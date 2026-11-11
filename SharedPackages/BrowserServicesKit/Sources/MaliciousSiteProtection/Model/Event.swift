@@ -25,14 +25,6 @@ public extension PixelKit {
         public static let category = "category"
         public static let settingToggledTo = "newState"
         public static let datasetType = "type"
-        public static let fromRevision = "fromRevision"
-        public static let toRevision = "toRevision"
-        public static let updateFrequencyMinutes = "updateFrequencyMinutes"
-        public static let isFullReplacement = "isFullReplacement"
-        public static let numberOfDataSetsProcessed = "numberOfDatasetsProcessed"
-        public static let numberOfSuccessfulDataSetsUpdated = "numberOfSuccessfulDatasetsUpdated"
-        public static let performanceBucket = "performanceBucket"
-        public static let diskUsageBucket = "diskUsageBucket"
     }
 }
 
@@ -49,10 +41,14 @@ public enum Event: PixelKit.Event {
     case matchesApiFailure(Error)
     case failedToDownloadInitialDataSets(category: ThreatKind, type: DataManager.StoredDataType.Kind)
     #if os(iOS)
-    case singleDataSetUpdatePerformance(SingleDataSetUpdatePerformanceInfo)
-    case singleDataSetUpdateDiskUsage(SingleDataSetUpdateDiskUsageInfo)
-    case aggregateDataSetUpdatePerformance(AggregateDataSetPerformanceInfo)
-    case aggregateDataSetUpdateDiskUsage(AggregateDataSetUpdateDiskUsageInfo)
+    /// How long applying, encoding and writing a dataset update took.
+    case dataSetUpdateTime(category: ThreatKind, type: DataManager.StoredDataType.Kind, bucket: DurationBucketAggregation)
+    /// The size of the dataset file written after an update.
+    case dataSetSize(category: ThreatKind, type: DataManager.StoredDataType.Kind, bucket: DatasetSizeBucketAggregation)
+    /// The total time spent applying, encoding and writing the datasets an update round of `type` wrote.
+    case dataSetAggregateUpdateTime(type: DataManager.StoredDataType.Kind, bucket: DurationBucketAggregation)
+    /// The total size of the dataset files written in an update round of `type`.
+    case dataSetAggregateSize(type: DataManager.StoredDataType.Kind, bucket: DatasetSizeBucketAggregation)
     #endif
 
     public var name: String {
@@ -74,14 +70,14 @@ public enum Event: PixelKit.Event {
         case .failedToDownloadInitialDataSets:
             return "malicious-site-protection_failed-to-fetch-initial-datasets"
         #if os(iOS)
-        case .singleDataSetUpdatePerformance:
-            return "malicious-site-protection_single-dataset-update-performance"
-        case .singleDataSetUpdateDiskUsage:
-            return "malicious-site-protection_single-dataset-update-disk-usage"
-        case .aggregateDataSetUpdatePerformance:
-            return "malicious-site-protection_aggregate-dataset-update-performance"
-        case .aggregateDataSetUpdateDiskUsage:
-            return "malicious-site-protection_aggregate-dataset-update-disk-usage"
+        case .dataSetUpdateTime(let category, let type, let bucket):
+            return "malicious-site-protection_update-time_\(category.rawValue)_\(type.pixelSuffix)_\(bucket.rawValue)"
+        case .dataSetSize(let category, let type, let bucket):
+            return "malicious-site-protection_dataset-size_\(category.rawValue)_\(type.pixelSuffix)_\(bucket.rawValue)"
+        case .dataSetAggregateUpdateTime(let type, let bucket):
+            return "malicious-site-protection_update-time_aggregate_\(type.pixelSuffix)_\(bucket.rawValue)"
+        case .dataSetAggregateSize(let type, let bucket):
+            return "malicious-site-protection_dataset-size_aggregate_\(type.pixelSuffix)_\(bucket.rawValue)"
         #endif
         }
     }
@@ -119,36 +115,12 @@ public enum Event: PixelKit.Event {
                 PixelKit.Parameters.datasetType: datasetType.rawValue,
             ]
         #if os(iOS)
-        case .singleDataSetUpdatePerformance(let info):
-            return [
-                PixelKit.Parameters.category: info.category.rawValue,
-                PixelKit.Parameters.datasetType: info.type.rawValue,
-                PixelKit.Parameters.fromRevision: String(info.fromRevision),
-                PixelKit.Parameters.toRevision: String(info.toRevision),
-                PixelKit.Parameters.isFullReplacement: String(info.isFullReplacement),
-                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
-                PixelKit.Parameters.performanceBucket: info.performanceBucket
-            ]
-        case .singleDataSetUpdateDiskUsage(let info):
-            return [
-                PixelKit.Parameters.category: info.category.rawValue,
-                PixelKit.Parameters.datasetType: info.type.rawValue,
-                PixelKit.Parameters.toRevision: String(info.toRevision),
-                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
-                PixelKit.Parameters.diskUsageBucket: info.diskUsageBucket
-            ]
-        case .aggregateDataSetUpdatePerformance(let info):
-            return [
-                PixelKit.Parameters.datasetType: info.type.rawValue,
-                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
-                PixelKit.Parameters.performanceBucket: info.performanceBucket
-            ]
-        case .aggregateDataSetUpdateDiskUsage(let info):
-            return [
-                PixelKit.Parameters.datasetType: info.type.rawValue,
-                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
-                PixelKit.Parameters.diskUsageBucket: info.diskUsageBucket
-            ]
+        case .dataSetUpdateTime,
+             .dataSetSize,
+             .dataSetAggregateUpdateTime,
+             .dataSetAggregateSize:
+            // Every value is in the name.
+            return [:]
         #endif
         }
     }
@@ -163,12 +135,13 @@ public enum Event: PixelKit.Event {
                 .settingToggled,
                 .matchesApiTimeout,
                 .matchesApiFailure,
-                .failedToDownloadInitialDataSets,
-                .singleDataSetUpdatePerformance,
-                .singleDataSetUpdateDiskUsage,
-                .aggregateDataSetUpdatePerformance,
-                .aggregateDataSetUpdateDiskUsage:
+                .failedToDownloadInitialDataSets:
             return [.pixelSource]
+        case .dataSetUpdateTime,
+             .dataSetSize,
+             .dataSetAggregateUpdateTime,
+             .dataSetAggregateSize:
+            return nil
         #else
         case .errorPageShown,
                 .visitSite,

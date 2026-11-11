@@ -47,7 +47,7 @@ final class MaliciousSiteProtectionManager {
             apiEnvironment: api.environment,
             service: api.service,
             dataManager: dataManager,
-            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
+            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents(),
             supportedThreatsProvider: supportedThreatsProvider
         )
     }

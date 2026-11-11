@@ -123,8 +123,9 @@ import Subscription
         let offTitleStates: [ConnectionStatus] = [.disconnected, .disconnecting, .notConfigured, .connecting, .reasserting]
         for status in offTitleStates {
             viewModel.headerTitle = ""
-            statusObserver.subject.send(status)
-            await waitFor(condition: self.viewModel.headerTitle == UserText.netPStatusHeaderTitleOff)
+            await waitFor(viewModel.$headerTitle, matching: { $0 == UserText.netPStatusHeaderTitleOff }) {
+                statusObserver.subject.send(status)
+            }
         }
     }
 
@@ -241,9 +242,9 @@ import Subscription
         let subject = CurrentValueSubject<String?, Never>(nil)
         let viewModel = makeViewModel(controllerErrorPublisher: subject.eraseToAnyPublisher())
 
-        subject.send(UserText.vpnErrorAuthenticationFailed)
-
-        await waitFor(condition: viewModel.error != nil)
+        await waitFor(viewModel.$error, matching: { $0 != nil }) {
+            subject.send(UserText.vpnErrorAuthenticationFailed)
+        }
         XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
         XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
     }
@@ -252,11 +253,13 @@ import Subscription
         let subject = CurrentValueSubject<String?, Never>(nil)
         let viewModel = makeViewModel(controllerErrorPublisher: subject.eraseToAnyPublisher())
 
-        subject.send(UserText.vpnErrorAuthenticationFailed)
-        await waitFor(condition: viewModel.error != nil)
+        await waitFor(viewModel.$error, matching: { $0 != nil }) {
+            subject.send(UserText.vpnErrorAuthenticationFailed)
+        }
 
-        subject.send(nil)
-        await waitFor(condition: viewModel.error == nil)
+        await waitFor(viewModel.$error, matching: { $0 == nil }) {
+            subject.send(nil)
+        }
         XCTAssertNil(viewModel.error)
     }
 
@@ -266,14 +269,14 @@ import Subscription
         let viewModel = makeViewModel(controllerErrorPublisher: controllerErrorSubject.eraseToAnyPublisher(),
                                       errorObserver: errorObserver)
 
-        controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
-        await waitFor(condition: viewModel.error != nil)
+        await waitFor(viewModel.$error, matching: { $0 != nil }) {
+            controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
+        }
 
         // A session status change that resolves to no error must not clear a live controller start failure.
-        errorObserver.subject.send(nil)
-
-        // Give the sink a chance to run, then confirm the controller error is still showing.
-        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorAuthenticationFailed)
+        await waitFor(viewModel.$error, matching: { $0?.message == UserText.vpnErrorAuthenticationFailed }) {
+            errorObserver.subject.send(nil)
+        }
         XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
         XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
     }
@@ -285,12 +288,14 @@ import Subscription
                                       errorObserver: errorObserver)
 
         // A real (non-nil) session error is showing in the banner first.
-        errorObserver.subject.send("VPN disconnected due to expired subscription")
-        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorSubscriptionExpired)
+        await waitFor(viewModel.$error, matching: { $0?.message == UserText.vpnErrorSubscriptionExpired }) {
+            errorObserver.subject.send("VPN disconnected due to expired subscription")
+        }
 
         // With a controller (pre-session) start failure also present, the controller message wins.
-        controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
-        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorAuthenticationFailed)
+        await waitFor(viewModel.$error, matching: { $0?.message == UserText.vpnErrorAuthenticationFailed }) {
+            controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
+        }
         XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
         XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
     }
@@ -327,24 +332,38 @@ import Subscription
     }
 
     private func whenStatusUpdate_connected() async {
-        statusObserver.subject.send(.connected(connectedDate: Date()))
-        await waitFor(condition: self.viewModel.isNetPEnabled)
+        await waitFor(viewModel.$isNetPEnabled, matching: { $0 }) {
+            statusObserver.subject.send(.connected(connectedDate: Date()))
+        }
     }
 
     private func whenStatusUpdate_notConnected() async {
         let nonConnectedCases: [ConnectionStatus] = [.disconnected, .disconnecting, .notConfigured, .reasserting]
         for current in nonConnectedCases {
-            statusObserver.subject.send(current)
-            await waitFor(condition: !self.viewModel.isNetPEnabled)
+            await waitFor(viewModel.$isNetPEnabled, matching: { !$0 }) {
+                statusObserver.subject.send(current)
+            }
         }
     }
 
-    private func waitFor(condition: @escaping @autoclosure () -> Bool) async {
-        let predicate = NSPredicate { _, _ in
-            condition()
-        }
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+    @MainActor
+    private func waitFor<Value>(_ publisher: @autoclosure () -> Published<Value>.Publisher,
+                                matching predicate: @escaping (Value) -> Bool,
+                                after action: () -> Void) async {
+        let expectation = expectation(description: "Published value matches the expected state")
+        let cancellable = publisher()
+            .dropFirst()
+            .first(where: predicate)
+            .sink { _ in
+                // Keep subscription synchronous, then let the @Published setter finish before resuming.
+                DispatchQueue.main.async {
+                    expectation.fulfill()
+                }
+            }
+
+        action()
         await fulfillment(of: [expectation], timeout: 20)
+        cancellable.cancel()
     }
 
     // MARK: - Strict routing pill
@@ -371,14 +390,16 @@ import Subscription
         let statusObserver = MockConnectionStatusObserver()
         let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
 
-        statusObserver.subject.send(.connected(connectedDate: Date()))
-        await waitFor(condition: model.isNetPEnabled)
+        await waitFor(model.$isNetPEnabled, matching: { $0 }) {
+            statusObserver.subject.send(.connected(connectedDate: Date()))
+        }
         XCTAssertTrue(model.showStrictRoutingPill)
 
         // Reasserting is presented as an off/connecting state, matching the rest of the status UI,
         // so the pill and its on-state message are hidden while the tunnel reasserts.
-        statusObserver.subject.send(.reasserting)
-        await waitFor(condition: !model.isNetPEnabled)
+        await waitFor(model.$isNetPEnabled, matching: { !$0 }) {
+            statusObserver.subject.send(.reasserting)
+        }
         XCTAssertFalse(model.showStrictRoutingPill)
         XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOff)
     }

@@ -25,17 +25,16 @@ import WidgetKit
 
 class DownloadManagerTests: XCTestCase {
     private let downloadManagerTestsHelper = DownloadTestsHelper(downloadsDirectory: DownloadManager().downloadsDirectory)
+    private var observations: [(NotificationCenter, NSObjectProtocol)] = []
 
-    override func setUp() {
-        super.setUp()
-        WKNavigationResponse.swizzleDealloc()
-    }
     override func tearDown() {
+        observations.forEach { $0.0.removeObserver($0.1) }
+        observations.removeAll()
         super.tearDown()
-        WKNavigationResponse.restoreDealloc()
         downloadManagerTestsHelper.deleteAllFiles()
     }
     
+    @MainActor
     func testWhenIPadThenPKPassThenDownloadIsNotTemporary() throws {
         guard UIDevice.current.userInterfaceIdiom == .pad else { return }
         
@@ -48,6 +47,7 @@ class DownloadManagerTests: XCTestCase {
         XCTAssertFalse(download.temporary, "Download should be not temporary")
     }
     
+    @MainActor
     func testNotificationTemporaryPKPassDownloadOnPhone() throws {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
         
@@ -61,7 +61,7 @@ class DownloadManagerTests: XCTestCase {
         
         let expectation = expectation(description: "Download finish")
         
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { [self] notification in
+        observe(notificationCenter, name: .downloadFinished) { [self] notification in
           
             if downloadManagerTestsHelper.downloadForNotification(notification) == download {
                 let (tmpPath, finalPath) = downloadManagerTestsHelper.temporaryAndFinalPathForDownload(download)
@@ -76,6 +76,7 @@ class DownloadManagerTests: XCTestCase {
         wait(for: [expectation], timeout: 5)
     }
     
+    @MainActor
     func testNotificationTemporaryRealityDownload() throws {
         
         let notificationCenter = NotificationCenter()
@@ -88,7 +89,7 @@ class DownloadManagerTests: XCTestCase {
         
         let expectation = expectation(description: "Download finish")
         
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { [self] notification in
+        observe(notificationCenter, name: .downloadFinished) { [self] notification in
            
             if downloadManagerTestsHelper.downloadForNotification(notification) == download {
                 let (tmpPath, finalPath) = downloadManagerTestsHelper.temporaryAndFinalPathForDownload(download)
@@ -104,6 +105,7 @@ class DownloadManagerTests: XCTestCase {
         
     }
     
+    @MainActor
     func testNotificationTemporaryUSDZDownload() throws {
         let notificationCenter = NotificationCenter()
         let downloadManager = DownloadManager(notificationCenter)
@@ -115,7 +117,7 @@ class DownloadManagerTests: XCTestCase {
         
         let expectation = expectation(description: "Download finish")
         
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { [self] notification in
+        observe(notificationCenter, name: .downloadFinished) { [self] notification in
             
             if downloadManagerTestsHelper.downloadForNotification(notification) == download {
                 let (tmpPath, finalPath) = downloadManagerTestsHelper.temporaryAndFinalPathForDownload(download)
@@ -130,6 +132,7 @@ class DownloadManagerTests: XCTestCase {
         wait(for: [expectation], timeout: 5)
     }
     
+    @MainActor
     func testNotificationPermanentBinaryDownload() throws {
         let notificationCenter = NotificationCenter()
         let downloadManager = DownloadManager(notificationCenter)
@@ -141,7 +144,7 @@ class DownloadManagerTests: XCTestCase {
         
         let expectation = expectation(description: "Download finish")
         
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { [self] notification in
+        observe(notificationCenter, name: .downloadFinished) { [self] notification in
            
             if downloadManagerTestsHelper.downloadForNotification(notification) == download {
                 let (tmpPath, finalPath) = downloadManagerTestsHelper.temporaryAndFinalPathForDownload(download)
@@ -156,6 +159,7 @@ class DownloadManagerTests: XCTestCase {
         wait(for: [expectation], timeout: 5)
     }
     
+    @MainActor
     func testClosurePermanentBinaryDownload() throws {
         let downloadManager = DownloadManager(NotificationCenter())
         let sessionSetup = MockSessionSetup(mimeType: "application/octet-stream", downloadManager: downloadManager)
@@ -176,6 +180,7 @@ class DownloadManagerTests: XCTestCase {
         wait(for: [expectation], timeout: 5)
     }
     
+    @MainActor
     func testIfFinishedDownloadIsRemovedFromList() throws {
         let notificationCenter = NotificationCenter()
         let downloadManager = DownloadManager(notificationCenter)
@@ -184,7 +189,7 @@ class DownloadManagerTests: XCTestCase {
         let download = try downloadManager.makeDownload(navigationResponse: sessionSetup.response, downloadSession: sessionSetup.session)!
         let expectation = expectation(description: "Download finish")
         
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { [self] notification in
+        observe(notificationCenter, name: .downloadFinished) { [self] notification in
            
             if downloadManagerTestsHelper.downloadForNotification(notification) == download {
                 XCTAssertEqual(downloadManager.downloadList.count, 0)
@@ -205,6 +210,7 @@ class DownloadManagerTests: XCTestCase {
         fatalError("Should only be used to test valid downloads")
     }
     
+    @MainActor
     func testRTLSanitizing() throws {
         // Use Unicode escape sequences to avoid hidden bidirectional characters
         let spoofedName = "test.\u{202E}gpj\u{202C}"
@@ -218,7 +224,7 @@ class DownloadManagerTests: XCTestCase {
         
         let expectation = expectation(description: "Download finish")
         
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { [self] notification in
+        observe(notificationCenter, name: .downloadFinished) { [self] notification in
            
             if downloadManagerTestsHelper.downloadForNotification(notification) == download {
                 let (tmpPath, finalPath) = downloadManagerTestsHelper.temporaryAndFinalPathForDownload(download)
@@ -234,6 +240,7 @@ class DownloadManagerTests: XCTestCase {
         wait(for: [expectation], timeout: 5)
     }
     
+    @MainActor
     func testDownloadListUniqueFilenames() throws {
         let numberOfFiles = 3
         var files = [String](repeating: "duck.txt", count: numberOfFiles)
@@ -252,6 +259,7 @@ class DownloadManagerTests: XCTestCase {
         XCTAssertEqual(downloadListNames, expectedList.sorted(), "Lists should be the same")
     }
     
+    @MainActor
     func testFileSystemUniqueFilenames() throws {
         let fileWithExtension = "duck.txt"
         let fileWithoutExtension = "duck"
@@ -277,6 +285,7 @@ class DownloadManagerTests: XCTestCase {
 
     }
     
+    @MainActor
     func testWhenDownloadManagerInitializedThenDownloadsDirectoryNotCreated() {
         // Given
         let handler = DownloadsDirectoryHandler()
@@ -290,6 +299,7 @@ class DownloadManagerTests: XCTestCase {
         XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory should not exist after initialization")
     }
     
+    @MainActor
     func testWhenNonTemporaryDownloadCompletesThenDownloadsDirectoryCreated() throws {
         // Given
         let handler = DownloadsDirectoryHandler()
@@ -306,7 +316,7 @@ class DownloadManagerTests: XCTestCase {
         let download = try downloadManager.makeDownload(navigationResponse: sessionSetup.response, downloadSession: sessionSetup.session)!
         
         let expectation = expectation(description: "Download finish")
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { _ in
+        observe(notificationCenter, name: .downloadFinished) { _ in
             expectation.fulfill()
         }
         
@@ -317,6 +327,7 @@ class DownloadManagerTests: XCTestCase {
         XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should exist after non-temporary download")
     }
     
+    @MainActor
     func testWhenTemporaryDownloadCompletesThenDownloadsDirectoryNotCreated() throws {
         // Given
         let handler = DownloadsDirectoryHandler()
@@ -333,7 +344,7 @@ class DownloadManagerTests: XCTestCase {
         
         let expectation = expectation(description: "Download finish")
         
-        notificationCenter.addObserver(forName: .downloadFinished, object: nil, queue: nil) { _ in
+        observe(notificationCenter, name: .downloadFinished) { _ in
             expectation.fulfill()
         }
         
@@ -342,5 +353,17 @@ class DownloadManagerTests: XCTestCase {
         
         // Then
         XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory should not exist after temporary download")
+    }
+    @MainActor
+    private func observe(_ notificationCenter: NotificationCenter,
+                         name: Notification.Name,
+                         using handler: @escaping @MainActor @Sendable (Notification) -> Void) {
+        let observer = notificationCenter.addObserver(forName: name, object: nil, queue: .main) { notification in
+            // OperationQueue.main delivers this callback on the main actor's executor.
+            MainActor.assumeIsolated {
+                handler(notification)
+            }
+        }
+        observations.append((notificationCenter, observer))
     }
 }

@@ -24,7 +24,10 @@ import XCTest
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class CPMNetworkProcessRecoveryTests: XCTestCase {
+    private let readinessTimeout: TimeInterval = 30
     private let flagUpdates = PassthroughSubject<Void, Never>()
+    private var nextContextCheck: XCTestExpectation?
+    private var nextRestart: XCTestExpectation?
     private var flagReads = 0
     private var processReads = 0
     private var contextChecks = 0
@@ -47,13 +50,29 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
                                   restart: { [unowned self] webView in
             guard self.canRestart else { return false }
             self.restarted.append(webView)
+            self.nextRestart?.fulfill()
+            self.nextRestart = nil
             return true
         })
+    }
+
+    private func expectNextContextCheck() -> XCTestExpectation {
+        let checked = expectation(description: "The watched background is checked")
+        nextContextCheck = checked
+        return checked
+    }
+
+    private func expectNextRestart() -> XCTestExpectation {
+        let restarted = expectation(description: "The watched background restarts")
+        nextRestart = restarted
+        return restarted
     }
 
     private func watch(_ view: WKWebView, in recovery: CPMNetworkProcessRecovery, identifier: String = "embedded") {
         recovery.watch(view, identifier: identifier, isCurrent: { [unowned self] in
             self.contextChecks += 1
+            self.nextContextCheck?.fulfill()
+            self.nextContextCheck = nil
             return self.current
         })
     }
@@ -170,14 +189,16 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
     func testRuntimeDisableStopsPollingAndEnableRecoversWithoutNavigation() async throws {
         let recovery = makeRecovery(interval: 0.01)
         let view = WKWebView()
+        let polled = expectNextContextCheck()
         watch(view, in: recovery)
-        var deadline = Date().addingTimeInterval(2)
-        while contextChecks == 0, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        await fulfillment(of: [polled], timeout: readinessTimeout)
         XCTAssertGreaterThan(contextChecks, 0, "The enabled watch must poll before testing disable")
         enabled = false
         flagUpdates.send(())
-        // Allow the main-queue flag notification and any already scheduled tick to drain.
-        try await Task.sleep(for: .milliseconds(50))
+        // The flag subscriber runs on the main queue. Wait until it has handled this update.
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.main.async { continuation.resume() }
+        }
         let disabledFlagReads = flagReads
         let disabledProcessReads = processReads
         let disabledContextChecks = contextChecks
@@ -187,10 +208,10 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         XCTAssertEqual(processReads, disabledProcessReads)
         XCTAssertEqual(contextChecks, disabledContextChecks)
         XCTAssertTrue(restarted.isEmpty)
+        let didRestart = expectNextRestart()
         enabled = true
         flagUpdates.send(())
-        deadline = Date().addingTimeInterval(2)
-        while restarted.isEmpty, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        await fulfillment(of: [didRestart], timeout: readinessTimeout)
         XCTAssertEqual(restarted, [view], "Re-enable must recover using the retained baseline without navigation")
         withExtendedLifetime(recovery) {}
     }
@@ -200,15 +221,15 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         let recovery = makeRecovery(interval: 0.01)
         let view = WKWebView()
         watch(view, in: recovery)
+        let polled = expectNextContextCheck()
         enabled = true
         flagUpdates.send(())
-        var deadline = Date().addingTimeInterval(2)
-        while contextChecks == 0, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        await fulfillment(of: [polled], timeout: readinessTimeout)
         XCTAssertGreaterThan(contextChecks, 0)
         XCTAssertTrue(restarted.isEmpty)
+        let didRestart = expectNextRestart()
         process = 200
-        deadline = Date().addingTimeInterval(2)
-        while restarted.isEmpty, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        await fulfillment(of: [didRestart], timeout: readinessTimeout)
         XCTAssertEqual(restarted, [view])
         withExtendedLifetime(recovery) {}
     }
@@ -217,9 +238,9 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         var recovery: CPMNetworkProcessRecovery? = makeRecovery(interval: 0.01)
         weak var released = recovery
         let view = WKWebView()
+        let polled = expectNextContextCheck()
         watch(view, in: try XCTUnwrap(recovery))
-        let deadline = Date().addingTimeInterval(2)
-        while contextChecks == 0, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        await fulfillment(of: [polled], timeout: readinessTimeout)
         XCTAssertGreaterThan(contextChecks, 0)
         recovery = nil
         XCTAssertNil(released)
@@ -386,9 +407,9 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         weak var released = recovery
         let view = WKWebView()
         watch(view, in: try XCTUnwrap(recovery))
+        let didRestart = expectNextRestart()
         process = 200
-        let deadline = Date().addingTimeInterval(2)
-        while restarted.isEmpty, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        await fulfillment(of: [didRestart], timeout: readinessTimeout)
         XCTAssertEqual(restarted, [view])
         recovery = nil
         XCTAssertNil(released)

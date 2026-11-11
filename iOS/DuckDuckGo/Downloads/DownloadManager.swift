@@ -140,7 +140,8 @@ class DownloadManager: DownloadManaging {
         return download
     }
 
-    func makeDownload(navigationResponse: WKNavigationResponse,
+    @MainActor
+    func makeDownload(navigationResponse: WebViewNavigationResponse,
                       suggestedFilename: String? = nil,
                       downloadSession: DownloadSession? = nil,
                       cookieStore: WKHTTPCookieStore? = nil,

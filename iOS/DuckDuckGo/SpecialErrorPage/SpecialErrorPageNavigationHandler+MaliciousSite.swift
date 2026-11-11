@@ -47,14 +47,14 @@ protocol MaliciousSiteProtectionNavigationHandling: SpecialErrorPageThreatProvid
     /// Retrieves a task for detecting malicious sites based on the provided navigation response.
     ///
     /// - Parameters:
-    ///   - navigationResponse: The `WKNavigationResponse` object that contains information about
+    ///   - navigationResponse: The navigation response that contains information about
     ///     the navigation event.
     ///   - webView: The web view from which the navigation request began.
     /// - Returns: A `Task<MaliciousSiteProtectionNavigationResult, Never>?` that represents the
     ///   asynchronous operation for detecting malicious sites. If the task cannot be found,
     ///   the function returns `nil`.
     @MainActor
-    func getMaliciousSiteDetectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>?
+    func getMaliciousSiteDetectionTask(for navigationResponse: WebViewNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>?
 }
 
 final class MaliciousSiteProtectionNavigationHandler {
@@ -127,7 +127,7 @@ extension MaliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavig
     }
 
     @MainActor
-    func getMaliciousSiteDetectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>? {
+    func getMaliciousSiteDetectionTask(for navigationResponse: WebViewNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>? {
 
         guard let url = navigationResponse.response.url else {
             assertionFailure("Could not find Malicious Site Detection Task for URL")

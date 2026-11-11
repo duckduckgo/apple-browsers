@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AppRouting
 import Bookmarks
 import BrowserServicesKit
 import Common
@@ -37,10 +38,6 @@ import XCTest
 // swiftlint:disable force_try identifier_name
 
 final class SuggestionJsonScenarioTests: XCTestCase {
-
-    override class func setUp() {
-        StatisticsUserDefaults().atb = nil
-    }
 
     // MARK: - Test Scenarios
 
@@ -613,7 +610,9 @@ private extension Suggestion {
         let subtitle = ""
         switch self {
         case .phrase(phrase: let phrase):
-            return .init(type: .phrase, title: phrase, subtitle: subtitle, uri: URL.makeSearchURL(query: phrase, forceSearchQuery: true)?.absoluteString, tabId: nil, score: 0)
+            let builder = SearchURLBuilder(searchBaseURL: .ddg, isPad: false)
+            let url = builder.makeSearchURL(query: phrase, forceSearchQuery: true)
+            return .init(type: .phrase, title: phrase, subtitle: subtitle, uri: url.absoluteString, tabId: nil, score: 0)
 
         case .website(url: let url):
             return .init(type: .website, title: url.absoluteString.dropping(prefix: (url.scheme ?? "") + "://"), subtitle: subtitle, uri: url.absoluteString, tabId: nil, score: 0)

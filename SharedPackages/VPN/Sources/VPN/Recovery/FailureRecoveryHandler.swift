@@ -69,6 +69,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
     private let deviceManager: NetworkProtectionDeviceManagement
     private weak var reassertingControl: Reasserting?
     private let retryConfig: RetryConfig
+    private let taskPriority: TaskPriority
     private let eventHandler: (FailureRecoveryStep) -> Void
 
     private var task: Task<Void, Never>? {
@@ -77,10 +78,15 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
         }
     }
 
-    init(deviceManager: NetworkProtectionDeviceManagement, reassertingControl: Reasserting, retryConfig: RetryConfig = .default, eventHandler: @escaping (FailureRecoveryStep) -> Void) {
+    init(deviceManager: NetworkProtectionDeviceManagement,
+         reassertingControl: Reasserting,
+         retryConfig: RetryConfig = .default,
+         taskPriority: TaskPriority = .background,
+         eventHandler: @escaping (FailureRecoveryStep) -> Void) {
         self.deviceManager = deviceManager
         self.reassertingControl = reassertingControl
         self.retryConfig = retryConfig
+        self.taskPriority = taskPriority
         self.eventHandler = eventHandler
     }
 
@@ -168,7 +174,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
         _ config: RetryConfig,
         action: @escaping () async throws -> Void
     ) async {
-        let task = Task(priority: .background) {
+        let task = Task(priority: taskPriority) {
             var currentDelay = config.initialDelay
             var count = 0
             repeat {

@@ -611,7 +611,8 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         }
         webView.navigationDelegate = navigationDelegate
         webView.loadHTMLString("<html><body></body></html>", baseURL: baseURL)
-        await fulfillment(of: [loadExpectation], timeout: 1)
+        // WebKit process startup can take ten seconds on a busy CI simulator.
+        await fulfillment(of: [loadExpectation], timeout: 30)
         withExtendedLifetime(navigationDelegate) {}
         return (webView, handler)
     }

@@ -32,12 +32,10 @@ final class OnboardingPersonalizationAppSettingsTests {
 
     init() throws {
         userDefaults = try #require(UserDefaults(suiteName: groupName))
-        UserDefaults.app = userDefaults
-        sut = AppUserDefaults(groupName: groupName)
+        sut = AppUserDefaults(groupName: groupName, cookiePopupDefaults: userDefaults)
     }
 
     deinit {
-        UserDefaults.app = .standard
         userDefaults.removePersistentDomain(forName: groupName)
     }
 

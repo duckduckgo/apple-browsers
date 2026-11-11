@@ -36,10 +36,10 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
     private var timeTraveller: TimeTraveller!
     private var application: MockBackgroundRefreshApplication!
     private var preferencesScheduler: TestSchedulerOf<DispatchQueue>!
+    private let taskRegistrationRegistry = BackgroundTaskRegistrationRegistry()
 
     init() {
         setupSUT()
-        MaliciousSiteProtectionDatasetsFetcher.resetRegisteredTaskIdentifiers()
     }
 
     func setupSUT(
@@ -66,7 +66,8 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
             dateProvider: timeTraveller.getDate,
             backgroundTaskScheduler: backgroundSchedulerMock,
             application: application,
-            preferencesScheduler: preferencesScheduler.eraseToAnyScheduler()
+            preferencesScheduler: preferencesScheduler.eraseToAnyScheduler(),
+            taskRegistrationRegistry: taskRegistrationRegistry
         )
     }
 

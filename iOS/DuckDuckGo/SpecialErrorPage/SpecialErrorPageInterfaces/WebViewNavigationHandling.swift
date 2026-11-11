@@ -33,6 +33,15 @@ protocol WebViewNavigation {}
 // Defining a protocol for WKNavigation and using mocks such as DummyWKNavigation in tests resolves the problem.
 extension WKNavigation: WebViewNavigation {}
 
+// MARK: - WebViewNavigationResponse
+
+/// The response data used by navigation policies and downloads.
+protocol WebViewNavigationResponse: AnyObject {
+    @MainActor var response: URLResponse { get }
+}
+
+extension WKNavigationResponse: WebViewNavigationResponse {}
+
 // MARK: - WebViewNavigationHandling
 
 /// A protocol that defines methods for handling navigation events of `WKWebView`.
@@ -51,7 +60,7 @@ protocol WebViewNavigationHandling: AnyObject {
     ///   - webView: The web view from which the navigation request began.
     /// - Returns: A Boolean value that indicates whether to cancel or allow the navigation.
     @MainActor
-    func handleDecidePolicy(for navigationResponse: WKNavigationResponse, webView: WKWebView) async -> Bool
+    func handleDecidePolicy(for navigationResponse: WebViewNavigationResponse, webView: WKWebView) async -> Bool
 
     /// Handles authentication challenges received by the web view.
     ///

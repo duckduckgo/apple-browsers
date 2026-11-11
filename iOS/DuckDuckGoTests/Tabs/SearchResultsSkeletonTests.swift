@@ -131,50 +131,67 @@ struct SearchResultsSkeletonTests {
     }
 
     private static let search = URL(string: "https://duckduckgo.com/?q=pizza")!
+    private static let website = URL(string: "https://example.com")!
 
     @available(iOS 16, macOS 13, *)
-    @Test("The outline flag is on for internal users only until the remote configuration says otherwise", .timeLimit(.minutes(1)))
-    func skeletonFlagDefaultsToInternalOnly() {
-        guard case .internalOnly = FeatureFlag.searchSubmitPageSkeleton.defaultValue else {
-            Issue.record("searchSubmitPageSkeleton must default to internal only")
+    @Test("The cover flag stays internal only until the remote configuration says otherwise", .timeLimit(.minutes(1)))
+    func coverFlagDefaultsToInternalOnly() {
+        guard case .internalOnly = FeatureFlag.searchSubmitPageCover.defaultValue else {
+            Issue.record("searchSubmitPageCover must default to internal only")
             return
         }
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("With the outline flag off, a search keeps the plain cover and teaches no header",
-          .timeLimit(.minutes(1)),
-          arguments: [[FeatureFlag](), [.searchSubmitPageCover], [.searchSubmitPageSkeleton]])
-    func skeletonOffWithoutBothFlags(enabled: [FeatureFlag]) {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: enabled)
-
-        #expect(!MainViewController.showsSearchResultsSkeleton(for: Self.search, featureFlagger: flagger))
-        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, featureFlagger: flagger))
+    @Test("Only a search gets the outline; a website keeps the plain cover", .timeLimit(.minutes(1)))
+    func outlineIsForSearchesOnly() {
+        #expect(MainViewController.showsSearchResultsSkeleton(for: Self.search))
+        #expect(!MainViewController.showsSearchResultsSkeleton(for: Self.website))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("With both flags on, a search shows the outline and teaches the header; a website does neither", .timeLimit(.minutes(1)))
-    func skeletonOnWithBothFlags() throws {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.searchSubmitPageCover, .searchSubmitPageSkeleton])
-        let website = try #require(URL(string: "https://example.com"))
+    @Test("The header is only learned with the cover flag on, and only from a search", .timeLimit(.minutes(1)))
+    func headerLearnedOnlyWithCoverFlag() {
+        let off = MockFeatureFlagger(enabledFeatureFlags: [])
+        let on = MockFeatureFlagger(enabledFeatureFlags: [.searchSubmitPageCover])
 
-        #expect(MainViewController.showsSearchResultsSkeleton(for: Self.search, featureFlagger: flagger))
-        #expect(MainViewController.learnsSearchPageHeader(from: Self.search, featureFlagger: flagger))
-        #expect(!MainViewController.showsSearchResultsSkeleton(for: website, featureFlagger: flagger))
-        #expect(!MainViewController.learnsSearchPageHeader(from: website, featureFlagger: flagger))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, featureFlagger: off))
+        #expect(MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, featureFlagger: on))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.website, isFireTab: false, featureFlagger: on))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The outline flag changing while the app runs applies to the next search", .timeLimit(.minutes(1)))
-    func skeletonFollowsFlagChanges() {
+    @Test("A Fire tab's results never teach the header", .timeLimit(.minutes(1)))
+    func fireTabNeverTeachesHeader() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.searchSubmitPageCover])
-        #expect(!MainViewController.showsSearchResultsSkeleton(for: Self.search, featureFlagger: flagger))
 
-        flagger.enabledFeatureFlags.append(.searchSubmitPageSkeleton)
-        #expect(MainViewController.showsSearchResultsSkeleton(for: Self.search, featureFlagger: flagger))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: true, featureFlagger: flagger))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Clearing forgets every remembered header", .timeLimit(.minutes(1)))
+    func clearForgetsHeaders() {
+        let memory = SearchPageHeaderMemory()
+        memory.record(Self.makeHeader(width: 402), for: .light)
+        memory.record(Self.makeHeader(width: 402), for: .dark)
+
+        memory.clear()
+
+        #expect(memory.header(for: .light, width: 402) == nil)
+        #expect(memory.header(for: .dark, width: 402) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The cover flag changing while the app runs applies to the next page", .timeLimit(.minutes(1)))
+    func headerFollowsFlagChanges() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, featureFlagger: flagger))
 
         flagger.enabledFeatureFlags = [.searchSubmitPageCover]
-        #expect(!MainViewController.showsSearchResultsSkeleton(for: Self.search, featureFlagger: flagger))
+        #expect(MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, featureFlagger: flagger))
+
+        flagger.enabledFeatureFlags = []
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, featureFlagger: flagger))
     }
 
     @available(iOS 16, macOS 13, *)

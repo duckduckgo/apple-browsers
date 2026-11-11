@@ -58,22 +58,25 @@ extension MainViewController {
     func learnSearchPageHeader(from tab: TabViewController) {
         let style = traitCollection.userInterfaceStyle
         guard tab === currentTab,
-              let url = tab.url, Self.learnsSearchPageHeader(from: url, featureFlagger: featureFlagger) else { return }
+              let url = tab.url,
+              Self.learnsSearchPageHeader(from: url, isFireTab: tab.tabModel.fireTab, featureFlagger: featureFlagger) else { return }
         tab.captureSearchPageHeader { [weak self] header in
             guard let self, let header, self.traitCollection.userInterfaceStyle == style else { return }
             self.searchPageHeaderMemory.record(header, for: style)
         }
     }
 
-    /// The outline and header are an addition to the cover, released on their own flag.
-    static func showsSearchResultsSkeleton(for url: URL, featureFlagger: FeatureFlagger) -> Bool {
+    /// Websites keep the plain cover; only the results page has a known shape.
+    static func showsSearchResultsSkeleton(for url: URL) -> Bool {
         url.isDuckDuckGoSearch
-            && featureFlagger.isFeatureOn(.searchSubmitPageCover)
-            && featureFlagger.isFeatureOn(.searchSubmitPageSkeleton)
     }
 
-    static func learnsSearchPageHeader(from url: URL, featureFlagger: FeatureFlagger) -> Bool {
-        showsSearchResultsSkeleton(for: url, featureFlagger: featureFlagger) && isAllResultsPage(url)
+    /// Fire tabs are meant to leave no trace, so their results never teach the header.
+    static func learnsSearchPageHeader(from url: URL, isFireTab: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        !isFireTab
+            && featureFlagger.isFeatureOn(.searchSubmitPageCover)
+            && showsSearchResultsSkeleton(for: url)
+            && isAllResultsPage(url)
     }
 
     /// Other verticals, such as Images, select a different tab and drop the filters.
@@ -99,8 +102,7 @@ extension MainViewController {
             handoff.exitSnapshotWindowFrame = panel.convert(panel.bounds, to: nil)
         }
         handoff.destinationColor = expectedPageBackgroundColor(for: url)
-        // Websites keep the plain cover; only the results page has a known shape.
-        handoff.showsSearchResultsSkeleton = Self.showsSearchResultsSkeleton(for: url, featureFlagger: featureFlagger)
+        handoff.showsSearchResultsSkeleton = Self.showsSearchResultsSkeleton(for: url)
         if handoff.showsSearchResultsSkeleton {
             handoff.searchResultsHeader = searchPageHeaderMemory.header(for: traitCollection.userInterfaceStyle,
                                                                         width: tab.webView?.bounds.width ?? 0)

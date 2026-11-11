@@ -21,7 +21,8 @@ import UIKit
 
 /// Remembers how the results page header last rendered, per appearance, so the cover can show it as is.
 ///
-/// The header holds the tabs and filters, never the query. Kept in memory for the session only.
+/// The header holds the tabs and filters, never the query. Kept in memory only, never from a Fire tab,
+/// and dropped whenever data is burned, since the tabs it shows can hint at the last search.
 @MainActor
 final class SearchPageHeaderMemory {
 
@@ -36,6 +37,10 @@ final class SearchPageHeaderMemory {
     func record(_ header: UIImage, for style: UIUserInterfaceStyle) {
         guard header.size.width > 0, header.size.height > 0 else { return }
         headers[style] = header
+    }
+
+    func clear() {
+        headers.removeAll()
     }
 
     nonisolated static func matches(_ header: UIImage, width: CGFloat) -> Bool {

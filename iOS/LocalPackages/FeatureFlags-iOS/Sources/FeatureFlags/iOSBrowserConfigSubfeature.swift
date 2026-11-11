@@ -177,9 +177,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432472832449
     case searchSubmitPageCover
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432242361261
-    case searchSubmitPageSkeleton
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
 

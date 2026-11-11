@@ -9266,6 +9266,7 @@ extension MainViewController: TabManagerFireModeDelegate {
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {
+        searchPageHeaderMemory.clear()
         switch fireRequest.trigger {
         case .manualFire:
             showBurningOverlay()

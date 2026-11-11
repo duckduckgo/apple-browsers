@@ -39,7 +39,7 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
     func testWhenNothingIsGivenThenWebBookmarksAreReturnedInTreeOrderWithTheirFolderAndNoQuery() async {
         let tool = make(tree())
 
-        let result = await tool.execute(arguments: [:], context: context)
+        let result = await tool.execute(arguments: ["query": .null, "folder": .null, "limit": .null], context: context)
 
         XCTAssertEqual(result, .success(["results": [
             entry("News", "https://news.example", []),

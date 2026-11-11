@@ -28,7 +28,7 @@ final class PinTabBrowserToolTests: XCTestCase {
         let owner = collection.tabCollection.tabs[1]
         let (tool, context) = make(collection: collection, ownerTabID: owner.uuid)
 
-        let omitted = await tool.execute(arguments: [:], context: context)
+        let omitted = await tool.execute(arguments: ["tabIds": .null], context: context)
 
         XCTAssertEqual(omitted, .success(pinned(owner.uuid)))
         XCTAssertEqual(collection.pinnedTabsCollection?.tabs.map(\.uuid), [owner.uuid])
@@ -104,7 +104,7 @@ final class PinTabBrowserToolTests: XCTestCase {
         let (tool, context) = make(collection: collection, ownerTabID: collection.tabCollection.tabs[0].uuid)
         let tooMany = JSONValue.array(Array(repeating: "id", count: PinTabBrowserTool.maxTabIDs + 1))
 
-        for tabIDs: JSONValue in [[], .null, "id", [1], [" "], tooMany] {
+        for tabIDs: JSONValue in [[], "id", [1], [" "], tooMany] {
             let result = await tool.execute(arguments: ["tabIds": tabIDs], context: context)
             XCTAssertEqual(result, .failure(.invalidArguments), "\(tabIDs)")
         }

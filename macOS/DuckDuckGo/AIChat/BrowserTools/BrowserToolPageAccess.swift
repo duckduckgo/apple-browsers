@@ -87,7 +87,7 @@ enum BrowserToolTargetTab {
     }
 
     static func tabIDs(from arguments: JSONValue?, maxCount: Int = 50) -> TabIDsArgument {
-        guard let value = arguments?["tabIds"] else { return .absent }
+        guard let value = arguments?["tabIds"], value != .null else { return .absent }
         guard let values = value.arrayValue, (1...maxCount).contains(values.count) else { return .invalid }
         let tabIDs = values.compactMap { $0.stringValue?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         return tabIDs.count == values.count ? .ids(tabIDs) : .invalid

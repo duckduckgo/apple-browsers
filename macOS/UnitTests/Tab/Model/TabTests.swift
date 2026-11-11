@@ -365,6 +365,57 @@ final class TabTests: XCTestCase {
 
     @available(macOS 15.4, *)
     @MainActor
+    func testWhenExtensionPageReplacesPendingNavigationThenContentStaysOnExtensionPage() async throws {
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
+        tab = try await makeTabWithLoadedWebExtension()
+
+        tab.setContent(.url(urls.url1, source: .link))
+        tab.setContent(.webExtensionUrl(extensionURL))
+        await waitForQueuedWebViewURLUpdate()
+
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenGoingBackFromExtensionPageThenContentFollowsTabWebView() async throws {
+        tab = try await makeTabWithLoadedWebExtension()
+        try await tab.setContent(.url(urls.url, source: .link))?.result.get()
+        try await tab.setContent(.url(urls.url1, source: .link))?.result.get()
+        tab.setContent(.webExtensionUrl(URL(string: "webkit-extension://example/app.html")!))
+
+        try await tab.goBack()?.result.get()
+
+        XCTAssertEqual(tab.content, .url(urls.url, source: .historyEntry))
+    }
+
+    /// A tab whose web view serves websites, with `webkit-extension://example/` pages served by a loaded extension.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeTabWithLoadedWebExtension() async throws -> Tab {
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Loaded Extension"))
+        context.baseURL = URL(string: "webkit-extension://example/")!
+        try controller.load(context)
+        addTeardownBlock { @MainActor in try? controller.unload(context) }
+        let manager = StubWebExtensionManager(context: context)
+        schemeHandler.middleware = [{ _ in .ok(.html("")) }]
+
+        return Tab(content: .none,
+                   webViewConfiguration: schemeHandler.webViewConfiguration(),
+                   webExtensionManagerProvider: { manager })
+    }
+
+    /// The web view reports URL changes through the main queue, so one may still be queued after a content change.
+    @MainActor
+    private func waitForQueuedWebViewURLUpdate() async {
+        let eQueuedUpdateDelivered = expectation(description: "queued URL update delivered")
+        DispatchQueue.main.async { eQueuedUpdateDelivered.fulfill() }
+        await fulfillment(of: [eQueuedUpdateDelivered], timeout: 5)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
     func testWhenExtensionSubframeNavigatesThenOwningTabStaysUnchanged() async {
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let frame = WKFrameInfo.mock(for: tab.webView, isMain: false)

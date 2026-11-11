@@ -608,6 +608,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     /// view, which extensions read as `sender.tab`.
     var webExtensionPageWebView: WebView?
 
+    private var isObservingWebViewURL = true
+
     var audioState: WebView.AudioState {
         webView.audioState
     }
@@ -638,6 +640,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             }
             if content != oldValue {
                 webExtensionPageWebView = nil
+                isObservingWebViewURL = true
             }
             Task { @MainActor in
                 extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)
@@ -707,6 +710,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     private func handleUrlDidChange() {
+        guard isObservingWebViewURL else {
+            return
+        }
+
         if let url = webView.url {
             let content = TabContent.contentFromURL(url, source: .webViewUpdated)
 
@@ -927,7 +934,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         userInteractionDialog = nil
-        let navigation = webView.navigator()?.go(to: backItem, withExpectedNavigationType: .backForward(distance: -1))
+        let navigation = navigateHistory(to: backItem, distance: -1)
         // update TabContent source to .historyEntry on navigation
         navigation?.appendResponder(willStart: { [weak self] navigation in
             guard let self,
@@ -944,7 +951,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         guard canGoForward, let forwardItem = webView.backForwardList.forwardItem else { return nil }
 
         userInteractionDialog = nil
-        let navigation = webView.navigator()?.go(to: forwardItem, withExpectedNavigationType: .backForward(distance: 1))
+        let navigation = navigateHistory(to: forwardItem, distance: 1)
         // update TabContent source to .historyEntry on navigation
         navigation?.appendResponder(willStart: { [weak self] navigation in
             guard let self,
@@ -999,8 +1006,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return nil
         }
 
-        let navigation = webView.navigator()?.go(to: backForwardNavigation.item,
-                                                 withExpectedNavigationType: .backForward(distance: backForwardNavigation.distance))
+        let navigation = navigateHistory(to: backForwardNavigation.item, distance: backForwardNavigation.distance)
         // update TabContent source to .historyEntry on navigation
         navigation?.appendResponder(willStart: { [weak self] navigation in
             guard let self,
@@ -1109,7 +1115,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // Pages of loaded extensions show in `webExtensionPageWebView`, so `webView` drops what it was loading.
         // Others load here to show the error page.
         guard !isLoadedWebExtensionPage(url) else {
-            webView.stopLoading()
+            stopObservingWebView()
             return nil
         }
 
@@ -1206,6 +1212,20 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         return webExtensionManagerProvider()?.extensionContext(for: url)?.webViewConfiguration != nil
+    }
+
+    /// A loaded extension page takes over from `webView`: stops its load and ignores what its page still reports.
+    @MainActor
+    private func stopObservingWebView() {
+        isObservingWebViewURL = false
+        webView.stopLoading()
+    }
+
+    /// History navigations are the tab's own, so they may replace an extension page covering `webView`.
+    @MainActor
+    private func navigateHistory(to item: WKBackForwardListItem, distance: Int) -> ExpectedNavigation? {
+        isObservingWebViewURL = true
+        return webView.navigator()?.go(to: item, withExpectedNavigationType: .backForward(distance: distance))
     }
 
     @MainActor

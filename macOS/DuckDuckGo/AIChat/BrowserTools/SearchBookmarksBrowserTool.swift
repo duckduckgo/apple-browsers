@@ -106,7 +106,7 @@ final class SearchBookmarksBrowserTool: BrowserTool {
                         into: &results)
             } else if let bookmark = entity as? Bookmark, let url = bookmark.urlObject, url.isHttpOrHttps {
                 results.append(Result(title: BrowserToolOutputLimits.clip(bookmark.title, to: BrowserToolOutputLimits.title),
-                                      url: BrowserToolOutputLimits.urlWithoutQueryOrFragment(url.absoluteString),
+                                      url: BrowserToolOutputLimits.redactedURL(url.absoluteString),
                                       folder: path))
             }
         }

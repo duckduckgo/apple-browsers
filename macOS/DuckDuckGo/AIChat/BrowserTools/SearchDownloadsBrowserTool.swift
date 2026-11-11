@@ -63,7 +63,7 @@ final class SearchDownloadsBrowserTool: BrowserTool {
             .sorted { $0.modified > $1.modified }
             .map { item -> (fileName: String, url: String, downloadedAt: Date) in
                 // A data: or blob: address can hold the file itself, so only web addresses are returned.
-                let url = item.downloadURL.isHttpOrHttps ? BrowserToolOutputLimits.urlWithoutQueryOrFragment(item.downloadURL.absoluteString) : ""
+                let url = item.downloadURL.isHttpOrHttps ? BrowserToolOutputLimits.redactedURL(item.downloadURL.absoluteString) : ""
                 return (BrowserToolOutputLimits.clip(item.fileName, to: Self.maxFileNameLength), url, item.modified)
             }
             // Matches only what Duck.ai sees, so a query string cannot be confirmed by guessing it.

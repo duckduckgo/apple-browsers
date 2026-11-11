@@ -301,7 +301,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case customWebViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
-    case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
     case challengeSolver

@@ -158,6 +158,40 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func testWhenRestoreIsPendingThenGatekeeperThrows() async {
+        mockSubscriptionManager.isUserAuthenticatedValue = true
+        mockSubscriptionManager.getTokenContainerError = SubscriptionManagerError.errorRetrievingTokenContainer(error: URLError(.timedOut))
+        sut = DefaultDataBrokerProtectionFeatureGatekeeper(privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                                                           featureDisabler: mockFeatureDisabler,
+                                                           userDefaults: userDefaults(),
+                                                           subscriptionAvailability: mockFeatureAvailability,
+                                                           subscriptionManager: mockSubscriptionManager,
+                                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
+
+        do {
+            _ = try await sut.arePrerequisitesSatisfied()
+            XCTFail("Error expected")
+        } catch {
+            guard case .errorRetrievingTokenContainer = error as? SubscriptionManagerError else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
+    }
+
+    func testWhenTokenIsLostForGoodThenGatekeeperReturnsFalse() async throws {
+        mockSubscriptionManager.resultTokenContainer = nil
+        sut = DefaultDataBrokerProtectionFeatureGatekeeper(privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                                                           featureDisabler: mockFeatureDisabler,
+                                                           userDefaults: userDefaults(),
+                                                           subscriptionAvailability: mockFeatureAvailability,
+                                                           subscriptionManager: mockSubscriptionManager,
+                                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
+
+        let result = try await sut.arePrerequisitesSatisfied()
+
+        XCTAssertFalse(result)
+    }
+
     func testPrerequisites_readTheTokenThroughGetTokenContainer() async throws {
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(privacyConfigurationManager: MockPrivacyConfigurationManaging(),

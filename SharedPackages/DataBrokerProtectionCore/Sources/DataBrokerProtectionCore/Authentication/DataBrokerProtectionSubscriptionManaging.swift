@@ -33,6 +33,8 @@ public enum DataBrokerProtectionEntitlementStatus {
 }
 
 public protocol DataBrokerProtectionSubscriptionManaging {
+    /// Whether the user is signed in to the subscription. Doesn't depend on a token being stored.
+    var isUserAuthenticated: Bool { get }
     func accessToken() async -> String?
     /// Returns whether the current token carries the PIR entitlement.
     /// - Returns: `.enabled` or `.disabled` from the token's entitlements, or `.error` when no token can be read.
@@ -46,6 +48,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
 
     let subscriptionManager: any SubscriptionManager
     let runTypeProvider: AppRunTypeProviding
+    private static let integrationTestsTokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
 
     public func accessToken() async -> String? {
         // We use a staging token for DuckDuckGo subscription supplied through a github secret/action
@@ -54,9 +57,8 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
 
         if runTypeProvider.runType == .integrationTests {
             Logger.dataBrokerProtection.log("🐕 integrationTests")
-            var tokenKey: String
             Logger.dataBrokerProtection.log("🐕 auth v2")
-            tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
+            let tokenKey = Self.integrationTestsTokenKey
 
             if let token = ProcessInfo.processInfo.environment[tokenKey] {
                 return token
@@ -77,6 +79,14 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     public init(subscriptionManager: any SubscriptionManager, runTypeProvider: AppRunTypeProviding) {
         self.subscriptionManager = subscriptionManager
         self.runTypeProvider = runTypeProvider
+    }
+
+    /// The subscription's authentication state. In integration tests, whether the environment provides a token.
+    public var isUserAuthenticated: Bool {
+        if runTypeProvider.runType == .integrationTests {
+            return ProcessInfo.processInfo.environment[Self.integrationTestsTokenKey] != nil
+        }
+        return subscriptionManager.isUserAuthenticated
     }
 
     /// Reads the current token with `getTokenContainer(policy: .localValid)`, which restores a missing one first when it can.

@@ -109,14 +109,15 @@ public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
     public func restoreSubscriptionAfterExpiredRefreshToken() async throws {
         Logger.subscriptionAppStoreRestoreFlow.log("Restoring subscription after expired refresh token")
 
-        // Clear subscription Cache
-        subscriptionManager.clearSubscriptionCache()
-
         guard let lastTransactionJWSRepresentation = await storePurchaseManager.mostRecentTransaction() else {
             Logger.subscriptionAppStoreRestoreFlow.error("Missing last transaction")
             throw AppStoreRestoreFlowError.missingAccountOrTransactions
         }
 
-        _ = try await subscriptionManager.getSubscriptionFrom(lastTransactionJWSRepresentation: lastTransactionJWSRepresentation)
+        // The activation caches the restored subscription; the cache is cleared only when the account has none,
+        // so a failed attempt keeps the cached subscription
+        if try await subscriptionManager.getSubscriptionFrom(lastTransactionJWSRepresentation: lastTransactionJWSRepresentation) == nil {
+            subscriptionManager.clearSubscriptionCache()
+        }
     }
 }

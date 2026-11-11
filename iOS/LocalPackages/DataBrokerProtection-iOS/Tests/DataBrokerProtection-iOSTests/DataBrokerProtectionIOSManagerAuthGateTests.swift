@@ -83,6 +83,19 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func testValidatePrerequisites_authenticatedFreemiumActivated_entitlementCantBeRead_returnsFalse() async throws {
+        let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: true)
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+        dependencies.authenticationManager.entitlementStatusValue = .error
+        dependencies.freemiumDBPUserStateManager.didActivate = true
+
+        let result = await sut.validateRunPrerequisites()
+
+        XCTAssertFalse(result)
+    }
+
     func testValidatePrerequisites_unauthenticatedActivatedButFlagOff_returnsFalse() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: false)
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)

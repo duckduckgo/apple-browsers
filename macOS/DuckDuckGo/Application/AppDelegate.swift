@@ -1022,6 +1022,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     userDefaults: subscriptionUserDefaults,
                                                                     subscriptionEndpointService: subscriptionEndpointService,
                                                                     subscriptionEnvironment: subscriptionEnvironment,
+                                                                    process: .browser,
                                                                     pixelHandler: pixelHandler,
                                                                     isInternalUserEnabled: isInternalUserEnabled,
                                                                     wideEvent: wideEvent,

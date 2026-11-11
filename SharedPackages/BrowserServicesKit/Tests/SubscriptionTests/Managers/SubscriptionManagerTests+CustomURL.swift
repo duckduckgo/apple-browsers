@@ -38,6 +38,7 @@ extension SubscriptionManagerTests {
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
@@ -64,6 +65,7 @@ extension SubscriptionManagerTests {
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
@@ -88,6 +90,7 @@ extension SubscriptionManagerTests {
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
+            process: .browser,
             pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )

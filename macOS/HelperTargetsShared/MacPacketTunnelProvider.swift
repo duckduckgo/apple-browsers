@@ -578,6 +578,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointService,
                                                                subscriptionEnvironment: subscriptionEnvironment,
+                                                               process: .vpn,
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
                                                                wideEvent: self.wideEvent,

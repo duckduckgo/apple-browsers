@@ -66,7 +66,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
                                                          environment: subscriptionEnvironment,
                                                          userDefaults: subscriptionUserDefaults,
                                                          pixelHandlingSource: .vpnApp,
-                                                         source: .vpn)
+                                                         process: .vpn)
 
         _delegate = DuckDuckGoVPNAppDelegate(subscriptionManager: subscriptionManager,
                                              subscriptionEnvironment: subscriptionEnvironment)

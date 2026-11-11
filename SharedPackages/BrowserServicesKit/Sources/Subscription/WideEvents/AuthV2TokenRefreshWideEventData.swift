@@ -169,7 +169,7 @@ public enum BackupRecoveryOutcome: String, Codable, CaseIterable {
         switch result {
         case .recovered:
             self = .succeeded
-        case .notApplicable, nil:
+        case .notApplicable, .deferred, nil:
             self = .notAttempted
         case .sessionChanged:
             self = .sessionChanged

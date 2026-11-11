@@ -107,7 +107,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
                                                          environment: subscriptionEnvironment,
                                                          userDefaults: subscriptionUserDefaults,
                                                          pixelHandlingSource: .dbp,
-                                                         source: .pir)
+                                                         process: .pir)
     }
 
     @MainActor

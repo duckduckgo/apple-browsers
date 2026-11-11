@@ -266,7 +266,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let subscriptionCachingService: SubscriptionCachingService
     private let pixelHandler: SubscriptionPixelHandling
     /// Recovers the current token after a rejected refresh or when none is stored. When nil, no recovery is attempted.
-    public var tokenRecoveryCoordinator: TokenRecoveryCoordinator?
+    /// Only a `.browser` manager can recover a token.
+    public var tokenRecoveryCoordinator: TokenRecoveryCoordinator? {
+        didSet {
+            if tokenRecoveryCoordinator != nil && process != .browser {
+                assertionFailure("Only the browser can recover a token")
+            }
+        }
+    }
+    /// The process this manager runs in. Only `.browser` signs the user out automatically.
+    private let process: SubscriptionProcess
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
     private let userDefaults: UserDefaults
@@ -285,6 +294,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 subscriptionEndpointService: SubscriptionEndpointService,
                 subscriptionCachingService: SubscriptionCachingService = DefaultSubscriptionCachingService(),
                 subscriptionEnvironment: SubscriptionEnvironment,
+                process: SubscriptionProcess,
                 pixelHandler: SubscriptionPixelHandling,
                 initForPurchase: Bool = true,
                 isInternalUserEnabled: @escaping () -> Bool = { false },
@@ -298,6 +308,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.subscriptionEndpointService = subscriptionEndpointService
         self.subscriptionCachingService = subscriptionCachingService
         self.currentEnvironment = subscriptionEnvironment
+        self.process = process
         self.pixelHandler = pixelHandler
         self.isInternalUserEnabled = isInternalUserEnabled
         self.wideEvent = wideEvent
@@ -734,6 +745,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
             switch tokenRequestError {
             case OAuthClientError.unknownAccount:
+                // Only the browser signs out automatically: other processes keep the token and stop
+                guard process == .browser else {
+                    Logger.subscriptionTokensManagement.log("Unknown account in a \(String(describing: self.process), privacy: .public) process, keeping the token")
+                    throw SubscriptionManagerError.noTokenAvailable
+                }
                 // The account doesn't exist on the server: sign out without trying to recover, and delete the backup of that account
                 let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 await automaticallySignOut(recoveryOutcome: .notApplicable,
@@ -760,8 +776,18 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     updateCachedIsUserAuthenticated(true)
                     return stored
                 }
-                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 pixelHandler.handle(pixel: .invalidRefreshToken)
+                // Only the browser recovers or signs out: other processes keep the token and stop
+                guard process == .browser else {
+                    Logger.subscriptionTokensManagement.log("Refresh rejected in a \(String(describing: self.process), privacy: .public) process, keeping the token")
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted,
+                                                                                    method: nil,
+                                                                                    backupOutcome: .notAttempted,
+                                                                                    error: nil,
+                                                                                    signedOut: false)
+                    throw SubscriptionManagerError.noTokenAvailable
+                }
+                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
 
                 // Recover the token through the recovery coordinator (in the apps: backup, then App Store restore) and return it
                 var recoveryReport: TokenRecoveryReport?

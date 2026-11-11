@@ -24,6 +24,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     private static let extensionParameterKey = "extension"
     private static let outcomeParameterKey = "outcome"
+    private static let rollbackParameterKey = "rollback"
 
     // MARK: - Chrome Web Store Updates
 
@@ -32,8 +33,7 @@ enum WebExtensionPixel: PixelKit.Event {
     case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: String)
     case updateVerified(extension: WebExtensionPixelExtension)
     case updateApplied(extension: WebExtensionPixelExtension)
-    case updateRolledBack(extension: WebExtensionPixelExtension)
-    case updateInstallFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateInstallFailure)
+    case updateInstallFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateInstallFailure, rollback: WebExtensionUpdateRollback)
 
     // MARK: - Installation
 
@@ -144,11 +144,9 @@ enum WebExtensionPixel: PixelKit.Event {
         case .updateVerified:
             return "web_extension_update_verified_macos"
         case .updateApplied:
-            return "web_extension_update_applied_macos"
-        case .updateRolledBack:
-            return "web_extension_update_rolled_back_macos"
+            return "web_extension_update_success_macos"
         case .updateInstallFailed:
-            return "web_extension_update_install_failed_macos"
+            return "web_extension_update_failure_macos"
         case .installed:
             return "m_mac_web_extension_installed"
         case .installError:
@@ -283,9 +281,10 @@ enum WebExtensionPixel: PixelKit.Event {
             return parameters
         case .updateDownloadFailed(let pixelExtension, let outcome), .updateVerificationFailed(let pixelExtension, let outcome):
             return [Self.extensionParameterKey: pixelExtension.parameterValue, Self.outcomeParameterKey: outcome]
-        case .updateInstallFailed(let pixelExtension, let outcome):
-            return [Self.extensionParameterKey: pixelExtension.parameterValue, Self.outcomeParameterKey: outcome.rawValue]
-        case .updateVerified(let pixelExtension), .updateApplied(let pixelExtension), .updateRolledBack(let pixelExtension):
+        case .updateInstallFailed(let pixelExtension, let outcome, let rollback):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue, Self.outcomeParameterKey: outcome.rawValue,
+                    Self.rollbackParameterKey: rollback.rawValue]
+        case .updateVerified(let pixelExtension), .updateApplied(let pixelExtension):
             return [Self.extensionParameterKey: pixelExtension.parameterValue]
         case .embeddedUpgraded(let fromVersion, let toVersion),
              .darkReaderUpgraded(let fromVersion, let toVersion),
@@ -347,7 +346,7 @@ enum WebExtensionPixel: PixelKit.Event {
     var namePrefix: PixelKitNamePrefix {
         switch self {
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
-             .updateApplied, .updateRolledBack, .updateInstallFailed,
+             .updateApplied, .updateInstallFailed,
              .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
              .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
              .getClicked, .detailsOpened, .publisherLinkClicked, .toolbarClicked:
@@ -427,10 +426,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .updateVerified(extension: pixelExtension)
         case .updateApplied(let pixelExtension):
             pixel = .updateApplied(extension: pixelExtension)
-        case .updateRolledBack(let pixelExtension):
-            pixel = .updateRolledBack(extension: pixelExtension)
-        case .updateInstallFailed(let pixelExtension, let outcome):
-            pixel = .updateInstallFailed(extension: pixelExtension, outcome: outcome)
+        case .updateInstallFailed(let pixelExtension, let outcome, let rollback):
+            pixel = .updateInstallFailed(extension: pixelExtension, outcome: outcome, rollback: rollback)
         case .installed(let pixelExtension):
             pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):
@@ -508,7 +505,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         }
         switch event {
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
-             .updateApplied, .updateRolledBack, .updateInstallFailed:
+             .updateApplied, .updateInstallFailed:
             frequency = .dailyAndCount
         case .bitwardenDailyActive, .apiCompatibilityGaps, .installedCount:
             frequency = .daily

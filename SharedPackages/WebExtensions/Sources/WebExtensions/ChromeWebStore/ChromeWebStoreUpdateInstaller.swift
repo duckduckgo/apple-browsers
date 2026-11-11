@@ -28,6 +28,12 @@ public enum WebExtensionUpdateInstallFailure: String, CaseIterable, Sendable {
     case rollbackFailure = "rollback_failure"
 }
 
+/// Whether restoring the previous package after an update failure was needed and succeeded.
+public enum WebExtensionUpdateRollback: String, CaseIterable, Sendable {
+    case success, failure
+    case notNeeded = "not_needed"
+}
+
 /// Applies only the packages already pending at startup. Downloads accepted later wait for the next launch.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
@@ -74,7 +80,7 @@ final class ChromeWebStoreUpdateInstaller {
             for update in startupSnapshot { await prune(update) }
         } catch {
             if !Task.isCancelled, !WebExtensionManager.isUpdateInstallationDeferral(error) {
-                manager?.reportUpdateInstallationFailure(.storageFailure, storeIdentity: nil)
+                manager?.reportUpdateInstallationFailure(.storageFailure, rollback: .notNeeded, storeIdentity: nil)
             }
             Logger.webExtensions.error("Extension update installation: startup snapshot failed=\(error.localizedDescription)")
         }
@@ -129,7 +135,7 @@ final class ChromeWebStoreUpdateInstaller {
             try? await pendingUpdates.removeInstallationCopy(copy)
         } catch {
             if !Task.isCancelled, !WebExtensionManager.isUpdateInstallationDeferral(error) {
-                manager?.reportUpdateInstallationFailure(.storageFailure, storeIdentity: .init(store: .chromeWebStore, id: source.extensionID))
+                manager?.reportUpdateInstallationFailure(.storageFailure, rollback: .notNeeded, storeIdentity: .init(store: .chromeWebStore, id: source.extensionID))
             }
             Logger.webExtensions.error("Extension update installation: \(source.extensionID, privacy: .public) startup copy failed=\(error.localizedDescription)")
         }

@@ -362,12 +362,14 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         try await assertRollbackIntent()
 
         let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory))
-        let manager = makeManager(loader: loader)
+        let pixels = WebExtensionUpdatePixelFiringMock()
+        let manager = makeManager(loader: loader, pixels: pixels)
         try await manager.recoverExtensionUpdates(isAllowed: { _ in true })
 
         XCTAssertEqual(installationStore.installedExtensions.first?.version, "1.0")
         XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
         XCTAssertEqual(loader.loadedVersions, [])
+        XCTAssertEqual(pixels.events, [.failed(.other, .storageFailure, .success)])
         let remaining = try await transactions.journals()
         XCTAssertTrue(remaining.isEmpty, "Only registry reconciliation may acknowledge and remove the rollback journal")
     }
@@ -464,10 +466,28 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         XCTAssertEqual(try installedVersion(), "1.0")
         XCTAssertEqual(installationStore.installedExtensions, [original])
         XCTAssertEqual(try permissionStore.settings(for: identifier), approved)
-        XCTAssertEqual(pixels.events.count, 2)
-        XCTAssertTrue(pixels.events.contains(.rolledBack(.other)))
-        XCTAssertTrue(pixels.events.contains(.failed(.other, .loadFailure)))
+        XCTAssertEqual(pixels.events.count, 1)
+        XCTAssertTrue(pixels.events.contains(.failed(.other, .loadFailure, .success)))
         try loader.unloadExtension(identifier: identifier, from: manager.controller)
+    }
+
+    func testFailedRollbackReportsTheOriginalLoadFailureOnce() async throws {
+        let permissionStore = WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore())
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let permissions = WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: NoUpdatePrompt())
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory), permissionController: permissions)
+        let pixels = WebExtensionUpdatePixelFiringMock()
+        let manager = makeManager(loader: loader, permissions: permissions, fileManager: FailingTransactionRollbackFileManager(), pixels: pixels)
+        installationStore.add(original)
+        _ = try await loader.loadWebExtension(identifier: identifier, into: manager.controller)
+        loader.rejectedVersion = "2.0"
+
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+            XCTFail("The failed restoration must propagate")
+        } catch WebExtensionManager.UpdateInstallationError.rollbackFailed { }
+
+        XCTAssertEqual(pixels.events, [.failed(.other, .loadFailure, .failure)])
     }
 
     func testFailedCandidateUnloadLeavesItsFilesAndBackupUntouchedForLaunchRecovery() async throws {
@@ -492,7 +512,7 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         XCTAssertEqual(installationStore.installedExtensions, [original])
         let journal = try await onlyJournal()
         XCTAssertEqual(journal.phase, .replacing)
-        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure, .failure)])
         XCTAssertTrue(FileManager.default.fileExists(atPath: transactionDirectory(journal.transactionID).appendingPathComponent("previous").path))
         loader.rejectedUnloadVersion = nil
         try loader.unloadExtension(identifier: identifier, from: manager.controller)
@@ -612,9 +632,8 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         XCTAssertEqual(try permissionStore.settings(for: identifier)?.grantedPermissions, [:])
         let remaining = try await transactions.journals()
         XCTAssertTrue(remaining.isEmpty)
-        XCTAssertEqual(pixels.events.count, 2)
-        XCTAssertTrue(pixels.events.contains(.rolledBack(.other)))
-        XCTAssertTrue(pixels.events.contains(.failed(.other, .loadFailure)))
+        XCTAssertEqual(pixels.events.count, 1)
+        XCTAssertTrue(pixels.events.contains(.failed(.other, .loadFailure, .success)))
         try loader.unloadExtension(identifier: identifier, from: manager.controller)
     }
 
@@ -750,9 +769,8 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         XCTAssertEqual(installationStore.installedExtensions, [original])
         XCTAssertEqual(try permissionStore.settings(for: identifier), approved)
         try await assertRollbackIntent()
-        XCTAssertEqual(pixels.events.count, 2, "Cleanup-only errors must not add a failure pixel")
-        XCTAssertTrue(pixels.events.contains(.rolledBack(.other)))
-        XCTAssertTrue(pixels.events.contains(.failed(.other, .loadFailure)))
+        XCTAssertEqual(pixels.events.count, 1, "Cleanup-only errors must not add a failure pixel")
+        XCTAssertTrue(pixels.events.contains(.failed(.other, .loadFailure, .success)))
         try loader.unloadExtension(identifier: identifier, from: manager.controller)
     }
 
@@ -846,7 +864,7 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
             XCTFail("Candidate manifest version must match the verified offer")
         } catch WebExtensionManager.UpdateInstallationError.invalidPackage { }
 
-        XCTAssertEqual(pixels.events, [.failed(.other, .invalidPackage)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .invalidPackage, .notNeeded)])
         XCTAssertEqual(installationStore.installedExtensions, [original])
     }
 
@@ -863,7 +881,7 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
             XCTFail("Missing package must fail staging")
         } catch { }
 
-        XCTAssertEqual(pixels.events, [.failed(.other, .storageFailure)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .storageFailure, .notNeeded)])
         XCTAssertEqual(installationStore.installedExtensions, [original])
     }
 
@@ -883,7 +901,7 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
             XCTFail("Injected unload failure must prevent replacement")
         } catch RejectingUpdateLoader.LoadError.injectedUnload { }
 
-        XCTAssertEqual(pixels.events, [.failed(.other, .unloadFailure)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .unloadFailure, .notNeeded)])
         XCTAssertEqual(manager.context(for: identifier)?.webExtension.version, "1.0")
         XCTAssertEqual(installationStore.installedExtensions, [original])
         loader.rejectedUnloadVersion = nil
@@ -915,9 +933,27 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         } catch WebExtensionManager.UpdateInstallationError.rollbackFailed { }
 
         XCTAssertTrue(operation.isCancelled)
-        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure, .failure)])
         loader.rejectedUnloadVersion = nil
         try loader.unloadExtension(identifier: identifier, from: manager.controller)
+    }
+
+    func testBlockingACommittedCandidateRestoresItsPredecessorWithoutReportingFailure() async throws {
+        let staged = try await stage()
+        try await transactions.replace(staged)
+        let candidate = InstalledWebExtension(uniqueIdentifier: identifier, filename: identifier, name: original.name, version: "2.0",
+                                             storeIdentity: original.storeIdentity, isDisabled: true)
+        try await transactions.commit(staged, updatedMetadata: JSONEncoder().encode(candidate), retainPrevious: true)
+        installationStore.add(candidate)
+        let pixels = WebExtensionUpdatePixelFiringMock()
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory))
+        let manager = makeManager(loader: loader, pixels: pixels)
+
+        let failures = try await manager.recoverExtensionUpdates(isAllowed: { _ in false })
+
+        XCTAssertTrue(failures.isEmpty)
+        XCTAssertEqual(try installedVersion(), "1.0")
+        XCTAssertTrue(pixels.events.isEmpty, "Blocklist rejection is not an installation failure")
     }
 
     func testBlockedCommittedCandidateReportsRollbackFailureWhenRestoringItsBackupFails() async throws {
@@ -937,7 +973,7 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         let failed = try await manager.recoverExtensionUpdates(isAllowed: { _ in false })
 
         XCTAssertEqual(failed, [identifier])
-        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure, .failure)])
         XCTAssertEqual(installationStore.installedExtensions, [candidate])
         XCTAssertNotNil(try permissionStore.settings(for: identifier))
     }
@@ -961,7 +997,7 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
 
         XCTAssertTrue(operation.isCancelled)
         XCTAssertEqual(failed, [identifier])
-        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure, .failure)])
         XCTAssertEqual(installationStore.installedExtensions, [candidate])
     }
 

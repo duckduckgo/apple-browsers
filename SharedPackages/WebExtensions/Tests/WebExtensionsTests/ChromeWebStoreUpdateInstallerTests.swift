@@ -261,7 +261,7 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertNotNil(manager.context(for: unrelatedID))
         let backup = extensionsDirectory.appendingPathComponent(".update-transactions").appendingPathComponent(staged.transactionID.uuidString).appendingPathComponent("previous")
         XCTAssertTrue(FileManager.default.fileExists(atPath: backup.path))
-        XCTAssertEqual(pixels.events, [.failed(.other, .rollbackFailure)])
+        XCTAssertEqual(pixels.events, [.failed(.other, .storageFailure, .failure)])
     }
 
     func testCleanupOnlyFailureDuringSupersessionDefersTheValidPackageWithoutBlockingThePredecessor() async throws {

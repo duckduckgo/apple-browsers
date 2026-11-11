@@ -27,8 +27,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         for pixelExtension in WebExtensionPixelExtension.allCases {
             var cases: [(WebExtensionPixelEvent, String, [String: String])] = [
                 (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos", ["extension": pixelExtension.parameterValue]),
-                (.updateApplied(extension: pixelExtension), "web_extension_update_applied_macos", ["extension": pixelExtension.parameterValue]),
-                (.updateRolledBack(extension: pixelExtension), "web_extension_update_rolled_back_macos", ["extension": pixelExtension.parameterValue])
+                (.updateApplied(extension: pixelExtension), "web_extension_update_success_macos", ["extension": pixelExtension.parameterValue])
             ]
             cases += WebExtensionUpdateDownloadFailure.allCases.map { outcome in
                 (.updateDownloadFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_download_failed_macos",
@@ -38,9 +37,11 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
                 (.updateVerificationFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_verification_failed_macos",
                  ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
             }
-            cases += WebExtensionUpdateInstallFailure.allCases.map { outcome in
-                (.updateInstallFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_install_failed_macos",
-                 ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+            cases += WebExtensionUpdateInstallFailure.allCases.flatMap { outcome in
+                WebExtensionUpdateRollback.allCases.map { rollback in
+                    (.updateInstallFailed(extension: pixelExtension, outcome: outcome, rollback: rollback), "web_extension_update_failure_macos",
+                     ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue, "rollback": rollback.rawValue])
+                }
             }
 
             for (event, name, parameters) in cases {
@@ -66,9 +67,8 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             (.updateDownloadFailed(extension: pixelExtension, outcome: .networkFailure), "web_extension_update_download_failed_macos"),
             (.updateVerificationFailed(extension: pixelExtension, outcome: .invalidPackage), "web_extension_update_verification_failed_macos"),
             (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos"),
-            (.updateApplied(extension: pixelExtension), "web_extension_update_applied_macos"),
-            (.updateRolledBack(extension: pixelExtension), "web_extension_update_rolled_back_macos"),
-            (.updateInstallFailed(extension: pixelExtension, outcome: .loadFailure), "web_extension_update_install_failed_macos")
+            (.updateApplied(extension: pixelExtension), "web_extension_update_success_macos"),
+            (.updateInstallFailed(extension: pixelExtension, outcome: .loadFailure, rollback: .success), "web_extension_update_failure_macos")
         ]
         for (event, expectedName) in cases {
             let suite = "\(#function)-\(UUID().uuidString)"

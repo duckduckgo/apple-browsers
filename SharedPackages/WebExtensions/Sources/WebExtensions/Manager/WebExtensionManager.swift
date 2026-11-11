@@ -1935,14 +1935,16 @@ extension WebExtensionManager {
         } catch {
             let installationError = error
             let failedContext = candidateContext ?? failedUpdateContext(identifier: identifier, generation: generation, attemptedLoad: attemptedCandidateLoad)
+            let rollback: WebExtensionUpdateRollback
             do {
-                try await restorePreviousExtensionUpdate(installed, staged: staged, generation: generation,
-                                                         candidateContext: failedContext, shouldReload: didUnload && didReplace)
+                rollback = try await restorePreviousExtensionUpdate(installed, staged: staged, generation: generation,
+                                                                    candidateContext: failedContext, shouldReload: didUnload && didReplace)
             } catch {
-                reportUpdateInstallationFailureIfNeeded(error, outcome: .rollbackFailure, storeIdentity: installed.storeIdentity)
+                let outcome: WebExtensionUpdateInstallFailure = Self.isUpdateInstallationDeferral(installationError) ? .rollbackFailure : failureOutcome
+                reportUpdateInstallationFailureIfNeeded(error, outcome: outcome, rollback: .failure, storeIdentity: installed.storeIdentity)
                 throw error
             }
-            reportUpdateInstallationFailureIfNeeded(installationError, outcome: failureOutcome, storeIdentity: installed.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(installationError, outcome: failureOutcome, rollback: rollback, storeIdentity: installed.storeIdentity)
             throw installationError
         }
     }
@@ -1961,7 +1963,7 @@ extension WebExtensionManager {
             return try await extensionUpdateTransactions.stage(update, installationID: installed.uniqueIdentifier, previousVersion: installed.version,
                                                                 previousMetadata: JSONEncoder().encode(installed), versionOverrideIdentifier: versionOverrideIdentifier)
         } catch {
-            reportUpdateInstallationFailureIfNeeded(error, outcome: .storageFailure, storeIdentity: installed.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(error, outcome: .storageFailure, rollback: .notNeeded, storeIdentity: installed.storeIdentity)
             throw error
         }
     }
@@ -1976,24 +1978,24 @@ extension WebExtensionManager {
         }
     }
 
-    private static func shouldReportUpdateInstallationFailure(_ error: Error, outcome: WebExtensionUpdateInstallFailure) -> Bool {
+    private static func shouldReportUpdateInstallationFailure(_ error: Error, rollback: WebExtensionUpdateRollback) -> Bool {
         guard !isUpdateInstallationDeferral(error) else { return false }
         // Repair runs even during cancellation. A real rollback failure must remain visible regardless of its error type.
-        return outcome == .rollbackFailure || !Task.isCancelled
+        return rollback == .failure || !Task.isCancelled
     }
 
-    func reportUpdateInstallationFailure(_ failure: WebExtensionUpdateInstallFailure, storeIdentity: WebExtensionStoreIdentity?) {
-        pixelFiring.fire(.updateInstallFailed(extension: pixelExtension(for: storeIdentity), outcome: failure))
+    func reportUpdateInstallationFailure(_ failure: WebExtensionUpdateInstallFailure, rollback: WebExtensionUpdateRollback,
+                                         storeIdentity: WebExtensionStoreIdentity?) {
+        pixelFiring.fire(.updateInstallFailed(extension: pixelExtension(for: storeIdentity), outcome: failure, rollback: rollback))
     }
 
-    private func reportUpdateInstallationFailureIfNeeded(_ error: Error, outcome: WebExtensionUpdateInstallFailure,
+    private func reportUpdateInstallationFailureIfNeeded(_ error: Error, outcome: WebExtensionUpdateInstallFailure, rollback: WebExtensionUpdateRollback,
                                                          storeIdentity: WebExtensionStoreIdentity?) {
-        guard Self.shouldReportUpdateInstallationFailure(error, outcome: outcome) else { return }
-        reportUpdateInstallationFailure(outcome, storeIdentity: storeIdentity)
+        guard Self.shouldReportUpdateInstallationFailure(error, rollback: rollback) else { return }
+        reportUpdateInstallationFailure(outcome, rollback: rollback, storeIdentity: storeIdentity)
     }
 
-    private func reportUpdateRollback(storeIdentity: WebExtensionStoreIdentity?) {
-        pixelFiring.fire(.updateRolledBack(extension: pixelExtension(for: storeIdentity)))
+    private func logUpdateRollback(storeIdentity: WebExtensionStoreIdentity?) {
         Logger.webExtensions.info("Extension update installation: \(storeIdentity?.id ?? "unknown", privacy: .public) rolled back")
     }
 
@@ -2076,7 +2078,7 @@ extension WebExtensionManager {
     }
 
     private func restorePreviousExtensionUpdate(_ installed: InstalledWebExtension, staged: WebExtensionUpdateTransactionStore.Staged,
-                                                generation: UUID, candidateContext: WKWebExtensionContext?, shouldReload: Bool) async throws {
+                                                generation: UUID, candidateContext: WKWebExtensionContext?, shouldReload: Bool) async throws -> WebExtensionUpdateRollback {
         let identifier = installed.uniqueIdentifier
         do {
             if let candidateContext, context(for: identifier) === candidateContext {
@@ -2109,8 +2111,10 @@ extension WebExtensionManager {
             }
             if metadata != nil, let restored = installationStore.installedExtension(withUniqueIdentifier: identifier),
                restored.storeIdentity == installed.storeIdentity, restored.version == installed.version {
-                reportUpdateRollback(storeIdentity: installed.storeIdentity)
+                logUpdateRollback(storeIdentity: installed.storeIdentity)
+                return .success
             }
+            return .notNeeded
         } catch {
             if Self.isUpdateInstallationDeferral(error) { throw error }
             // Retain the journal and backup if recovery itself fails; launch recovery can retry.
@@ -2148,7 +2152,7 @@ extension WebExtensionManager {
         var failures: Set<String> = []
         let journals: [WebExtensionUpdateTransactionStore.Journal]
         do { journals = try await extensionUpdateTransactions.journals() } catch {
-            reportUpdateInstallationFailureIfNeeded(error, outcome: .storageFailure, storeIdentity: nil)
+            reportUpdateInstallationFailureIfNeeded(error, outcome: .storageFailure, rollback: .notNeeded, storeIdentity: nil)
             throw error
         }
         for journal in journals {
@@ -2156,8 +2160,10 @@ extension WebExtensionManager {
             if journal.phase == .committed, journal.retainsPrevious { retainedUpdateIdentifiers.insert(journal.installationID) }
             do { try await recoverExtensionUpdate(journal, candidateAllowed: candidateAllowed, isAllowed: isAllowed) } catch {
                 failures.insert(journal.installationID)
-                let outcome: WebExtensionUpdateInstallFailure = journal.phase == .committed && candidateAllowed ? .storageFailure : .rollbackFailure
-                reportUpdateInstallationFailureIfNeeded(error, outcome: outcome, storeIdentity: .init(store: .chromeWebStore, id: journal.extensionID))
+                let needsRollback = journal.phase == .replacing || journal.phase == .rollingBack || (journal.phase == .committed && !candidateAllowed)
+                let outcome: WebExtensionUpdateInstallFailure = journal.phase == .committed && !candidateAllowed ? .rollbackFailure : .storageFailure
+                reportUpdateInstallationFailureIfNeeded(error, outcome: outcome, rollback: needsRollback ? .failure : .notNeeded,
+                                                        storeIdentity: .init(store: .chromeWebStore, id: journal.extensionID))
                 Logger.webExtensions.error("Extension update recovery failed for \(journal.installationID): \(error.localizedDescription)")
             }
         }
@@ -2196,7 +2202,10 @@ extension WebExtensionManager {
         let registryAcknowledged = await acknowledgeUpdateRegistry(journal.transactionID, required: journal.registryCommitted != nil)
         let overrideCleared = journal.phase != .committed || !allowed || didCommitStoreUpdate(recovered, journal.versionOverrideIdentifier)
         if journal.phase == .replacing || (journal.phase == .rollingBack && !alreadyReconciled) || (!allowed && journal.phase == .committed) {
-            reportUpdateRollback(storeIdentity: recovered.storeIdentity)
+            logUpdateRollback(storeIdentity: recovered.storeIdentity)
+            if journal.phase == .replacing || journal.phase == .rollingBack {
+                reportUpdateInstallationFailure(.storageFailure, rollback: .success, storeIdentity: recovered.storeIdentity)
+            }
         } else if journal.phase == .committed, !alreadyReconciled {
             pixelFiring.fire(.updateApplied(extension: pixelExtension(for: recovered.storeIdentity)))
             Logger.webExtensions.info("Extension update installation: \(journal.extensionID, privacy: .public) recovered committed package")
@@ -2218,7 +2227,7 @@ extension WebExtensionManager {
         do {
             return try await restoreRetainedExtensionUpdate(installed, disabled: true) ?? installed
         } catch {
-            reportUpdateInstallationFailureIfNeeded(error, outcome: .rollbackFailure, storeIdentity: installed.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(error, outcome: .rollbackFailure, rollback: .failure, storeIdentity: installed.storeIdentity)
             throw error
         }
     }
@@ -2300,7 +2309,10 @@ extension WebExtensionManager {
         let identifier = installed.uniqueIdentifier
         guard retainedUpdateIdentifiers.contains(identifier) else { return nil }
         do {
-            guard let predecessor = try await restoreRetainedExtensionUpdate(installed, disabled: true, generation: generation) else { return nil }
+            guard let predecessor = try await restoreRetainedExtensionUpdate(installed, disabled: true, generation: generation) else {
+                reportUpdateInstallationFailureIfNeeded(originalFailure, outcome: .loadFailure, rollback: .notNeeded, storeIdentity: installed.storeIdentity)
+                return nil
+            }
             try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: predecessor)
             try await acknowledgeUpdateRegistryBeforeEnable(predecessor, generation: generation)
             permissionController?.beginUpdate(for: identifier)
@@ -2311,11 +2323,11 @@ extension WebExtensionManager {
             })
             try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: predecessor, ownedContext: context(for: identifier))
             unloadGuard.recordLoad(of: identifier)
-            reportUpdateInstallationFailureIfNeeded(originalFailure, outcome: .loadFailure, storeIdentity: installed.storeIdentity)
-            reportUpdateRollback(storeIdentity: predecessor.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(originalFailure, outcome: .loadFailure, rollback: .success, storeIdentity: installed.storeIdentity)
+            logUpdateRollback(storeIdentity: predecessor.storeIdentity)
             return predecessor
         } catch {
-            reportUpdateInstallationFailureIfNeeded(error, outcome: .rollbackFailure, storeIdentity: installed.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(error, outcome: .loadFailure, rollback: .failure, storeIdentity: installed.storeIdentity)
             throw error
         }
     }
@@ -2339,13 +2351,21 @@ extension WebExtensionManager {
         guard let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) else { return }
         guard let generation = beginStoreExtensionEnable(identifier: identifier) else { return }
         defer { endStoreExtensionEnable(identifier: identifier, generation: generation) }
+        guard retainedUpdateIdentifiers.contains(identifier) else { return }
         var predecessorWasRestored = false
         do {
             try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: installed)
-            guard let predecessor = try await restoreRetainedExtensionUpdate(installed, disabled: installed.isDisabled, generation: generation) else { return }
+            guard let predecessor = try await restoreRetainedExtensionUpdate(installed, disabled: installed.isDisabled, generation: generation) else {
+                reportUpdateInstallationFailureIfNeeded(originalFailure, outcome: .loadFailure, rollback: .notNeeded, storeIdentity: installed.storeIdentity)
+                return
+            }
             predecessorWasRestored = true
             try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: predecessor)
-            guard !predecessor.isDisabled else { return }
+            guard !predecessor.isDisabled else {
+                reportUpdateInstallationFailureIfNeeded(originalFailure, outcome: .loadFailure, rollback: .success, storeIdentity: installed.storeIdentity)
+                logUpdateRollback(storeIdentity: predecessor.storeIdentity)
+                return
+            }
             permissionController?.beginUpdate(for: identifier)
             defer { permissionController?.endUpdate(for: identifier) }
             do {
@@ -2361,14 +2381,14 @@ extension WebExtensionManager {
             let loadedContext = context(for: identifier)
             try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: predecessor, ownedContext: loadedContext)
             unloadGuard.recordLoad(of: identifier)
-            reportUpdateInstallationFailureIfNeeded(originalFailure, outcome: .loadFailure, storeIdentity: installed.storeIdentity)
-            reportUpdateRollback(storeIdentity: predecessor.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(originalFailure, outcome: .loadFailure, rollback: .success, storeIdentity: installed.storeIdentity)
+            logUpdateRollback(storeIdentity: predecessor.storeIdentity)
             notifyUpdate()
         } catch {
             if case UpdateInstallationError.installationChanged = error,
                predecessorWasRestored || installationStore.installedExtension(withUniqueIdentifier: identifier) == nil { return }
             updateRecoveryBlockedIdentifiers.insert(identifier)
-            reportUpdateInstallationFailureIfNeeded(error, outcome: .rollbackFailure, storeIdentity: installed.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(error, outcome: .loadFailure, rollback: .failure, storeIdentity: installed.storeIdentity)
             Logger.webExtensions.error("Extension update retained predecessor recovery failed for \(identifier): \(error.localizedDescription)")
         }
     }

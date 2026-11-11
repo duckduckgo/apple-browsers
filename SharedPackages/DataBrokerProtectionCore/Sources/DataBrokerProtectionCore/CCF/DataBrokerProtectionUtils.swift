@@ -103,7 +103,7 @@ final class DataBrokerUserScript: UserScriptsProvider {
          contentBlocking: DBPWebViewContentBlocking?) throws {
         contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
                                                                     properties: prefs,
-                                                                    scriptContext: .contentScopeIsolated,
+                                                                    scriptContext: .brokerProtection,
                                                                     privacyConfigurationJSONGenerator: nil)
         dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
         dataBrokerFeature.broker = contentScopeUserScriptIsolated.broker

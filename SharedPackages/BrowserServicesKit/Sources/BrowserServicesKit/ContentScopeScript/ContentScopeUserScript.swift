@@ -52,6 +52,9 @@ public enum ContentScopeScriptContext: Equatable {
     /// as `trackerData` in the user-preferences payload for C-S-S surrogate injection.
     case contentScope(surrogateTrackerData: TrackerData? = nil)
     case contentScopeIsolated
+    /// Isolated-world script for PIR's broker web views. It carries only `brokerProtection`, so it's far
+    /// smaller than `contentScopeIsolated`.
+    case brokerProtection
     case aiChatDataClearing
     case aiChatHistory
 
@@ -59,7 +62,7 @@ public enum ContentScopeScriptContext: Equatable {
         switch self {
         case .contentScope, .aiChatDataClearing, .aiChatHistory:
             return false
-        case .contentScopeIsolated:
+        case .contentScopeIsolated, .brokerProtection:
             return true
         }
     }
@@ -68,7 +71,7 @@ public enum ContentScopeScriptContext: Equatable {
     /// protections off for duck.ai must not disable them.
     var appliesUserUnprotectedDomains: Bool {
         switch self {
-        case .contentScope, .contentScopeIsolated:
+        case .contentScope, .contentScopeIsolated, .brokerProtection:
             return true
         case .aiChatDataClearing, .aiChatHistory:
             return false
@@ -81,6 +84,8 @@ public enum ContentScopeScriptContext: Equatable {
             return "contentScope"
         case .contentScopeIsolated:
             return "contentScopeIsolated"
+        case .brokerProtection:
+            return "brokerProtection"
         case .aiChatDataClearing:
             return "duckAiDataClearing"
         case .aiChatHistory:
@@ -96,7 +101,7 @@ public enum ContentScopeScriptContext: Equatable {
             return "duckAiDataClearing"
         case .aiChatHistory:
             return "duckAiChatHistory"
-        case .contentScopeIsolated:
+        case .contentScopeIsolated, .brokerProtection:
             return "contentScopeScriptsIsolated"
         }
     }

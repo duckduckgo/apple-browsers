@@ -1,5 +1,5 @@
 {
-  "originHash" : "005f40496eccd5d76532554cadb2fb11dd4f0a6459ffa98ed1faed9a9a3aaf20",
+  "originHash" : "e693489a284b0b2dfff286a1edd4b956f5049216f99ea12be0d5d9aefce2fc63",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "231658a22b682ffba804f95ddc0cc005dc7fea20",
-        "version" : "20.6.0"
+        "branch" : "pr-releases/randerson/apple-broker-protection-bundle",
+        "revision" : "6065ecb0cb58b9e596fd5036fa4585e6a02ccc10"
       }
     },
     {

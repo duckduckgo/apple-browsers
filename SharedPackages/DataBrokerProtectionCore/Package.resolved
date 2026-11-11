@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "231658a22b682ffba804f95ddc0cc005dc7fea20",
-        "version" : "20.6.0"
+        "branch" : "pr-releases/randerson/apple-broker-protection-bundle",
+        "revision" : "6065ecb0cb58b9e596fd5036fa4585e6a02ccc10"
       }
     },
     {

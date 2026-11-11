@@ -101,7 +101,9 @@ extension DebugScreensViewModel {
                 AdBlockingDebugView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "AI Chat", { dependencies in
-                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+                                aiChatBonusMessageLog: dependencies.aiChatBonusMessageLog,
+                                featureFlagger: AppDependencyProvider.shared.featureFlagger)
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
@@ -136,8 +138,12 @@ extension DebugScreensViewModel {
             .view(title: "History", { d in
                 HistoryDebugRootView(tabManager: d.tabManager)
             }),
-            .view(title: "Bookmarks", { _ in
-                BookmarksDebugRootView()
+            .view(title: "Bookmarks", accessibilityIdentifier: "Debug.Screen.Bookmarks", { dependencies in
+                BookmarksDebugRootView(bookmarksDatabase: dependencies.bookmarksDatabase)
+            }),
+            .view(title: "Favorites", { d in
+                FavoritesDebugView(bookmarksDatabase: d.bookmarksDatabase,
+                                   favoritesDisplayMode: AppDependencyProvider.shared.appSettings.favoritesDisplayMode)
             }),
             .view(title: "Remote Messaging", { dependencies in
                 RemoteMessagingDebugRootView(remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
@@ -191,6 +197,7 @@ extension DebugScreensViewModel {
                 WhatsNewDebugView(
                     diagnosticsProvider: dependencies.promoCoordinationDiagnosticsProvider,
                     cooldownResetter: dependencies.promoCoordinationCooldownResetter,
+                    keyValueStore: dependencies.keyValueStore,
                     remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler
                 )
             }),
@@ -297,8 +304,13 @@ extension DebugScreensViewModel {
 
                 weak var capturedController: OnboardingDebugViewController?
 
-                // swiftlint:disable:next empty_parentheses_with_trailing_closure
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
+                // The app always injects `DaxDialogs`; the debug screen edits its time-limit state.
+                guard let daxDialogs = d.daxDialogManager as? DaxDialogs else {
+                    assertionFailure("Expected DaxDialogs")
+                    return UIViewController()
+                }
+
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(timeLimit: daxDialogs.timeLimit) {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(

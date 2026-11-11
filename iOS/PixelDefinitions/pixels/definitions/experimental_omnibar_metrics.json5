@@ -77,7 +77,8 @@
                 "key": "default_position",
                 "description": "The user's default toggle position setting: search, duckAI, or lastUsed",
                 "type": "string"
-            }
+            },
+            "address_bar_position"
         ]
     },
     "m_aichat_experimental_omnibar_session_both_modes": {

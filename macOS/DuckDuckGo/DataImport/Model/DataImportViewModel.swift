@@ -465,7 +465,7 @@ struct DataImportViewModel {
             completeAndCleanupWideEvent(with: summary)
         }
 
-        if self.areAllSelectedDataTypesSuccessfullyImported {
+        if self.areRequiredSelectedDataTypesSuccessfullyImported {
             successfulImportHappened = true
             NotificationCenter.default.post(name: .dataImportComplete, object: nil)
         }
@@ -772,8 +772,11 @@ extension DataImportViewModel {
         return availablePreviousTypes.isEmpty ? availableTypes : availablePreviousTypes
     }
 
-    private var areAllSelectedDataTypesSuccessfullyImported: Bool {
-        selectedDataTypes.allSatisfy(isDataTypeSuccessfullyImported)
+    /// A History failure shows no error, so it doesn't count against the import when other selected types were imported.
+    private var areRequiredSelectedDataTypesSuccessfullyImported: Bool {
+        let nonHistoryDataTypes = selectedDataTypes.subtracting([.history])
+        let requiredDataTypes = nonHistoryDataTypes.isEmpty ? selectedDataTypes : nonHistoryDataTypes
+        return requiredDataTypes.allSatisfy(isDataTypeSuccessfullyImported)
     }
 
     func summary(for dataType: DataType) -> DataTypeSummary? {
@@ -938,6 +941,10 @@ extension DataImportViewModel {
             guard summary.values.filter({ !$0.isSuccess }).isEmpty else {
                 return .submit
             }
+            // History isn't synced, so there's nothing to offer when it's all that was imported.
+            guard summary.keys.contains(where: { $0 != .history }) else {
+                return nil
+            }
             switch syncFeatureVisibility {
             case .hide:
                 return nil
@@ -970,6 +977,10 @@ extension DataImportViewModel {
         } else {
             return .cancel
         }
+    }
+
+    var isHistoryImportEnabled: Bool {
+        featureFlagger.isFeatureOn(.dataImportHistory)
     }
 
     var shouldShowSyncFooterButton: Bool {
@@ -1267,7 +1278,7 @@ extension DataImportViewModel {
                                 /* profileURL: */ $0.profileURL,
                                 /* primaryPassword: */ nil)
         }), selectedDataTypes.intersects(importer.importableTypes) else {
-            if #available(macOS 15.2, *), .safari == importSource {
+            if #available(macOS 15.2, *), [.safari, .safariTechnologyPreview].contains(importSource) {
                 screen = .archiveImport(dataTypes: filteredSupportedDataTypes)
                 return
             }

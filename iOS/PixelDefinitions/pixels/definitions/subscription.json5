@@ -1068,11 +1068,27 @@
         "parameters": ["appVersion", "pixelSource"]
     },
     "subscription_cancellation_app_store_cancelled": {
-        "description": "Fired when the subscription is found no longer set to auto-renew after the user returns from the App Store subscription management screen opened by the cancellation flow.",
+        "description": "Fired when an App Store subscription that was set to auto-renew is found no longer set to auto-renew after the user returns from the App Store subscription management screen, opened either by the cancellation flow or by Manage Subscription in Settings.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry",
+                "type": "string",
+                "description": "Which entry point opened the App Store subscription management screen",
+                "enum": ["cancellation", "manage"]
+            },
+            "freeTrial",
+            {
+                "key": "days_since_purchase",
+                "type": "string",
+                "description": "Days between the subscription start date and the cancellation, bucketed: d1 is days 0-1, d2_7 is days 2-7, d8_30 is days 8-30, d31_plus is day 31 onwards",
+                "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+            }
+        ]
     },
     "subscription_cancellation_flow_load_failure": {
         "description": "Fired when a cancellation flow page fails to load, either from a network error or an HTTP 4xx/5xx response.",

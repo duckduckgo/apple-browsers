@@ -49,7 +49,9 @@ protocol DependencyProvider {
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
     var isSitePermissionsEnabled: Bool { get }
+    var isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool { get }
     var findInPageImplementation: FindInPageImplementation { get }
+    var sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -119,6 +121,9 @@ extension DependencyProvider {
 
 /// Provides dependencies for objects that are not directly instantiated
 /// through `init` call (e.g. ViewControllers created from Storyboards).
+///
+/// Legacy dependency container. Do not add new consumers.
+/// Inject the specific dependencies through initializers instead.
 final class AppDependencyProvider: DependencyProvider {
     let appSessionInfo: AppSessionInfo? = AppSessionInfo(
         keyValueStore: UserDefaults.standard, version: AppVersion().versionAndBuildNumber)
@@ -129,7 +134,10 @@ final class AppDependencyProvider: DependencyProvider {
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
     let isSitePermissionsEnabled: Bool
+    let isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool
     let findInPageImplementation: FindInPageImplementation
+    /// One instance for the app, so every tab and Duck Player share the segments cache.
+    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
@@ -259,6 +267,7 @@ final class AppDependencyProvider: DependencyProvider {
 
         // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
         isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
+        isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.duckAIAndInputLiquidGlass)
         findInPageImplementation = FindInPageImplementation(featureFlagger: featureFlagger)
 
         // Configure PixelKit Experiments

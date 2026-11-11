@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
 
 /* No comment provided by engineer. */
@@ -381,6 +384,21 @@
 
 /* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newTab" = "Nov zavihek";
+
+/* Section header in the Duck.ai tab header Plus (+) menu; every row below it opens a new tab */
+"aichat.header.plusMenu.newTabSection" = "Nov zavihek";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai chat in a new tab */
+"aichat.header.plusMenu.newTabSection.chat" = "Klepet";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode in a new tab */
+"aichat.header.plusMenu.newTabSection.image" = "Slika";
+
+/* Row in the Duck.ai tab header Plus (+) menu — opens a new tab in search mode */
+"aichat.header.plusMenu.newTabSection.search" = "Iskanje";
+
+/* Row in the New Tab section of the Duck.ai tab header Plus (+) menu — opens a new Duck.ai voice chat in a new tab */
+"aichat.header.plusMenu.newTabSection.voiceChat" = "Glasovni klepet";
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nov glasovni klepet";
@@ -1560,6 +1578,21 @@
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Domena *%1$@* vam je tukaj poskušala slediti. Blokiral sem jo!\n\n☝️ Tapnite ščit za več informacij.";
+
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Klepeti so anonimizirani, račun ni potreben. In brezplačno je!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Preizkusi Duck.ai";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Preskoči";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Klepetajte zasebno s priljubljenimi umetnimi inteligencami v Duck.ai";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Začnite zasebni klepet z umetno inteligenco z Duck.ai ali preklopite na iskanje za zaščiteno brskanje.";
 
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Petka!";
@@ -3298,6 +3331,126 @@
 /* No comment provided by engineer. */
 "menu.button.hint" = "Brskanje po meniju";
 
+/* iPad menu bar command */
+"menuActualSize" = "Dejanska velikost";
+
+/* iPad menu bar command */
+"menuAddToDock" = "Dodaj DuckDuckGo v Dock …";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Dodaj pripomoček na domači zaslon …";
+
+/* iPad menu bar command */
+"menuBack" = "Nazaj";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Zaznamki";
+
+/* iPad menu bar command */
+"menuClearTabsAndData" = "Počisti zavihke in podatke";
+
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Izbriši vse klepete …";
+
+/* iPad menu bar command */
+"menuDuplicateTab" = "Podvoji zavihek";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Izvozi zaznamke …";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Priljubljeni";
+
+/* iPad menu bar command */
+"menuFeedback" = "Deli povratne informacije";
+
+/* iPad menu bar command */
+"menuForward" = "Naprej";
+
+/* iPad menu bar command */
+"menuHideBookmarks" = "Skrij zaznamke";
+
+/* iPad menu bar command */
+"menuHideDownloads" = "Skrij prenose";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Skrij gumb Duck.ai";
+
+/* iPad menu bar command */
+"menuHidePasswords" = "Skrij geslo";
+
+/* iPad menu bar command */
+"menuHideTabs" = "Skrij zavihke";
+
+/* iPad menu bar command */
+"menuImportBookmarks" = "Uvozi zaznamke …";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Uvozi zaznamke in gesla …";
+
+/* iPad menu bar command */
+"menuLastTab" = "Zadnji zavihek";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Nov klepet";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Nov slikovni klepet";
+
+/* iPad menu bar command */
+"menuNewTabOnRight" = "Nov zavihek na desni";
+
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Nov glasovni klepet";
+
+/* iPad menu bar command */
+"menuNextTab" = "Prikaži naslednji zavihek";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Odpri Duck.ai";
+
+/* iPad menu bar command */
+"menuOpenLocation" = "Odpri lokacijo …";
+
+/* iPad menu bar command */
+"menuPreviousTab" = "Pokaži prejšnji zavihek";
+
+/* iPad menu bar command */
+"menuPrint" = "Natisni …";
+
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Nedavni klepeti";
+
+/* iPad menu bar command selecting a numbered tab */
+"menuSelectTab" = "Izberi zavihek %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Nastavi DuckDuckGo kot privzeti brskalnik …";
+
+/* iPad menu bar command */
+"menuSettings" = "Nastavitve DuckDuckGo …";
+
+/* iPad menu bar command */
+"menuShowBookmarks" = "Prikaži zaznamke";
+
+/* iPad menu bar command */
+"menuShowDownloads" = "Prikaži prenose";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Prikaži gumb Duck.ai";
+
+/* iPad menu bar command */
+"menuShowPasswords" = "Prikaži gesla";
+
+/* iPad menu bar command */
+"menuShowTabs" = "Prikaži zavihke";
+
+/* iPad menu bar command */
+"menuStop" = "Ustavi";
+
+/* iPad menu bar command */
+"menuVoiceSearch" = "Zasebno glasovno iskanje";
+
 /* No comment provided by engineer. */
 "Message" = "Sporočilo";
 
@@ -3700,8 +3853,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Razumem";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Čakal bom na dosegu roke za hiter dostop.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izberite brskalnik";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Blokirajte oglase\nin pojavna okna";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Iščite in\nbrskajte zasebno";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Klepetajte zasebno\nz umetno inteligenco";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Na pravem mestu ste!\nZaščite so aktivirane.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Na pravem mestu ste!\nBlokiranje oglasov je aktivirano.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Na pravem mestu ste!\nFunkcije umetne inteligence so onemogočene.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Naprej";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "Izberite, kaj vas najbolj zanima, in začeli bomo tam.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "Onemogoči\nfunkcije umetne inteligence";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Prilagodite si po svoje";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Čakal bom skrit na dosegu roke, če boste želeli klepetati in brskati z umetno inteligenco.";
@@ -3730,8 +3916,8 @@
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Želite DuckDuckGo nastaviti kot privzeti brskalnik?";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Začni zasebni klepet z umetno inteligenco z Duck.ai ali preklopi na iskanje za zaščiteno brskanje.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Začnite zasebni klepet z umetno inteligenco z Duck.ai ali preklopite na iskanje za zaščiteno brskanje.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Ponujamo tudi plačljivo naročnino z naprednimi modeli umetne inteligence z višjimi omejitvami klepeta GPT in Claude, varnim VPN in še več.";
@@ -3855,6 +4041,84 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Tukaj sem že bil/-a";
+
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Skrije več pojavnih oken s sprejemanjem piškotkov, ki jih ni mogoče zavrniti";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Sprejmi nekatere piškotke";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Naprej";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "To lahko pozneje kadar koli prilagodite v nastavitvah.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Poveča zasebnost in zapira pojavna okna s piškotki";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Zavrni izbirne piškotke";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Internet, brez hrupa.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Blokirajte videooglase na YouTubu";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Odpri zavihke s klepetom z umetno inteligenco";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Ne zdaj";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Z enim dotikom lahko preklopite na Iskanje";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Želite, da se novi zavihki odprejo s klepetom z umetno inteligenco?";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Naprej";
+
+/* Message of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.message" = "Spremenite privzeti model umetne inteligence zdaj ali kadar koli med klepetom.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Vaši klepeti, po vaši meri.";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Naprej";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Iz rezultatov iskanja slik izloči znana spletna mesta z neželeno vsebino, ustvarjena z umetno inteligenco.";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Skrij slike, ki jih ustvari umetna inteligenca";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Vključi odgovore, ustvarjene z umetno inteligenco, med rezultate iskanja";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Iskanje brez umetne inteligence";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Vklopi Duck.ai";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Pusti Duck.ai izklopljen";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "V Duck.ai vaše klepete anonimiziramo in jih nikoli ne uporabljamo za učenje UI.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Želite možnost zasebnega klepeta s priljubljenimi umetnimi inteligencami?";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "Zdaj pa preizkusite zasebno iskanje!";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Več";
@@ -4096,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Vprašaj za požarno zaščito spletnih mest ob vpisu";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Spletne strani se zanašajo na piškotke, da boš vedno prijavljen. Ko spletno mesto požarno zaščitiš, piškotki ne bodo izbrisani in ostal boš prijavljen tudi po uporabi gumba Fire. Še vedno blokiramo zunanje sledilce, ki jih najdemo na požarno izoliranih spletnih mestih.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Spletne strani s požarno zaščito";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ni spletnih mest s požarno zaščito";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "S požarno zaščito tega spletnega mesta se boste prijavili po uporabi gumba Fire.";
@@ -4131,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "V REDU";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Odstrani vse spletne strani s požarno zaščito";
 
 /* No comment provided by engineer. */
 "Previews" = "Predogledi";
@@ -4434,6 +4707,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik filtrira znane strani z neželenimi zadetki UI. [Več](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Prikaz animacije okoli tipkovnice, ko preklopite na Duck.ai ali v njem tipkate.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Animacija tipkovnice Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";
@@ -5122,6 +5401,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Naročnina, povezana s tem računom Apple, ni več aktivna.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Se izteka";
+
 /* FAQ Button */
 "subscription.faq" = "Pogosta vprašanja in podpora";
 
@@ -5151,6 +5433,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Naročnina";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Brez naročnine";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "S tem računom Apple ni povezana nobena naročnina.";
@@ -5193,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje naročnine ...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Odstop poteka …";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ne zdaj";
@@ -5299,6 +5587,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Oglejte si vse naročnine";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Potrjujem odstop";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "Storitve %@ prenehajo delovati, ko potrdite.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Vaša naročnina %1$@ bo takoj prenehala, znesek v višini %2$@ pa vam bo v 14 dneh povrnjen na prvotni način plačila.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Želite odstopiti od naročnine?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Obišči stran s pomočjo";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Odstopa nismo mogli samodejno obdelati. Obiščite našo stran za pomoč, da dokončate odstop.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Odstop od pogodbe";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Lahko odstopite in prejmete celotno povračilo do dne %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Obdrži naročnino";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Odstop je bil izveden dne %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Povračilo zneska v višini %@ je v obdelavi.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Opozorilo SwiftUI";
 
@@ -5320,11 +5641,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "druga naprava";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Poveži";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Funkcija Sync & Backup je omogočena v tej napravi.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Pridobi aplikacijo";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Želite sinhronizirati zaznamke tudi z namizno aplikacijo?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Račun ni potreben. Celovito šifriranje pomeni, da nihče (niti mi) razen vas ne more videti vaših zaznamkov.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Celovito šifriranje. Nihče ne more videti vaših zaznamkov, niti mi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sinhronizirajte in varnostno kopirajte svoje zaznamke";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Zavrzi promocijo sinhronizacije";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavitev sinhronizacije";
@@ -5338,11 +5677,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, hvala";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Želite sinhronizirati gesla tudi z namizno aplikacijo?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Račun ni potreben. Celovito šifriranje pomeni, da nihče (niti mi) razen vas ne more videti vaših gesel.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Celovito šifriranje. Nihče ne more videti vaših gesel, niti mi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizirajte in varnostno kopirajte svoja gesla";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Začni sinhronizacijo";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sinhronizacija in varnostno kopiranje te naprave";

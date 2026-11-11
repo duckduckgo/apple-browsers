@@ -277,7 +277,7 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
 
 /// Lightweight page-type signals read from page markup, used by the duck.ai web app to pick
 /// page-tailored suggested prompts ("shortcuts"). All fields are best-effort and may be empty.
-public struct AIChatPageTypeSignals: Codable, Equatable {
+public struct AIChatPageTypeSignals: Codable, Equatable, Sendable {
     /// `@type` values from every <script type="application/ld+json"> block (incl. `@graph`), deduped. [] if none.
     public let jsonLdType: [String]
     /// Content of the first <meta property="og:type">, or nil if absent.
@@ -292,7 +292,7 @@ public struct AIChatPageTypeSignals: Codable, Equatable {
     }
 }
 
-public struct AIChatPageContextData: Codable, Equatable {
+public struct AIChatPageContextData: Codable, Equatable, Sendable {
     /// Carrier for pages handed over as markdown — everything that isn't a document.
     public static let htmlMIMEType = "text/html"
     public static let pdfMIMEType = "application/pdf"
@@ -451,7 +451,7 @@ public struct AIChatPageContextData: Codable, Equatable {
         data = try container.decodeIfPresent(String.self, forKey: .data)
     }
 
-    public struct PageContextFavicon: Codable, Equatable {
+    public struct PageContextFavicon: Codable, Equatable, Sendable {
         public let href: String
         public let rel: String
 

@@ -32,15 +32,21 @@ import UserScript
 import WebKit
 
 public protocol AppStoreUpdateControllerFactory {
+    @MainActor
     static func instantiate(internalUserDecider: InternalUserDecider,
+                            featureFlagger: FeatureFlagger,
+                            privacyConfigurationManager: PrivacyConfigurationManaging,
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
+                            keyValueStore: any ThrowingKeyValueStoring,
                             isOnboardingFinished: @escaping () -> Bool) -> any UpdateController
 }
 
 public protocol SparkleUpdateControllerFactory {
+    @MainActor
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
+                            privacyConfigurationManager: PrivacyConfigurationManaging,
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
@@ -103,7 +109,7 @@ public protocol UpdateController: UpdateControllerObjC {
     /// Whether the notification dot should be cleared when the menu opens.
     ///
     /// **App Store vs Sparkle Behavior:**
-    /// - **App Store**: Always `true` - clears dot on menu open
+    /// - **App Store**: `true` - clears dot on menu open, unless `moreProminentUpdates` is on
     /// - **Sparkle**: Always `false` - dot is only cleared by explicit user action
     ///
     /// **Usage**: Controls whether the notification dot is automatically cleared when user opens the menu.
@@ -139,6 +145,14 @@ public protocol UpdateController: UpdateControllerObjC {
     /// **Usage**: Drives UI state in Settings, shows progress bars, enables/disables buttons.
     var updateProgress: UpdateCycleProgress { get }
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { get }
+
+    /// Tracks how prominent the update prompts should be while `moreProminentUpdates` is on.
+    /// `nil` for controllers that don't track prompt stages.
+    var updatePromptStageTracker: UpdatePromptStageTracker? { get }
+
+    /// Whether the update prompts may show. Defaults to `hasPendingUpdate`.
+    var canShowUpdatePrompts: Bool { get }
+    var canShowUpdatePromptsPublisher: AnyPublisher<Bool, Never> { get }
 
     // MARK: - Update Configuration
 
@@ -275,7 +289,31 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     func handleAppTermination()
 }
 
+@MainActor
+public extension UpdateController {
+
+    /// The prompt stage to show for the pending update, or `.none` until there's an update ready to install or open.
+    var pendingUpdatePromptStage: UpdatePromptStage {
+        canShowUpdatePrompts ? updatePromptStageTracker?.stage ?? .none : .none
+    }
+
+    var pendingUpdatePromptStagePublisher: AnyPublisher<UpdatePromptStage, Never> {
+        guard let tracker = updatePromptStageTracker else {
+            return Just(.none).eraseToAnyPublisher()
+        }
+        return canShowUpdatePromptsPublisher.combineLatest(tracker.$stage)
+            .map { canShowUpdatePrompts, stage in canShowUpdatePrompts ? stage : .none }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+}
+
 extension UpdateController {
+
+    public var updatePromptStageTracker: UpdatePromptStageTracker? { nil }
+
+    public var canShowUpdatePrompts: Bool { hasPendingUpdate }
+    public var canShowUpdatePromptsPublisher: AnyPublisher<Bool, Never> { hasPendingUpdatePublisher.eraseToAnyPublisher() }
 
     /// Whether release notes need a fresh update check to populate data.
     ///

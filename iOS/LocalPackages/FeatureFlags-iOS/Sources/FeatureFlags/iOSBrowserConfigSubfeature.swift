@@ -24,6 +24,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .iOSBrowserConfig
     }
 
+    /// https://app.asana.com/1/137249556945/task/1219972523893967
+    case ipadMenuBar
+
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
@@ -39,6 +42,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
     case unifiedURLPredictor
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220345796572420
+    case suggestionDebounce200ms
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
@@ -112,6 +118,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
     case customProductPageDuckAiOnboardingFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220296514602367
+    case contextualOnboardingTimeLimit
+
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
@@ -127,16 +136,15 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220300732211487
+    case duckAIAndInputLiquidGlass
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
-
-    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
-    case onboardingFlowByDownloadReasonExperiment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603?focus=true
     case newTabPageSessionInstrumentation
@@ -149,6 +157,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
     case newTabPageRedesign
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219937997681296?focus=true
+    case scrollableEscapeHatch
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
     case sitePermissions
@@ -167,4 +178,13 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1219652686297425
     case deferredMemoryCacheDelete
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
+    case idleReturnNewTabPageAtLaunch
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
+    case launchBackgroundTask
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
+    case webPageTranslation
 }

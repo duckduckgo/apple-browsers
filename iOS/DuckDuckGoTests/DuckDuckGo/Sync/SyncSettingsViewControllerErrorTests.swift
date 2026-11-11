@@ -22,8 +22,8 @@ import XCTest
 import Core
 import Combine
 @testable import DDGSync
-import Persistence
-import PixelKit
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import Common
 import FoundationExtensions
 import SyncUI_iOS
@@ -80,7 +80,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
     }
 
@@ -423,7 +424,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
 
         spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
@@ -441,7 +443,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
 
@@ -461,7 +464,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
         spyVC.onPresent = { [weak spyVC] _ in
@@ -487,7 +491,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
         let confirmationTask = Task { @MainActor in
@@ -746,7 +751,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
 
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
@@ -763,7 +769,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
 
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
@@ -783,7 +790,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
         syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
@@ -861,10 +869,284 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         XCTAssertEqual(SyncErrorMessage.unableToSyncWithDevice.description, UserText.syncFailedDescription)
     }
 
+    @MainActor
+    func testWhenSignupPixelFailsToSendAfterAccountIsCreatedThenShowsSuccess() async {
+        let pixelFiring = PixelKitMock()
+        pixelFiring.expectedFireError = URLError(.notConnectedToInternet)
+        let settingsVC = makeSignupVC(pixelFiring: pixelFiring)
+
+        await runSimplifiedSignup(on: settingsVC)
+
+        XCTAssertEqual(settingsVC.viewModel.connectingSheetPhase, .success(.newlySyncing))
+    }
+
+    @MainActor
+    func testWhenSignupSucceedsThenFiresSignupDirectButNotSetupEndedSuccessful() async {
+        let pixelFiring = PixelKitMock()
+        let settingsVC = makeSignupVC(pixelFiring: pixelFiring)
+
+        await runSimplifiedSignup(on: settingsVC)
+
+        let firedPixelNames = pixelFiring.actualFireCalls.map(\.pixel.name)
+        XCTAssertTrue(firedPixelNames.contains(Pixel.Event.syncSignupDirect.name))
+        XCTAssertFalse(firedPixelNames.contains(Pixel.Event.syncSetupEndedSuccessful.name))
+    }
+
+    @MainActor
+    private func makeSignupVC(pixelFiring: PixelKitMock) -> SyncSettingsViewController {
+        SyncSettingsViewController(
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            pixelFiring: pixelFiring,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
+        )
+    }
+
+    @MainActor
+    private func runSimplifiedSignup(on settingsVC: SyncSettingsViewController) async {
+        let viewModel = settingsVC.viewModel
+        viewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
+        let finished = expectation(description: "signup flow finishes")
+        finished.assertForOverFulfill = false
+        viewModel.$connectingSheetPhase
+            .dropFirst()
+            .sink { phase in
+                if phase == .success(.newlySyncing) || phase == .syncAnotherDevice(isConnecting: false) {
+                    finished.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        settingsVC.simplifiedCreateAccountAndStartSyncing(optionsViewModel: viewModel)
+
+        await fulfillment(of: [finished], timeout: 5)
+    }
+
     private func legacyPairingURL(for syncCode: SyncCode) throws -> URL {
         let base64Code = try syncCode.toJSON().base64EncodedString()
         return PairingInfo(base64Code: base64Code, deviceName: "Android")
             .toURL(baseURL: try XCTUnwrap(URL(string: "https://duckduckgo.com")))
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksPromoWithRedesignOnThenShowsSyncAnotherDevicePrompt() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 1)
+    }
+
+    @MainActor
+    func testWhenOpenedFromPasswordsPromoWithRedesignOnThenShowsSyncAnotherDevicePrompt() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.passwordsPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 1)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksPromoWithRedesignOffThenDoesNotStartSetup() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+        promptShown.isInverted = true
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 0.5)
+        XCTAssertFalse(vc.viewModel.isBusy)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksPromoWithRedesignOnAndAccountCreationUnavailableThenDoesNotStartSetup() async {
+        let syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+        syncService.featureFlags = SyncFeatureFlags.all.subtracting(.accountCreation)
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]),
+                        syncService: syncService)
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+        promptShown.isInverted = true
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 0.5)
+        XCTAssertFalse(vc.viewModel.isBusy)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksAnotherDevicePromoAndUserAuthenticatesThenStartsSyncWithAnotherDevice() async {
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
+                                syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false))
+        vc.loadViewIfNeeded()
+        XCTAssertNil(vc.codeCollectionIntent)
+
+        vc.viewDidAppear(false)
+
+        await waitUntil { vc.codeCollectionIntent == .syncAnotherDevice }
+        XCTAssertEqual(vc.authenticationRequestCount, 1)
+        XCTAssertEqual(vc.codeCollectionIntent, .syncAnotherDevice)
+    }
+
+    @MainActor
+    func testWhenOpenedFromPasswordsAnotherDevicePromoAndUserAuthenticatesThenStartsSyncWithAnotherDevice() async {
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.passwordsAnotherDevicePromotion,
+                                syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false))
+        vc.loadViewIfNeeded()
+        XCTAssertNil(vc.codeCollectionIntent)
+
+        vc.viewDidAppear(false)
+
+        await waitUntil { vc.codeCollectionIntent == .syncAnotherDevice }
+        XCTAssertEqual(vc.authenticationRequestCount, 1)
+        XCTAssertEqual(vc.codeCollectionIntent, .syncAnotherDevice)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksAnotherDevicePromoAndAuthenticationFailsThenDoesNotStartSyncWithAnotherDevice() async {
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
+                                syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false))
+        vc.authenticationError = .failedToAuthenticate
+        vc.loadViewIfNeeded()
+
+        vc.viewDidAppear(false)
+
+        await waitUntil { vc.authenticationRequestCount == 1 }
+        await Task.yield()
+        XCTAssertNil(vc.codeCollectionIntent)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksAnotherDevicePromoAndConnectFlowsUnavailableThenDoesNotStartSyncWithAnotherDevice() async {
+        let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
+        syncService.featureFlags = SyncFeatureFlags.all.subtracting(.connectFlows)
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
+                                syncService: syncService)
+        vc.loadViewIfNeeded()
+
+        vc.viewDidAppear(false)
+        await Task.yield()
+
+        XCTAssertEqual(vc.authenticationRequestCount, 0)
+        XCTAssertNil(vc.codeCollectionIntent)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksAnotherDevicePromoThenSyncWithAnotherDeviceStartsOnlyOnce() async {
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
+                                syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false))
+        vc.loadViewIfNeeded()
+        vc.viewDidAppear(false)
+        await waitUntil { vc.codeCollectionIntent == .syncAnotherDevice }
+        vc.codeCollectionIntent = nil
+
+        vc.viewDidAppear(false)
+        await Task.yield()
+
+        XCTAssertEqual(vc.authenticationRequestCount, 1)
+        XCTAssertNil(vc.codeCollectionIntent)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksAnotherDevicePromoWithSyncInactiveThenDoesNotStartSyncWithAnotherDevice() async {
+        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
+                                syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false))
+        vc.loadViewIfNeeded()
+
+        vc.viewDidAppear(false)
+        await Task.yield()
+
+        XCTAssertEqual(vc.authenticationRequestCount, 0)
+        XCTAssertNil(vc.codeCollectionIntent)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksPromoWithSyncActiveThenDoesNotStartSyncWithAnotherDevice() {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign]),
+                        syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false))
+        vc.loadViewIfNeeded()
+
+        vc.viewDidAppear(false)
+
+        XCTAssertNil(vc.codeCollectionIntent)
+    }
+
+    @MainActor
+    func testWhenDevicesAreMappedThenSyncedDevicesCountIsStored() {
+        let storage: any KeyedStoring<SyncPromoStorageKeys> = MockKeyValueStore().keyedStoring()
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
+                        featureFlagger: MockFeatureFlagger(),
+                        syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
+                        syncPromoStorage: storage)
+        storage.syncedDevicesCount = 1
+
+        vc.mapDevices([
+            RegisteredDevice(id: "1", name: "iPhone", type: "phone"),
+            RegisteredDevice(id: "2", name: "Mac", type: "desktop")
+        ])
+
+        XCTAssertEqual(storage.syncedDevicesCount, 2)
+    }
+
+    @MainActor
+    private func makeVC(source: String,
+                        featureFlagger: MockFeatureFlagger,
+                        syncService: MockDDGSyncing = MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+                        syncPromoStorage: any KeyedStoring<SyncPromoStorageKeys> = MockKeyValueStore().keyedStoring()) -> SyncSettingsViewController {
+        SyncSettingsViewController(
+            syncService: syncService,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            source: source,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: syncPromoStorage
+        )
+    }
+
+    @MainActor
+    private func makeAuthStubVC(source: String, syncService: MockDDGSyncing) -> AuthStubSyncSettingsViewController {
+        AuthStubSyncSettingsViewController(
+            syncService: syncService,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            source: source,
+            featureFlagger: MockFeatureFlagger(),
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
+        )
+    }
+
+    @MainActor
+    private func waitUntil(_ condition: @MainActor () -> Bool) async {
+        for _ in 0..<100 where !condition() {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+    }
+
+    @MainActor
+    private func expectSyncAnotherDevicePrompt(in vc: SyncSettingsViewController) -> XCTestExpectation {
+        let promptShown = expectation(description: "Sync another device prompt shown")
+        vc.viewModel.$connectingSheetPhase
+            .first { $0 == .syncAnotherDevice(isConnecting: false) }
+            .sink { _ in promptShown.fulfill() }
+            .store(in: &cancellables)
+        return promptShown
     }
 
     @MainActor
@@ -877,7 +1159,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             pairingInfo: try XCTUnwrap(PairingInfo(url: pairingURL)),
             featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
     }
 
@@ -1006,6 +1289,17 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 }
 
 @MainActor
+private final class AuthStubSyncSettingsViewController: SyncSettingsViewController {
+
+    var authenticationError: UserAuthenticator.AuthError?
+    var authenticationRequestCount = 0
+
+    override func authenticateUser(completion: @escaping (UserAuthenticator.AuthError?) -> Void) {
+        authenticationRequestCount += 1
+        completion(authenticationError)
+    }
+}
+
 private final class SpySyncSettingsViewController: SyncSettingsViewController {
 
     var dismissPresentedViewControllerCallCount = 0

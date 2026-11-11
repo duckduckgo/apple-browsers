@@ -91,6 +91,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219054712997074?focus=true
     case webExtensionsPermissions
 
+    /// Controls Chrome Web Store update discovery when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
+    case webExtensionUpdateDiscovery
+
     /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
     /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
@@ -174,6 +178,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173932
     case adBlockingExtensionEnabledByDefault
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032?focus=true
+    case sponsorBlock
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
 
@@ -195,14 +202,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217280986826116
-    case dbpPerformanceMetrics
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217396600005661
     case dbpExtractedProfileRefresh
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218160728553684
     case dbpSchedulerDeferralHandling
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219522935831328
+    case dbpChallengeSolver
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
@@ -230,9 +237,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211654922002904
     case aiChatOmnibarTools
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
-    case aiChatOmnibarOnboarding
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215385527516382?focus=true
     case aiChatOnboardingToggleAffectsNtpAndDdg
@@ -496,6 +500,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
     case aiChatNtpSuggestionsDeletion
 
+    /// Enables the Duck.ai suggested-prompt chips below the New Tab Page omnibar's Duck.ai input
+    case aiChatNtpSuggestedPrompts
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
@@ -571,15 +578,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
     case promoQueueAutofillEmptyStatePromo
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
+    case defaultBrowserWinBackPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
     /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
     case lazyMenuRebuild
-
-    /// Enables removing individual AI chat suggestions from the omnibar
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
-    case aiChatRemoveSuggestion
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
@@ -818,6 +824,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions), category: .webExtensions)
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
+        case .webExtensionUpdateDiscovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:
@@ -860,6 +868,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault), category: .adBlocking)
+        case .sponsorBlock:
+            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout), category: .webExtensions)
         case .syncSeamlessAccountSwitching:
@@ -874,12 +884,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true, category: .dbp)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours), category: .dbp)
-        case .dbpPerformanceMetrics:
-            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.performanceMetrics), category: .dbp)
         case .dbpExtractedProfileRefresh:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true, category: .dbp)
         case .dbpSchedulerDeferralHandling:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.schedulerDeferralHandling), supportsLocalOverriding: true, category: .dbp)
+        case .dbpChallengeSolver:
+            Config(source: .remoteReleasable(DBPSubfeature.challengeSolver), category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased), category: .sync)
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -898,8 +908,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled), category: .duckAI)
         case .aiChatOmnibarTools:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarTools), category: .duckAI)
-        case .aiChatOmnibarOnboarding:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarOnboarding), category: .duckAI)
         case .aiChatOnboardingToggleAffectsNtpAndDdg:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.onboardingToggleAffectsNtpAndDdg), category: .duckAI)
         case .osSupportForceUnsupportedMessage:
@@ -945,9 +953,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewSafariFilePicker:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
         case .dataImportHistory:
-            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
         case .dataImportSourceFilter:
-            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.sourceFilter))
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.sourceFilter))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
@@ -1050,6 +1058,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
+        case .aiChatNtpSuggestedPrompts:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.ntpSuggestedPrompts), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarFloating), category: .duckAI)
         case .sidebarSuggestedPrompts:
@@ -1090,12 +1100,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
         case .promoQueueAutofillEmptyStatePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
+        case .defaultBrowserWinBackPromo:
+            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
-        case .aiChatRemoveSuggestion:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.removeSuggestion), category: .duckAI)
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.screenTimeCleaning))
         case .tabSuspension:

@@ -45,7 +45,7 @@ concurrency:
 jobs:
   import:
     name: ${{ matrix.platform }} release translations
-    runs-on: [image:osx-tahoe-27, m4pro]
+    runs-on: [image:osx-27-edge, m4pro]
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -226,6 +226,8 @@ jobs:
             ✋ Reason: ${{ steps.import.outputs.reason || 'A step failed before the import ran. See the workflow logs.' }}
             🌿 Release branch: ${{ steps.release.outputs.branch || 'not found' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            🔄 Jobs in progress with the release's strings, which the release waits on: ${{ steps.import.outputs.jobs_in_progress == '' && 'none' || '' }}
+            ${{ steps.import.outputs.jobs_in_progress }}
             ⏸️ Jobs awaiting authorization, which keep their strings out of other jobs: ${{ steps.import.outputs.jobs_awaiting_authorization == '' && 'none' || '' }}
             ${{ steps.import.outputs.jobs_awaiting_authorization }}
         run: |

@@ -843,6 +843,26 @@ struct DuckAIWideEventInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("A started flow records the address bar position", .timeLimit(.minutes(1)))
+    func startedFlowRecordsAddressBarPosition() {
+        let wideEvent = WideEventMock()
+        let sut = DefaultDuckAIWideEventInstrumentation(wideEvent: wideEvent, addressBarPosition: { .bottom })
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        #expect(lastStartedData(wideEvent)?.jsonParameters()["feature.data.ext.device.address_bar_position"] as? String == "bottom")
+    }
+
+    @available(iOS 16, *)
+    @Test("A started flow omits an unknown address bar position", .timeLimit(.minutes(1)))
+    func startedFlowOmitsUnknownAddressBarPosition() {
+        let wideEvent = WideEventMock()
+        let sut = DefaultDuckAIWideEventInstrumentation(wideEvent: wideEvent, addressBarPosition: { nil })
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        #expect(lastStartedData(wideEvent)?.jsonParameters()["feature.data.ext.device.address_bar_position"] == nil)
+    }
+
+    @available(iOS 16, *)
     @Test("The sheet's standalone reporter completes its native prompt as SUCCESS", .timeLimit(.minutes(1)))
     func standaloneSheetReporterCompletesNativePrompt() {
         let (instrumentation, wideEvent, _) = makeSUT()
@@ -866,7 +886,7 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(DuckAIPromptWideEventData.metadata.pixelName == "duckai_prompt")
         #expect(DuckAIPromptWideEventData.metadata.featureName == "duckai-prompt")
         #expect(DuckAIPromptWideEventData.metadata.type == "ios-duckai-prompt")
-        #expect(DuckAIPromptWideEventData.metadata.version == "1.3.0")
+        #expect(DuckAIPromptWideEventData.metadata.version == "1.5.0")
     }
 
     @available(iOS 16, *)

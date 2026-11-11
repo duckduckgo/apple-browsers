@@ -34,6 +34,18 @@ enum SubscriptionOnboardingLaunchFailureReason: String {
     case notPresentable
 }
 
+enum SubscriptionCancellationEntry: String {
+    case cancellation
+    case manage
+}
+
+enum SubscriptionDaysSincePurchaseBucket: String {
+    case d1
+    case d2To7 = "d2_7"
+    case d8To30 = "d8_30"
+    case d31Plus = "d31_plus"
+}
+
 enum SubscriptionPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
@@ -87,7 +99,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionOnboardingLaunchFailure(SubscriptionOnboardingLaunchFailureReason)
     // Subscription Cancellation Flow
     case subscriptionCancellationCancelClick
-    case subscriptionCancellationAppStoreCancelled
+    case subscriptionCancellationAppStoreCancelled(entry: SubscriptionCancellationEntry, isTrial: Bool, daysSincePurchase: SubscriptionDaysSincePurchaseBucket)
     case subscriptionCancellationFlowLoadFailure(Error)
     case subscriptionCancellationFeatureInfoFailure(entitlement: SubscriptionEntitlement)
     // Subscription Withdrawal
@@ -152,6 +164,9 @@ enum SubscriptionPixel: PixelKit.Event {
         static let entryPointKey = "entry_point"
         static let reasonKey = "reason"
         static let entitlementKey = "entitlement"
+        static let entryKey = "entry"
+        static let freeTrialKey = "free_trial"
+        static let daysSincePurchaseKey = "days_since_purchase"
     }
 
     private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
@@ -187,6 +202,10 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.reasonKey: reason.rawValue]
         case .subscriptionCancellationFeatureInfoFailure(let entitlement):
             return [SubscriptionPixelsDefaults.entitlementKey: entitlement.rawValue]
+        case .subscriptionCancellationAppStoreCancelled(let entry, let isTrial, let daysSincePurchase):
+            return [SubscriptionPixelsDefaults.entryKey: entry.rawValue,
+                    SubscriptionPixelsDefaults.freeTrialKey: String(isTrial),
+                    SubscriptionPixelsDefaults.daysSincePurchaseKey: daysSincePurchase.rawValue]
         default:
             return nil
         }

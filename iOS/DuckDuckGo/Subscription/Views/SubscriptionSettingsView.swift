@@ -123,13 +123,15 @@ struct SubscriptionSettingsViewV2: View {
     private var configurationHeader: SubscriptionSettingsHeaderView {
         switch configuration {
         case .subscribed:
-            return SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: viewModel.tierBadgeToDisplay)
+            return SubscriptionSettingsHeaderView(state: .active(isTrial: false, status: viewModel.state.subscriptionInfo?.status),
+                                                  tierBadge: viewModel.tierBadgeToDisplay)
         case .expired:
             return SubscriptionSettingsHeaderView(state: .expired(viewModel.state.subscriptionDetails))
         case .activating:
             return SubscriptionSettingsHeaderView(state: .activating)
         case .trial:
-            return SubscriptionSettingsHeaderView(state: .trial, tierBadge: viewModel.tierBadgeToDisplay)
+            return SubscriptionSettingsHeaderView(state: .active(isTrial: true, status: viewModel.state.subscriptionInfo?.status),
+                                                  tierBadge: viewModel.tierBadgeToDisplay)
         }
     }
 
@@ -809,5 +811,15 @@ extension SubscriptionSettingsViewV2 {
         } else {
             SubscriptionPIRMoveToDesktopView()
         }
+    }
+}
+
+extension SubscriptionSettingsHeaderView.HeaderState {
+
+    static func active(isTrial: Bool, status: DuckDuckGoSubscription.Status?) -> Self {
+        if status == .notAutoRenewable {
+            return .expiring
+        }
+        return isTrial ? .trial : .subscribed
     }
 }

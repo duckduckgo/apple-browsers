@@ -251,7 +251,8 @@ enum Preferences {
                 case .subscriptionSettings:
                     SubscriptionUI.PreferencesSubscriptionSettingsView(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
                 case .autofill:
-                    AutofillView(model: AutofillPreferencesModel())
+                    AutofillView(model: AutofillPreferencesModel(),
+                                 showExtensions: { model.selectPane(.extensions) })
                 case .accessibility:
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:

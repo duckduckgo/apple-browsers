@@ -31,6 +31,8 @@ import os.log
 import DataBrokerProtection_iOS
 import VPN
 import PixelKit
+import AIChat
+import FeatureFlags_iOS
 
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
@@ -285,11 +287,13 @@ extension MainViewController {
                                                    duckAIGridContentProvider: duckAIGridContentProvider,
                                                    duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker,
                                                    floatingUIManager: floatingUIManager,
+                                                   isFireShortcutEnabled: { [weak self] in self?.isShortcutEnabled() == true },
                                                    pixelFiring: self.pixelFiring)
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
+        controller.recentChatsReaderProvider = makeTabSwitcherRecentChatsReaderProvider()
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -341,12 +345,12 @@ extension MainViewController {
         }, deepLinkTarget: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
     }
 
-    func segueToDataBrokerProtection() {
+    func segueToDataBrokerProtection(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .dbp())
-        }, deepLinkTarget: .dbp())
+            $0.triggerDeepLinkNavigation(to: .dbp(freeScanEntryPoint: freeScanEntryPoint))
+        }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint))
     }
 
     func segueToPIRWithSubscriptionCheck() {
@@ -424,6 +428,17 @@ extension MainViewController {
         launchSettings(completion: { _ in
             completion?()
         }, deepLinkTarget: .privateSearch)
+    }
+
+    func makeSyncSettingsViewController(source: String?) -> SyncSettingsViewController {
+        SyncSettingsViewController(syncService: syncService,
+                                   syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
+                                   syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
+                                   syncCreditCardsAdapter: syncDataProviders.creditCardsAdapter,
+                                   appSettings: appSettings,
+                                   syncPausedStateManager: syncPausedStateManager,
+                                   source: source,
+                                   syncAutoRestoreHandler: syncAutoRestoreHandler)
     }
 
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
@@ -512,6 +527,7 @@ extension MainViewController {
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             daxGreetingDebugging: daxGreetingService,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService)
 
@@ -645,11 +661,13 @@ extension MainViewController {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            aiChatBonusMessageLog: self.userScriptsDependencies.aiChatBonusOffer.messageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
             daxGreetingDebugging: self.daxGreetingService))
 
-        debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
+        let closeButton = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
+        debug.navigationItem.rightBarButtonItem = closeButton
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
@@ -773,4 +791,22 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
 
 extension NSNotification.Name {
     static let settingsDidDisappear: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.settings.didDisappear")
+}
+
+extension MainViewController {
+
+    /// Fire mode lists Fire chats only.
+    func makeTabSwitcherRecentChatsReaderProvider() -> ((BrowsingMode) -> AIChatSuggestionsReading)? {
+        // iPhone only: "View all chats" opens the native history, which iPad doesn't have.
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), aiChatSettings.isAIChatEnabled,
+              !isPad else { return nil }
+        return { [weak self] mode in
+            guard let self else { return NilSuggestionsReader() }
+            return AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: mode == .fire,
+                                                                 nativeStorageHandler: self.duckAiNativeStorageHandler,
+                                                                 fireModeStorageHandler: self.duckAiFireModeStorageHandler,
+                                                                 featureFlagger: self.featureFlagger,
+                                                                 privacyConfig: self.privacyConfigurationManager)
+        }
+    }
 }

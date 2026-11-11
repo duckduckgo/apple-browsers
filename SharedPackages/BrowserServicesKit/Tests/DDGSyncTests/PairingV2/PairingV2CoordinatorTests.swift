@@ -1802,6 +1802,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
     func testWhenPeerDeniesWhileConfirmationIsPendingThenDismissesAndDiscardsBufferedRecoveryCode() async throws {
         let setup = try await makeNativeJoinerReadyForLogin()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         let confirmationGate = PairingV2CoordinatorTestGate()
         setup.confirmationDelegate.joinPeerHandler = {
             await confirmationGate.wait()
@@ -1827,6 +1829,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(setup.coordinator.state, .failed(.recoveryCodeDenied))
         XCTAssertEqual(setup.confirmationDelegate.dismissConfirmationCallCount, 1)
         XCTAssertNil(setup.coordinator.pendingRecoveryKey)
+        guard await XCTWaiter.fulfillment(of: [closeChannelExpectation], timeout: 2) == .completed else {
+            XCTFail("Expected channel cleanup to finish before inspecting sent messages")
+            return
+        }
         XCTAssertEqual(try recoveryCodeDoneCount(in: setup.messageExchanger,
                                                  peerPrivateKey: setup.peerKeyPair.privateKey,
                                                  messageCrypto: setup.messageCrypto), 0)

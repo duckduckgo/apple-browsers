@@ -83,6 +83,7 @@ protocol TabSwitcherBarsStateHandling {
                                 canShowSelectionMenu: Bool)
 
     func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool)
+    func configureDuckChatMenu(_ menu: UIMenu?)
 
 }
 
@@ -218,9 +219,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     func configureButtonActions(tabsStyle: TabSwitcherViewController.TabsStyle,
                                 canShowSelectionMenu: Bool) {
+        configureAccessibility(tabSwitcherStyleButton, label: tabsStyle.accessibilityLabel, identifier: "TabSwitcher.Button.ViewStyle")
         if let button = tabSwitcherStyleButton.customView as? BrowserChromeButton {
             button.setImage(tabsStyle.image)
-            button.accessibilityLabel = tabsStyle.accessibilityLabel
         }
 
         // Configure edit button with menu
@@ -254,16 +255,26 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         button.showsMenuAsPrimaryAction = false
     }
 
+    func configureDuckChatMenu(_ menu: UIMenu?) {
+        guard let button = duckChatButton.customView as? BrowserChromeButton else { return }
+        button.menu = menu
+        button.showsMenuAsPrimaryAction = menu != nil
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+    }
+
     private func configureButtons() {
         configureAccessibility(fireButton, label: "Close all tabs and clear data", identifier: "Browser.Toolbar.Button.Fire")
         configureAccessibility(duckChatButton, label: UserText.duckAiFeatureName, identifier: "TabSwitcher.Button.DuckChat")
-        configureAccessibility(plusButton, label: UserText.keyCommandNewTab)
-        configureAccessibility(doneIconButton, label: UserText.navigationTitleDone)
-        configureAccessibility(doneTextButton, label: UserText.navigationTitleDone)
-        configureAccessibility(editButton, label: UserText.actionGenericEdit)
-        configureAccessibility(selectAllButton, label: UserText.selectAllTabs)
-        configureAccessibility(deselectAllButton, label: UserText.deselectAllTabs)
-        configureAccessibility(menuButton, label: "More Menu")
+        configureAccessibility(plusButton, label: UserText.keyCommandNewTab, identifier: "TabSwitcher.Button.NewTab")
+        configureAccessibility(doneIconButton, label: UserText.navigationTitleDone, identifier: "TabSwitcher.Button.Done")
+        configureAccessibility(doneTextButton, label: UserText.navigationTitleDone, identifier: "TabSwitcher.Button.Done")
+        configureAccessibility(editButton, label: UserText.actionGenericEdit, identifier: "TabSwitcher.Button.Edit")
+        configureAccessibility(selectAllButton, label: UserText.selectAllTabs, identifier: "TabSwitcher.Button.SelectAll")
+        configureAccessibility(deselectAllButton, label: UserText.deselectAllTabs, identifier: "TabSwitcher.Button.DeselectAll")
+        configureAccessibility(menuButton, label: "More Menu", identifier: "TabSwitcher.Button.More")
+        configureAccessibility(closeTabsButton, label: UserText.tabSwitcherCloseTabsButtonTitle(withCount: params.selectedCount), identifier: "TabSwitcher.Button.CloseSelected")
 
         setEnabled(editButton, params.totalCount > 1 || params.containsWebPages)
         setEnabled(closeTabsButton, params.selectedCount > 0)

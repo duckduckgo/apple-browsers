@@ -72,6 +72,7 @@ final class PullToRefreshViewAdapter: NSObject {
     private var isPulling = false
     private var isRefreshControlEnabled = true
     private var isPullSuspended = false
+    private var isContentLocked = false
     private var didTriggerRefresh = false
     private var didEndRefreshing = false
     private var initialTranslationY: CGFloat = 0
@@ -94,13 +95,20 @@ final class PullToRefreshViewAdapter: NSObject {
         }
     }
 
+    var backgroundColorOverride: UIColor? {
+        didSet {
+            guard backgroundColorOverride != oldValue else { return }
+            webViewBackgroundDidChange()
+        }
+    }
+
     private var isFloatingRefreshBackgroundActive: Bool {
         isFloatingUIEnabled && pullableViewClipsToBoundsBeforePull != nil
     }
 
     private var pageBackgroundColor: UIColor? {
         if isFloatingUIEnabled {
-            return isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor
+            return backgroundColorOverride ?? (isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor)
         }
         return backgroundColor
     }
@@ -283,7 +291,7 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private func handleVerticalChange(translation: CGPoint) {
         guard let scrollView else { return }
-        guard isRefreshControlEnabled, !isPullSuspended else { return }
+        guard isRefreshControlEnabled, !isPullSuspended, !isContentLocked else { return }
         guard isPulling || translation.y > abs(translation.x) else { return }
 
         let wasNotPulling = !isPulling
@@ -467,8 +475,16 @@ final class PullToRefreshViewAdapter: NSObject {
     private func applyRefreshControlState() {
         guard !isPulling else { return }
 
-        let shouldAttach = isRefreshControlEnabled && !isPullSuspended
+        let shouldAttach = isRefreshControlEnabled && !isPullSuspended && !isContentLocked
         fakeScrollView.refreshControl = shouldAttach ? refreshControl : nil
+    }
+
+    /// Set while the page handles its own vertical gestures (reported by content-scope-scripts'
+    /// `browserUiLock`). Kept separate from `setRefreshControlEnabled`, which other callers
+    /// toggle while scrolling, so a locked page stays locked.
+    func setContentLocked(_ isLocked: Bool) {
+        isContentLocked = isLocked
+        applyRefreshControlState()
     }
 
     func setTopOffset(_ offset: CGFloat) {

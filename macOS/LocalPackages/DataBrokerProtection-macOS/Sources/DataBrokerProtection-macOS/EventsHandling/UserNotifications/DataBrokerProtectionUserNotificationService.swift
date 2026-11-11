@@ -33,11 +33,27 @@ public protocol DataBrokerProtectionUserNotificationService {
     func scheduleCheckInNotificationIfPossible()
 }
 
-public enum DataBrokerProtectionNotificationCommand: String {
-    case showDashboard = "databrokerprotection://show_dashboard"
+public enum DataBrokerProtectionNotificationCommand {
+    case showDashboard(freeScanEntryPoint: String?)
+
+    /// Query-item name used to carry the freemium entry point across the launch-URL IPC.
+    public static let freeScanEntryPointQueryItem = "entry_point"
+
+    /// Bare URL used to identify the show-dashboard command at the receiver
+    /// (query items are stripped before matching, then read separately to extract the entry point).
+    public static let showDashboardPath = "databrokerprotection://show_dashboard"
 
     public var url: URL {
-        URL(string: self.rawValue)!
+        switch self {
+        case .showDashboard(let freeScanEntryPoint):
+            let bareURL = URL(string: Self.showDashboardPath)!
+            guard let freeScanEntryPoint,
+                  var components = URLComponents(string: Self.showDashboardPath) else {
+                return bareURL
+            }
+            components.queryItems = [URLQueryItem(name: Self.freeScanEntryPointQueryItem, value: freeScanEntryPoint)]
+            return components.url ?? bareURL
+        }
     }
 }
 
@@ -191,13 +207,13 @@ extension DefaultDataBrokerProtectionUserNotificationService: UNUserNotification
 
         switch identifier {
         case .firstScanComplete, .firstProfileRemoved, .allInfoRemoved, .twoWeeksCheckIn:
-            NSWorkspace.shared.open(DataBrokerProtectionNotificationCommand.showDashboard.url)
+            NSWorkspace.shared.open(DataBrokerProtectionNotificationCommand.showDashboard(freeScanEntryPoint: nil).url)
 
             if let pixel = pixelMapper[identifier] {
                 pixelHandler.fire(pixel)
             }
         case .firstFreemiumScanComplete:
-            NSWorkspace.shared.open(DataBrokerProtectionNotificationCommand.showDashboard.url)
+            NSWorkspace.shared.open(DataBrokerProtectionNotificationCommand.showDashboard(freeScanEntryPoint: "scancompletenotification").url)
 
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.firstScanCompleteNotificationClicked)
         }

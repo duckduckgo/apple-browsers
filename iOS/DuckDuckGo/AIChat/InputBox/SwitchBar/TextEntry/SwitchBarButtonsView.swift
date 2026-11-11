@@ -114,6 +114,18 @@ class SwitchBarButtonsView: UIView {
     var buttonState: SwitchBarButtonState = .noButtons {
         didSet {
             updateButtonsVisibility()
+            updateAIChatShortcutMenu()
+        }
+    }
+
+    var usesFloatingAIStopButtonSpacing = false {
+        didSet { updateTrailingInset() }
+    }
+
+    var hidesStopButtonBackground = false {
+        didSet {
+            stopGeneratingBackdrop.isHidden = hidesStopButtonBackground
+            updateTrailingInset()
         }
     }
 
@@ -127,6 +139,11 @@ class SwitchBarButtonsView: UIView {
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
+
+    /// Replaces the shortcut tap while the input is empty; typed text still goes to Duck.ai as the prompt.
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        didSet { updateAIChatShortcutMenu() }
+    }
 
     private let stack = UIStackView()
     private let clearButton = BrowserChromeButton(.secondary)
@@ -262,12 +279,24 @@ class SwitchBarButtonsView: UIView {
         aiChatShortcutButton.accessibilityTraits = .button
     }
 
+    private func updateAIChatShortcutMenu() {
+        aiChatShortcutButton.menu = buttonState.showsClearButton ? nil : aiChatShortcutEmptyInputMenu
+        aiChatShortcutButton.showsMenuAsPrimaryAction = aiChatShortcutButton.menu != nil
+    }
+
     private func updateButtonsVisibility() {
+        updateTrailingInset()
         clearButton.isHidden = !buttonState.showsClearButton
         stopGeneratingButton.isHidden = !buttonState.showsStopGeneratingButton
         voiceButton.isHidden = !buttonState.showsVoiceButton
         aiChatShortcutButton.isHidden = !buttonState.showsAIChatShortcutButton
         separatorView.isHidden = !buttonState.showsSeparator
+    }
+
+    private func updateTrailingInset() {
+        let trailing = usesFloatingAIStopButtonSpacing && buttonState == .stopGeneratingOnly ? 0 : Constants.stackTrailingInset
+        let stopButtonInset: CGFloat = hidesStopButtonBackground && buttonState == .stopGeneratingOnly ? 2 : 0
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: trailing + stopButtonInset)
     }
 
     /// Iterates the stack so newly-added buttons are auto-covered — the duck.ai chip stays

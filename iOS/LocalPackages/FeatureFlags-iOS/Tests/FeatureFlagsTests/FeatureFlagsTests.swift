@@ -25,6 +25,23 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testContextualOnboardingTimeLimitUsesIOSBrowserConfigAndInternalOnlyDefault() {
+        let flag = FeatureFlag.contextualOnboardingTimeLimit
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .contextualOnboardingTimeLimit)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.parent.rawValue, "iOSBrowserConfig")
+        XCTAssertEqual(subfeature.rawValue, "contextualOnboardingTimeLimit")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testAttachmentPrivacyUsesRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.unifiedToggleInputAttachmentPrivacy
         guard case let .remoteReleasable(subfeature) = flag.source else {
@@ -49,6 +66,22 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertEqual(subfeature as? AIChatSubfeature, .unifiedToggleInputPastedText)
         XCTAssertEqual(subfeature.parent, .aiChat)
         XCTAssertEqual(subfeature.rawValue, "unifiedToggleInputPastedText")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testKeyboardEdgeSweepUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
+        let flag = FeatureFlag.unifiedToggleInputKeyboardEdgeSweep
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .unifiedToggleInputKeyboardEdgeSweep)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "unifiedToggleInputKeyboardEdgeSweep")
         guard case .internalOnly = flag.defaultValue else {
             XCTFail("Expected internal-only default")
             return

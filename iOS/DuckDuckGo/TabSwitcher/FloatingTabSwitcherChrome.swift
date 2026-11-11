@@ -96,6 +96,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         let label = UILabel()
         label.font = UIFont.daxHeadline()
         label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.isAccessibilityElement = true
+        label.accessibilityIdentifier = "TabSwitcher.Title"
         return label
     }()
 
@@ -194,7 +196,15 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         duckChatItem.accessibilityIdentifier = "TabSwitcher.Button.DuckChat"
         duckChatItem.accessibilityLabel = UserText.duckAiFeatureName
         tabsStyleItem.accessibilityLabel = UserText.tabSwitcherGridViewMenuTitle
+        tabsStyleItem.accessibilityIdentifier = "TabSwitcher.Button.ViewStyle"
         editMenuItem.accessibilityLabel = UserText.actionGenericEdit
+        editMenuItem.accessibilityIdentifier = "TabSwitcher.Button.Edit"
+        editMenuButton.accessibilityIdentifier = "TabSwitcher.Button.Edit"
+        selectAllItem.accessibilityIdentifier = "TabSwitcher.Button.SelectAll"
+        deselectAllItem.accessibilityIdentifier = "TabSwitcher.Button.DeselectAll"
+        multiSelectMenuItem.accessibilityLabel = "More Menu"
+        multiSelectMenuItem.accessibilityIdentifier = "TabSwitcher.Button.More"
+        closeTabsItem.accessibilityIdentifier = "TabSwitcher.Button.CloseSelected"
 
         attachTopScrollViewInteraction()
     }
@@ -287,6 +297,17 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             onNewChat: { [weak self] in self?.actions.onNewChatTapped?() },
             isNewChatAvailable: { [weak self] in self?.actions.isNewChatAvailable?() ?? false }
         ))
+    }
+
+    func configureDuckChatMenu(_ menu: UIMenu?) {
+        duckChatItem.menu = menu
+        // A primary action sets the item's image too, so it has to carry the icon.
+        duckChatItem.primaryAction = menu == nil
+            ? UIAction(image: DesignSystemImages.Glyphs.Size24.aiChat) { [weak self] _ in self?.actions.onDuckChatTapped?() }
+            : nil
+        if #available(iOS 16.0, *) {
+            duckChatItem.preferredMenuElementOrder = .fixed
+        }
     }
 
     func decorate(theme: Theme) {

@@ -53,6 +53,7 @@ final class PromoRegistryTests: XCTestCase {
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            userChurnService: MockUserChurnStateProvider(),
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),

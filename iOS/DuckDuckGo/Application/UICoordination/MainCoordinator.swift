@@ -79,7 +79,9 @@ final class MainCoordinator {
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let daxGreetingActivity: DaxGreetingActivityStore
+    private let daxDialogs: DaxDialogs
     private let wideEvent: WideEventManaging
+    private let eventHub: EventHubManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
@@ -100,6 +102,7 @@ final class MainCoordinator {
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
+    private var onboardingTimeLimitCancellable: AnyCancellable?
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
@@ -113,6 +116,7 @@ final class MainCoordinator {
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -151,6 +155,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.daxDialogs = daxDialogs
         self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
@@ -158,6 +163,7 @@ final class MainCoordinator {
         self.promoCoordinationService = promoCoordinationService
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
+        self.eventHub = eventHub
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
         FireModeCapability.resolve(using: featureFlagger)
@@ -182,7 +188,7 @@ final class MainCoordinator {
         )
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
-        let autoconsentManagementProvider = AutoconsentManagementProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider(eventHub: eventHub)
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -276,12 +282,6 @@ final class MainCoordinator {
             syncService: syncService.sync
         )
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: featureFlagger,
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
@@ -352,6 +352,14 @@ final class MainCoordinator {
                                         usageContextProvider: usageContextProvider,
                                         promptExposureReporter: promptExposureReporter)
 
+        onboardingTimeLimitCancellable = daxDialogs.isDismissedPublisher
+            .filter { [weak daxDialogs] isDismissed in
+                isDismissed && daxDialogs?.timeLimit.endedByTimeLimit == true
+            }
+            .sink { [weak controller] _ in
+                controller?.endContextualOnboardingAfterTimeLimit()
+            }
+
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
         // Apply tracker animation suppression early for cold starts
@@ -362,8 +370,8 @@ final class MainCoordinator {
 
     }
 
-    func start() {
-        controller.loadViewIfNeeded()
+    func start(drawsIdleReturnNewTabPage: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -442,7 +450,8 @@ final class MainCoordinator {
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
             searchTokenProvider: controller,
-            scriptletConfiguration: makeScriptletConfiguration()
+            scriptletConfiguration: makeScriptletConfiguration(),
+            eventHub: eventHub
         )
         self.webExtensionManager = webExtensionManager
 
@@ -670,8 +679,8 @@ final class MainCoordinator {
         controller.presentNetworkProtectionStatusSettingsModal(entryPoint: entryPoint, scrollToStrictRouting: scrollToStrictRouting)
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        controller.presentDataBrokerProtectionDashboard()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        controller.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     func presentModalPromptIfNeeded() {
@@ -695,6 +704,7 @@ final class MainCoordinator {
 
     func onForeground(isFirstForeground: Bool) {
         daxGreetingActivity.recordForegroundOpen()
+        daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source
@@ -773,17 +783,19 @@ extension MainCoordinator: URLHandling {
         fireMediumWidgetPixelIfNeeded(url: url)
 
         let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+        let deepLink = AppDeepLinkSchemes.fromURL(url)
 
+        // New Search clears the navigation stack itself, only when it has to.
         if syncPairingInfo == nil
+            && deepLink != .newSearch
             && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
         }
-        switch AppDeepLinkSchemes.fromURL(url) {
+        switch deepLink {
         case .newSearch:
-            controller.newTab(reuseExisting: true)
-            controller.enterSearch()
+            handleNewSearchDeepLink()
         case .favorites:
             controller.newTab(reuseExisting: true, allowingKeyboard: false)
         case .quickLink:
@@ -795,7 +807,7 @@ extension MainCoordinator: URLHandling {
             let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .deeplink)
             controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
-            controller.onVoiceSearchPressed()
+            controller.handleVoiceSearchOpenRequest(entrySource: AIChatEntryPointSource.forDeepLink(url))
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
@@ -818,6 +830,23 @@ extension MainCoordinator: URLHandling {
             return false
         }
         return true
+    }
+
+    private func handleNewSearchDeepLink() {
+        // Already on a New Tab Page: focus it in place. Clearing and rebuilding it would drop
+        // the keyboard the app opened with, or is about to raise, and raise it again.
+        // An input left in another mode, such as Duck.ai, is still rebuilt so it opens in the
+        // mode a new search starts in.
+        if controller.isNewTabPageVisible, controller.presentedViewController == nil,
+           controller.isInputInInitialToggleMode {
+            if !controller.isInputFocused {
+                controller.enterSearch()
+            }
+            return
+        }
+        controller.clearNavigationStack()
+        controller.newTab(reuseExisting: true)
+        controller.enterSearch()
     }
 
     private func handleOpenPasswords(url: URL) {
@@ -871,7 +900,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {
-            controller.onVoiceSearchPressed()
+            controller.handleVoiceSearchOpenRequest(entrySource: .iconShortcut)
         }
     }
 
@@ -966,6 +995,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         }
     }
 
+    /// The arrival on the New Tab Page the launch drew is held until the return is noted.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        controller.recordPendingNewTabPagePresentationIfVisible()
+        completion(.openedNewTab)
+    }
+
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
         guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
@@ -987,10 +1023,17 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
         let focused = controller.isInputFocused
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: afterIdleSurface,
+        let landedOn = landedOnForCurrentTab()
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOn, afterIdleSurface: afterIdleSurface,
                                                                  focused: focused,
                                                                  toggleEnabled: controller.isReturnSessionToggleEnabled,
                                                                  togglePosition: controller.returnSessionTogglePosition(focused: focused))
+        // A live voice chat carries on from its own entry.
+        if landedOn == .duckAI, !voiceSessionStateManager.isVoiceSessionActive {
+            controller.fireAIChatEntryPointPixel(source: .appOpen, opensNewTab: false, hasPrompt: false)
+            // The Duck.ai tab is already on screen, so show it to the entry that just started.
+            controller.reportDuckAISessionCurrentTab()
+        }
     }
 
     private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {

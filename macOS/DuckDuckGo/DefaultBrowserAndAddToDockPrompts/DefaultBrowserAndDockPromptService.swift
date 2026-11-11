@@ -30,6 +30,9 @@ final class DefaultBrowserAndDockPromptService {
     let userActivityManager: DefaultBrowserAndDockPromptUserActivityManager
     let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting
     let uiHosting: () -> DefaultBrowserAndDockPromptUIHosting?
+    let uiProvider: DefaultBrowserAndDockPromptUIProviding
+    let actionPerformer: DefaultBrowserAndDockActionPerforming
+    let dateProvider: () -> Date
 
     init(
         privacyConfigManager: PrivacyConfigurationManaging,
@@ -84,6 +87,9 @@ final class DefaultBrowserAndDockPromptService {
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier(dockCustomizer: dockCustomization)
         let uiProvider = DefaultBrowserAndDockPromptUIProvider()
         self.uiHosting = uiHosting
+        self.uiProvider = uiProvider
+        actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization, defaultBrowserProvider: SystemDefaultBrowserProvider())
+        dateProvider = defaultBrowserAndDockPromptDateProvider
 
         presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)
     }

@@ -31,7 +31,7 @@ final class DuckAIEntryWideEventData: WideEventData {
         mobileMetaType: "ios-duckai-entry",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-duckai-entry",
-        version: "1.4.0"
+        version: "1.3.0"
     )
 
     enum StatusReason: String, Codable, CaseIterable {

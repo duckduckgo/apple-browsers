@@ -8487,7 +8487,7 @@ extension MainViewController: TabDelegate {
     func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
         guard tab === currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
-        openNewChatFromDuckAIPage(tab, source: .swipeUpNewChat)
+        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
     }
 
     /// Top of the Duck.ai input card; nil when it isn't showing.

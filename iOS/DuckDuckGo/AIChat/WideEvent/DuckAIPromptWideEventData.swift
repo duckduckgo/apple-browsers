@@ -29,7 +29,7 @@ final class DuckAIPromptWideEventData: WideEventData {
         featureName: "duckai-prompt",
         mobileMetaType: "ios-duckai-prompt",
         desktopMetaType: "macos-duckai-prompt",
-        version: "1.6.0"
+        version: "1.5.0"
     )
 
     var globalData: WideEventGlobalData

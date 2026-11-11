@@ -135,9 +135,11 @@ enum DuckAIChatScrollInsetStyler {
                         const height = Math.max(0, overlap - existingClearance);
                         const previousHeight = state.spacer.getBoundingClientRect().height;
                         state.spacer.style.height = `${height}px`;
-                        if (wasAtBottom) state.target.scrollTop = state.target.scrollHeight;
-                        // Auto margins move without resizing content.
-                        if (Math.abs(height - previousHeight) > 0.5) state.schedule();
+                        if (Math.abs(height - previousHeight) > 0.5) {
+                            if (wasAtBottom) state.target.scrollTop = state.target.scrollHeight;
+                            // Auto margins move without resizing content.
+                            state.schedule();
+                        }
                     } else if (state.spacer?.parentElement === state.target) {
                         state.spacer.remove();
                     }

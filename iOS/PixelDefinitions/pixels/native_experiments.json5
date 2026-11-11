@@ -2,7 +2,7 @@
     // This file defines pixels sent by the native experiments framework
     "defaultSuffixes": [],
     "activeExperiments": {
-        "onboardingVPNDownloadReasonExperiment": {
+        "onboardingFlowByDownloadReasonExperiment": {
             "cohorts": ["control", "treatment"],
             "metrics": {
                 "onboarding_completed": {

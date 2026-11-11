@@ -117,17 +117,28 @@ public struct AppStoreReleases: Decodable {
 }
 
 public final class LatestReleaseChecker {
-    private let baseURL: String
+    private let baseURL: String?
     private let urlSession: URLSession
+    private let debugSettings: UpdatesDebugSettings
 
-    public init(baseURL: String = "https://staticcdn.duckduckgo.com/macos-desktop-browser/",
-                urlSession: URLSession = .shared) {
+    /// An explicitly supplied base URL takes precedence over the Debug menu override.
+    public init(baseURL: String? = nil,
+                urlSession: URLSession = .shared,
+                debugSettings: UpdatesDebugSettings = UpdatesDebugSettings()) {
         self.baseURL = baseURL
         self.urlSession = urlSession
+        self.debugSettings = debugSettings
     }
 
     private var releaseMetadataURL: String {
-        return baseURL + "release_metadata.json"
+        #if DEBUG
+        let customBaseURL = baseURL ?? debugSettings.appStoreMetadataBaseURL
+        #else
+        let customBaseURL = baseURL
+        #endif
+        let resolvedURL = customBaseURL ?? "https://staticcdn.duckduckgo.com/macos-desktop-browser/"
+        let separator = resolvedURL.hasSuffix("/") ? "" : "/"
+        return resolvedURL + separator + "release_metadata.json"
     }
 
     public func getAppStoreReleases() async throws -> AppStoreReleases {
@@ -135,8 +146,17 @@ public final class LatestReleaseChecker {
             throw LatestReleaseError.invalidURL
         }
 
+        var request = URLRequest(url: url)
+        #if DEBUG
+        if baseURL == nil, debugSettings.appStoreMetadataBaseURL != nil {
+            let appVersion = AppVersion()
+            request.setValue(appVersion.versionNumber, forHTTPHeaderField: "X-DDG-Test-App-Version")
+            request.setValue(appVersion.buildNumber, forHTTPHeaderField: "X-DDG-Test-App-Build")
+        }
+        #endif
+
         do {
-            let (data, response) = try await urlSession.data(from: url)
+            let (data, response) = try await urlSession.data(for: request)
 
             // Validate HTTP response
             if let httpResponse = response as? HTTPURLResponse,

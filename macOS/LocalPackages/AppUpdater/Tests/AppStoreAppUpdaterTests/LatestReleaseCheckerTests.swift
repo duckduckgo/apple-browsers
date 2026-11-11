@@ -18,8 +18,10 @@
 
 import AppStoreAppUpdater
 import AppUpdaterShared
+import Common
 import Foundation
 @_spi(Testing) import Networking
+@_spi(Testing) import Persistence
 import XCTest
 
 final class LatestReleaseCheckerTests: XCTestCase {
@@ -551,14 +553,68 @@ final class LatestReleaseCheckerTests: XCTestCase {
         XCTAssertNil(releases.available)
     }
 
-    private func respond(with json: String) {
+    private func respond(with json: String, capturingRequest: ((URLRequest) -> Void)? = nil) {
         MockURLProtocol.requestHandler = { request in
+            capturingRequest?(request)
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
             return (response, json.data(using: .utf8)!)
         }
     }
 
     // MARK: - URL Construction Tests
+
+    func testDebugMetadataOverride_changesAndResetsWithoutRecreatingChecker() async throws {
+        let debugSettings = UpdatesDebugSettings(persistor: UpdatesDebugSettingsUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
+        let checker = LatestReleaseChecker(urlSession: mockURLSession, debugSettings: debugSettings)
+        var requests: [URLRequest] = []
+        respond(with: """
+        {"latest_appstore_version": {"latest_version": "1.156.0", "build_number": 540,
+        "release_date": "2025-09-11T10:30:00Z", "is_critical": false}}
+        """, capturingRequest: { requests.append($0) })
+
+        _ = try await checker.getAppStoreReleases()
+        debugSettings.appStoreMetadataBaseURL = "http://localhost:8765"
+        _ = try await checker.getAppStoreReleases()
+        debugSettings.appStoreMetadataBaseURL = "http://localhost:8766/metadata/"
+        _ = try await checker.getAppStoreReleases()
+        debugSettings.reset()
+        _ = try await checker.getAppStoreReleases()
+
+        XCTAssertEqual(requests.map { $0.url?.absoluteString }, [
+            "https://staticcdn.duckduckgo.com/macos-desktop-browser/release_metadata.json",
+            "http://localhost:8765/release_metadata.json",
+            "http://localhost:8766/metadata/release_metadata.json",
+            "https://staticcdn.duckduckgo.com/macos-desktop-browser/release_metadata.json"
+        ])
+        XCTAssertEqual(requests.count, 4)
+        guard requests.count == 4 else { return }
+        let appVersion = AppVersion()
+        for request in requests[1...2] {
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-DDG-Test-App-Version"), appVersion.versionNumber)
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-DDG-Test-App-Build"), appVersion.buildNumber)
+        }
+        for request in [requests[0], requests[3]] {
+            XCTAssertNil(request.value(forHTTPHeaderField: "X-DDG-Test-App-Version"))
+            XCTAssertNil(request.value(forHTTPHeaderField: "X-DDG-Test-App-Build"))
+        }
+    }
+
+    func testExplicitBaseURL_takesPrecedenceOverDebugMetadataOverride() async throws {
+        let debugSettings = UpdatesDebugSettings(persistor: UpdatesDebugSettingsUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
+        debugSettings.appStoreMetadataBaseURL = "http://localhost:8765/"
+        let checker = LatestReleaseChecker(baseURL: "https://test.example.com", urlSession: mockURLSession, debugSettings: debugSettings)
+        var capturedRequest: URLRequest?
+        respond(with: """
+        {"latest_appstore_version": {"latest_version": "1.156.0", "build_number": 540,
+        "release_date": "2025-09-11T10:30:00Z", "is_critical": false}}
+        """, capturingRequest: { capturedRequest = $0 })
+
+        _ = try await checker.getAppStoreReleases()
+
+        XCTAssertEqual(capturedRequest?.url?.absoluteString, "https://test.example.com/release_metadata.json")
+        XCTAssertNil(capturedRequest?.value(forHTTPHeaderField: "X-DDG-Test-App-Version"))
+        XCTAssertNil(capturedRequest?.value(forHTTPHeaderField: "X-DDG-Test-App-Build"))
+    }
 
     func testGetLatestReleaseAvailable_constructsCorrectURL() async {
         // Given

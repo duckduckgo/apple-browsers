@@ -1893,12 +1893,12 @@ public struct UserText {
 
     // MARK: - Dax greetings
 
-    public static let daxGreetingMonday = NotLocalizedString(
+    public static let daxGreetingMonday = NSLocalizedString(
         "new-tab-page.dax-greeting.monday",
         value: "It’s Monday. Let’s do this.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingFriday = NotLocalizedString(
+    public static let daxGreetingFriday = NSLocalizedString(
         "new-tab-page.dax-greeting.friday",
         value: "Almost the weekend.",
         comment: "Dax greeting on the New Tab page.")
@@ -1913,92 +1913,87 @@ public struct UserText {
         value: "Sunday? I’m still in my PJs.",
         comment: "English-only Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWhereToToday = NotLocalizedString(
+    public static let daxGreetingWhereToToday = NSLocalizedString(
         "new-tab-page.dax-greeting.whereToToday",
         value: "Where to today?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingNewDayNewTabs = NotLocalizedString(
+    public static let daxGreetingNewDayNewTabs = NSLocalizedString(
         "new-tab-page.dax-greeting.newDayNewTabs",
         value: "New day, new tabs.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWhereShouldWeStart = NotLocalizedString(
+    public static let daxGreetingWhereShouldWeStart = NSLocalizedString(
         "new-tab-page.dax-greeting.whereShouldWeStart",
         value: "Where should we start?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingMorning = NotLocalizedString(
+    public static let daxGreetingMorning = NSLocalizedString(
         "new-tab-page.dax-greeting.morning",
         value: "Morning, sunshine.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingStillAwake = NotLocalizedString(
+    public static let daxGreetingStillAwake = NSLocalizedString(
         "new-tab-page.dax-greeting.stillAwake",
-        value: "Still awake? Me too!",
+        value: "I never sleep.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingNightOwl = NotLocalizedString(
+    public static let daxGreetingNightOwl = NSLocalizedString(
         "new-tab-page.dax-greeting.nightOwl",
-        value: "Night owl? Me too.",
+        value: "I’m really a night owl.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingYoureBack = NotLocalizedString(
-        "new-tab-page.dax-greeting.youreBack",
-        value: "Hey, you’re back!",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingGoodbyeAds = NotLocalizedString(
+    public static let daxGreetingGoodbyeAds = NSLocalizedString(
         "new-tab-page.dax-greeting.goodbyeAds",
         value: "Goodbye creepy ads!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingAskMe = NotLocalizedString(
+    public static let daxGreetingAskMe = NSLocalizedString(
         "new-tab-page.dax-greeting.askMe",
-        value: "Ask me. I won’t tell.",
+        value: "Ask me anything.",
         comment: "Dax greeting on the New Tab page. Refers to private AI chat.")
 
-    public static let daxGreetingDuckDuckHello = NotLocalizedString(
+    public static let daxGreetingDuckDuckHello = NSLocalizedString(
         "new-tab-page.dax-greeting.duckDuckHello",
-        value: "Duck Duck Hello!",
+        value: "Duck Duck Hello.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingNiceToSeeYou = NotLocalizedString(
+    public static let daxGreetingNiceToSeeYou = NSLocalizedString(
         "new-tab-page.dax-greeting.niceToSeeYou",
         value: "Nice to see you.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingReadyWhenYouAre = NotLocalizedString(
+    public static let daxGreetingReadyWhenYouAre = NSLocalizedString(
         "new-tab-page.dax-greeting.readyWhenYouAre",
         value: "Ready when you are.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingReadyToSearchPrivately = NotLocalizedString(
+    public static let daxGreetingReadyToSearchPrivately = NSLocalizedString(
         "new-tab-page.dax-greeting.readyToSearchPrivately",
         value: "Ready to search privately?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingHeyThere = NotLocalizedString(
+    public static let daxGreetingHeyThere = NSLocalizedString(
         "new-tab-page.dax-greeting.heyThere",
-        value: "Hey there!",
+        value: "Hey there.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWhatsOnYourMind = NotLocalizedString(
+    public static let daxGreetingWhatsOnYourMind = NSLocalizedString(
         "new-tab-page.dax-greeting.whatsOnYourMind",
         value: "What’s on your mind?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingHowCanIHelp = NotLocalizedString(
+    public static let daxGreetingHowCanIHelp = NSLocalizedString(
         "new-tab-page.dax-greeting.howCanIHelp",
         value: "How can I help you today?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingLetsExplore = NotLocalizedString(
+    public static let daxGreetingLetsExplore = NSLocalizedString(
         "new-tab-page.dax-greeting.letsExplore",
         value: "Let’s explore.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingLetsDoThis = NotLocalizedString(
+    public static let daxGreetingLetsDoThis = NSLocalizedString(
         "new-tab-page.dax-greeting.letsDoThis",
         value: "Let’s do this!",
         comment: "Dax greeting on the New Tab page.")
@@ -2064,6 +2059,7 @@ public struct UserText {
     static let subscriptionCompletingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
     static let subscriptionPlanChangeInProgressTitle = NSLocalizedString("subscription.progress.view.plan.change.in.progress", value: "Plan change in progress…", comment: "Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade)")
     static let subscriptionCompletePlanChangeTitle = NSLocalizedString("subscription.progress.view.complete.plan.change", value: "Completing plan change…", comment: "Progress view title when completing a plan change with the backend")
+    static let subscriptionWithdrawInProgressTitle = NSLocalizedString("subscription.progress.view.withdraw.in.progress", value: "Withdrawal in progress…", comment: "Progress view title while withdrawing from the subscription contract")
 
     // Subscription Settings
     public static var subscriptionTitle = NSLocalizedString("subscription.settings.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
@@ -2206,6 +2202,49 @@ public struct UserText {
     public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
     public static let subscriptionManageSubscription = NotLocalizedString("subscription.manage.subscription", value: "Manage Subscription", comment: "Action title that opens the payment platform's subscription management screen. Used for en_US locale only.")
     public static let subscriptionCancelSubscription = NotLocalizedString("subscription.cancel.subscription", value: "Cancel Subscription", comment: "Action title that starts the subscription cancellation flow. Used for en_US locale only.")
+    public static let subscriptionWithdrawFromContract = NSLocalizedString("subscription.withdraw.from.contract", value: "Withdraw from Contract", comment: "Action title that starts withdrawing from the subscription contract with a full refund")
+    static func subscriptionWithdrawFromContractSubtitle(eligibleUntil: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.from.contract.subtitle",
+                                           value: "You can withdraw and get a full refund until %@",
+                                           comment: "Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw.")
+        return String(format: localized, eligibleUntil)
+    }
+    public static let subscriptionWithdrawConfirmTitle = NSLocalizedString("subscription.withdraw.confirm.title", value: "Withdraw from your subscription?", comment: "Title of the alert confirming withdrawal from the subscription contract")
+    static func subscriptionWithdrawConfirmMessage(tierName: String, refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.message",
+                                           value: "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days.",
+                                           comment: "Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency.")
+        return String(format: localized, tierName, refundAmount)
+    }
+    static func subscriptionWithdrawConfirmMessage(tierName: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.message.no.amount",
+                                           value: "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days.",
+                                           comment: "Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).")
+        return String(format: localized, tierName)
+    }
+    static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
+                                           value: "%@ stop working once you confirm.",
+                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+        return String(format: localized, features)
+    }
+    public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
+    public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
+    public static let subscriptionNotSubscribed = NSLocalizedString("subscription.not.subscribed", value: "Not Subscribed", comment: "Subscription status shown after the user withdrew from the subscription contract")
+    static func subscriptionWithdrawnInfo(withdrawalDate: String) -> String {
+        let localized = NSLocalizedString("subscription.withdrawn.info",
+                                           value: "You withdrew on %@.",
+                                           comment: "Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date.")
+        return String(format: localized, withdrawalDate)
+    }
+    static func subscriptionWithdrawnRefundInfo(refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.withdrawn.refund.info",
+                                           value: "Your refund of %@ is being processed.",
+                                           comment: "Shown below the withdrawal confirmation. Parameter is the refunded amount with currency.")
+        return String(format: localized, refundAmount)
+    }
+    public static let subscriptionWithdrawErrorMessage = NSLocalizedString("subscription.withdraw.error.message", value: "We couldn’t process your withdrawal automatically. Please visit our help page to complete your withdrawal.", comment: "Message of the alert shown when withdrawing from the subscription contract fails")
+    public static let subscriptionWithdrawErrorButton = NSLocalizedString("subscription.withdraw.error.button", value: "Visit Help Page", comment: "Button that opens the help page to complete a failed subscription withdrawal")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")

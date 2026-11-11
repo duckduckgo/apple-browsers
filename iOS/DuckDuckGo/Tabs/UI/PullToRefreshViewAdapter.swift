@@ -95,13 +95,20 @@ final class PullToRefreshViewAdapter: NSObject {
         }
     }
 
+    var backgroundColorOverride: UIColor? {
+        didSet {
+            guard backgroundColorOverride != oldValue else { return }
+            webViewBackgroundDidChange()
+        }
+    }
+
     private var isFloatingRefreshBackgroundActive: Bool {
         isFloatingUIEnabled && pullableViewClipsToBoundsBeforePull != nil
     }
 
     private var pageBackgroundColor: UIColor? {
         if isFloatingUIEnabled {
-            return isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor
+            return backgroundColorOverride ?? (isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor)
         }
         return backgroundColor
     }

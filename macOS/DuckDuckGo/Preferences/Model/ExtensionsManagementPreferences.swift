@@ -123,62 +123,20 @@ extension ExtensionsManagementPreferences {
         let isRemotelyDisabled: Bool
         /// Saved at installation, so they're known while the extension is disabled.
         let permissions: [String]
+        let matchPatterns: [String]
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
 
+        /// The installation alert's lines, one per row.
         var permissionsSummary: String? {
-            let names = permissions
-                .compactMap(WebExtensionManifestPermission.init(rawValue:))
-                .map(\.displayName)
+            let messages = WebExtensionPermissionFormatter.messages(forPermissionNames: permissions, matchPatterns: matchPatterns)
 
-            if names.isEmpty {
+            if messages.isEmpty {
                 return nil
             }
 
-            let summary = ListFormatter.localizedString(byJoining: names)
-            return summary.prefix(1).uppercased() + summary.dropFirst()
-        }
-    }
-}
-
-extension WebExtensionManifestPermission {
-
-    var displayName: String {
-        switch self {
-        case .accessibilityFeaturesModify: UserText.extensionsSettingsPermissionAccessibilityFeaturesModify
-        case .accessibilityFeaturesRead: UserText.extensionsSettingsPermissionAccessibilityFeaturesRead
-        case .bookmarks: UserText.extensionsSettingsPermissionBookmarks
-        case .clipboardRead: UserText.extensionsSettingsPermissionClipboardRead
-        case .clipboardWrite: UserText.extensionsSettingsPermissionClipboardWrite
-        case .contentSettings: UserText.extensionsSettingsPermissionContentSettings
-        case .debugger: UserText.extensionsSettingsPermissionDebugger
-        case .declarativeNetRequest: UserText.extensionsSettingsPermissionDeclarativeNetRequest
-        case .declarativeNetRequestFeedback: UserText.extensionsSettingsPermissionDeclarativeNetRequestFeedback
-        case .desktopCapture: UserText.extensionsSettingsPermissionDesktopCapture
-        case .downloads: UserText.extensionsSettingsPermissionDownloads
-        case .downloadsOpen: UserText.extensionsSettingsPermissionDownloadsOpen
-        case .downloadsUI: UserText.extensionsSettingsPermissionDownloadsUI
-        case .favicon: UserText.extensionsSettingsPermissionFavicon
-        case .geolocation: UserText.extensionsSettingsPermissionGeolocation
-        case .history: UserText.extensionsSettingsPermissionHistory
-        case .identityEmail: UserText.extensionsSettingsPermissionIdentityEmail
-        case .management: UserText.extensionsSettingsPermissionManagement
-        case .nativeMessaging: UserText.extensionsSettingsPermissionNativeMessaging
-        case .notifications: UserText.extensionsSettingsPermissionNotifications
-        case .pageCapture: UserText.extensionsSettingsPermissionPageCapture
-        case .privacy: UserText.extensionsSettingsPermissionPrivacy
-        case .proxy: UserText.extensionsSettingsPermissionProxy
-        case .readingList: UserText.extensionsSettingsPermissionReadingList
-        case .sessions: UserText.extensionsSettingsPermissionSessions
-        case .systemStorage: UserText.extensionsSettingsPermissionSystemStorage
-        case .tabCapture: UserText.extensionsSettingsPermissionTabCapture
-        case .tabGroups: UserText.extensionsSettingsPermissionTabGroups
-        case .tabs: UserText.extensionsSettingsPermissionTabs
-        case .topSites: UserText.extensionsSettingsPermissionTopSites
-        case .ttsEngine: UserText.extensionsSettingsPermissionTtsEngine
-        case .webAuthenticationProxy: UserText.extensionsSettingsPermissionWebAuthenticationProxy
-        case .webNavigation: UserText.extensionsSettingsPermissionWebNavigation
+            return messages.map { "• \($0)" }.joined(separator: "\n")
         }
     }
 }
@@ -244,7 +202,8 @@ private extension ExtensionsManagementPreferences {
             let entry = InstalledExtensionEntry(record: record,
                                                 listing: listing,
                                                 isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
-                                                permissions: manager.extensionPermissions(for: identifier))
+                                                permissions: manager.extensionPermissions(for: identifier),
+                                                matchPatterns: manager.extensionMatchPatterns(for: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

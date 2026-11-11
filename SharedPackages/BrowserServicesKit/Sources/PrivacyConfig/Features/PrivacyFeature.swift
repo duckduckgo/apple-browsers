@@ -779,6 +779,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Gates the cancellation flow shown from "Cancel Subscription" in Subscription Settings.
     case subscriptionCancellationFlow
+
+    /// Gates "Withdraw from Contract" in Subscription Settings, letting international Stripe subscribers withdraw for a full refund.
+    case stripeInternationalSubscriptionWithdrawal
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -922,7 +925,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Controls permission prompts and persistence on macOS.
     case permissions
     /// Controls Chrome Web Store update discovery on macOS.
-    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear

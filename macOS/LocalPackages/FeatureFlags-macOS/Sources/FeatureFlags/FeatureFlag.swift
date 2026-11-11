@@ -92,7 +92,7 @@ public enum FeatureFlag: String, CaseIterable {
     case webExtensionsPermissions
 
     /// Controls Chrome Web Store update discovery when the extension manager is created.
-    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case webExtensionUpdateDiscovery
 
     /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
@@ -827,7 +827,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionUpdateDiscovery:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:

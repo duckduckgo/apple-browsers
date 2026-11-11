@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Tamaño real";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Añade DuckDuckGo al Dock...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Añadir widget a la pantalla de inicio...";
+
+/* iPad menu bar command */
 "menuBack" = "Volver";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Marcadores";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Borrar datos y pestañas";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Eliminar todos los chats...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Duplicar pestaña";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Exportar marcadores...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favoritos";
 
 /* iPad menu bar command */
 "menuFeedback" = "Compartir opiniones";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Avanzar";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Ocultar marcadores";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Ocultar descargas";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Ocultar botón Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Ocultar contraseñas";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Ocultar pestañas";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importar marcadores…";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importar marcadores y contraseñas...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Última pestaña";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Nuevo chat";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Nuevo chat de imágenes";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Nueva pestaña a la derecha";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Nuevo chat de voz";
+
 /* iPad menu bar command */
 "menuNextTab" = "Mostrar pestaña siguiente";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Abrir Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Abrir ubicación...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Imprimir...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Chats recientes";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Seleccionar pestaña %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Establece DuckDuckGo como tu navegador predeterminado...";
 
 /* iPad menu bar command */
 "menuSettings" = "Ajustes de DuckDuckGo...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Mostrar marcadores";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Mostrar descargas";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Mostrar botón de Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Mostrar contraseñas";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "La sincronización y la copia de seguridad no están disponibles temporalmente.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Preguntar si marcar sitios web como Fireproof al iniciar sesión";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Los sitios web dependen de cookies para mantener tu sesión iniciada. Cuando marcas una web como «a prueba de fuego» no se borrarán las cookies y tu sesión permanecerá iniciada, incluso después de utilizar el botón Fuego. Seguiremos bloqueando rastreadores de terceros que se encuentren en sitios web a prueba de fuego.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Sitios web a prueba de fuego";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Todavía no hay sitios web Fireproof";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Marcar esta página como a prueba de fuego hará que la sesión se mantenga iniciada después de usar el botón Fuego.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "De acuerdo";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Eliminar todos los sitios web Fireproof";
 
 /* No comment provided by engineer. */
 "Previews" = "Avances";
@@ -5371,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Suscripción";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "No suscrito";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "No hay ninguna suscripción asociada a esta cuenta de Apple.";
 
@@ -5412,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restaurando suscripción...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Cancelación en curso…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ahora no";
@@ -5518,6 +5587,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Ver todos los planes";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Confirmar cancelación";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "%@ dejarán de funcionar una vez que confirmes.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Tu suscripción a %1$@ finalizará de inmediato y recibirás el reembolso de %2$@ en el método de pago original en un plazo de 14 días.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "¿Cancelar la suscripción?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Visita la página de ayuda";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "No hemos podido procesar tu cancelación automáticamente. Visita nuestra página de ayuda para completar la cancelación.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Desistir del contrato";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Puedes desistir y obtener un reembolso completo hasta %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Mantener suscripción";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Desististe el día %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Se está procesando el reembolso de %@.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alerta de SwiftUI";
 
@@ -5539,11 +5641,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "el otro dispositivo";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Conectar";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup está activado en este dispositivo.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Obtener app";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "¿Sincronizar también los marcadores con la aplicación de escritorio?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No necesitas ninguna cuenta. El cifrado de extremo a extremo significa que nadie más que tú puede ver tus marcadores, ni siquiera nosotros.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Encriptado de extremo a extremo. Nadie puede ver tus marcadores, ni siquiera nosotros.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sincroniza y haz copias de seguridad de tus marcadores";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Descartar promoción de sincronización";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Configurar la sincronización";
@@ -5557,11 +5677,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "No, gracias";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "¿Sincronizar también las contraseñas con la aplicación de escritorio?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "No necesitas ninguna cuenta. El cifrado de extremo a extremo significa que nadie más que tú puede ver tus contraseñas, ni siquiera nosotros.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Encriptado de extremo a extremo. Nadie puede ver tus contraseñas, ni siquiera nosotros.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sincroniza y haz copias de seguridad de tus contraseñas";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Iniciar sincronización";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup de este dispositivo";
@@ -6151,12 +6280,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Preguntar si marcar sitios web como a prueba de fuego al iniciar sesión";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Todavía no hay sitios web a prueba de fuego";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Eliminar todos los sitios web a prueba de fuego";

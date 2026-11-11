@@ -23,6 +23,59 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
+    func testUpdatePreparationPixelsUseOnlyAllowedParameters() throws {
+        for pixelExtension in WebExtensionPixelExtension.allCases {
+            let cases: [(WebExtensionPixelEvent, String, [String: String])] =
+                WebExtensionUpdateDownloadFailure.allCases.map { outcome in
+                    (.updateDownloadFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_download_failed_macos",
+                     ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+                } + WebExtensionUpdateVerificationFailure.allCases.map { outcome in
+                    (.updateVerificationFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_verification_failed_macos",
+                     ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+                } + [(.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos", ["extension": pixelExtension.parameterValue])]
+
+            for (event, name, parameters) in cases {
+                let pixels = PixelKitMock()
+                MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+                XCTAssertEqual(pixels.actualFireCalls.count, 1)
+                let call = try XCTUnwrap(pixels.actualFireCalls.first)
+                XCTAssertEqual(call.pixel.name, name)
+                XCTAssertEqual(call.pixel.parameters, parameters)
+                XCTAssertEqual(call.frequency, .dailyAndCount)
+                XCTAssertEqual(call.pixel.namePrefix, .none)
+                XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+                XCTAssertNil(call.pixel.error)
+                XCTAssertNil(call.additionalParameters)
+                XCTAssertTrue(call.includeAppVersionParameter)
+            }
+        }
+    }
+
+    func testUpdatePreparationWireNamesMatchDefinitions() throws {
+        let pixelExtension: WebExtensionPixelExtension = .catalog(.bitwarden)
+        let cases: [(WebExtensionPixelEvent, String)] = [
+            (.updateDownloadFailed(extension: pixelExtension, outcome: .networkFailure), "web_extension_update_download_failed_macos"),
+            (.updateVerificationFailed(extension: pixelExtension, outcome: .invalidPackage), "web_extension_update_verification_failed_macos"),
+            (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos")
+        ]
+        for (event, expectedName) in cases {
+            let suite = "\(#function)-\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            var names: [String] = []
+            let pixelKit = PixelKit(dryRun: false, appVersion: "1.0.0", source: PixelKit.Source.macDMG.rawValue,
+                                    defaultHeaders: [:], pixelCalendar: nil, defaults: defaults) { name, _, _, _, _, completion in
+                names.append(name)
+                completion(true, nil)
+            }
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+            let call = try XCTUnwrap(pixels.actualFireCalls.first)
+            pixelKit.fire(call.pixel, frequency: call.frequency)
+            XCTAssertEqual(names, [expectedName + "_daily", expectedName + "_count"])
+        }
+    }
+
     func testBackgroundLoadRestartOutcomesUseCanonicalPixelKitContract() throws {
         for outcome in CPMBackgroundLoadRestartOutcome.allCases {
             let pixels = PixelKitMock()

@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Faktisk storlek";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Lägg till DuckDuckGo i Dock ...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Lägg till widget på startsidan ...";
+
+/* iPad menu bar command */
 "menuBack" = "Tillbaka";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Bokmärken";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Rensa flikar och data";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Radera alla chattar ...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Duplicera flik";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Exportera bokmärken...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favoriter";
 
 /* iPad menu bar command */
 "menuFeedback" = "Berätta vad du tycker";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Framåt";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Dölj bokmärken";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Dölj hämtningar";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Dölj Duck.ai-knappen";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Dölj lösenord";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Dölj flikar";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importera bokmärken ...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importera bokmärken och lösenord ...";
+
+/* iPad menu bar command */
 "menuLastTab" = "Senaste fliken";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Ny chatt";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Ny bildchatt";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Ny flik till höger";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Ny röstchatt";
+
 /* iPad menu bar command */
 "menuNextTab" = "Visa nästa flik";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Öppna Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Öppna plats...";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Skriv ut ...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Senaste chattar";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Välj flik %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Ställ in DuckDuckGo som standardwebbläsare ...";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo-inställningar...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Visa bokmärken";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Visa nerladdningar";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Visa Duck.ai-knappen";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Visa lösenord";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup är inte tillgängligt just nu.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Fråga om Fireproof ska användas för webbplatser vid inloggning";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Webbplatser använder kakor för att hålla dig inloggad. Om du brandsäkrar en webbplats kommer kakor inte att raderas och du förblir inloggad även efter att du har använt brännarknappen. Vi blockerar fortfarande tredje parters spårare som finns på brandsäkrade webbplatser.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Brandsäkra webbplatser";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Inga Fireproof-webbplatser ännu";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Om du brandsäkrar denna webbplats förblir du inloggad även efter att du har använt brännarknappen.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Ta bort alla Fireproof-webbplatser";
 
 /* No comment provided by engineer. */
 "Previews" = "Förhandsvisningar";
@@ -5371,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Abonnemang";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Inget aktivt abonnemang";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Det finns inget abonnemang som är kopplat till det här Apple-kontot.";
 
@@ -5412,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Återställer abonnemang ...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Återkallande pågår …";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Inte nu";
@@ -5518,6 +5587,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Visa alla abonnemang";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Bekräfta att du vill ångra abonnemanget";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "%@ slutar fungera så snart du bekräftar.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Din %1$@-prenumeration avslutas direkt och %2$@ återbetalas till din ursprungliga betalningsmetod inom 14 dagar.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Vill du ångra ditt abonnemang?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Gå till hjälpsidan";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Det gick inte att behandla din begäran om att ångra abonnemanget automatiskt. Besök vår hjälpsida för att slutföra din begäran om att ångra abonnemanget.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Ångra abonnemangsavtalet";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Du kan ångra dig och få full återbetalning fram till %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Behåll abonnemang";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Du ångrade abonnemanget den %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Din återbetalning på %@ behandlas.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-varning";
 
@@ -5539,11 +5641,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "den andra enheten";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Anslut";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Sync & Backup är aktiverat på den här enheten.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Hämta app";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Vill du även synkronisera bokmärken med din datorapp?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Inget konto behövs. End-to-end-kryptering innebär att ingen annan än du kan se dina bokmärken, inte ens vi.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "End-to-end-krypterat. Ingen kan se dina bokmärken, inte ens vi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Synka och säkerhetskopiera dina bokmärken";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Avvisa synkroniseringskampanj";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Ställ in synk";
@@ -5557,11 +5677,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nej tack";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Vill du även synkronisera lösenord med din datorapp?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Inget konto behövs. End-to-end-kryptering innebär att ingen annan än du kan se dina lösenord, inte ens vi.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "End-to-end-krypterat. Ingen kan se dina lösenord, inte ens vi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synka och säkerhetskopiera dina lösenord";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Starta synkronisering";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup på den här enheten";
@@ -6151,12 +6280,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Fråga om webbplatser ska brandsäkras vid inloggning";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Inga brandsäkra webbplatser ännu";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Ta bort alla brandsäkra webbplatser";

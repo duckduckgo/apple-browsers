@@ -3335,13 +3335,31 @@
 "menuActualSize" = "Dejanska velikost";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Dodaj DuckDuckGo v Dock …";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Dodaj pripomoček na domači zaslon …";
+
+/* iPad menu bar command */
 "menuBack" = "Nazaj";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Zaznamki";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Počisti zavihke in podatke";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Izbriši vse klepete …";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Podvoji zavihek";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Izvozi zaznamke …";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Priljubljeni";
 
 /* iPad menu bar command */
 "menuFeedback" = "Deli povratne informacije";
@@ -3350,7 +3368,13 @@
 "menuForward" = "Naprej";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Skrij zaznamke";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Skrij prenose";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Skrij gumb Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Skrij geslo";
@@ -3359,13 +3383,31 @@
 "menuHideTabs" = "Skrij zavihke";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Uvozi zaznamke …";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Uvozi zaznamke in gesla …";
+
+/* iPad menu bar command */
 "menuLastTab" = "Zadnji zavihek";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Nov klepet";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Nov slikovni klepet";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Nov zavihek na desni";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Nov glasovni klepet";
+
 /* iPad menu bar command */
 "menuNextTab" = "Prikaži naslednji zavihek";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Odpri Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Odpri lokacijo …";
@@ -3376,14 +3418,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Natisni …";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Nedavni klepeti";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Izberi zavihek %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Nastavi DuckDuckGo kot privzeti brskalnik …";
 
 /* iPad menu bar command */
 "menuSettings" = "Nastavitve DuckDuckGo …";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Prikaži zaznamke";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Prikaži prenose";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Prikaži gumb Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Prikaži gesla";
@@ -4306,11 +4360,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Vprašaj za požarno zaščito spletnih mest ob vpisu";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Spletne strani se zanašajo na piškotke, da boš vedno prijavljen. Ko spletno mesto požarno zaščitiš, piškotki ne bodo izbrisani in ostal boš prijavljen tudi po uporabi gumba Fire. Še vedno blokiramo zunanje sledilce, ki jih najdemo na požarno izoliranih spletnih mestih.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Spletne strani s požarno zaščito";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Ni spletnih mest s požarno zaščito";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "S požarno zaščito tega spletnega mesta se boste prijavili po uporabi gumba Fire.";
@@ -4341,6 +4401,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "V REDU";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Odstrani vse spletne strani s požarno zaščito";
 
 /* No comment provided by engineer. */
 "Previews" = "Predogledi";
@@ -5371,6 +5434,9 @@
 /* Header for the subscription section */
 "subscription.manage.title" = "Naročnina";
 
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Brez naročnine";
+
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "S tem računom Apple ni povezana nobena naročnina.";
 
@@ -5412,6 +5478,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje naročnine ...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Odstop poteka …";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ne zdaj";
@@ -5518,6 +5587,39 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Oglejte si vse naročnine";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Potrjujem odstop";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+"subscription.withdraw.confirm.features.message" = "Storitve %@ prenehajo delovati, ko potrdite.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Vaša naročnina %1$@ bo takoj prenehala, znesek v višini %2$@ pa vam bo v 14 dneh povrnjen na prvotni način plačila.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Želite odstopiti od naročnine?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Obišči stran s pomočjo";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Odstopa nismo mogli samodejno obdelati. Obiščite našo stran za pomoč, da dokončate odstop.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Odstop od pogodbe";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Lahko odstopite in prejmete celotno povračilo do dne %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Obdrži naročnino";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Odstop je bil izveden dne %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Povračilo zneska v višini %@ je v obdelavi.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Opozorilo SwiftUI";
 
@@ -5539,11 +5641,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "druga naprava";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Poveži";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Funkcija Sync & Backup je omogočena v tej napravi.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Pridobi aplikacijo";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Želite sinhronizirati zaznamke tudi z namizno aplikacijo?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Račun ni potreben. Celovito šifriranje pomeni, da nihče (niti mi) razen vas ne more videti vaših zaznamkov.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Celovito šifriranje. Nihče ne more videti vaših zaznamkov, niti mi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sinhronizirajte in varnostno kopirajte svoje zaznamke";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Zavrzi promocijo sinhronizacije";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavitev sinhronizacije";
@@ -5557,11 +5677,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, hvala";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Želite sinhronizirati gesla tudi z namizno aplikacijo?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Račun ni potreben. Celovito šifriranje pomeni, da nihče (niti mi) razen vas ne more videti vaših gesel.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Celovito šifriranje. Nihče ne more videti vaših gesel, niti mi.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizirajte in varnostno kopirajte svoja gesla";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Začni sinhronizacijo";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sinhronizacija in varnostno kopiranje te naprave";
@@ -6151,12 +6280,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
-
-/* Fireproofing setting toggle label */
-"preserveLogins.askOnSignIn" = "Vprašaj za požarno zaščito spletnih mest ob vpisu";
-
-/* Empty Fireproof sites list */
-"preserveLogins.emptyState" = "Ni spletnih mest s požarno zaščito";
-
-/* Button to remove all Fireproof sites */
-"preserveLogins.removeAllSites" = "Odstrani vse spletne strani s požarno zaščito";

@@ -430,6 +430,85 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         XCTAssertEqual(result, HashPrefixSet(revision: 2, items: ["aa", "bb"]))
     }
 
+    // MARK: - Load Time Event
+
+    #if os(iOS)
+    func makeDataManager(eventMapping: MockEventMapping) -> MaliciousSiteProtection.DataManager {
+        // Assigned here because the mock only encodes embedded data when these change after its init.
+        embeddedDataProvider.filterSet = [Filter(hash: "embedded", regex: "embedded")]
+        embeddedDataProvider.hashPrefixes = ["embedded"]
+        return MaliciousSiteProtection.DataManager(
+            fileStore: fileStore,
+            embeddedDataProvider: embeddedDataProvider,
+            fileNameProvider: { dataType in
+                switch dataType {
+                case .filterSet: Constants.filterSetFileName
+                case .hashPrefixSet: Constants.hashPrefixesFileName
+                }
+            },
+            eventMapping: eventMapping
+        )
+    }
+
+    func testWhenStoredDataSetsAreLoaded_ThenFireLoadTimeForEach() async throws {
+        // GIVEN
+        let eventMapping = MockEventMapping()
+        try fileStore.write(data: JSONEncoder().encode(FilterDictionary(revision: 70, items: [Filter(hash: "h", regex: "r")])), to: Constants.filterSetFileName)
+        try fileStore.write(data: JSONEncoder().encode(HashPrefixSet(revision: 70, items: ["aa"])), to: Constants.hashPrefixesFileName)
+        dataManager = makeDataManager(eventMapping: eventMapping)
+
+        // WHEN
+        _ = await dataManager.dataSet(for: .filterSet(threatKind: .phishing))
+        _ = await dataManager.dataSet(for: .hashPrefixes(threatKind: .phishing))
+
+        // THEN
+        XCTAssertEqual(eventMapping.dataSetLoadTimeEvents.map(\.category), [.phishing, .phishing])
+        XCTAssertEqual(eventMapping.dataSetLoadTimeEvents.map(\.type), [.filterSet, .hashPrefixSet])
+        for event in eventMapping.dataSetLoadTimeEvents {
+            XCTAssertTrue(Event.DurationBucketAggregation.allCases.map(\.rawValue).contains(event.bucket), "Unexpected bucket \(event.bucket)")
+        }
+    }
+
+    func testWhenDataSetIsCached_ThenDoNotFireLoadTimeAgain() async throws {
+        // GIVEN
+        let eventMapping = MockEventMapping()
+        try fileStore.write(data: JSONEncoder().encode(HashPrefixSet(revision: 70, items: ["aa"])), to: Constants.hashPrefixesFileName)
+        dataManager = makeDataManager(eventMapping: eventMapping)
+        _ = await dataManager.dataSet(for: .hashPrefixes(threatKind: .malware))
+
+        // WHEN
+        _ = await dataManager.dataSet(for: .hashPrefixes(threatKind: .malware))
+
+        // THEN
+        XCTAssertEqual(eventMapping.dataSetLoadTimeEvents.count, 1)
+    }
+
+    func testWhenNoStoredDataSet_ThenDoNotFireLoadTime() async {
+        // GIVEN
+        let eventMapping = MockEventMapping()
+        dataManager = makeDataManager(eventMapping: eventMapping)
+
+        // WHEN
+        _ = await dataManager.dataSet(for: .filterSet(threatKind: .phishing))
+
+        // THEN
+        XCTAssertTrue(eventMapping.dataSetLoadTimeEvents.isEmpty)
+    }
+
+    func testWhenStoredDataSetCannotBeDecoded_ThenDoNotFireLoadTime() async throws {
+        // GIVEN
+        let eventMapping = MockEventMapping()
+        try fileStore.write(data: "fake".utf8data, to: Constants.filterSetFileName)
+        dataManager = makeDataManager(eventMapping: eventMapping)
+
+        // WHEN
+        _ = await dataManager.dataSet(for: .filterSet(threatKind: .phishing))
+
+        // THEN
+        XCTAssertTrue(eventMapping.dataSetLoadTimeEvents.isEmpty)
+    }
+    #endif
+
 }
 
 class MockMaliciousSiteProtectionFileStore: MaliciousSiteProtection.FileStoring {

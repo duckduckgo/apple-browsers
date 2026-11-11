@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import os
 
@@ -33,13 +34,15 @@ public actor DataManager: DataManaging {
 
     public typealias FileNameProvider = (DataManager.StoredDataType) -> String
     private nonisolated let fileNameProvider: FileNameProvider
+    private let eventMapping: EventMapping<Event>?
 
     private var store: [StoredDataType: Any] = [:]
 
-    public init(fileStore: FileStoring, embeddedDataProvider: EmbeddedDataProviding?, fileNameProvider: @escaping FileNameProvider) {
+    public init(fileStore: FileStoring, embeddedDataProvider: EmbeddedDataProviding?, fileNameProvider: @escaping FileNameProvider, eventMapping: EventMapping<Event>? = nil) {
         self.embeddedDataProvider = embeddedDataProvider
         self.fileStore = fileStore
         self.fileNameProvider = fileNameProvider
+        self.eventMapping = eventMapping
     }
 
     public func preloadData(for threatKinds: [ThreatKind]) {
@@ -59,8 +62,10 @@ public actor DataManager: DataManaging {
         // read stored dataSet if it‘s newer than the embedded one
         let dataSet: DataKey.DataSet
 
+        let loadStartTime = CFAbsoluteTimeGetCurrent()
         if let storedDataSet = readStoredDataSet(for: key) {
             dataSet = storedDataSet
+            fireLoadTimeEvent(for: key, duration: CFAbsoluteTimeGetCurrent() - loadStartTime)
         } else if let embeddedDataProvider {
             // no stored dataSet or the embedded one is newer
             let embeddedRevision = embeddedDataProvider.revision(for: dataType)
@@ -97,6 +102,17 @@ public actor DataManager: DataManaging {
         }
 
         return storedDataSet
+    }
+
+    /// Fires how long reading and decoding a stored dataset file took. Only on iOS, where the event exists.
+    private func fireLoadTimeEvent<DataKey: MaliciousSiteDataKey>(for key: DataKey, duration: TimeInterval) {
+        #if os(iOS)
+        eventMapping?.fire(.dataSetLoadTime(
+            category: key.threatKind,
+            type: key.dataType.kind,
+            bucket: Event.DurationBucketAggregation(seconds: duration)
+        ))
+        #endif
     }
 
     @discardableResult

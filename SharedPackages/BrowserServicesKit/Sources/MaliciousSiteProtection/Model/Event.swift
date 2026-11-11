@@ -49,6 +49,8 @@ public enum Event: PixelKit.Event {
     case dataSetAggregateUpdateTime(type: DataManager.StoredDataType.Kind, bucket: DurationBucketAggregation)
     /// The total size of the dataset files written in an update round of `type`.
     case dataSetAggregateSize(type: DataManager.StoredDataType.Kind, bucket: DatasetSizeBucketAggregation)
+    /// How long reading and decoding a stored dataset file took.
+    case dataSetLoadTime(category: ThreatKind, type: DataManager.StoredDataType.Kind, bucket: DurationBucketAggregation)
     #endif
 
     public var name: String {
@@ -78,6 +80,8 @@ public enum Event: PixelKit.Event {
             return "malicious-site-protection_update-time_aggregate_\(type.pixelSuffix)_\(bucket.rawValue)"
         case .dataSetAggregateSize(let type, let bucket):
             return "malicious-site-protection_dataset-size_aggregate_\(type.pixelSuffix)_\(bucket.rawValue)"
+        case .dataSetLoadTime(let category, let type, let bucket):
+            return "malicious-site-protection_load-time_\(category.rawValue)_\(type.pixelSuffix)_\(bucket.rawValue)"
         #endif
         }
     }
@@ -117,6 +121,7 @@ public enum Event: PixelKit.Event {
         #if os(iOS)
         case .dataSetUpdateTime,
              .dataSetSize,
+             .dataSetLoadTime,
              .dataSetAggregateUpdateTime,
              .dataSetAggregateSize:
             // Every value is in the name.
@@ -139,6 +144,7 @@ public enum Event: PixelKit.Event {
             return [.pixelSource]
         case .dataSetUpdateTime,
              .dataSetSize,
+             .dataSetLoadTime,
              .dataSetAggregateUpdateTime,
              .dataSetAggregateSize:
             return nil

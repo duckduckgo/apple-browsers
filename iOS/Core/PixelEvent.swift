@@ -4182,7 +4182,7 @@ public extension Pixel.Event {
             case .matchesApiFailure:
                 // Only logged.
                 return nil
-            case .dataSetUpdateTime, .dataSetSize, .dataSetAggregateUpdateTime, .dataSetAggregateSize:
+            case .dataSetUpdateTime, .dataSetSize, .dataSetLoadTime, .dataSetAggregateUpdateTime, .dataSetAggregateSize:
                 // Fired as `MaliciousSiteProtectionDebugPixel`.
                 return nil
             case .failedToDownloadInitialDataSets(category: let category, type: let type):

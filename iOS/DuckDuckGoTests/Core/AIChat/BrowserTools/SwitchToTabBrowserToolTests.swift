@@ -82,6 +82,23 @@ final class SwitchToTabBrowserToolTests: XCTestCase {
         XCTAssertEqual(selections, 0)
     }
 
+    func testDuckAIURLsAreNotSelectable() async {
+        for address in ["https://duck.ai/", "https://duck.ai/chat", "https://duckduckgo.com/?q=hello&ia=chat"] {
+            let owner = tab("owner")
+            let target = Tab(uid: "chat", link: Link(title: "Chat", url: URL(string: address)!), fireTab: false)
+            var selections = 0
+            let source = MultiTabAttachmentSource(currentTabID: owner.uid, mode: .normal, tabsProvider: { [owner, target] })
+            let scope = BrowserToolScope(owner: owner, source: source, selectedTabID: { owner.uid },
+                                         selectTab: { _ in selections += 1; return true })
+            let tool = SwitchToTabBrowserTool(scopeProvider: { _ in scope })
+
+            let result = await tool.execute(arguments: ["tabId": "chat"], context: context(scope))
+
+            XCTAssertEqual(result, .failure(.notFound))
+            XCTAssertEqual(selections, 0)
+        }
+    }
+
     func testInvalidContextUnavailableProviderAndInvalidOwnerNeverSelect() async {
         let owner = tab("owner")
         let target = tab("target")

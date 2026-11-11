@@ -49,7 +49,8 @@ final class SwitchToTabBrowserTool: BrowserTool {
         }
 
         guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }
-        guard let tab = scope.source.tabsProvider().first(where: { $0.mode == .normal && $0.uid == targetTabID }) else {
+        guard let tab = scope.source.tabsProvider().first(where: { $0.mode == .normal && $0.uid == targetTabID }),
+              tab.link?.url.isDuckAIURL != true else {
             return .failure(.notFound)
         }
         guard scope.contains(tab), scope.selectTab(tab) else { return .failure(.unavailable) }

@@ -1104,8 +1104,18 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor(unsafe)
     @discardableResult
     private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource, request originalRequest: URLRequest? = nil) -> ExpectedNavigation? {
-        guard let url = content.urlForWebView,
-              shouldReload(url, source: reloadIfNeededSource) else { return nil }
+        guard let url = content.urlForWebView else { return nil }
+
+        // Pages of loaded extensions show in `webExtensionPageWebView`, so `webView` drops what it was loading.
+        // Others load here to show the error page.
+        guard !isLoadedWebExtensionPage(url) else {
+            webView.stopLoading()
+            return nil
+        }
+
+        guard shouldReload(url, source: reloadIfNeededSource) else {
+            return nil
+        }
 
         // An explicit request must keep its method and body instead of reloading or restoring an older navigation.
         if originalRequest == nil {
@@ -1142,11 +1152,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @MainActor
     private func shouldReload(_ url: URL, source: ReloadIfNeededSource) -> Bool {
-        // Pages of loaded extensions show in `webExtensionPageWebView`; others load here to show the error page.
-        guard !isLoadedWebExtensionPage(url) else {
-            return false
-        }
-
         /// Use unified logic if enabled to decide if URL is valid
         guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor))
                 // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)
@@ -1199,6 +1204,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         guard #available(macOS 15.4, *), url.isWebExtensionUrl else {
             return false
         }
+
         return webExtensionManagerProvider()?.extensionContext(for: url)?.webViewConfiguration != nil
     }
 

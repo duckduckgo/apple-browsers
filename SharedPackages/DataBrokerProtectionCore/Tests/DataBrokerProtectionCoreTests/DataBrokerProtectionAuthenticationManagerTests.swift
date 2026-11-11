@@ -33,8 +33,9 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
         subscriptionManager = nil
     }
 
-    func testUserNotAuthenticatedWhenSubscriptionManagerReturnsFalse() async {
-        subscriptionManager.accessTokenValue = nil
+    func testWhenSubscriptionIsSignedOutWithATokenThenUserIsNotAuthenticated() async {
+        subscriptionManager.accessTokenValue = "some"
+        subscriptionManager.isUserAuthenticatedValue = false
 
         authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
         let isAuthenticated = await authenticationManager.isUserAuthenticated
@@ -51,8 +52,9 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
         XCTAssertNil(authHeader)
     }
 
-    func testUserAuthenticatedWhenSubscriptionManagerReturnsTrue() async {
-        subscriptionManager.accessTokenValue = "some"
+    func testWhenSubscriptionIsSignedInWithoutATokenThenUserIsAuthenticated() async {
+        subscriptionManager.accessTokenValue = nil
+        subscriptionManager.isUserAuthenticatedValue = true
 
         authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
         let isAuthenticated = await authenticationManager.isUserAuthenticated
@@ -96,8 +98,13 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
 final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSubscriptionManaging {
 
     var isUserEligibleForFreeTrialValue = false
+    var isUserAuthenticatedValue = false
     var accessTokenValue: String?
     var entitlementStatusValue: DataBrokerProtectionEntitlementStatus = .error
+
+    var isUserAuthenticated: Bool {
+        isUserAuthenticatedValue
+    }
 
     func accessToken() async -> String? {
         accessTokenValue

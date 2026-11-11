@@ -47,6 +47,30 @@ final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
         try super.tearDownWithError()
     }
 
+    private static let environmentTokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
+
+    func testWhenSubscriptionIsSignedInWithoutATokenThenUserIsAuthenticated() {
+        mockSubscriptionManager.isUserAuthenticatedValue = true
+        mockSubscriptionManager.resultTokenContainer = nil
+
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
+    }
+
+    func testWhenSubscriptionIsSignedOutThenUserIsNotAuthenticated() {
+        mockSubscriptionManager.isUserAuthenticatedValue = false
+
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
+    }
+
+    func testWhenRunningIntegrationTestsWithEnvironmentTokenThenUserIsAuthenticated() {
+        mockSubscriptionManager.isUserAuthenticatedValue = false
+        mockRunTypeProvider.runType = .integrationTests
+        setenv(Self.environmentTokenKey, "token", 1)
+        defer { unsetenv(Self.environmentTokenKey) }
+
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
+    }
+
     func testWhenSubscriptionBridgeReturnsTrue_isUserEligibleForFreeTrial_ReturnsTrue() {
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
         XCTAssertTrue(subscriptionManager.isUserEligibleForFreeTrial())

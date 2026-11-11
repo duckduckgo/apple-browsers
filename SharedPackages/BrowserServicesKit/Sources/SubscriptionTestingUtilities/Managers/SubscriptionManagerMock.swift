@@ -121,8 +121,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         return try withdrawSubscriptionResult.get()
     }
 
+    /// When set, the value of `isUserAuthenticated`. Otherwise the user counts as signed in while `resultTokenContainer` is set.
+    public var isUserAuthenticatedValue: Bool?
     public var isUserAuthenticated: Bool {
-        resultTokenContainer != nil
+        isUserAuthenticatedValue ?? (resultTokenContainer != nil)
     }
 
     public var localTokenStateResult: LocalSubscriptionTokenState?

@@ -608,8 +608,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     /// view, which extensions read as `sender.tab`.
     var webExtensionPageWebView: WebView?
 
-    private var isObservingWebViewURL = true
-
     var audioState: WebView.AudioState {
         webView.audioState
     }
@@ -640,7 +638,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             }
             if content != oldValue {
                 webExtensionPageWebView = nil
-                isObservingWebViewURL = true
             }
             Task { @MainActor in
                 extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)
@@ -710,10 +707,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     private func handleUrlDidChange() {
-        guard isObservingWebViewURL else {
-            return
-        }
-
         if let url = webView.url {
             let content = TabContent.contentFromURL(url, source: .webViewUpdated)
 
@@ -934,7 +927,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         userInteractionDialog = nil
-        let navigation = navigateHistory(to: backItem, distance: -1)
+        let navigation = webView.navigator()?.go(to: backItem, withExpectedNavigationType: .backForward(distance: -1))
         // update TabContent source to .historyEntry on navigation
         navigation?.appendResponder(willStart: { [weak self] navigation in
             guard let self,
@@ -951,7 +944,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         guard canGoForward, let forwardItem = webView.backForwardList.forwardItem else { return nil }
 
         userInteractionDialog = nil
-        let navigation = navigateHistory(to: forwardItem, distance: 1)
+        let navigation = webView.navigator()?.go(to: forwardItem, withExpectedNavigationType: .backForward(distance: 1))
         // update TabContent source to .historyEntry on navigation
         navigation?.appendResponder(willStart: { [weak self] navigation in
             guard let self,
@@ -1006,7 +999,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return nil
         }
 
-        let navigation = navigateHistory(to: backForwardNavigation.item, distance: backForwardNavigation.distance)
+        let navigation = webView.navigator()?.go(to: backForwardNavigation.item,
+                                                 withExpectedNavigationType: .backForward(distance: backForwardNavigation.distance))
         // update TabContent source to .historyEntry on navigation
         navigation?.appendResponder(willStart: { [weak self] navigation in
             guard let self,
@@ -1110,18 +1104,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor(unsafe)
     @discardableResult
     private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource, request originalRequest: URLRequest? = nil) -> ExpectedNavigation? {
-        guard let url = content.urlForWebView else { return nil }
-
-        // Pages of loaded extensions show in `webExtensionPageWebView`, so `webView` drops what it was loading.
-        // Others load here to show the error page.
-        guard !isLoadedWebExtensionPage(url) else {
-            stopObservingWebView()
-            return nil
-        }
-
-        guard shouldReload(url, source: reloadIfNeededSource) else {
-            return nil
-        }
+        guard let url = content.urlForWebView,
+              shouldReload(url, source: reloadIfNeededSource) else { return nil }
 
         // An explicit request must keep its method and body instead of reloading or restoring an older navigation.
         if originalRequest == nil {
@@ -1139,6 +1123,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         invalidateInteractionStateData()
 
         let source = content.source
+        // Pages of loaded extensions show in `webExtensionPageWebView`; `webView` loads an empty stand-in to keep the page in its history.
+        // Others load here to show the error page.
+        if isLoadedWebExtensionPage(url) {
+            return webView.navigator(distributedNavigationDelegate: navigationDelegate)
+                .loadSimulatedRequest(URLRequest(url: url), responseHTML: "", withExpectedNavigationType: source.navigationType)
+        }
         if url.isFileURL {
             // WebKit won‘t load local page‘s external resouces even with `allowingReadAccessTo` provided
             // this could be fixed using a custom scheme handler loading local resources in future.
@@ -1212,20 +1202,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         return webExtensionManagerProvider()?.extensionContext(for: url)?.webViewConfiguration != nil
-    }
-
-    /// A loaded extension page takes over from `webView`: stops its load and ignores what its page still reports.
-    @MainActor
-    private func stopObservingWebView() {
-        isObservingWebViewURL = false
-        webView.stopLoading()
-    }
-
-    /// History navigations are the tab's own, so they may replace an extension page covering `webView`.
-    @MainActor
-    private func navigateHistory(to item: WKBackForwardListItem, distance: Int) -> ExpectedNavigation? {
-        isObservingWebViewURL = true
-        return webView.navigator()?.go(to: item, withExpectedNavigationType: .backForward(distance: distance))
     }
 
     @MainActor
@@ -1638,6 +1614,12 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
                 // navigation failure with MaliciousSiteError is achieved by redirecting to a special token-protected
                 // duck://error?.. URL performed in SpecialErrorPageTabExtension.swift
                 || error as NSError is MaliciousSiteError else { return }
+
+        // `webView` can't load a loaded extension's page for real (on reload or uncached history): restore its stand-in.
+        guard !isLoadedWebExtensionPage(url) else {
+            webView.loadAlternateHTML("", baseURL: url, forUnreachableURL: url)
+            return
+        }
 
         self.error = error
 

@@ -325,7 +325,7 @@ final class TabTests: XCTestCase {
 
     @available(macOS 15.4, *)
     @MainActor
-    func testWhenContentIsExtensionPageThenTabWebViewDoesNotLoadIt() async throws {
+    func testWhenContentIsExtensionPageThenTabWebViewLoadsStandInWithoutError() async throws {
         let controller = WKWebExtensionController(configuration: .nonPersistent())
         let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Tab Load Test", pages: [
             "app.html": "<html><body>App</body></html>"
@@ -338,10 +338,12 @@ final class TabTests: XCTestCase {
                   webViewConfiguration: try XCTUnwrap(context.webViewConfiguration),
                   webExtensionManagerProvider: { manager })
 
-        tab.setContent(.webExtensionUrl(URL(string: "webkit-extension://example/app.html")!))
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
 
-        XCTAssertNil(tab.webView.url)
-        XCTAssertFalse(tab.webView.isLoading)
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
+
+        XCTAssertEqual(tab.webView.url, extensionURL)
+        XCTAssertNil(tab.error)
     }
 
     @available(macOS 15.4, *)
@@ -370,23 +372,40 @@ final class TabTests: XCTestCase {
         tab = try await makeTabWithLoadedWebExtension()
 
         tab.setContent(.url(urls.url1, source: .link))
-        tab.setContent(.webExtensionUrl(extensionURL))
-        await waitForQueuedWebViewURLUpdate()
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
 
         XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
     }
 
     @available(macOS 15.4, *)
     @MainActor
-    func testWhenGoingBackFromExtensionPageThenContentFollowsTabWebView() async throws {
+    func testWhenGoingBackAndForwardAroundExtensionPageThenContentFollowsHistory() async throws {
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
         tab = try await makeTabWithLoadedWebExtension()
         try await tab.setContent(.url(urls.url, source: .link))?.result.get()
         try await tab.setContent(.url(urls.url1, source: .link))?.result.get()
-        tab.setContent(.webExtensionUrl(URL(string: "webkit-extension://example/app.html")!))
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
 
         try await tab.goBack()?.result.get()
+        XCTAssertEqual(tab.content, .url(urls.url1, source: .historyEntry))
 
-        XCTAssertEqual(tab.content, .url(urls.url, source: .historyEntry))
+        try await tab.goForward()?.result.get()
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+        XCTAssertNil(tab.error)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionPageIsReloadedThenTabShowsNoError() async throws {
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
+        tab = try await makeTabWithLoadedWebExtension()
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
+
+        _ = await tab.reload()?.result
+        await waitForNavigationToEnd()
+
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+        XCTAssertNil(tab.error)
     }
 
     /// A tab whose web view serves websites, with `webkit-extension://example/` pages served by a loaded extension.
@@ -406,12 +425,13 @@ final class TabTests: XCTestCase {
                    webExtensionManagerProvider: { manager })
     }
 
-    /// The web view reports URL changes through the main queue, so one may still be queued after a content change.
+    /// The stand-in that replaces a failed load finishes in a navigation of its own.
     @MainActor
-    private func waitForQueuedWebViewURLUpdate() async {
-        let eQueuedUpdateDelivered = expectation(description: "queued URL update delivered")
-        DispatchQueue.main.async { eQueuedUpdateDelivered.fulfill() }
-        await fulfillment(of: [eQueuedUpdateDelivered], timeout: 5)
+    private func waitForNavigationToEnd() async {
+        let eNavigationEnded = expectation(description: "navigation ended")
+        let cancellable = tab.navigationDidEndPublisher.first().sink { _ in eNavigationEnded.fulfill() }
+        await fulfillment(of: [eNavigationEnded], timeout: 5)
+        cancellable.cancel()
     }
 
     @available(macOS 15.4, *)

@@ -44,7 +44,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     func testACallIsReportedWhenItStartsAndWhenItEndsWithWhatItSearchedFor() async throws {
         let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .auto))
 
-        _ = await service.invoke(try request(callID: "call-1", input: ["query": "flights"]), context: context(), permissionPusher: nil)
+        _ = await service.invoke(try request(callID: "call-1", input: ["query": "flights"]), context: context(), permissionPrompter: nil)
 
         XCTAssertEqual(received(), [
             AIChatBrowserToolActivity(callID: "call-1", toolName: "listOpenTabs", subject: "flights", phase: .started),
@@ -54,17 +54,17 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
 
     func testWhenTheUserIsAskedForTheirOKThenThatIsReportedToo() async throws {
         let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .ask))
-        let pusher = DecliningPermissionPusher(service: service)
+        let prompter = DismissingPermissionPrompter(service: service)
 
-        _ = await service.invoke(try request(callID: "call-2"), context: context(), permissionPusher: pusher)
+        _ = await service.invoke(try request(callID: "call-2"), context: context(), permissionPrompter: prompter)
 
         XCTAssertEqual(received().map(\.phase), [.started, .awaitingPermission, .finished(succeeded: false)])
-        XCTAssertEqual(pusher.pushes, 1)
+        XCTAssertEqual(prompter.presentations, 1)
     }
 
     func testAPromptForACallThatAlreadyEndedIsNotReported() async throws {
         let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .auto))
-        _ = await service.invoke(try request(callID: "call-4"), context: context(), permissionPusher: nil)
+        _ = await service.invoke(try request(callID: "call-4"), context: context(), permissionPrompter: nil)
 
         service.permissionWasRequested(forCallID: "call-4")
 
@@ -74,7 +74,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     func testNothingIsReportedFromAFireWindow() async throws {
         let (service, received) = makeService(tool: StubBrowserTool(permissionMode: .auto))
 
-        _ = await service.invoke(try request(callID: "call-3"), context: context(isBurner: true), permissionPusher: nil)
+        _ = await service.invoke(try request(callID: "call-3"), context: context(isBurner: true), permissionPrompter: nil)
 
         XCTAssertEqual(received(), [])
     }
@@ -117,24 +117,24 @@ private final class StubBrowserTool: BrowserTool {
     }
 }
 
-/// Stands in for the chat page: tells the service a prompt was shown, then declines it.
+/// Stands in for the native prompt: tells the service it is on screen, then is dismissed.
 @MainActor
-private final class DecliningPermissionPusher: ClientToolPermissionPushing {
-    private(set) var pushes = 0
+private final class DismissingPermissionPrompter: ClientToolPermissionPrompting {
+    private(set) var presentations = 0
     private let service: AIChatBrowserToolsService
 
     init(service: AIChatBrowserToolsService) {
         self.service = service
     }
 
-    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
-        pushes += 1
-        service.permissionWasRequested(forCallID: prompt.callId)
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        presentations += 1
+        service.permissionWasRequested(forCallID: prompt.callID)
         Task { @MainActor in
-            let data = try JSONSerialization.data(withJSONObject: ["callId": prompt.callId, "requestId": prompt.requestId, "decision": "decline"])
-            let response = try JSONDecoder().decode(RespondToClientToolPermissionRequest.self, from: data)
-            self.service.clientToolPermissions.respond(to: response, from: self)
+            self.service.clientToolPermissions.respond(to: prompt, decision: .dismiss, from: self)
         }
         return true
     }
+
+    func withdrawClientToolPermissionPrompt(requestID: String) {}
 }

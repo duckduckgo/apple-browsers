@@ -21,26 +21,13 @@ import Foundation
 import Onboarding
 import WebExtensions
 
-/// Store adapter backing the App-Settings toggles used across two onboarding steps.
+/// Store adapter backing the App-Settings toggles used on the Block Ads onboarding step.
 ///
-/// - **Recently visited sites** (Search step): passthrough to `recentlyVisitedSites`:
-///   - `true` → On (the app default, shown selected on first load)
-///   - `false` → Off.
 /// - **Cookie pop-up protection** + **Pop-ups without opt-outs** (Block Ads step): passthrough to `cookiePopupPreference` (`.off` / `.default` / `.max`)
 ///   turning protection off collapses the preference to `.off`, which makes pop-ups-without-opt-outs `false`.
 ///
-/// - See: [Search: Setup step](https://app.asana.com/1/137249556945/task/1216445221863465?focus=true)
 /// - See: [Block Ads: Setup step](https://app.asana.com/1/137249556945/task/1216445221863468?focus=true)
 extension AppUserDefaults: OnboardingAppSettingsPersonalizationStore {
-
-    public var recentlyVisitedSitesEnabled: Bool {
-        get {
-            recentlyVisitedSites
-        }
-        set {
-            recentlyVisitedSites = newValue
-        }
-    }
 
     public var isCookiePopUpProtectionEnabled: Bool {
         get {

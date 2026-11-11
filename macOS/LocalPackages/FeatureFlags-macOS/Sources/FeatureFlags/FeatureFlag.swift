@@ -92,7 +92,7 @@ public enum FeatureFlag: String, CaseIterable {
     case webExtensionsPermissions
 
     /// Controls Chrome Web Store update discovery when the extension manager is created.
-    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case webExtensionUpdateDiscovery
 
     /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
@@ -580,6 +580,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
     case promoQueueAutofillEmptyStatePromo
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
+    case defaultBrowserWinBackPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -828,7 +831,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionUpdateDiscovery:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:
@@ -1105,6 +1108,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
         case .promoQueueAutofillEmptyStatePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
+        case .defaultBrowserWinBackPromo:
+            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

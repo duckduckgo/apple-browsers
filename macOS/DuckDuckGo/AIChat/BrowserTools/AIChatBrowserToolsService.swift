@@ -109,15 +109,15 @@ final class AIChatBrowserToolsService {
     /// Runs a call through the invoker, reporting to `activity` when it starts, waits on the user and ends.
     func invoke(_ request: ExecuteClientToolRequest,
                 context: BrowserToolCallContext,
-                permissionPusher: (any ClientToolPermissionPushing)?) async -> ExecuteClientToolResponse {
+                permissionPrompter: (any ClientToolPermissionPrompting)?) async -> ExecuteClientToolResponse {
         guard !context.isBurner else {
-            return await invoker.invokeClientTool(request, context: context, permissionPusher: permissionPusher)
+            return await invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
         }
         let call = ReportedCall(name: request.capability.name,
                                 subject: subject(ofToolNamed: request.capability.name, arguments: request.input, context: context))
         reportedCalls[request.callId] = call
         report(call, callID: request.callId, phase: .started)
-        let response = await invoker.invokeClientTool(request, context: context, permissionPusher: permissionPusher)
+        let response = await invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
         reportedCalls[request.callId] = nil
         if case .success = response {
             report(call, callID: request.callId, phase: .finished(succeeded: true))
@@ -127,7 +127,7 @@ final class AIChatBrowserToolsService {
         return response
     }
 
-    /// Called once a chat has shown a permission prompt for `callID`.
+    /// Called once a permission prompt for `callID` is on screen.
     func permissionWasRequested(forCallID callID: String) {
         guard let call = reportedCalls[callID] else { return }
         report(call, callID: callID, phase: .awaitingPermission)

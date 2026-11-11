@@ -89,6 +89,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
             } else {
                 latestUpdate = nil
                 hasPendingUpdate = false
+                hasBeenReadyToUpdate = false
+                canShowUpdatePrompts = false
                 needsNotificationDot = false
             }
         }
@@ -102,6 +104,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         let isDone = currentProgress.isDone
         let isResumable = progressState.isResumable
         hasPendingUpdate = isInstalled && isDone && isResumable
+        hasBeenReadyToUpdate = isInstalled && (hasBeenReadyToUpdate || hasPendingUpdate)
+        canShowUpdatePrompts = hasBeenReadyToUpdate && currentProgress.isIdle
     }
 
     // MARK: - Update Progress State Machine
@@ -127,6 +131,11 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     @Published public private(set) var hasPendingUpdate = false
     public var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
+
+    /// Once an update has been ready, the prompts show whenever no update is running, including after a failure, until the app has updated.
+    @Published public private(set) var canShowUpdatePrompts = false
+    private var hasBeenReadyToUpdate = false
+    public var canShowUpdatePromptsPublisher: AnyPublisher<Bool, Never> { $canShowUpdatePrompts.eraseToAnyPublisher() }
 
     public var mustShowUpdateIndicators: Bool = false
     public let clearsNotificationDotOnMenuOpen = false
@@ -414,26 +423,24 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     /// For automatic updates, regular notifications and the blue dot are delayed.
     /// to reduce noise - users who quit within that time get the update silently.
     /// Critical updates show immediately. Manual updates show immediately (unchanged behavior).
-    /// Whenever the flag is on and automatic updates are enabled, the persisted prompt stage replaces the in-memory delay.
+    /// With more prominent updates on, the persisted prompt stage replaces the delay and the popover: the menu item
+    /// shows as soon as the update is ready, and the dot only at the first prompt.
     private func handleUpdateNotification() {
         guard let latestUpdate, hasPendingUpdate else {
             hideUpdateIndicators()
             return
         }
 
-        if isMoreProminentUpdatesOn && areAutomaticUpdatesEnabled {
-            if promptStage < .firstPrompt {
-                hideUpdateIndicators()
-            } else if !mustShowUpdateIndicators {
-                pendingNotificationTask?.cancel()
-                pendingNotificationTask = nil
-                showUpdateIndicators()
-            }
+        if isMoreProminentUpdatesOn {
+            pendingNotificationTask?.cancel()
+            pendingNotificationTask = nil
+            mustShowUpdateIndicators = true
+            needsNotificationDot = promptStage == .firstPrompt
             return
         }
 
         // Already scheduled or shown - don't restart the timer
-        guard pendingNotificationTask == nil, !mustShowUpdateIndicators else { return }
+        guard pendingNotificationTask == nil, !needsNotificationDot else { return }
 
         // Manual updates: show immediately (unchanged behavior)
         guard areAutomaticUpdatesEnabled else {
@@ -447,6 +454,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         if delay == 0 {
             showUpdateIndicators()
         } else {
+            // Turning the flag off can leave the menu item showing, but here it waits for the delay too.
+            mustShowUpdateIndicators = false
             scheduleDelayedNotification(delay: delay)
         }
     }
@@ -545,10 +554,14 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     private func resumeUpdater() {
-        if !progressState.isResumable {
+        if let resume = progressState.resumeCallback {
+            resume()
+        } else if progressState.updateProgress.isIdle {
+            // Nothing to resume after a failed or dismissed update, so start it again.
+            checkForUpdateSkippingRollout()
+        } else {
             pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterAttemptToRestartWithoutResumeBlock))
         }
-        progressState.resumeCallback?()
     }
 
     public func handleAppTermination() {

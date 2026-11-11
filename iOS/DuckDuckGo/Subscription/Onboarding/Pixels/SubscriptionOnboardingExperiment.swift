@@ -64,9 +64,17 @@ enum SubscriptionOnboardingExperiment {
             return (assigned, false)
         }
         guard locale.isEnglishUnitedStates else { return (nil, false) }
+        guard !isEnrolledInConflictingExperiment(using: featureFlagger) else { return (nil, false) }
         let flag = isOnFreeTrial ? freeTrialsFlag : paidSubsFlag
         let cohort = featureFlagger.resolveCohort(for: flag).flatMap { Cohort(rawValue: $0.rawValue) }
         return (cohort, cohort != nil)
+    }
+
+    /// Whether the device is in an experiment whose users must never be enrolled here, in any cohort.
+    ///
+    /// - Returns: `true` if user is enrolled in conflicting experiment, `false` otherwise.
+    private static func isEnrolledInConflictingExperiment(using featureFlagger: FeatureFlagger) -> Bool {
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingVPNDownloadReasonExperiment) != nil
     }
 
     /// Reads whichever experiment this device is already enrolled in, without enrolling it in either.

@@ -967,14 +967,14 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenOpenedFromAIChatPromoWithRedesignOffThenStartsPairing() async {
-        let vc = makeAuthStubVC(source: SyncSettingsViewController.SourceConstants.aiChatPromotion,
-                                syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false))
+    func testWhenOpenedFromAIChatPromoWithRedesignOffThenShowsSyncAnotherDevicePrompt() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.aiChatPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
 
         vc.loadViewIfNeeded()
 
-        await waitUntil { vc.codeCollectionIntent == .syncAnotherDevice }
-        XCTAssertEqual(vc.codeCollectionIntent, .syncAnotherDevice)
+        await fulfillment(of: [promptShown], timeout: 1)
     }
 
     @MainActor

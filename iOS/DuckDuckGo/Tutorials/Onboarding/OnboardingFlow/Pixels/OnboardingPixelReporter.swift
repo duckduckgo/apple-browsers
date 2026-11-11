@@ -34,6 +34,10 @@ protocol OnboardingIntroImpressionReporting {
     func measureOnboardingIntroImpression()
 }
 
+protocol OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason)
+}
+
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureStartOnboardingCTAAction()
     func measureSkipOnboardingCTAAction()
@@ -124,7 +128,7 @@ protocol OnboardingDownloadReasonPixelReporting {
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingDownloadReasonPixelReporting
-typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
+typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting & OnboardingTimeLimitReporting
 
 // MARK: - Implementation
 
@@ -390,6 +394,12 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
 }
 
 // MARK: - OnboardingPixelReporter + Screen Impression
+
+extension OnboardingPixelReporter: OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason) {
+        fireSharedPixel(.timeLimit(reason))
+    }
+}
 
 extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
@@ -674,7 +684,7 @@ struct OnboardingDownloadReasonExperimentMetric {
 
     private func fire(metric: Name) {
         experimentPixelFiring.fireExperimentPixel(
-            for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+            for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
             metric: metric.rawValue,
             conversionWindowDays: Self.conversionWindowD0,
             value: ""

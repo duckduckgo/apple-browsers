@@ -57,16 +57,16 @@ enum NewTabLongPressMenu {
                 actions.onNewChat()
             })
         }
-        items.append(contentsOf: [
-            UIAction(title: UserText.actionNewFireTab, image: DesignSystemImages.Glyphs.Size16.fireWindow) { _ in
-                pixelFiring?.fire(NewTabLongPressMenuPixel.newFireTab(source: source))
-                actions.onNewFireTab()
-            },
-            UIAction(title: UserText.actionNewTab, image: DesignSystemImages.Glyphs.Size16.add) { _ in
-                pixelFiring?.fire(NewTabLongPressMenuPixel.newNormalTab(source: source))
-                actions.onNewTab()
-            }
-        ])
+        let newFireTab = UIAction(title: UserText.actionNewFireTab, image: DesignSystemImages.Glyphs.Size16.fireWindow) { _ in
+            pixelFiring?.fire(NewTabLongPressMenuPixel.newFireTab(source: source))
+            actions.onNewFireTab()
+        }
+        let newTab = UIAction(title: UserText.actionNewTab, image: DesignSystemImages.Glyphs.Size16.add) { _ in
+            pixelFiring?.fire(NewTabLongPressMenuPixel.newNormalTab(source: source))
+            actions.onNewTab()
+        }
+        newTab.accessibilityIdentifier = "Browser.NewTabMenu.NewTab"
+        items.append(contentsOf: [newFireTab, newTab])
         return items
     }
 }

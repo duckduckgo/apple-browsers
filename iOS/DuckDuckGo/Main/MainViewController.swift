@@ -9561,6 +9561,7 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+        daxDialogsManager.checkTimeLimit()
 
         // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
         // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).

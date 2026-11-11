@@ -72,6 +72,59 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         XCTAssertEqual(service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
     }
 
+    func testScopeLookupDoesNotCreateScopesForOtherChatsWithSameOrDifferentOwner() async throws {
+        for sameOwner in [false, true] {
+            let fixture = BrowserToolsBridgeFixture()
+            defer { fixture.cleanUp() }
+            _ = fixture.script
+            let otherOwner = sameOwner ? fixture.owner : Tab(uid: "other-owner", fireTab: false)
+            let otherScript = fixture.makeScript()
+            defer { otherScript.detachBrowserTools() }
+            var otherScopeCreations = 0
+            otherScript.bindBrowserTools(to: fixture.service, owner: otherOwner) {
+                otherScopeCreations += 1
+                let source = MultiTabAttachmentSource(currentTabID: otherOwner.uid, mode: .normal, tabsProvider: { [otherOwner] })
+                return BrowserToolScope(owner: otherOwner, source: source, selectedTabID: { otherOwner.uid })
+            }
+            otherScript.browserToolsDocumentDidCommit()
+            otherScopeCreations = 0
+            let unknownContext = BrowserToolCallContext(ownerTabID: fixture.owner.uid, ownerWindowToken: UUID().uuidString, isBurner: false)
+
+            let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: unknownContext, permissionPusher: nil)
+
+            XCTAssertEqual(rejected, .failure(callId: "call", error: .unavailable))
+            XCTAssertEqual(otherScopeCreations, 0)
+            let accepted = await fixture.invoke()
+            XCTAssertEqual(accepted, fixture.success)
+            XCTAssertEqual(otherScopeCreations, 0)
+        }
+    }
+
+    func testStaleContextDoesNotCreateScopeForNewDocument() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        var scopeCreations = 0
+        var createdScope: BrowserToolScope?
+        fixture.script.bindBrowserTools(to: fixture.service, owner: fixture.owner) { [weak fixture] in
+            scopeCreations += 1
+            createdScope = fixture?.makeScope()
+            return createdScope
+        }
+        let originalScope = try XCTUnwrap(createdScope)
+        let staleContext = BrowserToolCallContext(ownerTabID: originalScope.ownerTabID, ownerWindowToken: originalScope.token, isBurner: false)
+        fixture.script.browserToolsDocumentDidCommit()
+        scopeCreations = 0
+
+        let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: staleContext, permissionPusher: nil)
+
+        XCTAssertEqual(rejected, .failure(callId: "call", error: .unavailable))
+        XCTAssertEqual(scopeCreations, 0)
+        let accepted = await fixture.invoke()
+        XCTAssertEqual(accepted, fixture.success)
+        XCTAssertEqual(scopeCreations, 1)
+        XCTAssertNotEqual(createdScope?.token, originalScope.token)
+    }
+
     func testBothGatesAreDynamicForSameServiceAndParentFeature() throws {
         let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true), enabledFeatureFlags: [])
         let feature = ChatToBrowserToolCallingFeature(featureFlagger: flags)

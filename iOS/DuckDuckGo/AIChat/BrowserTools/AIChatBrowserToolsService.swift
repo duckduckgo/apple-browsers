@@ -291,7 +291,10 @@ private extension AIChatBrowserToolsService {
     func scope(for context: BrowserToolCallContext) -> BrowserToolScope? {
         guard isEnabled, !context.isBurner, clearing.isEmpty else { return nil }
         for binding in bindings.values {
-            guard let source = binding.source, let scope = admittedScope(for: source), scope.accepts(context) else { continue }
+            guard binding.ownerTabID == context.ownerTabID,
+                  let existing = currentScope(binding), existing.token == context.ownerWindowToken,
+                  let source = binding.source,
+                  let scope = admittedScope(for: source), scope.accepts(context) else { continue }
             return scope
         }
         return injectedScopeProvider?(context)

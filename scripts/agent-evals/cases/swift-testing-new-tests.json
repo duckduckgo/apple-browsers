@@ -1,6 +1,6 @@
 {
   "covers": ["@Test timeLimit", "swiftlint --strict"],
-  "prompt": "Add unit tests for `punycodeEncodedHostname` and `punycodeDecodedHostname` in SharedPackages/Common/Sources/Common/Extensions/String+Punycode.swift. Put them in a new file SharedPackages/Common/Tests/CommonTests/Extensions/StringPunycodeTests.swift using Swift Testing. Don't build or run the tests.",
+  "prompt": "Add unit tests for `punycodeEncodedHostname` and `punycodeDecodedHostname` in SharedPackages/Common/Sources/Common/Extensions/String+Punycode.swift. Put them in a new file SharedPackages/Common/Tests/CommonTests/Extensions/StringPunycodeTests.swift using Swift Testing. Skip building the project and running the test suite; both are too slow here.",
   "max_turns": 25,
   "graders": [
     {"type": "file_changed", "path": "SharedPackages/Common/Tests/CommonTests/Extensions/StringPunycodeTests.swift"},

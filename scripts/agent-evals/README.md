@@ -47,7 +47,7 @@ Add `cases/<id>.json`:
 ```json
 {
   "covers": ["@Test timeLimit"],
-  "prompt": "Add unit tests for ... using Swift Testing. Don't build or run the tests.",
+  "prompt": "Add unit tests for ... using Swift Testing. Skip building the project and running the test suite; both are too slow here.",
   "max_turns": 25,
   "graders": [
     {"type": "diff_contains", "path": "*Tests.swift", "pattern": "\\.timeLimit\\(\\.minutes\\(1\\)\\)"}
@@ -56,7 +56,9 @@ Add `cases/<id>.json`:
 ```
 
 - Phrase the prompt like a real request. Don't hint at the rule being tested.
-- Keep tasks small, and say "don't build" when building isn't the point.
+- Keep tasks small. To rule out slow steps, name exactly what to skip ("skip building the project
+  and running the test suite"). A blanket "don't run anything" also stops agents from running
+  required checks such as SwiftLint.
 - This repo is public: no internal task text, names or data in prompts.
 
 Graders: `diff_contains` / `diff_not_contains` (regex over added lines, optional `path` glob),

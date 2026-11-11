@@ -125,6 +125,7 @@ final class DuckDuckGoSubscriptionTests: XCTestCase {
             activeOffers: hasTrial ? [DuckDuckGoSubscription.Offer(type: .trial)] : [],
             tier: nil,
             availableChanges: nil,
-            pendingPlans: nil)
+            pendingPlans: nil,
+            planCountry: nil)
     }
 }

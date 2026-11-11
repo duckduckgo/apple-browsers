@@ -52,7 +52,7 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
         switch effectivePlatform {
         case .subscription(.stripe), .app(.stripe):
-            return await fetchStripeTierOptions(includeProTier: includeProTier)
+            return await fetchStripeTierOptions(includeProTier: includeProTier, planCountry: currentSubscription?.planCountry)
         case .subscription(.apple):
             // Apple subscription on non–App Store app (e.g. Sparkle): we cannot show tier options;
             // the app has no StoreKit. UI should redirect user to App Store / subscription settings.
@@ -88,23 +88,17 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
     // MARK: - Stripe path
 
-    private var countryParameter: String {
-        let regionCode: String?
-        if #available(iOS 16, macOS 13, *) {
-            regionCode = Locale.current.region?.identifier
-        } else {
-            regionCode = Locale.current.regionCode
-        }
-        guard let regionCode, regionCode.count == 2 else { return "us" }
-        return regionCode.lowercased()
+    private func countryParameter(planCountry: String?) -> String {
+        guard let planCountry, planCountry.count == 2 else { return "us" }
+        return planCountry.lowercased()
     }
 
-    private func fetchStripeTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
+    private func fetchStripeTierOptions(includeProTier: Bool, planCountry: String?) async -> Result<SubscriptionTierOptions, Error> {
         Logger.subscriptionStripePurchaseFlow.log("Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
         let productsResponse: GetTierProductsResponse
         do {
             productsResponse = try await subscriptionEndpointService.getTierProducts(
-                country: countryParameter,
+                country: countryParameter(planCountry: planCountry),
                 platform: SubscriptionPlatformName.stripe.rawValue
             )
         } catch {

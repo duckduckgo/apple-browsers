@@ -58,7 +58,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
             activeOffers: [],
             tier: nil,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         return try encoder.encode(subscription)
     }
@@ -231,7 +232,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
                 activeOffers: [],
                 tier: .plus,
                 availableChanges: nil,
-                pendingPlans: nil
+                pendingPlans: nil,
+                planCountry: nil
             )
         )
         let confirmData = try encoder.encode(confirmResponse)

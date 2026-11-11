@@ -942,7 +942,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1008,7 +1009,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1064,7 +1066,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1123,7 +1126,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1182,7 +1186,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(stripeSubscription)
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
@@ -1219,7 +1224,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(stripeSubscription)
         mockSubscriptionManager.resultTokenContainer = nil
@@ -1254,7 +1260,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(googleSubscription)
 
@@ -1284,7 +1291,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(unknownSubscription)
 

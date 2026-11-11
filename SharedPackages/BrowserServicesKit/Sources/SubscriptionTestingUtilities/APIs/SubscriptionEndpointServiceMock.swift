@@ -41,7 +41,9 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
     // MARK: - Products
 
     public var getTierProductsResult: Result<GetTierProductsResponse, APIRequestV2Error>?
+    public var getTierProductsCountry: String?
     public func getTierProducts(country: String?, platform: String?) async throws -> GetTierProductsResponse {
+        getTierProductsCountry = country
         switch getTierProductsResult! {
         case .success(let result): return result
         case .failure(let error): throw error

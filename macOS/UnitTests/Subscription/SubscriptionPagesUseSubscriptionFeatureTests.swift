@@ -838,7 +838,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.confirmPurchaseResponse = .success(subscription)
 
@@ -994,7 +995,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(stripeSubscription)
         subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
@@ -1038,7 +1040,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(stripeSubscription)
         subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
@@ -1099,7 +1102,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1118,7 +1122,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil,
+            pendingPlans: nil,,
+            planCountry: nil
         )
         subscriptionManager.confirmPurchaseResponse = .success(newSubscription)
 
@@ -1158,7 +1163,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1199,7 +1205,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1241,7 +1248,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1260,7 +1268,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.confirmPurchaseResponse = .success(newSubscription)
 

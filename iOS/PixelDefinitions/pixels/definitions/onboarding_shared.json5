@@ -313,7 +313,7 @@
                 "key": "value",
                 "type": "string",
                 "description": "On the engagement (clicked) event: the download reason the user selected",
-                "enum": ["search", "ai-chat", "no-ai", "ad-blocking", "vpn"]
+                "enum": ["search", "ai-chat", "no-ai", "ad-blocking"]
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",

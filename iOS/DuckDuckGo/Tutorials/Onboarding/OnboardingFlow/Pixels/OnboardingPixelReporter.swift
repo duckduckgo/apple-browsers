@@ -560,9 +560,13 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
     }
 
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
-        fireSharedPixel(.downloadChoice(.clicked(.init(reason))))
+        // The VPN reason isn't measured yet.
+        guard let value = OnboardingSharedPixelEvent.DownloadChoiceEvent.Value(reason),
+              let variant = OnboardingPixelParameter.DownloadReasonVariant(reason) else { return }
+
+        fireSharedPixel(.downloadChoice(.clicked(value)))
         // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
-        setDownloadReasonVariantIfNotAlreadySet(OnboardingPixelParameter.DownloadReasonVariant(reason))
+        setDownloadReasonVariantIfNotAlreadySet(variant)
         downloadReasonExperimentMetric.measureDownloadReasonSelected(reason)
     }
 
@@ -610,13 +614,13 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
 
 private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
 
-    init(_ reason: OnboardingDownloadReason) {
+    init?(_ reason: OnboardingDownloadReason) {
         switch reason {
         case .browserPrivately: self = .search
         case .privateAIChat: self = .aiChat
         case .noAI: self = .noAI
         case .blockAds: self = .adBlocking
-        case .vpn: self = .vpn
+        case .vpn: return nil
         }
     }
 
@@ -647,7 +651,6 @@ struct OnboardingDownloadReasonExperimentMetric {
         case downloadReasonSelectedAIChat = "download_reason_selected_ai-chat"
         case downloadReasonSelectedNoAI = "download_reason_selected_no-ai"
         case downloadReasonSelectedAdBlocking = "download_reason_selected_ad-blocking"
-        case downloadReasonSelectedVPN = "download_reason_selected_vpn"
     }
 
     private static let conversionWindowD0: ConversionWindow = 0...0
@@ -665,13 +668,14 @@ struct OnboardingDownloadReasonExperimentMetric {
     /// Fires the per-reason "selected" metric (one metric per option, empty value, d0) when the user
     /// picks a download reason.
     func measureDownloadReasonSelected(_ reason: OnboardingDownloadReason) {
-        let metric: Name = switch reason {
+        let metric: Name? = switch reason {
         case .browserPrivately: .downloadReasonSelectedSearch
         case .privateAIChat: .downloadReasonSelectedAIChat
         case .noAI: .downloadReasonSelectedNoAI
         case .blockAds: .downloadReasonSelectedAdBlocking
-        case .vpn: .downloadReasonSelectedVPN
+        case .vpn: nil
         }
+        guard let metric else { return }
         fire(metric: metric)
     }
 

@@ -44,7 +44,6 @@ public enum OnboardingDownloadReasonStore {
         case "privateAIChat": "ai-chat"
         case "noAI": "no-ai"
         case "blockAds": "ad-blocking"
-        case "vpn": "vpn"
         default: nil
         }
     }

@@ -25,10 +25,6 @@
                     "description": "User selected the 'ad-blocking' download reason",
                     "enum": [""]
                 },
-                "download_reason_selected_vpn": {
-                    "description": "User selected the 'vpn' download reason",
-                    "enum": [""]
-                },
                 "download_reason_search_retention_search": {
                     "description": "D5-7 search retention for the 'search' download-reason segment",
                     "enum": ["1", "4", "6", "11", "21", "30"]
@@ -43,10 +39,6 @@
                 },
                 "download_reason_search_retention_ad-blocking": {
                     "description": "D5-7 search retention for the 'ad-blocking' download-reason segment",
-                    "enum": ["1", "4", "6", "11", "21", "30"]
-                },
-                "download_reason_search_retention_vpn": {
-                    "description": "D5-7 search retention for the 'vpn' download-reason segment",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 }
             }

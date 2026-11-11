@@ -10,6 +10,12 @@
 /* The title of the notifications shown from VPN */
 "network.protection.notification.title" = "DuckDuckGo";
 
+/* The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing */
+"network.protection.signed.out.notification.body" = "Open DuckDuckGo to reconnect.";
+
+/* The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing */
+"network.protection.signed.out.notification.title" = "DuckDuckGo VPN can't connect";
+
 /* The body of the notification when the VPN is snoozed, with a duration string as parameter (e.g, 30 minutes) */
 "network.protection.snoozed.notification.body" = "VPN snoozed for %@";
 

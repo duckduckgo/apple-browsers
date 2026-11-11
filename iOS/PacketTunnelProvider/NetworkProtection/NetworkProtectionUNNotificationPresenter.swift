@@ -147,7 +147,8 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
 
     func showSignedOutNotification() {
         let identifier = NetworkProtectionNotificationIdentifier.signedOut.rawValue
-        let content = notificationContent(body: UserText.networkProtectionSignedOutNotificationBody)
+        let content = notificationContent(title: UserText.networkProtectionSignedOutNotificationTitle,
+                                          body: UserText.networkProtectionSignedOutNotificationBody)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: .none)
 
         requestAlertAuthorization { authorized in

@@ -124,7 +124,8 @@ final class SearchHistoryBrowserTool: BrowserTool {
             }
             .filter { _, entry in
                 guard let term, !term.isEmpty else { return true }
-                return (entry.title ?? "").range(of: term, options: .caseInsensitive) != nil
+                return BrowserToolOutputLimits.clip(displayTitle(title: entry.title, url: entry.url), to: BrowserToolOutputLimits.title)
+                    .range(of: term, options: .caseInsensitive) != nil
                     || BrowserToolOutputLimits.urlWithoutQueryOrFragment(entry.url.absoluteString).range(of: term, options: .caseInsensitive) != nil
             }
             .sorted { $0.0.date > $1.0.date }

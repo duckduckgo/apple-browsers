@@ -56,9 +56,13 @@ final class BookmarkTabBrowserTool: BrowserTool {
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         // One call at a time, so a folder one call creates is found by the next.
         let previous = running
-        let call = Task { await previous?.value; return await bookmark(arguments: arguments, context: context) }
+        let call = Task {
+            await previous?.value
+            guard !Task.isCancelled else { return BrowserToolResult.failure(.cancelled) }
+            return await bookmark(arguments: arguments, context: context)
+        }
         running = Task { _ = await call.value }
-        return await call.value
+        return await withTaskCancellationHandler { await call.value } onCancel: { call.cancel() }
     }
 
     private func bookmark(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
@@ -138,10 +142,10 @@ final class BookmarkTabBrowserTool: BrowserTool {
 
     // makeFolder reloads the list asynchronously.
     private func waitUntilListed(_ folderID: String) async {
-        let lists = bookmarkManager.listPublisher.timeout(.seconds(2), scheduler: DispatchQueue.main).values
-        for await list in lists where list.map({ Self.contains(folderID, in: $0.topLevelEntities) }) == true {
-            return
-        }
+        let listed = bookmarkManager.listPublisher
+            .first { $0.map { Self.contains(folderID, in: $0.topLevelEntities) } == true }
+            .timeout(.seconds(2), scheduler: DispatchQueue.main)
+        for await _ in listed.values { return }
     }
 
     private static func contains(_ folderID: String, in entities: [BaseBookmarkEntity]) -> Bool {

@@ -679,6 +679,123 @@ struct FirstPaintCoverTests {
         #expect(bounds.maxX <= 402)
     }
 
+    /// A search cover whose content check answers only when the test says so.
+    private static func armSearch(_ harness: Harness, checks: Box<[@MainActor (Bool) -> Void]>) {
+        var handoff = FirstPaintCover.Handoff()
+        handoff.isContentReady = { completion in checks.value.append(completion) }
+        harness.cover.arm(in: harness.container, above: harness.webView, handoff: handoff)
+        harness.startAndCommit()
+    }
+
+    @MainActor
+    private final class Box<Value> {
+        var value: Value
+        init(_ value: Value) { self.value = value }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("On a search, first layout waits for the first result instead of revealing a half-built page", .timeLimit(.minutes(1)),
+          arguments: [firstVisuallyNonEmptyLayout, didRenderSignificantAmountOfText, firstMeaningfulPaint])
+    func searchWaitsForFirstResult(events: UInt) {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+
+        harness.cover.renderingProgressDidChange(events)
+
+        #expect(harness.cover.phase == .awaitingContent)
+        #expect(checks.value.count == 1)
+        #expect(harness.timeouts.contains { $0.delay == FirstPaintCover.Constants.contentGrace && !$0.isCancelled })
+        #expect(harness.pendingFades.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The cover keeps asking until the first result shows, then reveals", .timeLimit(.minutes(1)))
+    func searchRevealsOnceResultShows() throws {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+
+        checks.value[0](false)
+        #expect(harness.pendingFades.isEmpty)
+        let poll = try #require(harness.timeouts.last)
+        #expect(poll.delay == FirstPaintCover.Constants.contentPollInterval)
+
+        poll.action()
+        #expect(checks.value.count == 2)
+        checks.value[1](true)
+
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A results page with no results is revealed when the grace runs out", .timeLimit(.minutes(1)))
+    func searchRevealsAfterGrace() throws {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        checks.value[0](false)
+
+        let grace = try #require(harness.timeouts.first { $0.delay == FirstPaintCover.Constants.contentGrace && !$0.isCancelled })
+        grace.action()
+
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.count == 1)
+        #expect(harness.timeouts.allSatisfy { $0.delay != FirstPaintCover.Constants.contentPollInterval || $0.isCancelled })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Finishing the load while waiting for the first result reveals the page", .timeLimit(.minutes(1)))
+    func searchRevealsOnFinish() {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+
+        harness.cover.didFinish(harness.navigation)
+
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An answer that arrives after the cover lifted does nothing", .timeLimit(.minutes(1)))
+    func lateContentAnswerIsIgnored() {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        harness.cover.cancel()
+
+        checks.value[0](true)
+        checks.value[0](false)
+
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.isEmpty)
+        #expect(harness.timeouts.allSatisfy { $0.delay != FirstPaintCover.Constants.contentPollInterval })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The remembered header is in place as soon as the cover is armed", .timeLimit(.minutes(1)))
+    func headerIsPlacedOnArm() throws {
+        let harness = Harness()
+        harness.webView.frame = harness.container.bounds
+        var handoff = FirstPaintCover.Handoff()
+        handoff.showsSearchResultsSkeleton = true
+        handoff.searchResultsHeader = UIGraphicsImageRenderer(size: CGSize(width: 400, height: SearchResultsSkeletonView.Constants.headerHeight))
+            .image { _ in }
+
+        harness.cover.arm(in: harness.container, above: harness.webView, handoff: handoff, contentTop: 120)
+
+        let skeleton = try #require(harness.cover.skeletonView)
+        let headerView = try #require(skeleton.subviews.first as? UIImageView)
+        #expect(!headerView.isHidden)
+        #expect(headerView.frame == CGRect(x: 0, y: 120, width: 400, height: SearchResultsSkeletonView.Constants.headerHeight))
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Callbacks without an armed cover do nothing", .timeLimit(.minutes(1)))
     func idleCallbacksDoNothing() {

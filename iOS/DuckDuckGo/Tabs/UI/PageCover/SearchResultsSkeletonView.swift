@@ -134,7 +134,10 @@ final class SearchResultsSkeletonView: UIView {
 
         let showsHeaderImage = headerImage.map { SearchPageHeaderMemory.matches($0, width: pageFrame.width) } ?? false
         headerView.isHidden = !showsHeaderImage
-        headerView.frame = CGRect(x: pageFrame.minX, y: contentTop, width: pageFrame.width, height: headerImage?.size.height ?? 0)
+        // Never animate: a layout pass inside someone else's animation would slide the header into place.
+        UIView.performWithoutAnimation {
+            headerView.frame = CGRect(x: pageFrame.minX, y: contentTop, width: pageFrame.width, height: headerImage?.size.height ?? 0)
+        }
 
         CATransaction.begin()
         CATransaction.setDisableActions(true)

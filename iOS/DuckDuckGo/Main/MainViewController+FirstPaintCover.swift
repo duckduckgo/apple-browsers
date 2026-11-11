@@ -106,6 +106,11 @@ extension MainViewController {
         if handoff.showsSearchResultsSkeleton {
             handoff.searchResultsHeader = searchPageHeaderMemory.header(for: traitCollection.userInterfaceStyle,
                                                                         width: tab.webView?.bounds.width ?? 0)
+            // Holding for the first result keeps the half-built tabs row from flashing in over the remembered one.
+            handoff.isContentReady = { [weak tab] completion in
+                guard let tab else { return completion(true) }
+                tab.checkSearchResultsShowing(completion: completion)
+            }
         }
         tab.coverPageUntilFirstPaint(handoff: handoff)
     }

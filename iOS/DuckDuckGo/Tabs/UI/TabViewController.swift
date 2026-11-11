@@ -1707,6 +1707,16 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Whether the results page shows its first result yet; its tabs row fills in at the same moment.
+    func checkSearchResultsShowing(completion: @escaping @MainActor (Bool) -> Void) {
+        guard isViewLoaded, let webView else { return completion(true) }
+        let script = "document.querySelector('[data-testid=\"result\"], [data-testid=\"ad\"]') !== null"
+        webView.evaluateJavaScript(script, in: nil, in: .defaultClient) { result in
+            let isShowing = (try? result.get()) as? Bool ?? false
+            MainActor.assumeIsolated { completion(isShowing) }
+        }
+    }
+
     private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
         if case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.willLoad(isInternalRetry: !shouldCancelPendingAIChatTabAttachmentPrompt) {

@@ -1479,6 +1479,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.log("Disabled Connect On Demand because no auth token is stored")
         notificationsPresenter.showSignedOutNotification()
+
+        // We add a delay here so the notification has a chance to show up before the extension exits
+        try? await Task.sleep(interval: .seconds(5))
         return true
     }
 

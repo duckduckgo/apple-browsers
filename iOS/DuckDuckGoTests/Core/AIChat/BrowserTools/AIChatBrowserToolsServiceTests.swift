@@ -21,6 +21,7 @@ import AIChat
 import Core
 import FeatureFlags_iOS
 import Persistence
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo
 
@@ -29,6 +30,27 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     private func request(name: String = "listOpenTabs", version: Int = 1, input: JSONValue = [:]) throws -> ExecuteClientToolRequest {
         let value: JSONValue = ["callId": "call", "capability": ["name": .string(name), "version": .int(version)], "input": input]
         return try JSONDecoder().decode(ExecuteClientToolRequest.self, from: JSONEncoder().encode(value))
+    }
+
+    func testExternalUserCannotDiscoverOrInvokeToolsEvenWhenAllFlagsAreEnabled() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.flags.internalUserDecider = MockInternalUserDecider(isInternalUser: false)
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs, .aiChatBrowserToolSwitchToTab]
+        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+
+        XCTAssertTrue(fixture.flags.isFeatureOn(.aiChatBrowserTools))
+        XCTAssertFalse(ChatToBrowserToolCallingFeature(featureFlagger: fixture.flags).isAvailable)
+        XCTAssertFalse(fixture.service.isEnabled)
+        XCTAssertNil(fixture.service.clientToolsConfiguration)
+        XCTAssertNil(fixture.service.configuration(for: fixture.script))
+        XCTAssertTrue(fixture.service.catalog.enabledTools.isEmpty)
+
+        let result = await fixture.invoke()
+
+        XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
+        XCTAssertEqual(fixture.listings, 0)
+        XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
     }
 
     func testInjectedScopeCannotBypassActiveFireBlock() async throws {
@@ -51,7 +73,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     }
 
     func testBothGatesAreDynamicForSameServiceAndParentFeature() throws {
-        let flags = MockFeatureFlagger(enabledFeatureFlags: [])
+        let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true), enabledFeatureFlags: [])
         let feature = ChatToBrowserToolCallingFeature(featureFlagger: flags)
         let suiteName = UUID().uuidString
         let storage = UserDefaults(suiteName: suiteName)!
@@ -86,7 +108,8 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     }
 
     func testCatalogAndInvokerRefuseUnsupportedNamesVersionsAndDisabledGates() async throws {
-        let flags = MockFeatureFlagger(enabledFeatureFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs])
+        let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                      enabledFeatureFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs])
         let suiteName = UUID().uuidString
         let storage = UserDefaults(suiteName: suiteName)!
         defer { storage.removePersistentDomain(forName: suiteName) }
@@ -111,7 +134,8 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     }
 
     func testDefaultResolverRefusesEvenWithStoredPermission() async throws {
-        let flags = MockFeatureFlagger(enabledFeatureFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs])
+        let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                      enabledFeatureFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs])
         let suiteName = UUID().uuidString
         let storage = UserDefaults(suiteName: suiteName)!
         defer { storage.removePersistentDomain(forName: suiteName) }
@@ -128,7 +152,8 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let source = MultiTabAttachmentSource(currentTabID: owner.uid, mode: .normal, tabsProvider: { [owner] })
         let scope = BrowserToolScope(owner: owner, source: source, selectedTabID: { owner.uid })
         var available = true
-        let flags = MockFeatureFlagger(enabledFeatureFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs])
+        let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                      enabledFeatureFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs])
         let suiteName = UUID().uuidString
         let storage = UserDefaults(suiteName: suiteName)!
         defer { storage.removePersistentDomain(forName: suiteName) }

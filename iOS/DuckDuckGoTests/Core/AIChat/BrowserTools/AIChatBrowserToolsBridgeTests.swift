@@ -24,6 +24,7 @@ import Core
 import FeatureFlags_iOS
 import JavaScriptCore
 import Persistence
+import PrivacyConfig
 import UserScript
 import WebKit
 import XCTest
@@ -715,7 +716,7 @@ final class BrowserToolsBridgeFixture {
     init(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]) {
         let suiteName = UUID().uuidString
         let defaults = UserDefaults(suiteName: suiteName)!
-        let flags = MockFeatureFlagger(enabledFeatureFlags: enabledFlags)
+        let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true), enabledFeatureFlags: enabledFlags)
         self.suiteName = suiteName
         self.defaults = defaults
         self.flags = flags

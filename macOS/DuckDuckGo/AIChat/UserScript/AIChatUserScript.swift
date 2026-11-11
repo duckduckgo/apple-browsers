@@ -276,7 +276,6 @@ final class AIChatUserScript: NSObject, Subfeature {
 
 extension AIChatUserScript: ClientToolPermissionPrompting {
 
-    /// Asks from the Duck.ai button of the chat's owner tab's window.
     @MainActor
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
         browserTools?.permissionPrompts.present(prompt, chatWebView: webView, prompter: self) ?? false

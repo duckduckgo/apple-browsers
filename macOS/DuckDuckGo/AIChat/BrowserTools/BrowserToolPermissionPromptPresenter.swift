@@ -22,9 +22,6 @@ import Combine
 import SwiftUI
 import WebKit
 
-/// Shows browser tool permission prompts from the window's Duck.ai button. A prompt belongs to its chat's
-/// owner tab, which is selected when the prompt arrives; each window shows the oldest prompt for its
-/// selected tab, and a prompt for another tab waits until that tab is selected again.
 @MainActor
 final class BrowserToolPermissionPromptPresenter {
 
@@ -55,7 +52,6 @@ final class BrowserToolPermissionPromptPresenter {
         self.respond = respond
     }
 
-    /// False when the chat has no owner tab in a regular window, which cancels the call.
     func present(_ prompt: ClientToolPermissionPrompt, chatWebView: WKWebView?, prompter: any ClientToolPermissionPrompting) -> Bool {
         guard let ownerTabID = AIChatTabPickerSource.ownerTabID(for: chatWebView, in: windowControllersManager),
               let collection = AIChatTabPickerSource.collection(containingTabID: ownerTabID, in: windowControllersManager),
@@ -86,7 +82,6 @@ final class BrowserToolPermissionPromptPresenter {
         respond(request.prompt, decision, prompter)
     }
 
-    /// Shows, per window, the oldest prompt for its selected tab and closes any other.
     private func refresh() {
         requests.removeAll { $0.collection == nil || $0.prompter == nil }
         let collections = Dictionary(requests.compactMap { request in request.collection.map { (ObjectIdentifier($0), $0) } },
@@ -112,25 +107,23 @@ final class BrowserToolPermissionPromptPresenter {
         return requests.first { $0.collection === collection && $0.ownerTabID == selectedTabID }
     }
 
-    /// Slides in the window's tool permission button, beside the Duck.ai control, and opens the prompt from it.
     private func show(_ request: Request, in collection: TabCollectionViewModel, key: ObjectIdentifier) {
         guard let tabBar = windowController(for: collection)?.mainViewController.tabBarViewController else { return }
         let prompt = request.prompt
         let popover = NSPopover()
-        // Stays open until answered: clicking elsewhere must not settle the call.
         popover.behavior = .applicationDefined
         let content = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt) { [weak self] decision in
             self?.answer(prompt.requestID, with: decision)
         })
         popover.contentViewController = content
-        // Sized before showing: a popover resized afterwards keeps its bottom edge and drifts off its anchor.
+        // Resized after showing, a popover drifts off its anchor.
         popover.contentSize = content.view.fittingSize
         let open: (NSView) -> Void = { [weak self, weak popover] anchor in
             guard let popover, !popover.isShown,
                   self?.shown.values.contains(where: { $0.requestID == prompt.requestID }) == true else { return }
             popover.show(positionedBelow: anchor.bounds.insetFromLineOfDeath(flipped: anchor.isFlipped), in: anchor)
         }
-        // Recorded first: the button may already be in place and open the prompt right away.
+        // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
                            keyMonitor: keyMonitor(answering: prompt.requestID, popover: popover, in: tabBar.view.window))
         tabBar.showBrowserToolPermissionButton(icon: BrowserToolPermissionPromptText.icon(toolName: prompt.toolName),
@@ -140,8 +133,7 @@ final class BrowserToolPermissionPromptPresenter {
                                                shown: open)
     }
 
-    /// Esc answers "not this time" and ⌘↵ allows once, while the prompt shows in `window`. The popover
-    /// itself doesn't take key focus, so SwiftUI keyboard shortcuts don't reach it.
+    // The popover doesn't take key focus, so SwiftUI shortcuts don't reach it.
     private func keyMonitor(answering requestID: String, popover: NSPopover, in window: NSWindow?) -> Any? {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover, weak window] event in
             guard let self, let popover, popover.isShown,

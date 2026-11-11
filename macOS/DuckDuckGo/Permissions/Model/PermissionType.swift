@@ -43,7 +43,6 @@ enum PermissionType: Hashable {
     case notification
     case externalScheme(scheme: String)
     case autoplayPolicy
-    /// A Duck.ai browser tool, kept under Duck.ai's own site whichever page or chat asks.
     case browserTool(name: String)
 
     var rawValue: String {
@@ -89,7 +88,6 @@ extension PermissionType {
 
     /// Duck.ai's native voice flow overrides microphone decisions at read time, so permission
     /// editors hide that row while the override is active. The saved decision is kept for rollback.
-    /// Duck.ai browser tool choices aren't listed with website permissions.
     func isUserEditable(forDomain domain: String, nativeVoiceFlowEnabled: Bool) -> Bool {
         !isBrowserTool && !(self == .microphone && domain == URL.duckAi.host && nativeVoiceFlowEnabled)
     }

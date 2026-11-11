@@ -19,8 +19,6 @@
 import AIChat
 import Foundation
 
-/// Remembered Always / Never choices for browser tools, kept as site permissions of Duck.ai's own site,
-/// so one choice applies to every Duck.ai page, sidebar and chat.
 @MainActor
 final class BrowserToolSitePermissions: BrowserToolPermissionStoring {
 

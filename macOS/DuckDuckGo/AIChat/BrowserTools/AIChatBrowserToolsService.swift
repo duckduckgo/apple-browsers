@@ -189,7 +189,6 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         guard isEnabled,
               let subfeature = AIChatBrowserToolsSubfeature(rawValue: name),
               let flag = Self.featureFlag(for: subfeature) else { return false }
-        // The native prompt is the browser's three-choice permission prompt; without it a tool that asks can't run.
         if askToolNames.contains(name), !featureFlagger.isFeatureOn(.websitePermissionsPrompts) { return false }
         return featureFlagger.isFeatureOn(flag)
     }

@@ -935,8 +935,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     // MARK: - Duck.ai browser tool permission
 
-    /// Slides in the button of a pending Duck.ai browser tool permission, at the end of the Duck.ai control.
-    /// `shown` gets the button once it's in place, to anchor the prompt; clicking it calls `action`.
     func showBrowserToolPermissionButton(icon: NSImage, title: String, action: @escaping (NSView) -> Void, shown: @escaping (NSView) -> Void) {
         browserToolPermissionAction = action
         applyDuckAIChromeButtonVisibility()
@@ -951,7 +949,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             shown(button)
             return
         }
-        // Slides in outlined, then fills in as the prompt opens from it.
         styleBrowserToolPermissionButton(button, filled: false)
         button.isHidden = false
         button.alphaValue = 0
@@ -980,14 +977,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             button.animator().alphaValue = 0
             rightSideStackView.layoutSubtreeIfNeeded()
         }, completionHandler: { [weak self, weak button] in
-            // Shown again while sliding out.
             guard let self, browserToolPermissionAction == nil else { return }
             button?.isHidden = true
             applyDuckAIChromeButtonVisibility()
         })
     }
 
-    /// The button sits at the end of the Duck.ai pill, in a slot whose width slides it in and out.
     private func makeBrowserToolPermissionButton() -> MouseOverButton {
         let size = theme.tabBarButtonSize - 4
         let slot = NSView(frame: .zero)
@@ -1022,7 +1017,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             rightSideStackView.insertArrangedSubview(slot, at: index)
         }
 
-        // Hovering shows ✕: a click answers "not this time".
         browserToolPermissionHover = button.publisher(for: \.isMouseOver)
             .sink { [weak self, weak button] isMouseOver in
                 guard let self, let button else { return }
@@ -1038,8 +1032,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let palette = theme.palette
         button.setCornerRadius(theme.toolbarButtonsCornerRadius - 2)
         guard let layer = button.layer else { return }
-        // On the button's own layer, under the glyph: MouseOverButton's background layer would cover it.
-        // Resolved against the app's appearance: plain `cgColor` may pick the other mode's shade.
+        // Own layer: MouseOverButton's background layer would cover the glyph.
+        // Plain `cgColor` may resolve the other appearance's shade.
         var fill: CGColor?
         var border: CGColor?
         NSAppearance.withAppAppearance {
@@ -1065,8 +1059,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         browserToolPermissionAction?(sender)
     }
 
-    /// The user's visibility choice, except that a hidden pill shows, disabled, while a browser tool permission
-    /// waits: the prompt opens from it. It hides again once the permission is answered.
     private func applyDuckAIChromeButtonVisibility() {
         applyDuckAIChromeUserButtonVisibility()
         guard let container = duckAIChromeControlContainer, let titleButton = duckAIChromeTitleButton else { return }

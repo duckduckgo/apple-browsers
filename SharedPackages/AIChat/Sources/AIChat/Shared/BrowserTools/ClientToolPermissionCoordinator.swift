@@ -33,7 +33,6 @@ public struct ClientToolPermissionPrompt: Equatable, Sendable {
     public let requestID: String
     public let callID: String
     public let toolName: String
-    /// The call names a tab other than the chat's own, which some prompts word differently.
     public let targetsOtherTab: Bool
 }
 

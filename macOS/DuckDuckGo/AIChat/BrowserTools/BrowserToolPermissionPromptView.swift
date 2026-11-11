@@ -20,8 +20,6 @@ import AIChat
 import DesignResourcesKitIcons
 import SwiftUI
 
-/// What the prompt says for a tool. Reading or searching another tab is worded apart, and never names that
-/// tab: the prompt may show while the user is looking at another page.
 enum BrowserToolPermissionPromptText {
 
     static func title(toolName: String, targetsOtherTab: Bool) -> String {
@@ -39,7 +37,6 @@ enum BrowserToolPermissionPromptText {
         }
     }
 
-    /// The tool's icon on the tab bar button that holds the prompt.
     static func icon(toolName: String) -> NSImage {
         switch toolName {
         case "listOpenTabs": DesignSystemImages.Glyphs.Size16.windowsAndTabs
@@ -69,8 +66,6 @@ enum BrowserToolPermissionPromptText {
     }
 }
 
-/// Allow once · Always allow · Never allow for one browser tool call. Closing it without a choice answers
-/// "not this time"; the presenter handles Esc and ⌘↵.
 struct BrowserToolPermissionPromptView: View {
 
     private enum Constants {
@@ -111,7 +106,6 @@ struct BrowserToolPermissionPromptView: View {
         .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
     }
 
-    /// The one with a shortcut hint is the primary, accent-coloured choice.
     private func decisionButton(_ title: String, _ decision: ClientToolPermissionDecision, id: String, shortcutHint: String? = nil) -> some View {
         let palette = themeManager.theme.palette
         let primary = shortcutHint != nil

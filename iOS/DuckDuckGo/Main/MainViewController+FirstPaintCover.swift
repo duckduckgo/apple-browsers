@@ -21,6 +21,7 @@ import UIKit
 import Bookmarks
 import Core
 import FeatureFlags_iOS
+import PrivacyConfig
 import Suggestions
 
 extension MainViewController {
@@ -53,6 +54,35 @@ extension MainViewController {
         searchPageColorMemory.record(preview: preview, for: style)
     }
 
+    /// Keeps the header of the results page just shown, to stand in for the next one while it loads.
+    func learnSearchPageHeader(from tab: TabViewController) {
+        let style = traitCollection.userInterfaceStyle
+        guard tab === currentTab,
+              let url = tab.url, Self.learnsSearchPageHeader(from: url, featureFlagger: featureFlagger) else { return }
+        tab.captureSearchPageHeader { [weak self] header in
+            guard let self, let header, self.traitCollection.userInterfaceStyle == style else { return }
+            self.searchPageHeaderMemory.record(header, for: style)
+        }
+    }
+
+    /// The outline and header are an addition to the cover, released on their own flag.
+    static func showsSearchResultsSkeleton(for url: URL, featureFlagger: FeatureFlagger) -> Bool {
+        url.isDuckDuckGoSearch
+            && featureFlagger.isFeatureOn(.searchSubmitPageCover)
+            && featureFlagger.isFeatureOn(.searchSubmitPageSkeleton)
+    }
+
+    static func learnsSearchPageHeader(from url: URL, featureFlagger: FeatureFlagger) -> Bool {
+        showsSearchResultsSkeleton(for: url, featureFlagger: featureFlagger) && isAllResultsPage(url)
+    }
+
+    /// Other verticals, such as Images, select a different tab and drop the filters.
+    static func isAllResultsPage(_ url: URL) -> Bool {
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        let vertical = items.first { $0.name == "ia" }?.value
+        return (vertical == nil || vertical == "web") && !items.contains { $0.name == "iax" || $0.name == "iaxm" }
+    }
+
     private func prepareFirstPaintCover(forSubmitting url: URL) {
         // Other schemes, such as mailto:, never load in the tab.
         guard featureFlagger.isFeatureOn(.searchSubmitPageCover),
@@ -69,8 +99,12 @@ extension MainViewController {
             handoff.exitSnapshotWindowFrame = panel.convert(panel.bounds, to: nil)
         }
         handoff.destinationColor = expectedPageBackgroundColor(for: url)
-        // Websites keep the plain cover; the outline matches the phone-width results page only.
-        handoff.showsSearchResultsSkeleton = url.isDuckDuckGoSearch && traitCollection.horizontalSizeClass == .compact
+        // Websites keep the plain cover; only the results page has a known shape.
+        handoff.showsSearchResultsSkeleton = Self.showsSearchResultsSkeleton(for: url, featureFlagger: featureFlagger)
+        if handoff.showsSearchResultsSkeleton {
+            handoff.searchResultsHeader = searchPageHeaderMemory.header(for: traitCollection.userInterfaceStyle,
+                                                                        width: tab.webView?.bounds.width ?? 0)
+        }
         tab.coverPageUntilFirstPaint(handoff: handoff)
     }
 

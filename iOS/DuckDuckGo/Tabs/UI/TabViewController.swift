@@ -1692,6 +1692,21 @@ class TabViewController: UIViewController {
         firstPaintCover.arm(in: webViewContainer, above: webView, handoff: handoff, contentTop: contentTop)
     }
 
+    /// Snapshots the results page header at full resolution; nil unless the page is at rest at its top.
+    func captureSearchPageHeader(completion: @escaping @MainActor (UIImage?) -> Void) {
+        guard isViewLoaded, let webView, webView.window != nil, !webView.isLoading else { return completion(nil) }
+        let scrollView = webView.scrollView
+        let top = scrollView.adjustedContentInset.top
+        guard abs(scrollView.contentOffset.y + top) < 1, scrollView.zoomScale == scrollView.minimumZoomScale else { return completion(nil) }
+
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = CGRect(x: 0, y: top, width: webView.bounds.width, height: SearchResultsSkeletonView.Constants.headerHeight)
+        configuration.afterScreenUpdates = false
+        webView.takeSnapshot(with: configuration) { image, _ in
+            MainActor.assumeIsolated { completion(image) }
+        }
+    }
+
     private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
         if case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.willLoad(isInternalRetry: !shouldCancelPendingAIChatTabAttachmentPrompt) {

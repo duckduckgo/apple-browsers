@@ -45,6 +45,8 @@ final class FirstPaintCover {
         var destinationColor: UIColor?
         /// Outlines the results page while it loads; only for searches, never for websites.
         var showsSearchResultsSkeleton = false
+        /// The results page header as it last rendered; replaces the header's outline when it fits.
+        var searchResultsHeader: UIImage?
     }
 
     /// Returns a closure that cancels the scheduled action.
@@ -131,6 +133,8 @@ final class FirstPaintCover {
         if handoff.showsSearchResultsSkeleton {
             let skeleton = SearchResultsSkeletonView(frame: view.bounds)
             skeleton.contentTop = contentTop
+            skeleton.pageView = webView
+            skeleton.headerImage = handoff.searchResultsHeader
             view.insertSubview(skeleton, at: 0)
             skeleton.appear()
             skeletonView = skeleton

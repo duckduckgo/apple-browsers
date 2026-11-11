@@ -586,6 +586,7 @@ class MainViewController: UIViewController {
     private var pageBackgroundColorObservation: NSKeyValueObservation?
     /// Results-page colour per appearance, so a search from any page can hand off to it.
     let searchPageColorMemory = SearchPageColorMemory()
+    let searchPageHeaderMemory = SearchPageHeaderMemory()
     private var siteThemeColorObservation: NSKeyValueObservation?
     private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
@@ -6382,6 +6383,8 @@ extension MainViewController: OmniBarDelegate {
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
+        // Before the suggestions hide, so the previous page never shows through.
+        prepareFirstPaintCover(forQuery: query)
         // Hide suggestion tray before kicking off navigation. refreshOmniBar()
         // queues an async swipe-tabs collection reload via applyWidth(); that
         // reload re-parents the OmniBar cell and fires textFieldDidEndEditing
@@ -8019,6 +8022,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage) {
         previewsSource.update(preview: preview, forTab: tab.tabModel)
         learnSearchPageColorIfNeeded(from: tab, preview: preview)
+        learnSearchPageHeader(from: tab)
     }
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags? {

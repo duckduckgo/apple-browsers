@@ -671,6 +671,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1218197249861911
     case searchSubmitPageCover
 
+    /// Shows the results page's header and an outline of its results on the search-submit cover.
+    /// TODO: add the flag's Asana task URL.
+    case searchSubmitPageSkeleton
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
 
@@ -1142,6 +1146,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
         case .searchSubmitPageCover:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageCover))
+        case .searchSubmitPageSkeleton:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageSkeleton))
         case .idleReturnNewTabPageAtLaunch:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
         case .launchBackgroundTask:

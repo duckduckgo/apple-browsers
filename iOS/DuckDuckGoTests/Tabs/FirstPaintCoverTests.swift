@@ -621,7 +621,21 @@ struct FirstPaintCoverTests {
         #expect(harness.cover.coverView?.subviews.first === skeleton)
         #expect(harness.cover.coverView?.subviews.last === handoff.exitSnapshot)
         #expect(skeleton.contentTop == 120)
+        #expect(skeleton.headerImage == nil)
         #expect(skeleton.frame == harness.container.bounds)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A remembered results header is handed to the outline", .timeLimit(.minutes(1)))
+    func searchPassesHeaderToSkeleton() throws {
+        let harness = Harness()
+        var handoff = FirstPaintCover.Handoff()
+        handoff.showsSearchResultsSkeleton = true
+        handoff.searchResultsHeader = UIImage()
+
+        harness.cover.arm(in: harness.container, above: harness.webView, handoff: handoff)
+
+        #expect(try #require(harness.cover.skeletonView).headerImage === handoff.searchResultsHeader)
     }
 
     @available(iOS 16, macOS 13, *)

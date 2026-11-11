@@ -177,6 +177,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1218197249861911
     case searchSubmitPageCover
 
+    /// TODO: add the flag's Asana task URL.
+    case searchSubmitPageSkeleton
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
 

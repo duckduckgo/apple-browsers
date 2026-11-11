@@ -26,7 +26,7 @@ struct UpdateBannerView: View {
 
     enum Style {
         /// Single pill-shaped row.
-        case row
+        case row(title: String)
         /// Illustrated card.
         case card
     }
@@ -39,8 +39,8 @@ struct UpdateBannerView: View {
     var body: some View {
         Group {
             switch style {
-            case .row:
-                row
+            case .row(let title):
+                row(title: title)
             case .card:
                 card
             }
@@ -49,12 +49,12 @@ struct UpdateBannerView: View {
         .environment(\.colorScheme, .light)
     }
 
-    private var row: some View {
+    private func row(title: String) -> some View {
         HStack(spacing: 0) {
             HStack(spacing: 8) {
                 UpdateBannerIcon()
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    UpdateBannerText(UserText.updateBannerRowTitle, style: .title)
+                    UpdateBannerText(title, style: .title)
                     UpdateBannerText("• \(version)", style: .detail)
                 }
             }
@@ -218,6 +218,11 @@ extension UpdateController {
         (self as? any SparkleUpdateControlling)?.isAtRestartCheckpoint == true ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
     }
 
+    /// App Store builds can't tell whether the update has downloaded, so they say "Update available".
+    var updateBannerRowTitle: String {
+        self is any SparkleUpdateControlling ? UserText.updateBannerRowReadyTitle : UserText.updateBannerRowAvailableTitle
+    }
+
     var updateBannerButtonTitle: String {
         self is any SparkleUpdateControlling ? updatePromptButtonTitle : UserText.updateBannerOpenAppStoreButton
     }
@@ -233,7 +238,7 @@ extension UpdateController {
 }
 
 #Preview("Row") {
-    UpdateBannerView(style: .row, version: "1.301.2", buttonTitle: UserText.updatePromptRestartButton) {}
+    UpdateBannerView(style: .row(title: UserText.updateBannerRowReadyTitle), version: "1.301.2", buttonTitle: UserText.updatePromptRestartButton) {}
         .frame(width: 334)
         .padding()
 }

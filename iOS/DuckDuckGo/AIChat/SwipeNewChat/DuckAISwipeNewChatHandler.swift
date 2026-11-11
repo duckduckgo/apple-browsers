@@ -209,11 +209,14 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         let constants = DuckAISwipeNewChat.Constants.self
         let offset = min(distance, constants.triggerDistance)
             + max(distance - constants.triggerDistance, 0) * constants.overpullResistance
-        indicator.update(progress: progress, isArmed: isArmed)
         guard movesContent else {
+            indicator.update(progress: progress, isArmed: isArmed)
             setIndicatorSlotHeight(constants.triggerDistance)
             return
         }
+        // The ring only starts once the whole circle is out from under the chat, so it never fills half hidden.
+        let revealed = constants.indicatorSpacing + DuckAISwipeNewChatIndicatorView.circleDiameter
+        indicator.update(progress: max(0, min((offset - revealed) / (constants.triggerDistance - revealed), 1)), isArmed: isArmed)
         if backdrop.isHidden {
             showBackdrop()
         }
@@ -361,6 +364,8 @@ private final class DuckAISwipeNewChatIndicatorView: UIView {
         static let fadeInProgress: CGFloat = 0.3
         static let collapsed = CGAffineTransform(scaleX: 0.01, y: 0.01)
     }
+
+    static var circleDiameter: CGFloat { Metrics.diameter }
 
     private let circle = UIView()
     private let ring = CAShapeLayer()

@@ -125,11 +125,11 @@ final class BookmarkTabBrowserTool: BrowserTool {
                 continue
             }
             let parent = folder
-            let created: BookmarkFolder = try await withCheckedThrowingContinuation { continuation in
+            let newFolder: BookmarkFolder = try await withCheckedThrowingContinuation { continuation in
                 bookmarkManager.makeFolder(named: name, parent: parent) { continuation.resume(with: $0) }
             }
-            await waitUntilListed(created.id)
-            folder = created
+            await waitUntilListed(newFolder.id)
+            folder = newFolder
             siblings = []
             created = true
         }

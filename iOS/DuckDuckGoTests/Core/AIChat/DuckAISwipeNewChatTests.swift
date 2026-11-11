@@ -236,6 +236,16 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Navigating between touch-down and the pan asks the new chat again", .timeLimit(.minutes(1)))
+    func navigationBeforePanDropsOldAnswer() {
+        var pull = Pull.idle
+        _ = ([.touchedDown, .pageAnswered(isAtBottom: true, translation: 0)] as [DuckAISwipeNewChat.Event]).flatMap { pull.handle($0) }
+        #expect(pull.handle(.cancelled).isEmpty)
+        #expect(pull.handle(.began(isEligible: true, translation: 0)) == [.checkAtBottom])
+        #expect(pull == .tracking)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Cancelling an armed pull springs back, starts nothing and resets", .timeLimit(.minutes(1)))
     func cancelResets() {
         var pull = Pull.idle

@@ -96,8 +96,9 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 
     /// A pull belongs to the chat it started on, so navigating away mid-pull drops it and any page reply still due.
+    /// That includes a finger that is down but hasn't moved yet, so the old chat's answer can't arm the new one.
     func webViewURLDidChange() {
-        if pull.isUnderway {
+        if pull != .idle {
             generation += 1
             apply(pull.handle(.cancelled))
         }

@@ -50,12 +50,16 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private let backdrop = UIView()
 
     private var pull = DuckAISwipeNewChat.Pull.idle
-    private var panStart: (velocity: CGPoint, y: CGFloat, bottomInsetMinY: CGFloat)?
+    private var panStart: (velocity: CGPoint, y: CGFloat, bottomInsetMinY: CGFloat, isHeld: Bool)?
+    private var touchDownTime: TimeInterval?
     /// Bumped to make late page replies and animation completions from an earlier interaction do nothing.
     private var generation = 0
     private var commitState = DuckAISwipeNewChat.Commit.idle
 
     private var movesContent: Bool { !UIAccessibility.isReduceMotionEnabled }
+
+    /// A selection being dragged isn't a pull.
+    private static let canPullExpression = "(getSelection()?.isCollapsed ?? true) && \(DuckAIChatScroller.isAtBottomExpression)"
 
     init(webView: WKWebView,
          hostView: UIView,
@@ -123,7 +127,8 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
                                                          isInputHidden: chrome.isInputHidden,
                                                          panVelocity: panStart.velocity,
                                                          startY: panStart.y,
-                                                         bottomInsetMinY: panStart.bottomInsetMinY)
+                                                         bottomInsetMinY: panStart.bottomInsetMinY,
+                                                         isHeld: panStart.isHeld)
         return (eligibility, chrome)
     }
 
@@ -134,9 +139,11 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private func beginIfEligible(_ gesture: UIPanGestureRecognizer, in hostView: UIView) -> Bool {
         guard let window = hostView.window else { return false }
         let homeIndicatorTop = window.bounds.maxY - window.safeAreaInsets.bottom
+        let heldFor = touchDownTime.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0
         panStart = (gesture.velocity(in: hostView),
                     gesture.location(in: hostView).y,
-                    hostView.convert(CGPoint(x: 0, y: homeIndicatorTop), from: nil).y)
+                    hostView.convert(CGPoint(x: 0, y: homeIndicatorTop), from: nil).y,
+                    heldFor >= DuckAISwipeNewChat.Constants.longPressDuration)
         guard let current = eligibility(), current.eligibility.isEligible else { return false }
         tickHaptic.prepare()
         armHaptic.prepare()
@@ -281,7 +288,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private func checkAtBottom() {
         guard let webView, webView.bounds.width > 0, webView.bounds.height > 0 else { return }
         let generation = generation
-        webView.evaluateJavaScript(DuckAIChatScroller.isAtBottomExpression) { [weak self] result, _ in
+        webView.evaluateJavaScript(Self.canPullExpression) { [weak self] result, _ in
             guard let self, generation == self.generation, let hostView = self.hostView else { return }
             self.apply(self.pull.handle(.pageAnswered(isAtBottom: result as? Bool == true,
                                                       translation: self.pan.translation(in: hostView).y)))
@@ -314,8 +321,10 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
     /// Asks the page at touch-down, before the chat scrolls with the finger.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        guard pan.numberOfTouches == 0, feature.isAvailable, commitState == .idle, webView != nil else { return true }
+        guard pan.numberOfTouches == 0, feature.isAvailable, commitState == .idle,
+              webView?.url?.duckAIChatID != nil else { return true }
         generation += 1
+        touchDownTime = touch.timestamp
         apply(pull.handle(.touchedDown))
         return true
     }

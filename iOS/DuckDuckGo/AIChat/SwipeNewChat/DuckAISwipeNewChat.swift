@@ -32,6 +32,8 @@ enum DuckAISwipeNewChat {
         static let indicatorSpacing: CGFloat = 4
         static let springBackDuration: TimeInterval = 0.35
         static let commitDuration: TimeInterval = 0.2
+        /// A finger held this long before moving is a long press or a drag, not a pull.
+        static let longPressDuration: TimeInterval = 0.5
         /// How long the new tab gets to appear before the old chat is put back.
         static let newTabTimeout: TimeInterval = 1
     }
@@ -46,6 +48,7 @@ enum DuckAISwipeNewChat {
         var startY: CGFloat
         /// Top of the home indicator inset, in the same coordinates as `startY`.
         var bottomInsetMinY: CGFloat
+        var isHeld: Bool
 
         var isEligible: Bool {
             isFeatureAvailable
@@ -55,6 +58,7 @@ enum DuckAISwipeNewChat {
             && !isInputHidden
             && abs(panVelocity.y) > abs(panVelocity.x)
             && startY < bottomInsetMinY
+            && !isHeld
         }
     }
 

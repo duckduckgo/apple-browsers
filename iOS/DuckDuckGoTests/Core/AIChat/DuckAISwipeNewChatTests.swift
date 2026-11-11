@@ -388,7 +388,8 @@ struct DuckAISwipeNewChatTests {
                                               isInputHidden: false,
                                               panVelocity: CGPoint(x: 10, y: -400),
                                               startY: 500,
-                                              bottomInsetMinY: 800)
+                                              bottomInsetMinY: 800,
+                                              isHeld: false)
 
     @available(iOS 16, macOS 13, *)
     @Test("A vertical pan on a chat with nothing in the way is eligible", .timeLimit(.minutes(1)))
@@ -404,7 +405,8 @@ struct DuckAISwipeNewChatTests {
             ("no chat ID", \Eligibility.hasChat, false),
             ("generating", \Eligibility.isGenerating, true),
             ("voice session", \Eligibility.isVoiceSessionActive, true),
-            ("input hidden by the page", \Eligibility.isInputHidden, true)
+            ("input hidden by the page", \Eligibility.isInputHidden, true),
+            ("held before moving: a long press or drag", \Eligibility.isHeld, true)
           ] as [(String, WritableKeyPath<Eligibility, Bool>, Bool)])
     func blockingStateIsIneligible(_ name: String, _ keyPath: WritableKeyPath<Eligibility, Bool>, _ value: Bool) {
         var eligibility = Self.eligible

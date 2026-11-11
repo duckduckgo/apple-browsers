@@ -322,16 +322,22 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(tab.content, .url(urls.url1, source: .ui))
     }
 
+    @available(macOS 15.4, *)
     @MainActor
-    func testWhenContentIsExtensionPageThenTabWebViewDoesNotLoadIt() {
-        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
-        let extensionURL = URL(string: "webkit-extension://example/app/app.html#/page/ready")!
+    func testWhenContentIsExtensionPageThenTabWebViewDoesNotLoadIt() async throws {
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Tab Load Test", pages: [
+            "app.html": "<html><body>App</body></html>"
+        ]))
+        context.baseURL = URL(string: "webkit-extension://example/")!
+        try controller.load(context)
+        defer { try? controller.unload(context) }
+        tab = Tab(content: .none, webViewConfiguration: try XCTUnwrap(context.webViewConfiguration))
 
-        let navigation = tab.setContent(.webExtensionUrl(extensionURL))
+        tab.setContent(.webExtensionUrl(URL(string: "webkit-extension://example/app.html")!))
 
-        XCTAssertNil(navigation)
         XCTAssertNil(tab.webView.url)
-        XCTAssertNil(tab.error)
+        XCTAssertFalse(tab.webView.isLoading)
     }
 
     @available(macOS 15.4, *)

@@ -74,6 +74,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let toolbarFire = "Browser.Toolbar.Button.Fire"
         static let toolbarMenu = "Browser.Toolbar.Button.Menu"
         static let domainCapsule = "Browser.FloatingDomainCapsule"
+        static let chromeMorphTrace = "Browser.ChromeMorphTrace"
         static let aiChat = "Browser.OmniBar.Button.AIChat"
         static let customizable = "Browser.OmniBar.Button.Customizable"
     }
@@ -532,6 +533,129 @@ class FloatingUIXCUITestCase: XCTestCase {
         }
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertConfiguredBarPosition()
+    }
+
+    /// The chrome hide/show must be paced over several frames and never jump. With the address bar at
+    /// the bottom it must also be a single motion: the shape keeps changing on every frame, and the
+    /// glass is never dimmed by a cross-fade.
+    func verifyChromeMorphIsOneContinuousMotion() {
+        openPage(path: "/long-page", heading: Page.longHeading)
+        XCTAssertTrue(webView.waitForExistence(timeout: timeout))
+
+        webView.swipeUp(velocity: .fast)
+        XCTAssertTrue(domainCapsule.waitForHittable(timeout: timeout))
+        assertMorphIsContinuous(try? chromeMorphTrace(endingAt: 0), named: "collapse")
+
+        webView.swipeDown(velocity: .fast)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        assertMorphIsContinuous(try? chromeMorphTrace(endingAt: 1), named: "expand")
+    }
+
+    /// Reversing direction before the chrome has settled must turn the motion round, not restart it.
+    func verifyChromeMorphReversesWithoutJumping() {
+        openPage(path: "/long-page", heading: Page.longHeading)
+        XCTAssertTrue(webView.waitForExistence(timeout: timeout))
+
+        let start = webView.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+        let turn = webView.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        let end = webView.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+        start.press(forDuration: 0.05, thenDragTo: turn, withVelocity: .fast, thenHoldForDuration: 0)
+        turn.press(forDuration: 0.05, thenDragTo: end, withVelocity: .fast, thenHoldForDuration: 0)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+
+        guard let trace = try? chromeMorphTrace(endingAt: 1) else {
+            return XCTFail("No chrome morph was recorded for the reversal.")
+        }
+        assertNoJump(in: trace, named: "reversal")
+    }
+
+    private struct MorphSample {
+        let percent: Double
+        let width: Double
+        let height: Double
+        let midY: Double
+        let pillAlpha: Double
+        let barAlpha: Double
+        let bottomObscuredHeight: Double
+        let seconds: Double
+    }
+
+    private struct MorphTraceError: Error {}
+
+    /// Waits for the chrome to settle at `percent` and returns the frames recorded on the way there.
+    private func chromeMorphTrace(endingAt percent: Double) throws -> [MorphSample] {
+        let probe = element(withIdentifier: AccessibilityID.chromeMorphTrace)
+        var samples: [MorphSample] = []
+        let settled = waitUntil(timeout: timeout) {
+            samples = Self.morphSamples(from: probe.value as? String ?? "")
+            return samples.count > 1 && samples.last?.percent == percent
+        }
+        guard settled else { throw MorphTraceError() }
+        return samples
+    }
+
+    private static func morphSamples(from encoded: String) -> [MorphSample] {
+        encoded.split(separator: ";").compactMap { entry in
+            let values = entry.split(separator: ",").compactMap { Double($0) }.map { $0 / 10 }
+            guard values.count == 8 else { return nil }
+            return MorphSample(percent: values[0] / 1000, width: values[1], height: values[2], midY: values[3],
+                               pillAlpha: values[4] / 1000, barAlpha: values[5] / 1000,
+                               bottomObscuredHeight: values[6], seconds: values[7] / 1000)
+        }
+    }
+
+    private func assertMorphIsContinuous(_ trace: [MorphSample]?, named name: String,
+                                         file: StaticString = #filePath, line: UInt = #line) {
+        guard let trace else {
+            return XCTFail("No chrome morph was recorded for the \(name).", file: file, line: line)
+        }
+        let attachment = XCTAttachment(string: trace.map {
+            String(format: "p=%.3f w=%.1f h=%.1f y=%.1f pill=%.2f bar=%.2f inset=%.1f t=%.3f",
+                   $0.percent, $0.width, $0.height, $0.midY, $0.pillAlpha, $0.barAlpha, $0.bottomObscuredHeight, $0.seconds)
+        }.joined(separator: "\n"))
+        attachment.name = "chrome-morph-\(name)-\(barPosition.rawValue)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+
+        assertNoJump(in: trace, named: name, file: file, line: line)
+        guard barPosition == .bottom else { return }
+
+        // Frames where the chrome moved on but its shape did not: the "locks, then shrinks" stagger.
+        let moving = Array(zip(trace, trace.dropFirst())).filter { abs($0.percent - $1.percent) > 0.01 }
+        let stalled = moving.filter { previous, next in
+            abs(previous.width - next.width) < 0.5 && abs(previous.height - next.height) < 0.5 && abs(previous.midY - next.midY) < 0.5
+        }
+        XCTAssertLessThanOrEqual(stalled.count, 1,
+                                 "The \(name) held its shape for \(stalled.count) frames while the chrome kept moving.",
+                                 file: file, line: line)
+
+        // The pill is the glass for the whole morph; a part-faded pill dims the chrome mid-collapse.
+        for sample in trace where sample.percent > 0 && sample.percent < 0.99 {
+            XCTAssertEqual(sample.pillAlpha, 1, accuracy: 0.01,
+                           "The glass dimmed during the \(name) (p=\(sample.percent)).", file: file, line: line)
+        }
+
+        let insets = trace.map(\.bottomObscuredHeight)
+        let isShrinking = (insets.first ?? 0) > (insets.last ?? 0)
+        for (previous, next) in zip(insets, insets.dropFirst()) {
+            XCTAssertTrue(isShrinking ? next <= previous + 0.5 : next >= previous - 0.5,
+                          "The web view's bottom inset must follow the \(name) in one direction.", file: file, line: line)
+        }
+        let largestInsetStep = zip(insets, insets.dropFirst()).map { abs($0 - $1) }.max() ?? 0
+        XCTAssertLessThan(largestInsetStep, abs((insets.first ?? 0) - (insets.last ?? 0)) / 2,
+                          "The web view's bottom inset jumped during the \(name).", file: file, line: line)
+    }
+
+    /// The motion is spread over several frames and no single frame covers most of the travel.
+    private func assertNoJump(in trace: [MorphSample], named name: String,
+                              file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertGreaterThanOrEqual(trace.count, 8, "The \(name) was not paced over enough frames.", file: file, line: line)
+        let duration = (trace.last?.seconds ?? 0) - (trace.first?.seconds ?? 0)
+        XCTAssertGreaterThan(duration, 0.15, "The \(name) finished too quickly to read as motion.", file: file, line: line)
+        XCTAssertLessThan(duration, 1.5, "The \(name) took too long to settle.", file: file, line: line)
+
+        let largestStep = zip(trace, trace.dropFirst()).map { abs($0.percent - $1.percent) }.max() ?? 1
+        XCTAssertLessThan(largestStep, 0.5, "The \(name) covered most of its travel in one frame.", file: file, line: line)
     }
 
     func verifyCollapsedChromeTransitions() {
@@ -1237,6 +1361,8 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }
     func testWebInputChromeAfterAddressBarRelocation() { verifyWebInputChromeAfterAddressBarRelocation() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
+    func testChromeMorphIsOneContinuousMotion() { verifyChromeMorphIsOneContinuousMotion() }
+    func testChromeMorphReversesWithoutJumping() { verifyChromeMorphReversesWithoutJumping() }
     func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }
     func testTabSwitcherRotation() { verifyTabSwitcherRotation() }

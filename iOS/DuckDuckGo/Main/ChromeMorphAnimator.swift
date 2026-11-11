@@ -19,56 +19,76 @@
 
 import UIKit
 
-/// Moves the chrome visibility fraction toward a target, never faster than `maxSpeed`.
+/// Moves the chrome visibility fraction toward a target on a damped spring.
 ///
-/// That speed limit is the entire timing model. A scroll only ever assigns a new target; the
-/// animator decides nothing. Changes slower than the limit land exactly on their target each frame,
-/// so an unhurried drag still reads as direct manipulation; anything faster is paced out, so a full
-/// hide or reveal always takes `fullTraversalDuration` however hard the page was flicked.
-///
-/// There is no from/to pair and no notion of restarting on "retargeting": a new
-/// target mid-flight is a plain assignment, which is what removes the stall and snap failure modes
-/// a start-time-based animation needs explicit handling to avoid.
+/// A scroll only ever assigns a new target; the spring decides the pacing. It carries its velocity
+/// across target changes, so reversing mid-flight neither stalls nor snaps, and a hard flick is
+/// paced out over roughly `collapseDuration` / `expandDuration` instead of cutting in one frame.
+/// The value runs slightly past the target before settling, which is what gives the morph its give.
 final class ChromeMorphAnimator {
 
-    static let defaultTraversalDuration: CFTimeInterval = 0.30
+    static let defaultCollapseDuration: CFTimeInterval = 0.225
+    static let defaultExpandDuration: CFTimeInterval = 0.285
 
-    /// Below this the remaining distance is not worth another frame.
+    /// Slightly under-damped: about 1.5% overshoot.
+    static let dampingRatio: CGFloat = 0.8
+
+    /// Spring response per second of perceived duration, for `dampingRatio`.
+    private static let responsePerDuration: CGFloat = 1.35
+
+    /// Below these the remaining motion is not worth another frame.
     private static let settleEpsilon: CGFloat = 0.001
+    private static let settleSpeedEpsilon: CGFloat = 0.02
 
-    private let maxSpeed: CGFloat
-    private var legSpeed: CGFloat
+    /// Longest step integrated at once; longer frames are split so the spring stays stable.
+    private static let maxIntegrationStep: CGFloat = 1.0 / 240
+    /// A stalled run loop resumes the spring instead of fast-forwarding through it.
+    private static let maxFrameDuration: CGFloat = 0.1
+
+    private let collapseDuration: CFTimeInterval
+    private let expandDuration: CFTimeInterval
+    private var response: CGFloat
 
     private var displayLink: CADisplayLink?
     private var previousTargetTimestamp: CFTimeInterval?
     private var target: CGFloat = 1
+    private var velocity: CGFloat = 0
     private var onProgress: ((CGFloat) -> Void)?
     private var onComplete: (() -> Void)?
 
-    /// The value last emitted, so an interrupted morph resumes from where it visually is.
+    /// The value last emitted, so an interrupted morph resumes from where it visually is. May sit
+    /// slightly outside `0...1` while the spring settles.
     private(set) var currentValue: CGFloat = 1
 
     var isAnimating: Bool { displayLink != nil }
 
     var targetValue: CGFloat { target }
 
-    init(fullTraversalDuration: CFTimeInterval = ChromeMorphAnimator.defaultTraversalDuration) {
-        maxSpeed = 1 / CGFloat(max(fullTraversalDuration, 0.0001))
-        legSpeed = maxSpeed
+    init(collapseDuration: CFTimeInterval = ChromeMorphAnimator.defaultCollapseDuration,
+         expandDuration: CFTimeInterval = ChromeMorphAnimator.defaultExpandDuration) {
+        self.collapseDuration = collapseDuration
+        self.expandDuration = expandDuration
+        response = Self.response(forDuration: collapseDuration)
     }
 
-    /// Aims the morph at `value`. `fullTraversalDuration` overrides the pace for this leg only, for
-    /// the few callers that need a specific length (find-in-page, onboarding).
+    private static func response(forDuration duration: CFTimeInterval) -> CGFloat {
+        CGFloat(max(duration, 0.0001)) * responsePerDuration
+    }
+
+    /// Aims the morph at `value`. `duration` overrides the pace for this leg only, for the few
+    /// callers that need a specific length (find-in-page, onboarding).
     func setTarget(_ value: CGFloat,
-                   fullTraversalDuration: CFTimeInterval? = nil,
+                   duration: CFTimeInterval? = nil,
                    onProgress: @escaping (CGFloat) -> Void,
                    onComplete: @escaping () -> Void) {
+        if value != target || duration != nil {
+            response = Self.response(forDuration: duration ?? (value < currentValue ? collapseDuration : expandDuration))
+        }
         target = value
-        legSpeed = fullTraversalDuration.map { 1 / CGFloat(max($0, 0.0001)) } ?? maxSpeed
         self.onProgress = onProgress
         self.onComplete = onComplete
 
-        guard abs(target - currentValue) > Self.settleEpsilon else {
+        guard isAnimating || abs(target - currentValue) > Self.settleEpsilon else {
             settle()
             return
         }
@@ -92,6 +112,7 @@ final class ChromeMorphAnimator {
         displayLink?.invalidate()
         displayLink = nil
         previousTargetTimestamp = nil
+        velocity = 0
         onProgress = nil
         onComplete = nil
     }
@@ -101,20 +122,31 @@ final class ChromeMorphAnimator {
     }
 
     /// Uses time between delivered frames so a missed callback does not stretch the animation.
-    /// Retargeting preserves this clock and the currently displayed value.
+    /// Retargeting preserves this clock, the displayed value and its velocity.
     func advance(timestamp: CFTimeInterval, targetTimestamp: CFTimeInterval) {
         guard isAnimating else { return }
-        let frameDuration = CGFloat(max(targetTimestamp - (previousTargetTimestamp ?? timestamp), 0))
+        let elapsed = CGFloat(max(targetTimestamp - (previousTargetTimestamp ?? timestamp), 0))
         previousTargetTimestamp = targetTimestamp
-        let remaining = target - currentValue
-        let maxStep = legSpeed * frameDuration
+        integrate(over: min(elapsed, Self.maxFrameDuration))
 
-        guard abs(remaining) > maxStep else {
+        guard abs(target - currentValue) > Self.settleEpsilon || abs(velocity) > Self.settleSpeedEpsilon else {
             settle()
             return
         }
-        currentValue += remaining < 0 ? -maxStep : maxStep
         onProgress?(currentValue)
+    }
+
+    private func integrate(over duration: CGFloat) {
+        let angularFrequency = 2 * .pi / response
+        let stiffness = angularFrequency * angularFrequency
+        let damping = 2 * Self.dampingRatio * angularFrequency
+        var remaining = duration
+        while remaining > 0 {
+            let step = min(remaining, Self.maxIntegrationStep)
+            velocity += (stiffness * (target - currentValue) - damping * velocity) * step
+            currentValue += velocity * step
+            remaining -= step
+        }
     }
 
     private func settle() {

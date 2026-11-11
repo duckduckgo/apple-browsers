@@ -124,21 +124,6 @@ final class BrowserToolbarViewTests: XCTestCase {
 
     private let omnibarHeight: CGFloat = 60
 
-    func testWhenCollapsedOmnibarIsRefreshedThenExpandedButtonsBecomeVisibleAgain() throws {
-        let sut = makeSUT(embeddedOmnibar: true)
-        let button = UIView()
-        sut.setToolbarButtons([button])
-        let stack = try XCTUnwrap(button.superview as? UIStackView)
-        sut.setButtonRowCollapseProgress(1, reduceMotion: false)
-        XCTAssertEqual(stack.alpha, 0)
-
-        sut.setOmnibarView(UIView(), height: omnibarHeight)
-        sut.setButtonRowCollapseProgress(0, reduceMotion: false)
-
-        XCTAssertEqual(stack.alpha, 1)
-        XCTAssertEqual(stack.transform, .identity)
-    }
-
     private final class SuperviewTrackingView: UIView {
         private(set) var superviewChangeCount = 0
 
@@ -233,7 +218,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         let container = try XCTUnwrap(omnibar.superview)
         let attachmentConstraints = container.constraints.filter { $0.firstItem as? UIView === omnibar }
         XCTAssertEqual(attachmentConstraints.count, 4)
-        sut.setButtonRowCollapseProgress(1, reduceMotion: false)
         let updatedHeight = omnibarHeight + 10
 
         for _ in 0..<10 {
@@ -270,7 +254,7 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         XCTAssertNil(replacement.superview)
         XCTAssertFalse(sut.isHostingOmnibarView(replacement))
-        XCTAssertEqual(sut.setButtonRowCollapseProgress(0, reduceMotion: false), BrowserToolbarView.floatingButtonsHeight)
+        XCTAssertEqual(sut.panelHeight, BrowserToolbarView.floatingButtonsHeight)
     }
 
     private func makeSUT(floating: Bool = true, embeddedOmnibar: Bool = true) -> BrowserToolbarView {
@@ -283,50 +267,44 @@ final class BrowserToolbarViewTests: XCTestCase {
         return toolbar
     }
 
-    func testWhenProgressIsZeroThenButtonRowIsFullyShownAtFullHeight() {
+    func testWhenOmnibarIsEmbeddedThenPanelHeightCoversBothRows() {
         let sut = makeSUT()
-        let fullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: true)
 
-        let height = sut.setButtonRowCollapseProgress(0, reduceMotion: false)
-
-        XCTAssertEqual(height, fullHeight, accuracy: 0.01)
+        XCTAssertEqual(sut.panelHeight, BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: true), accuracy: 0.01)
     }
 
-    func testWhenProgressIsOneThenButtonRowIsGoneAtSingleRowHeight() {
-        let sut = makeSUT()
-        let singleRowHeight = BrowserToolbarView.singleRowHeight(withOmnibarHeight: omnibarHeight)
-
-        let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
-
-        XCTAssertEqual(height, singleRowHeight, accuracy: 0.01)
-    }
-
-    func testWhenProgressIsHalfThenHeightIsBetweenFullAndSingleRow() {
-        let sut = makeSUT()
-        let fullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: true)
-        let singleRowHeight = BrowserToolbarView.singleRowHeight(withOmnibarHeight: omnibarHeight)
-
-        let height = sut.setButtonRowCollapseProgress(0.5, reduceMotion: false)
-
-        XCTAssertEqual(height, (fullHeight + singleRowHeight) / 2, accuracy: 0.01)
-    }
-
-    func testWhenReduceMotionThenProgressIsIgnoredAndButtonRowStaysFullyShown() {
-        let sut = makeSUT()
-        let fullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: true)
-
-        let height = sut.setButtonRowCollapseProgress(1, reduceMotion: true)
-
-        XCTAssertEqual(height, fullHeight, accuracy: 0.01)
-    }
-
-    func testWhenNoEmbeddedOmnibarThenProgressIsANoOp() {
+    func testWhenNoEmbeddedOmnibarThenPanelHeightIsTheButtonsOnlyHeight() {
         let sut = makeSUT(embeddedOmnibar: false)
-        let buttonsOnlyHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: true)
 
-        let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
+        XCTAssertEqual(sut.panelHeight, BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: true), accuracy: 0.01)
+    }
 
-        XCTAssertEqual(height, buttonsOnlyHeight, accuracy: 0.01)
+    func testWhenNotFloatingThenPanelHeightKeepsLegacyPadding() {
+        let sut = makeSUT(floating: false)
+
+        XCTAssertEqual(sut.panelHeight, BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: false), accuracy: 0.01)
+    }
+
+    // The morph must not touch layout: the panel is scaled as a whole, glass and content together.
+    func testWhenMorphTransformIsAppliedThenPanelIsScaledWithoutChangingItsLayout() throws {
+        let sut = makeSUT()
+        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
+        let panel = try XCTUnwrap(glassView.superview)
+        let boundsBefore = panel.bounds
+        let transform = CGAffineTransform(scaleX: 0.8, y: 0.7).concatenating(CGAffineTransform(translationX: 0, y: 20))
+
+        sut.setMorphTransform(transform)
+        sut.layoutIfNeeded()
+
+        XCTAssertEqual(panel.bounds, boundsBefore)
+        XCTAssertEqual(panel.transform.a, 0.8, accuracy: 0.001)
+        XCTAssertEqual(panel.transform.d, 0.7, accuracy: 0.001)
+        XCTAssertEqual(glassView.transform, .identity)
+
+        sut.setMorphTransform(.identity)
+
+        XCTAssertEqual(panel.transform.a, 1, accuracy: 0.001)
+        XCTAssertEqual(panel.transform.d, 1, accuracy: 0.001)
     }
 
     func testWhenStandaloneCollapseProgressIsAppliedThenGlassScaleStaysIdentity() {
@@ -393,35 +371,24 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
     }
 
-    func testWhenNotFloatingThenProgressIsANoOp() {
-        let sut = makeSUT(floating: false)
-        let legacyFullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: false)
-
-        let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
-
-        XCTAssertEqual(height, legacyFullHeight, accuracy: 0.01)
-    }
-
     private func firstVisualEffectView(in view: UIView) -> UIVisualEffectView? {
         if let view = view as? UIVisualEffectView { return view }
         return view.subviews.lazy.compactMap { self.firstVisualEffectView(in: $0) }.first
     }
 
-    func testWhenButtonRowIsMidCollapseThenRestingCapsuleFrameStillReportsSingleRowHeight() {
+    func testWhenOmnibarIsEmbeddedThenRestingCapsuleFrameIsTheWholePanelEvenWhileMorphing() {
         let sut = makeSUT()
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
         container.addSubview(sut)
-        let singleRowHeight = BrowserToolbarView.singleRowHeight(withOmnibarHeight: omnibarHeight)
+        let fullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: true)
 
-        _ = sut.setButtonRowCollapseProgress(0, reduceMotion: false)
-        let heightAtStart = sut.restingCapsuleFrame(in: container).height
+        let heightAtRest = sut.restingCapsuleFrame(in: container).height
+        sut.setMorphTransform(CGAffineTransform(scaleX: 0.5, y: 0.5))
+        let heightMidMorph = sut.restingCapsuleFrame(in: container).height
 
-        _ = sut.setButtonRowCollapseProgress(0.3, reduceMotion: false)
-        let heightMidCollapse = sut.restingCapsuleFrame(in: container).height
-
-        XCTAssertEqual(heightAtStart, singleRowHeight, accuracy: 0.01)
-        XCTAssertEqual(heightMidCollapse, singleRowHeight, accuracy: 0.01,
-                       "restingCapsuleFrame must not track the live, mid-animation panel height")
+        XCTAssertEqual(heightAtRest, fullHeight, accuracy: 0.01)
+        XCTAssertEqual(heightMidMorph, fullHeight, accuracy: 0.01,
+                       "restingCapsuleFrame must not track the live, mid-morph panel")
     }
 
     func testWhenNoEmbeddedOmnibarThenRestingCapsuleFrameUsesTheLiveButtonsOnlyHeight() {
@@ -442,10 +409,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(
             BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true),
             134,
-            accuracy: 0.01)
-        XCTAssertEqual(
-            BrowserToolbarView.singleRowHeight(withOmnibarHeight: 48),
-            78,
             accuracy: 0.01)
     }
 
@@ -755,20 +718,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         view.widthAnchor.constraint(equalToConstant: width).isActive = true
         view.heightAnchor.constraint(equalToConstant: 44).isActive = true
         return view
-    }
-
-    func testWhenButtonRowCollapsesThenEmbeddedOmnibarKeepsItsHeight() {
-        let fieldHeight: CGFloat = 48
-        let omnibar = UIView()
-        let toolbar = BrowserToolbarView(frame: .zero)
-        toolbar.setFloatingStyleEnabled(true)
-        toolbar.setOmnibarView(omnibar, height: fieldHeight)
-
-        let collapsedHeight = toolbar.setButtonRowCollapseProgress(1, reduceMotion: false)
-        toolbar.frame = CGRect(x: 0, y: 0, width: 390, height: collapsedHeight)
-        toolbar.layoutIfNeeded()
-
-        XCTAssertEqual(omnibar.bounds.height, fieldHeight, accuracy: 0.5)
     }
 
     func testWhenNotFloatingThenCombinedChromeHeightKeepsLegacyPadding() {

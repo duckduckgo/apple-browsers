@@ -58,6 +58,11 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
     private var movesContent: Bool { !UIAccessibility.isReduceMotionEnabled }
 
+    private var chatID: String? {
+        guard let url = webView?.url else { return nil }
+        return url.duckAIChatID ?? url.duckAISharedChatID
+    }
+
     /// A selection being dragged isn't a pull.
     private static let canPullExpression = "(getSelection()?.isCollapsed ?? true) && \(DuckAIChatScroller.isAtBottomExpression)"
 
@@ -97,7 +102,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             generation += 1
             apply(pull.handle(.cancelled))
         }
-        apply(commitState.handle(.urlChanged(chatID: webView?.url?.duckAIChatID)))
+        apply(commitState.handle(.urlChanged(chatID: chatID)))
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -121,7 +126,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private func eligibility() -> (eligibility: DuckAISwipeNewChat.Eligibility, chrome: DuckAISwipeNewChatChromeState)? {
         guard let panStart, let chrome = chromeState() else { return nil }
         let eligibility = DuckAISwipeNewChat.Eligibility(isFeatureAvailable: feature.isAvailable,
-                                                         hasChat: webView?.url?.duckAIChatID != nil,
+                                                         hasChat: chatID != nil,
                                                          isGenerating: chrome.isGenerating,
                                                          isVoiceSessionActive: chrome.isVoiceSessionActive,
                                                          isInputHidden: chrome.isInputHidden,
@@ -169,7 +174,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             case .springBack:
                 springBack()
             case .startNewChat:
-                apply(commitState.handle(.released(chatID: webView?.url?.duckAIChatID)))
+                apply(commitState.handle(.released(chatID: chatID)))
             }
         }
     }
@@ -241,7 +246,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             self.indicator.alpha = 0
         } completion: { _ in
             guard generation == self.generation else { return }
-            self.apply(self.commitState.handle(.fadedOut(chatID: self.webView?.url?.duckAIChatID,
+            self.apply(self.commitState.handle(.fadedOut(chatID: self.chatID,
                                                          isEligible: self.isStillEligible())))
         }
     }
@@ -322,7 +327,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     /// Asks the page at touch-down, before the chat scrolls with the finger.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard pan.numberOfTouches == 0, feature.isAvailable, commitState == .idle,
-              webView?.url?.duckAIChatID != nil else { return true }
+              chatID != nil else { return true }
         generation += 1
         touchDownTime = touch.timestamp
         apply(pull.handle(.touchedDown))
@@ -330,7 +335,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        feature.isAvailable && commitState == .idle && webView?.url?.duckAIChatID != nil
+        feature.isAvailable && commitState == .idle && chatID != nil
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,

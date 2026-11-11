@@ -171,7 +171,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
                                            currentDateProvider: { now },
                                            pixelFiring: pixelFiring)
 
-            pixelHandler.fire(.timeLimit(reason), source: .default, flow: .default, variant: .duckAISearch)
+            pixelHandler.fire(.timeLimit(reason), source: .default, flow: .default, variants: .init(searchExperience: .duckAISearch))
 
             let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
             XCTAssertEqual(event.pixel.namePrefix, .custom("m_ios_"))
@@ -183,7 +183,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
             XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "4-10")
             XCTAssertEqual(event.additionalParameters?["source"], "default")
             XCTAssertEqual(event.additionalParameters?["flow"], "default")
-            XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-search")
+            XCTAssertEqual(event.additionalParameters?["variant_search_experience"], "search_plus_duckai-search")
         }
     }
 

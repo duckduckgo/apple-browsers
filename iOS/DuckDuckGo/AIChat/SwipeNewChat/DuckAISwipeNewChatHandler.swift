@@ -379,7 +379,8 @@ private final class DuckAISwipeNewChatIndicatorView: UIView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isShadowHidden = true
         button.setIcon(DesignSystemImages.Glyphs.Size24.compose)
-        button.applySubmitStyle(isActive: true, isFireTab: isFireTab, activeForeground: .white)
+        button.applySubmitStyle(isActive: true, isFireTab: isFireTab,
+                                activeForeground: isFireTab ? .white : UIColor(designSystemColor: .accentContentPrimary))
         circle.addSubview(button)
 
         label.translatesAutoresizingMaskIntoConstraints = false

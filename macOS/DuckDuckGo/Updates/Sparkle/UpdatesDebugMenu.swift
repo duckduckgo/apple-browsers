@@ -227,6 +227,9 @@ final class UpdatesDebugMenu: NSMenu {
 
         Keep this Terminal open while testing. Press Ctrl+C there to stop the server.
         Python 3 must already be installed. If a server is already running, stop it before restarting this exported copy.
+        If Python reports “Operation not permitted” while reading the exported files, allow your terminal app to access Downloads:
+        System Settings → Privacy & Security → Files & Folders → iTerm (or Terminal) → Downloads Folder.
+        Enable that permission for the terminal app running Python, then retry the command.
 
         ## Configure the Debug app
 

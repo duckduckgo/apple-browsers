@@ -174,10 +174,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1219652686297425
     case deferredMemoryCacheDelete
 
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1218197249861911
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432472832449
     case searchSubmitPageCover
 
-    /// TODO: add the flag's Asana task URL.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432242361261
     case searchSubmitPageSkeleton
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863

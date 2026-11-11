@@ -143,7 +143,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case legacyFindInPage
 
     /// Container transform when a new tab opens.
-    /// Asana task: pending
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220324835587117
     case newTabTransition
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.

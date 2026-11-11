@@ -47,10 +47,12 @@ extension TabSwitcherViewController {
                                           message: message,
                                           preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
-            alert.addAction(title: UserText.actionBookmark, style: .default) { [weak self] in
+            let bookmarkAction = UIAlertAction(title: UserText.actionBookmark, style: .default) { [weak self] _ in
                 guard let self else { return }
                 tabsToBookmarks(self)
             }
+            bookmarkAction.accessibilityIdentifier = "TabSwitcher.BookmarkTabs.Confirm"
+            alert.addAction(bookmarkAction)
             present(alert, animated: true, completion: nil)
         }
     }

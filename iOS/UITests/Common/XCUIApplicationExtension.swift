@@ -73,6 +73,26 @@ extension XCUIApplication {
             "Expected page content '\(text)' did not appear.", file: file, line: line)
     }
 
+    func openAutocompleteSuggestion(
+        withIdentifierPrefix identifierPrefix: String,
+        file: StaticString = #filePath,
+        line: UInt = #line) {
+        // Existing suggestion identifiers append unique data; select only by the semantic role prefix.
+        let suggestion = descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", identifierPrefix))
+            .firstMatch
+        suggestion.tapWhenHittable(in: self, file: file, line: line)
+    }
+
+    func openBrowsingMenuItem(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
+        dismissAddressBarEditing(file: file, line: line)
+        buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(in: self, file: file, line: line)
+        let item = descendants(matching: .any)[identifier]
+        let menu = descendants(matching: .any)["Browser.Menu.List"]
+        menu.swipeUpToReveal(item, file: file, line: line)
+        item.tap()
+    }
+
     func dismissAddressBarEditing(file: StaticString = #filePath, line: UInt = #line) {
         let timeout: TimeInterval = 20
         let startedAt = ProcessInfo.processInfo.systemUptime

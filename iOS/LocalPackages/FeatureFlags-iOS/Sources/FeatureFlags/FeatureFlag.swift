@@ -1147,7 +1147,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .searchSubmitPageCover:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageCover))
         case .searchSubmitPageSkeleton:
-            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageSkeleton))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageSkeleton))
         case .idleReturnNewTabPageAtLaunch:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
         case .launchBackgroundTask:

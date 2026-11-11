@@ -133,10 +133,10 @@ struct SearchResultsSkeletonTests {
     private static let search = URL(string: "https://duckduckgo.com/?q=pizza")!
 
     @available(iOS 16, macOS 13, *)
-    @Test("The outline flag is off unless the remote configuration turns it on", .timeLimit(.minutes(1)))
-    func skeletonFlagDefaultsToOff() {
-        guard case .disabled = FeatureFlag.searchSubmitPageSkeleton.defaultValue else {
-            Issue.record("searchSubmitPageSkeleton must default to disabled")
+    @Test("The outline flag is on for internal users only until the remote configuration says otherwise", .timeLimit(.minutes(1)))
+    func skeletonFlagDefaultsToInternalOnly() {
+        guard case .internalOnly = FeatureFlag.searchSubmitPageSkeleton.defaultValue else {
+            Issue.record("searchSubmitPageSkeleton must default to internal only")
             return
         }
     }

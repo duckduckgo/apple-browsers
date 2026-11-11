@@ -242,6 +242,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring
     private let subscriptionManager: any SubscriptionManager
     private let statisticsLoader: StatisticsLoader
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
@@ -271,6 +272,7 @@ final class AIChatContentHandler: AIChatContentHandling {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          statisticsLoader: StatisticsLoader = .shared,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
@@ -285,6 +287,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingExperimentMetricStore = onboardingExperimentMetricStore
         self.subscriptionManager = subscriptionManager
         self.statisticsLoader = statisticsLoader
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
@@ -525,11 +528,11 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
                 // Also completes the subscription onboarding checklist's Duck.ai step
-                let wasAlreadyActivated = onboardingActivationRecorder.recordDuckAIActivatedIfNeeded()
+                onboardingActivationRecorder.recordDuckAIActivated()
                 Task {
                     SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(
                         isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
-                        isAlreadyActivated: wasAlreadyActivated)
+                        metricStore: onboardingExperimentMetricStore)
                 }
             }
 

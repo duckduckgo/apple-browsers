@@ -20,8 +20,6 @@ import AIChat
 import AppKit
 import Foundation
 
-/// Searches completed downloads by file name and source URL. Asks first: downloads are browsing
-/// data. Never returns the local path, which would expose the username, nor a URL's query or fragment.
 @MainActor
 final class SearchDownloadsBrowserTool: BrowserTool {
 
@@ -29,7 +27,6 @@ final class SearchDownloadsBrowserTool: BrowserTool {
     static let maxLimit = 50
     static let maxFileNameLength = 256
 
-    /// Matches `AIChatBrowserToolsSubfeature.searchDownloads`, which is how the catalog gates it.
     let name = "searchDownloads"
     let permissionMode = BrowserToolPermissionMode.ask
 
@@ -44,7 +41,6 @@ final class SearchDownloadsBrowserTool: BrowserTool {
 
     private let downloads: @MainActor () -> [DownloadListItem]
 
-    /// - Parameter downloads: read on each call; the app's download list is created after this tool.
     init(downloads: @escaping @MainActor () -> [DownloadListItem] = { NSApp.delegateTyped.downloadListCoordinator.downloadListItems }) {
         self.downloads = downloads
     }
@@ -62,7 +58,6 @@ final class SearchDownloadsBrowserTool: BrowserTool {
         }
 
         let results = downloads()
-            // Fire Window downloads belong to a private session; unfinished or failed ones were never downloaded.
             .filter { !$0.isBurner && $0.progress == nil && $0.error == nil }
             .sorted { $0.modified > $1.modified }
             .map { item -> (fileName: String, url: String, downloadedAt: Date) in

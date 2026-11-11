@@ -19,13 +19,11 @@
 import AIChat
 import Foundation
 
-/// Pins tabs in the window the chat belongs to, or the chat's own tab when no ids are given.
 @MainActor
 final class PinTabBrowserTool: BrowserTool {
 
     static let maxTabIDs = 50
 
-    /// Matches `AIChatBrowserToolsSubfeature.pinTab`, which is how the catalog gates it.
     let name = "pinTab"
     let permissionMode = BrowserToolPermissionMode.auto
 
@@ -74,7 +72,6 @@ final class PinTabBrowserTool: BrowserTool {
         return .success(["tabs": .array(results)])
     }
 
-    /// Whether the tab ends up pinned. Only web pages can be pinned, as on other platforms.
     private func pin(_ tabID: TabIdentifier, in collection: TabCollectionViewModel) -> Bool {
         switch collection.indexInAllTabs(where: { $0.uuid == tabID }) {
         case .pinned: return true

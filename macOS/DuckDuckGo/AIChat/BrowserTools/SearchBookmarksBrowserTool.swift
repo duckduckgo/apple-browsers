@@ -19,15 +19,12 @@
 import AIChat
 import Foundation
 
-/// Searches bookmarks by title, URL and folder name, optionally within a folder path and its
-/// subfolders, in bookmark order. Asks first: bookmarks are the user's own data.
 @MainActor
 final class SearchBookmarksBrowserTool: BrowserTool {
 
     static let defaultLimit = 10
     static let maxLimit = 50
 
-    /// Matches `AIChatBrowserToolsSubfeature.searchBookmarks`, which is how the catalog gates it.
     let name = "searchBookmarks"
     let permissionMode = BrowserToolPermissionMode.ask
 
@@ -74,7 +71,6 @@ final class SearchBookmarksBrowserTool: BrowserTool {
         }
         guard let list = bookmarkManager.list else { return .failure(.unavailable) }
 
-        // A folder that does not exist yields no results rather than an error.
         guard let folder = Self.contents(of: folderPath, in: list) else { return .success(["results": []]) }
         var results: [Result] = []
         Self.collect(folder.entities, path: folder.path, into: &results)
@@ -92,8 +88,6 @@ final class SearchBookmarksBrowserTool: BrowserTool {
         return .success(["results": .array(Array(matches))])
     }
 
-    /// The children of the folder at `path` and that path's names, or nil when it does not exist.
-    /// Names match exactly; the first folder with a name wins, as in `bookmarkTab`.
     private static func contents(of path: [String], in list: BookmarkList) -> (entities: [BaseBookmarkEntity], path: [String])? {
         var entities = list.topLevelEntities
         for name in path {
@@ -103,7 +97,6 @@ final class SearchBookmarksBrowserTool: BrowserTool {
         return (entities, path.map { BrowserToolOutputLimits.clip($0, to: BookmarkTabBrowserTool.maxFolderNameLength) })
     }
 
-    /// Bookmarks in tree order. Only web pages, and none deeper than the contract's folder depth.
     private static func collect(_ entities: [BaseBookmarkEntity], path: [String], into results: inout [Result]) {
         for entity in entities {
             if let folder = entity as? BookmarkFolder {

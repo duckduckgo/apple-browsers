@@ -106,8 +106,6 @@ final class SearchDownloadsBrowserToolTests: XCTestCase {
         XCTAssertEqual(tool.permissionMode, .ask)
     }
 
-    // MARK: -
-
     private func item(_ fileName: String, from url: String, at seconds: TimeInterval) -> DownloadListItem {
         DownloadListItem(identifier: UUID(),
                          added: Date(timeIntervalSince1970: seconds),

@@ -65,7 +65,6 @@ public struct BrowserToolCallContext: Equatable, Sendable {
     /// token, so the front end cannot infer that the user is browsing privately.
     public let isBurner: Bool
 
-    /// True when the chat is shown in its own window, detached from any browser window.
     public let isDetached: Bool
 
     public init(ownerTabID: String,

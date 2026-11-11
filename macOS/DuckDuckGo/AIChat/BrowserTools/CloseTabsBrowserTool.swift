@@ -19,14 +19,11 @@
 import AIChat
 import Foundation
 
-/// Closes tabs in the window the chat belongs to, or the chat's own tab when no ids are given.
-/// Pinned tabs are never closed.
 @MainActor
 final class CloseTabsBrowserTool: BrowserTool {
 
     static let maxTabIDs = 50
 
-    /// Matches `AIChatBrowserToolsSubfeature.closeTabs`, which is how the catalog gates it.
     let name = "closeTabs"
     let permissionMode = BrowserToolPermissionMode.ask
 
@@ -44,8 +41,6 @@ final class CloseTabsBrowserTool: BrowserTool {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let afterReply: (@escaping @MainActor () -> Void) -> Void
 
-    /// - Parameter afterReply: runs work a second after this call returns, so closing the chat's own tab
-    ///   cannot lose the reply.
     init(windowControllersManager: WindowControllersManagerProtocol,
          afterReply: @escaping (@escaping @MainActor () -> Void) -> Void = { work in DispatchQueue.main.asyncAfter(deadline: .now() + 1) { work() } }) {
         self.windowControllersManager = windowControllersManager

@@ -19,12 +19,9 @@
 import AIChat
 import Foundation
 
-/// Opens a web page in a new tab of the chat's window. A detached chat has no window of its own,
-/// so it uses the regular window the user was last in.
 @MainActor
 final class OpenTabBrowserTool: BrowserTool {
 
-    /// Matches `AIChatBrowserToolsSubfeature.openTab`, which is how the catalog gates it.
     let name = "openTab"
     let permissionMode = BrowserToolPermissionMode.auto
 
@@ -48,7 +45,6 @@ final class OpenTabBrowserTool: BrowserTool {
         guard let collection = targetCollection(for: context) else { return .failure(.unavailable) }
 
         let tab = Tab(content: .url(url, credential: nil, source: .link), shouldLoadInBackground: true, burnerMode: collection.burnerMode)
-        // In the background, so the user stays where they are, even when several tabs open in a row.
         collection.insertOrAppend(tab: tab, selected: false)
         guard collection.indexInAllTabs(of: tab) != nil else { return .failure(.unavailable) }
 

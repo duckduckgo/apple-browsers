@@ -44,7 +44,8 @@ enum AIChatEntryPointPixel: PixelKit.Event {
                      opensNewTab: Bool,
                      hasPrompt: Bool,
                      voice: Bool,
-                     additionalParameters: [String: String] = [:]) {
+                     additionalParameters: [String: String] = [:],
+                     pixelFiring: PixelFiring? = PixelKit.shared) {
         let parameters: [String: String] = [
             PixelParameters.source: source.rawValue,
             "duckai_enabled": String(duckAIEnabled),
@@ -53,8 +54,8 @@ enum AIChatEntryPointPixel: PixelKit.Event {
             "has_prompt": String(hasPrompt),
             "voice": String(voice)
         ]
-        PixelKit.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount,
-                      withAdditionalParameters: parameters.merging(additionalParameters) { current, _ in current })
+        pixelFiring?.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount,
+                          options: .parameters(parameters.merging(additionalParameters) { current, _ in current }))
     }
 }
 

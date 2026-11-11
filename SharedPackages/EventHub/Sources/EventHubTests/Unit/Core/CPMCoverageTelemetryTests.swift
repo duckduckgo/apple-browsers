@@ -27,11 +27,11 @@ struct CPMCoverageTelemetryTests {
     static let pixelName = "autoconsent_cpmCoverage_day"
 
     static let unhandledBuckets = """
-    { "0": {"gte": 0, "lt": 1}, "1-5": {"gte": 1, "lt": 6}, "6-10": {"gte": 6, "lt": 11}, "11-30": {"gte": 11, "lt": 31}, "31+": {"gte": 31} }
+    { "1-2": {"gte": 1, "lt": 3}, "3-5": {"gte": 3, "lt": 6}, "6-10": {"gte": 6, "lt": 11}, "11-30": {"gte": 11, "lt": 31}, "31+": {"gte": 31} }
     """
 
     static let pagesBuckets = """
-    { "0": {"gte": 0, "lt": 1}, "1-9": {"gte": 1, "lt": 10}, "10-24": {"gte": 10, "lt": 25}, "25-49": {"gte": 25, "lt": 50},
+    { "1-9": {"gte": 1, "lt": 10}, "10-24": {"gte": 10, "lt": 25}, "25-49": {"gte": 25, "lt": 50},
       "50-99": {"gte": 50, "lt": 100}, "100-199": {"gte": 100, "lt": 200}, "200+": {"gte": 200} }
     """
 
@@ -60,21 +60,17 @@ struct CPMCoverageTelemetryTests {
         for _ in 0..<times { f.manager.handleNativeEvent(type) }
     }
 
-    @Test("A day without events sends the 0 bucket for every counter", .timeLimit(.minutes(1)))
-    func dayWithoutEventsSendsZeroBuckets() throws {
+    @Test("A day without events sends no pixel", .timeLimit(.minutes(1)))
+    func dayWithoutEventsSendsNoPixel() {
         let f = EventHubFixture.active(Self.config)
 
         f.advance(by: 86400)
 
-        let pixel = try #require(f.fired.first { $0.name == Self.pixelName })
-        #expect(pixel.parameters["unhandled"] == "0")
-        #expect(pixel.parameters["unhandled_top10k"] == "0")
-        #expect(pixel.parameters["pages"] == "0")
-        #expect(pixel.parameters["pages_top10k"] == "0")
+        #expect(!f.fired.contains { $0.name == Self.pixelName })
     }
 
-    @Test("A day with pages but no unhandled popups sends the 0 unhandled bucket", .timeLimit(.minutes(1)))
-    func dayWithZeroUnhandledSendsZeroBucket() throws {
+    @Test("A day with pages but no unhandled popups sends the pixel without the unhandled counters", .timeLimit(.minutes(1)))
+    func dayWithoutUnhandledOmitsUnhandledCounters() throws {
         let f = EventHubFixture.active(Self.config)
         send("autoconsent_pages", times: 30, to: f)
         send("autoconsent_pages_top10k", times: 12, to: f)
@@ -82,17 +78,19 @@ struct CPMCoverageTelemetryTests {
         f.advance(by: 86400)
 
         let pixel = try #require(f.fired.first { $0.name == Self.pixelName })
-        #expect(pixel.parameters["unhandled"] == "0")
-        #expect(pixel.parameters["unhandled_top10k"] == "0")
+        #expect(pixel.parameters["unhandled"] == nil)
+        #expect(pixel.parameters["unhandled_top10k"] == nil)
         #expect(pixel.parameters["pages"] == "25-49")
         #expect(pixel.parameters["pages_top10k"] == "10-24")
     }
 
-    @Test("Each counter is bucketed from its own source", .timeLimit(.minutes(1)))
-    func countersAreBucketedFromTheirOwnSource() throws {
+    @Test("Each counter is bucketed from its own source", .timeLimit(.minutes(1)), arguments: [
+        (2, "1-2"), (5, "3-5"),
+    ])
+    func countersAreBucketedFromTheirOwnSource(unhandledTop10k: Int, expectedUnhandledTop10k: String) throws {
         let f = EventHubFixture.active(Self.config)
         send("autoconsent_unhandled", times: 7, to: f)
-        send("autoconsent_unhandled_top10k", times: 2, to: f)
+        send("autoconsent_unhandled_top10k", times: unhandledTop10k, to: f)
         send("autoconsent_pages", times: 250, to: f)
         send("autoconsent_pages_top10k", times: 100, to: f)
 
@@ -100,7 +98,7 @@ struct CPMCoverageTelemetryTests {
 
         let pixel = try #require(f.fired.first { $0.name == Self.pixelName })
         #expect(pixel.parameters["unhandled"] == "6-10")
-        #expect(pixel.parameters["unhandled_top10k"] == "1-5")
+        #expect(pixel.parameters["unhandled_top10k"] == expectedUnhandledTop10k)
         #expect(pixel.parameters["pages"] == "200+")
         #expect(pixel.parameters["pages_top10k"] == "100-199")
     }

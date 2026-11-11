@@ -73,6 +73,7 @@ let package = Package(
             name: "DataBrokerProtectionDebugServer",
             dependencies: [
                 "DataBrokerProtectionCore",
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "DebugServer", package: "DebugServer"),
             ],
             swiftSettings: [
@@ -99,6 +100,7 @@ let package = Package(
                 .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
+                "DataBrokerProtectionDebugServer",
                 "BrowserServicesKit",
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Persistence", package: "Persistence"),

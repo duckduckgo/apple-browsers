@@ -68,8 +68,8 @@ final class AppLaunchUITests: UITestCase {
             "-ff.fireMode", "true",
             "-ff.fireButtonRefinements", "true",
             "-ff.slideToDelete", "false",
-            // These tests check browser controls after opening a tab from the context menu.
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+            // Pass a Boolean UserDefaults value so new tabs open without taking keyboard focus.
+            "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
         ]
         app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
         app.launch()

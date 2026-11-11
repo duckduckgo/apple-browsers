@@ -330,7 +330,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        feature.isAvailable && commitState == .idle
+        feature.isAvailable && commitState == .idle && webView?.url?.duckAIChatID != nil
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,

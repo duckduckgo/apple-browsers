@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import UIKit
 import WebKit
 
@@ -33,11 +34,24 @@ protocol DelegateFindSession: AnyObject {
 
 @available(iOS 16.0, *)
 final class WebKitDelegateFindSession: DelegateFindSession {
-    enum Failure: String, Error {
+    enum Failure: String, DDGError {
         case interactionUnavailable = "Find interaction unavailable"
         case delegateUnavailable = "WebKit delegate unavailable"
         case sessionUnavailable = "WebKit returned no session"
         case nativeNavigatorVisible = "Native navigator already visible"
+
+        static var errorDomain: String { "com.duckduckgo.findInPage.delegateSession" }
+
+        var errorCode: Int {
+            switch self {
+            case .interactionUnavailable: return 1
+            case .delegateUnavailable: return 2
+            case .sessionUnavailable: return 3
+            case .nativeNavigatorVisible: return 4
+            }
+        }
+
+        var description: String { rawValue }
     }
 
     private weak var webView: WKWebView?

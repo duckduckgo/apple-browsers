@@ -147,6 +147,23 @@ final class DelegateSessionFindInPageTests: XCTestCase {
         XCTAssertEqual(session.ends, 1)
     }
 
+    func testSessionFailuresBridgeToNSErrorWithStableIdentityAndDiagnosticDescription() {
+        let failures: [(WebKitDelegateFindSession.Failure, Int, String)] = [
+            (.interactionUnavailable, 1, "Find interaction unavailable"),
+            (.delegateUnavailable, 2, "WebKit delegate unavailable"),
+            (.sessionUnavailable, 3, "WebKit returned no session"),
+            (.nativeNavigatorVisible, 4, "Native navigator already visible")
+        ]
+
+        for (failure, code, description) in failures {
+            let error = failure as NSError
+            XCTAssertEqual(error.domain, "com.duckduckgo.findInPage.delegateSession")
+            XCTAssertEqual(error.code, code)
+            XCTAssertEqual(error.localizedDescription, description)
+            XCTAssertNil(error.userInfo[NSUnderlyingErrorKey])
+        }
+    }
+
     func testFailureIsExplicitAndNeverUsesAnotherBackend() {
         let find = DelegateSessionFindInPage(webView: WKWebView(), query: "retained", queryChanged: { _ in }) { _ in
             throw WebKitDelegateFindSession.Failure.sessionUnavailable

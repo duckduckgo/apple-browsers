@@ -139,7 +139,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
 
-    /// https://app.asana.com/REPLACE_WITH_TASK_URL
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220385578839193?focus=true
     case legacyFindInPageUIWithSystemFindEngine
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.

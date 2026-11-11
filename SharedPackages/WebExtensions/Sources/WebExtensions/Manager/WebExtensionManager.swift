@@ -1844,7 +1844,7 @@ extension WebExtensionManager {
     enum UpdateInstallationResult { case applied, installedDisabled }
     enum UpdateInstallationError: Error { case installationChanged, alreadyUpdating, invalidPackage, rollbackFailed, recoveryFailed }
 
-    /// Kept internal until lifecycle eligibility is connected. Missing or increased approval installs disabled.
+    /// With permission enforcement enabled, missing or increased approval installs disabled.
     func applyVerifiedUpdate(_ update: ChromeWebStoreVerifiedUpdate,
                              replacing installed: InstalledWebExtension,
                              reportedInstalledVersion: String? = nil,
@@ -2000,7 +2000,9 @@ extension WebExtensionManager {
     }
 
     private func updateRequiresDisabling(_ candidate: WKWebExtension, installed: InstalledWebExtension) -> Bool {
-        guard !installed.isDisabled, let permissionController else { return true }
+        guard !installed.isDisabled else { return true }
+        // When the permissions flag is off, updates use the loader's legacy implicit consent.
+        guard let permissionController else { return false }
         do { try permissionController.snapshotForUpdate(for: installed.uniqueIdentifier) } catch { return true }
         return !permissionController.canActivateUpdate(candidate, for: installed.uniqueIdentifier)
     }
@@ -2020,9 +2022,10 @@ extension WebExtensionManager {
     }
 
     private func requireSavedUpdateConsent(_ parsed: WKWebExtension, identifier: String, requiresApprovedAccess: Bool = true) throws {
+        guard let permissionController else { return }
         let approved = requiresApprovedAccess
-            ? permissionController?.canActivateUpdate(parsed, for: identifier)
-            : permissionController?.hasSavedPermissions(for: identifier)
+            ? permissionController.canActivateUpdate(parsed, for: identifier)
+            : permissionController.hasSavedPermissions(for: identifier)
         guard approved == true else {
             throw WebExtensionLoader.PermissionPreparationError(underlyingError: WebExtensionPermissionController.PermissionError.updateConsentRequired)
         }

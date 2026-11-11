@@ -422,16 +422,18 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: transactionDirectory.appendingPathComponent("previous").path))
     }
 
-    func testDefaultManagerPathInstallsDisabledWithoutExecutingNewCode() async throws {
-        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory))
+    func testMissingConsentWithPermissionControllerInstallsDisabledWithoutExecutingNewCode() async throws {
+        let permissionStore = WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore())
+        let permissions = WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: NoUpdatePrompt())
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory), permissionController: permissions)
         let pixels = WebExtensionUpdatePixelFiringMock()
-        let manager = makeManager(loader: loader, pixels: pixels)
+        let manager = makeManager(loader: loader, permissions: permissions, pixels: pixels)
         installationStore.add(original)
         let update = try makeUpdate()
 
         let outcome = try await manager.applyVerifiedUpdate(update, replacing: original, isEligible: { true })
 
-        guard case .installedDisabled = outcome else { return XCTFail("Default automated replacement must fail closed") }
+        guard case .installedDisabled = outcome else { return XCTFail("Permission enforcement must reject missing consent") }
         XCTAssertEqual(loader.loadedVersions, [])
         XCTAssertEqual(installationStore.installedExtensions.first?.uniqueIdentifier, identifier)
         XCTAssertEqual(installationStore.installedExtensions.first?.version, "2.0")
@@ -440,6 +442,62 @@ final class WebExtensionUpdateTransactionTests: XCTestCase {
         XCTAssertEqual(journals.count, 1)
         XCTAssertTrue(try XCTUnwrap(journals.first).retainsPrevious)
         XCTAssertEqual(pixels.events, [.applied(.other)], "A safe disabled commit is an applied package, not a failure")
+    }
+
+    func testUpdateWithoutPermissionControllerUsesLegacyImplicitConsent() async throws {
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory))
+        let manager = makeManager(loader: loader)
+        installationStore.add(original)
+        let pattern = try WKWebExtension.MatchPattern(string: "https://example.com/*")
+        let update = try makeUpdate(permissions: ["storage"], hostPermissions: [pattern.string])
+
+        let outcome = try await manager.applyVerifiedUpdate(update, replacing: original, isEligible: { true })
+
+        guard case .applied = outcome else { return XCTFail("Without permission enforcement, updates must preserve implicit consent") }
+        let context = try XCTUnwrap(manager.context(for: identifier))
+        XCTAssertEqual(context.webExtension.version, "2.0")
+        XCTAssertTrue(context.hasPermission(.storage))
+        XCTAssertEqual(context.permissionStatus(for: pattern), .grantedExplicitly)
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, false)
+        let remaining = try await transactions.journals()
+        XCTAssertTrue(remaining.isEmpty)
+        try loader.unloadExtension(identifier: identifier, from: manager.controller)
+    }
+
+    func testUpdateWithoutPermissionControllerPreservesPreviouslyDisabledState() async throws {
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory))
+        let manager = makeManager(loader: loader)
+        var disabled = original
+        disabled.isDisabled = true
+        installationStore.add(disabled)
+
+        let outcome = try await manager.applyVerifiedUpdate(makeUpdate(permissions: ["storage"]), replacing: disabled, isEligible: { true })
+
+        guard case .installedDisabled = outcome else { return XCTFail("Implicit consent must not enable a disabled extension") }
+        XCTAssertEqual(installationStore.installedExtensions.first?.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
+        XCTAssertTrue(loader.loadedVersions.isEmpty)
+    }
+
+    func testExplicitEnableWithoutPermissionControllerWorksWithStartupInstaller() async throws {
+        try writePackage(version: "1.0", at: currentDirectory, permissions: ["storage"])
+        let loader = RejectingUpdateLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory))
+        let manager = makeManager(loader: loader)
+        var disabled = original
+        disabled.isDisabled = true
+        installationStore.add(disabled)
+        let installer = ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: ChromeWebStorePendingUpdateStore(),
+                                                     isEnabled: { true }, isCatalogExtension: { _ in true })
+        manager.startupUpdateInstaller = installer
+        defer { installer.cancelStartup() }
+        _ = await installer.runOnce()
+
+        try await manager.enableExtension(identifier: identifier)
+
+        let context = try XCTUnwrap(manager.context(for: identifier))
+        XCTAssertTrue(context.hasPermission(.storage))
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, false)
+        try loader.unloadExtension(identifier: identifier, from: manager.controller)
     }
 
     func testFailedCandidateLoadLeavesOldRuntimeRegistryAndConsentWorking() async throws {

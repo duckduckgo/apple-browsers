@@ -1140,6 +1140,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @MainActor
     private func shouldReload(_ url: URL, source: ReloadIfNeededSource) -> Bool {
+        // Extension pages load in `webExtensionPageWebView` when the tab is displayed; `webView` can't load them.
+        guard !url.isWebExtensionUrl else {
+            return false
+        }
+
         /// Use unified logic if enabled to decide if URL is valid
         guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor))
                 // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)

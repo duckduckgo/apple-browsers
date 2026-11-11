@@ -152,7 +152,7 @@ final class PopoverSuggestionsCoordinator {
         ) { request, completion in
             requestRunner.run(request, completion: completion)
         }
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource, featureFlagger: dependencies.featureFlagger)
         let querySubject = CurrentValueSubject<String, Never>("")
         duckAIQuerySubject = querySubject
         let source = DuckAISuggestionsSource(

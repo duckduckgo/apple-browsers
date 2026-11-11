@@ -47,10 +47,12 @@ extension TabSwitcherViewController {
                                           message: message,
                                           preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
-            alert.addAction(title: UserText.actionBookmark, style: .default) { [weak self] in
+            let bookmarkAction = UIAlertAction(title: UserText.actionBookmark, style: .default) { [weak self] _ in
                 guard let self else { return }
                 tabsToBookmarks(self)
             }
+            bookmarkAction.accessibilityIdentifier = "TabSwitcher.BookmarkTabs.Confirm"
+            alert.addAction(bookmarkAction)
             present(alert, animated: true, completion: nil)
         }
     }
@@ -194,12 +196,14 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.actionCancel,
                                       style: .cancel) { _ in })
 
-        alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: indexPaths.count),
-                                      style: .destructive) { [weak self] _ in
+        let closeAction = UIAlertAction(title: UserText.closeTabs(withCount: indexPaths.count),
+                                        style: .destructive) { [weak self] _ in
             guard let self else { return }
             self.fireConfirmCloseTabsPixel()
             self.activePageController.deleteTabsAtIndexPaths(indexPaths)
-        })
+        }
+        closeAction.accessibilityIdentifier = "TabSwitcher.CloseTabs.Confirm"
+        alert.addAction(closeAction)
 
         present(alert, animated: true)
     }

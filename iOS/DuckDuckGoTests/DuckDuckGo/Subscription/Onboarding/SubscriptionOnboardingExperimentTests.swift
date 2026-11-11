@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import Combine
 import PrivacyConfig
 import PixelKit
 import PixelExperimentKit
@@ -102,6 +103,62 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.nonEnUS)
 
         XCTAssertEqual(result.cohort, .treatment)
+        XCTAssertFalse(result.isFreshlyEnrolled)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+    }
+
+    func test_resolveCohort_inOnboardingVPNExperimentControl_doesNotEnroll() {
+        let featureFlagger = PerFlagCohortFeatureFlagger(
+            assignedCohorts: [FeatureFlag.onboardingVPNDownloadReasonExperiment.rawValue: FeatureFlag.OnboardingVPNDownloadReasonExperimentCohort.control],
+            resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsOct2026Cohort.treatment
+        )
+
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
+
+        XCTAssertNil(result.cohort)
+        XCTAssertFalse(result.isFreshlyEnrolled)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+    }
+
+    func test_resolveCohort_inOnboardingVPNExperimentTreatment_doesNotEnroll() {
+        let featureFlagger = PerFlagCohortFeatureFlagger(
+            assignedCohorts: [FeatureFlag.onboardingVPNDownloadReasonExperiment.rawValue: FeatureFlag.OnboardingVPNDownloadReasonExperimentCohort.treatment],
+            resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsOct2026Cohort.treatment
+        )
+
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.enUS)
+
+        XCTAssertNil(result.cohort)
+        XCTAssertFalse(result.isFreshlyEnrolled)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+    }
+
+    func test_resolveCohort_notInOnboardingVPNExperiment_enrolls() {
+        let featureFlagger = PerFlagCohortFeatureFlagger(
+            assignedCohorts: [:],
+            resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsOct2026Cohort.treatment
+        )
+
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
+
+        XCTAssertEqual(result.cohort, .treatment)
+        XCTAssertTrue(result.isFreshlyEnrolled)
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    /// The exclusion only blocks fresh enrollment. A device that was already enrolled here keeps its cohort.
+    func test_resolveCohort_alreadyEnrolledAndInOnboardingVPNExperiment_returnsExistingCohort() {
+        let featureFlagger = PerFlagCohortFeatureFlagger(
+            assignedCohorts: [
+                FeatureFlag.subscriptionOnboardingFreeTrialsOct2026.rawValue: FeatureFlag.SubscriptionOnboardingFreeTrialsOct2026Cohort.control,
+                FeatureFlag.onboardingVPNDownloadReasonExperiment.rawValue: FeatureFlag.OnboardingVPNDownloadReasonExperimentCohort.treatment
+            ],
+            resolveCohortStub: nil
+        )
+
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
+
+        XCTAssertEqual(result.cohort, .control)
         XCTAssertFalse(result.isFreshlyEnrolled)
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
@@ -389,5 +446,37 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
             allActiveExperiments: [subfeature.rawValue: experimentData]
         )
         configurePixelKit(featureFlagger: featureFlagger)
+    }
+}
+
+/// Answers `assignedCohort` per flag. `PrivacyConfig.MockFeatureFlagger` returns the same stub for every flag, so it
+/// can't express "enrolled in the onboarding VPN experiment but not in Subscription onboarding".
+private final class PerFlagCohortFeatureFlagger: FeatureFlagger {
+
+    let internalUserDecider: InternalUserDecider = PrivacyConfig.MockFeatureFlagger().internalUserDecider
+    let localOverrides: FeatureFlagLocalOverriding? = nil
+    let allActiveExperiments: Experiments = [:]
+    var updatesPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+
+    private let assignedCohorts: [String: any FeatureFlagCohortDescribing]
+    private let resolveCohortStub: (any FeatureFlagCohortDescribing)?
+    private(set) var didCallResolveCohort = false
+
+    init(assignedCohorts: [String: any FeatureFlagCohortDescribing], resolveCohortStub: (any FeatureFlagCohortDescribing)?) {
+        self.assignedCohorts = assignedCohorts
+        self.resolveCohortStub = resolveCohortStub
+    }
+
+    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
+        false
+    }
+
+    func resolveCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        didCallResolveCohort = true
+        return assignedCohorts[featureFlag.rawValue] ?? resolveCohortStub
+    }
+
+    func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        assignedCohorts[featureFlag.rawValue]
     }
 }

@@ -210,6 +210,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             pixelReporter.measureResumeOnboardingCTAAction()
         } else {
             pixelReporter.measureStartOnboardingCTAAction()
+            enrollInDownloadReasonVPNExperimentIfNeeded()
         }
         makeNextViewState()
     }
@@ -548,6 +549,12 @@ private extension OnboardingIntroViewModel {
         case let .renderable(renderable):
             state = mapToViewState(renderableStep: renderable)
         }
+    }
+
+    /// Enrolls the user in the VPN download-reason experiment when they start onboarding from the intro.
+    func enrollInDownloadReasonVPNExperimentIfNeeded() {
+        guard currentIntroStep == introSteps.first else { return }
+        onboardingManager.enrollInDownloadReasonVPNExperimentIfNeeded()
     }
 
     func makeNextViewState() {

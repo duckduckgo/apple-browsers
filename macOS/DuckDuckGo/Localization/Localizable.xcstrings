@@ -125717,18 +125717,6 @@
         }
       }
     },
-    "webExtensions.settings.password-managers" : {
-      "comment" : "Header of the password manager extensions section in the Extensions settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Password Managers"
-          }
-        }
-      }
-    },
     "webExtensions.settings.permission.accessibility-features-modify" : {
       "comment" : "Item in the list of an extension's permissions: changing accessibility settings",
       "extractionState" : "extracted_with_value",

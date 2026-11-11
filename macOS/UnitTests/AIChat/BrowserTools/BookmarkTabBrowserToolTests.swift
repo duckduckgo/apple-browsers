@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import Bookmarks
+import CoreData
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -100,14 +102,21 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         XCTAssertNil(store.saveEntitiesAtIndicesCalledWith)
     }
 
-    func testWhenTwoCallsNameTheSameNewFolderThenItIsCreatedOnce() async {
+    func testWhenTwoCallsNameTheSameNewFolderThenItIsCreatedOnce() async throws {
+        let container = CoreData.bookmarkContainer()
+        let database = container.newBackgroundContext()
+        database.performAndWait { BookmarkUtils.prepareFoldersStructure(in: database) }
+        let manager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(contextProvider: { database }),
+                                           foldersStore: BookmarkFolderStoreMock(), appearancePreferences: .mock)
+        manager.loadBookmarks()
+        try await waitUntil { manager.list != nil }
         let otherURL = "https://example.com/other"
-        let (tool, context, manager, _, _) = makeWithStore(bookmarks: [], extraTabURLs: [otherURL])
-        let other = tabs[1].uuid
+        let (tool, context, _) = makeTool(manager: manager, extraTabURLs: [otherURL])
 
         async let first = tool.execute(arguments: ["folder": ["Trips"]], context: context)
-        async let second = tool.execute(arguments: ["tabId": .string(other), "folder": ["Trips"]], context: context)
+        async let second = tool.execute(arguments: ["tabId": .string(tabs[1].uuid), "folder": ["Trips"]], context: context)
         _ = await (first, second)
+        try await waitUntil { manager.getBookmark(forUrl: otherURL)?.parentFolderUUID != nil }
 
         let trips = manager.list?.topLevelEntities.filter { $0.title == "Trips" } ?? []
         XCTAssertEqual(trips.count, 1)
@@ -154,21 +163,32 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         return (tool, context, manager, owner)
     }
 
-    private func makeWithStore(bookmarks: [BaseBookmarkEntity],
-                               extraTabURLs: [String] = []) -> (BookmarkTabBrowserTool, BrowserToolCallContext, LocalBookmarkManager, String, BookmarkStoreMock) {
+    private func makeWithStore(bookmarks: [BaseBookmarkEntity]) -> (BookmarkTabBrowserTool, BrowserToolCallContext, LocalBookmarkManager, String, BookmarkStoreMock) {
         let store = BookmarkStoreMock(bookmarks: bookmarks)
         store.completesMoveCompletions = true
         let manager = LocalBookmarkManager(bookmarkStore: store, foldersStore: BookmarkFolderStoreMock(), appearancePreferences: .mock)
         manager.loadBookmarks()
+        let (tool, context, owner) = makeTool(manager: manager)
+        return (tool, context, manager, owner, store)
+    }
 
+    private func makeTool(manager: LocalBookmarkManager, extraTabURLs: [String] = []) -> (BookmarkTabBrowserTool, BrowserToolCallContext, String) {
         tabs = ([pageURL] + extraTabURLs).map { Tab(content: .url(URL(string: $0)!, credential: nil, source: .ui)) }
         let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), pinnedTabsManagerProvider: nil)
         let windows = WindowControllersManagerMock()
         windows.customAllTabCollectionViewModels = [collection]
-        let owner = collection.tabCollection.tabs[0].uuid
+        let owner = tabs[0].uuid
         let context = BrowserToolCallContext(ownerTabID: owner,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
                                              isBurner: false)
-        return (BookmarkTabBrowserTool(windowControllersManager: windows, bookmarkManager: manager), context, manager, owner, store)
+        return (BookmarkTabBrowserTool(windowControllersManager: windows, bookmarkManager: manager), context, owner)
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(2)
+        while !condition() {
+            guard Date() < deadline else { return XCTFail("Timed out") }
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }
     }
 }

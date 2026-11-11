@@ -137,14 +137,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
 
-    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
-    ///
-    /// Concluded; no feature flag reads it any more. It's kept because its settings still carry the onboarding
-    /// AI models fallback (`OnboardingAIModelsFallback`) and its legacy 8-15 search retention metric still fires.
-    /// The follow-up experiment is `PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment`.
-    case onboardingFlowByDownloadReasonExperiment
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603?focus=true
     case newTabPageSessionInstrumentation
 

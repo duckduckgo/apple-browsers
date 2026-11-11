@@ -55,7 +55,6 @@ public class StatisticsLoader {
          },
          fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
-            StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
             StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
             StatisticsLoader.fireOnboardingByDownloadReasonSearchExperimentPixels()
          },
@@ -99,25 +98,6 @@ public class StatisticsLoader {
                 conversionWindowDays: 5...7,
                 threshold: threshold
             )
-        }
-    }
-
-    /// Transitional: preserves the previous 8-15 search window for experiments already running when
-    /// the canonical window was shortened to 8-14, so their in-flight analysis keeps the window it
-    /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
-    static func fireLegacySearchRetentionExperimentPixels() {
-        let inProgressExperiments = [
-            iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue
-        ]
-        for subfeatureID in inProgressExperiments {
-            for threshold in [4, 6, 11, 21, 30] {
-                PixelKit.fireExperimentPixelIfThresholdReached(
-                    for: subfeatureID,
-                    metric: "search",
-                    conversionWindowDays: 8...15,
-                    threshold: threshold
-                )
-            }
         }
     }
 

@@ -28,8 +28,8 @@ final class SuggestionDebounceTests: XCTestCase {
         assertDebounceBoundary(enabled: false, milliseconds: 100)
     }
 
-    func testEnabledFlagSendsAfter200Milliseconds() {
-        assertDebounceBoundary(enabled: true, milliseconds: 200)
+    func testEnabledFlagSendsAfter150Milliseconds() {
+        assertDebounceBoundary(enabled: true, milliseconds: 150)
     }
 
     private func assertDebounceBoundary(enabled: Bool, milliseconds: Int, file: StaticString = #filePath, line: UInt = #line) {
@@ -53,7 +53,7 @@ final class SuggestionDebounceTests: XCTestCase {
             let scheduler = DispatchQueue.test
             let subject = PassthroughSubject<String, Never>()
             let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
-            let delay = enabled ? 200 : 100
+            let delay = enabled ? 150 : 100
             var received = [String]()
             let subscription = subject.debounceSuggestions(using: featureFlagger, scheduler: scheduler)
                 .sink { received.append($0) }
@@ -99,7 +99,7 @@ final class SuggestionDebounceTests: XCTestCase {
 
         featureFlagger.enabledFeatureFlags = [.suggestionDebounce200ms]
         subject.send("two")
-        scheduler.advance(by: .milliseconds(199))
+        scheduler.advance(by: .milliseconds(149))
         XCTAssertEqual(received, ["one"])
         scheduler.advance(by: .milliseconds(1))
         XCTAssertEqual(received, ["one", "two"])

@@ -55,7 +55,7 @@ final class SuggestionLoaderDebounceTests: XCTestCase {
         let text = PassthroughSubject<String, Never>()
         let dataSource = DeferredSuggestionDataSource()
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
-        let delay = enabled ? 200 : 100
+        let delay = enabled ? 150 : 100
         let results: AnyPublisher<Int, Never>
         let lastCompletedQuery: () -> String?
         let tearDown: () -> Void

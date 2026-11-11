@@ -25,7 +25,7 @@ extension Publisher where Output == String, Failure == Never {
 
     func debounceSuggestions<S: Scheduler>(using featureFlagger: FeatureFlagger, scheduler: S) -> AnyPublisher<String, Never> {
         map { text in
-            let milliseconds = featureFlagger.isFeatureOn(.suggestionDebounce200ms) ? 200 : 100
+            let milliseconds = featureFlagger.isFeatureOn(.suggestionDebounce200ms) ? 150 : 100
             return Just(text)
                 .delay(for: .milliseconds(milliseconds), scheduler: scheduler)
         }

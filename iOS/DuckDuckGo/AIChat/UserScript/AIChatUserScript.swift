@@ -92,6 +92,7 @@ enum DuckAIChatScrollInsetStyler {
                     const scrollTop = state.top ? `${state.top}px` : state.original.scrollTop;
                     const scrollBottom = state.bottom ? `${state.bottom}px` : state.original.scrollBottom;
                     if (state.bottom > 0) {
+                        const wasAtBottom = state.target.scrollTop + state.target.clientHeight >= state.target.scrollHeight - 4;
                         if (state.spacer?.parentElement !== state.target) {
                             state.spacer = document.createElement('div');
                             state.spacer.setAttribute('aria-hidden', 'true');
@@ -129,6 +130,7 @@ enum DuckAIChatScrollInsetStyler {
                         const height = Math.max(0, overlap - existingClearance);
                         const previousHeight = state.spacer.getBoundingClientRect().height;
                         state.spacer.style.height = `${height}px`;
+                        if (wasAtBottom) state.target.scrollTop = state.target.scrollHeight;
                         // Auto margins move without resizing content.
                         if (Math.abs(height - previousHeight) > 0.5) state.schedule();
                     } else if (state.spacer?.parentElement === state.target) {

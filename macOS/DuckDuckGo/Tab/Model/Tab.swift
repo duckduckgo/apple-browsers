@@ -90,6 +90,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
+    private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
     let featureFlagger: FeatureFlagger
     private let privacyFeatures: AnyPrivacyFeatures
     private let fireproofDomains: FireproofDomains
@@ -321,6 +322,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
         self.themeManager = themeManager
+        self.webExtensionManagerProvider = webExtensionManagerProvider
 
         self.specialPagesUserScript = SpecialPagesUserScript()
         self.onboardingActionsManager = specialPagesUserScript?.withAllSubfeatures()
@@ -1140,8 +1142,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @MainActor
     private func shouldReload(_ url: URL, source: ReloadIfNeededSource) -> Bool {
-        // Extension pages load in `webExtensionPageWebView` when the tab is displayed; `webView` can't load them.
-        guard !url.isWebExtensionUrl else {
+        // Pages of loaded extensions show in `webExtensionPageWebView`; others load here to show the error page.
+        guard !isLoadedWebExtensionPage(url) else {
             return false
         }
 
@@ -1190,6 +1192,14 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         case .contentUpdated:
             return true
         }
+    }
+
+    @MainActor
+    private func isLoadedWebExtensionPage(_ url: URL) -> Bool {
+        guard #available(macOS 15.4, *), url.isWebExtensionUrl else {
+            return false
+        }
+        return webExtensionManagerProvider()?.extensionContext(for: url)?.webViewConfiguration != nil
     }
 
     @MainActor

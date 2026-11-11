@@ -22,6 +22,7 @@ import DDGNavigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
+import WebExtensions
 import WebKit
 import XCTest
 
@@ -332,12 +333,34 @@ final class TabTests: XCTestCase {
         context.baseURL = URL(string: "webkit-extension://example/")!
         try controller.load(context)
         defer { try? controller.unload(context) }
-        tab = Tab(content: .none, webViewConfiguration: try XCTUnwrap(context.webViewConfiguration))
+        let manager = StubWebExtensionManager(context: context)
+        tab = Tab(content: .none,
+                  webViewConfiguration: try XCTUnwrap(context.webViewConfiguration),
+                  webExtensionManagerProvider: { manager })
 
         tab.setContent(.webExtensionUrl(URL(string: "webkit-extension://example/app.html")!))
 
         XCTAssertNil(tab.webView.url)
         XCTAssertFalse(tab.webView.isLoading)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenNoLoadedExtensionServesPageThenTabWebViewLoadsIt() async throws {
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Tab Load Test"))
+        context.baseURL = URL(string: "webkit-extension://example/")!
+        try controller.load(context)
+        defer { try? controller.unload(context) }
+        let manager = StubWebExtensionManager(context: nil)
+        tab = Tab(content: .none,
+                  webViewConfiguration: try XCTUnwrap(context.webViewConfiguration),
+                  webExtensionManagerProvider: { manager })
+        let extensionURL = URL(string: "webkit-extension://missing/app.html")!
+
+        tab.setContent(.webExtensionUrl(extensionURL))
+
+        XCTAssertEqual(tab.webView.url, extensionURL)
     }
 
     @available(macOS 15.4, *)
@@ -882,4 +905,49 @@ private extension Tab {
             setContent(newValue.map { TabContent.url($0, source: .link) } ?? .newtab)
         }
     }
+}
+
+/// A web extension manager that only resolves extension pages to `context`, which is all these tests ask for.
+@available(macOS 15.4, *)
+private final class StubWebExtensionManager: WebExtensionManaging {
+
+    let context: WKWebExtensionContext?
+    let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring = NoOpCPMMessagingHealthMonitor()
+    let badgeColors = WebExtensionBadgeColorStore()
+    let eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
+    let extensionsDirectory = FileManager.default.temporaryDirectory
+    let loadedExtensions: Set<WKWebExtensionContext> = []
+    let webExtensionIdentifiers: [String] = []
+    let extensionUpdates = AsyncStream<Void>.makeStream().stream
+    let lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent>.makeStream().stream
+
+    init(context: WKWebExtensionContext?) {
+        self.context = context
+    }
+
+    func attachExtensions(to configuration: WKWebViewConfiguration) {}
+    func loadInstalledExtensions() async {}
+    func reloadInstalledExtensions() async {}
+    func installExtension(from sourceURL: URL) async throws {}
+    func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
+    func uninstallExtension(identifier: String) throws {}
+    func uninstallAllExtensions() -> [Result<Void, Error>] { [] }
+    func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {}
+    func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {}
+    func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? { nil }
+    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? { nil }
+    func unloadAllExtensions() {}
+    func reloadExtension(identifier: String) async throws {}
+    func disableExtension(identifier: String) async throws {}
+    func enableExtension(identifier: String) async throws {}
+    func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
+    func isRemotelyDisabled(identifier: String) -> Bool { false }
+    func extensionName(for identifier: String) -> String? { nil }
+    func extensionVersion(for identifier: String) -> String? { nil }
+    func extensionPermissions(for identifier: String) -> [String] { [] }
+    func extensionMatchPatterns(for identifier: String) -> [String] { [] }
+    func extensionContext(for url: URL) -> WKWebExtensionContext? { context }
+    func context(for identifier: String) -> WKWebExtensionContext? { nil }
+    func clearCachedScriptlets() {}
+    func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
 }

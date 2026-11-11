@@ -5259,14 +5259,16 @@ class MainViewController: UIViewController {
     /// Returns the source reported, which the caller stamps on the tab so its prompts report it too.
     @discardableResult
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
-                                   chatState: DuckAIEntryWideEventData.ChatState? = nil) -> AIChatEntryPointSource {
+                                   chatState: DuckAIEntryWideEventData.ChatState? = nil,
+                                   additionalPixelParameters: [String: String] = [:]) -> AIChatEntryPointSource {
         let source = takeOnboardingPromoSource(for: source)
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt,
-                                   voice: voice)
+                                   voice: voice,
+                                   additionalParameters: additionalPixelParameters)
         let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab,
                                                        opensInSidebar: opensContextualSurfaceInSidebar)
         // A tab entry reads its chat state once its Duck.ai tab is shown.
@@ -8487,7 +8489,14 @@ extension MainViewController: TabDelegate {
     func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
         guard tab === currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
-        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
+        let wasUsedBefore = featureDiscovery.addToParams([:], forFeature: .duckAISwipeNewChat)
+        let source = fireAIChatEntryPointPixel(source: .swipeUpNewChat, opensNewTab: true, hasPrompt: false,
+                                               additionalPixelParameters: wasUsedBefore)
+        featureDiscovery.setWasUsedBefore(.duckAISwipeNewChat)
+        DuckAISwipeNewChatUsage().recordSwipe()
+        // Unlike the other in-chat New Chat buttons, the new tab reports the swipe, so its prompts carry it as their origin.
+        let focusRequest = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? DuckAINewChatInputRequest() : nil
+        tab.openNewChatInNewTab(source: source, inputRequest: focusRequest)
     }
 
     /// Top of the Duck.ai input card; nil when it isn't showing.

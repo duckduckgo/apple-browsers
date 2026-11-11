@@ -64,7 +64,13 @@ final class AppLaunchUITests: UITestCase {
         for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
             app.launchArguments[index + 1] = String(floating)
         }
-        app.launchArguments += ["-ff.fireMode", "true", "-ff.fireButtonRefinements", "true", "-ff.slideToDelete", "false"]
+        app.launchArguments += [
+            "-ff.fireMode", "true",
+            "-ff.fireButtonRefinements", "true",
+            "-ff.slideToDelete", "false",
+            // These tests check browser controls after opening a tab from the context menu.
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+        ]
         app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
         app.launch()
         app.dismissAddressBarEditing(file: file, line: line)

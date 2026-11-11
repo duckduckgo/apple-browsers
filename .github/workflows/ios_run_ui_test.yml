@@ -191,7 +191,7 @@ jobs:
           -resultBundlePath TestResults.xcresult \
           -test-iterations 2 \
           -retry-tests-on-failure \
-          -test-repetition-relaunch-enabled YES \
+          -test-repetition-relaunch-enabled NO \
           "-only-testing:UI Tests/$TEST_CLASS" \
           "${diagnostics_args[@]}" \
         2>&1 | tee ui-tests.log \

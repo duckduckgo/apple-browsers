@@ -134,8 +134,23 @@ final class SwitchToTabBrowserToolTests: XCTestCase {
         }
     }
 
-    func testSelectionFailureAndSynchronousScopeChangesCannotReportSuccess() async {
-        for mutation in ["failure", "revoke", "removeTarget", "replaceTarget", "removeOwner", "replaceOwner"] {
+    func testSelectionFailureReturnsUnavailable() async {
+        let owner = tab("owner")
+        let target = tab("target")
+        var selections = 0
+        let source = MultiTabAttachmentSource(currentTabID: owner.uid, mode: .normal, tabsProvider: { [owner, target] })
+        let scope = BrowserToolScope(owner: owner, source: source, selectedTabID: { owner.uid },
+                                     selectTab: { _ in selections += 1; return false })
+        let tool = SwitchToTabBrowserTool(scopeProvider: { _ in scope })
+
+        let result = await tool.execute(arguments: ["tabId": "target"], context: context(scope))
+
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertEqual(selections, 1)
+    }
+
+    func testConfirmedSelectionRemainsSuccessfulAfterSynchronousScopeChanges() async {
+        for mutation in ["revoke", "removeTarget", "replaceTarget", "removeOwner", "replaceOwner"] {
             let owner = tab("owner")
             let target = tab("target")
             var tabs = [owner, target]
@@ -151,14 +166,15 @@ final class SwitchToTabBrowserToolTests: XCTestCase {
                 case "replaceTarget": tabs = [owner, self.tab("target")]
                 case "removeOwner": tabs = [target]
                 case "replaceOwner": tabs = [self.tab("owner"), target]
-                default: return false
+                default: XCTFail("Unexpected mutation")
                 }
                 return true
             })
             revoke = { [weak scope] in scope?.revoke() }
             let tool = SwitchToTabBrowserTool(scopeProvider: { _ in scope })
             let result = await tool.execute(arguments: ["tabId": "target"], context: context(scope))
-            XCTAssertEqual(result, .failure(.unavailable), "Mutation: \(mutation)")
+            guard case .success(let value) = result else { return XCTFail("Expected successful selection for mutation: \(mutation)") }
+            XCTAssertEqual(value["tabId"], .string("target"))
             XCTAssertEqual(selections, 1)
         }
     }

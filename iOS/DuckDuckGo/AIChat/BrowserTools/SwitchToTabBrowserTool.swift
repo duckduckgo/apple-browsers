@@ -52,7 +52,7 @@ final class SwitchToTabBrowserTool: BrowserTool {
         guard let tab = scope.source.tabsProvider().first(where: { $0.mode == .normal && $0.uid == targetTabID }) else {
             return .failure(.notFound)
         }
-        guard scope.selectTab(tab), scope.contains(tab) else { return .failure(.unavailable) }
+        guard scope.contains(tab), scope.selectTab(tab) else { return .failure(.unavailable) }
 
         return .success([
             "tabId": .string(targetTabID),

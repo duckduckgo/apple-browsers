@@ -43,8 +43,11 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     public func loadInitialData() async {}
 
     public private(set) var restoreMissingTokenIfPossibleCallCount = 0
+    /// Called by `restoreMissingTokenIfPossible()`, for example to store a restored token.
+    public var restoreMissingTokenIfPossibleHandler: (() -> Void)?
     public func restoreMissingTokenIfPossible() async {
         restoreMissingTokenIfPossibleCallCount += 1
+        restoreMissingTokenIfPossibleHandler?()
     }
 
     public var resultSubscription: Result<DuckDuckGoSubscription, Error>?

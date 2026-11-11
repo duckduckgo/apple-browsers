@@ -473,6 +473,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let heartbeatStore: TunnelHeartbeatStore?
     private let sessionHealth: VPNSessionHealthInstrumentation
     private let reportWakeConnectivityFailure: (() -> Void)?
+    private let isAuthTokenMissing: () -> Bool
     @MainActor private var wakeConnectivityFailures: PostWakeConnectivityFailures?
     private var sessionHealthStartAttemptID: UUID?
     private var heartbeatTask: Task<Never, Error>? {
@@ -510,7 +511,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 loopDetector: ConnectionFailureLoopDetector,
                 heartbeatStore: TunnelHeartbeatStore? = nil,
                 reportWakeConnectivityFailure: (() -> Void)? = nil,
-                sessionHealth: VPNSessionHealthInstrumentation) {
+                sessionHealth: VPNSessionHealthInstrumentation,
+                isAuthTokenMissing: @escaping () -> Bool = { false }) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
         self.notificationsPresenter = notificationsPresenter
@@ -536,6 +538,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.heartbeatStore = heartbeatStore
         self.sessionHealth = sessionHealth
         self.reportWakeConnectivityFailure = reportWakeConnectivityFailure
+        self.isAuthTokenMissing = isAuthTokenMissing
 
         self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
@@ -928,9 +931,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // expired.  In either case it should be enough to record the manual failures
                 // for these prerequisited to avoid flooding our metrics.
                 providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken(error))
-                Logger.networkProtection.log("Going to sleep...")
-                try? await Task.sleep(interval: .seconds(15))
-                Logger.networkProtection.log("Waking up...")
+                if await !disableOnDemandIfAuthTokenMissing(after: error) {
+                    Logger.networkProtection.log("Going to sleep...")
+                    try? await Task.sleep(interval: .seconds(15))
+                    Logger.networkProtection.log("Waking up...")
+                }
             } else {
                 loopDetector.connectionFailed(isOnDemand: false)
 
@@ -1453,6 +1458,38 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                                             reassert: false,
                                             regenerateKey: false,
                                             attemptSource: .adapterRestart)
+    }
+
+    /// Turns off Connect On Demand and asks the user to open the app, when a start failed because no auth token is stored.
+    /// Does nothing when the token couldn't be read, for example before the first unlock, so iOS keeps retrying.
+    /// - Parameter error: The error the start failed with.
+    /// - Returns: Whether Connect On Demand was turned off.
+    @MainActor
+    private func disableOnDemandIfAuthTokenMissing(after error: Error) async -> Bool {
+        guard Self.isStartFailureWithoutStoredAuthToken(error, isAuthTokenMissing: isAuthTokenMissing) else {
+            return false
+        }
+
+        do {
+            try await disableOnDemandIfSupportedByOS()
+        } catch {
+            Logger.networkProtection.error("Failed to disable Connect On Demand after starting without an auth token: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+
+        Logger.networkProtection.log("Disabled Connect On Demand because no auth token is stored")
+        notificationsPresenter.showSignedOutNotification()
+        return true
+    }
+
+    /// Returns whether a start failed because no auth token is stored, rather than because the stored token couldn't be read or used.
+    /// - Parameters:
+    ///   - error: The error the start failed with.
+    ///   - isAuthTokenMissing: Returns whether the token store was read and holds no token. Only called for
+    ///     `TunnelError.startingTunnelWithoutAuthToken`.
+    static func isStartFailureWithoutStoredAuthToken(_ error: Error, isAuthTokenMissing: () -> Bool) -> Bool {
+        guard case TunnelError.startingTunnelWithoutAuthToken = error else { return false }
+        return isAuthTokenMissing()
     }
 
     /// Disables on-demand if the OS supports it.

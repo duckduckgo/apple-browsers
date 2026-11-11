@@ -77,6 +77,7 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
         dateFormatter.locale = locale
     }
 
+    @MainActor
     var offer: SubscriptionWithdrawalOffer? {
         guard isFeatureEnabled(),
               let subscription,
@@ -95,6 +96,7 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
         subscriptionManager.url(for: .helpPagesCancelOrChangeSubscription)
     }
 
+    @MainActor
     func confirmationMessage(for offer: SubscriptionWithdrawalOffer) -> String {
         let message = offer.refundAmount.map { UserText.withdrawDialogMessage(tierName: offer.tierName, refundAmount: $0) }
             ?? UserText.withdrawDialogMessage(tierName: offer.tierName)
@@ -174,7 +176,7 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
         guard confirmation != nil else { return }
         await subscriptionManager.signOut(notifyUI: true, userInitiated: true)
         confirmation = nil
-        eligibility = nil
+        reset()
     }
 
     @MainActor
@@ -188,7 +190,7 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
     }
 
     @MainActor
-    func keepTapped() {
+    func keepSubscriptionTapped() {
         userEventHandler(.didClickKeepSubscription)
     }
 
@@ -197,6 +199,7 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
         userEventHandler(.openURL(.helpPagesCancelOrChangeSubscription))
     }
 
+    @MainActor
     private func formattedAmount(_ amount: String?, currency: String?) -> String? {
         guard let amount, let currencyCode = currency?.uppercased() else { return nil }
         currencyFormatter.currencyCode = currencyCode

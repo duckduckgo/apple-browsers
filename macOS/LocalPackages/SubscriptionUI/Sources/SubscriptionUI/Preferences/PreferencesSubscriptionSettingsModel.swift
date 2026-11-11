@@ -165,7 +165,6 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                                                                  userEventHandler: userEventHandler)
         Task {
             await self.updateSubscription(forceRefresh: false)
-            await self.fetchWithdrawalEligibility()
         }
 
         self.email = subscriptionManager.userEmail

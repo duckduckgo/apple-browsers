@@ -46,7 +46,7 @@ public struct PreferencesSubscriptionSettingsView: View {
                 TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
 
                 if model.withdrawal.confirmation != nil {
-                    StatusIndicatorView(status: .custom(UserText.notSubscribedStatusIndicator, Color.secondary.opacity(0.33)), isLarge: true)
+                    withdrawnHeaderView
                 } else {
                     switch model.settingsState {
                     case .subscriptionActive:
@@ -72,7 +72,9 @@ public struct PreferencesSubscriptionSettingsView: View {
                     upgradeSection
                     activateSection
                     settingsSection
-                    withdrawalSection
+                    WithdrawalSection(withdrawal: model.withdrawal) { offer in
+                        withdrawalConfirmationOffer = offer
+                    }
                     helpSection
 
                 case .subscriptionExpired:
@@ -100,7 +102,7 @@ public struct PreferencesSubscriptionSettingsView: View {
         }
         .sheet(item: $withdrawalConfirmationOffer, onDismiss: {
             if !didConfirmWithdrawal {
-                model.withdrawal.keepTapped()
+                model.withdrawal.keepSubscriptionTapped()
             }
             didConfirmWithdrawal = false
         }, content: { offer in
@@ -297,76 +299,6 @@ public struct PreferencesSubscriptionSettingsView: View {
     }
 
     @ViewBuilder
-    private var withdrawalSection: some View {
-        if let offer = model.withdrawal.offer {
-            PreferencePaneSection {
-                TextMenuItemHeader(UserText.withdrawSectionTitle, bottomPadding: 0)
-
-                if let eligibleUntil = offer.eligibleUntil {
-                    TextMenuItemCaption(UserText.withdrawSectionCaption(eligibleUntil: eligibleUntil))
-                        .padding(.bottom, 8)
-                }
-
-                TextButton(UserText.withdrawButton, weight: .semibold) {
-                    model.withdrawal.withdrawTapped()
-                    withdrawalConfirmationOffer = offer
-                }
-                .disabled(model.withdrawal.isWithdrawing)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func withdrawnSection(_ confirmation: SubscriptionWithdrawalConfirmation) -> some View {
-        PreferencePaneSection {
-            TextMenuItemHeader(UserText.withdrawnInfo(withdrawalDate: confirmation.withdrawalDate), bottomPadding: 0)
-
-            if let refundAmount = confirmation.refundAmount {
-                TextMenuItemCaption(UserText.withdrawnRefundInfo(refundAmount: refundAmount))
-            }
-        }
-    }
-
-    private func withdrawalConfirmationDialog(_ offer: SubscriptionWithdrawalOffer) -> some View {
-        SubscriptionDialog(imageName: "Shield-Disabled-Feature-128",
-                           title: UserText.withdrawDialogTitle,
-                           description: model.withdrawal.confirmationMessage(for: offer),
-                           buttons: {
-            Button(UserText.withdrawDialogKeepButton) {
-                withdrawalConfirmationOffer = nil
-            }
-            Button(UserText.withdrawDialogConfirmButton) {
-                didConfirmWithdrawal = true
-                withdrawalConfirmationOffer = nil
-                Task { await model.withdrawal.withdraw() }
-            }
-            .buttonStyle(DestructiveActionButtonStyle(enabled: true))
-        })
-        .frame(width: 420)
-        .onAppear {
-            model.withdrawal.confirmationShown()
-        }
-    }
-
-    @ViewBuilder
-    private var withdrawalErrorDialog: some View {
-        let message = UserText.withdrawErrorMessage(helpPageURL: model.withdrawal.helpPageURL.absoluteString)
-        SubscriptionDialog(imageName: "Privacy-Pro-128",
-                           title: UserText.somethingWentWrongAlertTitle,
-                           description: (try? AttributedString(markdown: message)) ?? AttributedString(message),
-                           buttons: {
-            Button(UserText.okButtonTitle) { model.withdrawal.isShowingError = false }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
-        })
-        .environment(\.openURL, OpenURLAction { _ in
-            model.withdrawal.isShowingError = false
-            model.withdrawal.openHelpPage()
-            return .handled
-        })
-        .frame(width: 420)
-    }
-
-    @ViewBuilder
     private var emailView: some View {
         VStack {
             VStack(alignment: .center) {
@@ -472,5 +404,90 @@ public struct PreferencesSubscriptionSettingsView: View {
                 .padding(2)
             }
         }
+    }
+}
+
+// MARK: - Withdrawal
+
+extension PreferencesSubscriptionSettingsView {
+
+    @ViewBuilder
+    private var withdrawnHeaderView: some View {
+        StatusIndicatorView(status: .custom(UserText.notSubscribedStatusIndicator, Color(designSystemColor: .statusGray)), isLarge: true)
+    }
+
+    private struct WithdrawalSection: View {
+
+        @ObservedObject var withdrawal: PreferencesSubscriptionWithdrawalModel
+        let onWithdraw: (SubscriptionWithdrawalOffer) -> Void
+
+        var body: some View {
+            if let offer = withdrawal.offer {
+                PreferencePaneSection {
+                    TextMenuItemHeader(UserText.withdrawSectionTitle, bottomPadding: 0)
+
+                    if let eligibleUntil = offer.eligibleUntil {
+                        TextMenuItemCaption(UserText.withdrawSectionCaption(eligibleUntil: eligibleUntil))
+                            .padding(.bottom, 8)
+                    }
+
+                    TextButton(UserText.withdrawButton, weight: .semibold) {
+                        withdrawal.withdrawTapped()
+                        onWithdraw(offer)
+                    }
+                    .disabled(withdrawal.isWithdrawing)
+                }
+            }
+        }
+    }
+
+    private func withdrawalConfirmationDialog(_ offer: SubscriptionWithdrawalOffer) -> some View {
+        SubscriptionDialog(imageName: "Shield-Disabled-Feature-128",
+                           title: UserText.withdrawDialogTitle,
+                           description: model.withdrawal.confirmationMessage(for: offer),
+                           buttons: {
+            Button(UserText.withdrawDialogKeepButton) {
+                withdrawalConfirmationOffer = nil
+            }
+            Button(UserText.withdrawDialogConfirmButton) {
+                didConfirmWithdrawal = true
+                withdrawalConfirmationOffer = nil
+                Task { await model.withdrawal.withdraw() }
+            }
+            .buttonStyle(DestructiveActionButtonStyle(enabled: true))
+        })
+        .frame(width: 420)
+        .onAppear {
+            model.withdrawal.confirmationShown()
+        }
+    }
+
+    @ViewBuilder
+    private func withdrawnSection(_ confirmation: SubscriptionWithdrawalConfirmation) -> some View {
+        PreferencePaneSection {
+            TextMenuItemHeader(UserText.withdrawnInfo(withdrawalDate: confirmation.withdrawalDate), bottomPadding: 0)
+
+            if let refundAmount = confirmation.refundAmount {
+                TextMenuItemCaption(UserText.withdrawnRefundInfo(refundAmount: refundAmount))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var withdrawalErrorDialog: some View {
+        let message = UserText.withdrawErrorMessage(helpPageURL: model.withdrawal.helpPageURL.absoluteString)
+        SubscriptionDialog(imageName: "Privacy-Pro-128",
+                           title: UserText.somethingWentWrongAlertTitle,
+                           description: (try? AttributedString(markdown: message)) ?? AttributedString(message),
+                           buttons: {
+            Button(UserText.okButtonTitle) { model.withdrawal.isShowingError = false }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+        })
+        .environment(\.openURL, OpenURLAction { _ in
+            model.withdrawal.isShowingError = false
+            model.withdrawal.openHelpPage()
+            return .handled
+        })
+        .frame(width: 420)
     }
 }

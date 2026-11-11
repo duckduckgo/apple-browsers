@@ -351,8 +351,8 @@ final class PreferencesSubscriptionWithdrawalModelTests {
 
     @available(macOS 13, *)
     @Test("Keeping the subscription reports the keep click only", .timeLimit(.minutes(1)))
-    func keepTappedReportsKeep() {
-        makeModel().keepTapped()
+    func keepSubscriptionTappedReportsKeep() {
+        makeModel().keepSubscriptionTapped()
 
         #expect(events == ["didClickKeepSubscription"])
     }

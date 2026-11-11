@@ -33,7 +33,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
 
     func test_newChatInputRequest_fromExpandedInput_staysExpanded() {
         let inputs = makeInputs(tabIsAITab: true, tabURL: URL(string: "https://duck.ai/"), tabLinkURL: URL(string: "https://duck.ai/"),
-                                tabRequestsNewChatInput: true, coordinatorIsAITabState: true, coordinatorIsAITabExpanded: true)
+                                tabRequestsNewChatInput: true, coordinatorIsAITabState: true, keepsExpandedInputForNewChat: true)
 
         XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshAITab(.showExpanded))
     }
@@ -208,7 +208,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         tabRequestsDeepLinkSurface: Bool = false,
         tabRequestsNewChatInput: Bool = false,
         coordinatorIsAITabState: Bool = false,
-        coordinatorIsAITabExpanded: Bool = false,
+        keepsExpandedInputForNewChat: Bool = false,
         coordinatorIsActive: Bool = false,
         coordinatorIsOmnibarSession: Bool = false,
         coordinatorHasSubmittedPrompt: Bool = false,
@@ -226,7 +226,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             tabRequestsDeepLinkSurface: tabRequestsDeepLinkSurface,
             tabRequestsNewChatInput: tabRequestsNewChatInput,
             coordinatorIsAITabState: coordinatorIsAITabState,
-            coordinatorIsAITabExpanded: coordinatorIsAITabExpanded,
+            keepsExpandedInputForNewChat: keepsExpandedInputForNewChat,
             coordinatorIsActive: coordinatorIsActive,
             coordinatorIsOmnibarSession: coordinatorIsOmnibarSession,
             coordinatorHasSubmittedPrompt: coordinatorHasSubmittedPrompt,

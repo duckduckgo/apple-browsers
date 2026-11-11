@@ -430,7 +430,8 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let tabRequestsDeepLinkSurface: Bool
     let tabRequestsNewChatInput: Bool
     let coordinatorIsAITabState: Bool
-    let coordinatorIsAITabExpanded: Bool
+    /// The new tab transition carries an expanded input into a new chat; without it the input collapses first, as before.
+    let keepsExpandedInputForNewChat: Bool
     let coordinatorIsActive: Bool
     let coordinatorIsOmnibarSession: Bool
     let coordinatorHasSubmittedPrompt: Bool
@@ -447,7 +448,7 @@ extension MainViewController {
         // A tab opened for a new chat starts focused, even when the tab it came from left the input collapsed.
         if inputs.tabRequestsNewChatInput {
             // From an expanded input it stays expanded, so the keyboard doesn't drop and rise again.
-            return .refreshAITab(inputs.coordinatorIsAITabExpanded ? .showExpanded : .showCollapsed(expandAfterRefresh: true))
+            return .refreshAITab(inputs.keepsExpandedInputForNewChat ? .showExpanded : .showCollapsed(expandAfterRefresh: true))
         }
 
         // During a fresh navigation (e.g. opening a chat in a new tab), `tabModel.link` is briefly
@@ -826,7 +827,7 @@ private extension MainViewController {
             tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
             tabRequestsNewChatInput: tab.tabModel.newChatInputRequest != nil,
             coordinatorIsAITabState: coordinator.isAITabState,
-            coordinatorIsAITabExpanded: coordinator.isAITabExpanded,
+            keepsExpandedInputForNewChat: isNewTabTransitionEnabled && coordinator.isAITabExpanded,
             coordinatorIsActive: coordinator.isActive,
             coordinatorIsOmnibarSession: coordinator.isOmnibarSession,
             coordinatorHasSubmittedPrompt: coordinator.hasSubmittedPrompt,

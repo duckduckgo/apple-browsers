@@ -90,6 +90,32 @@ final class LocalSummariesPromoTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Opting in from Settings retires the promo, so switching back to Duck.ai doesn't bring it back",
+          .timeLimit(.minutes(1)))
+    func optInElsewhereRetiresThePromo() async {
+        _ = promo
+
+        service.optIn()
+        await waitUntil { self.promo.outcome != nil }
+        service.optOut()
+
+        #expect(promo.outcome == .optedInElsewhere)
+        #expect(promo.presentation() == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Someone who opted in before the promo existed never sees it", .timeLimit(.minutes(1)))
+    func earlierOptInRetiresThePromo() {
+        storage.pageSummariesModel = .appleIntelligence
+
+        _ = promo
+        service.optOut()
+
+        #expect(promo.outcome == .optedInElsewhere)
+        #expect(promo.presentation() == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("The debug reset brings the promo back", .timeLimit(.minutes(1)))
     func resetBringsItBack() {
         promo.dismiss()
@@ -98,5 +124,12 @@ final class LocalSummariesPromoTests {
 
         #expect(promo.outcome == nil)
         #expect(promo.presentation() != nil)
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async {
+        for _ in 0..<500 {
+            if condition() { return }
+            try? await Task.sleep(nanoseconds: 2_000_000)
+        }
     }
 }

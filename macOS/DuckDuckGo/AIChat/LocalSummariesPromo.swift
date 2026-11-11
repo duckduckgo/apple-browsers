@@ -29,6 +29,8 @@ extension Notification.Name {
 enum LocalSummariesPromoOutcome: String {
     case tried
     case closed
+    /// Opted in from Settings or Duck.ai instead of the promo.
+    case optedInElsewhere
 }
 
 enum LocalSummariesPromoEligibility {
@@ -50,6 +52,7 @@ final class LocalSummariesPromo {
     private let localModelService: AIChatLocalModelService
     private let keyValueStore: ThrowingKeyValueStoring
     private let notificationCenter: NotificationCenter
+    private var optInCancellable: AnyCancellable?
 
     init(localModelService: AIChatLocalModelService,
          keyValueStore: ThrowingKeyValueStoring,
@@ -57,6 +60,17 @@ final class LocalSummariesPromo {
         self.localModelService = localModelService
         self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
+
+        // Opting in anywhere answers the offer, so switching back to Duck.ai later doesn't bring it back.
+        retireIfOptedIn()
+        optInCancellable = localModelService.changesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.retireIfOptedIn() }
+    }
+
+    private func retireIfOptedIn() {
+        guard outcome == nil, localModelService.isOptedIn else { return }
+        record(.optedInElsewhere)
     }
 
     var isEligible: Bool {

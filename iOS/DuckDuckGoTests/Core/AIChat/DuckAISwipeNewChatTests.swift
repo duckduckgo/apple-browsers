@@ -136,15 +136,51 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A pan that starts above the bottom never pulls, even when it scrolls on to the bottom", .timeLimit(.minutes(1)))
-    func panStartedAboveBottomNeverPulls() {
-        let result = run([.began(isEligible: true, translation: 0),
+    @Test("A pan that scrolls on to the bottom pulls from where the page said it got there", .timeLimit(.minutes(1)))
+    func panReachingBottomPullsFromThere() {
+        let short = run([.began(isEligible: true, translation: 0),
+                         .pageAnswered(isAtBottom: false, translation: 0),
+                         .moved(translation: -500),
+                         .pageAnswered(isAtBottom: true, translation: -500),
+                         .moved(translation: -500 - (threshold - 1)),
+                         .ended])
+        #expect(startNewChatCount(short.effects) == 0)
+
+        let full = run([.began(isEligible: true, translation: 0),
+                        .pageAnswered(isAtBottom: false, translation: 0),
+                        .moved(translation: -500),
+                        .pageAnswered(isAtBottom: true, translation: -500),
+                        .moved(translation: -500 - threshold),
+                        .ended])
+        #expect(startNewChatCount(full.effects) == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("While scrolling toward the bottom the page is asked one question at a time", .timeLimit(.minutes(1)))
+    func seekingAsksOneAtATime() {
+        let result = run([.touchedDown,
                           .pageAnswered(isAtBottom: false, translation: 0),
-                          .moved(translation: -500),
-                          .pageAnswered(isAtBottom: true, translation: -500),
-                          .moved(translation: -500 - threshold * 2),
-                          .ended])
-        #expect(result.effects == [.checkAtBottom])
+                          .began(isEligible: true, translation: -10),
+                          .moved(translation: -40),
+                          .moved(translation: -80),
+                          .pageAnswered(isAtBottom: false, translation: -80),
+                          .moved(translation: -120)])
+        #expect(result.effects == [.checkAtBottom, .checkAtBottom, .checkAtBottom])
+        #expect(result.pull == .seeking(isAsking: true))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A pan that ends before reaching the bottom pulls nothing, even if the page then says it's there",
+          .timeLimit(.minutes(1)))
+    func momentumAfterReleaseNeverPulls() {
+        let result = run([.touchedDown,
+                          .pageAnswered(isAtBottom: false, translation: 0),
+                          .began(isEligible: true, translation: -10),
+                          .moved(translation: -300),
+                          .ended,
+                          .pageAnswered(isAtBottom: true, translation: -300)])
+        #expect(!result.effects.contains(.springBack))
+        #expect(startNewChatCount(result.effects) == 0)
         #expect(result.pull == .idle)
     }
 
@@ -157,17 +193,16 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A finger that goes down above the bottom never pulls, even if the chat then scrolls to it",
-          .timeLimit(.minutes(1)))
-    func touchDownAboveBottomNeverPulls() {
+    @Test("A finger that goes down above the bottom pulls once the chat scrolls to it", .timeLimit(.minutes(1)))
+    func touchDownAboveBottomPullsOnceThere() {
         let result = run([.touchedDown,
                           .pageAnswered(isAtBottom: false, translation: 0),
                           .began(isEligible: true, translation: -10),
                           .moved(translation: -500),
-                          .moved(translation: -500 - threshold * 2),
+                          .pageAnswered(isAtBottom: true, translation: -500),
+                          .moved(translation: -500 - threshold),
                           .ended])
-        #expect(result.effects == [.checkAtBottom])
-        #expect(result.pull == .idle)
+        #expect(startNewChatCount(result.effects) == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -206,6 +241,7 @@ struct DuckAISwipeNewChatTests {
                          .ended])
         #expect(startNewChatCount(above.effects) == 0)
         #expect(above.pull == .idle)
+        #expect(!above.effects.contains(.springBack))
     }
 
     @available(iOS 16, macOS 13, *)

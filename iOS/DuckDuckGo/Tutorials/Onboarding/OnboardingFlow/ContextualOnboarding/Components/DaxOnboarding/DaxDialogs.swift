@@ -638,8 +638,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     }
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {
-        checkTimeLimit()
-        let message = nextBrowsingMessageExperiment(privacyInfo: privacyInfo)
+        let message = checkTimeLimit()
+            ? nextBrowsingMessageAfterTimeLimit(privacyInfo: privacyInfo)
+            : nextBrowsingMessageExperiment(privacyInfo: privacyInfo)
         if message != nil {
             lastURLDaxDialogReturnedFor = privacyInfo.url
         }
@@ -700,6 +701,28 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             clearOnboardingBrowsingData()
         }
 
+        return spec
+    }
+
+    private func nextBrowsingMessageAfterTimeLimit(privacyInfo: PrivacyInfo) -> BrowsingSpec? {
+        currentHomeSpec = nil
+        guard !tutorialSettings.hasSkippedOnboarding else { return nil }
+
+        if let lastVisitedOnboardingWebsiteURL,
+           compareUrls(url1: lastVisitedOnboardingWebsiteURL, url2: privacyInfo.url),
+           lastShownDaxDialogType == .withOneTracker || lastShownDaxDialogType == .withMultipleTrackers {
+            return lastShownDaxDialog(privacyInfo: privacyInfo)
+        }
+
+        guard shouldShowNetworkTrackerDialog,
+              !privacyInfo.url.isDuckDuckGoSearch,
+              let entityNames = blockedEntityNames(privacyInfo.trackerInfo),
+              let spec = trackersBlockedMessage(entityNames, isReloadingDialog: false) else {
+            clearOnboardingBrowsingData()
+            return nil
+        }
+        lastShownDaxDialogType = spec.type
+        lastVisitedOnboardingWebsiteURL = privacyInfo.url
         return spec
     }
 

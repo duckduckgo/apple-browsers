@@ -30,6 +30,8 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        // These tests walk the iPhone linear onboarding, which iPad does not show.
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone)
         continueAfterFailure = false
         executionTimeAllowance = 180
         XCUIDevice.shared.orientation = .portrait
@@ -66,6 +68,7 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
     func testDaysLimitSuppressesSearchAndTrackerFreeSiteDialogs() {
         launch(daysSinceStart: 8)
         finishLinearOnboarding()
+        assertNoContextualDialog()
 
         search()
         assertNoContextualDialog()
@@ -123,7 +126,6 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
     func testWarmReturnPastLimitRemovesAnAlreadyVisibleSearchDialog() {
         launch(maxAppOpens: 1)
         finishLinearOnboarding()
-        search()
         let searchDialog = app.staticTexts[searchDialogTitle]
         XCTAssertTrue(searchDialog.waitForExistence(timeout: timeout))
 
@@ -146,7 +148,6 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
             "-isInternalUser", "true",
             "-currentAppVariant", returningUser ? "ru" : "mh",
             "-ff.contextualOnboardingTimeLimit", "true",
-            "-ff.onboardingFlowByDownloadReasonExperiment", "false",
             "-ff.onboardingDuckAIFlow", "false",
             "-ff.newTabPageRedesign", "true",
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
@@ -161,10 +162,21 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         app.launch()
     }
 
+    /// Completes the iPhone linear onboarding by searching from its last step, which lands on the search results page.
     private func finishLinearOnboarding() {
         tapButton("Let’s get started!")
-        waitForText("Protections activated!")
+        waitForText("Set things up your way")
+        tap(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Search and")).firstMatch)
+        tapButton("Next")
+
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Protections activated")).firstMatch
+            .waitForExistence(timeout: timeout))
         tapButton("Skip")
+        waitForText("Want easy access to private AI chat in the address bar?")
+        tap(app.staticTexts["Search only"])
+        tapButton("Next")
+        waitForText("Where should I put your address bar?")
+        tapButton("Next")
 
         let dock = app.staticTexts["Add me to your Dock!"]
         let icon = app.staticTexts["Which color looks best on me?"]
@@ -175,14 +187,11 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
         waitForText("Which color looks best on me?")
         tapButton("Next")
 
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            waitForText("Where should I put your address bar?")
-            tapButton("Next")
-            waitForText("Want easy access to private AI chat in the address bar?")
-            tap(app.staticTexts["Search only"])
-            tapButton("Next")
-        }
-        waitForBrowser()
+        waitForText("Now, try a private search!")
+        // The step focuses its search field and shows the keyboard on its own.
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+        app.typeText("timebound dax onboarding\n")
+        waitForPageText("All")
     }
 
     private func relaunchPreservingOnboardingState() {

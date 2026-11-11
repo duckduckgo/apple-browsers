@@ -94,7 +94,7 @@ public class DBPIOSInterface {
 
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
         var meetsProfileRunPrequisite: Bool { get throws }
-        /// False only when the current token lacks the PIR entitlement. A token that can't be read doesn't stop a run.
+        /// True only when the current token carries the PIR entitlement. When the token can't be read, the run is skipped and no data is removed.
         var meetsEntitlementRunPrequisite: Bool { get async }
         var meetsLocaleRequirement: Bool { get }
 
@@ -947,7 +947,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
 
     public var meetsEntitlementRunPrequisite: Bool {
         get async {
-            await authenticationManager.entitlementStatus() != .disabled
+            await authenticationManager.entitlementStatus() == .enabled
         }
     }
 

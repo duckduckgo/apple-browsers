@@ -216,6 +216,16 @@ public final class DataBrokerProtectionAgentManager {
     private var currentRunIsFreeScan: Bool?
 
     /// Snapshots the current authentication state and caches whether this is a free scan run.
+    /// Whether a signed-in user's operations can run: only when the current token carries the PIR entitlement.
+    /// While the token can't be read the run is skipped and all data is kept.
+    private func canRunSubscriptionOperations() async -> Bool {
+        let status = await authenticationManager.entitlementStatus()
+        if status != .enabled {
+            Logger.dataBrokerProtection.log("Skipping PIR operations, entitlement status: \(String(describing: status), privacy: .public)")
+        }
+        return status == .enabled
+    }
+
     /// Returns the current `isAuthenticated` value for callers that need it.
     @discardableResult
     private func refreshIsAuthenticatedState() async -> Bool {
@@ -348,6 +358,10 @@ private extension DataBrokerProtectionAgentManager {
         Task {
             let isAuthenticated = await refreshIsAuthenticatedState()
             if isAuthenticated {
+                guard await canRunSubscriptionOperations() else {
+                    completion?()
+                    return
+                }
                 queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView,
                                                                     isAuthenticatedUser: true,
                                                                     jobDependencies: jobDependencies,
@@ -446,11 +460,15 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
         eventPixels.markInitialScansStarted()
 
-        await refreshIsAuthenticatedState()
+        let isAuthenticated = await refreshIsAuthenticatedState()
 
         eventsHandler.fire(.profileSaved)
         await fireMonitoringPixels()
         await checkForEmailConfirmationData()
+
+        if isAuthenticated {
+            guard await canRunSubscriptionOperations() else { return }
+        }
 
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: false,
                                                              isAuthenticatedUser: currentRunIsFreeScan != true,

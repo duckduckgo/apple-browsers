@@ -121,6 +121,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         mockDataManager.profileToReturn = mockProfile
         mockAuthenticationManager.isUserAuthenticatedValue = true
+        mockAuthenticationManager.entitlementStatusValue = .enabled
         mockFreemiumDBPUserStateManager.didActivate = false
 
         let schedulerStartedExpectation = XCTestExpectation(description: "Scheduler started")
@@ -345,6 +346,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         mockDataManager.profileToReturn = mockProfile
         mockAuthenticationManager.isUserAuthenticatedValue = true
+        mockAuthenticationManager.entitlementStatusValue = .enabled
         mockFreemiumDBPUserStateManager.didActivate = false
 
         var startScheduledScansCalled = false
@@ -651,6 +653,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         mockAuthenticationManager.isUserAuthenticatedValue = true
+        mockAuthenticationManager.entitlementStatusValue = .enabled
         mockFreemiumDBPUserStateManager.didActivate = false
 
         var startScheduledScansCalled = false
@@ -771,6 +774,69 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         XCTAssertNil(mockSharedPixelsHandler.lastFiredEvent)
     }
 
+    // MARK: - Token can't be read
+
+    private func makeAgentManager() -> DataBrokerProtectionAgentManager {
+        DataBrokerProtectionAgentManager(
+            eventsHandler: mockEventsHandler,
+            activityScheduler: mockActivityScheduler,
+            ipcServer: mockIPCServer,
+            queueManager: mockQueueManager,
+            dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
+            jobDependencies: mockDependencies,
+            sharedPixelsHandler: mockSharedPixelsHandler,
+            pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
+            agentStopper: mockAgentStopper,
+            configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            authenticationManager: mockAuthenticationManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
+    }
+
+    func testWhenSignedInAndEntitlementCantBeReadThenScheduledOperationsDoNotRun() async {
+        sut = makeAgentManager()
+        mockDataManager.profileToReturn = mockProfile
+        mockAuthenticationManager.isUserAuthenticatedValue = true
+        mockAuthenticationManager.entitlementStatusValue = .error
+        var operationsStarted = false
+        mockQueueManager.startScheduledAllOperationsIfPermittedCalledCompletion = { operationsStarted = true }
+        mockQueueManager.startScheduledScanOperationsIfPermittedCalledCompletion = { operationsStarted = true }
+
+        await sut.startScheduledOperations()
+
+        XCTAssertFalse(operationsStarted)
+    }
+
+    func testWhenSignedInAndEntitlementEnabledThenAllOperationsRun() async {
+        sut = makeAgentManager()
+        mockDataManager.profileToReturn = mockProfile
+        mockAuthenticationManager.isUserAuthenticatedValue = true
+        mockAuthenticationManager.entitlementStatusValue = .enabled
+        var allOperationsStarted = false
+        mockQueueManager.startScheduledAllOperationsIfPermittedCalledCompletion = { allOperationsStarted = true }
+
+        await sut.startScheduledOperations()
+
+        XCTAssertTrue(allOperationsStarted)
+    }
+
+    func testWhenSignedInAndEntitlementCantBeReadThenProfileSavedRunsNothing() async {
+        sut = makeAgentManager()
+        mockDataManager.profileToReturn = mockProfile
+        mockAuthenticationManager.isUserAuthenticatedValue = true
+        mockAuthenticationManager.entitlementStatusValue = .error
+        var scansStarted = false
+        mockQueueManager.startImmediateScanOperationsIfPermittedCalledCompletion = { scansStarted = true }
+
+        await sut.profileSaved()
+
+        XCTAssertFalse(scansStarted)
+    }
 }
 
 struct MockConfigurationFetcher: ConfigurationFetching {
@@ -863,4 +929,5 @@ private final class MockResourceMonitor: ResourceMonitoring {
     func stop() {
         stopCallCount += 1
     }
+
 }

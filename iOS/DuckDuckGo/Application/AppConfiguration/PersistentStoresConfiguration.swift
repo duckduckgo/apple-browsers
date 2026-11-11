@@ -21,6 +21,10 @@ import Foundation
 import Core
 import Persistence
 import BrowserServicesKit
+#if DEBUG
+import Bookmarks
+import CoreData
+#endif
 import os.log
 import PixelKit
 
@@ -34,13 +38,27 @@ enum DatabaseError {
 final class PersistentStoresConfiguration {
 
     let database = Database.shared
-    let bookmarksDatabase = BookmarksDatabase.make()
+    let bookmarksDatabase: CoreDataDatabase
     private(set) var sharedSecureVault: (any AutofillSecureVault)?
 
     private let application: UIApplication
-    
+#if DEBUG
+    private let usesTemporaryBookmarksStore: Bool
+#endif
+
     init(application: UIApplication = .shared) {
         self.application = application
+#if DEBUG
+        let environment = ProcessInfo.processInfo.environment
+        let usesTemporaryBookmarksStore = environment["UITEST_MODE"] == "1" && environment["UITEST_TEMPORARY_BOOKMARKS_STORE"] == "1"
+        self.usesTemporaryBookmarksStore = usesTemporaryBookmarksStore
+        if usesTemporaryBookmarksStore {
+            let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            bookmarksDatabase = BookmarksDatabase.make(location: location)
+            return
+        }
+#endif
+        bookmarksDatabase = BookmarksDatabase.make()
     }
 
     func configure(syncKeyValueStore: ThrowingKeyValueStoring,
@@ -66,6 +84,12 @@ final class PersistentStoresConfiguration {
     }
 
     private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBookmarksDBFilePresent: Bool?) throws {
+#if DEBUG
+        if usesTemporaryBookmarksStore {
+            try loadTemporaryBookmarksStore()
+            return
+        }
+#endif
         do {
             // Create a simple counter store with just atomic writes (no encryption for debugging data)
             let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -78,6 +102,27 @@ final class PersistentStoresConfiguration {
             throw TerminationError.bookmarksDatabase(.other(error))
         }
     }
+
+#if DEBUG
+    private func loadTemporaryBookmarksStore() throws {
+        // Prepare the empty store before the app creates any bookmark or sync services.
+        var storeError: Error?
+        bookmarksDatabase.loadStore { context, error in
+            storeError = error
+            if let context {
+                BookmarkUtils.prepareFoldersStructure(in: context)
+                do {
+                    try context.save()
+                } catch {
+                    storeError = error
+                }
+            }
+        }
+        if let storeError {
+            throw TerminationError.bookmarksDatabase(.other(storeError))
+        }
+    }
+#endif
 
     private func initializeSharedSecureVault() {
         guard AutofillSettingStatus.isAutofillEnabledInSettings else {

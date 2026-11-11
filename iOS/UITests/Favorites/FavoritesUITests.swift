@@ -22,9 +22,8 @@ import UITestingSupport
 
 final class FavoritesUITests: UITestCase {
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        app.resetBookmarks()
+    override var additionalLaunchEnvironment: [String: String] {
+        ["UITEST_TEMPORARY_BOOKMARKS_STORE": "1"]
     }
 
     func testWhenPageIsFavoritedThenItCanBeOpenedFromNewTabAndRemoved() {

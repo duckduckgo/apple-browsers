@@ -24,12 +24,10 @@ final class BookmarksUITests: UITestCase {
 
     override var additionalLaunchEnvironment: [String: String] {
         // Avoid XCTest's repeated animation-idle timeouts in bookmark workflows.
-        ["UITEST_DISABLE_ANIMATIONS": "1"]
-    }
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        app.resetBookmarks()
+        [
+            "UITEST_DISABLE_ANIMATIONS": "1",
+            "UITEST_TEMPORARY_BOOKMARKS_STORE": "1",
+        ]
     }
 
     func testWhenPageIsBookmarkedThenItCanBeOpenedAndDeleted() {

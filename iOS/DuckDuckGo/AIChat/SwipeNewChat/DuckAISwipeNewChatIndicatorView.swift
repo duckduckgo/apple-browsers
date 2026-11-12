@@ -64,7 +64,7 @@ final class DuckAISwipeNewChatIndicatorView: UIView {
         label.font = .daxCaption()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textSecondary)
-        label.text = UserText.actionNewAIChat
+        label.text = UserText.duckAiSwipeNewChatLabel
 
         addSubview(circle)
         addSubview(label)

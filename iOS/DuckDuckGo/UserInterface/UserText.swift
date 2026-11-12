@@ -2547,6 +2547,7 @@ public struct UserText {
         value: "Attach selected tabs",
         comment: "accessibility label for applying the tab attachment selection")
     public static let duckAiAddressBarMenuNewChat = NSLocalizedString("duckai.address.bar.menu.new.chat", value: "New Chat", comment: "Address bar Duck.ai menu option that opens a fresh chat with no page context")
+    public static let duckAiSwipeNewChatLabel = NSLocalizedString("duckai.swipe.new-chat.label", value: "New Chat", comment: "Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat.")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
         return message.format(arguments: maxFileSizeMB)

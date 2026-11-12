@@ -196,13 +196,15 @@ final class AppLaunchUITests: UITestCase {
     }
 
     func testSlideToDeleteRequiresCompletedDrag() {
-        app.launchArguments += ["-ff.slideToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
+        app.launchArguments += [
+            "-ff.slideToDelete", "true",
+            "-ff.fireMode", "true",
+            "-ff.fireButtonRefinements", "true",
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+            "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
+        ]
         app.launch()
-
-        let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
-            "UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"
-        ])).firstMatch
-        if dismissInput.waitForExistence(timeout: 3) { dismissInput.tap() }
+        app.dismissAddressBarEditing()
 
         let menuIdentifier = UIDevice.current.userInterfaceIdiom == .pad
             ? "Browser.OmniBar.Button.BrowsingMenu"
@@ -213,8 +215,9 @@ final class AppLaunchUITests: UITestCase {
         let newTab = app.buttons["New Tab"]
         XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))
         newTab.tap()
-        XCTAssertTrue(dismissInput.waitForExistence(timeout: UITestTimeouts.navigation))
-        dismissInput.tap()
+        app.openTabSwitcher()
+        app.assertTabCount(2)
+        app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
 
         let fireButton = app.buttons["Browser.Toolbar.Button.Fire"]
         XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))

@@ -192,7 +192,7 @@ final class BookmarksUITests: UITestCase {
         app.assertBookmarkCount(0)
 
         XCTContext.runActivity(named: "Remove the folder from Bookmarks Edit") { _ in
-            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app, timeout: UITestTimeouts.navigation)
             XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
             app.buttons["Remove \(folderName)"].tapWhenHittable(in: app)
             app.tables["Bookmarks.List"].buttons["Delete"].tapWhenHittable(in: app)

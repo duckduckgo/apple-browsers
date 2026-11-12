@@ -285,8 +285,10 @@ extension XCUIElement {
         return (false, lastReason, passes)
     }
 
-    func tapWhenHittable(in application: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        let timeout = UITestTimeouts.elementExistence
+    func tapWhenHittable(in application: XCUIApplication,
+                         timeout: TimeInterval = UITestTimeouts.elementExistence,
+                         file: StaticString = #filePath,
+                         line: UInt = #line) {
         let startedAt = ProcessInfo.processInfo.systemUptime
         let observation = waitForAppWindowReadiness(in: application, timeout: timeout)
         let elapsed = ProcessInfo.processInfo.systemUptime - startedAt

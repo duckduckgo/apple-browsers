@@ -141,7 +141,16 @@ final class BookmarksUITests: UITestCase {
         let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
 
         XCTContext.runActivity(named: "Create five tabs with four bookmarkable pages") { _ in
-            for page in pages {
+            let firstPage = pages[0]
+            if !site.request(firstPage, in: app, timeout: 20) {
+                XCTContext.runActivity(named: "Relaunch before creating bookmark tabs") { _ in
+                    app.terminate()
+                    app.launch()
+                    site.navigate(to: firstPage, in: app)
+                }
+            }
+            app.openNewTab()
+            for page in pages.dropFirst() {
                 site.navigate(to: page, in: app)
                 app.openNewTab()
             }

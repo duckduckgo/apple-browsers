@@ -78,14 +78,17 @@ final class LocalUITestWebsite {
     }
 
     func navigate(to page: Page, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        let request = requests.expectRequest(for: page.path)
-        app.enterSearchText("http://\(hostAndPort)\(page.path)\r", file: file, line: line)
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [request], timeout: UITestTimeouts.navigation),
-            .completed,
+        XCTAssertTrue(
+            request(page, in: app, timeout: UITestTimeouts.navigation, file: file, line: line),
             "Browser did not request the local page \(page.path).",
             file: file,
             line: line)
+    }
+
+    func request(_ page: Page, in app: XCUIApplication, timeout: TimeInterval, file: StaticString = #filePath, line: UInt = #line) -> Bool {
+        let request = requests.expectRequest(for: page.path)
+        app.enterSearchText("http://\(hostAndPort)\(page.path)\r", file: file, line: line)
+        return XCTWaiter.wait(for: [request], timeout: timeout) == .completed
     }
 
     private final class PageRequests {

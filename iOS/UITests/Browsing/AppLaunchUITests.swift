@@ -103,10 +103,13 @@ final class AppLaunchUITests: UITestCase {
                 app.openTabSwitcher(file: file, line: line)
                 app.assertTabCount(expectedTabs, file: file, line: line)
                 let originalTab = app.tabCell(at: expectedTabs - 1)
-                app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
+                let done = app.buttons["TabSwitcher.Button.Done"]
+                done.tapWhenHittable(in: app, file: file, line: line)
+                XCTAssertTrue(done.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
 
+                XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
                 tabs.press(forDuration: 1)
-                newTab.tapWhenHittable(in: app, file: file, line: line)
+                newTab.tapWhenHittable(in: app, timeout: UITestTimeouts.navigation, file: file, line: line)
                 XCTAssertTrue(newTab.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
                 app.dismissAddressBarEditing(file: file, line: line)
                 XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
@@ -202,6 +205,7 @@ final class AppLaunchUITests: UITestCase {
             "-ff.fireButtonRefinements", "true",
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
+            "-com.duckduckgo.app.currentFireButtonAnimationKey", "none",
         ]
         app.launch()
         app.dismissAddressBarEditing()
@@ -243,6 +247,9 @@ final class AppLaunchUITests: UITestCase {
         start.press(forDuration: 0.1, thenDragTo: end)
         XCTAssertTrue(slider.waitForNonExistence(timeout: UITestTimeouts.navigation))
         XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertTrue(
+            app.buttons["Browser.Toolbar.Button.TabSwitcher"].waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
+            "The tab switcher did not become tappable after clearing tabs and data.")
         app.openTabSwitcher()
         let tabSwitcher = app.collectionViews["TabSwitcher.Collection.Tabs"]
         let newTabButton = tabSwitcher.buttons["Open new tab"]

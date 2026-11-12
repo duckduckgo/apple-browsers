@@ -225,6 +225,7 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
     public func removeAllData() throws {
         try database.deleteProfileData()
         communicator.invalidateCache()
+        communicator.scanDelegate?.assistedOptOutDataDidChange()
 
         delegate?.dataBrokerProtectionDataManagerDidDeleteData()
     }
@@ -254,7 +255,9 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
                                      brokerId: extractedProfile.brokerId,
                                      profileQueryId: extractedProfile.profileQueryId,
                                      type: .matchRemovedByUser)
-            try? database.add(event)
+            if (try? database.add(event)) != nil {
+                communicator.scanDelegate?.assistedOptOutDataDidChange()
+            }
         }
     }
 }

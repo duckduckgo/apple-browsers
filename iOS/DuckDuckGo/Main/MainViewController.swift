@@ -396,6 +396,7 @@ class MainViewController: UIViewController {
     /// Drives the floating-UI capsule morph frame-by-frame during animated bar reveal/hide so the
     /// pill physically morphs into/out of the bars, matching the scroll transition.
     private let chromeMorphAnimator = ChromeMorphAnimator()
+    private let chromeMorphTraceRecorder = ProcessInfo.isRunningUITests ? ChromeMorphTraceRecorder() : nil
     /// The last true chrome-visibility fraction requested (1 = fully shown, 0 = hidden). Tracked
     /// separately from container alpha because the floating capsule morph drives chrome alpha with a
     /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
@@ -2081,6 +2082,7 @@ class MainViewController: UIViewController {
                                                barsVisibilityPercent: barsVisibilityPercent,
                                                expandedFrame: floatingBarExpandedFrame(),
                                                reduceMotion: UIAccessibility.isReduceMotionEnabled,
+                                               bottomBar: viewCoordinator.isOmnibarInToolbar ? viewCoordinator.toolbar : nil,
                                                in: view)
         bringFindInPageToFrontIfNeeded()
     }
@@ -2126,11 +2128,23 @@ class MainViewController: UIViewController {
 
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
         guard isFloatingCapsuleActive, !UIAccessibility.isReduceMotionEnabled else { return percent }
-        return FloatingUILayoutPolicy.rampedProgress(
-            percent,
-            from: FloatingDomainCapsuleController.handoffStart,
-            to: FloatingDomainCapsuleController.alphaHandoffEnd(for: appSettings.currentAddressBarPosition)
-        )
+        if let pose = floatingBottomMorphPose(for: percent) {
+            return pose.barContentAlpha
+        }
+        return FloatingUILayoutPolicy.rampedProgress(percent, from: FloatingDomainCapsuleController.handoffStart, to: 1)
+    }
+
+    /// The shape the bottom bar and the domain pill share at `percent`, or nil when the bar doesn't
+    /// morph into the pill (top address bar, Reduce Motion, capsule inactive).
+    private func floatingBottomMorphPose(for percent: CGFloat) -> FloatingUILayoutPolicy.BottomMorphPose? {
+        guard isFloatingCapsuleActive, viewCoordinator.isOmnibarInToolbar else { return nil }
+        return floatingDomainCapsuleController.bottomMorphPose(
+            barsVisibilityPercent: percent,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            domain: currentFloatingDomainText(),
+            expandedFrame: floatingBarExpandedFrame(),
+            reduceMotion: UIAccessibility.isReduceMotionEnabled,
+            in: view)
     }
 
     private func toolbarAlpha(for percent: CGFloat) -> CGFloat {
@@ -3892,7 +3906,7 @@ class MainViewController: UIViewController {
     /// tracking can resume from what the user sees. Settled chrome is left untouched.
     func pinFloatingChromeMorphIfNeeded() {
         guard chromeMorphAnimator.isAnimating else { return }
-        let percent = chromeMorphAnimator.currentValue
+        let percent = chromeMorphAnimator.currentValue.clamped(to: 0...1)
         lastChromeVisibilityPercent = percent
         chromeMorphAnimator.cancel()
         applyBarsVisibilityState(percent, postChromeVisibilityNotification: false)
@@ -5347,14 +5361,16 @@ class MainViewController: UIViewController {
     /// Returns the source reported, which the caller stamps on the tab so its prompts report it too.
     @discardableResult
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
-                                   chatState: DuckAIEntryWideEventData.ChatState? = nil) -> AIChatEntryPointSource {
+                                   chatState: DuckAIEntryWideEventData.ChatState? = nil,
+                                   additionalPixelParameters: [String: String] = [:]) -> AIChatEntryPointSource {
         let source = takeOnboardingPromoSource(for: source)
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt,
-                                   voice: voice)
+                                   voice: voice,
+                                   additionalParameters: additionalPixelParameters)
         let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab,
                                                        opensInSidebar: opensContextualSurfaceInSidebar)
         // A tab entry reads its chat state once its Duck.ai tab is shown.
@@ -5884,7 +5900,7 @@ extension MainViewController: BrowserChromeDelegate {
         if useMorphScrub {
             chromeMorphAnimator.setTarget(
                 percent,
-                fullTraversalDuration: animationDuration.map(Double.init),
+                duration: animationDuration.map(Double.init),
                 onProgress: { [weak self] progress in
                     guard let self, self.viewIfLoaded?.window != nil else { return }
                     // Constraint changes schedule their own layout. Alpha and capsule-frame
@@ -5927,7 +5943,11 @@ extension MainViewController: BrowserChromeDelegate {
     /// it can be applied as a single step (legacy `UIView.animate` / non-animated) or per frame by
     /// the floating capsule morph scrub. `.browserChromeVisibilityChanged` is posted only when
     /// requested (the settled 0/1 endpoints), so intermediate scrub frames don't emit it.
-    private func applyBarsVisibilityState(_ percent: CGFloat, postChromeVisibilityNotification: Bool) {
+    ///
+    /// `morphPercent` may run slightly past `0...1` while the morph spring settles; only the shared
+    /// bar/pill shape follows it there.
+    private func applyBarsVisibilityState(_ morphPercent: CGFloat, postChromeVisibilityNotification: Bool) {
+        let percent = morphPercent.clamped(to: 0...1)
         guard isViewLoaded,
               let viewCoordinator,
               let toolbar = viewCoordinator.toolbar,
@@ -5938,17 +5958,10 @@ extension MainViewController: BrowserChromeDelegate {
             viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
         }
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
-        let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
-            ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
-                barsVisibilityPercent: percent,
-                collapseStart: FloatingDomainCapsuleController.handoffEnd
-              )
-            : 0
-        let panelHeight = toolbar.setButtonRowCollapseProgress(
-            buttonCollapseProgress,
-            reduceMotion: reduceMotion
-        )
-        viewCoordinator.constraints.toolbarHeight.constant = panelHeight
+        viewCoordinator.constraints.toolbarHeight.constant = toolbar.panelHeight
+        let bottomMorphPose = floatingBottomMorphPose(for: morphPercent)
+        toolbar.setMorphTransform(bottomMorphPose?.barTransform ?? .identity)
+        toolbar.setGlassHandedOff(bottomMorphPose?.isGlassOnPill == true)
 
         let standaloneCollapseProgress = isFloatingCapsuleActive && !viewCoordinator.isOmnibarInToolbar && !reduceMotion
             ? 1 - percent
@@ -5969,11 +5982,25 @@ extension MainViewController: BrowserChromeDelegate {
         if !isTabSwitcherTransitionOwningToolbar {
             toolbar.alpha = toolbarAlpha(for: percent)
         }
-        updateFloatingDomainCapsuleVisibility(for: percent)
+        updateFloatingDomainCapsuleVisibility(for: morphPercent)
+        recordChromeMorphTraceIfNeeded(morphPercent)
 
         if postChromeVisibilityNotification {
             self.postChromeVisibilityNotification(for: percent)
         }
+    }
+
+    private func recordChromeMorphTraceIfNeeded(_ morphPercent: CGFloat) {
+        guard let chromeMorphTraceRecorder, isFloatingCapsuleActive else { return }
+        chromeMorphTraceRecorder.install(in: view)
+        let pill = floatingDomainCapsuleController.button
+        let bar: UIView = viewCoordinator.isOmnibarInToolbar ? viewCoordinator.toolbar : viewCoordinator.navigationBarContainer
+        chromeMorphTraceRecorder.record(.init(percent: morphPercent,
+                                              pillFrame: pill.frame,
+                                              pillAlpha: pill.isHidden ? 0 : pill.alpha,
+                                              barAlpha: bar.alpha,
+                                              bottomObscuredHeight: floatingWebViewBottomObscuredHeight(for: morphPercent),
+                                              timestamp: CACurrentMediaTime()))
     }
 
     private func postChromeVisibilityNotification(for percent: CGFloat) {
@@ -6176,6 +6203,13 @@ extension MainViewController: BrowserChromeDelegate {
             let clampedPercent = max(0, min(1, barsVisibilityPercent))
             return max(barsMaxHeight * clampedPercent, view.safeAreaInsets.bottom)
         }
+        // The bar and the pill are one shrinking shape, so the obscured region shrinks with it.
+        let capsuleObscuredHeight = floatingBottomCapsuleObscuredHeight
+        if capsuleObscuredHeight > 0, floatingBottomMorphPose(for: barsVisibilityPercent) != nil {
+            let clampedPercent = barsVisibilityPercent.clamped(to: 0...1)
+            return max(view.safeAreaInsets.bottom,
+                       capsuleObscuredHeight + (floatingToolbarSlotHeight - capsuleObscuredHeight) * clampedPercent)
+        }
         return FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: barsVisibilityPercent,
             toolbarSlotHeight: floatingToolbarSlotHeight,
@@ -6268,7 +6302,7 @@ extension MainViewController: BrowserChromeDelegate {
     /// reflects the real fraction mid-transition. Call sites that reapply visibility need the true
     /// fraction.
     var currentBarsVisibility: CGFloat {
-        chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
+        chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue.clamped(to: 0...1) : lastChromeVisibilityPercent
     }
 
     func restoreCurrentBarsVisibilityAfterLayoutRefresh() {
@@ -8619,7 +8653,14 @@ extension MainViewController: TabDelegate {
     func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
         guard tab === currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
-        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
+        let wasUsedBefore = featureDiscovery.addToParams([:], forFeature: .duckAISwipeNewChat)
+        let source = fireAIChatEntryPointPixel(source: .swipeUpNewChat, opensNewTab: true, hasPrompt: false,
+                                               additionalPixelParameters: wasUsedBefore)
+        featureDiscovery.setWasUsedBefore(.duckAISwipeNewChat)
+        DuckAISwipeNewChatUsage().recordSwipe()
+        // Unlike the other in-chat New Chat buttons, the new tab reports the swipe, so its prompts carry it as their origin.
+        let focusRequest = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? DuckAINewChatInputRequest() : nil
+        tab.openNewChatInNewTab(source: source, inputRequest: focusRequest)
     }
 
     /// Top of the Duck.ai input card; nil when it isn't showing.

@@ -1630,24 +1630,24 @@
 			isa = PBXGroup;
 			children = (
 				96FDEB1130A4CA8B006C1A96 /* Configuration */,
+				968FD49E3092028E000D6B12 /* DBPE2ETests */,
 				96FDDEAB30A4C9E0006C1A96 /* DuckDuckGo */,
 				961FCD0330A22785000B767F /* DuckDuckGoDBPBackgroundAgent */,
 				961FCC8130A2276F000B767F /* DuckDuckGoVPN */,
 				961FCCB730A22775000B767F /* HelperTargetsShared */,
-				85AE2FF024A33A2D002D507F /* Frameworks */,
 				968FD4DE309202A5000D6B12 /* IntegrationTests */,
-				378E279C2970217400FCADA2 /* LocalPackages */,
 				961FCCE030A22779000B767F /* NetworkProtectionAppExtension */,
 				961FCCED30A2277D000B767F /* NetworkProtectionSystemExtension */,
-				AA585D7F248FD31100E9A3E2 /* Products */,
-				968FD4A430920294000D6B12 /* SyncE2EUITests */,
-				968FD46A3092017C000D6B12 /* tests-server */,
-				968FD49E3092028E000D6B12 /* DBPE2ETests */,
 				968FD477309201A6000D6B12 /* PerformanceTests */,
 				31E163BF293A581900963C10 /* privacy-reference-tests */,
+				968FD4A430920294000D6B12 /* SyncE2EUITests */,
+				968FD46A3092017C000D6B12 /* tests-server */,
 				968FD581309202D9000D6B12 /* UITests */,
 				968F03CF30936AE6000D6B12 /* UnitTests */,
 				961FCCFA30A22781000B767F /* VPNProxyExtension */,
+				378E279C2970217400FCADA2 /* LocalPackages */,
+				85AE2FF024A33A2D002D507F /* Frameworks */,
+				AA585D7F248FD31100E9A3E2 /* Products */,
 			);
 			sourceTree = "<group>";
 		};

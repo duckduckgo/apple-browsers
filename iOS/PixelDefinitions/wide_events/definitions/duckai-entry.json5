@@ -4,7 +4,7 @@
         "owners": ["SabrinaTardio"],
         "meta": {
             "type": "ios-duckai-entry",
-            "version": "3.0"
+            "version": "4.0"
         },
         "feature": {
             "name": "duckai_entry",
@@ -43,6 +43,7 @@
                             "browsing_menu_webpage",
                             "browsing_menu_duckai",
                             "duck_ai_new_chat",
+                            "swipe_up_new_chat",
                             "tab_switcher",
                             "tab_switcher_existing_chat",
                             "tabs_bar_existing_chat",

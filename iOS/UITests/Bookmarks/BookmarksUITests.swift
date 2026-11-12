@@ -34,29 +34,30 @@ final class BookmarksUITests: UITestCase {
         false
     }
 
-    func testWhenPageIsBookmarkedThenItCanBeOpenedAndDeleted() {
+    func testWhenPageIsBookmarkedThenItCanBeOpenedAndDeleted() throws {
+        let site = try localWebsite()
         app.launch()
         let bookmark = app.tables["Bookmarks.List"].cells["Bookmarks.Item"].firstMatch
 
         XCTContext.runActivity(named: "Bookmark the test page") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
         }
 
         XCTContext.runActivity(named: "Open the bookmark from autocomplete and refresh it") { _ in
             app.openNewTab()
-            app.enterSearchText("pri")
+            app.enterSearchText("first")
             app.openAutocompleteSuggestion(
                 withIdentifierPrefix: "Autocomplete.Suggestions.ListItem.Bookmark-")
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
             app.webViews.firstMatch.swipeDown()
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
 
         XCTContext.runActivity(named: "Open the bookmark from Bookmarks") { _ in
             app.openBookmarks()
             bookmark.tapWhenHittable(in: app)
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
 
         XCTContext.runActivity(named: "Delete the bookmark") { _ in
@@ -66,7 +67,8 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenBookmarkIsMovedThroughNestedFoldersThenItCanBeDeletedWithItsFolders() {
+    func testWhenBookmarkIsMovedThroughNestedFoldersThenItCanBeDeletedWithItsFolders() throws {
+        let site = try localWebsite()
         app.launch()
         let firstFolderName = "Test Folder"
         let secondFolderName = "Test Folder 2"
@@ -75,7 +77,7 @@ final class BookmarksUITests: UITestCase {
         let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
 
         XCTContext.runActivity(named: "Bookmark the test page") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
             app.openBookmarks()
         }
@@ -129,7 +131,8 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() {
+    func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() throws {
+        let site = try localWebsite()
         app.launch()
         let folderName = "Examples"
         let bookmarksList = app.tables["Bookmarks.List"]
@@ -138,9 +141,7 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Create five tabs with four bookmarkable pages") { _ in
             for index in 0..<4 {
-                app.openURL(
-                    "https://privacy-test-pages.site/\(index)",
-                    expecting: "Cannot GET /\(index)")
+                site.open(.bookmark(index), in: app)
                 app.openNewTab()
             }
             app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable(in: app)
@@ -210,14 +211,15 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() {
+    func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() throws {
+        let site = try localWebsite()
         app.launch()
-        let expectedTitles = ["Privacy Test Pages - Home", "Ad Click Flow"]
+        let expectedTitles = [LocalUITestWebsite.Page.first.title, LocalUITestWebsite.Page.second.title]
 
         XCTContext.runActivity(named: "Create two bookmarkable tabs") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openNewTab()
-            app.openURL("https://www.search-company.site", expecting: "Search engine")
+            site.open(.second, in: app)
         }
 
         XCTContext.runActivity(named: "Bookmark both open tabs") { _ in

@@ -23,10 +23,14 @@ import UITestingSupport
 final class FavoritesUITests: UITestCase {
 
     override var additionalLaunchEnvironment: [String: String] {
-        ["UITEST_TEMPORARY_BOOKMARKS_STORE": "1"]
+        [
+            "UITEST_DISABLE_ANIMATIONS": "1",
+            "UITEST_TEMPORARY_BOOKMARKS_STORE": "1"
+        ]
     }
 
-    func testWhenPageIsFavoritedThenItCanBeOpenedFromNewTabAndRemoved() {
+    func testWhenPageIsFavoritedThenItCanBeOpenedFromNewTabAndRemoved() throws {
+        let site = try localWebsite()
         let favorite = app.buttons["Favorites.Item"].firstMatch
         let favoriteSuggestion = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "Autocomplete.Suggestions.ListItem.Favorite-"))
@@ -34,7 +38,7 @@ final class FavoritesUITests: UITestCase {
         let bookmark = app.tables["Bookmarks.List"].cells["Bookmarks.Item"].firstMatch
 
         XCTContext.runActivity(named: "Add, remove, and restore the favorite") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openBrowsingMenuItem("Browser.Menu.AddFavorite")
             app.openBrowsingMenuItem("Browser.Menu.RemoveFavorite")
             app.openBrowsingMenuItem("Browser.Menu.AddFavorite")
@@ -49,11 +53,11 @@ final class FavoritesUITests: UITestCase {
                     timeout: UITestTimeouts.navigation),
                 "Favorite did not appear on the new-tab page.")
             favorite.tap()
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
 
         XCTContext.runActivity(named: "Verify the favorite appears in autocomplete") { _ in
-            app.enterSearchText("pri")
+            app.enterSearchText("first")
             XCTAssertTrue(
                 favoriteSuggestion.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Favorite did not appear in autocomplete suggestions.")

@@ -14,7 +14,15 @@ on:
   workflow_call:
     inputs:
       test:
-        description: "The UITestCase class to run"
+        description: "Name of the matrix job"
+        required: true
+        type: string
+      only-tests:
+        description: "JSON array of XCTest class or class/method selectors"
+        required: true
+        type: string
+      skip-tests:
+        description: "JSON array of XCTest methods to exclude from this job"
         required: true
         type: string
       device:
@@ -58,7 +66,7 @@ jobs:
 
     env:
       IOS_VERSION: ${{ inputs.ios-version }}
-      TEST_CLASS: ${{ inputs.test }}
+      TEST_GROUP: ${{ inputs.test }}
       DEVICE: ${{ inputs.device }}
       DEVICE_NAME: ${{ inputs.device-name }}
       USER_MODE: ${{ inputs.user-mode }}
@@ -176,10 +184,19 @@ jobs:
       env:
         SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
         DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
+        ONLY_TESTS: ${{ inputs.only-tests }}
+        SKIP_TESTS: ${{ inputs.skip-tests }}
       run: |
         : > ui-tests.log
         xctestrun_path=$(<xctestrun-path)
         DESTINATION="platform=iOS Simulator,id=$SIMULATOR_UDID"
+        test_args=()
+        while IFS= read -r selector; do
+          test_args+=("-only-testing:UI Tests/$selector")
+        done < <(jq -r '.[]' <<< "$ONLY_TESTS")
+        while IFS= read -r selector; do
+          test_args+=("-skip-testing:UI Tests/$selector")
+        done < <(jq -r '.[]' <<< "$SKIP_TESTS")
         diagnostics_args=()
         case "$DIAGNOSTICS_MODE" in
           default) ;;
@@ -194,7 +211,7 @@ jobs:
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled NO \
-          "-only-testing:UI Tests/$TEST_CLASS" \
+          "${test_args[@]}" \
           "${diagnostics_args[@]}" \
         2>&1 | tee ui-tests.log \
         | xcbeautify
@@ -205,10 +222,10 @@ jobs:
       env:
         DESTINATION: ${{ steps.select-simulator.outputs.destination }}
       run: |
-        file="${TEST_CLASS}-${DEVICE}-${USER_MODE}.xml"
+        file="${TEST_GROUP}-${DEVICE}-${USER_MODE}.xml"
         invalid="reports/${file%.xml}.invalid"
         selected_ios_version="${DESTINATION##*,OS=}"
-        test_id="$TEST_CLASS ($DEVICE_NAME, iOS $selected_ios_version, $USER_MODE)"
+        test_id="$TEST_GROUP ($DEVICE_NAME, iOS $selected_ios_version, $USER_MODE)"
         mkdir -p reports
         touch "$invalid"
         jq -n --argjson workflow_attempt "$GITHUB_RUN_ATTEMPT" \

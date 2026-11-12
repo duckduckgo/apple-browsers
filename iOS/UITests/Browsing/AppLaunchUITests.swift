@@ -52,15 +52,16 @@ final class AppLaunchUITests: UITestCase {
         assertToolbarActionAfterDismissal(floating: true, editing: true)
     }
 
-    func testRegularContextMenusKeepBrowserControlsVisible() {
-        assertContextMenusKeepBrowserControlsVisible(floating: false)
+    func testRegularContextMenusKeepBrowserControlsVisible() throws {
+        try assertContextMenusKeepBrowserControlsVisible(floating: false)
     }
 
-    func testFloatingContextMenusKeepBrowserControlsVisible() {
-        assertContextMenusKeepBrowserControlsVisible(floating: true)
+    func testFloatingContextMenusKeepBrowserControlsVisible() throws {
+        try assertContextMenusKeepBrowserControlsVisible(floating: true)
     }
 
-    private func assertContextMenusKeepBrowserControlsVisible(floating: Bool, file: StaticString = #filePath, line: UInt = #line) {
+    private func assertContextMenusKeepBrowserControlsVisible(floating: Bool, file: StaticString = #filePath, line: UInt = #line) throws {
+        let site = try localWebsite()
         for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
             app.launchArguments[index + 1] = String(floating)
         }
@@ -82,12 +83,12 @@ final class AppLaunchUITests: UITestCase {
         for loadedPage in [false, true] {
             XCTContext.runActivity(named: loadedPage ? "Context menus on a loaded page" : "Context menus on a new tab") { _ in
                 if loadedPage {
-                    app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages", file: file, line: line)
+                    site.open(.first, in: app, file: file, line: line)
                     fire.tapWhenHittable(in: app, file: file, line: line)
                     let close = app.buttons["Fire.Confirmation.Button.Close"]
                     close.tapWhenHittable(in: app, file: file, line: line)
                     XCTAssertTrue(close.waitForNonExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
-                    app.assertPageContains("Privacy Test Pages", file: file, line: line)
+                    app.assertPageContains(LocalUITestWebsite.Page.first.title, file: file, line: line)
                 }
 
                 XCTAssertTrue(tabs.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation), file: file, line: line)
@@ -117,7 +118,7 @@ final class AppLaunchUITests: UITestCase {
                 XCTAssertTrue(originalTab.exists, "Creating a tab removed an existing tab.", file: file, line: line)
                 if loadedPage {
                     originalTab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app, file: file, line: line)
-                    app.assertPageContains("Privacy Test Pages", file: file, line: line)
+                    app.assertPageContains(LocalUITestWebsite.Page.first.title, file: file, line: line)
                 } else {
                     app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app, file: file, line: line)
                 }

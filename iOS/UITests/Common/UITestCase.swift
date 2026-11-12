@@ -33,6 +33,7 @@ class UITestCase: XCTestCase {
     }
 
     let app = XCUIApplication()
+    private var website: LocalUITestWebsite?
 
     var additionalLaunchArguments: [String] {
         []
@@ -57,11 +58,19 @@ class UITestCase: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        defer { website = nil }
         if (testRun?.totalFailureCount ?? 0) > 0 {
             attachFailureDiagnostics()
         }
         app.terminate()
         try super.tearDownWithError()
+    }
+
+    func localWebsite() throws -> LocalUITestWebsite {
+        if let website { return website }
+        let website = try LocalUITestWebsite()
+        self.website = website
+        return website
     }
 
     /// Relaunches without resetting defaults so tests can exercise multi-launch flows.

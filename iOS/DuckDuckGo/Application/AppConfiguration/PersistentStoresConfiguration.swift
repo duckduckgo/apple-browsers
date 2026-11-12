@@ -39,7 +39,11 @@ enum DatabaseError {
 final class PersistentStoresConfiguration {
 
     let database = Database.shared
+#if DEBUG
     let bookmarksDatabase: CoreDataDatabase
+#else
+    let bookmarksDatabase = BookmarksDatabase.make()
+#endif
     private(set) var sharedSecureVault: (any AutofillSecureVault)?
 
     private let application: UIApplication
@@ -58,8 +62,8 @@ final class PersistentStoresConfiguration {
             bookmarksDatabase = BookmarksDatabase.make(location: location)
             return
         }
-#endif
         bookmarksDatabase = BookmarksDatabase.make()
+#endif
     }
 
     func configure(syncKeyValueStore: ThrowingKeyValueStoring,

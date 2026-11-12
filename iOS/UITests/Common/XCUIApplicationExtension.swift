@@ -188,7 +188,7 @@ extension XCUIApplication {
         dismissAddressBarEditing(file: file, line: line)
         browserWindow.buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
-            browserWindow.buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
+            browserWindow.buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.navigation),
             "Tab switcher did not appear.", file: file, line: line)
     }
 

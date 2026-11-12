@@ -17,6 +17,7 @@
 //
 
 #if DEBUG && os(macOS)
+import Combine
 import Foundation
 import WebKit
 import XCTest
@@ -122,9 +123,53 @@ final class ChromeWebStoreManualUpdateTestingTests: XCTestCase {
         XCTAssertEqual(relaunched.context(for: updated.uniqueIdentifier)?.webExtension.version, "2.0")
     }
 
-    private func makeManager() -> WebExtensionManager {
+    func testLocalUpdateAppliesWhenActivityAllowsWithoutRelaunching() async throws {
+        let server = ChromeWebStoreManualUpdateServer(testing: testing, notificationCenter: NotificationCenter())
+        let controlURL = try await server.start()
+        defer { server.stop() }
+        let activity = PassthroughSubject<Void, Never>()
+        var isInactive = false
+        let manager = makeManager(updateApplicationPolicy: { _ in { _ in isInactive } },
+                                  activityUpdates: activity.eraseToAnyPublisher())
+        await manager.loadInstalledExtensions()
+        try await testing.installVersionOne(in: manager)
+        let original = try XCTUnwrap(manager.installationStore.installedExtensions.first)
+        var request = URLRequest(url: controlURL.appendingPathComponent("offer"))
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data("version=2.0".utf8)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        let store = try XCTUnwrap(manager.chromeWebStore as? ChromeWebStoreService)
+        await store.checkForUpdatesNow()
+        let pending = try await store.pendingUpdates.allPendingUpdates()
+        XCTAssertEqual(pending.map(\.version), ["2.0"])
+        XCTAssertEqual(manager.context(for: original.uniqueIdentifier)?.webExtension.version, "1.0")
+
+        let applied = expectation(description: "The local update loads without relaunching")
+        let observation = NotificationCenter.default.publisher(for: .webExtensionsDidChangeLoadedExtensions, object: manager)
+            .sink { _ in
+                if manager.context(for: original.uniqueIdentifier)?.webExtension.version == "2.0" { applied.fulfill() }
+            }
+        defer { observation.cancel() }
+        isInactive = true
+        activity.send(())
+        await fulfillment(of: [applied], timeout: 15)
+        await manager.updateInstaller?.cancelAndWait()
+
+        let updated = try XCTUnwrap(manager.installationStore.installedExtensions.first)
+        XCTAssertEqual(updated.uniqueIdentifier, original.uniqueIdentifier)
+        XCTAssertEqual(updated.version, "2.0")
+        XCTAssertEqual(manager.context(for: updated.uniqueIdentifier)?.webExtension.version, "2.0")
+        let remaining = try await store.pendingUpdates.allPendingUpdates()
+        XCTAssertTrue(remaining.isEmpty)
+    }
+
+    private func makeManager(updateApplicationPolicy: ((WebExtensionManager) -> (@MainActor (String) -> Bool))? = nil,
+                             activityUpdates: AnyPublisher<Void, Never>? = nil) -> WebExtensionManager {
         let manager = testing.makeManager(configuration: WebExtensionConfigurationProvidingMock(), windowTabProvider: WebExtensionWindowTabProvidingMock(),
-                                          permissionPrompter: NoPrompt(), enforcesPermissions: false, presenter: NoPresenter())
+                                          permissionPrompter: NoPrompt(), enforcesPermissions: false, presenter: NoPresenter(),
+                                          updateApplicationPolicy: updateApplicationPolicy, updateApplicationActivityUpdates: activityUpdates)
         managers.append(manager)
         return manager
     }

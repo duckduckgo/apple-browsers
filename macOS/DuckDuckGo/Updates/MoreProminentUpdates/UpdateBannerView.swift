@@ -225,7 +225,7 @@ extension UpdateBannerView {
 
 extension UpdateController {
 
-    /// "Restart now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update now".
+    /// "Restart Now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update Now".
     var updatePromptButtonTitle: String {
         (self as? any SparkleUpdateControlling)?.isAtRestartCheckpoint == true ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
     }

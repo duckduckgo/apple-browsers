@@ -128,6 +128,7 @@ final class HoveredLinkTooltipPresenter {
         label.lineBreakMode = .byTruncatingTail
         label.cell?.truncatesLastVisibleLine = true
         label.maximumNumberOfLines = 1
+        label.setAccessibilityIdentifier("HoveredLinkTooltip.label")
 
         window.contentView = background
         // The tooltip only mirrors the page's hovered link; keep its window out of the accessibility tree.

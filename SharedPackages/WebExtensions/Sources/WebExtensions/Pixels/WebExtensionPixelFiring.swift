@@ -133,11 +133,8 @@ public enum WebExtensionPixelEvent {
     /// One terminal report for a failure episode, on a valid dashboard response or the observation deadline.
     /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
     case cpmMessagingEpisode(CPMMessagingEpisodeReport)
-    case cpmRecovery(CPMRecoveryFix, outcome: CPMRecoveryOutcome)
     /// Stages and one terminal observation for a retained-background error-6 restart.
     case cpmBackgroundLoadRestart(CPMBackgroundLoadRestartOutcome)
-    /// Missing first-document dashboard response after a successful first background startup.
-    case cpmStartupResponseMissing
 
     /// A stale background was restarted after an observed Network process replacement.
     /// This records applying the mitigation, not confirmed messaging recovery.
@@ -294,7 +291,6 @@ private extension WebExtensionReloadTrigger {
         case .dataClearing: return "data_clearing"
         case .scriptletUpdate: return "scriptlet_update"
         case .explicit: return "explicit"
-        case .cpmMessagingHang: return "cpm_messaging_hung"
         case .cpmBackgroundLoadFailure: return "cpm_background_load_failed"
         }
     }
@@ -328,16 +324,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
     @available(macOS 15.4, iOS 18.4, *)
     public init?(event: WebExtensionPixelEvent) {
         switch event {
-        case .cpmStartupResponseMissing:
-            name = "web_extension_cpm_startup_response_missing"
-            frequency = .dailyAndCount
-            parameters = [:]
         case .cpmBackgroundLoadRestart(let outcome):
             name = "web_extension_cpm_background_load_restart"
-            frequency = .dailyAndCount
-            parameters = ["outcome": outcome.rawValue]
-        case .cpmRecovery(let fix, let outcome):
-            name = "web_extension_cpm_\(fix.rawValue)"
             frequency = .dailyAndCount
             parameters = ["outcome": outcome.rawValue]
         case .cpmMessagingEpisode(let report):

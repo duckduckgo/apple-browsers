@@ -38,10 +38,6 @@ private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsP
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
-    var isBackgroundGraveyardTreatmentEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
-    }
-
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -114,6 +110,20 @@ enum WebExtensionManagerFactory {
         eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
+        if buildType.isDebugBuild, buildType.isSparkleBuild, ChromeWebStoreManualUpdateTesting.isEnabled {
+            let manager = ChromeWebStoreManualUpdateTesting().makeManager(
+                configuration: WebExtensionConfigurationProvider(), windowTabProvider: WebExtensionWindowTabProvider(),
+                permissionPrompter: WebExtensionPermissionPrompt(
+                    windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
+                enforcesPermissions: featureFlagger.isFeatureOn(.webExtensionsPermissions),
+                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
+                internalSiteHandler: internalSiteHandler,
+                isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) })
+            internalSiteHandler.dataSource = manager
+            return manager
+        }
+#endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
@@ -151,21 +161,12 @@ enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
-            isCPMMessagingHangRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
-            },
             isCPMNetworkProcessRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
             cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
-            isCPMBackgroundLoadRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
-            },
             isCPMBackgroundLoadRestartEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
-            },
-            isCPMLateBackgroundDocumentRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
             isCPMStableBaseURLEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)

@@ -17,6 +17,8 @@
 //
 
 import XCTest
+import Testing
+import AppKit
 import WebKit
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
@@ -322,6 +324,9 @@ private final class ReloadRecordingWebView: WKWebView {
 }
 
 private final class HandshakeAgentInterface: DataBrokerProtectionAppToAgentInterface {
+    func assistedOptOutDataDidChange() {}
+    func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList? { AssistedOptOutList(optOuts: []) }
+    func startAssistedOptOut(id: String) {}
     func profileSaved() async {}
     func appLaunched() async {}
     func openBrowser(domain: String) {}
@@ -409,4 +414,174 @@ private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsReprese
 
     func setCustomURL(_ url: String) {}
     func setURLType(_ type: DataBrokerProtectionWebUIURLType) {}
+}
+
+@MainActor
+struct AssistedDashboardTests {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func communicationUsesExplicitDelegateAndRejectsMalformedStart() async throws {
+        let fixture = AssistedDashboardFixture()
+        let configuration = try #require(fixture.model.setupCommunicationLayer())
+        let controller = try #require(configuration.userContentController as? DBPUIUserContentController)
+        let layer = controller.dbpUIUserScripts.dbpUICommunicationLayer
+        let featureConfig = try await layer.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)?([:], WKScriptMessage.mock())
+        #expect((featureConfig as? DBPUIFeatureConfigurationResponse)?.userAssistanceEnabled == true)
+        let list = try await layer.handler(forMethodNamed: DBPUIReceivedMethodName.getAssistedOptOuts.rawValue)?([:], WKScriptMessage.mock())
+        #expect(list as? AssistedOptOutList == fixture.agent.list)
+        let start = try #require(layer.handler(forMethodNamed: DBPUIReceivedMethodName.startAssistedOptOut.rawValue))
+        await #expect(throws: (any Error).self) { try await start(["id": 42], WKScriptMessage.mock()) }
+        _ = try await start(["id": "1-1-1"], WKScriptMessage.mock())
+        #expect(fixture.agent.startedIDs == ["1-1-1"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func visiblePollingPushesChangesPreservesFailedLoadsAndClearsWhenDisabled() async throws {
+        let fixture = AssistedDashboardFixture()
+        _ = try #require(fixture.model.setupCommunicationLayer())
+        let webView = AssistedRecordingWebView()
+        let initialPush = XCTestExpectation(description: "Initial list pushed")
+        webView.onPush = { initialPush.fulfill() }
+        await fixture.model.pollAssistedOptOuts(in: webView)
+        #expect(await XCTWaiter.fulfillment(of: [initialPush], timeout: 5) == .completed)
+        #expect(webView.scripts.count == 1)
+        #expect(webView.scripts[0].contains("assistedOptOutsDidChange"))
+        #expect(webView.scripts[0].contains("1-1-1"))
+        webView.onPush = nil
+        await fixture.model.pollAssistedOptOuts(in: webView)
+        #expect(webView.scripts.count == 1)
+        let lastGoodList = fixture.agent.list
+        fixture.agent.list = nil
+        await fixture.model.pollAssistedOptOuts(in: webView)
+        #expect(await fixture.model.getAssistedOptOuts() == lastGoodList)
+        #expect(webView.scripts.count == 1)
+        let requestsBeforeDisable = fixture.agent.requests.count
+        fixture.flagger.isUserAssistanceOn = false
+        let clearedPush = XCTestExpectation(description: "Disabled list cleared")
+        webView.onPush = { clearedPush.fulfill() }
+        await fixture.model.pollAssistedOptOuts(in: webView)
+        #expect(await XCTWaiter.fulfillment(of: [clearedPush], timeout: 5) == .completed)
+        #expect(fixture.agent.requests.count == requestsBeforeDisable)
+        #expect(webView.scripts.count == 2)
+        #expect(!webView.scripts[1].contains("1-1-1"))
+        #expect(await fixture.model.getAssistedOptOuts().optOuts.isEmpty)
+        fixture.flagger.isUserAssistanceOn = true
+        fixture.agent.list = lastGoodList
+        let restoredPush = XCTestExpectation(description: "Enabled list restored")
+        webView.onPush = { restoredPush.fulfill() }
+        await fixture.model.pollAssistedOptOuts(in: webView)
+        #expect(await XCTWaiter.fulfillment(of: [restoredPush], timeout: 5) == .completed)
+        #expect(webView.scripts.count == 3)
+        webView.pollingWindow.visibleForPolling = false
+        let requestsBeforeHide = fixture.agent.requests.count
+        await fixture.model.pollAssistedOptOuts(in: webView)
+        #expect(fixture.agent.requests.count == requestsBeforeHide)
+        #expect(fixture.agent.requests.first == false)
+        #expect(fixture.agent.requests.contains(true))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func pollingStopsAndDoesNotRetainViewModel() async throws {
+        let fixture = AssistedDashboardFixture()
+        let webView = AssistedRecordingWebView()
+        let firstPoll = XCTestExpectation(description: "Timer polled")
+        fixture.agent.onGet = { firstPoll.fulfill() }
+        fixture.model.startAssistedOptOutsPolling(in: webView)
+        #expect(await XCTWaiter.fulfillment(of: [firstPoll], timeout: 5) == .completed)
+        fixture.model.stopAssistedOptOutsPolling()
+        let noFurtherPoll = XCTestExpectation(description: "Stopped timer does not poll")
+        noFurtherPoll.isInverted = true
+        fixture.agent.onGet = { noFurtherPoll.fulfill() }
+        #expect(await XCTWaiter.fulfillment(of: [noFurtherPoll], timeout: 2.2) == .completed)
+        var model: DBPUIViewModel? = fixture.makeModel()
+        weak var weakModel = model
+        model?.startAssistedOptOutsPolling(in: webView)
+        model = nil
+        await Task.yield()
+        #expect(weakModel == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [true, false])
+    func dashboardRemovalNotifiesAgentOnlyAfterSuccessfulWrite(succeeds: Bool) throws {
+        let fixture = AssistedDashboardFixture()
+        _ = try #require(fixture.model.setupCommunicationLayer())
+        fixture.database.extractedProfileToReturn = .mockWithoutRemovedDate
+        if !succeeds { fixture.database.addHistoryEventError = DataBrokerProtectionError.jobTimeout }
+        fixture.dataManager.willRemoveOptOutFromDashboard(1)
+        #expect(fixture.agent.invalidations == (succeeds ? 1 : 0))
+        #expect(fixture.database.optOutEvents.last?.type == (succeeds ? .matchRemovedByUser : nil))
+        #expect(fixture.agent.profileSavedCalls == 0)
+    }
+}
+
+@MainActor
+private final class AssistedDashboardFixture {
+    let agent = AssistedAgentInterface()
+    let flagger = MockDBPFeatureFlagger(isUserAssistanceOn: true)
+    let database = MockDatabase()
+    let privacyConfig = PrivacyConfigurationManagingMock()
+    lazy var dataManager = DataBrokerProtectionDataManager(database: database)
+    lazy var model = makeModel()
+
+    init() {
+        let config = PrivacyConfigurationMock()
+        config.subfeatureSettings = #"{"enabledBrokers":["testbroker.com"]}"#
+        privacyConfig.privacyConfig = config
+    }
+
+    func makeModel() -> DBPUIViewModel {
+        DBPUIViewModel(dataManager: dataManager, agentInterface: agent, webUISettings: MockWebSettings(),
+                       pixelHandler: MockDataBrokerProtectionPixelsHandler(), privacyConfig: privacyConfig, prefs: .mock,
+                       dbpSettings: DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: "AssistedDashboardTests.\(UUID().uuidString)")!),
+                       userAssistanceFlagger: flagger)
+    }
+}
+
+private final class AssistedAgentInterface: DataBrokerProtectionAppToAgentInterface {
+    var list: AssistedOptOutList? = .init(optOuts: [.init(id: "1-1-1", dataBroker: .init(name: "Broker", url: "testbroker.com"), state: .waiting)])
+    var requests: [Bool] = []
+    var startedIDs: [String] = []
+    var invalidations = 0
+    var profileSavedCalls = 0
+    var onGet: (() -> Void)?
+    func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList? {
+        requests.append(droppingSubmitted)
+        onGet?()
+        return list
+    }
+    func startAssistedOptOut(id: String) { startedIDs.append(id) }
+    func assistedOptOutDataDidChange() { invalidations += 1 }
+    func profileSaved() async { profileSavedCalls += 1 }
+    func appLaunched() async {}
+    func openBrowser(domain: String) {}
+    func startImmediateOperations(showWebView: Bool) {}
+    func startScheduledOperations(showWebView: Bool) {}
+    func runAllOptOuts(showWebView: Bool) {}
+    func checkForEmailConfirmationData() async {}
+    func runEmailConfirmationOperations(showWebView: Bool) async {}
+    func getDebugMetadata() async -> DBPBackgroundAgentMetadata? { nil }
+    func startDebugServer() async -> Bool { false }
+    func stopDebugServer() {}
+}
+
+@MainActor
+private final class AssistedVisibilityWindow: NSWindow {
+    var visibleForPolling = true
+    override var occlusionState: NSWindow.OcclusionState { visibleForPolling ? .visible : [] }
+}
+
+@MainActor
+private final class AssistedRecordingWebView: WKWebView {
+    let pollingWindow = AssistedVisibilityWindow(contentRect: .zero, styleMask: [], backing: .buffered, defer: true)
+    var scripts: [String] = []
+    var onPush: (() -> Void)?
+    override var window: NSWindow? { pollingWindow }
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        scripts.append(javaScriptString)
+        onPush?()
+        completionHandler?(nil, nil)
+    }
 }

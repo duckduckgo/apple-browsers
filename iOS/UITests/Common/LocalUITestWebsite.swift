@@ -72,6 +72,11 @@ final class LocalUITestWebsite {
     }
 
     func open(_ page: Page, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        navigate(to: page, in: app, file: file, line: line)
+        app.assertPageContains(page.title, file: file, line: line)
+    }
+
+    func navigate(to page: Page, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let request = requests.expectRequest(for: page.path)
         app.enterSearchText("http://\(hostAndPort)\(page.path)\r", file: file, line: line)
         XCTAssertEqual(
@@ -80,7 +85,6 @@ final class LocalUITestWebsite {
             "Browser did not request the local page \(page.path).",
             file: file,
             line: line)
-        app.assertPageContains(page.title, file: file, line: line)
     }
 
     private final class PageRequests {

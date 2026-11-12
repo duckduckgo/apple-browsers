@@ -51,6 +51,17 @@ extension XCUIApplication {
             line: line)
     }
 
+    func assertBookmarkTitles(_ titles: [String], file: StaticString = #filePath, line: UInt = #line) {
+        assertBookmarkCount(titles.count, file: file, line: line)
+        let bookmarks = tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Item")
+        for title in titles {
+            let bookmark = bookmarks.containing(.staticText, identifier: title).firstMatch
+            XCTAssertTrue(
+                bookmark.waitForExistence(timeout: UITestTimeouts.elementExistence),
+                "Bookmark '\(title)' did not appear.", file: file, line: line)
+        }
+    }
+
     func bookmarkAllOpenTabs(
         expectedTabCount: Int,
         file: StaticString = #filePath,

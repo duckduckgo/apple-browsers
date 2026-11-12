@@ -134,14 +134,15 @@ final class BookmarksUITests: UITestCase {
     func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() throws {
         let site = try localWebsite()
         app.launch()
+        let pages = (0..<4).map(LocalUITestWebsite.Page.bookmark)
         let folderName = "Examples"
         let bookmarksList = app.tables["Bookmarks.List"]
         let bookmarks = bookmarksList.cells.matching(identifier: "Bookmarks.Item")
         let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
 
         XCTContext.runActivity(named: "Create five tabs with four bookmarkable pages") { _ in
-            for index in 0..<4 {
-                site.open(.bookmark(index), in: app)
+            for page in pages {
+                site.navigate(to: page, in: app)
                 app.openNewTab()
             }
             app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable(in: app)
@@ -150,7 +151,7 @@ final class BookmarksUITests: UITestCase {
         XCTContext.runActivity(named: "Bookmark all open tabs") { _ in
             app.bookmarkAllOpenTabs(expectedTabCount: 5)
             app.openBookmarks()
-            app.assertBookmarkCount(4)
+            app.assertBookmarkTitles(pages.map(\.title))
         }
 
         XCTContext.runActivity(named: "Create a folder and move all bookmarks into it") { _ in
@@ -228,15 +229,7 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Verify both bookmarks were added") { _ in
             app.openBookmarks()
-            app.assertBookmarkCount(expectedTitles.count)
-
-            let bookmarks = app.tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Item")
-            for title in expectedTitles {
-                let bookmark = bookmarks.containing(.staticText, identifier: title).firstMatch
-                XCTAssertTrue(
-                    bookmark.waitForExistence(timeout: UITestTimeouts.elementExistence),
-                    "Bookmark '\(title)' did not appear.")
-            }
+            app.assertBookmarkTitles(expectedTitles)
         }
     }
 }

@@ -172,7 +172,12 @@ final class BrowserToolbarView: UIView {
     static let floatingStandaloneButtonRowHorizontalPadding: CGFloat = 16
     // This is only used in floating UI
     static let floatingUICornerRadius: CGFloat = 40
-    static let floatingShadowOpacity: CGFloat = 0.12
+    /// Layer shadow under the floating glass. None on iOS 26+: Liquid Glass draws its own, and
+    /// compositing another dynamic shadow on top of it doubles it up.
+    static var floatingShadowOpacity: CGFloat {
+        if #available(iOS 26.0, *) { return 0 }
+        return 0.12
+    }
     static let floatingShadowRadius: CGFloat = 10
     static let floatingShadowOffset = CGSize(width: 0, height: 4)
 
@@ -1161,12 +1166,7 @@ final class BrowserToolbarView: UIView {
         appliedMaterialInterfaceStyle = nil
         let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
-            if #available(iOS 26.0, *) {
-                // Liquid Glass already provides a shadow; avoid compositing another dynamic shadow.
-                self.materialBackgroundView.layer.shadowOpacity = 0
-            } else {
-                self.materialBackgroundView.layer.shadowOpacity = self.visibleShadowOpacity
-            }
+            self.materialBackgroundView.layer.shadowOpacity = self.visibleShadowOpacity
             self.materialBackgroundView.effect = self.visibleMaterialEffect
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor

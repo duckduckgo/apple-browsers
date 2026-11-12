@@ -323,7 +323,8 @@ final class FloatingDomainCapsuleController {
         }
     }
 
-    /// The pill carries the bar's shadow while it is the bar's shape, and loses it as it shrinks.
+    /// The pill carries the bar's shadow while it is the bar's shape, and loses it as it shrinks. Like
+    /// the bar, it has none on iOS 26+, where the glass draws its own.
     private func applyShadow(amount: CGFloat) {
         let opacity = Float(BrowserToolbarView.floatingShadowOpacity * amount)
         guard button.layer.shadowOpacity != opacity || opacity > 0 else { return }
@@ -342,7 +343,10 @@ final class FloatingDomainCapsuleController {
             guard radius != appliedCornerRadius || !hasAppliedCornerConfiguration else { return }
             hasAppliedCornerConfiguration = true
             appliedCornerRadius = radius
-            backgroundView.cornerConfiguration = radius.map { .corners(radius: .fixed($0)) } ?? .capsule()
+            // Concentric, like the resting bar's glass: at the hand-off the pill has the bar's frame,
+            // so it resolves to the bar's exact corners even where the screen's are rounder than
+            // `radius`. Moving inward, the concentric part falls away and `radius` takes over.
+            backgroundView.cornerConfiguration = radius.map { .corners(radius: .containerConcentric(minimum: $0)) } ?? .capsule()
         } else {
             backgroundView.layer.cornerRadius = radius ?? height / 2
         }

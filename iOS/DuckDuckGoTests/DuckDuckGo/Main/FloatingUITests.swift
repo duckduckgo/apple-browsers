@@ -2334,6 +2334,17 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertGreaterThan(hidden.midY, halfway.midY)
     }
 
+    func testWhenBottomBarIsCollapsingThenPillAddsNoLayerShadowOverTheGlass() {
+        for percent in [CGFloat(0.99), 0.5, 0] {
+            let button = update(barsVisibilityPercent: percent, addressBarPosition: .bottom)
+
+            XCTAssertLessThanOrEqual(button?.layer.shadowOpacity ?? 1, Float(BrowserToolbarView.floatingShadowOpacity))
+            if #available(iOS 26.0, *) {
+                XCTAssertEqual(button?.layer.shadowOpacity ?? 1, 0, "p=\(percent)")
+            }
+        }
+    }
+
     func testWhenBottomBarWithReduceMotionThenPillStaysAtCapsuleSize() {
         let capsuleWidth = update(barsVisibilityPercent: 0, addressBarPosition: .bottom, reduceMotion: true)?.bounds.width ?? 0
         let midWidth = update(barsVisibilityPercent: 0.5, addressBarPosition: .bottom, reduceMotion: true)?.bounds.width ?? 0
@@ -2752,8 +2763,10 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
         }
     }
 
+    // WebKit's insets follow every frame so page-fixed content moves with the bar. The scroll view's
+    // own insets stay put until each endpoint so the scroll range doesn't shift mid-gesture.
     @available(iOS 26, *)
-    func testFloatingChromeKeepsWebKitAndScrollInsetsStableUntilEachEndpoint() {
+    func testFloatingChromeMovesWebKitInsetsEveryFrameButScrollInsetsOnlyAtEachEndpoint() {
         let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())
         tab.floatingUIManager = FloatingUIManager(
             isFloatingUIFeatureEnabled: true,
@@ -2774,7 +2787,7 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
             chrome.obscuredContentInsets = insets
             for progress: CGFloat in [0.2, 0.5, 0.8] {
                 tab.updateWebViewBottomAnchor(for: progress)
-                XCTAssertEqual(tab.webView.obscuredContentInsets, previous)
+                XCTAssertEqual(tab.webView.obscuredContentInsets, insets)
                 XCTAssertEqual(tab.webView.scrollView.contentInset, previous)
                 XCTAssertEqual(tab.webView.scrollView.verticalScrollIndicatorInsets, insets)
             }

@@ -285,6 +285,25 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(sut.panelHeight, BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: false), accuracy: 0.01)
     }
 
+    // Liquid Glass draws its own shadow; handing the glass to the pill and back must not add a layer one.
+    func testWhenGlassIsHandedBackThenItsLayerShadowMatchesTheRestingBar() throws {
+        let sut = makeSUT()
+        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
+        let restingOpacity = glassView.layer.shadowOpacity
+
+        sut.setGlassHandedOff(true)
+        XCTAssertEqual(glassView.layer.shadowOpacity, 0)
+        XCTAssertNil(glassView.effect)
+        sut.setGlassHandedOff(false)
+
+        XCTAssertEqual(glassView.layer.shadowOpacity, restingOpacity)
+        XCTAssertEqual(glassView.layer.shadowOpacity, Float(BrowserToolbarView.floatingShadowOpacity))
+        XCTAssertNotNil(glassView.effect)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(glassView.layer.shadowOpacity, 0)
+        }
+    }
+
     // The morph must not touch layout: the panel is scaled as a whole, glass and content together.
     func testWhenMorphTransformIsAppliedThenPanelIsScaledWithoutChangingItsLayout() throws {
         let sut = makeSUT()

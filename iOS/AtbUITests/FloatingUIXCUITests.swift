@@ -83,6 +83,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let oneHeading = "Floating UI Test Page One"
         static let twoHeading = "Floating UI Test Page Two"
         static let longHeading = "Floating UI Long Page"
+        static let fixedFooterHeading = "Floating UI Fixed Footer"
         static let scrollEdgeHeading = "Floating UI Scroll Edge"
         static let edgeHeading = "Floating UI Edge Controls"
         static let slowHeading = "Floating UI Slow Page"
@@ -549,6 +550,50 @@ class FloatingUIXCUITestCase: XCTestCase {
         webView.swipeDown(velocity: .fast)
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertMorphIsContinuous(try? chromeMorphTrace(endingAt: 1), named: "expand")
+    }
+
+    /// A page's fixed footer must end up just above the bar or the pill, never left behind with a gap
+    /// or hidden under the glass, and the page must not get a `resize` for every frame of the motion.
+    func verifyFixedFooterFollowsTheChrome() {
+        openPage(path: "/fixed-footer", heading: Page.fixedFooterHeading)
+        let footer = app.staticTexts["Fixed footer"]
+        let resizeCount = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Resizes'")).firstMatch
+        XCTAssertTrue(footer.waitForExistence(timeout: timeout))
+        XCTAssertTrue(resizeCount.waitForExistence(timeout: timeout))
+        func resizes() -> Int { Int(resizeCount.label.split(separator: " ").last ?? "") ?? 0 }
+        // Well clear of the top, so the expand below isn't held back by a top bounce.
+        webView.swipeUp(velocity: .fast)
+        webView.swipeUp(velocity: .fast)
+        webView.swipeDown(velocity: .slow)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+
+        let resizesBeforeCollapse = resizes()
+        webView.swipeUp(velocity: .fast)
+        XCTAssertTrue(domainCapsule.waitForHittable(timeout: timeout))
+        let footerRestsOnPill = waitUntil(timeout: 5) {
+            let gap = self.domainCapsule.frame.minY - self.footer(footer).maxY
+            return gap >= -1 && gap < 40
+        }
+        XCTAssertTrue(footerRestsOnPill,
+                      "Footer should sit just above the pill: footer \(footer.frame), pill \(domainCapsule.frame).")
+        XCTAssertLessThanOrEqual(resizes() - resizesBeforeCollapse, 3, "The page got a resize for every frame of the collapse.")
+
+        let resizesBeforeExpand = resizes()
+        webView.swipeDown(velocity: .fast)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        let footerRestsOnBar = waitUntil(timeout: 5) {
+            let gap = self.searchField.frame.minY - self.footer(footer).maxY
+            return gap >= 0 && gap < 60
+        }
+        XCTAssertTrue(footerRestsOnBar,
+                      "Footer should sit just above the bar: footer \(footer.frame), field \(searchField.frame).")
+        XCTAssertLessThanOrEqual(resizes() - resizesBeforeExpand, 3, "The page got a resize for every frame of the expand.")
+    }
+
+    /// The footer's frame from its label, which is vertically centred in the 56pt footer.
+    private func footer(_ label: XCUIElement) -> CGRect {
+        let frame = label.frame
+        return CGRect(x: 0, y: frame.midY - 28, width: app.frame.width, height: 56)
     }
 
     /// Reversing direction before the chrome has settled must turn the motion round, not restart it.
@@ -1103,6 +1148,9 @@ class FloatingUIXCUITestCase: XCTestCase {
         server["/long-page"] = { _ in
             .ok(.html(Self.longPageHTML))
         }
+        server["/fixed-footer"] = { _ in
+            .ok(.html(Self.fixedFooterHTML))
+        }
         server["/scroll-edge"] = { _ in
             .ok(.html(Self.scrollEdgeHTML))
         }
@@ -1194,6 +1242,30 @@ class FloatingUIXCUITestCase: XCTestCase {
           <a href="http://127.0.0.1:65534/floating-ui-error">Load error page</a>
         </nav>
         <p class="bottom">End of page</p>
+      </body>
+    </html>
+    """
+
+    private static let fixedFooterHTML = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <title>Fixed Footer</title>
+        <style>
+          body { margin: 0; min-height: 6000px; font: 16px system-ui; }
+          h1 { margin: 16px; }
+          footer { position: fixed; left: 0; right: 0; bottom: 0; height: 56px; background: #e0245e; color: white;
+                   display: flex; justify-content: space-around; align-items: center; }
+        </style>
+      </head>
+      <body>
+        <h1>\(Page.fixedFooterHeading)</h1>
+        <footer><span>Fixed footer</span><span id="resizes">Resizes 0</span></footer>
+        <script>
+          let resizes = 0;
+          addEventListener('resize', () => { document.getElementById('resizes').textContent = 'Resizes ' + (++resizes); });
+        </script>
       </body>
     </html>
     """
@@ -1365,6 +1437,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
     func testChromeMorphIsOneContinuousMotion() { verifyChromeMorphIsOneContinuousMotion() }
     func testChromeMorphReversesWithoutJumping() { verifyChromeMorphReversesWithoutJumping() }
+    func testFixedFooterFollowsTheChrome() { verifyFixedFooterFollowsTheChrome() }
     func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }
     func testTabSwitcherRotation() { verifyTabSwitcherRotation() }

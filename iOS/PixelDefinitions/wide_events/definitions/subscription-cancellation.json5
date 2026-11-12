@@ -1,0 +1,52 @@
+{
+    "ios-subscription-cancellation": {
+        "description": "Sent at the end of a subscription cancellation journey, from the moment an auto-renewing subscriber taps Cancel Subscription, Manage Subscription, Manage Payment or Cancel, or Change Plan in Subscription Settings, until a subscription check, right after the App Store sheet closes or on app launch or foreground, finds auto-renew turned off, the plan changed, or the data unusable, or 24 hours pass without a cancellation.",
+        "owners": ["hanyutang-sandra"],
+        "meta": {
+            "type": "ios-subscription-cancellation",
+            "version": "1.0"
+        },
+        "feature": {
+            "name": "subscription-cancellation",
+            "status": ["SUCCESS", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason for the outcome. `auto_renew_disabled` (SUCCESS) = a subscription check found the subscription no longer auto-renewing; `not_cancelled_before_timeout` (UNKNOWN) = still auto-renewing on the same plan 24 hours after the entry tap; `plan_changed` (UNKNOWN) = still auto-renewing but on a different product than at the entry tap; `no_subscription` (UNKNOWN) = no subscription was found; `partial_data` (UNKNOWN) = the subscription was expired, inactive or unreadable, or still could not be fetched 24 hours after the entry tap.",
+                        "enum": ["auto_renew_disabled", "not_cancelled_before_timeout", "plan_changed", "no_subscription", "partial_data"]
+                    },
+                    "entry_point": {
+                        "type": "string",
+                        "description": "The Subscription Settings button that started the journey.",
+                        "enum": ["cancel_subscription", "manage_subscription", "manage_payment_or_cancel", "change_plan"]
+                    },
+                    "purchase_platform": {
+                        "type": "string",
+                        "description": "Platform the subscription was purchased on.",
+                        "enum": ["app_store", "stripe"]
+                    },
+                    "is_trial": {
+                        "type": "boolean",
+                        "description": "Whether the subscription had an active free trial offer at the entry tap."
+                    },
+                    "subscription_identifier": {
+                        "type": "string",
+                        "description": "Product identifier of the subscription at the entry tap, e.g. ddg.privacy.pro.monthly.renews.us."
+                    },
+                    "days_since_purchase_bucketed": {
+                        "type": "string",
+                        "description": "Days between the subscription start and the entry tap, bucketed.",
+                        "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+                    },
+                    "days_until_renewal_bucketed": {
+                        "type": "string",
+                        "description": "Days between the entry tap and the subscription's next renewal or expiry date, bucketed.",
+                        "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+                    },
+                    "error": "errorParameters"
+                }
+            }
+        }
+    }
+}

@@ -901,14 +901,70 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.subscriptionManageButtonText, UserText.subscriptionManagePayment)
     }
 
-    func testCancelSubscriptionTapped_FiresCancelClick() {
+    func testCancelSubscriptionTapped_ReportsCancelSubscriptionTapped() {
         let instrumentation = SubscriptionCancellationInstrumentationSpy()
         sut = makeSUT(cancellationInstrumentation: instrumentation)
 
         sut.cancelSubscriptionTapped()
 
-        XCTAssertEqual(instrumentation.cancelClickedCount, 1)
-        XCTAssertEqual(instrumentation.appStoreSubscriptionCancelledCount, 0)
+        XCTAssertEqual(instrumentation.cancelSubscriptionTappedCount, 1)
+        XCTAssertEqual(instrumentation.manageSubscriptionClosedCount, 0)
+    }
+
+    func testManageSubscription_WhenAppleAndCancellationFlowOn_StartsCancellationJourneyFromManageSubscription() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
+        await assertManageSubscriptionStartsCancellationJourney(platform: .apple, expected: .manageSubscription)
+    }
+
+    func testManageSubscription_WhenProTierPurchaseOn_StartsCancellationJourneyFromManagePaymentOrCancel() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        await assertManageSubscriptionStartsCancellationJourney(platform: .stripe, expected: .managePaymentOrCancel)
+    }
+
+    func testManageSubscription_WhenFlagsOff_StartsCancellationJourneyFromChangePlan() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        await assertManageSubscriptionStartsCancellationJourney(platform: .stripe, expected: .changePlan)
+    }
+
+    func testManageSubscription_WhenStripePortalURLFails_ReportsManageSubscriptionFailed() async {
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.customerPortalURL = nil
+        let instrumentation = SubscriptionCancellationInstrumentationSpy()
+        sut = makeSUT(cancellationInstrumentation: instrumentation)
+        await loadSubscriptionWithoutRefresh()
+        let failed = expectation(description: "Manage subscription failure reported")
+        instrumentation.onManageSubscriptionFailed = { failed.fulfill() }
+
+        sut.manageSubscription()
+
+        await fulfillment(of: [failed], timeout: 5.0)
+        XCTAssertEqual(instrumentation.manageSubscriptionFailures.count, 1)
+    }
+
+    func testDisplayStripeView_WhenPortalClosesAfterManageSubscription_ReportsManageSubscriptionClosed() async {
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        let instrumentation = SubscriptionCancellationInstrumentationSpy()
+        sut = makeSUT(cancellationInstrumentation: instrumentation)
+        await loadSubscriptionWithoutRefresh()
+        let closed = expectation(description: "Manage subscription closed reported")
+        instrumentation.onManageSubscriptionClosed = { closed.fulfill() }
+
+        sut.manageSubscription()
+        sut.displayStripeView(false)
+
+        await fulfillment(of: [closed], timeout: 5.0)
+        XCTAssertEqual(instrumentation.manageSubscriptionClosedCount, 1)
+    }
+
+    func testDisplayStripeView_WhenClosedWithoutManageSubscription_DoesNotReportManageSubscriptionClosed() {
+        let instrumentation = SubscriptionCancellationInstrumentationSpy()
+        sut = makeSUT(cancellationInstrumentation: instrumentation)
+
+        sut.displayStripeView(false)
+
+        XCTAssertEqual(instrumentation.manageSubscriptionClosedCount, 0)
     }
 
     func testManageSubscription_WhenAppleInactiveAndFlagOn_DoesNotRefetchOrFireCancelled() async {
@@ -933,7 +989,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         await sut.openStoreCancellation()
 
         XCTAssertEqual(sut.state.subscriptionInfo?.status, .expired)
-        XCTAssertEqual(instrumentation.appStoreSubscriptionCancelledCount, 0)
+        XCTAssertEqual(instrumentation.manageSubscriptionClosedCount, 0)
     }
 
     // MARK: - Withdrawal
@@ -974,7 +1030,20 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
         await fulfillment(of: [refetched], timeout: 1.0)
         XCTAssertEqual(sut.state.subscriptionInfo?.status, .expired)
-        XCTAssertEqual(instrumentation.appStoreSubscriptionCancelledCount, 0)
+        XCTAssertEqual(instrumentation.manageSubscriptionClosedCount, 0)
+    }
+
+    private func assertManageSubscriptionStartsCancellationJourney(platform: DuckDuckGoSubscription.Platform,
+                                                                   expected: SubscriptionCancellationWideEventData.EntryPoint) async {
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .expired, platform: platform))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        let instrumentation = SubscriptionCancellationInstrumentationSpy()
+        sut = makeSUT(cancellationInstrumentation: instrumentation)
+        await loadSubscriptionWithoutRefresh()
+
+        sut.manageSubscription()
+
+        XCTAssertEqual(instrumentation.manageSubscriptionTappedEntryPoints, [expected])
     }
 
     private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,

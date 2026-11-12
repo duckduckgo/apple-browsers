@@ -55,6 +55,7 @@ actor WideEventService {
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
         await processCompletion(PostIdleSessionWideEventData.self, trigger: trigger)
         await processCompletion(NewTabPageSessionWideEventData.self, trigger: trigger)
+        await processSubscriptionCancellationCompletion(trigger: trigger)
 
         if includingLaunchOnlyEvents {
             // Launch-only: only a cold launch proves a still-pending refresh is genuinely stalled.
@@ -76,6 +77,18 @@ actor WideEventService {
         for data in wideEvent.getAllFlowData(SubscriptionPurchaseWideEventData.self) {
             data.entitlementsChecker = { [weak self] in
                 await self?.checkForCurrentEntitlements() ?? false
+            }
+
+            if case .complete(let status) = await data.completionDecision(for: trigger) {
+                _ = try? await wideEvent.completeFlow(data, status: status)
+            }
+        }
+    }
+
+    private func processSubscriptionCancellationCompletion(trigger: WideEventCompletionTrigger) async {
+        for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
+            data.subscriptionFetcher = { [subscriptionManager] in
+                try await subscriptionManager.getSubscription(forceRefresh: false)
             }
 
             if case .complete(let status) = await data.completionDecision(for: trigger) {

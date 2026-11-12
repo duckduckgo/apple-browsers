@@ -22,6 +22,7 @@ import FoundationExtensions
 import Networking
 import PixelKit
 import Subscription
+import WideEvent
 
 extension SubscriptionDaysSincePurchaseBucket {
 
@@ -36,8 +37,10 @@ extension SubscriptionDaysSincePurchaseBucket {
 }
 
 protocol SubscriptionCancellationInstrumenting {
-    func cancelClicked()
-    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription)
+    func cancelSubscriptionTapped(subscription: DuckDuckGoSubscription?)
+    func manageSubscriptionTapped(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?)
+    func manageSubscriptionFailed(_ error: Error)
+    func manageSubscriptionClosed(entry: SubscriptionCancellationEntry, subscriptionBefore: DuckDuckGoSubscription, subscriptionAfter: DuckDuckGoSubscription?)
     func flowLoadFailed(_ error: Error)
     func featureInfoFailed(entitlement: SubscriptionEntitlement)
 }
@@ -45,26 +48,78 @@ protocol SubscriptionCancellationInstrumenting {
 struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrumenting {
 
     private let pixelFiring: PixelFiring?
+    private let wideEvent: WideEventManaging?
     private let now: () -> Date
 
-    init(pixelFiring: PixelFiring? = PixelKit.shared, now: @escaping () -> Date = Date.init) {
+    init(pixelFiring: PixelFiring? = PixelKit.shared, wideEvent: WideEventManaging? = nil, now: @escaping () -> Date = Date.init) {
         self.pixelFiring = pixelFiring
+        self.wideEvent = wideEvent
         self.now = now
     }
 
-    func cancelClicked() {
+    func cancelSubscriptionTapped(subscription: DuckDuckGoSubscription?) {
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationCancelClick)
+        startCancellationWideEvent(entryPoint: .cancelSubscription, subscription: subscription)
     }
 
-    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription) {
-        let daysSincePurchase = SubscriptionDaysSincePurchaseBucket(startedAt: subscription.startedAt, now: now())
-        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry,
-                                                                                      isTrial: subscription.hasActiveTrialOffer,
-                                                                                      daysSincePurchase: daysSincePurchase))
+    func manageSubscriptionTapped(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?) {
+        startCancellationWideEvent(entryPoint: entryPoint, subscription: subscription)
+    }
+
+    private func startCancellationWideEvent(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?) {
+        guard let wideEvent,
+              let subscription,
+              subscription.status == .autoRenewable,
+              let purchasePlatform = SubscriptionPurchaseWideEventData.PurchasePlatform(subscription.platform),
+              wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self).isEmpty else {
+            return
+        }
+
+        let tapDate = now()
+        wideEvent.startFlow(SubscriptionCancellationWideEventData(
+            entryPoint: entryPoint,
+            purchasePlatform: purchasePlatform,
+            isTrial: subscription.hasActiveTrialOffer,
+            subscriptionIdentifier: subscription.productId,
+            daysSincePurchase: SubscriptionDaysSincePurchaseBucket(startedAt: subscription.startedAt, now: tapDate),
+            daysUntilRenewal: SubscriptionDaysSincePurchaseBucket(startedAt: tapDate, now: subscription.expiresOrRenewsAt),
+            startDate: tapDate
+        ))
+    }
+
+    func manageSubscriptionFailed(_ error: Error) {
+        attachErrorToPendingCancellation(error)
+    }
+
+    private func attachErrorToPendingCancellation(_ error: Error) {
+        guard let wideEvent else { return }
+        for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
+            data.errorData = WideEventErrorData(error: error)
+            wideEvent.updateFlow(data)
+        }
+    }
+
+    func manageSubscriptionClosed(entry: SubscriptionCancellationEntry, subscriptionBefore: DuckDuckGoSubscription, subscriptionAfter: DuckDuckGoSubscription?) {
+        if subscriptionBefore.platform == .apple, subscriptionBefore.status == .autoRenewable, subscriptionAfter?.status == .notAutoRenewable {
+            let daysSincePurchase = SubscriptionDaysSincePurchaseBucket(startedAt: subscriptionBefore.startedAt, now: now())
+            pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry,
+                                                                                          isTrial: subscriptionBefore.hasActiveTrialOffer,
+                                                                                          daysSincePurchase: daysSincePurchase))
+        }
+        completePendingCancellation(with: subscriptionAfter)
+    }
+
+    private func completePendingCancellation(with subscription: DuckDuckGoSubscription?) {
+        guard let wideEvent else { return }
+        for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
+            guard case .complete(let status) = data.completionDecision(for: subscription, now: now()) else { continue }
+            wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+        }
     }
 
     func flowLoadFailed(_ error: Error) {
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(error), frequency: .dailyAndCount)
+        attachErrorToPendingCancellation(error)
     }
 
     func featureInfoFailed(entitlement: SubscriptionEntitlement) {

@@ -186,10 +186,10 @@ struct SubscriptionCancellationInstrumentationTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Tapping Cancel Subscription fires the click pixel", .timeLimit(.minutes(1)))
-    func cancelClickedFiresPixel() {
+    func cancelSubscriptionTappedFiresPixel() {
         let pixelKit = PixelKitMock()
 
-        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).cancelClicked()
+        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).cancelSubscriptionTapped(subscription: nil)
 
         #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationCancelClick, frequency: .standard)])
     }
@@ -206,7 +206,8 @@ struct SubscriptionCancellationInstrumentationTests {
         let now = Calendar.current.date(byAdding: .day, value: daysSincePurchase, to: subscription.startedAt)!
         let expectedPixel = SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry, isTrial: isTrial, daysSincePurchase: expectedBucket)
 
-        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit, now: { now }).appStoreSubscriptionCancelled(entry: entry, subscription: subscription)
+        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit, now: { now })
+            .manageSubscriptionClosed(entry: entry, subscriptionBefore: subscription, subscriptionAfter: SubscriptionMockFactory.subscription(status: .notAutoRenewable))
 
         #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: expectedPixel, frequency: .standard)])
         #expect(pixelKit.actualFireCalls.first?.pixel.parameters == ["entry": entry.rawValue,

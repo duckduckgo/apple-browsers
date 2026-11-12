@@ -144,19 +144,29 @@ final class SubscriptionFlowViewModel: ObservableObject {
         return SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
     }
 
+    var onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring? {
+        guard let onboardingKeyValueStore else { return nil }
+        return SubscriptionOnboardingExperimentMetricStore(keyValueStore: onboardingKeyValueStore)
+    }
+
     /// Shared by enrollment and presentation: only first purchases from a flow with an onboarding store qualify.
     private static func isOnboardingEligible(flowType: SubscriptionFlowType, hasOnboardingStore: Bool) -> Bool {
         flowType == .firstPurchase && hasOnboardingStore
     }
 
     /// Before purchase confirmation: enrolls in the free-trials or paid-subs experiment, so the confirm request carries the cohort.
+    /// On fresh enrollment, also clears the duckAiPaidUsed sent flag.
     static func enrollInOnboardingExperimentIfNeeded(flowType: SubscriptionFlowType,
                                                      hasOnboardingStore: Bool,
+                                                     experimentMetricStore: SubscriptionOnboardingExperimentMetricStoring?,
                                                      isFreeTrial: Bool,
                                                      featureFlagger: FeatureFlagger,
                                                      locale: Locale = .current) {
         guard isOnboardingEligible(flowType: flowType, hasOnboardingStore: hasOnboardingStore) else { return }
         let (_, isFreshlyEnrolled) = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: isFreeTrial, locale: locale)
+        if isFreshlyEnrolled {
+            experimentMetricStore?.resetDuckAIPaidUsedSent()
+        }
         SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: isFreshlyEnrolled)
     }
 
@@ -294,6 +304,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             guard let self else { return }
             Self.enrollInOnboardingExperimentIfNeeded(flowType: self.flowType,
                                                       hasOnboardingStore: self.onboardingKeyValueStore != nil,
+                                                      experimentMetricStore: self.onboardingExperimentMetricStore,
                                                       isFreeTrial: isFreeTrial,
                                                       featureFlagger: self.featureFlagger)
         }

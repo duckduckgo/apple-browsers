@@ -371,10 +371,18 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
+    func test_fireDuckAIPaidUsedMetricIfNeeded_notEnrolled_stillMarksMetricSent() {
+        let metricStore = MockSubscriptionOnboardingExperimentMetricStore()
+
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, metricStore: metricStore)
+
+        XCTAssertTrue(metricStore.hasSentDuckAIPaidUsed)
+    }
+
     func test_fireDuckAIPaidUsedMetricIfNeeded_alreadyActivated_doesNotFire() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsNov2026, cohort: "control")
 
-        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, metricStore: MockSubscriptionOnboardingExperimentMetricStore(wasAlreadySent: true))
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, metricStore: MockSubscriptionOnboardingExperimentMetricStore(hasSentDuckAIPaidUsed: true))
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
@@ -444,17 +452,18 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
         SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: false, metricStore: metricStore)
 
-        XCTAssertEqual(metricStore.markDuckAIPaidUsedSentIfNeededCallCount, 0)
+        XCTAssertFalse(metricStore.hasSentDuckAIPaidUsed)
     }
 
-    func test_fireDuckAIPaidUsedMetricIfNeeded_subscriptionActive_marksMetricSentOnce() {
+    func test_fireDuckAIPaidUsedMetricIfNeeded_enrolled_marksMetricSentOnce() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsNov2026, cohort: "treatment")
         let metricStore = MockSubscriptionOnboardingExperimentMetricStore()
 
         SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, metricStore: metricStore)
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, metricStore: metricStore)
 
-        XCTAssertEqual(metricStore.markDuckAIPaidUsedSentIfNeededCallCount, 1)
-        XCTAssertFalse(firedEvents.isEmpty)
+        XCTAssertTrue(metricStore.hasSentDuckAIPaidUsed)
+        XCTAssertEqual(firedEvents.count, 1)
     }
 
     // MARK: - Legacy Oct2026 enrollments
@@ -557,15 +566,28 @@ final class SubscriptionOnboardingExperimentMetricStoreTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenMarkingDuckAIPaidUsedSentTwiceThenOnlyTheSecondCallReportsItAlreadySent() {
-        XCTAssertFalse(sut.markDuckAIPaidUsedSentIfNeeded())
-        XCTAssertTrue(sut.markDuckAIPaidUsedSentIfNeeded())
+    func testWhenNothingWasMarkedThenDuckAIPaidUsedIsNotSent() {
+        XCTAssertFalse(sut.hasSentDuckAIPaidUsed)
+    }
+
+    func testWhenMarkingDuckAIPaidUsedSentThenItIsSent() {
+        sut.markDuckAIPaidUsedSent()
+
+        XCTAssertTrue(sut.hasSentDuckAIPaidUsed)
+    }
+
+    func testWhenResettingAfterMarkingThenDuckAIPaidUsedIsNotSent() {
+        sut.markDuckAIPaidUsedSent()
+
+        sut.resetDuckAIPaidUsedSent()
+
+        XCTAssertFalse(sut.hasSentDuckAIPaidUsed)
     }
 
     func testWhenTheChecklistAlreadyHasDuckAIThenTheDuckAIPaidUsedMetricIsNotMarkedSent() {
         var persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         persistor.markComplete(.duckAI)
 
-        XCTAssertFalse(sut.markDuckAIPaidUsedSentIfNeeded())
+        XCTAssertFalse(sut.hasSentDuckAIPaidUsed)
     }
 }

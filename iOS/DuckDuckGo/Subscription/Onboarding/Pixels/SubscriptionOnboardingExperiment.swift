@@ -113,12 +113,12 @@ enum SubscriptionOnboardingExperiment {
         fireActivationMetric(Metric.vpnActivated)
     }
 
-    /// Reports a paid Duck.ai chat while the subscription is active, unless already recorded. No-ops if not
-    /// enrolled in either experiment.
+    /// Reports a paid Duck.ai chat while the subscription is active, unless already recorded. Sends nothing if not
+    /// enrolled in either experiment; the recorded flag is cleared again on fresh enrollment.
     static func fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: Bool, metricStore: SubscriptionOnboardingExperimentMetricStoring) {
-        guard isSubscriptionActive else { return }
-        guard !metricStore.markDuckAIPaidUsedSentIfNeeded() else { return }
+        guard isSubscriptionActive, !metricStore.hasSentDuckAIPaidUsed else { return }
         fireActivationMetric(Metric.duckAiPaidUsed)
+        metricStore.markDuckAIPaidUsedSent()
     }
 
     /// Reports PIR activation while the subscription is active, unless already recorded. No-ops if not
@@ -148,8 +148,9 @@ enum SubscriptionOnboardingExperiment {
 /// Remembers whether the duckAiPaidUsed experiment metric was already sent. Kept apart from the onboarding
 /// checklist, which the onboarding flow's Start chat completes before any paid prompt is sent.
 protocol SubscriptionOnboardingExperimentMetricStoring {
-    /// Marks the duckAiPaidUsed metric as sent the first time, and returns whether it had already been sent.
-    func markDuckAIPaidUsedSentIfNeeded() -> Bool
+    var hasSentDuckAIPaidUsed: Bool { get }
+    func markDuckAIPaidUsedSent()
+    func resetDuckAIPaidUsedSent()
 }
 
 enum SubscriptionOnboardingExperimentMetricStorageKeys: String, StorageKeyDescribing {
@@ -168,11 +169,15 @@ struct SubscriptionOnboardingExperimentMetricStore: SubscriptionOnboardingExperi
         self.storage = keyValueStore.throwingKeyedStoring()
     }
 
-    func markDuckAIPaidUsedSentIfNeeded() -> Bool {
-        let wasAlreadySent = (try? storage.value(for: \.duckAIPaidUsedSent)) ?? false
-        if !wasAlreadySent {
-            try? storage.set(true, for: \.duckAIPaidUsedSent)
-        }
-        return wasAlreadySent
+    var hasSentDuckAIPaidUsed: Bool {
+        (try? storage.value(for: \.duckAIPaidUsedSent)) ?? false
+    }
+
+    func markDuckAIPaidUsedSent() {
+        try? storage.set(true, for: \.duckAIPaidUsedSent)
+    }
+
+    func resetDuckAIPaidUsedSent() {
+        try? storage.removeValue(for: \.duckAIPaidUsedSent)
     }
 }

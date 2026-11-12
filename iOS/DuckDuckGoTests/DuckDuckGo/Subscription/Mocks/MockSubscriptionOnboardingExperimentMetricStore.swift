@@ -22,15 +22,17 @@ import Foundation
 
 final class MockSubscriptionOnboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring {
 
-    var markDuckAIPaidUsedSentIfNeededCallCount = 0
-    let wasAlreadySent: Bool
+    private(set) var hasSentDuckAIPaidUsed: Bool
 
-    init(wasAlreadySent: Bool = false) {
-        self.wasAlreadySent = wasAlreadySent
+    init(hasSentDuckAIPaidUsed: Bool = false) {
+        self.hasSentDuckAIPaidUsed = hasSentDuckAIPaidUsed
     }
 
-    func markDuckAIPaidUsedSentIfNeeded() -> Bool {
-        markDuckAIPaidUsedSentIfNeededCallCount += 1
-        return wasAlreadySent
+    func markDuckAIPaidUsedSent() {
+        hasSentDuckAIPaidUsed = true
+    }
+
+    func resetDuckAIPaidUsedSent() {
+        hasSentDuckAIPaidUsed = false
     }
 }

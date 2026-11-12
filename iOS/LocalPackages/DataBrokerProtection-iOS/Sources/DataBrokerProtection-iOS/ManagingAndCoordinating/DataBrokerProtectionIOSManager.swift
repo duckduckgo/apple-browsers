@@ -222,6 +222,7 @@ public final class DataBrokerProtectionIOSManager {
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService?
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     private let profileStateManager: DBPProfileStateManaging
+    private let contentBlocking: DBPWebViewContentBlocking?
     private var currentRunIsFreeScan: Bool?
     private var isContinuedProcessingRunActive = false
 
@@ -296,6 +297,7 @@ public final class DataBrokerProtectionIOSManager {
                                            freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
                                            freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                            profileStateManager: DBPProfileStateManaging,
+                                           contentBlocking: DBPWebViewContentBlocking? = nil,
                                            continuedProcessingCoordinator: (any DBPContinuedProcessingCoordinating)? = nil,
                                            shouldRegisterBackgroundTaskHandler: Bool = true) -> DataBrokerProtectionIOSManager {
         DataBrokerProtectionIOSManager(
@@ -319,6 +321,7 @@ public final class DataBrokerProtectionIOSManager {
             freeTrialConversionService: freeTrialConversionService,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             profileStateManager: profileStateManager,
+            contentBlocking: contentBlocking,
             continuedProcessingCoordinator: continuedProcessingCoordinator,
             shouldRegisterBackgroundTaskHandler: shouldRegisterBackgroundTaskHandler
         )
@@ -344,6 +347,7 @@ public final class DataBrokerProtectionIOSManager {
                  freeTrialConversionService: FreeTrialConversionInstrumentationService?,
                  freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                  profileStateManager: DBPProfileStateManaging,
+                 contentBlocking: DBPWebViewContentBlocking?,
                  continuedProcessingCoordinator: (any DBPContinuedProcessingCoordinating)?,
                  shouldRegisterBackgroundTaskHandler: Bool) {
         self.vaultResourcesProvider = vaultResourcesProvider
@@ -366,6 +370,7 @@ public final class DataBrokerProtectionIOSManager {
         self.freeTrialConversionService = freeTrialConversionService
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.profileStateManager = profileStateManager
+        self.contentBlocking = contentBlocking
 
         if let continuedProcessingCoordinator {
             self.continuedProcessingCoordinator = continuedProcessingCoordinator
@@ -873,8 +878,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             self.debugServer = nil
         }
 
-        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionIOSLogReader())
         do {
+            let server = DataBrokerProtectionDebugHTTPServer(provider: self,
+                                                             logReader: DataBrokerProtectionIOSLogReader(),
+                                                             runManager: DebugModeRunManager(runner: try makeDebugModeRunner()))
             try server.start()
             debugServer = server
             return true
@@ -882,6 +889,19 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    private func makeDebugModeRunner() throws -> DebugModeRunner {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        return DebugModeRunner(authenticationManager: authenticationManager,
+                               featureFlagger: featureFlagger,
+                               privacyConfigManager: privacyConfigManager,
+                               pixelHandler: sharedPixelsHandler,
+                               vault: try vaultFactory.makeVault(reporter: reporter),
+                               settings: settings,
+                               contentBlocking: contentBlocking)
     }
 
     public func stopDebugServer() {

@@ -115,7 +115,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             isWebViewInspectable: isWebViewInspectable,
             freeTrialConversionService: freeTrialConversionService,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-            profileStateManager: profileStateManager
+            profileStateManager: profileStateManager,
+            contentBlocking: contentBlocking
         )
     }
 

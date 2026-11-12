@@ -22,7 +22,6 @@ import Common
 import FoundationExtensions
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
-import DebugServer
 import Core
 import Subscription
 import PixelKit
@@ -526,8 +525,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 if let port = debuggingDelegate?.debugServerPort {
                     toggle.isOn = true
                     cell.detailTextLabel?.numberOfLines = 0
-                    let host = DebugServerNetworkInterface.wiFiAddress() ?? "127.0.0.1"
-                    cell.detailTextLabel?.text = "http://\(host):\(port)/api"
+                    cell.detailTextLabel?.text = "http://127.0.0.1:\(port)/api\nOn a device, run `iproxy \(port):\(port)` on your Mac first."
                 } else {
                     toggle.isOn = false
                     cell.detailTextLabel?.text = nil

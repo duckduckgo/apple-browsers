@@ -28,7 +28,10 @@ import Testing
 final class UpdatePromptStageTrackerTests {
 
     private let store = InMemoryThrowingKeyValueStore().throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
-    private var settings = MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 24)
+    private var settings = MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48,
+                                                        hoursUntilSecondPrompt: 168,
+                                                        hoursUntilThirdPrompt: 336,
+                                                        hoursUntilAppStoreUpdateAvailable: 24)
     private var forcedStage: UpdatePromptStage?
     private var isEnabled = true
     private let day0 = Date(timeIntervalSince1970: 1_800_000_000)
@@ -72,7 +75,7 @@ final class UpdatePromptStageTrackerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Ramps from available to the first and second prompts at the configured thresholds", .timeLimit(.minutes(1)))
+    @Test("Ramps from available through the first, second and third prompts at the configured thresholds", .timeLimit(.minutes(1)))
     func rampsThroughStages() throws {
         let tracker = makeTracker()
 
@@ -84,11 +87,16 @@ final class UpdatePromptStageTrackerTests {
         advance(by: .hours(48))
         try fireScheduledReevaluation()
         #expect(tracker.stage == .firstPrompt)
-        #expect(scheduled?.delay == .hours(48))
+        #expect(scheduled?.delay == .hours(120))
 
-        advance(by: .hours(48))
+        advance(by: .hours(120))
         try fireScheduledReevaluation()
         #expect(tracker.stage == .secondPrompt)
+        #expect(scheduled?.delay == .hours(168))
+
+        advance(by: .hours(168))
+        try fireScheduledReevaluation()
+        #expect(tracker.stage == .thirdPrompt)
         #expect(scheduled == nil)
     }
 
@@ -102,7 +110,7 @@ final class UpdatePromptStageTrackerTests {
         tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
 
         #expect(tracker.stage == .firstPrompt)
-        #expect(scheduled?.delay == .hours(36))
+        #expect(scheduled?.delay == .hours(108))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -111,7 +119,7 @@ final class UpdatePromptStageTrackerTests {
         let tracker = makeTracker()
         tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
 
-        advance(by: .hours(100))
+        advance(by: .hours(200))
         tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
 
         #expect(tracker.clockStartDate == day0)
@@ -165,13 +173,13 @@ final class UpdatePromptStageTrackerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Critical updates go straight to the second prompt", .timeLimit(.minutes(1)))
+    @Test("Critical updates go straight to the third prompt", .timeLimit(.minutes(1)))
     func criticalUpdateSkipsRamp() {
         let tracker = makeTracker()
 
         tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: true)
 
-        #expect(tracker.stage == .secondPrompt)
+        #expect(tracker.stage == .thirdPrompt)
         #expect(scheduled == nil)
     }
 
@@ -195,10 +203,10 @@ final class UpdatePromptStageTrackerTests {
         let tracker = makeTracker()
         tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
 
-        advance(by: .hours(97))
+        advance(by: .hours(337))
         becomeActive.send()
 
-        #expect(tracker.stage == .secondPrompt)
+        #expect(tracker.stage == .thirdPrompt)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -206,7 +214,7 @@ final class UpdatePromptStageTrackerTests {
     func backgroundTriggerReevaluatesOnMain() async {
         let tracker = makeTracker(reevaluationTriggers: becomeActive.receive(on: DispatchQueue.global()).eraseToAnyPublisher())
         tracker.updateCheckDidFinish(isUpdateAvailable: true, isCritical: false)
-        advance(by: .hours(97))
+        advance(by: .hours(169))
         let reachedSecondPrompt = tracker.$stage.first { $0 == .secondPrompt }.values
 
         becomeActive.send()
@@ -278,10 +286,19 @@ final class UpdatePromptStageTrackerTests {
         #expect(tracker.stage == .firstPrompt)
         #expect(scheduled?.delay == .minutes(1))
 
+        tracker.moveClock(to: .thirdPrompt, timeRemaining: .minutes(1))
+        #expect(tracker.stage == .secondPrompt)
+        #expect(scheduled?.delay == .minutes(1))
+
+        tracker.moveClock(to: .thirdPrompt)
+        #expect(tracker.clockStartDate == now - .hours(336))
+        #expect(tracker.stage == .thirdPrompt)
+        #expect(scheduled == nil)
+
         tracker.moveClock(to: .firstPrompt)
         #expect(tracker.clockStartDate == now - .hours(48))
         #expect(tracker.stage == .firstPrompt)
-        #expect(scheduled?.delay == .hours(48))
+        #expect(scheduled?.delay == .hours(120))
 
         tracker.resetClock()
         #expect(tracker.clockStartDate == now)
@@ -292,12 +309,26 @@ final class UpdatePromptStageTrackerTests {
     @Test("Each threshold starts its stage", .timeLimit(.minutes(1)), arguments: [
         (TimeInterval.hours(48) - 1, UpdatePromptStage.available),
         (.hours(48), .firstPrompt),
-        (.hours(96) - 1, .firstPrompt),
-        (.hours(96), .secondPrompt)
+        (.hours(168) - 1, .firstPrompt),
+        (.hours(168), .secondPrompt),
+        (.hours(336) - 1, .secondPrompt),
+        (.hours(336), .thirdPrompt)
     ])
     func thresholdBoundaries(elapsed: TimeInterval, expected: UpdatePromptStage) {
-        let settings = MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 24)
-
         #expect(UpdatePromptStageTracker.stage(afterElapsed: elapsed, settings: settings) == expected)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each stage shows the dot, the prominent menu prompt and the toolbar button as designed", .timeLimit(.minutes(1)), arguments: [
+        (UpdatePromptStage.none, false, UpdatePromptMenuStyle?.none, false),
+        (.available, false, nil, false),
+        (.firstPrompt, true, nil, false),
+        (.secondPrompt, true, .row, false),
+        (.thirdPrompt, false, .card, true)
+    ])
+    func stagePresentation(stage: UpdatePromptStage, dot: Bool, menuPrompt: UpdatePromptMenuStyle?, toolbarButton: Bool) {
+        #expect(stage.showsNotificationDot == dot)
+        #expect(stage.prominentMenuPrompt == menuPrompt)
+        #expect(stage.showsToolbarButton == toolbarButton)
     }
 }

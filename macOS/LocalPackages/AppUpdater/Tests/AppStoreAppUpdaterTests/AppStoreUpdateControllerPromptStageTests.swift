@@ -109,8 +109,8 @@ final class AppStoreUpdateControllerPromptStageTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Critical releases still wait for the buffer, then go straight to the second prompt", .timeLimit(.minutes(1)))
-    func criticalReleaseSkipsToSecondPromptAfterBuffer() async {
+    @Test("Critical releases still wait for the buffer, then go straight to the third prompt", .timeLimit(.minutes(1)))
+    func criticalReleaseSkipsToThirdPromptAfterBuffer() async {
         publish(latest: Self.olderVersion, available: Self.newerVersion, availableIsCritical: true)
         let controller = makeController()
 
@@ -120,7 +120,7 @@ final class AppStoreUpdateControllerPromptStageTests {
 
         now = releaseDate + .hours(24)
         await controller.performUpdateCheck(dismissRateLimiting: true)
-        #expect(tracker.stage == .secondPrompt)
+        #expect(tracker.stage == .thirdPrompt)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -137,7 +137,7 @@ final class AppStoreUpdateControllerPromptStageTests {
 
         #expect(controller.latestUpdate?.version == Self.newerVersion)
         #expect(controller.latestUpdate?.type == (isOfferCritical ? .critical : .regular))
-        #expect(tracker.stage == (isOfferCritical ? .secondPrompt : .available))
+        #expect(tracker.stage == (isOfferCritical ? .thirdPrompt : .available))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -177,7 +177,7 @@ final class AppStoreUpdateControllerPromptStageTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("With the flag on, the dot shows only at the first prompt, with no popover", .timeLimit(.minutes(1)))
+    @Test("With the flag on, the dot shows only at the first and second prompts, with no popover", .timeLimit(.minutes(1)))
     func dotFollowsThePromptStage() async {
         publish(latest: Self.olderVersion, available: Self.newerVersion)
         now = releaseDate + .hours(24)
@@ -193,9 +193,12 @@ final class AppStoreUpdateControllerPromptStageTests {
         #expect(controller.needsNotificationDot)
 
         tracker.moveClock(to: .secondPrompt)
+        #expect(controller.needsNotificationDot)
+
+        tracker.moveClock(to: .thirdPrompt)
         #expect(!controller.needsNotificationDot, "the toolbar button takes over from the dot")
 
-        #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt])
+        #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt, .thirdPrompt])
         #expect(notificationPresenter.shownUpdateTypes.isEmpty)
         cancellable.cancel()
     }

@@ -184,7 +184,7 @@ final class SparkleUpdateControllerPromptStageTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A downloaded update shows the menu item from day 0 and the dot only at the first prompt, with no popover", .timeLimit(.minutes(1)))
+    @Test("A downloaded update shows the menu item from day 0 and the dot at the first and second prompts, with no popover", .timeLimit(.minutes(1)))
     func indicatorsFollowThePromptStage() throws {
         let controller = makeController()
         let tracker = try #require(controller.updatePromptStageTracker)
@@ -208,11 +208,15 @@ final class SparkleUpdateControllerPromptStageTests {
         #expect(controller.pendingUpdatePromptStage == .firstPrompt)
 
         tracker.moveClock(to: .secondPrompt)
-        #expect(!controller.needsNotificationDot, "the toolbar button takes over from the dot")
-        #expect(controller.mustShowUpdateIndicators)
+        #expect(controller.needsNotificationDot)
         #expect(controller.pendingUpdatePromptStage == .secondPrompt)
 
-        #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt])
+        tracker.moveClock(to: .thirdPrompt)
+        #expect(!controller.needsNotificationDot, "the toolbar button takes over from the dot")
+        #expect(controller.mustShowUpdateIndicators)
+        #expect(controller.pendingUpdatePromptStage == .thirdPrompt)
+
+        #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt, .thirdPrompt])
         #expect(notificationPresenter.shownUpdateTypes.isEmpty)
         cancellable.cancel()
     }

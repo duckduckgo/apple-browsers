@@ -297,9 +297,8 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
     // MARK: - Private Methods
 
-    /// With more prominent updates on, the dot shows only at the first prompt. The toolbar button takes over at the second.
     private func updateNotificationDot(for stage: UpdatePromptStage) {
-        needsNotificationDot = hasPendingUpdate && (!isMoreProminentUpdatesOn || stage == .firstPrompt)
+        needsNotificationDot = hasPendingUpdate && (!isMoreProminentUpdatesOn || stage.showsNotificationDot)
     }
 
     /// The rolling-out release once it's past the buffer, otherwise the latest release.

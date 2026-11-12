@@ -81,6 +81,13 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
+    func viewModelDidRequestDuckAISettings() {
+        duckAIInputFocus.forget()
+        dismiss(animated: true) { [weak self] in
+            self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
+        }
+    }
+
     func viewModelDidExportChat(filename: String) {
         presentChatDownloadFinishedToast(DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename))
     }

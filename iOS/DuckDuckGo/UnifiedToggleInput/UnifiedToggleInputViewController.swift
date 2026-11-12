@@ -333,6 +333,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.selectedReasoningMode = newValue }
     }
 
+    var usesSimplifiedPromptBox: Bool {
+        get { inputBarView.usesSimplifiedPromptBox }
+        set { inputBarView.usesSimplifiedPromptBox = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { inputBarView.isToolsButtonHidden }
         set { inputBarView.isToolsButtonHidden = newValue }

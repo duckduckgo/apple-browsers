@@ -355,6 +355,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.selectedReasoningMode = newValue }
     }
 
+    var usesSimplifiedPromptBox: Bool {
+        get { toolsToolbar.usesSimplifiedPromptBox }
+        set { toolsToolbar.usesSimplifiedPromptBox = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { toolsToolbar.isToolsButtonHidden }
         set { toolsToolbar.isToolsButtonHidden = newValue }

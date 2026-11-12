@@ -102,14 +102,17 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         attachedTabIds: Set<TabUID> = [],
         tabAttachmentLimit: Int = 0,
         isTabSelectionAvailable: @escaping () -> Bool = { false },
-        tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult)? = nil
+        tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult)? = nil,
+        showsRecentTabs: Bool = true,
+        tools: UTIAttachMenuTools? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
         let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
         let canAttachAllowedFile = canAttachFile && !allowedFileTypes.isEmpty
         let canAttachPageContext = pageContextActionHandler != nil
         let showsTabAction = !attachableTabs.isEmpty && tabActionHandler != nil
-        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction || showsTabAction else { return nil }
+        let hasEnabledTool = tools?.menu.hasEnabledItem ?? false
+        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction || showsTabAction || hasEnabledTool else { return nil }
 
         var actions: [UIMenuElement] = [
             UIAction(
@@ -159,21 +162,52 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }
 
         if showsTabAction, let tabActionHandler {
-            actions.insert(Self.makeRecentTabsSection(attachableTabs: attachableTabs,
-                                                      attachedTabIds: attachedTabIds,
-                                                      attachmentLimit: tabAttachmentLimit,
-                                                      onItemSelected: onItemSelected,
-                                                      tabActionHandler: tabActionHandler), at: 0)
-            actions.append(makeTabPickerAction(presenterProvider: presenterProvider,
-                                              attachableTabs: attachableTabs,
-                                              attachedTabIds: attachedTabIds,
-                                              attachmentLimit: tabAttachmentLimit,
-                                              isAvailable: isTabSelectionAvailable,
-                                              onItemSelected: onItemSelected,
-                                              tabActionHandler: tabActionHandler))
+            addTabActions(to: &actions,
+                          presenterProvider: presenterProvider,
+                          attachableTabs: attachableTabs,
+                          attachedTabIds: attachedTabIds,
+                          attachmentLimit: tabAttachmentLimit,
+                          showsRecentTabs: showsRecentTabs,
+                          isAvailable: isTabSelectionAvailable,
+                          onItemSelected: onItemSelected,
+                          tabActionHandler: tabActionHandler)
         }
 
+        actions.append(contentsOf: Self.makeToolsSection(tools))
+
         return UIMenu(children: actions)
+    }
+
+    /// The tools sit below a divider, after the attachment rows.
+    private static func makeToolsSection(_ tools: UTIAttachMenuTools?) -> [UIMenuElement] {
+        guard let tools, !tools.menu.items.isEmpty else { return [] }
+        return [UTIToolsMenuFactory().makeAttachMenuSection(tools.menu, onSelect: tools.onSelect)]
+    }
+
+    /// Recent tabs lead the menu as shortcuts (unless the simplified menu drops them); Add Tabs follows the attachment rows.
+    private func addTabActions(to actions: inout [UIMenuElement],
+                               presenterProvider: @escaping () -> UIViewController?,
+                               attachableTabs: [MultiTabAttachmentCandidate],
+                               attachedTabIds: Set<TabUID>,
+                               attachmentLimit: Int,
+                               showsRecentTabs: Bool,
+                               isAvailable: @escaping () -> Bool,
+                               onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
+                               tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
+        if showsRecentTabs {
+            actions.insert(Self.makeRecentTabsSection(attachableTabs: attachableTabs,
+                                                      attachedTabIds: attachedTabIds,
+                                                      attachmentLimit: attachmentLimit,
+                                                      onItemSelected: onItemSelected,
+                                                      tabActionHandler: tabActionHandler), at: 0)
+        }
+        actions.append(makeTabPickerAction(presenterProvider: presenterProvider,
+                                          attachableTabs: attachableTabs,
+                                          attachedTabIds: attachedTabIds,
+                                          attachmentLimit: attachmentLimit,
+                                          isAvailable: isAvailable,
+                                          onItemSelected: onItemSelected,
+                                          tabActionHandler: tabActionHandler))
     }
 
     private static func makeRecentTabsSection(attachableTabs: [MultiTabAttachmentCandidate],

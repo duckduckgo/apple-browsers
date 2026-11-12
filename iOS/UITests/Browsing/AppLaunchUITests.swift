@@ -210,7 +210,15 @@ final class AppLaunchUITests: UITestCase {
         app.launch()
         app.dismissAddressBarEditing()
 
-        openNewTabFromBrowsingMenu()
+        let menuIdentifier = UIDevice.current.userInterfaceIdiom == .pad
+            ? "Browser.OmniBar.Button.BrowsingMenu"
+            : "Browser.Toolbar.Button.Menu"
+        let menuButton = app.buttons[menuIdentifier]
+        XCTAssertTrue(menuButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        menuButton.tap()
+        let newTab = app.buttons["New Tab"]
+        XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))
+        newTab.tap()
         app.openTabSwitcher()
         app.assertTabCount(2)
         app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
@@ -348,18 +356,6 @@ final class AppLaunchUITests: UITestCase {
         XCTAssertTrue(modal.wait(for: expectedWidth, timeout: UITestTimeouts.navigation))
     }
 
-    private func openNewTabFromBrowsingMenu() {
-        let menuIdentifier = UIDevice.current.userInterfaceIdiom == .pad
-            ? "Browser.OmniBar.Button.BrowsingMenu"
-            : "Browser.Toolbar.Button.Menu"
-        let menuButton = app.buttons[menuIdentifier]
-        XCTAssertTrue(menuButton.waitForExistence(timeout: UITestTimeouts.navigation))
-        menuButton.tap()
-        let newTab = app.buttons["New Tab"]
-        XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))
-        newTab.tap()
-    }
-
     func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
         for flag in ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"] {
             let indices = app.launchArguments.indices.filter { app.launchArguments[$0] == flag }
@@ -375,9 +371,13 @@ final class AppLaunchUITests: UITestCase {
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
         ]
+        app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
         app.launch()
         app.dismissAddressBarEditing()
-        openNewTabFromBrowsingMenu()
+        let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation))
+        tabSwitcher.press(forDuration: 1)
+        app.buttons["Browser.NewTabMenu.NewTab"].tapWhenHittable(in: app)
         app.openTabSwitcher()
         app.assertTabCount(2)
         let originalTabs = [app.tabCell(at: 0), app.tabCell(at: 1)]

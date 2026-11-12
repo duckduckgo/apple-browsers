@@ -253,6 +253,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432678359940
+    case stripeProductsByPlanCountry
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619299477
     case newSyncEntryPoints
 
@@ -895,6 +898,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(HtmlNewTabPageSubfeature.searchSuggestionsDeletion))
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow), category: .subscription)
+        case .stripeProductsByPlanCountry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.stripeProductsByPlanCountry), category: .subscription)
         case .newSyncEntryPoints:
             Config(source: .remoteReleasable(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:

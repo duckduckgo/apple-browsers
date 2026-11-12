@@ -111,6 +111,14 @@ extension URL {
         return chatID
     }
 
+    /// The ID of a chat someone shared, from `duck.ai/share/<id>`; nil for any other URL.
+    public var duckAISharedChatID: String? {
+        guard isDuckAIURL else { return nil }
+        let components = pathComponents
+        guard components.count == 3, components[1] == "share", !components[2].isEmpty else { return nil }
+        return components[2]
+    }
+
     /// Creates a URL with the specified chatID appended as a query parameter.
     /// - Parameter chatID: The unique identifier of the chat to open.
     /// - Returns: A new URL with the chatID appended, or self if URL components cannot be resolved.

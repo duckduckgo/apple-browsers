@@ -332,6 +332,191 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertLessThanOrEqual(try XCTUnwrap(metrics["spacerHeight"] as? Double), 260)
     }
 
+    // MARK: - Shared chat scroller
+
+    private func isAtBottom(_ webView: WKWebView) async throws -> Bool? {
+        try await webView.callAsyncJavaScript("return \(DuckAIChatScroller.isAtBottomExpression);",
+                                              arguments: [:], in: nil, contentWorld: .page) as? Bool
+    }
+
+    func testChatScrollerFindsAConversationTallerThanTheViewport() async throws {
+        let (webView, window) = await makeChatScrollFixture(height: 800)
+        defer { window.isHidden = true }
+        let found = try await webView.callAsyncJavaScript("""
+        return \(DuckAIChatScroller.expression) === document.getElementById('chat');
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(found as? Bool, true)
+    }
+
+    func testChatScrollerSkipsANonScrollingWrapperInsideTheConversation() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        let found = try await webView.callAsyncJavaScript("""
+        document.querySelector('article').innerHTML = '<div style="overflow-y:auto;height:1286px">Opened from Recent chats</div>';
+        return \(DuckAIChatScroller.expression) === document.getElementById('chat');
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(found as? Bool, true)
+    }
+
+    func testChatScrollerIsSharedWithTheScrollInsetStyler() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 94, right: 0), to: webView)
+        let shared = try await webView.callAsyncJavaScript("""
+        return window.__ddgNativeScrollInsets.target === \(DuckAIChatScroller.expression);
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(shared as? Bool, true)
+    }
+
+    func testChatScrollerFindsTheNewConversationOnceTheOldOneLeavesThePage() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        let found = try await webView.callAsyncJavaScript("""
+        const first = \(DuckAIChatScroller.expression);
+        first.remove();
+        const next = document.createElement('div');
+        next.id = 'next';
+        next.style.cssText = 'height: 500px; overflow-y: auto;';
+        document.body.appendChild(next);
+        return { first: first !== null, next: \(DuckAIChatScroller.expression) === next };
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let result = try XCTUnwrap(found as? [String: Bool])
+        XCTAssertEqual(result["first"], true)
+        XCTAssertEqual(result["next"], true)
+    }
+
+    func testChatScrollerFindsTheVisibleConversationWhenThePageHidesTheOldOne() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        let found = try await webView.callAsyncJavaScript("""
+        const first = \(DuckAIChatScroller.expression);
+        first.style.display = 'none';
+        const next = document.createElement('div');
+        next.style.cssText = 'height: 500px; overflow-y: auto;';
+        next.innerHTML = '<article>Visible conversation</article>';
+        document.body.appendChild(next);
+        return { next: \(DuckAIChatScroller.expression) === next, atBottom: \(DuckAIChatScroller.isAtBottomExpression) };
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let result = try XCTUnwrap(found as? [String: Bool])
+        XCTAssertEqual(result["next"], true)
+        XCTAssertEqual(result["atBottom"], false)
+    }
+
+    func testIsAtBottomFollowsTheConversationsScrollPosition() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        _ = try await webView.callAsyncJavaScript("document.getElementById('chat').scrollTop = 0;",
+                                                  arguments: [:], in: nil, contentWorld: .page)
+        let atTop = try await isAtBottom(webView)
+        XCTAssertEqual(atTop, false)
+
+        _ = try await webView.callAsyncJavaScript("const chat = document.getElementById('chat'); chat.scrollTop = chat.scrollHeight;",
+                                                  arguments: [:], in: nil, contentWorld: .page)
+        let atEnd = try await isAtBottom(webView)
+        XCTAssertEqual(atEnd, true)
+    }
+
+    func testIsAtBottomCountsTheScrollInsetSpacer() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0), to: webView)
+        _ = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const chat = document.getElementById('chat');
+        chat.scrollTop = chat.scrollHeight - chat.clientHeight - window.__ddgNativeScrollInsets.spacer.getBoundingClientRect().height;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let lastReplyAtEdge = try await isAtBottom(webView)
+        XCTAssertEqual(lastReplyAtEdge, false)
+
+        _ = try await webView.callAsyncJavaScript("const chat = document.getElementById('chat'); chat.scrollTop = chat.scrollHeight;",
+                                                  arguments: [:], in: nil, contentWorld: .page)
+        let spacerShowing = try await isAtBottom(webView)
+        XCTAssertEqual(spacerShowing, true)
+    }
+
+    func testIsAtBottomWhenAScrollStopsShortButTheEndIsAboveTheInset() async throws {
+        let (webView, window) = await makeChatScrollFixture(height: 800)
+        defer { window.isHidden = true }
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 40, right: 0), to: webView)
+        let spare = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const chat = document.getElementById('chat');
+        const spare = window.__ddgNativeScrollInsets.spacer.getBoundingClientRect().height - 40;
+        chat.scrollTop = chat.scrollHeight - chat.clientHeight - spare / 2;
+        return spare;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertGreaterThan(try XCTUnwrap(spare as? Double), 8)
+        let stoppedShort = try await isAtBottom(webView)
+        XCTAssertEqual(stoppedShort, true)
+    }
+
+    func testConversationAtItsEndStaysThereWhenTheSpacerGrows() async throws {
+        let atBottom = try await isAtBottomAfterTheSpacerGrows(keepsEndInView: true)
+        XCTAssertEqual(atBottom, true)
+    }
+
+    func testConversationAtItsEndIsLeftWhereItIsWhenNotKeptInView() async throws {
+        let atBottom = try await isAtBottomAfterTheSpacerGrows(keepsEndInView: false)
+        XCTAssertEqual(atBottom, false)
+    }
+
+    private func isAtBottomAfterTheSpacerGrows(keepsEndInView: Bool) async throws -> Bool? {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        _ = try await webView.callAsyncJavaScript("const chat = document.getElementById('chat'); chat.scrollTop = chat.scrollHeight;",
+                                                  arguments: [:], in: nil, contentWorld: .page)
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0),
+                                          keepsEndInView: keepsEndInView,
+                                          to: webView)
+        _ = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        """, arguments: [:], in: nil, contentWorld: .page)
+        return try await isAtBottom(webView)
+    }
+
+    func testConversationNearItsEndIsNotPulledBackWhenTheSpacerIsUnchanged() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        let insets = UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0)
+        DuckAIChatScrollInsetStyler.apply(insets, keepsEndInView: true, to: webView)
+        let offset = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const chat = document.getElementById('chat');
+        chat.scrollTop = chat.scrollHeight - chat.clientHeight - 2;
+        const leaving = chat.scrollTop;
+        window.__ddgNativeScrollInsets.apply();
+        return chat.scrollTop - leaving;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(try XCTUnwrap(offset as? Double), 0, accuracy: 0.5)
+    }
+
+    func testConversationScrolledUpKeepsItsPlaceWhenTheSpacerGrows() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        _ = try await webView.callAsyncJavaScript("document.getElementById('chat').scrollTop = 100;",
+                                                  arguments: [:], in: nil, contentWorld: .page)
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0), keepsEndInView: true, to: webView)
+        let offset = try await webView.callAsyncJavaScript("""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        return document.getElementById('chat').scrollTop;
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(try XCTUnwrap(offset as? Double), 100, accuracy: 0.5)
+    }
+
+    func testIsAtBottomForAShortConversationAndForNone() async throws {
+        let (webView, window) = await makeChatScrollFixture()
+        defer { window.isHidden = true }
+        _ = try await webView.callAsyncJavaScript("document.querySelector('article').style.minHeight = '100px';",
+                                                  arguments: [:], in: nil, contentWorld: .page)
+        let short = try await isAtBottom(webView)
+        XCTAssertEqual(short, true)
+
+        _ = try await webView.callAsyncJavaScript("document.getElementById('chat').remove();",
+                                                  arguments: [:], in: nil, contentWorld: .page)
+        let none = try await isAtBottom(webView)
+        XCTAssertEqual(none, false)
+    }
+
     private func makeChatScrollFixture(height: CGFloat = 500) async -> (WKWebView, UIWindow) {
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
         let window = UIWindow(frame: webView.frame)

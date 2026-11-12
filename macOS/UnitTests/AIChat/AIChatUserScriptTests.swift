@@ -269,13 +269,13 @@ final class AIChatUserScriptTests: XCTestCase {
         userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
         let tool = try XCTUnwrap(service.catalog.tool(named: "listOpenTabs"))
         service.permissions.setState(.allow, forToolNamed: tool.name)
-        let control = await service.clientToolPermissions.authorize(callID: "control", tool: tool, source: userScript)
+        let control = await service.clientToolPermissions.authorize(callID: "control", tool: tool, prompter: userScript)
         guard case .granted(let confirmControl) = control else {
             return XCTFail("Stored permission should authorize script source")
         }
         let controlResult = await confirmControl { .success(.null) }
         XCTAssertNotNil(controlResult)
-        let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, source: userScript)
+        let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, prompter: userScript)
         guard case .granted(let confirmExecution) = authorization else {
             return XCTFail("Stored permission should authorize script source")
         }
@@ -446,21 +446,18 @@ final class AIChatUserScriptTests: XCTestCase {
         }
     }
 
-    /// Client tools are only for a Duck.ai chat; a call from any other page gets no permission source.
-    @MainActor func testWhenExecuteClientToolComesFromAPageOutsideDuckAIThenThereIsNoPermissionPusher() async throws {
+    /// Client tools are only for a Duck.ai chat; a call from any other page gets no permission prompter.
+    @MainActor func testWhenExecuteClientToolComesFromAPageOutsideDuckAIThenThereIsNoPermissionPrompter() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.executeClientTool.rawValue))
         _ = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didCallExecuteClientTool)
-        XCTAssertNil(mockHandler.receivedClientToolPermissionPusher)
+        XCTAssertNil(mockHandler.receivedClientToolPermissionPrompter)
     }
 
-    /// Only the page that was asked can answer, so the script hands itself over as the source.
-    @MainActor func testWhenPermissionResponseIsReceivedThenTheScriptIsTheSource() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.respondToClientToolPermission.rawValue))
-        _ = try await handler([""], WKScriptMessage.mock())
-
-        XCTAssertTrue(mockHandler.receivedClientToolPermissionSource === userScript)
+    /// The browser asks natively, so a page, or a script injected into it, cannot answer a prompt.
+    @MainActor func testWhenThePageSendsAPermissionAnswerThenNoHandlerIsReturned() {
+        XCTAssertNil(userScript.handler(forMethodNamed: "respondToClientToolPermission"))
     }
 
     // MARK: - Open Settings handshake
@@ -710,18 +707,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    var receivedClientToolPermissionPusher: (any ClientToolPermissionPushing)?
+    var receivedClientToolPermissionPrompter: (any ClientToolPermissionPrompting)?
     var didCallExecuteClientTool = false
-    var receivedClientToolPermissionSource: (any ClientToolPermissionPushing)?
 
-    func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable? {
+    func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable? {
         didCallExecuteClientTool = true
-        receivedClientToolPermissionPusher = permissionPusher
-        return nil
-    }
-
-    func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable? {
-        receivedClientToolPermissionSource = source
+        receivedClientToolPermissionPrompter = permissionPrompter
         return nil
     }
 

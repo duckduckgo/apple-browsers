@@ -290,6 +290,34 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertTrue(context.isIsolated)
     }
 
+    func testWhenBrokerProtectionContextThenFileNameIsBrokerProtection() {
+        // GIVEN
+        let context = ContentScopeScriptContext.brokerProtection
+
+        // THEN
+        XCTAssertEqual(context.fileName, "brokerProtection")
+    }
+
+    func testWhenBrokerProtectionContextThenMessagingContextNameIsContentScopeScriptsIsolated() {
+        // GIVEN
+        let context = ContentScopeScriptContext.brokerProtection
+
+        // THEN
+        XCTAssertEqual(context.messagingContextName, "contentScopeScriptsIsolated")
+    }
+
+    func testWhenBrokerProtectionContextThenIsIsolatedReturnsTrue() {
+        // GIVEN
+        let context = ContentScopeScriptContext.brokerProtection
+
+        // THEN
+        XCTAssertTrue(context.isIsolated)
+    }
+
+    func testWhenBrokerProtectionContextThenSourceIsTheBrokerProtectionBundle() throws {
+        XCTAssertLessThan(try source(for: .brokerProtection).count, try source(for: .contentScopeIsolated).count)
+    }
+
     // MARK: - Surrogate tracker data encoding
 
     func testWhenContentScopeContextHasSurrogateTrackerDataThenItIsEncodedAsTrackerData() throws {

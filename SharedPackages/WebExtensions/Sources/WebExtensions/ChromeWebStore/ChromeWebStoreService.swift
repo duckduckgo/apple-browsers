@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import os.log
 import Persistence
 import PrivacyConfig
 import WebKit
@@ -61,11 +62,14 @@ public protocol ChromeWebStorePresenting {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public final class ChromeWebStoreService: ChromeWebStoreManaging {
-    private struct UpdateVersionOverride {
+    private struct UpdateVersionOverride: Codable {
+        let identifier: UUID
         let installationIdentifiers: Set<String>
         let installedVersion: String
         let reportedVersion: String
     }
+
+    private static let updateVersionOverridesKey = "web-extension-update-version-overrides"
 
     private weak var manager: WebExtensionManager?
     private let catalog: ChromeWebStoreCatalogProviding
@@ -79,8 +83,10 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     private var updateDiscoverySubscription: AnyCancellable?
     private var updateDiscoveryRevision: UInt64 = 0
     private var updater: ChromeWebStoreUpdater?
+    private let startupInstaller: ChromeWebStoreUpdateInstaller?
     public let pendingUpdates: any ChromeWebStorePendingUpdateStoring
     private var updateVersionOverrides: [String: UpdateVersionOverride] = [:]
+    private let keyValueStore: (any ThrowingKeyValueStoring)?
 
     public convenience init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
                             downloader: ChromeWebStoreDownloading = ChromeWebStoreDownloader(), presenter: ChromeWebStorePresenting,
@@ -89,11 +95,17 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                             updateDiscoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                             keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
-                            pendingUpdates: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore()) {
+                            pendingUpdates: (any ChromeWebStorePendingUpdateStoring)? = nil) {
+        let pending = pendingUpdates ?? (supportsUpdateDiscovery
+            ? ChromeWebStorePendingUpdateStore(persistentDirectory: manager.storageProvider.extensionsDirectory.appendingPathComponent(".pending-updates"))
+            : ChromeWebStorePendingUpdateStore())
+        let installer = supportsUpdateDiscovery ? ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: pending,
+                                                                               isEnabled: isUpdateDiscoveryEnabled,
+                                                                               isCatalogExtension: { catalog.contains($0) }) : nil
         self.init(manager: manager, catalog: catalog, downloader: downloader, presenter: presenter,
                   verifier: ChromeWebStorePackageVerifier(), supportsUpdateDiscovery: supportsUpdateDiscovery,
                   isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled, updateDiscoveryFeatureFlagUpdates: updateDiscoveryFeatureFlagUpdates,
-                  keyValueStore: keyValueStore, pixelFiring: pixelFiring, pendingUpdates: pendingUpdates, updateCheck: { identifier, version in
+                  keyValueStore: keyValueStore, pixelFiring: pixelFiring, pendingUpdates: pending, startupInstaller: installer, updateCheck: { identifier, version in
                       await ChromeWebStoreUpdateChecker().check(extensionID: identifier, installedVersion: version)
                   })
     }
@@ -106,6 +118,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
          keyValueStore: (any ThrowingKeyValueStoring)? = nil,
          pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
          pendingUpdates: any ChromeWebStorePendingUpdateStoring = ChromeWebStorePendingUpdateStore(),
+         startupInstaller: ChromeWebStoreUpdateInstaller? = nil,
          updateDownload: @escaping ChromeWebStoreUpdater.Download = { try await ChromeWebStoreUpdateDownloader().download($0) },
          now: @escaping @Sendable () -> Date = Date.init,
          updateCheck: ChromeWebStoreUpdateCoordinator.Check? = nil,
@@ -118,6 +131,15 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         self.verifier = verifier
         self.isUpdateDiscoveryEnabled = isUpdateDiscoveryEnabled
         self.pendingUpdates = pendingUpdates
+        self.startupInstaller = startupInstaller
+        self.keyValueStore = keyValueStore
+        if let data = try? keyValueStore?.object(forKey: Self.updateVersionOverridesKey) as? Data {
+            updateVersionOverrides = (try? JSONDecoder().decode([String: UpdateVersionOverride].self, from: data)) ?? [:]
+        }
+        manager.didCommitStoreUpdate = { [weak self] installed, identifier in
+            self?.clearUpdateVersionOverride(for: installed, consumedIdentifier: identifier) ?? false
+        }
+        configureStartupInstaller(manager: manager)
         if supportsUpdateDiscovery, let updateCheck {
             let updater = ChromeWebStoreUpdater(pendingUpdates: pendingUpdates, verifier: verifier, download: updateDownload,
                                                  installation: { [weak self] identifier in
@@ -179,6 +201,21 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         }
     }
 
+    private func configureStartupInstaller(manager: WebExtensionManager) {
+        for installed in manager.installationStore.installedExtensions {
+            _ = clearUpdateVersionOverride(for: installed, consumedIdentifier: installed.consumedVersionOverrideIdentifier)
+        }
+        guard let startupInstaller else { return }
+        manager.startupUpdateInstaller = startupInstaller
+        startupInstaller.versionOverride = { [weak self] installed in
+            guard let self, let identity = installed.storeIdentity, let version = installed.version,
+                  let reported = self.versionOverride(for: identity.id, installedVersion: version),
+                  let identifier = self.updateVersionOverrides[identity.id]?.identifier else { return nil }
+            return (reported, identifier)
+        }
+        startupInstaller.onSnapshotReady = { [weak self] in _ = self?.refreshUpdateDiscovery() }
+    }
+
     /// Checks now, joining an active batch and honoring the server's retry deadline.
     public func checkForUpdatesNow() async {
         guard !Task.isCancelled else { return }
@@ -188,11 +225,12 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     }
 
     public var canCheckForUpdates: Bool {
-        manager != nil && updateCoordinator != nil && isUpdateDiscoveryEnabled()
+        manager != nil && updateCoordinator != nil && isUpdateDiscoveryEnabled() && (startupInstaller?.isSnapshotReady ?? true)
     }
 
     @discardableResult
     private func refreshUpdateDiscovery() -> Task<Void, Never>? {
+        startupInstaller?.configurationDidChange()
         guard let updateCoordinator else { return nil }
         updateDiscoveryRevision += 1
         let revision = updateDiscoveryRevision
@@ -207,18 +245,21 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         return versionOverride(for: identity.id, installedVersion: version)
     }
 
-    /// Sets an in-memory version override for discovery and verification. Pass nil to clear it.
+    /// Persists a version override for discovery, verification and startup installation. Pass nil to clear it.
     /// Replacing this extension also clears its override without affecting other extensions.
     public func setUpdateCheckVersionOverride(_ version: String?, forInstallationIdentifier identifier: String) {
         guard let installed = manager?.installationStore.installedExtension(withUniqueIdentifier: identifier),
               let identity = installed.storeIdentity, identity.store == .chromeWebStore else { return }
+        var overrides = updateVersionOverrides
         guard let version else {
-            updateVersionOverrides.removeValue(forKey: identity.id)
+            overrides.removeValue(forKey: identity.id)
+            if persistUpdateVersionOverrides(overrides) { updateVersionOverrides = overrides }
             return
         }
         guard let installedVersion = eligibleInstalledVersions()?[identity.id] else { return }
-        updateVersionOverrides[identity.id] = UpdateVersionOverride(installationIdentifiers: installationIdentifiers(for: identity.id),
-                                                                  installedVersion: installedVersion, reportedVersion: version)
+        overrides[identity.id] = UpdateVersionOverride(identifier: UUID(), installationIdentifiers: installationIdentifiers(for: identity.id),
+                                                       installedVersion: installedVersion, reportedVersion: version)
+        if persistUpdateVersionOverrides(overrides) { updateVersionOverrides = overrides }
     }
 
     private func eligibleInstalledVersions() -> [String: String]? {
@@ -246,10 +287,33 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         guard let override = updateVersionOverrides[identifier] else { return nil }
         guard override.installedVersion == installedVersion,
               override.installationIdentifiers == installationIdentifiers(for: identifier) else {
-            updateVersionOverrides.removeValue(forKey: identifier)
+            var remaining = updateVersionOverrides
+            remaining.removeValue(forKey: identifier)
+            if persistUpdateVersionOverrides(remaining) { updateVersionOverrides = remaining }
             return nil
         }
         return override.reportedVersion
+    }
+
+    private func clearUpdateVersionOverride(for installed: InstalledWebExtension, consumedIdentifier: UUID?) -> Bool {
+        guard let identity = installed.storeIdentity, identity.store == .chromeWebStore else { return true }
+        guard let consumedIdentifier, updateVersionOverrides[identity.id]?.identifier == consumedIdentifier else { return true }
+        var remaining = updateVersionOverrides
+        remaining.removeValue(forKey: identity.id)
+        guard persistUpdateVersionOverrides(remaining) else { return false }
+        updateVersionOverrides = remaining
+        return true
+    }
+
+    @discardableResult
+    private func persistUpdateVersionOverrides(_ overrides: [String: UpdateVersionOverride]? = nil) -> Bool {
+        do {
+            try keyValueStore?.set(JSONEncoder().encode(overrides ?? updateVersionOverrides), forKey: Self.updateVersionOverridesKey)
+            return true
+        } catch {
+            Logger.webExtensions.error("Extension update installation: could not save version overrides")
+            return false
+        }
     }
 
     public var catalogExtensionIDs: [String] {

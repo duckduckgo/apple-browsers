@@ -23,8 +23,6 @@ import Foundation
 public enum WebExtensionReloadTrigger: Equatable, Sendable {
     /// Browser data clearing unloaded and then restored extensions.
     case dataClearing
-    /// CPM messaging reported a confirmed hang after an initialization failure.
-    case cpmMessagingHang
     /// The CPM background failed to load and WebKit kept the failed view, so a retry cannot replace it.
     case cpmBackgroundLoadFailure
     /// A scriptlet update required the affected extension to reload.

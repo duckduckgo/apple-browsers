@@ -42,6 +42,72 @@
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 }
             }
+        },
+        "subscriptionOnboardingFreeTrialsNov2026": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "vpnActivated_d1": {
+                    "description": "Free-trial subscriber installed a VPN configuration on day 0-1 after enrollment",
+                    "enum": ["1"]
+                },
+                "vpnActivated_d2_7": {
+                    "description": "Free-trial subscriber installed a VPN configuration on day 2-7 after enrollment",
+                    "enum": ["1"]
+                },
+                "duckAiPaidUsed_d1": {
+                    "description": "Free-trial subscriber sent a prompt to a paid Duck.ai model on day 0-1 after enrollment",
+                    "enum": ["1"]
+                },
+                "duckAiPaidUsed_d2_7": {
+                    "description": "Free-trial subscriber sent a prompt to a paid Duck.ai model on day 2-7 after enrollment",
+                    "enum": ["1"]
+                },
+                "pirActivated_d1": {
+                    "description": "Free-trial subscriber activated Personal Information Removal on day 0-1 after enrollment",
+                    "enum": ["1"]
+                },
+                "pirActivated_d2_7": {
+                    "description": "Free-trial subscriber activated Personal Information Removal on day 2-7 after enrollment",
+                    "enum": ["1"]
+                },
+                "ai_features_disabled": {
+                    "description": "Duck.ai was disabled in the app at the moment the device was enrolled",
+                    "enum": ["1"]
+                }
+            }
+        },
+        "subscriptionOnboardingPaidSubsNov2026": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "vpnActivated_d1": {
+                    "description": "Paid subscriber installed a VPN configuration on day 0-1 after enrollment",
+                    "enum": ["1"]
+                },
+                "vpnActivated_d2_30": {
+                    "description": "Paid subscriber installed a VPN configuration on day 2-30 after enrollment",
+                    "enum": ["1"]
+                },
+                "duckAiPaidUsed_d1": {
+                    "description": "Paid subscriber sent a prompt to a paid Duck.ai model on day 0-1 after enrollment",
+                    "enum": ["1"]
+                },
+                "duckAiPaidUsed_d2_30": {
+                    "description": "Paid subscriber sent a prompt to a paid Duck.ai model on day 2-30 after enrollment",
+                    "enum": ["1"]
+                },
+                "pirActivated_d1": {
+                    "description": "Paid subscriber activated Personal Information Removal on day 0-1 after enrollment",
+                    "enum": ["1"]
+                },
+                "pirActivated_d2_30": {
+                    "description": "Paid subscriber activated Personal Information Removal on day 2-30 after enrollment",
+                    "enum": ["1"]
+                },
+                "ai_features_disabled": {
+                    "description": "Duck.ai was disabled in the app at the moment the device was enrolled",
+                    "enum": ["1"]
+                }
+            }
         }
     }
 }

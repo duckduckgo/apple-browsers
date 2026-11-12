@@ -41,6 +41,9 @@ public enum OnboardingRebrandColor {
 
     public static let bubbleBorder = dynamic(light: 0xCBEAFF, dark: 0x011D34)
 
+    /// Subscription note background (Pollen 10 / Pollen 90).
+    public static let subscriptionNoteBackground = dynamic(light: 0xFEF4DA, dark: 0x47210A)
+
     private static func dynamic(light: UInt32, dark: UInt32, opacity: Double = 1) -> Color {
         Color(uiColor: UIColor { traitCollection in
             let hex = traitCollection.userInterfaceStyle == .dark ? dark : light

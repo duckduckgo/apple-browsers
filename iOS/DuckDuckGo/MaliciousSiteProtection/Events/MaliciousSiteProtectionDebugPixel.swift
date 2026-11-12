@@ -21,11 +21,12 @@ import Foundation
 import MaliciousSiteProtection
 import PixelKit
 
-/// Debug pixels for Malicious Site Protection datasets.
+/// Debug pixels for Malicious Site Protection datasets and URL checks.
 ///
 /// Every value sits in the name:
 ///  - `m_debug_malicious-site-protection_<measure>_<category>_<type>_<bucket>`, for one dataset
 ///  - `m_debug_malicious-site-protection_<measure>_aggregate_<type>_<bucket>`, for a whole update round
+///  - `m_debug_malicious-site-protection_url-check_background_<data-state>`
 enum MaliciousSiteProtectionDebugPixel: PixelKit.Event, Equatable {
     private static let namePrefix = "m_debug_malicious-site-protection"
 
@@ -39,6 +40,16 @@ enum MaliciousSiteProtectionDebugPixel: PixelKit.Event, Equatable {
     case aggregateUpdateTime(type: DataManager.StoredDataType.Kind, bucket: MaliciousSiteProtection.Event.DurationBucketAggregation)
     /// The total size of the dataset files written in an update round.
     case aggregateDatasetSize(type: DataManager.StoredDataType.Kind, bucket: MaliciousSiteProtection.Event.DatasetSizeBucketAggregation)
+    /// A URL check while the app was in the background, by whether the hash prefixes were already in memory.
+    case backgroundURLCheck(dataState: URLCheckDataState)
+
+    enum URLCheckDataState: String {
+        /// The hash prefixes of every supported threat were already in memory.
+        case cached
+        /// A check reads the hash prefixes of every supported threat, so this means at least one set wasn't in memory and was read from disk.
+        case disk
+    }
+
     var name: String {
         switch self {
         case .updateTime(let category, let type, let bucket):
@@ -51,6 +62,8 @@ enum MaliciousSiteProtectionDebugPixel: PixelKit.Event, Equatable {
             return Self.name("update-time", "aggregate", type, bucket.rawValue)
         case .aggregateDatasetSize(let type, let bucket):
             return Self.name("dataset-size", "aggregate", type, bucket.rawValue)
+        case .backgroundURLCheck(let dataState):
+            return [Self.namePrefix, "url-check", "background", dataState.rawValue].joined(separator: "_")
         }
     }
 

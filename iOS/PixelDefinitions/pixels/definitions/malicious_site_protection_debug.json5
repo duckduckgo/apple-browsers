@@ -83,6 +83,21 @@
         ],
         "parameters": ["appVersion"]
     },
+    "m_debug_malicious-site-protection_url-check_background": {
+        "description": "Fires when Malicious Site Protection checks a URL while the app is in the background. Not fired for foreground checks.",
+        "owners": ["alessandroboron"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": [
+            {
+                "description": "cached when the hash prefixes of every supported threat were already in memory; disk when at least one set had to be read from disk.",
+                "enum": ["cached", "disk"]
+            },
+            "daily_count",
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
     "m_debug_malicious-site-protection_dataset-size": {
         "description": "Fires after a Malicious Site Protection dataset update is saved, carrying the size of the whole dataset file written as a size bucket in the name (1 MB = 1,000,000 bytes). With aggregate in place of the category, it fires once per update round that wrote at least one dataset, carrying the total size of every file the round wrote.",
         "owners": ["alessandroboron"],

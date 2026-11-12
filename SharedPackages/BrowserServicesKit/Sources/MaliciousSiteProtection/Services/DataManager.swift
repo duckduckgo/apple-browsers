@@ -52,6 +52,11 @@ public actor DataManager: DataManaging {
         }
     }
 
+    /// Whether the datasets of `kind` for every one of `threatKinds` are in memory. Doesn't load anything.
+    public func isLoaded(_ kind: StoredDataType.Kind, for threatKinds: [ThreatKind]) -> Bool {
+        StoredDataType.dataTypes(for: kind, supportedThreats: threatKinds).allSatisfy { store[$0] != nil }
+    }
+
     func dataSet<DataKey: MaliciousSiteDataKey>(for key: DataKey) -> DataKey.DataSet {
         let dataType = key.dataType
         // return cached dataSet if available

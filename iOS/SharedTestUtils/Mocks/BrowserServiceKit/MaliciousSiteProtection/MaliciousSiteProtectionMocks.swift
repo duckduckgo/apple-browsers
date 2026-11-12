@@ -219,3 +219,19 @@ final class MockMaliciousSiteDetector: MaliciousSiteProtection.MaliciousSiteDete
 final class MockMaliciousSiteProtectionPreferencesStore: MaliciousSiteProtectionPreferencesStorage {
     var isEnabled: Bool = true
 }
+
+final class MockMaliciousSiteProtectionDataLoadStateProvider: MaliciousSiteProtectionDataLoadStateProviding {
+    var isLoaded: Bool
+    private(set) var capturedKind: MaliciousSiteProtection.DataManager.StoredDataType.Kind?
+    private(set) var capturedThreatKinds: [MaliciousSiteProtection.ThreatKind]?
+
+    init(isLoaded: Bool = true) {
+        self.isLoaded = isLoaded
+    }
+
+    func isLoaded(_ kind: MaliciousSiteProtection.DataManager.StoredDataType.Kind, for threatKinds: [MaliciousSiteProtection.ThreatKind]) async -> Bool {
+        capturedKind = kind
+        capturedThreatKinds = threatKinds
+        return isLoaded
+    }
+}

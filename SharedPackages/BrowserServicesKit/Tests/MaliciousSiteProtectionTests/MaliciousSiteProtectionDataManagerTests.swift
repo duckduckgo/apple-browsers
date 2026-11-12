@@ -430,13 +430,61 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         XCTAssertEqual(result, HashPrefixSet(revision: 2, items: ["aa", "bb"]))
     }
 
+    // MARK: - Is Loaded
+
+    /// The mock only encodes embedded data when these change after its init.
+    func setUpEmbeddedData() {
+        embeddedDataProvider.filterSet = [Filter(hash: "embedded", regex: "embedded")]
+        embeddedDataProvider.hashPrefixes = ["embedded"]
+    }
+
+    func testWhenNothingIsLoaded_ThenIsLoadedIsFalse() async {
+        let isLoaded = await dataManager.isLoaded(.hashPrefixSet, for: [.phishing])
+
+        XCTAssertFalse(isLoaded)
+    }
+
+    func testWhenDataSetsOfEveryThreatAreLoaded_ThenIsLoadedIsTrue() async {
+        setUpEmbeddedData()
+        _ = await dataManager.dataSet(for: .hashPrefixes(threatKind: .phishing))
+        _ = await dataManager.dataSet(for: .hashPrefixes(threatKind: .malware))
+
+        let isLoaded = await dataManager.isLoaded(.hashPrefixSet, for: [.phishing, .malware])
+
+        XCTAssertTrue(isLoaded)
+    }
+
+    func testWhenOnlySomeThreatsAreLoaded_ThenIsLoadedIsFalse() async {
+        setUpEmbeddedData()
+        _ = await dataManager.dataSet(for: .hashPrefixes(threatKind: .phishing))
+
+        let isLoaded = await dataManager.isLoaded(.hashPrefixSet, for: [.phishing, .malware])
+
+        XCTAssertFalse(isLoaded)
+    }
+
+    func testWhenOtherKindIsLoaded_ThenIsLoadedIsFalse() async {
+        setUpEmbeddedData()
+        _ = await dataManager.dataSet(for: .filterSet(threatKind: .phishing))
+
+        let isLoaded = await dataManager.isLoaded(.hashPrefixSet, for: [.phishing])
+
+        XCTAssertFalse(isLoaded)
+    }
+
+    func testWhenIsLoadedIsChecked_ThenNothingIsLoaded() async {
+        _ = await dataManager.isLoaded(.hashPrefixSet, for: [.phishing])
+
+        let isLoaded = await dataManager.isLoaded(.hashPrefixSet, for: [.phishing])
+
+        XCTAssertFalse(isLoaded)
+    }
+
     // MARK: - Load Time Event
 
     #if os(iOS)
     func makeDataManager(eventMapping: MockEventMapping) -> MaliciousSiteProtection.DataManager {
-        // Assigned here because the mock only encodes embedded data when these change after its init.
-        embeddedDataProvider.filterSet = [Filter(hash: "embedded", regex: "embedded")]
-        embeddedDataProvider.hashPrefixes = ["embedded"]
+        setUpEmbeddedData()
         return MaliciousSiteProtection.DataManager(
             fileStore: fileStore,
             embeddedDataProvider: embeddedDataProvider,

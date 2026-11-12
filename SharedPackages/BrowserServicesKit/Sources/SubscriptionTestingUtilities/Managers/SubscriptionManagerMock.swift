@@ -140,7 +140,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var resultTokenContainer: Networking.TokenContainer?
     public var resultCreateAccountTokenContainer: Networking.TokenContainer?
+    public private(set) var getTokenContainerPolicies: [Networking.AuthTokensCachePolicy] = []
     public func getTokenContainer(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
+        getTokenContainerPolicies.append(policy)
         switch policy {
         case .local, .localValid, .localForceRefresh:
             guard let resultTokenContainer else {

@@ -68,6 +68,17 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
         case appBecameActive
         case afterClickTimerFired
         case deadlineTimerFired
+
+        func triggers(_ check: DefaultBrowserConfirmationCheck) -> Bool {
+            switch self {
+            case .appBecameActive:
+                return check == .nextActivation
+            case .afterClickTimerFired:
+                return check == .afterClick
+            case .deadlineTimerFired:
+                return check == .deadline
+            }
+        }
     }
 
     private let source: DefaultBrowserConfirmationSource
@@ -117,12 +128,17 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     }
 
     func start(clickDate: Date) {
-        begin(DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .afterClick))
+        let confirmation = DefaultBrowserPendingConfirmation(clickDate: clickDate, nextCheck: .afterClick)
+        scheduleChecks(for: confirmation)
     }
 
     func resume() {
         guard let confirmation = store.pendingConfirmation else { return }
-        begin(confirmation)
+        if isPastDeadline(confirmation) {
+            evaluate(confirmation, at: .deadline)
+        } else {
+            scheduleChecks(for: confirmation)
+        }
     }
 
     func cancel() {
@@ -130,13 +146,10 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
         invalidateTimers()
     }
 
-    private func begin(_ confirmation: DefaultBrowserPendingConfirmation) {
+    private func scheduleChecks(for confirmation: DefaultBrowserPendingConfirmation) {
         invalidateTimers()
         pending = confirmation
-        if isPastDeadline(confirmation) {
-            run(.deadline)
-            return
-        }
+
         deadlineTimer = makeTimer(after: deadline(for: confirmation).timeIntervalSince(dateProvider()), sending: .deadlineTimerFired)
         if confirmation.nextCheck == .afterClick {
             let afterClickDate = confirmation.clickDate.addingTimeInterval(afterClickDelay)
@@ -147,21 +160,12 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     // MARK: - Events
 
     private func handle(_ event: Event) {
-        if event == .afterClickTimerFired {
-            afterClickTimer = nil
-        }
         guard let pending else { return }
-        if event == .deadlineTimerFired || isPastDeadline(pending) {
-            run(.deadline)
-            return
-        }
-        switch (event, pending.nextCheck) {
-        case (.afterClickTimerFired, .afterClick):
-            run(.afterClick)
-        case (.appBecameActive, .nextActivation):
-            run(.nextActivation)
-        default:
-            break
+
+        if isPastDeadline(pending) {
+            evaluate(pending, at: .deadline)
+        } else if event.triggers(pending.nextCheck) {
+            evaluate(pending, at: pending.nextCheck)
         }
     }
 
@@ -175,16 +179,14 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
         dateProvider() >= deadline(for: confirmation)
     }
 
-    private func run(_ check: DefaultBrowserConfirmationCheck) {
-        guard var confirmation = pending else { return }
+    private func evaluate(_ confirmation: DefaultBrowserPendingConfirmation, at check: DefaultBrowserConfirmationCheck) {
         if defaultBrowserProvider.isDefault {
             finish(with: .confirmed(check))
         } else if let next = check.next {
             // Temporary: This logging will be removed when pixels are added, before release.
             // https://app.asana.com/1/137249556945/project/1209825025475019/task/1215996183949490
             Logger.general.info("Default browser confirmation (\(self.source.rawValue)): not yet confirmed, next check \(next.rawValue)")
-            confirmation.nextCheck = next
-            pending = confirmation
+            pending = DefaultBrowserPendingConfirmation(clickDate: confirmation.clickDate, nextCheck: next)
         } else {
             finish(with: .notConfirmed)
         }

@@ -287,6 +287,13 @@ class TabViewController: UIViewController {
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
+    private var appliedViewportInsetRange: (minimum: UIEdgeInsets, maximum: UIEdgeInsets)?
+    private var isInteractiveObscuredInsetsChangeActive = false
+
+    private enum InteractiveObscuredInsetsChangeSelector {
+        static let begin = NSSelectorFromString("_beginInteractiveObscuredInsetsChange")
+        static let end = NSSelectorFromString("_endInteractiveObscuredInsetsChange")
+    }
     private var lastDuckAIInnerScrollInsets: UIEdgeInsets?
     private var scrollingBeforeFloatingAIChrome: Bool?
     private var backgroundBeforeFloatingAIChrome: (view: UIColor?, outer: UIColor?, container: UIColor?, isOpaque: Bool)?
@@ -1282,6 +1289,51 @@ class TabViewController: UIViewController {
         return true
     }
 
+    /// WebKit's unobscured area follows the chrome on every frame, so page-fixed content moves with the
+    /// bar instead of jumping once the bar and the scroll have both settled.
+    private func updateWebViewObscuredInsetsFollowingChrome(_ insets: UIEdgeInsets,
+                                                            barsVisibilityPercent: CGFloat,
+                                                            tracksChrome: Bool) {
+        let isChromeMidTransition = barsVisibilityPercent > 0 && barsVisibilityPercent < 1
+        if tracksChrome {
+            updateWebViewViewportInsetRange()
+            if isChromeMidTransition {
+                setInteractiveObscuredInsetsChange(active: true)
+            }
+        }
+        setWebViewObscuredContentInsetsIfSupported(insets)
+        if !isChromeMidTransition {
+            setInteractiveObscuredInsetsChange(active: false)
+        }
+    }
+
+    /// While the chrome moves, WebKit treats inset changes like a scroll: page-fixed content follows
+    /// every frame, but the page only gets one `resize` once the chrome settles instead of one per
+    /// frame, which heavy pages can't keep up with. No-op if WebKit drops the selectors.
+    private func setInteractiveObscuredInsetsChange(active: Bool) {
+        guard active != isInteractiveObscuredInsetsChangeActive, let webView else { return }
+        let selector = active ? InteractiveObscuredInsetsChangeSelector.begin : InteractiveObscuredInsetsChangeSelector.end
+        guard webView.responds(to: selector) else { return }
+        isInteractiveObscuredInsetsChangeActive = active
+        webView.perform(selector)
+    }
+
+    /// Tells WebKit how far the chrome can move, from fully hidden to fully shown, so it can place
+    /// page-fixed content continuously while the obscured insets change mid-scroll.
+    private func updateWebViewViewportInsetRange() {
+        guard #available(iOS 15.5, *), let webView, let chromeDelegate else { return }
+        let hidden = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
+        let shown = chromeDelegate.floatingWebViewObscuredInsets(for: 1)
+        // WebKit rejects a range whose minimum exceeds its maximum on any edge.
+        let minimum = UIEdgeInsets(top: min(hidden.top, shown.top), left: min(hidden.left, shown.left),
+                                   bottom: min(hidden.bottom, shown.bottom), right: min(hidden.right, shown.right))
+        let maximum = UIEdgeInsets(top: max(hidden.top, shown.top), left: max(hidden.left, shown.left),
+                                   bottom: max(hidden.bottom, shown.bottom), right: max(hidden.right, shown.right))
+        if let applied = appliedViewportInsetRange, applied.minimum == minimum, applied.maximum == maximum { return }
+        appliedViewportInsetRange = (minimum, maximum)
+        webView.setMinimumViewportInset(minimum, maximumViewportInset: maximum)
+    }
+
     private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat, forceInsets: Bool = false) {
         guard #available(iOS 26, *) else {
             assertionFailure("Floating UI requires iOS 26")
@@ -1351,13 +1403,13 @@ class TabViewController: UIViewController {
         )
         // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
         hasDeferredFloatingUIInsets = false
+        updateWebViewObscuredInsetsFollowingChrome(obscuredInsets,
+                                                   barsVisibilityPercent: barsVisibilityPercent,
+                                                   tracksChrome: !isUnifiedToggleInputAffectingLayout)
         if shouldUpdateScrollInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
                                                isFloatingUIEnabled: true, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
-            // Keep WebKit's viewport stable too. Changing it on every display-link tick can
-            // relayout page-fixed content while the glass is morphing over a full-bleed web view.
-            setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
             updateFloatingAIChatScrolling(isEnabled: usesFloatingAIChrome, topInset: obscuredInsets.top)
             if isAITab, usesFloatingAIChrome || lastDuckAIInnerScrollInsets != nil {
                 let innerInsets = usesFloatingAIChrome ? obscuredInsets : .zero
@@ -1434,6 +1486,11 @@ class TabViewController: UIViewController {
         guard let behavior = scrollViewAdjustmentBehaviorBeforeFloatingUI else { return }
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
         scrollViewAdjustmentBehaviorBeforeFloatingUI = nil
+        setInteractiveObscuredInsetsChange(active: false)
+        if #available(iOS 15.5, *), appliedViewportInsetRange != nil {
+            appliedViewportInsetRange = nil
+            webView.setMinimumViewportInset(.zero, maximumViewportInset: .zero)
+        }
     }
 
     private func observeNetPConnectionStatusChanges() {

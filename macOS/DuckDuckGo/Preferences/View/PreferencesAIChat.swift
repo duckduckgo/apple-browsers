@@ -202,7 +202,13 @@ extension Preferences {
 
                 if model.shouldShowLocalModelAccess {
                     PreferencePaneSection(UserText.localModelAccessSettingsTitle, spacing: 8) {
-                        TextMenuItemCaption(UserText.localModelAccessSettingsCaption)
+                        VStack(alignment: .leading, spacing: 0) {
+                            TextMenuItemCaption(UserText.localModelAccessSettingsCaption)
+                            TextButton(UserText.learnMore) {
+                                model.openLocalModelLearnMore()
+                            }
+                            .accessibilityIdentifier("Preferences.AIChat.localModelAccessLearnMore")
+                        }
                         LocalModelAccessRow(modelName: model.localModelName,
                                             isOn: model.isLocalModelOn,
                                             turnOn: { Task { await model.turnOnLocalModel() } },

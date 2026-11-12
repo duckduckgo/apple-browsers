@@ -357,6 +357,11 @@ final class AIChatPreferences: ObservableObject {
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
     }
 
+    /// The Duck.ai help pages until a Local Models page exists.
+    @MainActor func openLocalModelLearnMore() {
+        windowControllersManager.show(url: URL.aiChatHelpPages, source: .ui, newTab: true, selected: true)
+    }
+
     @MainActor func openHideAIGeneratedImagesLearnMore() {
         windowControllersManager.show(url: URL.hideAIGeneratedImagesLearnMore, source: .ui, newTab: true, selected: true)
     }

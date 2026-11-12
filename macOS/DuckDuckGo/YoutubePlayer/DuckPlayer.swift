@@ -197,14 +197,7 @@ final class DuckPlayer {
         isFeatureEnabled = privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .duckPlayer)
         isPiPFeatureEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DuckPlayerSubfeature.pip)
         isAutoplayFeatureEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DuckPlayerSubfeature.autoplay)
-        isCustomErrorFeatureEnabled =
-            privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DuckPlayerSubfeature.customError)
-
-        if let customErrorSettingsJSON = privacyConfigurationManager.privacyConfig.settings(for: DuckPlayerSubfeature.customError),
-           let jsonData = customErrorSettingsJSON.data(using: .utf8),
-           let customErrorSettings: CustomErrorSettings = DecodableHelper.decode(jsonData: jsonData) {
-            self.customErrorSettings = customErrorSettings
-        }
+        self.privacyConfigurationManager = privacyConfigurationManager
 
         self.onboardingDecider = onboardingDecider ?? DefaultDuckPlayerOnboardingDecider(preferences: preferences)
 
@@ -329,7 +322,7 @@ final class DuckPlayer {
         let environment = InitialPlayerSettings.Environment.development
         let locale = InitialPlayerSettings.Locale.en
         let focusMode = InitialPlayerSettings.FocusMode(state: onboardingDecider.shouldOpenFirstVideoOnDuckPlayer ? .disabled : .enabled)
-        let customError = InitialPlayerSettings.CustomError(state: isCustomErrorFeatureEnabled ? .enabled : .disabled, settings: customErrorSettings)
+        let customError = customErrorPlayerSettings
         let playerSettings = InitialPlayerSettings.PlayerSettings(pip: pip, autoplay: autoplay, focusMode: focusMode, customError: customError)
         let userValues = encodeUserValues()
 
@@ -361,6 +354,18 @@ final class DuckPlayer {
         self.shouldOpenNextVideoOnYoutube = true
     }
 
+    // Read on each request so a config refresh reaches the page without an app relaunch
+    var customErrorPlayerSettings: InitialPlayerSettings.CustomError {
+        let config = privacyConfigurationManager.privacyConfig
+        let isEnabled = config.isSubfeatureEnabled(DuckPlayerSubfeature.customError)
+        var settings: CustomErrorSettings?
+        if let settingsJSON = config.settings(for: DuckPlayerSubfeature.customError),
+           let jsonData = settingsJSON.data(using: .utf8) {
+            settings = DecodableHelper.decode(jsonData: jsonData)
+        }
+        return InitialPlayerSettings.CustomError(state: isEnabled ? .enabled : .disabled, settings: settings)
+    }
+
     // MARK: - Private
 
     private static let websiteTitlePrefix = "\(commonName) - "
@@ -376,8 +381,7 @@ final class DuckPlayer {
     private var isFeatureEnabledCancellable: AnyCancellable?
     private var isPiPFeatureEnabled: Bool
     private var isAutoplayFeatureEnabled: Bool
-    private var isCustomErrorFeatureEnabled: Bool
-    private var customErrorSettings: CustomErrorSettings?
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let onboardingDecider: DuckPlayerOnboardingDecider
     private(set) var shouldOpenNextVideoOnYoutube: Bool = false
 

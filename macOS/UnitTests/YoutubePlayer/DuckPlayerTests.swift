@@ -183,6 +183,22 @@ final class DuckPlayerTests: XCTestCase {
         let configSettings = try JSONDecoder().decode(CustomErrorSettings.self, from: Data(configJSON.utf8))
         XCTAssertEqual(configSettings, CustomErrorSettings(signInRequiredSelector: "a.sign-in", youtubeErrorSelector: nil))
     }
+
+    func testCustomErrorPlayerSettingsFollowPrivacyConfigUpdatesWithoutRelaunch() {
+        let config = MockPrivacyConfiguration()
+        let configManager = MockPrivacyConfigurationManager(privacyConfig: config)
+        duckPlayer = DuckPlayer(preferences: .init(persistor: DuckPlayerPreferencesPersistorMock()), privacyConfigurationManager: configManager)
+
+        XCTAssertEqual(duckPlayer.customErrorPlayerSettings.state, .disabled)
+        XCTAssertNil(duckPlayer.customErrorPlayerSettings.settings)
+
+        config.isSubfeatureEnabledCheck = { subfeature, _ in (subfeature as? DuckPlayerSubfeature) == .customError }
+        config.subfeatureSettings = #"{"signInRequiredSelector":"a.sign-in","youtubeErrorSelector":".ytp-error"}"#
+
+        XCTAssertEqual(duckPlayer.customErrorPlayerSettings.state, .enabled)
+        XCTAssertEqual(duckPlayer.customErrorPlayerSettings.settings,
+                       CustomErrorSettings(signInRequiredSelector: "a.sign-in", youtubeErrorSelector: ".ytp-error"))
+    }
 }
 
 extension WKWebViewConfiguration {

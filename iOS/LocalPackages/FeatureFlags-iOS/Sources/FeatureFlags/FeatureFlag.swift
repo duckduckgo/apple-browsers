@@ -580,6 +580,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
     case duckAINativeTermsOfService
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220469546567099
+    case duckAITermsOfServiceRecordRestore
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUIiOS26
 
@@ -591,6 +594,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220385578839193?focus=true
+    case legacyFindInPageUIWithSystemFindEngine
 
     /// Container transform when a new tab opens: the new page grows from a card over the receding old one.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220324835587117
@@ -931,6 +937,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .duckAINativeTermsOfService:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService))
+        case .duckAITermsOfServiceRecordRestore:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.termsOfServiceRecordRestore))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:
@@ -1127,6 +1135,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIAndInputLiquidGlass))
         case .legacyFindInPage:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
+        case .legacyFindInPageUIWithSystemFindEngine:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPageUIWithSystemFindEngine))
         case .newTabTransition:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabTransition))
         case .aiChatTabSwitcherRichCard:

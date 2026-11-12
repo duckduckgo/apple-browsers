@@ -379,5 +379,20 @@ final class DuckPlayerViewModelTests: XCTestCase {
         XCTAssertNotEqual(receivedTimestamp, initialTimestamp, "Should not emit the initial timestamp")
     }
 
+    @MainActor
+    func testWhenVideoURLIsBuiltTwiceThenURLsAreEqual() {
+        XCTAssertEqual(viewModel.getVideoURL(), viewModel.getVideoURL())
+    }
+
+    @MainActor
+    func testWhenPlaybackHasProgressedThenResumeURLStartsAtCurrentPosition() {
+        viewModel.updateTimeStamp(timeStamp: 42.7)
+
+        let url = viewModel.getResumeVideoURL()
+
+        let start = URLComponents(url: url!, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "start" }?.value
+        XCTAssertEqual(start, "42")
+    }
+
 
 }

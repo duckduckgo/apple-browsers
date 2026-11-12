@@ -333,6 +333,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             duckAiNativeStorageHandler: mockNativeStorage,
             usageContextProvider: UsageContextProvider(),
             onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             pixelHandler: pixelHandler,
             selectionJourneyInstrumentation: mockSelectionJourneyInstrumentation
         )
@@ -987,7 +988,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
             usageContextProvider: UsageContextProvider(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         mockSettings.isAutomaticContextAttachmentEnabled = true
 
@@ -2134,7 +2136,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
             usageContextProvider: UsageContextProvider(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         coordinator.delegate = mockDelegate
         return coordinator

@@ -106,6 +106,22 @@ final class WebViewHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenWebContentProcessTerminatesDuringUserAssist_thenActionFails() async throws {
+        let delegate = MockWebViewCommunicationDelegate()
+        let sut = try makeWebViewHandler(delegate: delegate)
+        await sut.initializeWebView(showWebView: false)
+        let failed = expectation(description: "userAssist failed")
+        delegate.onErrorHandler = { _ in failed.fulfill() }
+        let profile = ProfileQuery(firstName: "", lastName: "", city: "", state: "", birthYear: 1970)
+        sut.execute(action: UserAssistAction(id: "assist"), ofType: .optOut, data: .userData(profile, nil, nil, [:]))
+
+        sut.webViewWebContentProcessDidTerminate(WKWebView())
+
+        await fulfillment(of: [failed], timeout: 5)
+        XCTAssertEqual(delegate.errors as? [DataBrokerProtectionError], [.webContentProcessTerminated])
+    }
+
+    @MainActor
     func testWhenCustomUserAgentIsProvided_thenWebViewUsesIt() async throws {
         let customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0"
         let sut = try makeWebViewHandler(customUserAgent: customUserAgent)
@@ -127,13 +143,14 @@ final class WebViewHandlerTests: XCTestCase {
 
     @MainActor
     private func makeWebViewHandler(
+        delegate: CCFCommunicationDelegate = MockWebViewCommunicationDelegate(),
         customUserAgent: String? = nil,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil
     ) throws -> DataBrokerProtectionWebViewHandler {
         try DataBrokerProtectionWebViewHandler(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: .mock,
-            delegate: MockWebViewCommunicationDelegate(),
+            delegate: delegate,
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },
             customUserAgent: customUserAgent,
@@ -162,7 +179,12 @@ private final class MockWebViewCommunicationDelegate: CCFCommunicationDelegate {
     func conditionSuccess(actions: [Action]) async {
     }
 
+    var errors: [Error] = []
+    var onErrorHandler: ((Error) -> Void)?
+
     func onError(error: Error) {
+        errors.append(error)
+        onErrorHandler?(error)
     }
 }
 

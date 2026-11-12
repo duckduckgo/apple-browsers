@@ -341,8 +341,7 @@ final class AppLaunchUITests: UITestCase {
         XCTAssertTrue(modal.wait(for: expectedWidth, timeout: UITestTimeouts.navigation))
     }
 
-    func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() throws {
-        let site = try localWebsite()
+    func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
         for flag in ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"] {
             let indices = app.launchArguments.indices.filter { app.launchArguments[$0] == flag }
             XCTAssertEqual(indices.count, 1, "Expected one launch value for \(flag).")
@@ -357,7 +356,15 @@ final class AppLaunchUITests: UITestCase {
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
         ]
         app.launch()
-        site.open(.first, in: app)
+        app.dismissAddressBarEditing()
+        let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation))
+        tabSwitcher.press(forDuration: 1)
+        app.buttons["Browser.NewTabMenu.NewTab"].tapWhenHittable(in: app)
+        app.openTabSwitcher()
+        app.assertTabCount(2)
+        let originalTabs = [app.tabCell(at: 0), app.tabCell(at: 1)]
+        app.buttons["TabSwitcher.Button.Done"].tapWhenHittable(in: app)
 
         app.terminate()
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
@@ -367,14 +374,14 @@ final class AppLaunchUITests: UITestCase {
         ]
         app.launch()
 
-        let window = app.browserWindow
-        let newTabPage = NSPredicate { _, _ in
-            !window.webViews.firstMatch.exists && window.scrollViews.firstMatch.isHittable
-        }
+        let newTabPage = app.browserWindow.scrollViews.firstMatch
         XCTAssertTrue(
-            window.wait(for: newTabPage, timeout: UITestTimeouts.navigation),
+            newTabPage.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.navigation),
             "The New Tab page did not appear after automatic tab clearing.")
         app.openTabSwitcher()
+        for tab in originalTabs {
+            XCTAssertFalse(tab.exists, "An original tab survived automatic tab clearing.")
+        }
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Tab switcher after automatic tab clearing"

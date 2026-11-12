@@ -30,6 +30,10 @@ extension Preferences {
     struct AIChatView: View {
         @ObservedObject var model: AIChatPreferences
 
+        private var isLocalModelAccessShown: Bool {
+            model.shouldShowAIFeatures && model.shouldShowLocalModelAccess
+        }
+
         var body: some View {
             PreferencePane {
                 TextMenuTitle(UserText.aiFeatures)
@@ -200,7 +204,7 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
-                if model.shouldShowLocalModelAccess {
+                if isLocalModelAccessShown {
                     PreferencePaneSection(UserText.localModelAccessSettingsTitle, spacing: 8) {
                         VStack(alignment: .leading, spacing: 0) {
                             TextMenuItemCaption(UserText.localModelAccessSettingsCaption)
@@ -214,13 +218,15 @@ extension Preferences {
                                             turnOn: { Task { await model.turnOnLocalModel() } },
                                             turnOff: model.turnOffLocalModel)
                     }
-                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
                 }
 
                 // Always shown: the button disables all AI while any is on, then greys out
                 // once everything is disabled, with the caption reinforcing the no-AI state.
-                Divider()
-                    .padding(.bottom, 8)
+                // The local model design has no divider between its section and the button.
+                if !isLocalModelAccessShown {
+                    Divider()
+                        .padding(.bottom, 8)
+                }
 
                 PreferencePaneSection {
                     VStack(alignment: .leading) {

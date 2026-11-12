@@ -173,7 +173,7 @@ final class AIChatDebugMenu: NSMenu {
         NSApp.delegateTyped.localModelService.optOut()
     }
 
-    /// Runs `requestAIChatLocalModelAccess` the way Duck.ai would, until Duck.ai sends it, and shows the reply.
+    /// Runs `requestAIChatLocalModelAccess` the way Duck.ai would, until Duck.ai sends it.
     @MainActor
     @objc private func showLocalModelAccessPrompt() {
         let service = NSApp.delegateTyped.localModelService
@@ -181,17 +181,9 @@ final class AIChatDebugMenu: NSMenu {
         let webView = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController?
             .mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.webView
         Task { @MainActor in
-            let reply: String
-            do {
-                reply = try await service.requestAccess {
-                    await prompt.ask(from: webView, modelName: service.model.name)
-                }.rawValue
-            } catch {
-                reply = error.localizedDescription
+            _ = try? await service.requestAccess {
+                await prompt.ask(from: webView, modelName: service.model.name)
             }
-            let alert = NSAlert()
-            alert.messageText = "requestAIChatLocalModelAccess replied: \(reply)"
-            _ = await alert.runModal()
         }
     }
 

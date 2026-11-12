@@ -213,7 +213,9 @@ public final class DataBrokerProtectionAgentManager {
     private var debugServer: DataBrokerProtectionDebugHTTPServer?
     /// Runs the user's assisted opt-out attempts one at a time. Created on first use once the user is signed in.
     @MainActor private var assistedOptOutQueue: AssistedOptOutQueue?
-    private let assistedOptOutPresenter: AssistedOptOutPresenting?
+    private let injectedAssistedOptOutPresenter: AssistedOptOutPresenting?
+    @MainActor private lazy var assistedOptOutPresenter: AssistedOptOutPresenting =
+        injectedAssistedOptOutPresenter ?? AssistedOptOutWindowPresenter()
     private var assistedOptOutSubscriptions: Set<AnyCancellable> = []
 
     private var didStartActivityScheduler = false
@@ -250,7 +252,7 @@ public final class DataBrokerProtectionAgentManager {
          wideEvent: WideEventManaging? = nil,
          assistedOptOutPresenter: AssistedOptOutPresenting? = nil
     ) {
-        self.assistedOptOutPresenter = assistedOptOutPresenter
+        self.injectedAssistedOptOutPresenter = assistedOptOutPresenter
         self.eventsHandler = eventsHandler
         self.activityScheduler = activityScheduler
         self.ipcServer = ipcServer

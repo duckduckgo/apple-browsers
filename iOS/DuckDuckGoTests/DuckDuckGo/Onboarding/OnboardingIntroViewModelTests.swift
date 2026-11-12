@@ -2185,6 +2185,10 @@ final class MockOnboardingTryVPNFollowUpProvider: OnboardingTryVPNFollowUpProvid
         cancelVPNAccessCheckCallCount += 1
         hasVPNAccess = hasVPNAccess ?? false
     }
+
+    func makeVPNActivationViewModel() -> SubscriptionOnboardingVPNActivationViewModel {
+        .preview(state: .off, originalConnectionInfo: nil)
+    }
 }
 
 @MainActor

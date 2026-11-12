@@ -565,6 +565,7 @@ extension OnboardingView {
         private func vpnActivationView(content: OnboardingVPNActivationContent) -> some View {
             VPNActivationContent(
                 content: content,
+                viewModel: model.makeVPNActivationViewModel(),
                 isVisible: $showBubbleContent,
                 continueAction: {
                     animateContentTransition {

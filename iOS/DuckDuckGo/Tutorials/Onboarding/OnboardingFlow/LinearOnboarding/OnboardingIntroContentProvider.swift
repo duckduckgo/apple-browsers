@@ -532,8 +532,11 @@ extension OnboardingIntroContentProvider {
     var vpnActivationContent: OnboardingVPNActivationContent {
         OnboardingVPNActivationContent(
             offTitle: UserText.subscriptionOnboardingVPNActivationOffTitle,
+            onTitle: UserText.subscriptionOnboardingVPNActivationOnTitle,
             turnOnCTA: UserText.subscriptionOnboardingVPNActivationTurnOnButton,
+            tryAgainCTA: UserText.subscriptionOnboardingVPNActivationTryAgainButton,
             skipCTA: UserText.onboardingSkip,
+            nextCTA: UserText.subscriptionOnboardingVPNActivationNextButton,
             daxAnimation: .wingLeft
         )
     }
@@ -554,8 +557,11 @@ extension OnboardingIntroContentProvider {
 
 struct OnboardingVPNActivationContent: Equatable {
     let offTitle: String
+    let onTitle: String
     let turnOnCTA: String
+    let tryAgainCTA: String
     let skipCTA: String
+    let nextCTA: String
     let daxAnimation: DaxAnimation?
 }
 

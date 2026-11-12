@@ -32,12 +32,14 @@ extension OnboardingView {
             static let pictogramSize = CGSize(width: 128, height: 96)
             static let headerSpacing: CGFloat = 12
             static let outerSpacing: CGFloat = 28
+            static let cardSpacing: CGFloat = 12
             static let buttonSpacing: CGFloat = 8
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+        @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
         @State private var shouldStartTyping = false
         @State private var showContent = false
         @Binding private var isVisible: Bool
@@ -47,12 +49,18 @@ extension OnboardingView {
 
         init(
             content: OnboardingVPNActivationContent,
+            viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
             isVisible: Binding<Bool>,
             continueAction: @escaping () -> Void
         ) {
             self.content = content
+            self._viewModel = StateObject(wrappedValue: viewModel())
             self._isVisible = isVisible
             self.continueAction = continueAction
+        }
+
+        private var isOn: Bool {
+            viewModel.connectionState == .on
         }
 
         var body: some View {
@@ -63,22 +71,26 @@ extension OnboardingView {
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
+                message: AnyView(infoCards),
                 showContent: $showContent,
                 title: { header },
                 actions: { actions }
             )
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: viewModel.connectionState)
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+            .onAppear { viewModel.onAppear() }
+            .onDisappear { viewModel.onDisappear() }
         }
 
         private var header: some View {
             VStack(spacing: Metrics.headerSpacing) {
-                Image(uiImage: DesignSystemImages.Color.Size128.networkProtectionVPNDisabled)
+                Image(uiImage: isOn ? DesignSystemImages.Color.Size128.networkProtectionVPN : DesignSystemImages.Color.Size128.networkProtectionVPNDisabled)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: Metrics.pictogramSize.width, height: Metrics.pictogramSize.height)
 
                 TypingText(
-                    content.offTitle,
+                    isOn ? content.onTitle : content.offTitle,
                     startAnimating: $shouldStartTyping,
                     onTypingFinished: { [reduceMotion] in
                         if reduceMotion {
@@ -94,18 +106,59 @@ extension OnboardingView {
             }
         }
 
+        @ViewBuilder
+        private var infoCards: some View {
+            if isOn {
+                VStack(spacing: Metrics.cardSpacing) {
+                    SubscriptionOnboardingVPNInfoCard(state: .hiddenIP,
+                                                      ipAddress: viewModel.originalIPText,
+                                                      location: viewModel.originalLocationText)
+                    SubscriptionOnboardingVPNInfoCard(state: .newIP,
+                                                      ipAddress: viewModel.vpnIPText,
+                                                      location: viewModel.vpnLocationText,
+                                                      nearestIndicator: viewModel.vpnLocationNearestIndicator,
+                                                      isAvailable: viewModel.isVPNInfoAvailable)
+                }
+                .transition(.opacity)
+            } else {
+                SubscriptionOnboardingVPNInfoCard(state: .visibleIP,
+                                                  ipAddress: viewModel.originalIPText,
+                                                  location: viewModel.originalLocationText,
+                                                  isAvailable: viewModel.isOriginalInfoAvailable)
+                    .transition(.opacity)
+            }
+        }
+
+        @ViewBuilder
         private var actions: some View {
-            VStack(spacing: Metrics.buttonSpacing) {
-                // TODO: Turn on the VPN.
-                Button(action: {}) {
-                    Text(content.turnOnCTA)
+            if isOn {
+                Button(action: continueAction) {
+                    Text(content.nextCTA)
                 }
                 .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+            } else {
+                VStack(spacing: Metrics.buttonSpacing) {
+                    Button(action: turnOnVPN) {
+                        if viewModel.isActivating {
+                            SwiftUI.ProgressView()
+                        } else {
+                            Text(viewModel.didFailActivation ? content.tryAgainCTA : content.turnOnCTA)
+                        }
+                    }
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                    .disabled(viewModel.isActivating)
 
-                Button(action: continueAction) {
-                    Text(content.skipCTA)
+                    Button(action: continueAction) {
+                        Text(content.skipCTA)
+                    }
+                    .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                 }
-                .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+            }
+        }
+
+        private func turnOnVPN() {
+            Task {
+                await viewModel.turnOnVPN()
             }
         }
 

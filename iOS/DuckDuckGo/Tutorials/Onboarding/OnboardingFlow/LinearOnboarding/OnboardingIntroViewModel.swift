@@ -153,7 +153,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             contentProvider: OnboardingIntroContentProvider(
                 flowType: onboardingManager.currentOnboardingFlow,
                 featureFlagger: featureFlagger,
-                downloadReasonProvider: { onboardingManager.currentDownloadReason }
+                downloadReasonProvider: { onboardingManager.currentDownloadReason },
+                isVPNDownloadReasonAvailable: { onboardingManager.isVPNDownloadReasonAvailable }
             ),
             personalizationManager: personalizationManager,
             aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),
@@ -333,6 +334,14 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
+    func tryVPNAction() {
+        // TODO: Present the subscription paywall modal.
+    }
+
+    func skipTryVPNAction() {
+        makeNextViewState()
+    }
+
     func adBlockingContinueAction() {
         pixelReporter.measureAdBlockingSelection(
             youTubeAdBlockingEnabled: personalizationManager.isYouTubeAdBlockingEnabled,
@@ -487,6 +496,13 @@ private extension OnboardingIntroViewModel {
                         step: stepInfo()
                     )
                 )
+            case .tryVPN:
+                return .onboarding(
+                    .init(
+                        type: .tryVPNDialog(content: contentProvider.tryVPNContent),
+                        step: stepInfo()
+                    )
+                )
             case .setDefaultBrowser:
                 return .onboarding(
                     .init(
@@ -630,6 +646,8 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .keepDuckAISelection
         case .adBlockingPersonalization where introSteps.contains(.adBlockingPersonalization):
             currentIntroStep = .adBlockingPersonalization
+        case .tryVPN where introSteps.contains(.tryVPN):
+            currentIntroStep = .tryVPN
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -680,6 +698,8 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureKeepDuckAIImpression()
         case .adBlockingDialog:
             pixelReporter.measureAdBlockingImpression()
+        case .tryVPNDialog:
+            break
         }
     }
 

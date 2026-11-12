@@ -21,15 +21,37 @@ import Combine
 import FeatureFlags_iOS
 import PrivacyConfig
 
+struct SuggestionRequest: Equatable {
+    let query: String
+    let includeRemoteSuggestions: Bool
+}
+
 extension Publisher where Output == String, Failure == Never {
 
-    func debounceSuggestions<S: Scheduler>(using featureFlagger: FeatureFlagger, scheduler: S) -> AnyPublisher<String, Never> {
-        map { text in
-            let milliseconds = featureFlagger.isFeatureOn(.suggestionDebounce200ms) ? 150 : 100
-            return Just(text)
-                .delay(for: .milliseconds(milliseconds), scheduler: scheduler)
+    func debounceSuggestions<S: Scheduler>(using featureFlagger: FeatureFlagger, scheduler: S) -> AnyPublisher<SuggestionRequest, Never> {
+        Deferred {
+            var isFirstQuery = true
+            return self.map { text -> AnyPublisher<SuggestionRequest, Never> in
+                let isEnabled = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
+                let sendImmediately = isFirstQuery || text.isEmpty
+                isFirstQuery = text.isEmpty
+                let remote = SuggestionRequest(query: text, includeRemoteSuggestions: true)
+                guard isEnabled else {
+                    return Just(remote)
+                        .delay(for: .milliseconds(100), scheduler: scheduler)
+                        .eraseToAnyPublisher()
+                }
+                if text.isEmpty {
+                    return Just(remote).eraseToAnyPublisher()
+                }
+                let localRequest = Just(SuggestionRequest(query: text, includeRemoteSuggestions: false))
+                let local = sendImmediately ? localRequest.eraseToAnyPublisher() : localRequest
+                    .delay(for: .milliseconds(100), scheduler: scheduler).eraseToAnyPublisher()
+                return local.merge(with: Just(remote).delay(for: .milliseconds(150), scheduler: scheduler))
+                    .eraseToAnyPublisher()
+            }
+            .switchToLatest()
         }
-        .switchToLatest()
         .eraseToAnyPublisher()
     }
 }

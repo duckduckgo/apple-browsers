@@ -34,8 +34,6 @@ enum DuckAISwipeNewChat {
         static let commitDuration: TimeInterval = 0.2
         /// A finger held this long before moving is a long press or a drag, not a pull.
         static let longPressDuration: TimeInterval = 0.5
-        /// How long the new tab gets to appear before the old chat is put back.
-        static let newTabTimeout: TimeInterval = 1
     }
 
     struct Eligibility: Equatable {
@@ -175,26 +173,23 @@ enum DuckAISwipeNewChat {
         }
     }
 
-    /// From release to the new tab: the old chat fades out, then a new tab is asked for. The old chat is put back
-    /// once its tab goes off screen, after a timeout, or if anything unexpected happens first.
+    /// From release to the new tab: the old chat fades out, is put back, then a new tab is asked for. If anything
+    /// unexpected happens during the fade, the old chat is only put back.
     enum Commit: Equatable {
         case idle
         case leaving(chatID: String)
-        case awaitingNewTab
 
         enum Event: Equatable {
             case released(chatID: String?)
             /// `chatID` and `isEligible` are read when the fade finishes, not at release.
             case fadedOut(chatID: String?, isEligible: Bool)
             case urlChanged(chatID: String?)
-            case timedOut
             case cancelled
         }
 
         enum Effect: Equatable {
             case fadeOut
             case requestNewChat
-            case scheduleTimeout
             case restore
         }
 
@@ -205,18 +200,15 @@ enum DuckAISwipeNewChat {
                 return [.fadeOut]
 
             case (.leaving(let chatID), .fadedOut(let current, let isEligible)):
-                guard isEligible, current == chatID else {
-                    self = .idle
-                    return [.restore]
-                }
-                self = .awaitingNewTab
-                return [.requestNewChat, .scheduleTimeout]
+                self = .idle
+                // Opening the tab snapshots this one, so the chat is put back first.
+                return isEligible && current == chatID ? [.restore, .requestNewChat] : [.restore]
 
             case (.leaving(let chatID), .urlChanged(let current)) where current != chatID:
                 self = .idle
                 return [.restore]
 
-            case (.leaving, .cancelled), (.awaitingNewTab, .cancelled), (.awaitingNewTab, .timedOut):
+            case (.leaving, .cancelled):
                 self = .idle
                 return [.restore]
 

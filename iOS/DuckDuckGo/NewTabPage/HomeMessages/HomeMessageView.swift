@@ -185,7 +185,7 @@ private struct HomeMessageButtonStyleModifier: ViewModifier {
         if case .cancel = actionStyle {
             content.buttonStyle(SecondaryFillButtonStyle(compact: true))
         } else {
-            content.buttonStyle(BrandButtonStyle(compact: true))
+            content.buttonStyle(PrimaryButtonStyle(compact: true))
         }
     }
 }

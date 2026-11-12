@@ -451,23 +451,34 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     func testConversationAtItsEndStaysThereWhenTheSpacerGrows() async throws {
+        let atBottom = try await isAtBottomAfterTheSpacerGrows(keepsEndInView: true)
+        XCTAssertEqual(atBottom, true)
+    }
+
+    func testConversationAtItsEndIsLeftWhereItIsWhenNotKeptInView() async throws {
+        let atBottom = try await isAtBottomAfterTheSpacerGrows(keepsEndInView: false)
+        XCTAssertEqual(atBottom, false)
+    }
+
+    private func isAtBottomAfterTheSpacerGrows(keepsEndInView: Bool) async throws -> Bool? {
         let (webView, window) = await makeChatScrollFixture()
         defer { window.isHidden = true }
         _ = try await webView.callAsyncJavaScript("const chat = document.getElementById('chat'); chat.scrollTop = chat.scrollHeight;",
                                                   arguments: [:], in: nil, contentWorld: .page)
-        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0), to: webView)
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0),
+                                          keepsEndInView: keepsEndInView,
+                                          to: webView)
         _ = try await webView.callAsyncJavaScript("""
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         """, arguments: [:], in: nil, contentWorld: .page)
-        let atBottom = try await isAtBottom(webView)
-        XCTAssertEqual(atBottom, true)
+        return try await isAtBottom(webView)
     }
 
     func testConversationNearItsEndIsNotPulledBackWhenTheSpacerIsUnchanged() async throws {
         let (webView, window) = await makeChatScrollFixture()
         defer { window.isHidden = true }
         let insets = UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0)
-        DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+        DuckAIChatScrollInsetStyler.apply(insets, keepsEndInView: true, to: webView)
         let offset = try await webView.callAsyncJavaScript("""
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         const chat = document.getElementById('chat');
@@ -484,7 +495,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         defer { window.isHidden = true }
         _ = try await webView.callAsyncJavaScript("document.getElementById('chat').scrollTop = 100;",
                                                   arguments: [:], in: nil, contentWorld: .page)
-        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0), to: webView)
+        DuckAIChatScrollInsetStyler.apply(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0), keepsEndInView: true, to: webView)
         let offset = try await webView.callAsyncJavaScript("""
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         return document.getElementById('chat').scrollTop;

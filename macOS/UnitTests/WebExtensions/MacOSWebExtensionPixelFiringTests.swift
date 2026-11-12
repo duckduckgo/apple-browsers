@@ -23,16 +23,24 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
-    func testUpdatePreparationPixelsUseOnlyAllowedParameters() throws {
+    func testUpdatePixelsUseOnlyAllowedParameters() throws {
         for pixelExtension in WebExtensionPixelExtension.allCases {
-            let cases: [(WebExtensionPixelEvent, String, [String: String])] =
-                WebExtensionUpdateDownloadFailure.allCases.map { outcome in
-                    (.updateDownloadFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_download_failed_macos",
-                     ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
-                } + WebExtensionUpdateVerificationFailure.allCases.map { outcome in
-                    (.updateVerificationFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_verification_failed_macos",
-                     ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
-                } + [(.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos", ["extension": pixelExtension.parameterValue])]
+            var cases: [(WebExtensionPixelEvent, String, [String: String])] = [
+                (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos", ["extension": pixelExtension.parameterValue]),
+                (.updateApplied(extension: pixelExtension), "web_extension_update_success_macos", ["extension": pixelExtension.parameterValue])
+            ]
+            cases += WebExtensionUpdateDownloadFailure.allCases.map { outcome in
+                (.updateDownloadFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_download_failed_macos",
+                 ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+            }
+            cases += WebExtensionUpdateVerificationFailure.allCases.map { outcome in
+                (.updateVerificationFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_verification_failed_macos",
+                 ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+            }
+            cases += WebExtensionUpdateInstallFailure.allCases.map { outcome in
+                (.updateInstallFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_failure_macos",
+                 ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+            }
 
             for (event, name, parameters) in cases {
                 let pixels = PixelKitMock()
@@ -51,12 +59,14 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         }
     }
 
-    func testUpdatePreparationWireNamesMatchDefinitions() throws {
+    func testUpdateWireNamesMatchDefinitions() throws {
         let pixelExtension: WebExtensionPixelExtension = .catalog(.bitwarden)
         let cases: [(WebExtensionPixelEvent, String)] = [
             (.updateDownloadFailed(extension: pixelExtension, outcome: .networkFailure), "web_extension_update_download_failed_macos"),
             (.updateVerificationFailed(extension: pixelExtension, outcome: .invalidPackage), "web_extension_update_verification_failed_macos"),
-            (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos")
+            (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos"),
+            (.updateApplied(extension: pixelExtension), "web_extension_update_success_macos"),
+            (.updateInstallFailed(extension: pixelExtension, outcome: .loadFailure), "web_extension_update_failure_macos")
         ]
         for (event, expectedName) in cases {
             let suite = "\(#function)-\(UUID().uuidString)"

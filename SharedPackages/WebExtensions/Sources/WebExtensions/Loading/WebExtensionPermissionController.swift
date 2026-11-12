@@ -85,6 +85,7 @@ public final class WebExtensionPermissionController {
     public enum PermissionError: Error {
         case installationDenied
         case replacementAlreadyExists
+        case updateConsentRequired
     }
 
     private let store: any WebExtensionPermissionStoring
@@ -96,6 +97,8 @@ public final class WebExtensionPermissionController {
     private var lastSavedSettings: [String: WebExtensionPermissionSettings] = [:]
     /// The app permissions each loaded extension holds, which WebKit doesn't keep on the context.
     private var grantedAppPermissions: [String: [String: Date]] = [:]
+    /// An automatic replacement may restore saved approval, but must never start the initial-install prompt.
+    private var updatingInstallations: [String: Bool] = [:]
 
     /// Called when a loaded extension gains or loses an app permission, with its identifier.
     public var appPermissionsDidChange: @MainActor (_ identifier: String) -> Void = { _ in }
@@ -144,7 +147,9 @@ public final class WebExtensionPermissionController {
         grantedAppPermissions.removeValue(forKey: identifier)
         contexts[identifier] = context
         do {
-            if let settings = try store.settings(for: identifier) {
+            let settings = try store.settings(for: identifier)
+            try validateUpdateConsent(settings, for: context)
+            if let settings {
                 try restore(settings, to: context)
                 lastSavedSettings[identifier] = settings
             } else {
@@ -175,7 +180,53 @@ public final class WebExtensionPermissionController {
                 lastSavedSettings.removeValue(forKey: identifier)
                 grantedAppPermissions.removeValue(forKey: identifier)
             }
+            if updatingInstallations[identifier] != nil { throw PermissionError.updateConsentRequired }
             throw error
+        }
+    }
+
+    func beginUpdate(for identifier: String, requiresApprovedAccess: Bool = true) {
+        updatingInstallations[identifier] = requiresApprovedAccess
+    }
+
+    private func validateUpdateConsent(_ settings: WebExtensionPermissionSettings?, for context: WKWebExtensionContext) throws {
+        guard let requiresApprovedAccess = updatingInstallations[context.uniqueIdentifier] else { return }
+        guard let settings else { throw PermissionError.updateConsentRequired }
+        guard !requiresApprovedAccess || WebExtensionUpdatePermissionPolicy().canActivate(context.webExtension, settings: settings) else {
+            throw PermissionError.updateConsentRequired
+        }
+    }
+
+    func endUpdate(for identifier: String) {
+        updatingInstallations.removeValue(forKey: identifier)
+    }
+
+    /// Explicit enable may run with old grants; it still cannot recreate missing consent or grant new access.
+    func hasSavedPermissions(for identifier: String) -> Bool {
+        do { return try store.settings(for: identifier) != nil } catch { return false }
+    }
+
+    /// A rejected preparation never became active, so saving it could recreate consent removed during an await or delegate callback.
+    func discardPreparation(of context: WKWebExtensionContext) {
+        let identifier = context.uniqueIdentifier
+        guard contexts[identifier] === context else { return }
+        observations.removeValue(forKey: identifier)
+        lastSavedSettings.removeValue(forKey: identifier)
+        grantedAppPermissions.removeValue(forKey: identifier)
+        contexts.removeValue(forKey: identifier)
+    }
+
+    /// Captures effective incumbent grants before unloading, including changes whose notification has not arrived yet.
+    /// Keeping the same key lets rollback restore the current approval without overwriting later user revocations.
+    func snapshotForUpdate(for identifier: String) throws {
+        if let context = contexts[identifier] { try save(context) }
+    }
+
+    func canActivateUpdate(_ webExtension: WKWebExtension, for identifier: String) -> Bool {
+        do {
+            return WebExtensionUpdatePermissionPolicy().canActivate(webExtension, settings: try store.settings(for: identifier))
+        } catch {
+            return false
         }
     }
 

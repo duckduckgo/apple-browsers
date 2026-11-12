@@ -312,7 +312,7 @@ jobs:
         if: ${{ !cancelled() && inputs.kind == 'merge' && steps.task.outputs.kind == 'review' }}
         continue-on-error: true  # Falls back to the platform's owner.
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.APPLE_GH_RO_PAT }}
           SHA: ${{ github.sha }}
         run: python3 ./scripts/smartling/commit_author.py --sha "$SHA" --user-map "$RUNNER_TEMP/user_map.yml"
 

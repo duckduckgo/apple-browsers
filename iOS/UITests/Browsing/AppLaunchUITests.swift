@@ -371,8 +371,9 @@ final class AppLaunchUITests: UITestCase {
 
         app.launchArguments += [
             "-ff.fireMode", "true",
-            // The launch keyboard covers the tab switcher button, so the tap would race it.
+            // Keep the keyboard from covering the tab switcher during setup.
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+            "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
         ]
         app.launch()
         app.dismissAddressBarEditing()

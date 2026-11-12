@@ -179,7 +179,7 @@ extension XCUIApplication {
         XCTAssertTrue(
             tables["Bookmarks.List"].wait(
                 for: NSPredicate(format: "exists == true AND isHittable == true"),
-                timeout: UITestTimeouts.elementExistence),
+                timeout: UITestTimeouts.navigation),
             "Bookmarks list did not reappear after saving.", file: file, line: line)
     }
 

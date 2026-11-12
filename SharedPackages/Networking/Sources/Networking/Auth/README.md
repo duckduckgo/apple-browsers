@@ -181,7 +181,7 @@ A refresh with a refresh token the server no longer accepts fails with `OAuthCli
 
 ## Backup token
 
-The backup is a second, independent token pair for the same account, kept in its own storage. If the current token is lost, for example because the keychain item is deleted or a refresh is rejected after a race between processes, the backup can mint a new current pair without asking the user to sign in again.
+The backup is a second, independent token pair for the same account, kept in its own storage. If the current token is lost, for example because the keychain item is deleted or a refresh is rejected after a race between processes, the backup can mint a new current pair without asking the user to sign in again. To mint a pair means to spend a refresh token with the auth server and get a new access and refresh token in exchange.
 
 The backup is kept only when the client is created with `backupStorage`. In the apps, only the main iOS and macOS apps do this; the VPN extensions, the macOS VPN app and the macOS PIR agent don't.
 

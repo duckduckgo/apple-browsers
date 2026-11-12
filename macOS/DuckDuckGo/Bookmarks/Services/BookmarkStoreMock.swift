@@ -133,8 +133,25 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
         } else {
             bookmarks?.removeAll(where: { ids.contains($0.id) })
             bookmarks?.append(contentsOf: entitiesAtIndices.map(\.entity))
-            completion(saveEntitiesError)
+            if defersSaveCompletions {
+                let error = saveEntitiesError
+                deferredSaveCompletions.append { completion(error) }
+            } else {
+                completion(saveEntitiesError)
+            }
         }
+    }
+
+    var defersSaveCompletions = false
+    private var deferredSaveCompletions: [() -> Void] = []
+    var deferredSaveCompletionCount: Int { deferredSaveCompletions.count }
+
+    func completeNextSave() {
+        guard !deferredSaveCompletions.isEmpty else {
+            assertionFailure("No deferred bookmark save completion is available")
+            return
+        }
+        deferredSaveCompletions.removeFirst()()
     }
 
     var removeCalled: Bool { removeCalledWithIds != nil }

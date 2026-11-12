@@ -85,6 +85,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
 
         do {
             let (folder, folderCreated) = try await folder(at: folderPath, in: list)
+            try Task.checkCancellation()
             let alreadyBookmarked = try await save(url, title: tab.title ?? url.host ?? url.absoluteString,
                                                    in: folder, moving: !folderPath.isEmpty)
             return .success([
@@ -92,6 +93,8 @@ final class BookmarkTabBrowserTool: BrowserTool {
                 "alreadyBookmarked": .bool(alreadyBookmarked),
                 "folderCreated": .bool(folderCreated)
             ])
+        } catch is CancellationError {
+            return .failure(.cancelled)
         } catch {
             return .failure(.unavailable)
         }
@@ -128,6 +131,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
                 siblings = existing.childFolders
                 continue
             }
+            try Task.checkCancellation()
             let parent = folder
             let newFolder: BookmarkFolder = try await withCheckedThrowingContinuation { continuation in
                 bookmarkManager.makeFolder(named: name, parent: parent) { continuation.resume(with: $0) }

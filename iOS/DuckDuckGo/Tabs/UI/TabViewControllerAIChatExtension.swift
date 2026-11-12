@@ -183,6 +183,11 @@ extension TabViewController {
         duckAISwipeNewChat?.webViewURLDidChange()
     }
 
+    /// A pull only starts at the chat's end, so the chat is kept there as the input changes height.
+    var keepsDuckAIChatEndInView: Bool {
+        DuckAISwipeNewChatFeature(featureFlagger: featureFlagger).isAvailable
+    }
+
     /// Also called as the tab appears, so the flag turning on reaches a chat that is already open.
     func installDuckAISwipeNewChatIfNeeded() {
         let feature = DuckAISwipeNewChatFeature(featureFlagger: featureFlagger)

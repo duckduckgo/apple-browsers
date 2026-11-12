@@ -69,7 +69,7 @@ struct StartupOnboardingDecision {
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
              .aiSearchSettingsSelection, .aiModelSelection,
-             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization:
+             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -323,6 +323,7 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    private(set) var isSelectingTabBySwipe = false
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
@@ -970,8 +971,10 @@ class MainViewController: UIViewController {
     /// Released once the new page settles, so it is set only while a transition runs.
     lazy var newTabTransitions = NewTabTransitionCoordinator(host: self)
     lazy var duckAIInputFocus = DuckAIInputFocus(
+        // Part of the new tab transition's keyboard choreography, so without it the input is left as before.
         isFocused: { [weak self] in
-            self?.currentTab?.isAITab == true && self?.unifiedToggleInputCoordinator?.isAITabExpanded == true && self?.isInputFocused == true
+            guard let self, isNewTabTransitionEnabled else { return false }
+            return currentTab?.isAITab == true && unifiedToggleInputCoordinator?.isAITabExpanded == true && isInputFocused
         },
         resign: { [weak self] in self?.setDuckAIInputAside() },
         refocus: { [weak self] in self?.unifiedToggleInputCoordinator?.restoreSetAside() }
@@ -981,7 +984,6 @@ class MainViewController: UIViewController {
     private func setDuckAIInputAside() {
         unifiedToggleInputCoordinator?.setAside()
     }
-    let newTabTouchLocationRecorder = TouchLocationRecorder()
 
     /// Overlay used to render tab-swipe transitions. Hosts per-tab full-screen snapshots so
     /// the swipe moves chrome+content as a single visual unit instead of as N separately
@@ -1154,7 +1156,6 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        installNewTabTouchLocationRecorderIfNeeded()
         if !hasRequestedMenuRebuildOnFirstAppearance {
             hasRequestedMenuRebuildOnFirstAppearance = true
             menuRebuildRequests.send()
@@ -1321,7 +1322,7 @@ class MainViewController: UIViewController {
                     // Before selecting, so the entry attaches to this tab when it is shown.
                     fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
                 }
-                selectTab(tab)
+                selectTabBySwipe(tab)
             } else {
                 crossfadeDuckAIPlaceholder(toMatch: tab)
             }
@@ -1664,6 +1665,8 @@ class MainViewController: UIViewController {
     }
 
     var keyboardShowing = false
+    /// Between keyboardWillHide and keyboardDidHide, when a hide is already under way.
+    private(set) var isKeyboardHiding = false
     // Set at keyboardWillChangeFrame time (before keyboardDidShow) so the web-keyboard scroll guard
     // engages during the show animation, not just after it.
     private var isKeyboardOverlappingContent = false
@@ -1673,6 +1676,7 @@ class MainViewController: UIViewController {
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
+        isKeyboardHiding = false
         productSurfaceTelemetry.keyboardActive()
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
         // Keyboard up. Fix minimal chrome bar spot.
@@ -1701,6 +1705,7 @@ class MainViewController: UIViewController {
 
     @objc
     private func keyboardWillHide() {
+        isKeyboardHiding = true
         if !didSendGestureDismissPixel, newTabPageViewController?.isDragging == true, keyboardShowing {
             cancelPendingAppOpenKeyboard()
             PixelKit.fire(Pixel.Event.addressBarGestureDismiss)
@@ -1729,6 +1734,7 @@ class MainViewController: UIViewController {
     @objc
     private func keyboardDidHide() {
         keyboardShowing = false
+        isKeyboardHiding = false
         didSendGestureDismissPixel = false
 
         if #available(iOS 26, *) {
@@ -8783,6 +8789,12 @@ extension MainViewController: TabDelegate {
         }
     }
 
+    private func selectTabBySwipe(_ tab: Tab) {
+        isSelectingTabBySwipe = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
+        defer { isSelectingTabBySwipe = false }
+        selectTab(tab)
+    }
+
     func selectTab(_ tab: Tab) {
         if tab.uid != tabManager.currentTabsModel.currentTab?.uid {
             newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
@@ -9765,6 +9777,7 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+        daxDialogsManager.checkTimeLimit()
 
         // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
         // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).

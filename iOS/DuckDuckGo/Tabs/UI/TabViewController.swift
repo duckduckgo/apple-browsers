@@ -133,7 +133,6 @@ struct HTTPSUpgradeNavigationTracker {
 }
 
 class TabViewController: UIViewController {
-    private var cpmReadinessDocumentIsGET = false
 
     private struct Constants {
         static let frameLoadInterruptedErrorCode = 102
@@ -1363,7 +1362,7 @@ class TabViewController: UIViewController {
             if isAITab, usesFloatingAIChrome || lastDuckAIInnerScrollInsets != nil {
                 let innerInsets = usesFloatingAIChrome ? obscuredInsets : .zero
                 if lastDuckAIInnerScrollInsets != innerInsets {
-                    DuckAIChatScrollInsetStyler.apply(innerInsets, to: webView)
+                    DuckAIChatScrollInsetStyler.apply(innerInsets, keepsEndInView: keepsDuckAIChatEndInView, to: webView)
                     lastDuckAIInnerScrollInsets = innerInsets
                 }
             }
@@ -2981,9 +2980,6 @@ extension TabViewController: WKNavigationDelegate {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
                 .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
             )
-            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.matchReadinessRecoveryNavigation(tabIdentifier: tabModel.uid) {
-                $0 === navigation
-            }
         }
         sitePermissionsDidStartProvisionalNavigation(webView, navigation: navigation)
         navigationPixelResponder.didStart(navigation)
@@ -3016,7 +3012,9 @@ extension TabViewController: WKNavigationDelegate {
         terminationReloadMonitor.didFinish()
         if isAITab, #available(iOS 26, *),
            floatingUIManager.isDuckAIAndInputLiquidGlassEnabled {
-            DuckAIChatScrollInsetStyler.apply(lastDuckAIInnerScrollInsets ?? .zero, to: webView)
+            DuckAIChatScrollInsetStyler.apply(lastDuckAIInnerScrollInsets ?? .zero,
+                                              keepsEndInView: keepsDuckAIChatEndInView,
+                                              to: webView)
         }
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
@@ -3041,9 +3039,6 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = webView.url {
             if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
-                webExtensionManager.cpmMessagingHealthMonitor.registerReadinessRecoveryDocument(
-                    tabIdentifier: tabModel.uid, webView: webView, isGET: cpmReadinessDocumentIsGET
-                )
                 webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
                     tabIdentifier: tabModel.uid,
                     url: url,
@@ -3681,9 +3676,6 @@ extension TabViewController: WKNavigationDelegate {
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
         let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
             if case .allow = decision {
-                if navigationAction.isTargetingMainFrame {
-                    self?.cpmReadinessDocumentIsGET = navigationAction.request.httpMethod == "GET"
-                }
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
             decisionHandler(decision.webKitPolicy)

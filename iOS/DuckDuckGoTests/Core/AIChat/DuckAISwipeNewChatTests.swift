@@ -285,14 +285,6 @@ struct DuckAISwipeNewChatTests {
 
     typealias Commit = DuckAISwipeNewChat.Commit
 
-    /// Releases on chat "old" and lets the fade finish with the chat unchanged and still eligible.
-    private func fadedOut() -> Commit {
-        var commit = Commit.idle
-        _ = commit.handle(.released(chatID: "old"))
-        _ = commit.handle(.fadedOut(chatID: "old", isEligible: true))
-        return commit
-    }
-
     @available(iOS 16, macOS 13, *)
     @Test("Releasing fades the old chat out before asking for a new tab", .timeLimit(.minutes(1)))
     func releaseFadesOutFirst() {
@@ -302,27 +294,16 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Once faded out, a new tab is asked for once, and the swipe resets when the old tab goes off screen",
-          .timeLimit(.minutes(1)))
-    func fadedOutRequestsNewTabThenRestoresWhenTabLeaves() {
+    @Test("Once faded out, the chat is put back before a new tab is asked for, once", .timeLimit(.minutes(1)))
+    func fadedOutRestoresThenRequestsNewTab() {
         var commit = Commit.idle
         _ = commit.handle(.released(chatID: "old"))
-        #expect(commit.handle(.fadedOut(chatID: "old", isEligible: true)) == [.requestNewChat, .scheduleTimeout])
-        #expect(commit == .awaitingNewTab)
+        #expect(commit.handle(.fadedOut(chatID: "old", isEligible: true)) == [.restore, .requestNewChat])
+        #expect(commit == .idle)
 
-        #expect(commit.handle(.urlChanged(chatID: nil)).isEmpty)
         #expect(commit.handle(.fadedOut(chatID: "old", isEligible: true)).isEmpty)
-        #expect(commit.handle(.cancelled) == [.restore])
-        #expect(commit == .idle)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("If the new tab never comes, the old chat is put back when the wait times out", .timeLimit(.minutes(1)))
-    func timeoutRestores() {
-        var commit = fadedOut()
-        #expect(commit.handle(.timedOut) == [.restore])
-        #expect(commit == .idle)
-        #expect(commit.handle(.timedOut).isEmpty)
+        #expect(commit.handle(.urlChanged(chatID: nil)).isEmpty)
+        #expect(commit.handle(.cancelled).isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -356,16 +337,12 @@ struct DuckAISwipeNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Cancelling at any point puts the chat back, and later events do nothing", .timeLimit(.minutes(1)))
+    @Test("Cancelling during the fade puts the chat back, and later events do nothing", .timeLimit(.minutes(1)))
     func cancelRestores() {
         var leaving = Commit.idle
         _ = leaving.handle(.released(chatID: "old"))
         #expect(leaving.handle(.cancelled) == [.restore])
         #expect(leaving.handle(.fadedOut(chatID: "old", isEligible: true)).isEmpty)
-
-        var awaiting = fadedOut()
-        #expect(awaiting.handle(.cancelled) == [.restore])
-        #expect(awaiting.handle(.timedOut).isEmpty)
 
         var idle = Commit.idle
         #expect(idle.handle(.cancelled).isEmpty)

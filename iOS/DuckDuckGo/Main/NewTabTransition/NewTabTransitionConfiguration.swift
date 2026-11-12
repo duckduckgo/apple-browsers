@@ -46,7 +46,7 @@ struct NewTabTransitionConfiguration: Codable, Equatable {
 
     func motion(for origin: Tuning.Origin) -> Tuning.Motion {
         switch origin {
-        case .rightOfCenter, .tapLocation: return rightOfCenter
+        case .rightOfCenter: return rightOfCenter
         case .belowCenter: return belowCenter
         }
     }

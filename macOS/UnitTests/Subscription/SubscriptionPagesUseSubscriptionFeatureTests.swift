@@ -48,6 +48,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private var mockWideEvent: WideEventMock!
     private var mockEventReporter: MockSubscriptionEventReporter!
     private var mockRequestValidator: ScriptRequestValidatorMock!
+    private var mockBuildType: ApplicationBuildTypeMock!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -74,6 +75,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockWideEvent = WideEventMock()
         mockEventReporter = MockSubscriptionEventReporter()
         mockRequestValidator = ScriptRequestValidatorMock()
+        mockBuildType = ApplicationBuildTypeMock()
 
         let flowPerformer = DefaultSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
@@ -99,7 +101,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                       subscriptionEventReporter: mockEventReporter,
                                                       pendingTransactionHandler: MockPendingTransactionHandler(),
                                                       flowPerformer: flowPerformer,
-                                                      requestValidator: mockRequestValidator)
+                                                      requestValidator: mockRequestValidator,
+                                                      buildType: mockBuildType)
         sut.with(broker: broker)
     }
 
@@ -159,6 +162,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     func testGetFeatureConfig_WhenStripeSupported_ReturnsCorrectConfig() async throws {
         // Given
+        mockBuildType.isSparkleBuild = true
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
 
         // When
@@ -193,8 +197,23 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
+    func testGetFeatureConfig_WhenStripeSupportedOnNonSparkleBuild_DoesNotUseAlternateStripePaymentFlow() async throws {
+        mockBuildType.isSparkleBuild = false
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
+
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
+
+        guard let featureValue = result as? GetFeatureValue else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
+    }
+
     func testGetFeatureConfig_WhenBothFeaturesEnabled_ReturnsCorrectConfig() async throws {
         // Given
+        mockBuildType.isSparkleBuild = true
         mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
 
@@ -838,7 +857,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.confirmPurchaseResponse = .success(subscription)
 
@@ -994,7 +1014,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(stripeSubscription)
         subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
@@ -1038,7 +1059,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(stripeSubscription)
         subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
@@ -1099,7 +1121,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1119,6 +1142,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             tier: .pro,
             availableChanges: nil,
             pendingPlans: nil,
+            planCountry: nil,
         )
         subscriptionManager.confirmPurchaseResponse = .success(newSubscription)
 
@@ -1158,7 +1182,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1199,7 +1224,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1241,7 +1267,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1260,7 +1287,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.confirmPurchaseResponse = .success(newSubscription)
 

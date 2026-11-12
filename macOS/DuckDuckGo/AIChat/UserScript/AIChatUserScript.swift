@@ -219,18 +219,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .getAIChatTabContent:
             return handler.getAIChatTabContent
 
-        // Client tools. The script is the permission source, so a prompt goes back to the page
-        // that made the call and only that page can answer it.
+        // Client tools. The script stands for the chat in permission prompts, which the browser shows
+        // and answers natively: the page has no message to answer them.
         case .executeClientTool:
             return { @MainActor [weak self] params, message in
                 guard let self else { return nil }
-                let pusher = self.isClientToolsPage(message.messageWebView?.url) ? self : nil
-                return await self.handler.executeClientTool(params: params, message: message, permissionPusher: pusher)
-            }
-        case .respondToClientToolPermission:
-            return { @MainActor [weak self] params, message in
-                guard let self else { return nil }
-                return await self.handler.respondToClientToolPermission(params: params, message: message, source: self)
+                let prompter = self.isClientToolsPage(message.messageWebView?.url) ? self : nil
+                return await self.handler.executeClientTool(params: params, message: message, permissionPrompter: prompter)
             }
 
         case .reportMetric:
@@ -279,16 +274,16 @@ final class AIChatUserScript: NSObject, Subfeature {
 
 // MARK: - Client tools
 
-extension AIChatUserScript: ClientToolPermissionPushing {
+extension AIChatUserScript: ClientToolPermissionPrompting {
+
+    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
+    @MainActor
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        false
+    }
 
     @MainActor
-    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
-        guard let webView, let broker,
-              isClientToolsPage(webView.url),
-              ClientToolPayloadLimits.fits(prompt, within: ClientToolPayloadLimits.permissionBytes) else { return false }
-        broker.push(method: AIChatUserScriptMessages.clientToolPermissionRequested.rawValue, params: prompt, for: self, into: webView)
-        return true
-    }
+    func withdrawClientToolPermissionPrompt(requestID: String) {}
 
     /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
     /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.

@@ -28,7 +28,7 @@ struct VPNSignedOutRemover {
     private let stopAndRemoveVPN: () async -> Void
 
     /// - Parameters:
-    ///   - subscriptionManager: Reports whether the user is signed in, and restores a missing token from the backup.
+    ///   - subscriptionManager: Provides the stored token, restoring a missing one from the backup.
     ///   - isVPNInstalled: Returns whether a VPN configuration is installed.
     ///   - stopAndRemoveVPN: Stops the tunnel and removes the VPN configuration.
     init(subscriptionManager: any SubscriptionManager,
@@ -39,15 +39,22 @@ struct VPNSignedOutRemover {
         self.stopAndRemoveVPN = stopAndRemoveVPN
     }
 
-    /// Removes the installed VPN when the user is signed out.
-    /// When the user appears signed out, waits for `SubscriptionManager.restoreMissingTokenIfPossible()` first,
-    /// and keeps the VPN when the restore signs the user back in.
+    /// Removes the installed VPN when no token is stored and none can be restored from the backup.
+    /// Keeps the VPN when a token is stored, when one is restored, and when the stored token can't be read.
     func removeVPNIfSignedOut() async {
-        guard !subscriptionManager.isUserAuthenticated else { return }
-
-        await subscriptionManager.restoreMissingTokenIfPossible()
-
-        guard !subscriptionManager.isUserAuthenticated, await isVPNInstalled() else { return }
-        await stopAndRemoveVPN()
+        do {
+            // `.local` reads the stored token without any network call. When none is stored, it waits for the
+            // restore from the backup, so a token that is being restored doesn't remove the VPN.
+            // Not `.localValid`: it refreshes an expired access token, and a rejected refresh runs the token
+            // recovery and can sign the user out. That is too much to run each time the app becomes active.
+            _ = try await subscriptionManager.getTokenContainer(policy: .local)
+        } catch SubscriptionManagerError.noTokenAvailable {
+            // No token is stored and the backup restore didn't produce one: the user is signed out
+            guard await isVPNInstalled() else { return }
+            await stopAndRemoveVPN()
+        } catch {
+            // The stored token couldn't be read, for example while the keychain is locked: it may still exist,
+            // so keep the VPN
+        }
     }
 }

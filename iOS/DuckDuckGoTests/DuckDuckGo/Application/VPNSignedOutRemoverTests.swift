@@ -19,6 +19,7 @@
 
 import XCTest
 @_spi(Testing) import Networking
+import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
@@ -46,15 +47,20 @@ final class VPNSignedOutRemoverTests: XCTestCase {
                             stopAndRemoveVPN: { [unowned self] in self.removeCallCount += 1 })
     }
 
-    func testWhenMissingTokenIsRestoredFromBackupThenVPNIsKept() async {
-        subscriptionManager.resultTokenContainer = nil
-        subscriptionManager.restoreMissingTokenIfPossibleHandler = { [unowned self] in
-            self.subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        }
+    func testWhenTokenIsStoredThenVPNIsKept() async {
+        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 
         await makeRemover().removeVPNIfSignedOut()
 
-        XCTAssertEqual(subscriptionManager.restoreMissingTokenIfPossibleCallCount, 1)
+        XCTAssertEqual(removeCallCount, 0)
+    }
+
+    func testWhenMissingTokenIsRestoredFromBackupThenVPNIsKept() async {
+        subscriptionManager.resultTokenContainer = nil
+        subscriptionManager.getTokenContainerHandler = { _ in OAuthTokensFactory.makeValidTokenContainer() }
+
+        await makeRemover().removeVPNIfSignedOut()
+
         XCTAssertEqual(removeCallCount, 0)
     }
 
@@ -63,29 +69,40 @@ final class VPNSignedOutRemoverTests: XCTestCase {
 
         await makeRemover().removeVPNIfSignedOut()
 
-        XCTAssertEqual(subscriptionManager.restoreMissingTokenIfPossibleCallCount, 1)
         XCTAssertEqual(removeCallCount, 1)
     }
 
-    func testWhenSignedOutThenVPNIsRemovedOnlyAfterTheRestoreFinishes() async {
+    func testWhenStoredTokenCantBeReadThenVPNIsKept() async {
+        subscriptionManager.getTokenContainerHandler = { _ in
+            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: NSError(domain: NSOSStatusErrorDomain, code: -25308))
+        }
+
+        await makeRemover().removeVPNIfSignedOut()
+
+        XCTAssertEqual(removeCallCount, 0)
+    }
+
+    func testTokenIsReadWithLocalPolicyOnly() async {
         subscriptionManager.resultTokenContainer = nil
+
+        await makeRemover().removeVPNIfSignedOut()
+
+        XCTAssertEqual(subscriptionManager.getTokenContainerPolicies, [.local])
+    }
+
+    func testWhenSignedOutThenVPNIsRemovedOnlyAfterTheTokenRequestFinishes() async {
         var events: [String] = []
-        subscriptionManager.restoreMissingTokenIfPossibleHandler = { events.append("restore") }
+        subscriptionManager.getTokenContainerHandler = { _ in
+            events.append("token")
+            throw SubscriptionManagerError.noTokenAvailable
+        }
         let remover = VPNSignedOutRemover(subscriptionManager: subscriptionManager,
                                           isVPNInstalled: { true },
                                           stopAndRemoveVPN: { events.append("remove") })
 
         await remover.removeVPNIfSignedOut()
 
-        XCTAssertEqual(events, ["restore", "remove"])
-    }
-
-    func testWhenSignedInThenVPNIsKept() async {
-        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-
-        await makeRemover().removeVPNIfSignedOut()
-
-        XCTAssertEqual(removeCallCount, 0)
+        XCTAssertEqual(events, ["token", "remove"])
     }
 
     func testWhenSignedOutAndVPNIsNotInstalledThenNothingIsRemoved() async {

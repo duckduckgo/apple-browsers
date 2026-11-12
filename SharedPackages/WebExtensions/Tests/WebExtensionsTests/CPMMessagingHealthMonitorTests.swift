@@ -137,6 +137,18 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixels.breakages.isEmpty)
     }
 
+    func testWaitsEndWhenTheEmbeddedExtensionIsRemoved() {
+        commit("a", path: "a")
+        commit("b", path: "b")
+        advance(10)
+
+        monitor.handle(.embeddedExtensionRemoved)
+        advance(100)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertTrue(pixels.breakages.isEmpty, "an uninstalled or upgraded extension is gone, not broken")
+    }
+
     func testNonHTMLDocumentIsNotMeasured() {
         commit("a", path: "file.pdf", kind: .nonHTMLDocument)
         advance(100)

@@ -669,6 +669,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
+        if embeddedType == .embedded { cpmMessagingHealthMonitor.handle(.embeddedExtensionRemoved) }
         reportUninstalled(installedExtension)
         notifyUpdate()
         if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {

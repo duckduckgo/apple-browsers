@@ -131,6 +131,15 @@ final class PrivacyDashboardTabExtension {
         }
     }
 
+    /// Backstop for tabs that never reach the tab-close hook (the AI Chat sidebar tab, a modal tab): they are not in
+    /// a tab collection, so releasing them is the only sign that they are gone.
+    deinit {
+        DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, tabIdentifier] in
+            guard #available(macOS 15.4, *) else { return }
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: tabIdentifier))
+        }
+    }
+
     @available(macOS 15.4, *)
     @MainActor
     private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {

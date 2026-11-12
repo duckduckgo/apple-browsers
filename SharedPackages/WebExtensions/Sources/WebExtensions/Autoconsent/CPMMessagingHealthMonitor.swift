@@ -67,6 +67,9 @@ public enum CPMMessagingHealthEvent: Sendable {
     /// page's init (no configuration, no settings): the extension is running, but the page stays unanswered.
     case dashboardResponse(url: URL, extensionIdentifier: String? = nil, isAnswer: Bool = true)
     case extensionLifecycle(WebExtensionLifecycleEvent)
+    /// The embedded extension was uninstalled, or replaced by a newer version: pages waiting for it will never be
+    /// answered, and the extension is gone rather than broken.
+    case embeddedExtensionRemoved
     /// The process may stop running: iOS entered the background, or macOS is going to sleep.
     case interruptionBegan
     /// The app is running again: iOS returns to the foreground, or macOS woke.
@@ -167,6 +170,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             break
         case .extensionLifecycle(let lifecycleEvent):
             handle(lifecycleEvent)
+        case .embeddedExtensionRemoved:
+            endWaits()
         case .interruptionBegan:
             suspensionStart = suspensionStart ?? now()
         case .interruptionEnded:
@@ -235,15 +240,20 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         pixelFiring.fire(.cpmMessagingBreakagePersistent)
     }
 
+    /// Drops every wait and the silent series: the extension that would have answered is gone or being replaced.
+    private func endWaits() {
+        pendingCommits.removeAll()
+        silentTabs.removeAll()
+        didReportPersistentBreakage = false
+    }
+
     /// Updates state from an extension-manager lifecycle event. A reload ends the waits and the silent series.
     func handle(_ event: WebExtensionLifecycleEvent) {
         guard event.extensionType == .embedded else { return }
 
         switch event {
         case .willReload, .reloaded:
-            pendingCommits.removeAll()
-            silentTabs.removeAll()
-            didReportPersistentBreakage = false
+            endWaits()
         case .loaded, .reloadFailed:
             break
         }
@@ -276,6 +286,8 @@ private extension CPMMessagingHealthEvent {
             return "dashboardResponse"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"
+        case .embeddedExtensionRemoved:
+            return "embeddedExtensionRemoved"
         case .interruptionBegan:
             return "interruptionBegan"
         case .interruptionEnded:

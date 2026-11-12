@@ -2678,7 +2678,8 @@ extension TabViewController: WKNavigationDelegate {
         tabModel.clearPendingSessionRestoration()
 
         if let url = webView.url {
-            if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
+            // A link preview has no extension attached, so nothing would ever answer it.
+            if #available(iOS 18.4, *), !isLinkPreview, let webExtensionManager = webExtensionManagerProvider() {
                 // The error page reports the failed URL but never runs content scripts.
                 let isErrorPage = specialErrorPageNavigationHandler.isSpecialErrorPageRequest
                 let event = CPMMessagingHealthEvent.navigationCommitted(

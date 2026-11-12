@@ -42,6 +42,24 @@ on:
         required: false
         default: never
         type: string
+      job-cap:
+        type: string
+        default: default
+      execution-mode:
+        type: string
+        default: retry
+      iterations:
+        type: string
+        default: '2'
+      app-lock-relaunch-gap:
+        type: string
+        default: '0'
+      app-lock-disable-animations:
+        type: string
+        default: 'false'
+      simulator-log-level:
+        type: string
+        default: debug
 
 jobs:
   run-ui-test:
@@ -57,6 +75,12 @@ jobs:
     timeout-minutes: 45
 
     env:
+      UI_TEST_JOB_CAP: ${{ inputs.job-cap }}
+      UI_TEST_EXECUTION_MODE: ${{ inputs.execution-mode }}
+      UI_TEST_ITERATIONS: ${{ inputs.iterations }}
+      APP_LOCK_RELAUNCH_GAP: ${{ inputs.app-lock-relaunch-gap }}
+      APP_LOCK_DISABLE_ANIMATIONS: ${{ inputs.app-lock-disable-animations }}
+      SIMULATOR_LOG_LEVEL: ${{ inputs.simulator-log-level }}
       IOS_VERSION: ${{ inputs.ios-version }}
       TEST_CLASS: ${{ inputs.test }}
       DEVICE: ${{ inputs.device }}
@@ -68,6 +92,9 @@ jobs:
     - name: Check out the code
       id: checkout
       uses: actions/checkout@v6
+
+    - name: Validate experiment options
+      run: source scripts/ui_test_experiment_options.sh
 
     - name: Print macOS version
       run: sw_vers
@@ -115,7 +142,8 @@ jobs:
         fi
         xcrun simctl bootstatus "$simulator_udid" -b
         echo "simulator-udid=$simulator_udid" >> "$GITHUB_OUTPUT"
-        xcrun simctl spawn "$simulator_udid" log config --subsystem General --mode level:debug,persist:debug
+        source scripts/ui_test_experiment_options.sh
+        xcrun simctl spawn "$simulator_udid" log config --subsystem General --mode "$simulator_log_mode"
         xcrun simctl spawn "$simulator_udid" log config --status --subsystem General
 
     - name: Record simulator runtime diagnostics
@@ -166,6 +194,16 @@ jobs:
         SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
         DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
       run: |
+        source scripts/ui_test_experiment_options.sh
+        effective_job_cap=$production_parallel
+        if [[ "$USER_MODE" == internal ]]; then effective_job_cap=$internal_parallel; fi
+        jq -n --arg requested_job_cap "$UI_TEST_JOB_CAP" --argjson effective_job_cap "$effective_job_cap" \
+          --arg execution_mode "$UI_TEST_EXECUTION_MODE" --arg iterations "$UI_TEST_ITERATIONS" \
+          --arg app_lock_relaunch_gap "$APP_LOCK_RELAUNCH_GAP" --arg simulator_log_level "$SIMULATOR_LOG_LEVEL" \
+          --arg app_lock_disable_animations "$APP_LOCK_DISABLE_ANIMATIONS" --arg test_class "$TEST_CLASS" --arg device "$DEVICE" --arg user_mode "$USER_MODE" \
+          '{requested_job_cap: $requested_job_cap, effective_job_cap: $effective_job_cap, execution_mode: $execution_mode, iterations: $iterations, app_lock_relaunch_gap: $app_lock_relaunch_gap,
+            simulator_log_level: $simulator_log_level, app_lock_disable_animations: $app_lock_disable_animations, test_class: $test_class, device: $device, user_mode: $user_mode}' \
+          | tee experiment-options.json
         : > ui-tests.log
         xctestrun_path=$(<xctestrun-path)
         DESTINATION="platform=iOS Simulator,id=$SIMULATOR_UDID"
@@ -176,17 +214,28 @@ jobs:
           *) echo "::error::Unsupported diagnostics mode '$DIAGNOSTICS_MODE'."; exit 1 ;;
         esac
         set -o pipefail && env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
+          TEST_RUNNER_APP_LOCK_DISABLE_ANIMATIONS="$APP_LOCK_DISABLE_ANIMATIONS" \
+          TEST_RUNNER_APP_LOCK_RELAUNCH_GAP="$APP_LOCK_RELAUNCH_GAP" \
+          TEST_RUNNER_UI_TEST_EXECUTION_MODE="$UI_TEST_EXECUTION_MODE" \
+          TEST_RUNNER_UI_TEST_ITERATIONS="$UI_TEST_ITERATIONS" \
           xcodebuild test-without-building \
           -xctestrun "$xctestrun_path" \
           -destination "$DESTINATION" \
           -resultBundlePath TestResults.xcresult \
-          -test-iterations 2 \
-          -retry-tests-on-failure \
-          -test-repetition-relaunch-enabled YES \
+          "${repetition_args[@]}" \
           "-only-testing:UI Tests/$TEST_CLASS" \
           "${diagnostics_args[@]}" \
         2>&1 | tee ui-tests.log \
         | xcbeautify
+
+    - name: Export available test videos
+      if: always() && github.event_name == 'workflow_dispatch' && steps.run-ui-tests.outcome != 'skipped'
+      continue-on-error: true
+      run: |
+        # Includes recorded videos when XCTest retained them. Timeouts may have no recording.
+        if [[ -d TestResults.xcresult ]]; then
+          xcrun xcresulttool export attachments --path TestResults.xcresult --output-path test-attachments --filter '*.mp4'
+        fi
 
     - name: Restore simulator logging defaults
       if: always() && steps.simulator-logging.outputs.simulator-udid != ''
@@ -250,5 +299,7 @@ jobs:
           iOS/ui-tests.log
           iOS/TestResults.xcresult
           iOS/results-summary.json
+          iOS/experiment-options.json
+          iOS/test-attachments
         if-no-files-found: warn
         retention-days: 7

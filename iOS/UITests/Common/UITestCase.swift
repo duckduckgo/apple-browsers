@@ -60,10 +60,19 @@ class UITestCase: XCTestCase {
 
     /// Relaunches without resetting defaults so tests can exercise multi-launch flows.
     /// Internal-user mode and subclass launch arguments/environment are applied on every launch.
-    func relaunchAppPreservingState(file: StaticString = #filePath, line: UInt = #line) throws {
-        app.terminate()
+    func relaunchAppPreservingState(delayAfterTermination: TimeInterval = 0, file: StaticString = #filePath, line: UInt = #line) throws {
+        XCTContext.runActivity(named: "Terminate app for state-preserving relaunch") { _ in
+            app.terminate()
+        }
+        if delayAfterTermination > 0 {
+            XCTContext.runActivity(named: "Experimental relaunch gap: \(delayAfterTermination) seconds") { _ in
+                Thread.sleep(forTimeInterval: delayAfterTermination)
+            }
+        }
         try configureAppLaunch(clearingState: false)
-        app.launch()
+        XCTContext.runActivity(named: "Launch app preserving state") { _ in
+            app.launch()
+        }
         XCTAssertTrue(
             app.wait(for: .runningForeground, timeout: 30),
             "App did not return to the foreground after relaunch.",

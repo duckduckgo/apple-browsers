@@ -39,6 +39,34 @@ on:
         - production
         - internal
         - both
+      execution_mode:
+        description: "Experiment: retry failures, or repeat every test without automatic retry"
+        type: choice
+        default: retry
+        options: [retry, repeat-all]
+      iterations:
+        description: "Experiment: maximum attempts in retry mode, fixed repetitions in repeat-all (1..20)"
+        type: string
+        default: '2'
+      app_lock_relaunch_gap:
+        description: "Experiment: seconds between terminate and launch in ApplicationLockUITests only"
+        type: choice
+        default: '0'
+        options: ['0', '1', '2', '5']
+      app_lock_disable_animations:
+        description: "Experiment: disable app UIKit animations in ApplicationLockUITests only"
+        type: boolean
+        default: false
+      simulator_log_level:
+        description: "Experiment: General subsystem logging"
+        type: choice
+        default: debug
+        options: [debug, info]
+      job_cap:
+        description: "Experiment: jobs per mode; default = production 8 / internal 4; internal always capped at 4"
+        type: choice
+        default: default
+        options: [default, '1', '4', '8']
   schedule:
     - cron: '0 2 * * 1-5' # 2AM UTC to not clash with macOS tests run at 3AM
   pull_request:
@@ -74,6 +102,14 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     outputs:
+      job-cap: ${{ steps.experiments.outputs.job-cap }}
+      execution-mode: ${{ steps.experiments.outputs.execution-mode }}
+      iterations: ${{ steps.experiments.outputs.iterations }}
+      app-lock-relaunch-gap: ${{ steps.experiments.outputs.app-lock-relaunch-gap }}
+      app-lock-disable-animations: ${{ steps.experiments.outputs.app-lock-disable-animations }}
+      simulator-log-level: ${{ steps.experiments.outputs.simulator-log-level }}
+      production-parallel: ${{ steps.experiments.outputs.production-parallel }}
+      internal-parallel: ${{ steps.experiments.outputs.internal-parallel }}
       include: ${{ steps.matrix.outputs.include }}
       run-production: ${{ steps.modes.outputs.run-production }}
       run-internal: ${{ steps.modes.outputs.run-internal }}
@@ -81,6 +117,27 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Validate experiment options before building
+        id: experiments
+        working-directory: ${{ github.workspace }}
+        env:
+          UI_TEST_EXECUTION_MODE: ${{ inputs.execution_mode }}
+          UI_TEST_ITERATIONS: ${{ inputs.iterations }}
+          APP_LOCK_RELAUNCH_GAP: ${{ inputs.app_lock_relaunch_gap }}
+          APP_LOCK_DISABLE_ANIMATIONS: ${{ inputs.app_lock_disable_animations }}
+          SIMULATOR_LOG_LEVEL: ${{ inputs.simulator_log_level }}
+          UI_TEST_JOB_CAP: ${{ inputs.job_cap }}
+        run: |
+          source iOS/scripts/ui_test_experiment_options.sh
+          echo "job-cap=$UI_TEST_JOB_CAP" >> "$GITHUB_OUTPUT"
+          echo "execution-mode=$UI_TEST_EXECUTION_MODE" >> "$GITHUB_OUTPUT"
+          echo "iterations=$UI_TEST_ITERATIONS" >> "$GITHUB_OUTPUT"
+          echo "app-lock-relaunch-gap=$APP_LOCK_RELAUNCH_GAP" >> "$GITHUB_OUTPUT"
+          echo "app-lock-disable-animations=$APP_LOCK_DISABLE_ANIMATIONS" >> "$GITHUB_OUTPUT"
+          echo "simulator-log-level=$SIMULATOR_LOG_LEVEL" >> "$GITHUB_OUTPUT"
+          echo "production-parallel=$production_parallel" >> "$GITHUB_OUTPUT"
+          echo "internal-parallel=$internal_parallel" >> "$GITHUB_OUTPUT"
 
       - name: Define user-modes
         id: modes
@@ -197,6 +254,16 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Validate experiment options before building
+      env:
+        UI_TEST_EXECUTION_MODE: ${{ inputs.execution_mode }}
+        UI_TEST_ITERATIONS: ${{ inputs.iterations }}
+        APP_LOCK_RELAUNCH_GAP: ${{ inputs.app_lock_relaunch_gap }}
+        APP_LOCK_DISABLE_ANIMATIONS: ${{ inputs.app_lock_disable_animations }}
+        SIMULATOR_LOG_LEVEL: ${{ inputs.simulator_log_level }}
+        UI_TEST_JOB_CAP: ${{ inputs.job_cap }}
+      run: source scripts/ui_test_experiment_options.sh
+
     - name: Print macOS version
       run: sw_vers
 
@@ -298,7 +365,7 @@ jobs:
     strategy:
       # PRs run only production; allow up to eight class/device jobs at once.
       fail-fast: false
-      max-parallel: 8
+      max-parallel: ${{ fromJSON(needs.setup-tests.outputs.production-parallel) }}
       matrix:
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/ios_run_ui_test.yml
@@ -310,6 +377,12 @@ jobs:
       user-mode: production
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
       diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
+      job-cap: ${{ needs.setup-tests.outputs.job-cap }}
+      execution-mode: ${{ needs.setup-tests.outputs.execution-mode }}
+      iterations: ${{ needs.setup-tests.outputs.iterations }}
+      app-lock-relaunch-gap: ${{ needs.setup-tests.outputs.app-lock-relaunch-gap }}
+      app-lock-disable-animations: ${{ needs.setup-tests.outputs.app-lock-disable-animations }}
+      simulator-log-level: ${{ needs.setup-tests.outputs.simulator-log-level }}
 
   ui-tests-internal:
     name: UI Tests
@@ -318,7 +391,7 @@ jobs:
     strategy:
       # Keep internal at four, so scheduled/manual both-mode runs peak at twelve workers in total.
       fail-fast: false
-      max-parallel: 4
+      max-parallel: ${{ fromJSON(needs.setup-tests.outputs.internal-parallel) }}
       matrix:
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/ios_run_ui_test.yml
@@ -330,6 +403,12 @@ jobs:
       user-mode: internal
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
       diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
+      job-cap: ${{ needs.setup-tests.outputs.job-cap }}
+      execution-mode: ${{ needs.setup-tests.outputs.execution-mode }}
+      iterations: ${{ needs.setup-tests.outputs.iterations }}
+      app-lock-relaunch-gap: ${{ needs.setup-tests.outputs.app-lock-relaunch-gap }}
+      app-lock-disable-animations: ${{ needs.setup-tests.outputs.app-lock-disable-animations }}
+      simulator-log-level: ${{ needs.setup-tests.outputs.simulator-log-level }}
 
   test-report:
     name: Report test results

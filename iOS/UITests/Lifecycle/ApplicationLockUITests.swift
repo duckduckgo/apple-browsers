@@ -22,10 +22,38 @@ import UITestingSupport
 
 final class ApplicationLockUITests: UITestCase {
 
+    private var relaunchGap: TimeInterval = 0
+
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 
     override var additionalLaunchEnvironment: [String: String] {
-        super.additionalLaunchEnvironment.merging(["UITEST_APP_LOCK_DIAGNOSTICS": "1"]) { _, new in new }
+        var environment = super.additionalLaunchEnvironment
+        environment["UITEST_APP_LOCK_DIAGNOSTICS"] = "1"
+        if ProcessInfo.processInfo.environment["APP_LOCK_DISABLE_ANIMATIONS"] == "true" {
+            environment["UITEST_DISABLE_ANIMATIONS"] = "1"
+        }
+        return environment
+    }
+
+    override func setUpWithError() throws {
+        let environment = ProcessInfo.processInfo.environment
+        let gap = environment["APP_LOCK_RELAUNCH_GAP"] ?? "0"
+        let animations = environment["APP_LOCK_DISABLE_ANIMATIONS"] ?? "false"
+        guard ["0", "1", "2", "5"].contains(gap), ["true", "false"].contains(animations) else {
+            throw NSError(domain: "ApplicationLockUITests.Configuration", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "Invalid Application Lock experiment options."])
+        }
+        relaunchGap = TimeInterval(gap) ?? 0
+        recordPhase("Configuration: relaunchGap=\(gap), disableUIKitAnimations=\(animations), "
+                    + "executionMode=\(environment["UI_TEST_EXECUTION_MODE"] ?? "local"), iterations=\(environment["UI_TEST_ITERATIONS"] ?? "local")")
+        try super.setUpWithError()
+    }
+
+    private func recordPhase(_ phase: String) {
+        let attachment = XCTAttachment(string: "\(Date().ISO8601Format()) uptime=\(ProcessInfo.processInfo.systemUptime) \(phase)")
+        attachment.name = "Application Lock phase: \(phase)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     override func tearDownWithError() throws {
@@ -62,10 +90,14 @@ final class ApplicationLockUITests: UITestCase {
     }
 
     func testWhenApplicationLockIsEnabledThenRelaunchRequiresAuthenticationUntilLockIsDisabled() throws {
+        recordPhase("Enable Application Lock started")
         enableApplicationLock()
+        recordPhase("Enable Application Lock completed")
 
         try XCTContext.runActivity(named: "Authenticate after relaunch") { _ in
-            try relaunchAppPreservingState()
+            recordPhase("Relaunch started")
+            try relaunchAppPreservingState(delayAfterTermination: relaunchGap)
+            recordPhase("Relaunch completed")
 
             let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
             let needsRecovery = waitForAuthenticationPromptOrRecovery(authenticationReason)
@@ -77,6 +109,7 @@ final class ApplicationLockUITests: UITestCase {
                 }
             }
 
+            recordPhase("Authentication prompt ready")
             let passcodeField = springboard.secureTextFields.firstMatch
             XCTAssertTrue(
                 passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence),
@@ -86,22 +119,30 @@ final class ApplicationLockUITests: UITestCase {
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
                 "Browser did not unlock after entering the device passcode.")
+            recordPhase("Authentication completed; browser interactive")
         }
 
         XCTContext.runActivity(named: "Disable Application Lock") { _ in
+            recordPhase("Disable Application Lock: open fixture started")
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            recordPhase("Disable Application Lock: open Settings started")
             app.openSettings()
+            recordPhase("Disable Application Lock: open General started")
             app.openGeneralSettings()
+            recordPhase("Disable Application Lock: General ready")
 
             let applicationLock = app.settingsToggle(withIdentifier: "Settings.General.ApplicationLock")
             applicationLock.tapWhenHittable(in: app)
             XCTAssertTrue(
                 applicationLock.wait(for: \XCUIElement.value, equals: "0", timeout: UITestTimeouts.elementExistence),
                 "Application Lock did not become disabled.")
+            recordPhase("Disable Application Lock completed")
         }
 
         try XCTContext.runActivity(named: "Restore the page without authentication") { _ in
-            try relaunchAppPreservingState()
+            recordPhase("Relaunch started")
+            try relaunchAppPreservingState(delayAfterTermination: relaunchGap)
+            recordPhase("Relaunch completed")
 
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
@@ -110,6 +151,7 @@ final class ApplicationLockUITests: UITestCase {
             XCTAssertFalse(
                 springboard.staticTexts["Unlock DuckDuckGo."].exists,
                 "Application Lock appeared after it was disabled.")
+            recordPhase("Entire Application Lock flow completed")
         }
     }
 

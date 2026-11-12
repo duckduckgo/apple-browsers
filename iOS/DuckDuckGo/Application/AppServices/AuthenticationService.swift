@@ -111,11 +111,11 @@ extension AuthenticationService: AuthenticationViewControllerDelegate {
 // Opt-in diagnostics for the native Application Lock test; never logs credentials or authentication reasons.
 // Temporary: remove when the activation/recovery cause is confirmed and representative no-retry CI coverage no longer needs this trace.
 enum AppLockUITestDiagnostics {
-    static func record(_ event: String) {
+    static func record(_ event: @autoclosure () -> String) {
 #if DEBUG
         guard ProcessInfo.isRunningUITests,
               ProcessInfo.processInfo.environment["UITEST_APP_LOCK_DIAGNOSTICS"] == "1" else { return }
-        NSLog("Application Lock UI test: %@", event)
+        NSLog("Application Lock UI test: %@", event())
 #endif
     }
 }

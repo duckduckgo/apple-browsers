@@ -60,7 +60,9 @@ public class Authenticator: Authenticating {
             return success
         } catch {
             let authenticationError = error as NSError
-            AppLockUITestDiagnostics.record("policy.evaluationFailed domain=\(authenticationError.domain) code=\(authenticationError.code)")
+            AppLockUITestDiagnostics.record("policy.evaluationFailed domain=\(authenticationError.domain) code=\(authenticationError.code) "
+                                          + "description=\(authenticationError.localizedDescription) debugDescription=\(authenticationError.debugDescription) "
+                                          + "underlyingError=\(String(describing: authenticationError.userInfo[NSUnderlyingErrorKey]))")
             PixelKit.fire(Pixel.Event.dbLocalAuthenticationError.withError(error))
         }
         return false

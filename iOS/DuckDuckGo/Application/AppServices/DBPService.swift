@@ -174,7 +174,8 @@ final class DBPService: NSObject {
         }
         guard value == "true", let dbpIOSManager else { return }
 
-        if await dbpIOSManager.startDebugServer() {
+        let contentBlocking = DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+        if await dbpIOSManager.startDebugServer(contentBlocking: contentBlocking) {
             Logger.dataBrokerProtection.log("PIR debug server started from launch option on port \(dbpIOSManager.debugServerPort ?? 0, privacy: .public)")
         }
     }

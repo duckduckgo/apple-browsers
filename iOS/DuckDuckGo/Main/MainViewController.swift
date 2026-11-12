@@ -69,7 +69,7 @@ struct StartupOnboardingDecision {
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
              .aiSearchSettingsSelection, .aiModelSelection,
-             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization:
+             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:

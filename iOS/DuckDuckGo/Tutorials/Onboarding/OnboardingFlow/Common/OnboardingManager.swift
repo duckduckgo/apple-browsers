@@ -165,6 +165,7 @@ extension OnboardingIntroStep {
     static let addressBarPositionSelection: Self = .renderable(.addressBarPositionSelection)
     static let searchExperienceSelection: Self = .renderable(.searchExperienceSelection)
     static let duckAIQuerySelection: Self = .renderable(.duckAIQuerySelection)
+    static let tryVPN: Self = .renderable(.tryVPN)
 
     static func introDialog(isReturningUser: Bool) -> Self {
         .renderable(.introDialog(isReturningUser: isReturningUser))
@@ -188,6 +189,7 @@ extension OnboardingIntroStep {
         case addressBarPositionSelection
         case searchExperienceSelection
         case duckAIQuerySelection
+        case tryVPN // VPN download reason: offers the VPN free trial.
     }
 
     /// Identifies which interlude experience the host should run.
@@ -220,6 +222,7 @@ extension OnboardingIntroStep {
         case .renderable(.addressBarPositionSelection): return .addressBarPositionSelection
         case .renderable(.searchExperienceSelection): return .searchExperienceSelection
         case .renderable(.duckAIQuerySelection): return .duckAIQuerySelection
+        case .renderable(.tryVPN): return .tryVPN
         case .interlude(.duckAI): return .interludeDuckAI
         }
     }
@@ -260,6 +263,7 @@ enum OnboardingResumeStep: String {
     case appIconSelection
     case addressBarPositionSelection
     case searchExperienceSelection
+    case tryVPN
     /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
     case duckAIQuerySelection
     /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
@@ -489,8 +493,7 @@ private extension OnboardingManager {
         case .browserPrivately:
             personalisationSteps = [.searchExperienceSelection]
         case .vpn:
-            // TODO: Replace with the "Try VPN" steps once they land.
-            personalisationSteps = [.searchExperienceSelection]
+            personalisationSteps = [.tryVPN, .searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:

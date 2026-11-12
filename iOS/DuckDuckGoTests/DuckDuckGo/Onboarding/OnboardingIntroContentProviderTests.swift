@@ -487,6 +487,39 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.competitor == expectedCompetitor)
         }
 
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN reason shows the subscription note, and only the other reasons omit it", .timeLimit(.minutes(1)), arguments: OnboardingDownloadReason.allCases)
+        func subscriptionFooterPerReason(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            let expectedFooter = reason == .vpn ? UserText.Onboarding.BrowsersComparison.vpnSubscriptionFooter : nil
+            #expect(result.footer == expectedFooter)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN reason's table reuses the ad-blocking rows without AI chat and trackers, then adds a subscription VPN row", .timeLimit(.minutes(1)))
+        func vpnFeaturesReuseAdBlockingRows() {
+            // WHEN
+            let features = RebrandedComparisonTableModel.browserFeatures(for: .vpn)
+
+            // THEN
+            let adBlockingFeatures = RebrandedComparisonTableModel.browserFeatures(for: .blockAds)
+            #expect(Array(features.prefix(3)) == Array(adBlockingFeatures.prefix(3)))
+            #expect(features.map(\.title) == [
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopupsAndAds,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.hideLocationWithVPN
+            ])
+            #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .subscription])
+            #expect(features.allSatisfy { $0.competitorAvailability == .unavailable })
+        }
+
         @Test("Nil Download Reason keeps Safari as the competitor")
         func nilReasonUsesSafariCompetitor() {
             // GIVEN
@@ -498,6 +531,29 @@ struct OnboardingIntroContentProviderTests {
             // THEN
             #expect(result.competitor == .safari)
         }
+    }
+
+    @MainActor
+    @Suite("Try VPN Content")
+    struct TryVPNContent {
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check Try VPN content uses its copy and a skip button", .timeLimit(.minutes(1)))
+        func checkTryVPNContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.tryVPNContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.TryVPN.title)
+            #expect(result.message == UserText.Onboarding.TryVPN.message)
+            #expect(result.footer == UserText.Onboarding.TryVPN.footer)
+            #expect(result.primaryCTA == UserText.Onboarding.TryVPN.cta)
+            #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
     }
 
     @MainActor

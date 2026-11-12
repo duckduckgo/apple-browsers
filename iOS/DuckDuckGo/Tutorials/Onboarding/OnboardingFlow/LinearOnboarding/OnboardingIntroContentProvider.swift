@@ -39,6 +39,7 @@ protocol OnboardingIntroContentProviding {
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
     var searchExperienceContent: OnboardingSearchExperienceContent { get }
     var duckAIQueryContent: OnboardingDuckAIQueryContent { get }
+    var tryVPNContent: OnboardingTryVPNContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -400,10 +401,32 @@ struct OnboardingComparisonContent: Equatable {
     let subHeader: String?
     let competitor: Competitor
     let features: [RebrandedComparisonTableModel.Feature]
+    /// When set, renders a subscription note below the table.
+    let footer: String?
     let primaryCTA: String
     /// When set, renders a secondary skip button below the primary CTA.
     let secondaryCTA: String?
     let daxAnimation: DaxAnimation?
+
+    init(
+        title: String,
+        subHeader: String?,
+        competitor: Competitor,
+        features: [RebrandedComparisonTableModel.Feature],
+        footer: String? = nil,
+        primaryCTA: String,
+        secondaryCTA: String?,
+        daxAnimation: DaxAnimation?
+    ) {
+        self.title = title
+        self.subHeader = subHeader
+        self.competitor = competitor
+        self.features = features
+        self.footer = footer
+        self.primaryCTA = primaryCTA
+        self.secondaryCTA = secondaryCTA
+        self.daxAnimation = daxAnimation
+    }
 }
 
 extension OnboardingIntroContentProvider {
@@ -459,6 +482,7 @@ extension OnboardingIntroContentProvider {
             subHeader: subHeader,
             competitor: competitor,
             features: RebrandedComparisonTableModel.browserFeatures(for: reason),
+            footer: reason == .vpn ? UserText.Onboarding.BrowsersComparison.vpnSubscriptionFooter : nil,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
             daxAnimation: nil
@@ -474,6 +498,32 @@ extension OnboardingIntroContentProvider {
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
             secondaryCTA: nil,
             daxAnimation: .wingBottom
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Try VPN
+
+struct OnboardingTryVPNContent: Equatable {
+    let title: String
+    let message: String
+    let footer: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
+extension OnboardingIntroContentProvider {
+
+    var tryVPNContent: OnboardingTryVPNContent {
+        OnboardingTryVPNContent(
+            title: UserText.Onboarding.TryVPN.title,
+            message: UserText.Onboarding.TryVPN.message,
+            footer: UserText.Onboarding.TryVPN.footer,
+            primaryCTA: UserText.Onboarding.TryVPN.cta,
+            secondaryCTA: UserText.onboardingSkip,
+            daxAnimation: .wingLeft
         )
     }
 

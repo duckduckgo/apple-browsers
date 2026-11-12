@@ -27,9 +27,9 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
 
     public static let modelInfo = AIChatLocalModelInfo(id: "apple-foundation-models", name: "Apple Intelligence")
 
-    /// Used when token counting isn't available (before macOS / iOS 26.4). Roughly 2,000 tokens of
-    /// English, which leaves room for the instructions and the answer in a 4,096-token window.
-    static let characterBudgetWithoutTokenCounting = 8_000
+    /// Used when token counting isn't available (before macOS / iOS 26.4). It leaves room for the
+    /// instructions and the answer in a 4,096-token window.
+    static let estimatedTokenBudget = 2_000
 
     /// Token counts are estimates; keep a margin so a long page doesn't hit the window mid-answer.
     static let tokenSafetyMargin = 128
@@ -173,18 +173,44 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
 #endif
     }
 
-#if canImport(FoundationModels)
-    struct FittedContent {
+    struct FittedContent: Equatable {
         let content: String
         let truncated: Bool
         let promptTokens: Int?
     }
 
+    /// Cuts the content to `estimatedTokenBudget` without a tokenizer. A flat character limit
+    /// doesn't work: English runs about 4 characters a token, Chinese, Japanese and Korean about 1.
+    static func estimatedBudgetFit(_ content: String) -> FittedContent {
+        var tokens = 0.0
+        for index in content.indices {
+            tokens += estimatedTokens(for: content[index])
+            if tokens > Double(estimatedTokenBudget) {
+                return FittedContent(content: String(content[..<index]), truncated: true, promptTokens: nil)
+            }
+        }
+        return FittedContent(content: content, truncated: false, promptTokens: nil)
+    }
+
+    private static func estimatedTokens(for character: Character) -> Double {
+        guard let scalar = character.unicodeScalars.first else { return 0 }
+        if scalar.isASCII { return 0.25 }
+        switch scalar.value {
+        // Hangul Jamo, CJK punctuation, kana and ideographs, Hangul syllables, full-width forms.
+        case 0x1100...0x11FF, 0x2E80...0x9FFF, 0xA960...0xA97F, 0xAC00...0xD7AF, 0xF900...0xFAFF, 0xFF00...0xFFEF, 0x20000...0x3FFFF:
+            return 1
+        // Other scripts, like Cyrillic, Greek or Arabic, take more tokens per character than English.
+        default:
+            return 0.5
+        }
+    }
+
+#if canImport(FoundationModels)
     @available(macOS 26.0, iOS 26.0, *)
     private static func fittedContent(for request: AIChatLocalRunRequest, taskPrompt: TaskPrompt, model: SystemLanguageModel) async -> FittedContent {
         let content = request.content
         guard #available(macOS 26.4, iOS 26.4, *) else {
-            return characterBudgetFit(content)
+            return estimatedBudgetFit(content)
         }
 
         do {
@@ -205,15 +231,8 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
             return FittedContent(content: fitted, truncated: true, promptTokens: nil)
         } catch {
             Logger.aiChat.error("[LocalModel] Token counting failed: \(error.localizedDescription, privacy: .public)")
-            return characterBudgetFit(content)
+            return estimatedBudgetFit(content)
         }
-    }
-
-    private static func characterBudgetFit(_ content: String) -> FittedContent {
-        guard content.count > characterBudgetWithoutTokenCounting else {
-            return FittedContent(content: content, truncated: false, promptTokens: nil)
-        }
-        return FittedContent(content: String(content.prefix(characterBudgetWithoutTokenCounting)), truncated: true, promptTokens: nil)
     }
 
     @available(macOS 26.0, iOS 26.0, *)

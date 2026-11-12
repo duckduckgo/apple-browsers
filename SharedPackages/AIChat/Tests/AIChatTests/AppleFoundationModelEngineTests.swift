@@ -83,4 +83,25 @@ struct AppleFoundationModelEngineTests {
 
         #expect(prompt.contains("a <b>bold</b> <pages> word"))
     }
+
+    // MARK: - Fitting without token counting
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A short page is sent whole", .timeLimit(.minutes(1)))
+    func shortPageIsKept() {
+        let fitted = AppleFoundationModelEngine.estimatedBudgetFit("A short page.")
+
+        #expect(fitted == .init(content: "A short page.", truncated: false, promptTokens: nil))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A long page is cut to fit, with fewer characters for scripts that take more tokens",
+          .timeLimit(.minutes(1)),
+          arguments: [("a", 8_000), ("日", 2_000), ("한", 2_000), ("д", 4_000)])
+    func longPageIsCutByScript(character: String, keptCharacters: Int) {
+        let fitted = AppleFoundationModelEngine.estimatedBudgetFit(String(repeating: character, count: 10_000))
+
+        #expect(fitted.content.count == keptCharacters)
+        #expect(fitted.truncated)
+    }
 }

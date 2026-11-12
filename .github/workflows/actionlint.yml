@@ -20,6 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+      - name: Test iOS alpha PR comments
+        run: node --test .github/scripts/tests/ios-alpha-pr-comment.test.js
       - name: Check workflow files
         uses: docker://rhysd/actionlint:latest
         with:

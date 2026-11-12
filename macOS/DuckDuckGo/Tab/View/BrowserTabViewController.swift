@@ -1172,8 +1172,10 @@ final class BrowserTabViewController: NSViewController {
         let sidebarWidth: () -> CGFloat = { [weak self] in
             max(0, -(self?.sidebarContainerLeadingConstraint?.constant ?? 0))
         }
+        let isWindowAccessible = [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)
+            && featureFlagger.isFeatureOn(.hoveredLinkTooltipAccessibility)
         return HoveredLinkTooltipPresenter(hostView: view, backgroundColor: NSColor(resource: .browserTabBackground),
-                                           trailingInset: sidebarWidth)
+                                           isWindowAccessible: isWindowAccessible, trailingInset: sidebarWidth)
     }
 
     func subscribeToHoveredLink(of tabViewModel: TabViewModel?) {

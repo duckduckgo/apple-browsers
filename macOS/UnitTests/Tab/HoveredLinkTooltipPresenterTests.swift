@@ -390,6 +390,15 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertEqual(harness.tooltip?.isAccessibilityEnabled(), false)
     }
 
+    func testWhenWindowIsMadeAccessibleThenTooltipWindowIsExposedToAccessibility() {
+        let harness = TooltipHarness(isWindowAccessible: true)
+        harness.showFirstLink()
+
+        XCTAssertNotNil(harness.tooltip)
+        XCTAssertEqual(harness.tooltip?.isAccessibilityElement(), true)
+        XCTAssertEqual(harness.tooltip?.isAccessibilityEnabled(), true)
+    }
+
     func testWhenAppearanceChangesThenVisibleTooltipFollowsHostWithoutMouseMovement() {
         let harness = TooltipHarness()
         let host = harness.parent.contentView!
@@ -520,7 +529,7 @@ private final class TooltipHarness {
     var tooltip: NSWindow? { parent.childWindows?.first }
     var label: NSTextField? { (tooltip?.contentView as? NSBox)?.contentView?.subviews.first as? NSTextField }
 
-    init() {
+    init(isWindowAccessible: Bool = false) {
         _ = NSApplication.shared
         parent = TooltipParentWindow(contentRect: NSRect(x: 100, y: 200, width: 700, height: 400),
                                      styleMask: .borderless, backing: .buffered, defer: false)
@@ -532,6 +541,7 @@ private final class TooltipHarness {
         let animator = animator
         let tooltipWindow = tooltipWindow
         presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
+                                               isWindowAccessible: isWindowAccessible,
                                                makeWindow: { tooltipWindow }, mouseLocation: { pointer.location },
                                                animate: animator.animate, move: animator.move, schedule: scheduler.schedule)
     }

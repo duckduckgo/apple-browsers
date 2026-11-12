@@ -216,4 +216,59 @@ extension XCUIApplication {
             searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.elementExistence),
             "Browser did not reappear after closing Bookmarks.", file: file, line: line)
     }
+
+    func resetBookmarks(file: StaticString = #filePath, line: UInt = #line) {
+        XCTContext.runActivity(named: "Reset bookmarks and favorites") { _ in
+            dismissAddressBarEditing(file: file, line: line)
+            let menuButton = buttons["Browser.Toolbar.Button.Menu"]
+            XCTAssertTrue(
+                menuButton.wait(for: NSPredicate(format: "isHittable == true AND isEnabled == true"), timeout: UITestTimeouts.elementExistence),
+                "Toolbar menu button did not become available.", file: file, line: line)
+            menuButton.press(forDuration: 1)
+
+            let debugList = descendants(matching: .any)["Debug.List"]
+            guard debugList.waitForExistence(timeout: UITestTimeouts.navigation) else {
+                XCTFail(
+                    "Debug screen did not appear. Bookmark reset requires a Debug build or an internal-user build.",
+                    file: file,
+                    line: line)
+                return
+            }
+
+            let filter = searchFields.matching(
+                NSPredicate(format: "placeholderValue == %@", "Filter")
+            ).firstMatch
+            filter.tapWhenHittable(in: self, file: file, line: line)
+            filter.typeText("Bookmarks")
+
+            let bookmarksDebug = descendants(matching: .any)["Debug.Screen.Bookmarks"]
+            bookmarksDebug.tapWhenHittable(in: self, file: file, line: line)
+
+            buttons["Debug.Bookmarks.DeleteAll"].tapWhenHittable(in: self, file: file, line: line)
+            buttons.matching(identifier: "Debug.Bookmarks.ConfirmDelete").firstMatch
+                .tapWhenHittable(in: self, file: file, line: line)
+
+            // The completion button is only presented after the asynchronous reset saves successfully.
+            buttons.matching(identifier: "Debug.Bookmarks.ResetComplete").firstMatch
+                .tapWhenHittable(in: self, file: file, line: line)
+            let bookmarksNavigationBar = navigationBars.containing(
+                .button,
+                identifier: "Debug.Bookmarks.DeleteAll"
+            ).firstMatch
+            let dragStart = bookmarksNavigationBar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let dragEnd = windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
+            dragStart.press(forDuration: 0.1, thenDragTo: dragEnd)
+            XCTAssertTrue(
+                bookmarksNavigationBar.wait(
+                    for: NSPredicate(format: "exists == false"),
+                    timeout: UITestTimeouts.elementExistence),
+                "Debug screen did not close after resetting bookmarks.", file: file, line: line)
+            XCTAssertTrue(
+                searchEntry.wait(
+                    for: NSPredicate(format: "isHittable == true"),
+                    timeout: UITestTimeouts.elementExistence),
+                "Browser did not become available after resetting bookmarks.", file: file, line: line)
+        }
+    }
+
 }

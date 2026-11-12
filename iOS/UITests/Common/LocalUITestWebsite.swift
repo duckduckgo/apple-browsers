@@ -23,6 +23,7 @@ import XCTest
 
 final class LocalUITestWebsite {
     static let childLinkTitle = "Open child test page"
+    static let refreshedHeading = "Refreshed browsing test page"
 
     struct Page {
         let path: String
@@ -31,6 +32,7 @@ final class LocalUITestWebsite {
         static let first = Page(path: "/first-test-page", title: "First test page")
         static let second = Page(path: "/second-test-page", title: "Second test page")
         static let child = Page(path: "/child-test-page", title: "Child test page")
+        static let browsing = Page(path: "/browsing-test", title: "Browsing test page")
 
         static func bookmark(_ index: Int) -> Page {
             Page(path: "/bookmark-\(index)", title: "Bookmark test page \(index)")
@@ -38,12 +40,12 @@ final class LocalUITestWebsite {
     }
 
     private let server: HttpServer
-    private let requests: PageRequests
+    private let state: PageState
     let hostAndPort: String
 
     init() throws {
         let server = HttpServer()
-        let requests = PageRequests()
+        let state = PageState()
         let pages: [Page] = [.first, .second, .child] + (0..<4).map(Page.bookmark)
         for page in pages {
             // The child-tab test opens the link through the browser's context menu.
@@ -52,9 +54,19 @@ final class LocalUITestWebsite {
                 : ""
             let html = "<title>\(page.title)</title><h1>\(page.title)</h1>\(childLink)"
             server[page.path] = { _ in
-                requests.receivedRequest(for: page.path)
+                state.receivedRequest(for: page.path)
                 return .ok(.htmlBody(html))
             }
+        }
+        server[Page.browsing.path] = { _ in
+            state.receivedRequest(for: Page.browsing.path)
+            let heading = state.browsingHeading
+            let body = Array("<!doctype html><title>Browsing test</title><h1>\(heading)</h1>".utf8)
+            return .raw(200, "OK", [
+                "Cache-Control": "no-store",
+                "Content-Type": "text/html; charset=utf-8",
+                "Content-Length": String(body.count),
+            ]) { try $0.write(body) }
         }
         server.listenAddressIPv4 = "127.0.0.1"
         try server.start(0, forceIPv4: true, priority: .userInitiated)
@@ -65,7 +77,7 @@ final class LocalUITestWebsite {
             throw error
         }
         self.server = server
-        self.requests = requests
+        self.state = state
     }
 
     deinit {
@@ -86,14 +98,27 @@ final class LocalUITestWebsite {
     }
 
     func request(_ page: Page, in app: XCUIApplication, timeout: TimeInterval, file: StaticString = #filePath, line: UInt = #line) -> Bool {
-        let request = requests.expectRequest(for: page.path)
+        let request = state.expectRequest(for: page.path)
         app.enterSearchText("http://\(hostAndPort)\(page.path)\r", file: file, line: line)
         return XCTWaiter.wait(for: [request], timeout: timeout) == .completed
     }
 
-    private final class PageRequests {
+    func updateBrowsingPage() {
+        state.updateBrowsingPage()
+    }
+
+    private final class PageState {
         private let lock = NSLock()
         private var pending: [String: XCTestExpectation] = [:]
+        private var didUpdateBrowsingPage = false
+
+        var browsingHeading: String {
+            lock.withLock { didUpdateBrowsingPage ? LocalUITestWebsite.refreshedHeading : Page.browsing.title }
+        }
+
+        func updateBrowsingPage() {
+            lock.withLock { didUpdateBrowsingPage = true }
+        }
 
         func expectRequest(for path: String) -> XCTestExpectation {
             let expectation = XCTestExpectation(description: "Request for \(path)")

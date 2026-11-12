@@ -23,10 +23,12 @@ import UITestingSupport
 final class FavoritesUITests: UITestCase {
 
     override var additionalLaunchEnvironment: [String: String] {
-        [
-            "UITEST_DISABLE_ANIMATIONS": "1",
-            "UITEST_TEMPORARY_BOOKMARKS_STORE": "1"
-        ]
+        ["UITEST_DISABLE_ANIMATIONS": "1"]
+    }
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        app.resetBookmarks()
     }
 
     func testWhenPageIsFavoritedThenItCanBeOpenedFromNewTabAndRemoved() throws {

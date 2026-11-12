@@ -17,43 +17,23 @@
 //  limitations under the License.
 //
 
-import Swifter
 import XCTest
 import UITestingSupport
 
 final class BrowsingUITests: UITestCase {
 
-    private let server = HttpServer()
-    private let page = LocalPage()
-
     override var additionalLaunchEnvironment: [String: String] {
         ["UITEST_DISABLE_ANIMATIONS": "1"]
     }
 
-    private var pageURL: String {
-        get throws { "http://127.0.0.1:\(try server.port())/browsing-test" }
-    }
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        page.setHeading(LocalPage.initialHeading)
-        server["/browsing-test"] = { [page] _ in page.response() }
-        server.listenAddressIPv4 = "127.0.0.1"
-        try server.start(0, forceIPv4: true, priority: .userInitiated)
-    }
-
-    override func tearDownWithError() throws {
-        defer { server.stop() }
-        try super.tearDownWithError()
-    }
-
     func testWhenURLIsEnteredThenPageLoads() throws {
-        app.openURL(try pageURL, expecting: LocalPage.initialHeading)
+        let site = try localWebsite()
+        site.open(.browsing, in: app)
     }
 
     func testWhenPageLoadsThenRefreshBecomesAvailable() throws {
         let refreshButton = app.buttons["Browser.OmniBar.Button.Refresh"]
-        let url = try pageURL
+        let site = try localWebsite()
 
         XCTContext.runActivity(named: "Verify refresh is unavailable on the new-tab page") { _ in
             XCTAssertTrue(
@@ -63,35 +43,10 @@ final class BrowsingUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Load and refresh the test page") { _ in
-            app.openURL(url, expecting: LocalPage.initialHeading)
-            page.setHeading(LocalPage.refreshedHeading)
+            site.open(.browsing, in: app)
+            site.updateBrowsingPage()
             refreshButton.tapWhenHittable(in: app)
-            app.assertPageContains(LocalPage.refreshedHeading)
-        }
-    }
-
-    private final class LocalPage {
-        static let initialHeading = "Browsing test page"
-        static let refreshedHeading = "Refreshed browsing test page"
-
-        private let lock = NSLock()
-        private var heading = initialHeading
-
-        func setHeading(_ heading: String) {
-            lock.withLock { self.heading = heading }
-        }
-
-        func response() -> HttpResponse {
-            let title = lock.withLock { heading }
-            let body = Array("<!doctype html><title>Browsing test</title><h1>\(title)</h1>".utf8)
-            let headers = [
-                "Cache-Control": "no-store",
-                "Content-Type": "text/html; charset=utf-8",
-                "Content-Length": String(body.count),
-            ]
-            return .raw(200, "OK", headers) { writer in
-                try writer.write(body)
-            }
+            app.assertPageContains(LocalUITestWebsite.refreshedHeading)
         }
     }
 }

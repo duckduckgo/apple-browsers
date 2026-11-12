@@ -24,19 +24,16 @@ final class BookmarksUITests: UITestCase {
 
     override var additionalLaunchEnvironment: [String: String] {
         // Avoid XCTest's repeated animation-idle timeouts in bookmark workflows.
-        [
-            "UITEST_DISABLE_ANIMATIONS": "1",
-            "UITEST_TEMPORARY_BOOKMARKS_STORE": "1",
-        ]
+        ["UITEST_DISABLE_ANIMATIONS": "1"]
     }
 
-    override var launchesAppInSetUp: Bool {
-        false
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        app.resetBookmarks()
     }
 
     func testWhenPageIsBookmarkedThenItCanBeOpenedAndDeleted() throws {
         let site = try localWebsite()
-        app.launch()
         let bookmark = app.tables["Bookmarks.List"].cells["Bookmarks.Item"].firstMatch
 
         XCTContext.runActivity(named: "Bookmark the test page") { _ in
@@ -69,7 +66,6 @@ final class BookmarksUITests: UITestCase {
 
     func testWhenBookmarkIsMovedThroughNestedFoldersThenItCanBeDeletedWithItsFolders() throws {
         let site = try localWebsite()
-        app.launch()
         let firstFolderName = "Test Folder"
         let secondFolderName = "Test Folder 2"
         let bookmarksList = app.tables["Bookmarks.List"]
@@ -133,7 +129,6 @@ final class BookmarksUITests: UITestCase {
 
     func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() throws {
         let site = try localWebsite()
-        app.launch()
         let pages = (0..<4).map(LocalUITestWebsite.Page.bookmark)
         let folderName = "Examples"
         let bookmarksList = app.tables["Bookmarks.List"]
@@ -191,14 +186,32 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenFolderIsRemovedFromBookmarksEditThenItCanBeDeleted() {
+    func testWhenFolderIsRemovedFromBookmarksEditThenItCanBeDeleted() throws {
+        let site = try localWebsite()
         let folderName = "Removable Folder"
-        app.launchEnvironment["UITEST_BOOKMARKS_FOLDER_WITH_ONE_BOOKMARK"] = folderName
-        app.launch()
-        app.openBookmarks()
-        let folder = app.tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Folder")
-            .containing(.staticText, identifier: folderName).firstMatch
-        app.assertBookmarkCount(0)
+        let bookmarksList = app.tables["Bookmarks.List"]
+        let bookmark = bookmarksList.cells["Bookmarks.Item"].firstMatch
+        let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
+
+        XCTContext.runActivity(named: "Create a bookmark inside a folder") { _ in
+            site.open(.first, in: app)
+            app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
+            app.openBookmarks()
+            app.createBookmarkFolderAtRoot(named: folderName)
+
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            bookmark.tapWhenHittable(in: app)
+            let destination = app.tables["Bookmarks.Editor.List"].cells
+                .matching(identifier: "Bookmarks.Editor.Folder")
+                .containing(.staticText, identifier: folderName)
+                .firstMatch
+            app.tables["Bookmarks.Editor.List"].swipeUpToReveal(destination)
+            destination.tapWhenHittable(in: app)
+            app.saveBookmarkEditor()
+            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
+            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            app.assertBookmarkCount(0)
+        }
 
         XCTContext.runActivity(named: "Remove the folder from Bookmarks Edit") { _ in
             app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app, timeout: UITestTimeouts.navigation)
@@ -223,7 +236,6 @@ final class BookmarksUITests: UITestCase {
 
     func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() throws {
         let site = try localWebsite()
-        app.launch()
         let expectedTitles = [LocalUITestWebsite.Page.first.title, LocalUITestWebsite.Page.second.title]
 
         XCTContext.runActivity(named: "Create two bookmarkable tabs") { _ in

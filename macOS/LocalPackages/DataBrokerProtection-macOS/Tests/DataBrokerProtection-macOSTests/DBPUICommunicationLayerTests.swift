@@ -19,6 +19,7 @@
 import XCTest
 import Testing
 import AppKit
+@_spi(Testing) import PixelKit
 import WebKit
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
@@ -512,6 +513,21 @@ struct AssistedDashboardTests {
         #expect(fixture.agent.invalidations == (succeeds ? 1 : 0))
         #expect(fixture.database.optOutEvents.last?.type == (succeeds ? .matchRemovedByUser : nil))
         #expect(fixture.agent.profileSavedCalls == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [AssistedOptOutOutcome.submitted, .cancelled, .timedOut, .failed])
+    func sessionPixelsHaveMatchingNamesOutcomesAndBucketedDurations(outcome: AssistedOptOutOutcome) {
+        let pixels = PixelKitMock()
+        let instrumentation = AssistedOptOutPixelInstrumentation(pixelFiring: pixels)
+        instrumentation.started()
+        instrumentation.reachedUserTurn(after: 12)
+        instrumentation.ended(outcome: outcome, totalDuration: 601, userTurnDuration: 61)
+        #expect(pixels.actualFireCalls.map { $0.pixel.name } == ["pir_assisted_opt_out_started_macos", "pir_assisted_opt_out_user_turn_macos",
+                                                               "pir_assisted_opt_out_ended_macos"])
+        #expect(pixels.actualFireCalls.map { $0.pixel.parameters ?? [:] } == [[:], ["duration_bucket": "5_15s"],
+            ["outcome": outcome.rawValue, "total_duration_bucket": "10m_or_more", "user_turn_duration_bucket": "1_2m"]])
+        #expect(pixels.actualFireCalls.allSatisfy { $0.frequency == .standard && $0.includeAppVersionParameter && $0.pixel.namePrefix == .none })
     }
 }
 

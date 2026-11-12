@@ -220,7 +220,9 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         suggestionContainerViewModel.selectRow(at: 0)
         XCTAssertEqual(suggestionContainerViewModel.selectedSuggestionViewModel?.suggestion, deleted)
 
-        suggestionContainerViewModel.removeSuggestionFromResult(suggestion: deleted)
+        suggestionContainerViewModel.isTopSuggestionSelectionExpected = false
+        suggestionContainer.getSuggestions(for: "h", useCachedData: true)
+        suggestionLoadingMock.completion?(SuggestionResult(topHits: [next], duckduckgoSuggestions: [], localSuggestions: []), nil)
         suggestionContainerViewModel.selectRow(at: 0)
 
         XCTAssertEqual(suggestionContainerViewModel.selectionIndex, 0)

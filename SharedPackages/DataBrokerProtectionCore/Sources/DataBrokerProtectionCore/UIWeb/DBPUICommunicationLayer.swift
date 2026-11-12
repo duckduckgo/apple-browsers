@@ -29,13 +29,26 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     public let excludeVpnTraffic: Bool
     public let brokerRemovalEnabled: Bool
     public let needBackgroundAppRefresh: Bool
+    public let userAssistanceEnabled: Bool
 
-    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool, needBackgroundAppRefresh: Bool) {
+    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool, needBackgroundAppRefresh: Bool,
+                userAssistanceEnabled: Bool = false) {
         self.useUnifiedFeedback = useUnifiedFeedback
         self.excludeVpnTraffic = excludeVpnTraffic
         self.brokerRemovalEnabled = brokerRemovalEnabled
         self.needBackgroundAppRefresh = needBackgroundAppRefresh
+        self.userAssistanceEnabled = userAssistanceEnabled
     }
+}
+
+public protocol DBPUIAssistedOptOutsDelegate: AnyObject {
+    var isUserAssistanceEnabled: Bool { get }
+    func getAssistedOptOuts() async -> AssistedOptOutList
+    func startAssistedOptOut(id: String) async
+}
+
+struct DBPUIStartAssistedOptOutRequest: Decodable {
+    let id: String
 }
 
 public protocol DBPUIHandshakeDelegate: AnyObject {
@@ -88,11 +101,14 @@ public enum DBPUIReceivedMethodName: String {
     case setVPNBypassSetting = "setVpnExclusionSetting"
     case removeOptOutFromDashboard
     case enableBackgroundAppRefresh
+    case getAssistedOptOuts
+    case startAssistedOptOut
 }
 
 public enum DBPUISendableMethodName: String {
     case setState
     case backgroundAppRefreshDidChange
+    case assistedOptOutsDidChange
 }
 
 public struct DBPUICommunicationLayer: Subfeature {
@@ -108,6 +124,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     private let outboundBroker: UserScriptMessageBroker = UserScriptMessageBroker(context: "dbpui", requiresRunInPageContentWorld: true)
 
     weak public var delegate: DBPUICommunicationDelegate?
+    weak public var assistedOptOutsDelegate: DBPUIAssistedOptOutsDelegate?
     weak private var handshakeDelegate: DBPUIHandshakeDelegate?
 
     private enum Constants {
@@ -116,11 +133,13 @@ public struct DBPUICommunicationLayer: Subfeature {
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 handshakeDelegate: DBPUIHandshakeDelegate,
+                assistedOptOutsDelegate: DBPUIAssistedOptOutsDelegate? = nil,
                 vpnBypassService: VPNBypassServiceProvider? = nil,
                 privacyConfig: PrivacyConfigurationManaging,
                 keyRevocationChecker: BrokerBundleKeyRevocationChecker) {
         self.webURLSettings = webURLSettings
         self.handshakeDelegate = handshakeDelegate
+        self.assistedOptOutsDelegate = assistedOptOutsDelegate
         self.vpnBypassService = vpnBypassService
         self.privacyConfig = privacyConfig
         self.keyRevocationChecker = keyRevocationChecker
@@ -158,6 +177,8 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .setVPNBypassSetting: return setVPNBypassSetting
         case .removeOptOutFromDashboard: return removeOptOutFromDashboard
         case .enableBackgroundAppRefresh: return enableBackgroundAppRefresh
+        case .getAssistedOptOuts: return getAssistedOptOuts
+        case .startAssistedOptOut: return startAssistedOptOut
         }
 
     }
@@ -377,8 +398,26 @@ public struct DBPUICommunicationLayer: Subfeature {
             useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
             excludeVpnTraffic: vpnBypassService?.isSupported ?? false,
             brokerRemovalEnabled: true,
-            needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false
+            needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false,
+            userAssistanceEnabled: assistedOptOutsDelegate?.isUserAssistanceEnabled ?? false
         )
+    }
+
+    func getAssistedOptOuts(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        await assistedOptOutsDelegate?.getAssistedOptOuts() ?? AssistedOptOutList(optOuts: [])
+    }
+
+    func startAssistedOptOut(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let request = try? JSONDecoder().decode(DBPUIStartAssistedOptOutRequest.self, from: data) else {
+            throw DBPUIError.malformedRequest
+        }
+        await assistedOptOutsDelegate?.startAssistedOptOut(id: request.id)
+        return nil
+    }
+
+    public func sendAssistedOptOutsDidChange(_ list: AssistedOptOutList, into webView: WKWebView) {
+        outboundBroker.push(method: DBPUISendableMethodName.assistedOptOutsDidChange.rawValue, params: list, for: self, into: webView)
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

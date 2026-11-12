@@ -405,6 +405,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Autoconsent heuristic hit-testing: probe the viewport with elementFromPoint before the DOM walk
     /// to find cookie popups that aren't fixed, sticky or dialog-like.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220464829991571
     case heuristicHitTest
 
     /// Cookie Pop-up Protection opt-in dialog

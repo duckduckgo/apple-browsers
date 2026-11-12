@@ -69,7 +69,7 @@ struct StartupOnboardingDecision {
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
              .aiSearchSettingsSelection, .aiModelSelection,
-             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN:
+             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN, .tryVPNFollowUp:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -620,7 +620,7 @@ class MainViewController: UIViewController {
     var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
 
     private var duckPlayerEntryPointVisible = false
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+    let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
 
     // Ensure the VPN entry-point impression pixels fire at most once per app launch.
     private var didFireVPNToolbarImpressionPixel = false
@@ -4869,8 +4869,9 @@ class MainViewController: UIViewController {
     }
 
     private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
-        let subscriptionFlowViewController = makeDataBrokerProtectionSubscriptionFlowViewController(
-            redirectURLComponents: redirectURLComponents
+        let subscriptionFlowViewController = makeSubscriptionFlowViewController(
+            redirectURLComponents: redirectURLComponents,
+            includesPostPurchaseOnboarding: true
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4885,7 +4886,9 @@ class MainViewController: UIViewController {
         presenter.present(navigationController, animated: true)
     }
 
-    private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
+    /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
+                                                    includesPostPurchaseOnboarding: Bool) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4906,7 +4909,7 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
-            onboardingKeyValueStore: keyValueStore,
+            onboardingKeyValueStore: includesPostPurchaseOnboarding ? keyValueStore : nil,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
@@ -9908,6 +9911,17 @@ extension MainViewController {
 }
 
 extension MainViewController: OnboardingDelegate {
+
+    func presentSubscriptionPaywallFromOnboarding(from controller: UIViewController, onDismiss: @escaping () -> Void) {
+        // The onboarding continues with its own VPN setup, so skip the subscription onboarding after purchase.
+        let paywall = makeSubscriptionFlowViewController(
+            redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
+            includesPostPurchaseOnboarding: false
+        )
+        let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
+        navigationController.onDismiss = onDismiss
+        controller.present(navigationController, animated: true)
+    }
 
     func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {
         linearOnboardingContext?.activeInterlude = interlude

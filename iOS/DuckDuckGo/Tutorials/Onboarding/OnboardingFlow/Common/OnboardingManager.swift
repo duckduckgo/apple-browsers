@@ -166,6 +166,7 @@ extension OnboardingIntroStep {
     static let searchExperienceSelection: Self = .renderable(.searchExperienceSelection)
     static let duckAIQuerySelection: Self = .renderable(.duckAIQuerySelection)
     static let tryVPN: Self = .renderable(.tryVPN)
+    static let tryVPNFollowUp: Self = .renderable(.tryVPNFollowUp)
 
     static func introDialog(isReturningUser: Bool) -> Self {
         .renderable(.introDialog(isReturningUser: isReturningUser))
@@ -190,6 +191,7 @@ extension OnboardingIntroStep {
         case searchExperienceSelection
         case duckAIQuerySelection
         case tryVPN // VPN download reason: offers the VPN free trial.
+        case tryVPNFollowUp // VPN download reason: turns on the VPN for subscribers, otherwise says where to subscribe later.
     }
 
     /// Identifies which interlude experience the host should run.
@@ -223,6 +225,7 @@ extension OnboardingIntroStep {
         case .renderable(.searchExperienceSelection): return .searchExperienceSelection
         case .renderable(.duckAIQuerySelection): return .duckAIQuerySelection
         case .renderable(.tryVPN): return .tryVPN
+        case .renderable(.tryVPNFollowUp): return .tryVPNFollowUp
         case .interlude(.duckAI): return .interludeDuckAI
         }
     }
@@ -232,11 +235,13 @@ extension OnboardingIntroStep {
     /// Whether this step counts toward the onboarding progress indicator.
     ///
     /// Excludes steps that aren't part of the tracked sequence: the intro dialog, interludes
-    /// (which render no view state), and the Download Reason Screen. Consumed when computing the
+    /// (which render no view state), the Download Reason Screen and the Try VPN follow-up. Consumed when computing the
     /// current/total step counts shown in the progress bar.
     func countsTowardProgress(flow: OnboardingFlowType) -> Bool {
         switch self {
         case .renderable(.introDialog), .renderable(.downloadReasonSelection), .interlude:
+            return false
+        case .tryVPNFollowUp:
             return false
         case .duckAIQuerySelection where flow == .duckAI:
             return true
@@ -264,6 +269,7 @@ enum OnboardingResumeStep: String {
     case addressBarPositionSelection
     case searchExperienceSelection
     case tryVPN
+    case tryVPNFollowUp
     /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
     case duckAIQuerySelection
     /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
@@ -493,7 +499,7 @@ private extension OnboardingManager {
         case .browserPrivately:
             personalisationSteps = [.searchExperienceSelection]
         case .vpn:
-            personalisationSteps = [.tryVPN, .searchExperienceSelection]
+            personalisationSteps = [.tryVPN, .tryVPNFollowUp, .searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:

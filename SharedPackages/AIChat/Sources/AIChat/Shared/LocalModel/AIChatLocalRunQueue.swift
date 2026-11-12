@@ -69,6 +69,16 @@ public final class AIChatLocalRunQueue {
         job.onChunk(AIChatLocalRunChunk(requestId: requestId, seq: 0, text: "", done: true, status: .cancelled))
     }
 
+    /// Ends every run and tells each page, because the model may no longer be used.
+    public func cancelEveryRun() {
+        let waiting = pending
+        pending = []
+        for job in waiting {
+            job.onChunk(AIChatLocalRunChunk(requestId: job.request.requestId, seq: 0, text: "", done: true, status: .cancelled))
+        }
+        running?.task.cancel()
+    }
+
     /// Drops every run the page asked for, without telling it: the page is gone.
     public func cancelAll(ownerID: ObjectIdentifier) {
         pending.removeAll { $0.ownerID == ownerID }

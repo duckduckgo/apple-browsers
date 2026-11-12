@@ -173,6 +173,23 @@ final class AIChatLocalRunQueueTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Cancelling every run ends the running and waiting ones, and tells their pages", .timeLimit(.minutes(1)))
+    func cancelEveryRunEndsAll() async {
+        let queue = makeQueue()
+        let otherOwner = NSObject()
+        enqueue("r1", on: queue)
+        enqueue("r2", on: queue, owner: otherOwner)
+        await waitUntil { engine.startedRequestIds == ["r1"] }
+
+        queue.cancelEveryRun()
+        await waitUntil { queue.isIdle }
+
+        #expect(chunks(for: "r1").last?.status == .cancelled)
+        #expect(chunks(for: "r2") == [AIChatLocalRunChunk(requestId: "r2", seq: 0, text: "", done: true, status: .cancelled)])
+        #expect(engine.startedRequestIds == ["r1"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A page that goes away loses its waiting requests without being told", .timeLimit(.minutes(1)))
     func cancelAllDropsTheOwnersRequests() async {
         let queue = makeQueue()

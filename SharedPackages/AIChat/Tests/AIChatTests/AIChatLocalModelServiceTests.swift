@@ -149,6 +149,20 @@ final class AIChatLocalModelServiceTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Turning the model off ends a run that already started", .timeLimit(.minutes(1)))
+    func optOutCancelsRuns() async throws {
+        storage.pageSummariesModel = .appleIntelligence
+        engine.keepsRunning = true
+        service.register(page)
+        _ = try service.startRun(request(), for: page)
+
+        service.optOut()
+        await waitUntil { self.page.chunks.last?.done == true }
+
+        #expect(page.chunks.last?.status == .cancelled)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Coming back to the app picks up Apple Intelligence being turned off", .timeLimit(.minutes(1)))
     func appActivationRefreshesAvailability() {
         storage.pageSummariesModel = .appleIntelligence
@@ -291,13 +305,17 @@ private final class StubLocalModelEngine: AIChatLocalModelEngine {
         set { storedAvailability = newValue }
     }
     var reply: [String] = []
+    /// Leaves the stream open, like a model that's still writing.
+    var keepsRunning = false
     private(set) var runRequests: [AIChatLocalRunRequest] = []
 
     func run(_ request: AIChatLocalRunRequest) -> AsyncThrowingStream<AIChatLocalModelEngineEvent, Error> {
         runRequests.append(request)
         let (stream, continuation) = AsyncThrowingStream<AIChatLocalModelEngineEvent, Error>.makeStream()
         reply.forEach { continuation.yield(.text($0)) }
-        continuation.finish()
+        if !keepsRunning {
+            continuation.finish()
+        }
         return stream
     }
 }

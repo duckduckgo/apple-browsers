@@ -217,6 +217,10 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         let state = currentState
         guard state != lastPushedState else { return }
         lastPushedState = state
+        // Turn Off, the flag and Apple Intelligence decide every run, including ones already started.
+        if state != .ready {
+            runQueue.cancelEveryRun()
+        }
         // With the flag off Duck.ai treats the model as unsupported, so tell open pages exactly that.
         let update = AIChatLocalModelStateUpdate(state: state ?? .unsupported)
         for case let pusher as AIChatLocalModelPushing in pushers.allObjects {

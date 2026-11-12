@@ -137,7 +137,7 @@ final class BrowserWindowTests: XCTestCase {
         first.isPad = true
         second.isPad = true
         _ = first.willResize(toWidth: 800)
-        _ = second.willResize(toWidth: 400)
+        _ = second.willResize(toWidth: 600)
         XCTAssertTrue(first.isLargeWidth)
         XCTAssertFalse(second.isLargeWidth)
         _ = second.willResize(toWidth: 900)

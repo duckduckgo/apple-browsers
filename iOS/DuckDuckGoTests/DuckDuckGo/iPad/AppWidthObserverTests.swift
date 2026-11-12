@@ -54,12 +54,16 @@ class AppWidthObserverTests: XCTestCase {
         XCTAssertFalse(observer.isLargeWidth)
     }
 
-    func testWindowLayoutMatchesTheLowerSafariBreakpoint() {
+    func testWindowLayoutUsesTheOriginalWidthThreshold() {
         let observer = AppWidthObserver(usesWindowLayout: true)
         observer.isPad = true
         XCTAssertTrue(observer.willResize(toWidth: 500))
+        XCTAssertFalse(observer.isLargeWidth)
+        XCTAssertTrue(observer.willResize(toWidth: 677))
+        XCTAssertFalse(observer.isLargeWidth)
+        XCTAssertTrue(observer.willResize(toWidth: 678))
         XCTAssertTrue(observer.isLargeWidth)
-        XCTAssertTrue(observer.willResize(toWidth: 499))
+        XCTAssertTrue(observer.willResize(toWidth: 677))
         XCTAssertFalse(observer.isLargeWidth)
     }
 
@@ -67,8 +71,10 @@ class AppWidthObserverTests: XCTestCase {
         let observer = AppWidthObserver(usesWindowLayout: true)
         observer.isPad = false
         _ = observer.willResize(toWidth: 650)
+        XCTAssertFalse(observer.isLargeWidth)
+        _ = observer.willResize(toWidth: 678)
         XCTAssertTrue(observer.isLargeWidth)
-        _ = observer.willResize(toWidth: 499)
+        _ = observer.willResize(toWidth: 677)
         XCTAssertFalse(observer.isLargeWidth)
     }
 
@@ -77,16 +83,22 @@ class AppWidthObserverTests: XCTestCase {
         observer.isPad = true
         _ = observer.willResize(toWidth: 600)
         XCTAssertFalse(observer.isLargeWidth)
+        _ = observer.willResize(toWidth: 678)
+        XCTAssertTrue(observer.isLargeWidth)
+        _ = observer.willResize(toWidth: 677)
+        XCTAssertFalse(observer.isLargeWidth)
     }
 
     func testFocusedLayoutCopyPreservesTheWindowPolicy() {
         let focused = AppWidthObserver(usesWindowLayout: true)
+        focused.isPad = false
         let copy = AppWidthObserver()
-        _ = focused.willResize(toWidth: 600)
+        _ = focused.willResize(toWidth: 700)
         copy.update(from: focused)
         XCTAssertTrue(copy.isLargeWidth)
-        XCTAssertEqual(copy.currentWidth, 600)
-        _ = focused.willResize(toWidth: 400)
+        XCTAssertEqual(copy.currentWidth, 700)
+        _ = focused.willResize(toWidth: 600)
+        XCTAssertFalse(focused.isLargeWidth)
         XCTAssertTrue(copy.isLargeWidth)
     }
     

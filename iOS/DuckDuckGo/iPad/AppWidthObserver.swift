@@ -25,7 +25,6 @@ public class AppWidthObserver {
     struct Constants {
         
         static let minPadWidth: CGFloat = 678
-        static let minWindowWidth: CGFloat = 500
         
     }
     
@@ -37,10 +36,7 @@ public class AppWidthObserver {
     private(set) var usesWindowLayout: Bool
     
     public var isLargeWidth: Bool {
-        if usesWindowLayout {
-            return currentWidth >= Constants.minWindowWidth
-        }
-        return isPad && currentWidth >= Constants.minPadWidth
+        return (isPad || usesWindowLayout) && currentWidth >= Constants.minPadWidth
     }
 
     init(usesWindowLayout: Bool = false) {

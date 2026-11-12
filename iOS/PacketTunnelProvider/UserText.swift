@@ -55,6 +55,10 @@ final class UserText {
 
     static let networkProtectionEntitlementExpiredNotificationBody = NSLocalizedString("network.protection.entitlement.expired.notification.body", value: "VPN disconnected due to expired subscription. Subscribe to DuckDuckGo to reconnect the VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
 
+    static let networkProtectionSignedOutNotificationTitle = NSLocalizedString("network.protection.signed.out.notification.title", value: "DuckDuckGo VPN can't connect", comment: "The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
+
+    static let networkProtectionSignedOutNotificationBody = NSLocalizedString("network.protection.signed.out.notification.body", value: "Open DuckDuckGo to reconnect.", comment: "The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
+
     static func networkProtectionSnoozedNotificationBody(duration: String) -> String {
         let localized = NSLocalizedString(
             "network.protection.snoozed.notification.body",

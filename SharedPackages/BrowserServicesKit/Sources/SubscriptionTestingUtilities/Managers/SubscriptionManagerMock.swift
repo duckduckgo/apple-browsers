@@ -140,7 +140,15 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var resultTokenContainer: Networking.TokenContainer?
     public var resultCreateAccountTokenContainer: Networking.TokenContainer?
+    /// The policies passed to `getTokenContainer(policy:)`, in call order.
+    public private(set) var getTokenContainerPolicies: [Networking.AuthTokensCachePolicy] = []
+    /// When set, `getTokenContainer(policy:)` returns or throws its result instead of using `resultTokenContainer`.
+    public var getTokenContainerHandler: ((Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer)?
     public func getTokenContainer(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
+        getTokenContainerPolicies.append(policy)
+        if let getTokenContainerHandler {
+            return try await getTokenContainerHandler(policy)
+        }
         switch policy {
         case .local, .localValid, .localForceRefresh:
             guard let resultTokenContainer else {

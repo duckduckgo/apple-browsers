@@ -618,7 +618,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
                    reportWakeConnectivityFailure: { VPNWakeConnectivityPixel.fireFailure() },
-                   sessionHealth: sessionHealth)
+                   sessionHealth: sessionHealth,
+                   isAuthTokenMissing: { subscriptionManager.localTokenState() == .missing })
         startMonitoringMemoryPressureEvents()
 
         observeServerChanges()

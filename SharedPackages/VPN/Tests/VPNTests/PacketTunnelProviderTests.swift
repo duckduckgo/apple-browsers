@@ -167,6 +167,30 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertTrue(recorder.retryOnFailure)
     }
 
+    // MARK: - Start without a stored auth token
+
+    func testWhenStartFailsWithoutTokenAndNoTokenIsStoredThenItIsAMissingTokenFailure() {
+        let error = TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
+
+        XCTAssertTrue(PacketTunnelProvider.isStartFailureWithoutStoredAuthToken(error, isAuthTokenMissing: { true }))
+    }
+
+    func testWhenStartFailsWithoutTokenButTheTokenIsStoredOrUnreadableThenItIsNotAMissingTokenFailure() {
+        let error = TunnelError.startingTunnelWithoutAuthToken(internalError: NSError(domain: "keychain", code: -25308))
+
+        XCTAssertFalse(PacketTunnelProvider.isStartFailureWithoutStoredAuthToken(error, isAuthTokenMissing: { false }))
+    }
+
+    func testWhenStartFailsForAnotherReasonThenTheTokenStoreIsNotRead() {
+        var tokenStoreReads = 0
+
+        let result = PacketTunnelProvider.isStartFailureWithoutStoredAuthToken(TunnelError.reconnectBlocked,
+                                                                               isAuthTokenMissing: { tokenStoreReads += 1; return true })
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(tokenStoreReads, 0)
+    }
+
     /// Tests that `TunnelError` has the expected underlying error information.
     ///
     func testThatTunnelErrorHasTheExpectedUnderlyingErrorInformation() {

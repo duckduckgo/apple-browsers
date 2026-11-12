@@ -1597,6 +1597,8 @@ public struct UserText {
     static let networkProtectionConnectionInterruptedNotificationBody = NSLocalizedString("network.protection.interrupted.notification.body", value: "DuckDuckGo VPN was interrupted. Attempting to reconnect now...", comment: "The body of the notification shown when VPN connection is interrupted")
     static let networkProtectionConnectionFailureNotificationBody = NSLocalizedString("network.protection.failure.notification.body", value: "DuckDuckGo VPN failed to connect. Please try again later.", comment: "The body of the notification shown when VPN fails to reconnect")
     static let networkProtectionEntitlementExpiredNotificationBody = NSLocalizedString("network.protection.entitlement.expired.notification.body", value: "VPN disconnected due to expired subscription. Subscribe to DuckDuckGo to reconnect the VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
+    static let networkProtectionSignedOutNotificationTitle = NSLocalizedString("network.protection.signed.out.notification.title", value: "DuckDuckGo VPN can't connect", comment: "The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
+    static let networkProtectionSignedOutNotificationBody = NSLocalizedString("network.protection.signed.out.notification.body", value: "Open DuckDuckGo to reconnect.", comment: "The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
 
     static func networkProtectionSnoozedNotificationBody(duration: String) -> String {
         let localized = NSLocalizedString(

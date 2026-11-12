@@ -579,7 +579,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
     case duckAINativeTermsOfService
 
-    /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1220450331739162?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220469546567099
     case duckAITermsOfServiceRecordRestore
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true

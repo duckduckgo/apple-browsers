@@ -601,7 +601,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case nativeTermsOfService
 
     /// Restores the web app's Terms of Service record from the app's own acceptance when it's missing at page load.
-    /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1220450331739162?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220469546567099
     case termsOfServiceRecordRestore
 
     case dragPromptBar

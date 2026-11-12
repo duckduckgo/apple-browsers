@@ -745,6 +745,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
         func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
+        func viewModelWillClose() {}
     }
 
     private final class MockChatHistoryFireExecutor: FireExecuting {

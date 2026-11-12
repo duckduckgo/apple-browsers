@@ -153,7 +153,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             contentProvider: OnboardingIntroContentProvider(
                 flowType: onboardingManager.currentOnboardingFlow,
                 featureFlagger: featureFlagger,
-                downloadReasonProvider: { onboardingManager.currentDownloadReason }
+                downloadReasonProvider: { onboardingManager.currentDownloadReason },
+                isVPNDownloadReasonAvailable: { onboardingManager.isVPNDownloadReasonAvailable }
             ),
             personalizationManager: personalizationManager,
             aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),
@@ -210,6 +211,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             pixelReporter.measureResumeOnboardingCTAAction()
         } else {
             pixelReporter.measureStartOnboardingCTAAction()
+            enrollInDownloadReasonVPNExperimentIfNeeded()
         }
         makeNextViewState()
     }
@@ -329,6 +331,14 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: shouldKeep)
         pixelReporter.measureKeepDuckAISelection(shouldKeep: shouldKeep)
 
+        makeNextViewState()
+    }
+
+    func tryVPNAction() {
+        // TODO: Present the subscription paywall modal.
+    }
+
+    func skipTryVPNAction() {
         makeNextViewState()
     }
 
@@ -486,6 +496,13 @@ private extension OnboardingIntroViewModel {
                         step: stepInfo()
                     )
                 )
+            case .tryVPN:
+                return .onboarding(
+                    .init(
+                        type: .tryVPNDialog(content: contentProvider.tryVPNContent),
+                        step: stepInfo()
+                    )
+                )
             case .setDefaultBrowser:
                 return .onboarding(
                     .init(
@@ -548,6 +565,12 @@ private extension OnboardingIntroViewModel {
         case let .renderable(renderable):
             state = mapToViewState(renderableStep: renderable)
         }
+    }
+
+    /// Enrolls the user in the VPN download-reason experiment when they start onboarding from the intro.
+    func enrollInDownloadReasonVPNExperimentIfNeeded() {
+        guard currentIntroStep == introSteps.first else { return }
+        onboardingManager.enrollInDownloadReasonVPNExperimentIfNeeded()
     }
 
     func makeNextViewState() {
@@ -623,6 +646,8 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .keepDuckAISelection
         case .adBlockingPersonalization where introSteps.contains(.adBlockingPersonalization):
             currentIntroStep = .adBlockingPersonalization
+        case .tryVPN where introSteps.contains(.tryVPN):
+            currentIntroStep = .tryVPN
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -673,6 +698,8 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureKeepDuckAIImpression()
         case .adBlockingDialog:
             pixelReporter.measureAdBlockingImpression()
+        case .tryVPNDialog:
+            break
         }
     }
 

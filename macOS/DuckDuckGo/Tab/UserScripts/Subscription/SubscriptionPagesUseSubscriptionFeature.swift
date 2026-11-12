@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKitExtensions
 import Foundation
 import BrowserServicesKit
 import Common
@@ -83,6 +84,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let requestValidator: any ScriptRequestValidator
+    private let buildType: ApplicationBuildType
 
     // Wide Event
     private let wideEvent: WideEventManaging
@@ -111,7 +113,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 pendingTransactionHandler: PendingTransactionHandling,
                 flowPerformer: any SubscriptionFlowsExecuting,
-                requestValidator: any ScriptRequestValidator) {
+                requestValidator: any ScriptRequestValidator,
+                buildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -130,6 +133,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.pendingTransactionHandler = pendingTransactionHandler
         self.flowPerformer = flowPerformer
         self.requestValidator = requestValidator
+        self.buildType = buildType
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -238,7 +242,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return GetFeatureValue(usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-                               useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+                               useAlternateStripePaymentFlow: buildType.isSparkleBuild && subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
         )
     }
 

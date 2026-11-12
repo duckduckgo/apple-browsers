@@ -33,17 +33,26 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
             let storage = try DiscoveryStateStorage()
             let manager = makeManager(storage: storage, flags: flags)
             let store = try XCTUnwrap(manager.chromeWebStore)
+            if enabled {
+                try await waitForCondition { store.canCheckForUpdates }
+            }
             XCTAssertEqual(store.canCheckForUpdates, enabled)
             XCTAssertEqual(storage.discoveryReads, 1, "The same coordinator restores timing once, even when initially disabled")
 
             flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = !enabled
             flags.triggerUpdate()
+            if !enabled {
+                try await waitForCondition { store.canCheckForUpdates }
+            }
             XCTAssertEqual(store.canCheckForUpdates, !enabled)
             await store.checkForUpdatesNow()
             XCTAssertEqual(storage.discoveryReads, 1, "Toggling the flag must retain the coordinator and its timing state")
 
             flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = enabled
             flags.triggerUpdate()
+            if enabled {
+                try await waitForCondition { store.canCheckForUpdates }
+            }
             await store.checkForUpdatesNow()
             XCTAssertEqual(store.canCheckForUpdates, enabled)
             XCTAssertEqual(storage.discoveryReads, 1)
@@ -65,6 +74,18 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         await store.checkForUpdatesNow()
         XCTAssertFalse(store.canCheckForUpdates)
         XCTAssertEqual(storage.discoveryReads, 0)
+    }
+
+    private func waitForCondition(_ condition: () -> Bool, file: StaticString = #filePath, line: UInt = #line) async throws {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(5))
+        while !condition() {
+            guard clock.now < deadline else {
+                XCTFail("Condition was not met before the timeout", file: file, line: line)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
     }
 
     private func makeManager(storage: DiscoveryStateStorage, flags: MockFeatureFlagger, isAppStore: Bool = false) -> WebExtensionManager {

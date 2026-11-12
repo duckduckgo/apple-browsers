@@ -38,12 +38,12 @@ struct ClientToolInvokerTests {
         let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: requestData)
         let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
 
-        let response = await invoker.invokeClientTool(request, context: context, permissionPusher: source)
+        let response = await invoker.invokeClientTool(request, context: context, permissionPrompter: source)
 
         #expect(coordinator.calls.count == 1)
         #expect(coordinator.calls.first?.callID == request.callId)
         #expect(coordinator.calls.first?.tool === tool)
-        #expect(coordinator.calls.first?.source === source)
+        #expect(coordinator.calls.first?.prompter === source)
         #expect(coordinator.permissionConfirmationCount == (outcome == "denied" ? 0 : 1))
         if outcome == "granted" {
             #expect(response == .success(callId: request.callId, value: ["content": "page"]))
@@ -63,7 +63,7 @@ struct ClientToolInvokerTests {
         let request = try harness.request(name: reason == "unknown" ? "unknown" : harness.tool.name,
                                           version: reason == "version" ? 2 : 1)
         let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: reason == "fire")
-        let response = await harness.invoker.invokeClientTool(request, context: context, permissionPusher: harness.source)
+        let response = await harness.invoker.invokeClientTool(request, context: context, permissionPrompter: harness.source)
         #expect(response == .failure(callId: "call", error: .unavailable))
         #expect(harness.source.prompts.isEmpty)
         #expect(harness.permissions.writes == 0)
@@ -79,17 +79,17 @@ struct ClientToolInvokerTests {
 
         let read = try harness.start(callID: "read", version: readCapability.version)
         await harness.source.waitForPrompts(1)
-        try harness.answer(harness.source.prompts[0], decision: "allow")
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
         #expect(await read.value == .success(callId: "read", value: ["content": "page"]))
 
         let search = try harness.start(callID: "search", name: harness.otherTool.name)
         await harness.source.waitForPrompts(2)
-        try harness.answer(harness.source.prompts[1], decision: "allow")
+        harness.answer(harness.source.prompts[1], decision: .allowOnce)
         #expect(await search.value == .success(callId: "search", value: ["content": "page"]))
 
         for capability in [ClientToolCapability.readTabContent, try ClientToolCapability(name: "searchHistory", version: 2)] {
             let request = try harness.request(name: capability.name, version: capability.version)
-            let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: harness.source)
+            let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source)
             #expect(response == .failure(callId: "call", error: .unavailable))
         }
         #expect(harness.tool.calls.count == 1)
@@ -101,12 +101,12 @@ struct ClientToolInvokerTests {
         #expect(harness.catalog.enabledClientToolCapabilities == [readCapability])
         let disabledRequest = try harness.request(name: harness.otherTool.name)
         #expect(await harness.invoker.invokeClientTool(disabledRequest, context: harness.context,
-                                                       permissionPusher: harness.source) == .failure(callId: "call", error: .unavailable))
+                                                       permissionPrompter: harness.source) == .failure(callId: "call", error: .unavailable))
         harness.configuration.isEnabled = false
         #expect(harness.catalog.enabledClientToolCapabilities.isEmpty)
         let parentDisabledRequest = try harness.request(version: readCapability.version)
         #expect(await harness.invoker.invokeClientTool(parentDisabledRequest, context: harness.context,
-                                                       permissionPusher: harness.source) == .failure(callId: "call", error: .unavailable))
+                                                       permissionPrompter: harness.source) == .failure(callId: "call", error: .unavailable))
         #expect(harness.tool.calls.count == 1)
         #expect(harness.otherTool.calls.count == 1)
         #expect(harness.source.prompts.count == 2)
@@ -121,7 +121,7 @@ struct ClientToolInvokerTests {
         #expect(harness.catalog.tool(named: harness.tool.name) === harness.tool)
         #expect(harness.catalog.enabledClientToolCapabilities == [.searchHistory])
 
-        let response = await harness.invoker.invokeClientTool(try harness.request(), context: harness.context, permissionPusher: harness.source)
+        let response = await harness.invoker.invokeClientTool(try harness.request(), context: harness.context, permissionPrompter: harness.source)
 
         #expect(response == .failure(callId: "call", error: .unavailable))
         #expect(harness.tool.calls.isEmpty)
@@ -130,13 +130,13 @@ struct ClientToolInvokerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: ["allow", "always", "never", "decline"])
-    func availabilityIsRecheckedAfterDecision(decision: String) async throws {
+    @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.allowOnce, .always, .never])
+    func availabilityIsRecheckedAfterDecision(decision: ClientToolPermissionDecision) async throws {
         let harness = ClientToolTestHarness()
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
         harness.configuration.disabled.insert(harness.tool.name)
-        try harness.answer(harness.source.prompts[0], decision: decision)
+        harness.answer(harness.source.prompts[0], decision: decision)
         #expect(await task.value == .failure(callId: "call", error: .unavailable))
         #expect(harness.tool.calls.isEmpty)
     }
@@ -148,7 +148,7 @@ struct ClientToolInvokerTests {
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
         harness.configuration.isEnabled = false
-        try harness.answer(harness.source.prompts[0], decision: "allow")
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
         #expect(await task.value == .failure(callId: "call", error: .unavailable))
         #expect(harness.tool.calls.isEmpty)
     }
@@ -171,7 +171,7 @@ struct ClientToolInvokerTests {
             ]))
             let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: requestData)
             let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
-            let task = Task { await invoker.invokeClientTool(request, context: context, permissionPusher: source) }
+            let task = Task { await invoker.invokeClientTool(request, context: context, permissionPrompter: source) }
             await source.waitForPrompts(1)
             if parentDisabled {
                 configuration.isEnabled = false
@@ -179,11 +179,7 @@ struct ClientToolInvokerTests {
                 configuration.disabled.insert(tool.name)
             }
             let prompt = try #require(source.prompts.first)
-            let answerData = try JSONEncoder().encode([
-                "requestId": prompt.requestId, "callId": prompt.callId, "decision": "allow"
-            ])
-            let answer = try JSONDecoder().decode(RespondToClientToolPermissionRequest.self, from: answerData)
-            coordinator.respond(to: answer, from: source)
+            coordinator.respond(to: prompt, decision: .allowOnce, from: source)
 
             #expect(await task.value == .failure(callId: "call", error: .unavailable))
             #expect(tool.calls.isEmpty)
@@ -203,7 +199,7 @@ struct ClientToolInvokerTests {
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
         harness.configuration.disabled.insert(harness.tool.name)
-        try harness.answer(harness.source.prompts[0], decision: "allow")
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
         if cancelTask {
             task.cancel()
         } else {
@@ -220,7 +216,7 @@ struct ClientToolInvokerTests {
         let harness = ClientToolTestHarness()
         harness.permissions.storedDecisions[harness.tool.name] = state
         let request = try harness.request()
-        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: nil)
+        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: nil)
         switch state {
         case .allow: #expect(response == .success(callId: "call", value: ["content": "page"]))
         case .deny: #expect(response == .failure(callId: "call", error: .denied))
@@ -236,7 +232,7 @@ struct ClientToolInvokerTests {
         harness.tool.permissionMode = .auto
         harness.permissions.storedDecisions[harness.tool.name] = .deny
         let request = try harness.request()
-        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: nil)
+        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: nil)
         #expect(response == .success(callId: "call", value: ["content": "page"]))
         #expect(harness.source.prompts.isEmpty)
         #expect(harness.permissions.writes == 0)
@@ -249,7 +245,7 @@ struct ClientToolInvokerTests {
         harness.tool.permissionMode = .auto
         harness.tool.result = .success(.array([.null, .string("unchanged"), .int(13)]))
         let request = try harness.request(callID: "exact-call", input: input)
-        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: nil)
+        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: nil)
         #expect(response == .success(callId: "exact-call", value: .array([.null, .string("unchanged"), .int(13)])))
         #expect(harness.tool.calls.count == 1)
         #expect(harness.tool.calls.first?.0 == input)
@@ -263,7 +259,7 @@ struct ClientToolInvokerTests {
         harness.tool.permissionMode = .auto
         harness.tool.result = .failure(error)
         let request = try harness.request()
-        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: nil)
+        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: nil)
         let expected: ClientToolError
         switch error {
         case .invalidArguments: expected = .invalidArguments
@@ -273,18 +269,6 @@ struct ClientToolInvokerTests {
         case .cancelled: expected = .cancelled
         }
         #expect(response == .failure(callId: "call", error: expected))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func invalidInternalPromptFailsWithoutExecution() async throws {
-        let harness = ClientToolTestHarness()
-        harness.tool.permissionReason = String(repeating: "x", count: 4097)
-        let request = try harness.request()
-        let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: harness.source)
-        #expect(result == .failure(callId: "call", error: .executionFailed))
-        #expect(harness.tool.calls.isEmpty)
-        #expect(harness.source.prompts.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -303,7 +287,7 @@ struct ClientToolInvokerTests {
         }
         let first = try harness.start(callID: "first")
         await harness.source.waitForPrompts(1)
-        try harness.answer(harness.source.prompts[0], decision: "always")
+        harness.answer(harness.source.prompts[0], decision: .always)
         if releaseFirst == nil {
             await withCheckedContinuation { firstStarted = $0 }
         }
@@ -333,7 +317,7 @@ struct ClientToolInvokerTests {
         }
         let task = try harness.start()
         await harness.source.waitForPrompts(1)
-        try harness.answer(harness.source.prompts[0], decision: "allow")
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
         if !executionDidStart {
             await withCheckedContinuation { executionStarted = $0 }
         }
@@ -361,7 +345,7 @@ extension ClientToolInvokerTests {
         harness.tool.permissionMode = .auto
         harness.tool.clientResult = { _ in clientResult }
 
-        let response = await harness.invoker.invokeClientTool(try harness.request(), context: harness.context, permissionPusher: nil)
+        let response = await harness.invoker.invokeClientTool(try harness.request(), context: harness.context, permissionPrompter: nil)
 
         switch clientResult {
         case .success(let value): #expect(response == .success(callId: "call", value: value))
@@ -377,7 +361,7 @@ extension ClientToolInvokerTests {
         let harness = ClientToolTestHarness()
         let request = try harness.request(input: input)
 
-        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPusher: harness.source)
+        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source)
 
         #expect(response == .failure(callId: "call", error: .invalidArguments))
         #expect(harness.source.prompts.isEmpty)
@@ -388,15 +372,15 @@ extension ClientToolInvokerTests {
 @MainActor
 private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoordinating {
     let outcome: String
-    var calls: [(callID: String, tool: any BrowserTool, source: (any ClientToolPermissionPushing)?)] = []
+    var calls: [(callID: String, tool: any BrowserTool, prompter: (any ClientToolPermissionPrompting)?)] = []
     var permissionConfirmationCount = 0
 
     init(outcome: String) {
         self.outcome = outcome
     }
 
-    func authorize(callID: String, tool: any BrowserTool, source: (any ClientToolPermissionPushing)?) async -> ClientToolPermissionAuthorization {
-        calls.append((callID, tool, source))
+    func authorize(callID: String, tool: any BrowserTool, prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
+        calls.append((callID, tool, prompter))
         guard outcome != "denied" else { return .refused(.denied) }
         return .granted(performExecution: { [self] operation in
             permissionConfirmationCount += 1

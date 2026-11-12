@@ -2059,6 +2059,7 @@ public struct UserText {
     static let subscriptionCompletingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
     static let subscriptionPlanChangeInProgressTitle = NSLocalizedString("subscription.progress.view.plan.change.in.progress", value: "Plan change in progress…", comment: "Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade)")
     static let subscriptionCompletePlanChangeTitle = NSLocalizedString("subscription.progress.view.complete.plan.change", value: "Completing plan change…", comment: "Progress view title when completing a plan change with the backend")
+    static let subscriptionWithdrawInProgressTitle = NSLocalizedString("subscription.progress.view.withdraw.in.progress", value: "Withdrawal in progress…", comment: "Progress view title while withdrawing from the subscription contract")
 
     // Subscription Settings
     public static var subscriptionTitle = NSLocalizedString("subscription.settings.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
@@ -2201,6 +2202,49 @@ public struct UserText {
     public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
     public static let subscriptionManageSubscription = NotLocalizedString("subscription.manage.subscription", value: "Manage Subscription", comment: "Action title that opens the payment platform's subscription management screen. Used for en_US locale only.")
     public static let subscriptionCancelSubscription = NotLocalizedString("subscription.cancel.subscription", value: "Cancel Subscription", comment: "Action title that starts the subscription cancellation flow. Used for en_US locale only.")
+    public static let subscriptionWithdrawFromContract = NSLocalizedString("subscription.withdraw.from.contract", value: "Withdraw from Contract", comment: "Action title that starts withdrawing from the subscription contract with a full refund")
+    static func subscriptionWithdrawFromContractSubtitle(eligibleUntil: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.from.contract.subtitle",
+                                           value: "You can withdraw and get a full refund until %@",
+                                           comment: "Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw.")
+        return String(format: localized, eligibleUntil)
+    }
+    public static let subscriptionWithdrawConfirmTitle = NSLocalizedString("subscription.withdraw.confirm.title", value: "Withdraw from your subscription?", comment: "Title of the alert confirming withdrawal from the subscription contract")
+    static func subscriptionWithdrawConfirmMessage(tierName: String, refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.message",
+                                           value: "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days.",
+                                           comment: "Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency.")
+        return String(format: localized, tierName, refundAmount)
+    }
+    static func subscriptionWithdrawConfirmMessage(tierName: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.message.no.amount",
+                                           value: "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days.",
+                                           comment: "Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).")
+        return String(format: localized, tierName)
+    }
+    static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
+                                           value: "%@ stop working once you confirm.",
+                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+        return String(format: localized, features)
+    }
+    public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
+    public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
+    public static let subscriptionNotSubscribed = NSLocalizedString("subscription.not.subscribed", value: "Not Subscribed", comment: "Subscription status shown after the user withdrew from the subscription contract")
+    static func subscriptionWithdrawnInfo(withdrawalDate: String) -> String {
+        let localized = NSLocalizedString("subscription.withdrawn.info",
+                                           value: "You withdrew on %@.",
+                                           comment: "Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date.")
+        return String(format: localized, withdrawalDate)
+    }
+    static func subscriptionWithdrawnRefundInfo(refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.withdrawn.refund.info",
+                                           value: "Your refund of %@ is being processed.",
+                                           comment: "Shown below the withdrawal confirmation. Parameter is the refunded amount with currency.")
+        return String(format: localized, refundAmount)
+    }
+    public static let subscriptionWithdrawErrorMessage = NSLocalizedString("subscription.withdraw.error.message", value: "We couldn’t process your withdrawal automatically. Please visit our help page to complete your withdrawal.", comment: "Message of the alert shown when withdrawing from the subscription contract fails")
+    public static let subscriptionWithdrawErrorButton = NSLocalizedString("subscription.withdraw.error.button", value: "Visit Help Page", comment: "Button that opens the help page to complete a failed subscription withdrawal")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")
@@ -2846,7 +2890,23 @@ public struct UserText {
             public static let chatWithAI = NSLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI\nprivately", comment: "Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let removeAI = NSLocalizedString("onboarding.downloadReason.removeAI", value: "Disable\nAI features", comment: "Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let blockAds = NSLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads\nand pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
+            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "VPN-protect my connection", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
+
+            /// Single-line labels for the list layout (VPN experiment treatment).
+            public enum List {
+                public static let browsePrivately = NotLocalizedString("onboarding.downloadReason.list.browsePrivately", value: "Search and browse privately", comment: "Label for the option to set up the app for private searching and browsing.")
+                public static let chatWithAI = NotLocalizedString("onboarding.downloadReason.list.chatWithAI", value: "Chat with AI privately", comment: "Label for the option to set up the app for private AI chat.")
+                public static let removeAI = NotLocalizedString("onboarding.downloadReason.list.removeAI", value: "Disable AI features", comment: "Label for the option to set up the app without AI features in search results.")
+                public static let blockAds = NotLocalizedString("onboarding.downloadReason.list.blockAds", value: "Block ads and pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups.")
+            }
             public static let cta = NSLocalizedString("onboarding.downloadReason.cta", value: "Next", comment: "Button to continue to the next onboarding screen after choosing a reason.")
+        }
+
+        public enum TryVPN {
+            public static let title = NotLocalizedString("onboarding.tryVPN.title", value: "Try our VPN free for 7 days", comment: "Title of the onboarding screen offering a VPN free trial to users who chose VPN as their download reason.")
+            public static let message = NotLocalizedString("onboarding.tryVPN.message", value: "The VPN is part of an optional DuckDuckGo paid subscription.", comment: "Message of the onboarding screen offering a VPN free trial.")
+            public static let footer = NotLocalizedString("onboarding.tryVPN.footer", value: "The subscription also includes personal information removal, identity theft restoration and additional AI models with higher usage", comment: "Small print on the onboarding screen offering a VPN free trial, listing the other subscription features.")
+            public static let cta = NotLocalizedString("onboarding.tryVPN.cta", value: "Try for Free", comment: "Button on the onboarding screen to start the VPN free trial.")
         }
 
         public enum Personalization {
@@ -2916,6 +2976,7 @@ public struct UserText {
 
             public static let titleGenericDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-generic", value: "You’re in the right place!\nProtections activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let titleNoAIDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ai", value: "You’re in the right place!\nAI features disabled.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation.")
+            public static let vpnSubscriptionFooter = NotLocalizedString("onboarding.downloadReason.comparison.vpn.footer", value: "VPN is included with a paid DuckDuckGo subscription.", comment: "Note below the onboarding browser comparison chart for users who chose VPN as their download reason.")
             public static let titleNoAdsDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ads", value: "You’re in the right place!\nAd Blocking activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
         }
 

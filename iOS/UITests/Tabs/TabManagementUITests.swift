@@ -91,6 +91,10 @@ final class TabManagementUITests: UITestCase {
             // Verify a child was created, rather than navigating the parent in place.
             app.openTabSwitcher()
             app.assertTabCount(3)
+            let parent = tabs.privacy.buttons["TabSwitcher.Tab.Open"]
+            XCTAssertTrue(
+                parent.label.contains(LocalUITestWebsite.Page.first.title),
+                "Opening the child tab changed the parent's page.")
             // The child is inserted immediately after its parent, before the search tab.
             return app.tabCell(at: 1)
         }

@@ -46,8 +46,9 @@ final class LocalUITestWebsite {
         let requests = PageRequests()
         let pages: [Page] = [.first, .second, .child] + (0..<4).map(Page.bookmark)
         for page in pages {
+            // The child-tab test opens the link through the browser's context menu.
             let childLink = page.path == Page.first.path
-                ? "<a href=\"\(Page.child.path)\">\(Self.childLinkTitle)</a>"
+                ? "<a href=\"\(Page.child.path)\" onclick=\"event.preventDefault()\">\(Self.childLinkTitle)</a>"
                 : ""
             let html = "<title>\(page.title)</title><h1>\(page.title)</h1>\(childLink)"
             server[page.path] = { _ in

@@ -44,7 +44,7 @@ extension XCUIApplication {
             predicate: NSPredicate(format: "count == %d", count),
             object: bookmarks)
         XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.elementExistence),
+            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation),
             .completed,
             "Expected \(count) bookmarks, found \(bookmarks.count).",
             file: file,

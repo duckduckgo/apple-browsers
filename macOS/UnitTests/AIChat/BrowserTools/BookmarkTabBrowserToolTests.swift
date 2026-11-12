@@ -147,6 +147,22 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         XCTAssertNil(manager.getBookmark(forUrl: otherURL))
     }
 
+    func testWhenACallIsCancelledWhileCreatingAFolderThenItSavesNothing() async throws {
+        let (tool, context, _, _, store) = makeWithStore(bookmarks: [])
+        store.defersSaveCompletions = true
+
+        let call = Task { await tool.execute(arguments: ["folder": ["Trips", "Paris"]], context: context) }
+        try await waitUntil { store.deferredSaveCompletionCount == 1 }
+        call.cancel()
+        store.defersSaveCompletions = false
+        store.completeNextSave()
+
+        let result = await call.value
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertEqual(store.savedFolder(withTitle: "Trips")?.title, "Trips")
+        XCTAssertFalse(store.saveBookmarkCalled)
+    }
+
     func testWhenTheFolderIsMalformedThenArgumentsAreInvalid() async {
         let (tool, context, manager, _) = make()
         let tooDeep = JSONValue.array(Array(repeating: "a", count: BookmarkTabBrowserTool.maxFolderDepth + 1))

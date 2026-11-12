@@ -134,7 +134,7 @@ When the sheet has no ❓ left, your next message is the plan — before your fi
 4. **Not changing**: plain statements of what a reader might expect to change but won't. If you'd want to add "tell me if you want X", X is an open question.
 5. **How to implement** — offer both and wait for the pick:
    - **Inline**: you do every task in this session, in order.
-   - **Subagents**: one subagent per task A → E, one at a time (they share `PromoDependencies` and test setup), you reviewing each diff against its plan lines before starting the next. You do F yourself — parallel `project.pbxproj` edits corrupt it.
+   - **Subagents**: one subagent per task A → E, one at a time (they share `PromoDependencies` and test setup), you reviewing each diff against its plan lines before starting the next. You do F yourself.
 
 **Subagent prompts** contain: the path to [implementing.md](implementing.md) and the name of the task's section; the promo definition and decision sheet, verbatim; the task's file list; and "If you hit a decision this plan doesn't answer, stop and report it back; don't choose." Relay any reported question to the user. If `superpowers:subagent-driven-development` is available you can use it, keeping these rules.
 

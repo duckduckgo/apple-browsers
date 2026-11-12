@@ -1561,13 +1561,6 @@
 			name = "Recovered References";
 			sourceTree = "<group>";
 		};
-		378E279C2970217400FCADA2 /* LocalPackages */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = LocalPackages;
-			sourceTree = "<group>";
-		};
 		84DD058A2E9793B70043A25E /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -1616,7 +1609,6 @@
 				961FCCB730A22775000B767F /* HelperTargetsShared */,
 				85AE2FF024A33A2D002D507F /* Frameworks */,
 				968FD4DE309202A5000D6B12 /* IntegrationTests */,
-				378E279C2970217400FCADA2 /* LocalPackages */,
 				961FCCE030A22779000B767F /* NetworkProtectionAppExtension */,
 				961FCCED30A2277D000B767F /* NetworkProtectionSystemExtension */,
 				AA585D7F248FD31100E9A3E2 /* Products */,

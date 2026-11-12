@@ -24,6 +24,7 @@ import WebKit
 @available(iOS 18.4, *)
 @MainActor
 extension TabViewController: CPMMonitoredTab {
+    /// The identifier `didCommit` reports navigations to the health monitor with.
     var cpmTabIdentifier: String { tabModel.uid }
 }
 

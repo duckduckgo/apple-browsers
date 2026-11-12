@@ -321,6 +321,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         super.init()
 
+        // A closed tab stops waiting for the extension; the tab itself says which identifier the monitor knows it by.
         listener.onTabClosed = { [weak monitor = self.cpmMessagingHealthMonitor] tab in
             MainActor.assumeMainThread {
                 guard let identifier = (tab as? CPMMonitoredTab)?.cpmTabIdentifier else {

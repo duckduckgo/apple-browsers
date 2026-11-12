@@ -22,6 +22,7 @@ import WebKit
 @available(macOS 15.4, *)
 @MainActor
 extension Tab: CPMMonitoredTab {
+    /// The identifier `PrivacyDashboardTabExtension` reports navigations to the health monitor with.
     var cpmTabIdentifier: String { uuid }
 }
 

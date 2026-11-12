@@ -2749,6 +2749,7 @@ extension TabViewController: WKNavigationDelegate {
             webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
         }
         if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame {
+            // The response tells a non-HTML document from a page; the kind is read at commit.
             committingNavigationKind = committingNavigationKind.resolved(forMimeType: navigationResponse.response.mimeType)
         }
         if webView === self.webView {

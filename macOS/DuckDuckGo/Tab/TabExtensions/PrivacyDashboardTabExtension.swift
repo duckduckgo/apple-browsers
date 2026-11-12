@@ -282,6 +282,7 @@ extension Navigation {
         if initialNavigationType == .sessionRestoration {
             return .sessionRestoration
         }
+        // The response of the navigation is known at commit and tells a non-HTML document from a page.
         let kind: CPMNavigationKind = initialNavigationType.isBackForward ? .backForward : .other
         return kind.resolved(forMimeType: navigationResponse?.response.mimeType)
     }

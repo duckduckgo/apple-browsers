@@ -37,7 +37,7 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
 
     /// Whether a response with this MIME type is an HTML document. An unknown type counts as HTML, so a page
     /// is left out only when the response says it is something else.
-    public static func isHTMLDocument(mimeType: String?) -> Bool {
+    static func isHTMLDocument(mimeType: String?) -> Bool {
         guard let type = mimeType?.lowercased(), !type.isEmpty else { return true }
         return type == "text/html" || type == "application/xhtml+xml"
     }
@@ -47,6 +47,13 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
         guard self == .other, !Self.isHTMLDocument(mimeType: mimeType) else { return self }
         return .nonHTMLDocument
     }
+}
+
+/// A tab that the health monitor follows by an identifier. It is the identifier the tab reports navigations with,
+/// so the extension events listener can tell the monitor which tab closed.
+@MainActor
+public protocol CPMMonitoredTab: AnyObject {
+    var cpmTabIdentifier: String { get }
 }
 
 /// Facts supplied by tabs, the native messaging handler, and the extension manager.

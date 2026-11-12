@@ -19,12 +19,6 @@
 import WebKit
 import os.log
 
-/// A tab that the CPM health monitor follows by an identifier.
-@MainActor
-public protocol CPMMonitoredTab: AnyObject {
-    var cpmTabIdentifier: String { get }
-}
-
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionEventsListening {
 
@@ -106,6 +100,7 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
     public func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
+        // A replaced tab is gone: whatever the health monitor waited on for it ends here.
         if !isSuppressingTabLifecycleEvents { onTabClosed?(oldTab) }
         notifyController { $0.didReplaceTab(oldTab, with: tab) }
     }

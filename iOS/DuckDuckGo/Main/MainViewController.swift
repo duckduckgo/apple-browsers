@@ -323,6 +323,7 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    private(set) var isSelectingTabBySwipe = false
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
@@ -1321,7 +1322,7 @@ class MainViewController: UIViewController {
                     // Before selecting, so the entry attaches to this tab when it is shown.
                     fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
                 }
-                selectTab(tab)
+                selectTabBySwipe(tab)
             } else {
                 crossfadeDuckAIPlaceholder(toMatch: tab)
             }
@@ -8753,6 +8754,12 @@ extension MainViewController: TabDelegate {
             // This tab was shown before the entry started, so report it again for the entry.
             reportDuckAISessionCurrentTab()
         }
+    }
+
+    private func selectTabBySwipe(_ tab: Tab) {
+        isSelectingTabBySwipe = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
+        defer { isSelectingTabBySwipe = false }
+        selectTab(tab)
     }
 
     func selectTab(_ tab: Tab) {

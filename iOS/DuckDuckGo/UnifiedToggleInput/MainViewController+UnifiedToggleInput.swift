@@ -440,6 +440,7 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let isFloatingUIEnabled: Bool
     let isRefreshingCurrentTab: Bool
     let isAddressBarPositionCurrent: Bool
+    var isArrivingByTabSwipe = false
 }
 
 extension MainViewController {
@@ -479,6 +480,11 @@ extension MainViewController {
         // an existing-chat URL whose query string only just arrived.
         let resolvedURL = inputs.tabURL ?? inputs.tabLinkURL
         let isVoiceMode = resolvedURL?.isDuckAIVoiceMode == true || inputs.tabIsVoiceModeRequested
+
+        // A swipe may pass through this tab on the way to another, so it never brings up the keyboard.
+        if inputs.isArrivingByTabSwipe {
+            return .refreshAITab(.showCollapsed(expandAfterRefresh: false))
+        }
 
         if inputs.coordinatorIsAITabState {
             // Voice never inherits an expanded chat presentation: voice hides the input box, so once it ends the bottom chrome would render expanded (no fire button / app menu) over a non-focused tab. Force collapse so the standard collapsed accessories return on dismiss.
@@ -835,7 +841,8 @@ private extension MainViewController {
             isNavigationChromeHidden: viewCoordinator.isNavigationChromeHidden,
             isFloatingUIEnabled: isFloatingUIEnabled,
             isRefreshingCurrentTab: isRefreshingCurrentTab,
-            isAddressBarPositionCurrent: viewCoordinator.addressBarPosition == appSettings.currentAddressBarPosition
+            isAddressBarPositionCurrent: viewCoordinator.addressBarPosition == appSettings.currentAddressBarPosition,
+            isArrivingByTabSwipe: isSelectingTabBySwipe
         )
         return MainViewController.decideRefreshAction(for: inputs)
     }

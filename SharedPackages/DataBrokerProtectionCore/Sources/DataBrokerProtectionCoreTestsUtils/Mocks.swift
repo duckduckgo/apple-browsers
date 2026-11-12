@@ -355,6 +355,7 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
     public var wasFinishCalled = false
     public var finishCallCount = 0
     public var finishHandler: (() -> Void)?
+    public var asyncFinishHandler: (() async -> Void)?
     public var executeCallCount = 0
     public var executeHandler: (() -> Void)?
     public var initializeWebViewHandler: (() async -> Void)?
@@ -384,6 +385,7 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
         wasFinishCalled = true
         finishCallCount += 1
         finishHandler?()
+        await asyncFinishHandler?()
     }
 
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
@@ -1291,7 +1293,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return brokerProfileQueryDataToReturn.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
     }
 
+    public var scopedProfileFetchCount = 0
+    public var scopedProfileFetchHandler: ((Int64) throws -> [BrokerProfileQueryData])?
+
     public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        scopedProfileFetchCount += 1
+        if let scopedProfileFetchHandler { return try scopedProfileFetchHandler(brokerId) }
         if let fetchAllBrokerProfileQueryDataError {
             throw fetchAllBrokerProfileQueryDataError
         }

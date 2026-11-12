@@ -25,14 +25,14 @@ import WebExtensions
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
     func testBreakageUsesCanonicalPixelKitContract() throws {
         let pixels = PixelKitMock()
-        let report = CPMMessagingBreakageReport(tabs: .many)
+        let report = CPMMessagingBreakageReport(lastStage: .configRead, tabs: .many)
         MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(report))
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
         XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage")
         XCTAssertEqual(call.pixel.namePrefix, .none)
         XCTAssertEqual(call.frequency, .dailyAndCount)
-        XCTAssertEqual(call.pixel.parameters, ["tabs": "many"])
+        XCTAssertEqual(call.pixel.parameters, ["last_stage": "config_read", "tabs": "many"])
         XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
         XCTAssertNil(call.additionalParameters)
         XCTAssertTrue(call.includeAppVersionParameter)

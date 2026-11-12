@@ -31,6 +31,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case sendPixel
         case reportCpmCoverage
         case refreshCpmDashboardState
+        case cpmInitProgress
         case showCpmAnimation
         case cookiePopupHandled
         case isFeatureEnabled
@@ -76,6 +77,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return handleReportCpmCoverage(message.params)
         case .refreshCpmDashboardState:
             return await handleRefreshCpmDashboardState(message.params, extensionIdentifier: message.extensionIdentifier)
+        case .cpmInitProgress:
+            return await handleCpmInitProgress(message.params, extensionIdentifier: message.extensionIdentifier)
         case .showCpmAnimation:
             return handleShowCpmAnimation(message.params)
         case .cookiePopupHandled:
@@ -154,6 +157,24 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         await cpmMessagingHealthMonitor?.handle(event)
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
+        return .success(Self.successResponse)
+    }
+
+    /// A best-effort progress mark for one main-frame init. Unknown stages and marks without a page are
+    /// ignored, never an error, so a newer extension cannot make an older app answer with failures.
+    private func handleCpmInitProgress(_ params: [String: Any]?, extensionIdentifier: String) async -> WebExtensionMessageResult {
+        guard let stageName = params?["stage"] as? String,
+              let stage = CPMInitStage(rawValue: stageName),
+              let urlString = params?["url"] as? String,
+              let url = URL(string: urlString),
+              url.host != nil else {
+            return .success(Self.successResponse)
+        }
+        let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
+        await cpmMessagingHealthMonitor?.handle(.initProgress(extensionTabIdentifier: extensionTabIdentifier,
+                                                              url: url,
+                                                              stage: stage,
+                                                              extensionIdentifier: extensionIdentifier))
         return .success(Self.successResponse)
     }
 

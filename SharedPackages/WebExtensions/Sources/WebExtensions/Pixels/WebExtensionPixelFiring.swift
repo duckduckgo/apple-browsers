@@ -155,14 +155,17 @@ public enum CPMSilentTabs: String, Equatable, Sendable {
 
 /// One detected breakage. Sent the moment it is detected, so nothing is lost if the app closes afterwards.
 public struct CPMMessagingBreakageReport: Equatable, Sendable {
+    /// The furthest init step the extension reported for the tab's page; nil when it reported none.
+    public let lastStage: CPMInitStage?
     public let tabs: CPMSilentTabs
 
-    public init(tabs: CPMSilentTabs) {
+    public init(lastStage: CPMInitStage?, tabs: CPMSilentTabs) {
+        self.lastStage = lastStage
         self.tabs = tabs
     }
 
     var pixelParameters: [String: String] {
-        ["tabs": tabs.rawValue]
+        ["last_stage": lastStage?.rawValue ?? "none", "tabs": tabs.rawValue]
     }
 }
 

@@ -201,6 +201,109 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         }
     }
 
+    // MARK: - cpmInitProgress
+
+    @MainActor
+    func testWhenCpmInitProgressThenForwardsStageTabAndURLToHealthMonitor() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let message = createMessage(method: "cpmInitProgress", params: [
+            "tabId": NSNumber(value: 9),
+            "url": "https://example.com/a",
+            "stage": "config_read"
+        ])
+
+        let result = await handler.handleMessage(message)
+
+        guard case .success = result else { return XCTFail("Expected success") }
+        XCTAssertEqual(monitor.progressStages, [.configRead])
+        XCTAssertEqual(monitor.progressTabIdentifier, 9)
+        XCTAssertEqual(monitor.progressURL, URL(string: "https://example.com/a"))
+        XCTAssertNil(monitor.url, "a mark is not a dashboard response")
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressStageIsUnknownThenIgnoredWithoutError() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let message = createMessage(method: "cpmInitProgress", params: [
+            "tabId": NSNumber(value: 9), "url": "https://example.com/a", "stage": "made_up"
+        ])
+
+        let result = await handler.handleMessage(message)
+
+        guard case .success = result else { return XCTFail("An unknown stage must not be an error") }
+        XCTAssertTrue(monitor.progressStages.isEmpty)
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressIsMissingItsStageOrPageThenIgnoredWithoutError() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let incomplete: [[String: Any]] = [
+            ["tabId": NSNumber(value: 9), "url": "https://example.com/a"],
+            ["tabId": NSNumber(value: 9), "stage": "received"],
+            ["tabId": NSNumber(value: 9), "stage": "received", "url": "not a page"]
+        ]
+        for params in incomplete {
+            let result = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: params))
+            guard case .success = result else { return XCTFail("A bad mark must not be an error") }
+        }
+
+        XCTAssertTrue(monitor.progressStages.isEmpty)
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressHasNoUsableTabIdentifierThenItIsStillForwarded() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        for tabId: Any in [NSNull(), "9"] {
+            let message = createMessage(method: "cpmInitProgress", params: [
+                "tabId": tabId, "url": "https://example.com/a", "stage": "received"
+            ])
+            _ = await handler.handleMessage(message)
+        }
+
+        XCTAssertEqual(monitor.progressStages, [.received, .received])
+        XCTAssertNil(monitor.progressTabIdentifier)
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressUsesEveryStageNameThenEachIsRecognized() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let names = ["page_init_sent", "received", "config_read", "settings_checked",
+                     "site_checked", "response_sent"]
+        for name in names {
+            let message = createMessage(method: "cpmInitProgress", params: [
+                "tabId": NSNumber(value: 9), "url": "https://example.com/a", "stage": name
+            ])
+            _ = await handler.handleMessage(message)
+        }
+
+        XCTAssertEqual(monitor.progressStages.map(\.rawValue), names)
+    }
+
     // MARK: - showCpmAnimation
 
     func testWhenShowCpmAnimationWithNoParamsThenReturnsMissingParameterError() async {
@@ -916,8 +1019,16 @@ private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonito
     private(set) var extensionIdentifier: String?
     private(set) var url: URL?
     private(set) var isAnswer: Bool?
+    private(set) var progressStages: [CPMInitStage] = []
+    private(set) var progressTabIdentifier: Int?
+    private(set) var progressURL: URL?
 
     func handle(_ event: CPMMessagingHealthEvent) {
+        if case .initProgress(let tabIdentifier, let url, let stage, _) = event {
+            progressStages.append(stage)
+            progressTabIdentifier = tabIdentifier
+            progressURL = url
+        }
         guard case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier, let isAnswer) = event else { return }
         self.extensionTabIdentifier = extensionTabIdentifier
         self.extensionIdentifier = extensionIdentifier

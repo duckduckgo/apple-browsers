@@ -448,6 +448,147 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixels.breakages.isEmpty, "the answer is applied before the check")
     }
 
+    // MARK: - Init marks
+
+    func testReportCarriesTheFurthestStageOfTheSilentTab() {
+        commit("a", path: "a")
+        mark(.pageInitSent, extensionTab: 1, path: "a")
+        mark(.configRead, extensionTab: 1, path: "a")
+        mark(.received, extensionTab: 1, path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: .configRead)])
+    }
+
+    func testReportWithoutMarksHasNoStage() {
+        commit("a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)])
+    }
+
+    func testMarksOfAnotherTabDoNotLeakIntoTheReport() {
+        commit("a", path: "a")
+        commit("b", path: "b")
+        mark(.siteChecked, extensionTab: 2, path: "b")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url("b")))
+        mark(.received, extensionTab: 1, path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: .received)])
+    }
+
+    func testBothSilentTabsReportTheirOwnStage() {
+        commit("a", path: "a")
+        commit("b", path: "b")
+        mark(.received, extensionTab: 1, path: "a")
+        mark(.responseSent, extensionTab: 2, path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(Set(pixels.breakages.map { $0.lastStage?.rawValue ?? "none" }), ["received", "response_sent"])
+        XCTAssertEqual(pixels.persistentCount, 1)
+    }
+
+    func testMarkIsNotAnAnswer() {
+        commit("a", path: "a")
+        mark(.responseSent, extensionTab: 1, path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: .responseSent)])
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
+    func testMarkDoesNotCountAsAMessageForTheSeries() {
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+        mark(.responseSent, extensionTab: 5, path: "b")
+        commit("b", path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.persistentCount, 1, "a mark does not end the series")
+        XCTAssertEqual(pixels.breakages.count, 2)
+    }
+
+    func testMarkThatCannotBeTiedToOneTabIsDropped() {
+        commit("a", path: "same")
+        commit("b", path: "same")
+        mark(.received, extensionTab: 9, path: "same")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.many, stage: nil), report(.many, stage: nil)])
+    }
+
+    func testMarkOfThePageBeforeIsNotCountedForTheNewPage() {
+        commit("a", path: "old")
+        mark(.pageInitSent, extensionTab: 1, path: "old")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("old")))
+        advance(10)
+        commit("a", path: "new")
+        mark(.responseSent, extensionTab: 1, path: "old")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)], "a late mark of the old page is not the new page's")
+    }
+
+    func testMarkForATabWithoutAWaitingPageLearnsNothing() {
+        commit("a", path: "a")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a")))
+        mark(.responseSent, extensionTab: 7, path: "a")
+        advance(100)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertTrue(pixels.breakages.isEmpty)
+        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 7), "an answered page cannot teach a tab from a mark")
+    }
+
+    func testMarksFromAnOldExtensionAreIgnored() {
+        monitor.isCurrentEmbeddedExtension = { $0 == "current" }
+        commit("a", path: "a")
+        monitor.handle(.initProgress(extensionTabIdentifier: 1, url: url("a"), stage: .received, extensionIdentifier: "old"))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)])
+    }
+
+    func testMarksDuringSimulationAreIgnored() {
+        monitor.setBreakageSimulationEnabled(true)
+        commit("a", path: "a")
+        mark(.received, extensionTab: 1, path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)])
+    }
+
+    func testClosedTabForgetsItsMarks() {
+        commit("a", path: "a")
+        mark(.received, extensionTab: 1, path: "a")
+        monitor.handle(.tabClosed(tabIdentifier: "a"))
+        advance(5)
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)])
+    }
+
+    func testStagesAreRankedInTheOrderTheChainRuns() {
+        let names = CPMInitStage.allCases.map(\.rawValue)
+        XCTAssertEqual(names, ["page_init_sent", "received", "config_read", "settings_checked",
+                               "site_checked", "response_sent"])
+        XCTAssertEqual(CPMInitStage.allCases.map(\.rank), Array(0..<6))
+    }
+
     // MARK: - Helpers
 
     private func url(_ path: String) -> URL {
@@ -462,8 +603,12 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         date = date.addingTimeInterval(seconds)
     }
 
-    private func report(_ tabs: CPMSilentTabs) -> CPMMessagingBreakageReport {
-        CPMMessagingBreakageReport(tabs: tabs)
+    private func report(_ tabs: CPMSilentTabs, stage: CPMInitStage? = nil) -> CPMMessagingBreakageReport {
+        CPMMessagingBreakageReport(lastStage: stage, tabs: tabs)
+    }
+
+    private func mark(_ stage: CPMInitStage, extensionTab: Int?, path: String) {
+        monitor.handle(.initProgress(extensionTabIdentifier: extensionTab, url: url(path), stage: stage))
     }
 }
 

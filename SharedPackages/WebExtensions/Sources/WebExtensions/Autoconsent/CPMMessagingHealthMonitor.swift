@@ -33,6 +33,34 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
     case other
 }
 
+/// The last step of a main-frame init the extension reported, in the order the chain runs.
+public enum CPMInitStage: String, CaseIterable, Sendable {
+    /// The content script is about to send `init`.
+    case pageInitSent = "page_init_sent"
+    /// The background received `init`.
+    case received
+    /// The background read its configuration.
+    case configRead = "config_read"
+    /// The background read the user's setting.
+    case settingsChecked = "settings_checked"
+    /// The background checked the site.
+    case siteChecked = "site_checked"
+    /// The background answered the page's `init`; the reply itself is not observed.
+    case responseSent = "response_sent"
+
+    /// Position in the chain; a later report never lowers the last stage reached.
+    var rank: Int {
+        switch self {
+        case .pageInitSent: return 0
+        case .received: return 1
+        case .configRead: return 2
+        case .settingsChecked: return 3
+        case .siteChecked: return 4
+        case .responseSent: return 5
+        }
+    }
+}
+
 /// Facts supplied by tabs, the native messaging handler, and the extension manager.
 @available(macOS 15.4, iOS 18.4, *)
 public enum CPMMessagingHealthEvent: Sendable {
@@ -44,6 +72,9 @@ public enum CPMMessagingHealthEvent: Sendable {
     /// page's init (no configuration, no settings): the extension is running, but the page stays unanswered.
     case dashboardResponse(extensionTabIdentifier: Int?, url: URL, extensionIdentifier: String? = nil, isAnswer: Bool = true)
     case extensionLifecycle(WebExtensionLifecycleEvent)
+    /// A progress mark for one main-frame init, sent by the extension. It never answers a page; it only
+    /// tells how far the init got.
+    case initProgress(extensionTabIdentifier: Int?, url: URL, stage: CPMInitStage, extensionIdentifier: String? = nil)
     /// The process may stop running: iOS entered the background, or macOS is going to sleep.
     case interruptionBegan
     /// The app is running again: iOS returns to the foreground, or macOS woke.
@@ -58,14 +89,15 @@ public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
 
 /// Reports tabs whose page never heard from the extension.
 ///
-/// A committed page that can run the extension must hear from it: the extension sends a message from the
-/// tab while the page initializes. A page with no message for `silenceWindow` seconds of app time makes
-/// its tab silent, reported once; a tab that navigates or closes before the window ends is not reported. A message that arrives later still counts as an answer; there is no timer, the
-/// check runs when an event arrives. A second silent tab, with no message from the extension in between,
-/// reports the persistent pixel once.
+/// A committed page that can run the extension must hear from it: the extension refreshes the privacy
+/// dashboard from the tab while the page initializes. A page with no refresh for `silenceWindow` seconds of
+/// app time makes its tab silent, reported once; a tab that navigates or closes before the window ends is
+/// not reported. A refresh that arrives later still counts as an answer. There is no timer: the check runs
+/// when an event arrives. A second silent tab, with no answering refresh in between, reports the persistent
+/// pixel once.
 ///
 /// It also follows which extension tab belongs to which app tab, and reports through `onHealthyResponse`
-/// when the current embedded extension answers.
+/// when the current embedded extension sends a dashboard response.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
@@ -84,7 +116,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private var extensionTabMappings: [Int: String] = [:]
     /// When each tab's latest eligible page committed, until a message from the tab answers it.
     private var pendingCommits: [String: Date] = [:]
-    /// Tabs reported silent since the extension last sent any message.
+    /// The furthest init stage reported for each tab's latest page.
+    private var lastStages: [String: CPMInitStage] = [:]
+    /// Tabs reported silent since the extension last answered a page.
     private var silentTabs: Set<String> = []
     private var didReportPersistentBreakage = false
     private var suspensionStart: Date?
@@ -141,17 +175,23 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             let eligible = isEligible(url: url, navigationKind: navigationKind)
             committedPages[tabIdentifier] = eligible ? url : nil
             pendingCommits[tabIdentifier] = nil
+            lastStages[tabIdentifier] = nil
             if eligible && extensionIsLoaded { pendingCommits[tabIdentifier] = now() }
         case .tabClosed(let tabIdentifier):
             committedPages.removeValue(forKey: tabIdentifier)
             pendingCommits.removeValue(forKey: tabIdentifier)
+            lastStages.removeValue(forKey: tabIdentifier)
             extensionTabMappings = extensionTabMappings.filter { $0.value != tabIdentifier }
         case .webContentProcessTerminated(let tabIdentifier):
             // A crashed page is not the extension's silence.
             committedPages.removeValue(forKey: tabIdentifier)
             pendingCommits.removeValue(forKey: tabIdentifier)
+            lastStages.removeValue(forKey: tabIdentifier)
         case .dashboardResponse:
             break
+        case .initProgress(let extensionTabIdentifier, let url, let stage, let extensionIdentifier):
+            receiveProgress(extensionTabIdentifier: extensionTabIdentifier, url: url, stage: stage,
+                            extensionIdentifier: extensionIdentifier)
         case .extensionLifecycle(let lifecycleEvent):
             handle(lifecycleEvent)
         case .interruptionBegan:
@@ -166,6 +206,32 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func isEligible(url: URL, navigationKind: CPMNavigationKind) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return false }
         return navigationKind == .other
+    }
+
+    /// Records how far one page's init got. A mark is not an answer: the background can receive `init` and
+    /// still never answer, which is the silence this metric reports.
+    private func receiveProgress(extensionTabIdentifier: Int?, url: URL, stage: CPMInitStage, extensionIdentifier: String?) {
+        if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
+        guard !isCPMMessagingBreakageSimulationEnabled else { return }
+        learnTab(forExtensionTab: extensionTabIdentifier, url: url)
+        guard let tabIdentifier = tabForMark(extensionTab: extensionTabIdentifier, url: url) else { return }
+        raiseStage(of: tabIdentifier, to: stage)
+    }
+
+    /// The one tab a mark of its current page belongs to, if it can be told. A mark about any other page of
+    /// the tab (the page before, or one that has not committed yet) belongs to no current page.
+    private func tabForMark(extensionTab extensionTabIdentifier: Int?, url: URL) -> String? {
+        if let extensionTabIdentifier, let tabIdentifier = extensionTabMappings[extensionTabIdentifier] {
+            let isCurrentPage = committedPages[tabIdentifier]?.matchesCPMDashboardStatePage(url) == true
+            return isCurrentPage ? tabIdentifier : nil
+        }
+        let candidates = committedPages.filter { $0.value.matchesCPMDashboardStatePage(url) }
+        return candidates.count == 1 ? candidates.keys.first : nil
+    }
+
+    private func raiseStage(of tabIdentifier: String, to stage: CPMInitStage) {
+        guard stage.rank > (lastStages[tabIdentifier]?.rank ?? -1) else { return }
+        lastStages[tabIdentifier] = stage
     }
 
     /// Time spent suspended does not count towards the silence window.
@@ -222,7 +288,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     private func reportSilentTab(_ tabIdentifier: String) {
         let otherTabsWereSilent = !silentTabs.subtracting([tabIdentifier]).isEmpty
-        let report = CPMMessagingBreakageReport(tabs: otherTabsWereSilent ? .many : .one)
+        let report = CPMMessagingBreakageReport(lastStage: lastStages[tabIdentifier],
+                                                tabs: otherTabsWereSilent ? .many : .one)
         pixelFiring.fire(.cpmMessagingBreakage(report))
         guard silentTabs.count >= 2, !didReportPersistentBreakage else { return }
         didReportPersistentBreakage = true
@@ -250,6 +317,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         case .willReload, .reloaded:
             extensionTabMappings.removeAll()
             pendingCommits.removeAll()
+            lastStages.removeAll()
             silentTabs.removeAll()
             didReportPersistentBreakage = false
         case .loaded, .reloadFailed:
@@ -284,6 +352,8 @@ private extension CPMMessagingHealthEvent {
             return "dashboardResponse extensionTab=\(extensionTabIdentifier.map(String.init) ?? "none")"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"
+        case .initProgress(let extensionTabIdentifier, _, let stage, _):
+            return "initProgress extensionTab=\(extensionTabIdentifier.map(String.init) ?? "none") stage=\(stage.rawValue)"
         case .interruptionBegan:
             return "interruptionBegan"
         case .interruptionEnded:

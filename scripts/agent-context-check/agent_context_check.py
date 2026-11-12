@@ -129,8 +129,10 @@ def measure(tree, bytes_per_token):
         elif name == "SKILL.md":
             meta = parse_frontmatter(text)
             listing = f"{meta.get('name', '')}: {meta.get('description', '')}"
+            # Claude Code (2.1.322) leaves skills that only users can invoke out of the model's context.
+            model_invocable = meta.get("disable-model-invocation", "").lower() != "true"
             items.append(Item(path, "skill-description",
-                              estimate_tokens(listing, bytes_per_token), always_loaded=True))
+                              estimate_tokens(listing, bytes_per_token), always_loaded=model_invocable))
             items.append(Item(path, "skill-body",
                               estimate_tokens(text, bytes_per_token), always_loaded=False))
         elif name.startswith("REVIEW"):

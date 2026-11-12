@@ -73,6 +73,17 @@ class BudgetTests(RepoTestCase):
         self.assertEqual(self.errors(), [
             ".claude/skills/ddg-widget/SKILL.md#description: ~72 tokens, budget 50 (skill-description)"])
 
+    def testWhenSkillCannotBeInvokedByTheModelThenItsDescriptionIsNotAlwaysLoaded(self):
+        self.write(".claude/skills/ddg-manual/SKILL.md",
+                   "---\nname: ddg-manual\ndescription: " + "z" * 30 + "\ndisable-model-invocation: true\n---\n")
+        items = check.measure(check.Tree(self.root).load(), 1)
+        manual = [i for i in items if i.path.startswith(".claude/skills/ddg-manual/")]
+        self.assertTrue(manual)
+        self.assertFalse(any(i.always_loaded for i in manual))
+        always = sum(i.tokens for i in items if i.always_loaded)
+        config = {**CONFIG, "budgets": {**CONFIG["budgets"], "always-loaded-total": always}}
+        self.assertEqual(self.errors(config), [])
+
     def testWhenAlwaysLoadedTotalExceedsBudgetThenItFails(self):
         config = {**CONFIG, "budgets": {**CONFIG["budgets"], "always-loaded-total": 10}}
         self.assertTrue(any(e.startswith("always-loaded total") for e in self.errors(config)))

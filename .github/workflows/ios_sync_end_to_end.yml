@@ -30,7 +30,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.10.0
+      uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -171,7 +171,7 @@ jobs:
         mode: start
 
     - name: Create test account for Sync and return the recovery code
-      uses: duckduckgo/sync_crypto/action@chore/github-action-node24-runtime
+      uses: duckduckgo/sync_crypto/action@c95bb934e3b7ec99efcd3e5e6fe1f9ca16c92738 # chore/github-action-node24-runtime
       id: sync-recovery-code
       with:
         debug: true
@@ -188,7 +188,7 @@ jobs:
 
     - name: Sync e2e tests
       id: upload
-      uses: mobile-dev-inc/action-maestro-cloud@v3.0.1
+      uses: mobile-dev-inc/action-maestro-cloud@5759506b4ec7ee0a1ece4b7e6574bba2b282f241 # v3.0.1
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}

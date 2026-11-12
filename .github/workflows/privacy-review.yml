@@ -12,7 +12,7 @@ jobs:
       - name: Checkout native actions repo
         uses: actions/checkout@v6
         with:
-            ref: v2.7.0
+            ref: d42b5b7f8f0a89919a52f716a74e203be3f43948 # v2.7.0
             # Do not change the below path (downstream actions expect it)
             path: native-github-asana-sync
             repository: duckduckgo/native-github-asana-sync

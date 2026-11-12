@@ -139,7 +139,7 @@ jobs:
           esac
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.10.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -303,7 +303,7 @@ jobs:
         id: task-assignee
         if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
         continue-on-error: true  # A review task falls back to the triage DRI and a failure task to no one.
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
         with:
           action: get-asana-user-id
           github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
@@ -343,7 +343,7 @@ jobs:
 
       - name: Comment on the release task
         if: ${{ !cancelled() && (steps.task.outputs.comment_on_release_task == 'true' || (inputs.kind == 'release' && inputs.release_task_id != '' && steps.open-task.outcome == 'failure')) }}
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
         with:
           action: post-comment-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

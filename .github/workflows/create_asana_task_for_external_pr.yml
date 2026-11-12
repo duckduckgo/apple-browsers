@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create task from GitHub pull request
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
         with:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

@@ -79,7 +79,7 @@ jobs:
       - name: Get the Translations task ID
         id: task
         if: ${{ !cancelled() && steps.comment.outputs.notify == 'true' }}
-        uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
+        uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@a9b737c6a82c481ea57a8ac852923ef381b6dcc7 # main
         with:
           text: ${{ github.event.pull_request.body }}
 
@@ -87,7 +87,7 @@ jobs:
         id: asana
         if: ${{ !cancelled() && steps.task.outputs.task-id != '' }}
         continue-on-error: true
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
         with:
           action: post-comment-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

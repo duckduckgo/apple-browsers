@@ -24,7 +24,7 @@ runs:
   steps:
     - id: get-asana-user-id
       if: inputs.action == 'create-task'
-      uses: duckduckgo/native-github-asana-sync@v2.5.1
+      uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
       with:
         action: 'get-asana-user-id'
         github-username: ${{ inputs.commit-author }}

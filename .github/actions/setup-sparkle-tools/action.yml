@@ -1,0 +1,37 @@
+name: 'Set up Sparkle tools'
+description: 'Downloads the Sparkle release archive, verifies it against checksums.txt and adds its bin directory to PATH'
+
+inputs:
+  version:
+    description: 'Sparkle version. checksums.txt must list Sparkle-<version>.tar.xz; to use a new version, add its SHA-256 there.'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      env:
+        SPARKLE_VERSION: ${{ inputs.version }}
+        CHECKSUMS_FILE: ${{ github.action_path }}/checksums.txt
+        TOOLS_DIR: ${{ runner.temp }}/sparkle-tools
+      run: |
+        archive="Sparkle-${SPARKLE_VERSION}.tar.xz"
+        expected_sha="$(awk -v name="$archive" '$2 == name { print $1 }' "$CHECKSUMS_FILE")"
+        if [[ -z "$expected_sha" ]]; then
+          echo "::error::No checksum for ${archive} in .github/actions/setup-sparkle-tools/checksums.txt."
+          exit 1
+        fi
+
+        rm -rf "$TOOLS_DIR"
+        mkdir -p "$TOOLS_DIR"
+        curl -fLSs -o "${TOOLS_DIR}/${archive}" "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/${archive}"
+
+        actual_sha="$(shasum -a 256 "${TOOLS_DIR}/${archive}" | awk '{ print $1 }')"
+        if [[ "$actual_sha" != "$expected_sha" ]]; then
+          echo "::error::Checksum mismatch for ${archive}: expected ${expected_sha}, got ${actual_sha}."
+          exit 1
+        fi
+
+        tar -xJf "${TOOLS_DIR}/${archive}" -C "$TOOLS_DIR" bin
+        rm -f "${TOOLS_DIR}/${archive}"
+        echo "${TOOLS_DIR}/bin" >> "$GITHUB_PATH"

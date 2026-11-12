@@ -8,6 +8,9 @@ on:
 jobs:
   update_data:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -26,7 +29,7 @@ jobs:
           echo "$PR_BODY_MACOS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
       - name: Create PR for macOS
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         id: create-pr
         with:
           path: apple-monorepo/
@@ -42,14 +45,14 @@ jobs:
         id: asana-assignee
         if: failure() && github.event_name == 'schedule'
         continue-on-error: true  # Fall back to an unassigned task if the lookup fails.
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
         with:
           action: get-asana-user-id
           github-username: alessandroboron
           github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
       - name: Create Asana task on failure
         if: failure() && github.event_name == 'schedule'
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
         with:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

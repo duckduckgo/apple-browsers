@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 32
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.10.0
+      uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -246,7 +246,7 @@ jobs:
         xcbeautify --report junit --report-path . --junit-report-filename pir-e2e-tests.xml < pir-e2e-tests.log
 
     - name: Publish tests report
-      uses: mikepenz/action-junit-report@v6
+      uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
       if: always()
       with:
         check_name: "Test Report ${{ matrix.runner-name }}"
@@ -279,7 +279,7 @@ jobs:
 
     steps:
     - name: Create Asana task when workflow failed
-      uses: duckduckgo/native-github-asana-sync@v2.5.1
+      uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

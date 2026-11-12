@@ -92,7 +92,7 @@ jobs:
         ref: ${{ inputs.branch || github.ref_name }}
 
     - name: Run ShellCheck
-      uses: ludeeus/action-shellcheck@master
+      uses: ludeeus/action-shellcheck@00b27aa7cb85167568cb48a3838b75f4265f2bca # master
       with:
         format: gcc
         scandir: iOS/scripts
@@ -120,7 +120,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.10.0
+      uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -304,7 +304,7 @@ jobs:
         retention-days: 7
 
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v6
+      uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
       if: always()
       with:
         report_paths: iOS/unittests.xml
@@ -371,7 +371,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.10.0
+      uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}

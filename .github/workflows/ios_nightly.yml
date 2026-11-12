@@ -66,7 +66,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.10.0
+      uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -185,7 +185,7 @@ jobs:
         test-outcome: ${{ steps.run-unit-tests.outcome }}
 
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v6
+      uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
       if: always()
       with:
         report_paths: iOS/unittests.xml
@@ -221,7 +221,7 @@ jobs:
 
     - name: Create Asana task for production-mode failure
       if: steps.detect.outputs.has_production == 'true'
-      uses: duckduckgo/native-github-asana-sync@v2.5.1
+      uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -231,7 +231,7 @@ jobs:
 
     - name: Create Asana task for internal-mode failure
       if: steps.detect.outputs.has_internal == 'true'
-      uses: duckduckgo/native-github-asana-sync@v2.5.1
+      uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

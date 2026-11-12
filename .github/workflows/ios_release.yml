@@ -68,6 +68,9 @@ jobs:
     runs-on: [image:osx-27-edge, m4pro]
     name: Make App Store Connect Release
 
+    permissions:
+      contents: read
+
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
@@ -100,7 +103,7 @@ jobs:
         esac
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.10.0
+      uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}

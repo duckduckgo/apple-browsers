@@ -116,6 +116,10 @@ jobs:
     outputs:
       dmg-url: ${{ steps.set-common-env.outputs.dmg-url }}
 
+    # contents: write is needed only to list draft releases (update_asana_for_release looks up the latest public release)
+    permissions:
+      contents: write
+
     runs-on: [image:osx-27-edge, m4pro]
     timeout-minutes: 10
 
@@ -127,6 +131,15 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           submodules: recursive
           ref: main
+
+      # Runs before switching to the release branch so that main's copy of the action and its checksums is used.
+      # A failure is raised by "Check Sparkle tools" after Ruby is set up, so that the Asana failure reporting still runs.
+      - name: Set up Sparkle tools
+        id: sparkle-tools
+        continue-on-error: true
+        uses: ./.github/actions/setup-sparkle-tools
+        with:
+          version: ${{ vars.SPARKLE_VERSION }}
 
       - name: Print macOS version
         run: sw_vers
@@ -200,12 +213,11 @@ jobs:
           ./scripts/extract_release_notes.sh < release_task_content.txt > release_notes.html
           echo "RELEASE_NOTES_FILE=release_notes.html" >> $GITHUB_ENV
 
-      - name: Set up Sparkle tools
-        env:
-          SPARKLE_URL: https://github.com/sparkle-project/Sparkle/releases/download/${{ vars.SPARKLE_VERSION }}/Sparkle-${{ vars.SPARKLE_VERSION }}.tar.xz
+      - name: Check Sparkle tools
+        if: steps.sparkle-tools.outcome != 'success'
         run: |
-          curl -fLSs $SPARKLE_URL | tar xJ bin
-          echo "${{ github.workspace }}/macOS/bin" >> $GITHUB_PATH
+          echo "::error::Setting up Sparkle tools failed. See the \"Set up Sparkle tools\" step."
+          exit 1
 
       - name: Fetch DMG
         id: fetch-dmg
@@ -227,6 +239,7 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           VERSION: ${{ steps.verify-tag.outputs.release-version }}
         run: |
+          trap 'rm -f sparkle_private_key' EXIT
           echo -n "$SPARKLE_PRIVATE_KEY" > sparkle_private_key
           chmod 600 sparkle_private_key
 

@@ -79,7 +79,7 @@ jobs:
       steps:
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.10.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -173,7 +173,7 @@ jobs:
           retention-days: 7
 
       - name: Publish Unit Tests Report
-        uses: mikepenz/action-junit-report@v6
+        uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
         if: always()
         with:
           check_name: BSK Test Report (macOS)
@@ -234,7 +234,7 @@ jobs:
       steps:
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.10.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -376,7 +376,7 @@ jobs:
           retention-days: 7
 
       - name: Publish Unit Tests Report
-        uses: mikepenz/action-junit-report@v6
+        uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
         if: always()
         with:
           check_name: BSK Test Report (iOS)
@@ -465,7 +465,7 @@ jobs:
       steps:
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.10.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -604,7 +604,7 @@ jobs:
           retention-days: 7
 
       - name: Publish Unit Tests Report
-        uses: mikepenz/action-junit-report@v6
+        uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
         if: always()
         with:
           check_name: Shared Packages Test Report (macOS)

@@ -17,7 +17,7 @@ jobs:
         steps:
         - name: Get Task ID
           id: get-task-id
-          uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
+          uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@a9b737c6a82c481ea57a8ac852923ef381b6dcc7 # main
           with:
             text: ${{ github.event.pull_request.body }}
 
@@ -29,7 +29,7 @@ jobs:
         - name: Find incomplete PR review subtasks
           id: find-subtasks
           if: ${{ steps.get-task-id.outputs.task-id != '' }}
-          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@a9b737c6a82c481ea57a8ac852923ef381b6dcc7 # main
           with:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
@@ -46,7 +46,7 @@ jobs:
 
         steps:
         - name: Mark PR review subtask as complete
-          uses: duckduckgo/native-github-asana-sync@v2.5.1
+          uses: duckduckgo/native-github-asana-sync@0cea6a28daa3d941c4be8e109afb36815c3c792e # v2.5.1
           with:
             action: 'mark-asana-task-complete'
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

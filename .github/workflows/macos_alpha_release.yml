@@ -110,11 +110,20 @@ jobs:
 
     runs-on: [image:osx-27-edge, m4pro]
 
+    permissions:
+      contents: read
+
     defaults:
       run:
         working-directory: .
 
     steps:
+      - name: Check out the Sparkle tools action
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions/setup-sparkle-tools
+          persist-credentials: false
+
       - name: Print macOS version
         run: sw_vers
 
@@ -128,12 +137,12 @@ jobs:
         run: echo "DMG_URL=$(<${{ github.workspace }}/dmg_url.txt)" >> $GITHUB_OUTPUT
 
       - name: Set up Sparkle tools
-        env:
-          SPARKLE_URL: https://github.com/sparkle-project/Sparkle/releases/download/${{ vars.SPARKLE_VERSION }}/Sparkle-${{ vars.SPARKLE_VERSION }}.tar.xz
-        run: |
-          curl -fLSs $SPARKLE_URL | tar xJ bin
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
-          mkdir -p sparkle
+        uses: ./.github/actions/setup-sparkle-tools
+        with:
+          version: ${{ vars.SPARKLE_VERSION }}
+
+      - name: Create Sparkle working directory
+        run: mkdir -p sparkle
 
       - name: Fetch DMG and current appcast
         id: fetch-dmg

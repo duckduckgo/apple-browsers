@@ -381,6 +381,15 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertEqual(harness.scheduler.scheduledCount, scheduledCount, "Nothing is restored")
     }
 
+    func testWhenTooltipIsShownThenItsWindowIsHiddenFromAccessibility() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+
+        XCTAssertNotNil(harness.tooltip)
+        XCTAssertEqual(harness.tooltip?.isAccessibilityElement(), false)
+        XCTAssertEqual(harness.tooltip?.isAccessibilityEnabled(), false)
+    }
+
     func testWhenAppearanceChangesThenVisibleTooltipFollowsHostWithoutMouseMovement() {
         let harness = TooltipHarness()
         let host = harness.parent.contentView!

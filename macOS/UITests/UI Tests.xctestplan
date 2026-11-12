@@ -41,7 +41,7 @@
         "AppStoreSandboxUITests",
         "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
-        "HoveredLinkTooltipUITests\/testWhenSwitchingTabsWithCtrlTabThenTooltipIsDismissedAndComesBack()",
+        "HoveredLinkTooltipUITests",
         "NewPermissionViewTests\/test_locationPermissions_whenAccepted_showCorrectStateInBrowser()",
         "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()"
       ],

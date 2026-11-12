@@ -18,6 +18,8 @@
 
 import XCTest
 
+// Skipped in the test plans: the tooltip window is hidden from the accessibility tree, so `HoveredLinkTooltip.label`
+// can't be found by XCUITest. Re-enable once the tooltip can be observed another way.
 final class HoveredLinkTooltipUITests: UITestCase {
 
     private let pageTitle = "Hovered Link Page"

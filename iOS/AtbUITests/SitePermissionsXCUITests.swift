@@ -47,6 +47,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
         frameServer["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
         frameServer["/camera-frame"] = { _ in .ok(.html(Self.cameraFrameHTML)) }
+        frameServer["/camera-frame-tampered"] = { _ in .ok(.html(Self.tamperedCameraFrameHTML)) }
         try frameServer.start(0, forceIPv4: true, priority: .userInitiated)
         let framePort = try frameServer.port()
         server["/iframe-same-origin"] = { _ in
@@ -65,6 +66,9 @@ final class SitePermissionsXCUITests: XCTestCase {
         }
         server["/iframe-camera-cross-origin-not-delegated"] = { _ in
             .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame")))
+        }
+        server["/iframe-camera-cross-origin-not-delegated-tampered"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame-tampered")))
         }
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         port = try server.port()
@@ -756,6 +760,12 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     func testWhenCrossOriginIframeIsNotDelegatedCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
         assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-cross-origin-not-delegated",
+                                                      button: "Frame camera",
+                                                      result: "Frame result: NotAllowedError")
+    }
+
+    func testWhenNotDelegatedCrossOriginIframeTampersWithPromisesThenItIsStillDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-cross-origin-not-delegated-tampered",
                                                       button: "Frame camera",
                                                       result: "Frame result: NotAllowedError")
     }
@@ -1756,4 +1766,22 @@ final class SitePermissionsXCUITests: XCTestCase {
     </body>
     </html>
     """
+
+    /// Makes the next promise built by `then` resolve `true` before the request, which fakes a
+    /// "delegated" result unless the delegation check ignores promises the page can build.
+    private static let tamperedCameraFrameHTML = cameraFrameHTML.replacingOccurrences(
+        of: "const stream = await",
+        with: """
+        const nativeSpecies = Object.getOwnPropertyDescriptor(Promise, Symbol.species);
+                class AlwaysTrue extends Promise {
+                  constructor(executor) {
+                    Object.defineProperty(Promise, Symbol.species, nativeSpecies);
+                    super(resolve => resolve(true));
+                    executor(() => {}, () => {});
+                  }
+                }
+                Object.defineProperty(Promise, Symbol.species, { configurable: true, get: () => AlwaysTrue });
+                const stream = await
+        """
+    )
 }

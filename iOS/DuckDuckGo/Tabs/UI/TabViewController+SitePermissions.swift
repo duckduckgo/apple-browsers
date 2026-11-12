@@ -1282,6 +1282,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
     func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
                                 requestPermissionFor permissionTypes: Set<SitePermissionType>,
                                 requestID: String,
+                                topLevelOrigin: SitePermissionSecurityOrigin,
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
         guard isSitePermissionsEnabled else {
@@ -1298,8 +1299,10 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         guard webView === self.webView,
               !isLinkPreview,
               // Cross-origin frames may ask too: WebKit enforces iframe delegation before capture,
-              // and the prompt and saved decision belong to the top-level site.
+              // and the prompt and saved decision belong to the top-level site. The request must come
+              // from the committed page, not from one the tab is leaving.
               origin.isPotentiallyTrustworthy,
+              isSameOriginAsCommittedMainFrame(frame.isMainFrame ? origin : topLevelOrigin),
               sitePermissionsState.committedMediaPolicyBlocks.isDisjoint(with: permissionTypes),
               sitePermissionsState.pendingBridgeRequests[requestID] == nil,
               !sitePermissionsState.handledBridgeRequestIDs.contains(requestID),

@@ -21,7 +21,7 @@
     const rejectPromise = Promise.reject.bind(Promise);
     const callThen = Function.prototype.call.bind(Promise.prototype.then);
     const NativeDOMException = DOMException;
-    const resolvePromise = Promise.resolve.bind(Promise);
+    const NativePromise = Promise;
     const permissions = navigator.permissions;
     const queryPermission = permissions?.query?.bind(permissions);
     const permissionState = globalThis.PermissionStatus &&
@@ -51,6 +51,9 @@
     const hasNonOpaqueOrigin = origin !== "null" && origin.length > 0;
     const isSyntheticDocument = locationProtocol === "about:";
     const isTopLevel = globalThis.top === globalThis;
+    // Swift checks that the request still belongs to the committed top-level page.
+    const ancestorOrigins = globalThis.location.ancestorOrigins;
+    const topOrigin = isTopLevel ? origin : ancestorOrigins?.[ancestorOrigins.length - 1] ?? "null";
     const isSameOriginAsTopLevel = (() => {
         if (isTopLevel) {
             return true;
@@ -186,16 +189,24 @@
     };
     apply(defineProperty, Object, [globalThis, inheritedPolicyProperty, { value: policyAllows }]);
     // A cross-origin frame can't read its iframe's allow attribute, but WebKit's Permissions API
-    // reports "denied" for a feature the embedding pages didn't delegate to it.
-    const delegationAllows = (feature) => {
-        try {
-            return callThen(queryPermission({ name: feature }),
-                status => apply(permissionState, status, []) !== "denied",
-                () => false);
-        } catch (_) {
-            return resolvePromise(false);
-        }
-    };
+    // reports "denied" for a feature the embedding pages didn't delegate to it. Resolve only a
+    // promise made with the saved constructor: the page can change how derived promises are built.
+    const delegationAllows = (features) => new NativePromise(resolve => {
+        const check = (index) => {
+            if (index === features.length) {
+                resolve(true);
+                return;
+            }
+            try {
+                callThen(queryPermission({ name: features[index] }),
+                    status => apply(permissionState, status, []) === "denied" ? resolve(false) : check(index + 1),
+                    () => resolve(false));
+            } catch (_) {
+                resolve(false);
+            }
+        };
+        check(0);
+    });
     let nextRequestID = 0;
 
     const permissionDenied = () => new NativeDOMException("Permission denied", "NotAllowedError");
@@ -231,13 +242,13 @@
 
         nextRequestID += 1;
         const requestID = `${nonce}:${nextRequestID}`;
-        const post = isEligible => postMessage({ capability, requestID, isEligible, video, audio });
+        const post = isEligible => postMessage({ capability, requestID, isEligible, topOrigin, video, audio });
         let bridgePromise;
         try {
             bridgePromise = !isEligibleContext || !isCrossOrigin || isDuckAIHost
                 ? post(isEligibleContext)
-                : callThen(callThen(delegationAllows(video ? "camera" : "microphone"),
-                    allowed => allowed && (!video || !audio || delegationAllows("microphone"))), post);
+                : callThen(delegationAllows(video && audio ? ["camera", "microphone"] : [video ? "camera" : "microphone"]),
+                    post);
         } catch (_) {
             return rejectPromise(permissionDenied());
         }

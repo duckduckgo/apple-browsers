@@ -121,6 +121,9 @@ public struct Step: Codable, Sendable {
             case .condition:
                 let action = try JSONDecoder().decode(ConditionAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
+            case .userAssist:
+                let action = try JSONDecoder().decode(UserAssistAction.self, from: jsonData).with(json: jsonData)
+                actionList.append(action)
             }
         }
 
@@ -164,6 +167,8 @@ extension Array where Element == Action {
                 try container.encode(executeScriptAction)
             } else if let conditionAction = action as? ConditionAction {
                 try container.encode(conditionAction)
+            } else if let userAssistAction = action as? UserAssistAction {
+                try container.encode(userAssistAction)
             } else {
                 assertionFailure("Failed to encode action: \(action.actionType.rawValue)")
             }

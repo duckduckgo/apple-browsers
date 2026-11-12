@@ -18,7 +18,9 @@
 //
 
 import Foundation
+import os.log
 import Subscription
+import VPN
 
 /// Stops and removes the installed VPN when the user is signed out.
 struct VPNSignedOutRemover {
@@ -48,13 +50,19 @@ struct VPNSignedOutRemover {
             // Not `.localValid`: it refreshes an expired access token, and a rejected refresh runs the token
             // recovery and can sign the user out. That is too much to run each time the app becomes active.
             _ = try await subscriptionManager.getTokenContainer(policy: .local)
+            Logger.networkProtection.log("Signed-out VPN check: a token is stored or was restored, keeping the VPN")
         } catch SubscriptionManagerError.noTokenAvailable {
             // No token is stored and the backup restore didn't produce one: the user is signed out
-            guard await isVPNInstalled() else { return }
+            guard await isVPNInstalled() else {
+                Logger.networkProtection.log("Signed-out VPN check: no token available and no VPN installed, nothing to remove")
+                return
+            }
+            Logger.networkProtection.log("Signed-out VPN check: no token available, stopping and removing the VPN")
             await stopAndRemoveVPN()
         } catch {
             // The stored token couldn't be read, for example while the keychain is locked: it may still exist,
             // so keep the VPN
+            Logger.networkProtection.error("Signed-out VPN check: the token couldn't be read, keeping the VPN: \(String(describing: error), privacy: .public)")
         }
     }
 }

@@ -269,6 +269,12 @@ final class DuckPlayerViewModel: ObservableObject {
         currentTimeStamp = timeStamp
     }
 
+    /// Returns the video URL starting at the last reported playback position.
+    func getResumeVideoURL() -> URL? {
+        timestamp = max(timestamp, currentTimeStamp)
+        return getVideoURL()
+    }
+
     // MARK: - Private Methods
 
     /// Handles device orientation change notifications
@@ -281,7 +287,7 @@ final class DuckPlayerViewModel: ObservableObject {
     private func getVideoURLWithParameters() -> URL? {
         var parameters = defaultParameters
         parameters[Constants.autoplayParameter] = duckPlayerSettings.autoplay ? Constants.enabled : Constants.disabled
-        let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
+        let queryString = parameters.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
         return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
     }
 

@@ -65,7 +65,8 @@ struct Connected: ConnectedHandling {
                                                         isFloatingUIFeatureEnabledForCurrentLaunch: mainCoordinator.isFloatingUIFeatureEnabledForCurrentLaunch,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
-                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization,
+                                                        appWidthObserver: mainCoordinator.controller.appWidthObserver)
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
@@ -109,7 +110,8 @@ struct Connected: ConnectedHandling {
                                                         isFloatingUIFeatureEnabledForCurrentLaunch: mainCoordinator.isFloatingUIFeatureEnabledForCurrentLaunch,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
-                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization,
+                                                        appWidthObserver: mainCoordinator.controller.appWidthObserver)
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
@@ -142,7 +144,8 @@ struct Connected: ConnectedHandling {
                                                         isFloatingUIFeatureEnabledForCurrentLaunch: mainCoordinator.isFloatingUIFeatureEnabledForCurrentLaunch,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
-                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization,
+                                                        appWidthObserver: mainCoordinator.controller.appWidthObserver)
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,

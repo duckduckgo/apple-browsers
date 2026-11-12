@@ -132,8 +132,8 @@ final class BrowserWindowTests: XCTestCase {
     }
 
     func testResizingOneWindowDoesNotChangeTheOtherWindowsChromeWidth() {
-        let first = AppWidthObserver()
-        let second = AppWidthObserver()
+        let first = AppWidthObserver(usesWindowLayout: true)
+        let second = AppWidthObserver(usesWindowLayout: true)
         first.isPad = true
         second.isPad = true
         _ = first.willResize(toWidth: 800)
@@ -145,6 +145,27 @@ final class BrowserWindowTests: XCTestCase {
         XCTAssertTrue(second.isLargeWidth)
     }
 
+    func testGlobalFireAnimatesAllWindowsAndLocalFireOnlyAnimatesTheOrigin() {
+        let origin = UIWindow()
+        let peer = UIWindow()
+        let global = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .browsing)
+        let local = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .browsing)
+        XCTAssertEqual(BrowserWindowManager.animationWindows(for: global, origin: origin, windows: [peer, origin, peer]), [origin, peer])
+        XCTAssertEqual(BrowserWindowManager.animationWindows(for: local, origin: origin, windows: [peer, origin]), [origin])
+        XCTAssertTrue(BrowserWindowManager.animationWindows(for: local, origin: nil, windows: [peer]).isEmpty)
+    }
+
+    func testGlobalClearingCoverStaysBelowFireAnimationAndAboveBrowserContent() throws {
+        let window = UIWindow()
+        let content = UIView()
+        let animation = UIView()
+        animation.accessibilityIdentifier = FireButtonAnimator.overlayIdentifier
+        window.addSubview(content)
+        window.addSubview(animation)
+        let cover = BrowserWindowManager.addClearingOverlay(to: window)
+        XCTAssertEqual(window.subviews, [content, cover, animation])
+    }
+
     func testFirstResponderLookupStaysInTheRequestedWindow() {
         let first = UIWindow(frame: .zero)
         let second = UIWindow(frame: .zero)
@@ -152,6 +173,15 @@ final class BrowserWindowTests: XCTestCase {
         first.addSubview(responder)
         XCTAssertTrue(UIResponder.currentFirstResponder(in: first) === responder)
         XCTAssertNil(UIResponder.currentFirstResponder(in: second))
+    }
+
+    func testDeletionMessageUsesTheRequestedWindow() {
+        let origin = UIWindow(frame: CGRect(x: 0, y: 0, width: 400, height: 700))
+        let peer = UIWindow(frame: origin.frame)
+        defer { origin.subviews.forEach { $0.removeFromSuperview() } }
+        ActionMessageView.present(message: "Deleted", in: origin)
+        XCTAssertTrue(origin.subviews.contains { $0 is ActionMessageView })
+        XCTAssertFalse(peer.subviews.contains { $0 is ActionMessageView })
     }
 
     func testFireContainersSurviveRelaunchAndRotateIndependently() {

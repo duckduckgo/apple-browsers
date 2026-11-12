@@ -1396,8 +1396,7 @@ class TabViewController: UIViewController {
         applyContextualOnboardingTopInset(0)
         webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
-        let isLargeWidth = UIDevice.current.userInterfaceIdiom == .pad
-            && (view.window?.bounds.width ?? view.bounds.width) >= AppWidthObserver.Constants.minPadWidth
+        let isLargeWidth = (parent as? MainViewController)?.appWidthObserver.isLargeWidth ?? AppWidthObserver.shared.isLargeWidth
         borderView.bottomAlpha = isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
         setWebViewObscuredContentInsetsIfSupported(.zero)

@@ -191,6 +191,13 @@ final class BrowserWindowManager {
     }
 
     private func register(_ coordinator: MainCoordinator) {
+        coordinator.controller.browserWindowsForFireAnimation = { [weak self, weak coordinator] request in
+            if case .all = request.scope { try? self?.restoreStoredWindows() }
+            let windows = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+                .filter { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }.flatMap(\.windows)
+                .filter { $0.accessibilityIdentifier == "Browser.Window.Main" && !$0.isHidden }
+            return Self.animationWindows(for: request, origin: coordinator?.controller.viewIfLoaded?.window, windows: windows)
+        }
         menuSubscriptions[ObjectIdentifier(coordinator)] = coordinator.controller.menuRebuildRequests.sink { [weak self] in
             self?.dependencies?.services.mainMenuService.requestRebuild()
         }
@@ -232,8 +239,8 @@ final class BrowserWindowManager {
 
     func focus(window: UIWindow?, identifier: String) {
         focusedWindow = window
-        if let window { _ = AppWidthObserver.shared.willResize(toWidth: window.bounds.width) }
         guard let coordinator = coordinators[identifier], let dependencies else { return }
+        AppWidthObserver.shared.update(from: coordinator.controller.appWidthObserver)
         dependencies.services.syncService.presenter = coordinator.controller
         dependencies.services.remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: coordinator.controller)
         dependencies.services.systemSettingsPiPTutorialService.setPresenter(coordinator)
@@ -301,10 +308,7 @@ final class BrowserWindowManager {
         guard let executor = origin.controller.fireExecutor as? FireExecutor else { return }
         do {
             try await fireCoordinator.burn(request: request, state: state, origin: executor, allWindows: {
-                let identifiers = self.knownSessionIdentifiers.union(UIApplication.shared.openSessions.map(\.persistentIdentifier))
-                for identifier in identifiers {
-                    _ = try self.coordinator(for: identifier)
-                }
+                try self.restoreStoredWindows()
                 return ([self.primaryCoordinator] + Array(self.coordinators.values)).compactMap {
                     $0.controller.fireExecutor as? FireExecutor
                 }
@@ -324,12 +328,34 @@ final class BrowserWindowManager {
     }
 
     private func cover(_ window: UIWindow) {
+        clearingOverlays.append(Self.addClearingOverlay(to: window))
+    }
+
+    private func restoreStoredWindows() throws {
+        let identifiers = knownSessionIdentifiers.union(UIApplication.shared.openSessions.map(\.persistentIdentifier))
+        for identifier in identifiers {
+            _ = try coordinator(for: identifier)
+        }
+    }
+
+    static func animationWindows(for request: FireRequest, origin: UIWindow?, windows: [UIWindow]) -> [UIWindow] {
+        let origin = [origin].compactMap { $0 }
+        guard case .all = request.scope else { return origin }
+        var seen: Set<ObjectIdentifier> = []
+        return (origin + windows).filter { seen.insert(ObjectIdentifier($0)).inserted }
+    }
+
+    static func addClearingOverlay(to window: UIWindow) -> UIView {
         let overlay = UIView(frame: window.bounds)
         overlay.backgroundColor = .systemBackground
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         overlay.accessibilityIdentifier = "Browser.Window.Clearing"
-        window.addSubview(overlay)
-        clearingOverlays.append(overlay)
+        if let animation = window.subviews.first(where: { $0.accessibilityIdentifier == FireButtonAnimator.overlayIdentifier }) {
+            window.insertSubview(overlay, belowSubview: animation)
+        } else {
+            window.addSubview(overlay)
+        }
+        return overlay
     }
 }
 

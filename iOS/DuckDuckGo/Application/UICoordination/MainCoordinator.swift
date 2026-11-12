@@ -174,7 +174,8 @@ final class MainCoordinator {
         if windowIdentifier == nil { FireModeCapability.resolve(using: featureFlagger) }
         if windowIdentifier == nil { UnifiedToggleInputFeature.resolve(using: featureFlagger) }
         let fireModeCapability = FireModeCapability.create()
-        let appWidthObserver = allWindowsTabsModel == nil ? AppWidthObserver.shared : AppWidthObserver()
+        let appWidthObserver = allWindowsTabsModel == nil ? AppWidthObserver.shared
+            : AppWidthObserver(usesWindowLayout: UIApplication.shared.supportsMultipleScenes)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,

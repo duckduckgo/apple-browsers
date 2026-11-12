@@ -226,6 +226,7 @@ class MainViewController: UIViewController {
     let toggleModeStorage: ToggleModeStoring
     let appWidthObserver: AppWidthObserver
     var browserWindowRequest: ((BrowsingMode) -> Void)?
+    var browserWindowsForFireAnimation: ((FireRequest) -> [UIWindow])?
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     private var isDownloadMenuAlertVisible: Bool?
@@ -1100,7 +1101,7 @@ class MainViewController: UIViewController {
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
-        _ = appWidthObserver.willResize(toWidth: view.frame.width)
+        _ = updateWindowWidth(to: view.frame.width)
         applyWidth()
 
         registerForApplicationEvents()
@@ -1175,7 +1176,7 @@ class MainViewController: UIViewController {
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
-        _ = appWidthObserver.willResize(toWidth: view.frame.width)
+        _ = updateWindowWidth(to: view.frame.width)
         applyWidth()
 
         if daxDialogsManager.shouldShowFireButtonPulse {
@@ -3831,7 +3832,7 @@ class MainViewController: UIViewController {
             return snapshot
         }()
 
-        let needsWidthUpdate = appWidthObserver.willResize(toWidth: size.width)
+        let needsWidthUpdate = updateWindowWidth(to: size.width)
         if needsWidthUpdate {
             applyWidth(for: size)
         }
@@ -3972,6 +3973,14 @@ class MainViewController: UIViewController {
     }
 
     private var isApplyingWidth = false
+
+    private func updateWindowWidth(to width: CGFloat) -> Bool {
+        let changed = appWidthObserver.willResize(toWidth: width)
+        if appWidthObserver !== AppWidthObserver.shared, view.window?.isKeyWindow == true {
+            AppWidthObserver.shared.update(from: appWidthObserver)
+        }
+        return changed
+    }
 
     private func applyWidth(for size: CGSize? = nil) {
         // Re-entrancy guard: a refreshOmniBar side-effect calls applyWidth() with no size
@@ -9084,7 +9093,8 @@ extension MainViewController {
         fireExecutor.prepare(for: request)
         
         let instrumentation = DefaultFireAnimationInstrumentation(request: request)
-        fireButtonAnimator.animate(instrumentation: instrumentation) {
+        let windows = browserWindowsForFireAnimation?(request) ?? [view.window].compactMap { $0 }
+        fireButtonAnimator.animate(in: windows, instrumentation: instrumentation) {
             instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
             instrumentation.burnDidFinish()
@@ -9170,7 +9180,8 @@ extension MainViewController {
         let location: ActionMessageView.PresentationLocation = isEscapeHatchBurn(request)
             ? .top
             : .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom)
-        ActionMessageView.present(message: message, presentationLocation: location)
+        guard let window = view.window else { return }
+        ActionMessageView.present(message: message, in: window, presentationLocation: location)
     }
     
     private func refreshUIAfterClear() {
@@ -9262,7 +9273,7 @@ extension MainViewController {
     ///
     /// Only shown for manual fire triggers (user-initiated), not auto-clear operations.
     private func showBurningOverlay() {
-        guard let window = view.window else { return }
+        guard let window = viewIfLoaded?.window else { return }
 
         hideBurningOverlay()
 
@@ -9328,7 +9339,9 @@ extension MainViewController: FireExecutorDelegate {
             autoClearInProgress = true
         case .autoClearOnForeground:
             autoClearInProgress = true
-            clearNavigationStack()
+            if isViewLoaded {
+                clearNavigationStack()
+            }
         case .fireModeAutoClear:
             break
         }
@@ -9360,7 +9373,7 @@ extension MainViewController: FireExecutorDelegate {
         if fireRequest.options.contains(.tabs) {
             newTabPageControllerStore.removePages(for: tabsClearedByFireButton(fireRequest.scope))
         }
-        omniBar.endEditing()
+        viewCoordinator?.omniBar.endEditing()
         findInPageView?.done()
         reportDuckAIFireButtonClearedTabsIfNeeded(fireRequest)
 
@@ -9383,7 +9396,7 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurningTabs(fireRequest: FireRequest) {
-        guard fireRequest.trigger == .manualFire else { return }
+        guard isViewLoaded, fireRequest.trigger == .manualFire else { return }
                 
         switch fireRequest.scope {
         case .all, .fireMode, .normalMode:
@@ -9437,7 +9450,7 @@ extension MainViewController: FireExecutorDelegate {
             autoClearShouldRefreshUIAfterClear = true
         case .autoClearOnForeground:
             autoClearInProgress = false
-            if autoClearShouldRefreshUIAfterClear {
+            if isViewLoaded, autoClearShouldRefreshUIAfterClear {
                 refreshUIAfterClear()
             }
             autoClearShouldRefreshUIAfterClear = true

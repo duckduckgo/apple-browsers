@@ -112,10 +112,12 @@ enum FireButtonAnimationType: String, CaseIterable, Identifiable, CustomStringCo
 
 @MainActor
 class FireButtonAnimator {
+
+    static let overlayIdentifier = "Browser.Window.FireAnimation"
     
     private let appSettings: AppSettings
     private var preLoadedComposition: LottieAnimation?
-    private weak var preBurnSnapshot: UIView?
+    private let preBurnSnapshots = NSHashTable<UIView>.weakObjects()
 
     init(appSettings: AppSettings, notificationCenter: NotificationCenter = .default) {
         self.appSettings = appSettings
@@ -131,14 +133,21 @@ class FireButtonAnimator {
                                        object: nil)
     }
         
-    func animate(instrumentation: FireAnimationInstrumentation? = nil,
+    func animate(in windows: [UIWindow]? = nil,
+                 instrumentation: FireAnimationInstrumentation? = nil,
                  onAnimationStart: @escaping () async -> Void,
                  onTransitionCompleted: @escaping () async -> Void,
                  completion: @escaping () async -> Void) {
         removePreBurnSnapshot()
 
-        guard let window = UIApplication.shared.firstKeyWindow,
-              let snapshot = window.snapshotView(afterScreenUpdates: false) else {
+        var seen: Set<ObjectIdentifier> = []
+        let windows = (windows ?? [UIApplication.shared.firstKeyWindow].compactMap { $0 })
+            .filter { seen.insert(ObjectIdentifier($0)).inserted }
+        let snapshots = windows.compactMap { window -> (UIWindow, UIView)? in
+            guard let snapshot = window.snapshotView(afterScreenUpdates: false) else { return nil }
+            return (window, snapshot)
+        }
+        guard let composition = preLoadedComposition, !snapshots.isEmpty else {
             Task { @MainActor in
                 await onAnimationStart()
                 await onTransitionCompleted()
@@ -147,39 +156,48 @@ class FireButtonAnimator {
             return
         }
         
-        guard let composition = preLoadedComposition else {
-            Task { @MainActor in
-                await onAnimationStart()
-                await onTransitionCompleted()
-                await completion()
-            }
-            return
-        }
-        
-        window.addSubview(snapshot)
-        preBurnSnapshot = snapshot
-        
-        let animationView = LottieAnimationView(animation: composition)
         let currentAnimation = appSettings.currentFireButtonAnimation
         let speed = currentAnimation.speed
-        animationView.contentMode = .scaleAspectFill
-        animationView.animationSpeed = CGFloat(speed)
-        animationView.frame = window.frame
-        window.addSubview(animationView)
+        let animations = DispatchGroup()
+        var allFinished = true
+
+        for (window, snapshot) in snapshots {
+            let overlay = UIView(frame: window.bounds)
+            overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            overlay.accessibilityIdentifier = Self.overlayIdentifier
+            snapshot.frame = overlay.bounds
+            snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            overlay.addSubview(snapshot)
+            preBurnSnapshots.add(snapshot)
+
+            let animationView = LottieAnimationView(animation: composition)
+            animationView.contentMode = .scaleAspectFill
+            animationView.animationSpeed = CGFloat(speed)
+            animationView.frame = overlay.bounds
+            animationView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            overlay.addSubview(animationView)
+            window.addSubview(overlay)
+
+            animations.enter()
+            animationView.play(fromProgress: 0, toProgress: 1) { [weak overlay] finished in
+                overlay?.removeFromSuperview()
+                allFinished = allFinished && finished
+                animations.leave()
+            }
+        }
 
         let duration = Double(composition.duration) / speed
         let delay = duration * currentAnimation.transition
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            snapshot.removeFromSuperview()
+            snapshots.forEach { $0.1.removeFromSuperview() }
             Task { @MainActor in
                 await onTransitionCompleted()
             }
         }
         
-        animationView.play(fromProgress: 0, toProgress: 1) { [weak animationView] finished in
-            animationView?.removeFromSuperview()
+        animations.notify(queue: .main) {
             Task { @MainActor in
-                if finished {
+                if allFinished {
                     instrumentation?.animationDidFinish(animation: currentAnimation)
                 }
                 await completion()
@@ -194,8 +212,8 @@ class FireButtonAnimator {
     }
 
     private func removePreBurnSnapshot() {
-        preBurnSnapshot?.removeFromSuperview()
-        preBurnSnapshot = nil
+        preBurnSnapshots.allObjects.forEach { $0.removeFromSuperview() }
+        preBurnSnapshots.removeAllObjects()
     }
     
     @objc func onFireButtonAnimationChange() {

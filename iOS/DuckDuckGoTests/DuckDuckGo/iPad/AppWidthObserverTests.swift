@@ -23,31 +23,71 @@ import XCTest
 class AppWidthObserverTests: XCTestCase {
 
     func testWhenNotPadThenWillResizeButNotReportAsLarge() {
-        AppWidthObserver.shared.isPad = false
-        AppWidthObserver.shared.currentWidth = 0
-        XCTAssertTrue(AppWidthObserver.shared.willResize(toWidth: 10000))
-        XCTAssertFalse(AppWidthObserver.shared.isLargeWidth)
+        let observer = AppWidthObserver()
+        observer.isPad = false
+        observer.currentWidth = 0
+        XCTAssertTrue(observer.willResize(toWidth: 10000))
+        XCTAssertFalse(observer.isLargeWidth)
     }
 
     func testWhenResizesToSameSizeThenWillNotResize() {
-        AppWidthObserver.shared.isPad = true
-        AppWidthObserver.shared.currentWidth = 0
-        XCTAssertTrue(AppWidthObserver.shared.willResize(toWidth: 10000))
-        XCTAssertFalse(AppWidthObserver.shared.willResize(toWidth: 10000))
+        let observer = AppWidthObserver()
+        observer.isPad = true
+        observer.currentWidth = 0
+        XCTAssertTrue(observer.willResize(toWidth: 10000))
+        XCTAssertFalse(observer.willResize(toWidth: 10000))
     }
 
     func testWhenInitialWidthIsLargeThenReportsAsLarge() {
-        AppWidthObserver.shared.isPad = true
-        AppWidthObserver.shared.currentWidth = 0
-        XCTAssertTrue(AppWidthObserver.shared.willResize(toWidth: 10000))
-        XCTAssertTrue(AppWidthObserver.shared.isLargeWidth)
+        let observer = AppWidthObserver()
+        observer.isPad = true
+        observer.currentWidth = 0
+        XCTAssertTrue(observer.willResize(toWidth: 10000))
+        XCTAssertTrue(observer.isLargeWidth)
     }
 
     func testWhenInitialWidthIsSmallThenReportsAsSmall() {
-        AppWidthObserver.shared.isPad = true
-        AppWidthObserver.shared.currentWidth = 0
-        XCTAssertTrue(AppWidthObserver.shared.willResize(toWidth: 100))
-        XCTAssertFalse(AppWidthObserver.shared.isLargeWidth)
+        let observer = AppWidthObserver()
+        observer.isPad = true
+        observer.currentWidth = 0
+        XCTAssertTrue(observer.willResize(toWidth: 100))
+        XCTAssertFalse(observer.isLargeWidth)
+    }
+
+    func testWindowLayoutMatchesTheLowerSafariBreakpoint() {
+        let observer = AppWidthObserver(usesWindowLayout: true)
+        observer.isPad = true
+        XCTAssertTrue(observer.willResize(toWidth: 500))
+        XCTAssertTrue(observer.isLargeWidth)
+        XCTAssertTrue(observer.willResize(toWidth: 499))
+        XCTAssertFalse(observer.isLargeWidth)
+    }
+
+    func testWindowLayoutSupportsAnExpandedPhoneWindow() {
+        let observer = AppWidthObserver(usesWindowLayout: true)
+        observer.isPad = false
+        _ = observer.willResize(toWidth: 650)
+        XCTAssertTrue(observer.isLargeWidth)
+        _ = observer.willResize(toWidth: 499)
+        XCTAssertFalse(observer.isLargeWidth)
+    }
+
+    func testDisabledWindowLayoutKeepsTheLegacyBreakpoint() {
+        let observer = AppWidthObserver()
+        observer.isPad = true
+        _ = observer.willResize(toWidth: 600)
+        XCTAssertFalse(observer.isLargeWidth)
+    }
+
+    func testFocusedLayoutCopyPreservesTheWindowPolicy() {
+        let focused = AppWidthObserver(usesWindowLayout: true)
+        let copy = AppWidthObserver()
+        _ = focused.willResize(toWidth: 600)
+        copy.update(from: focused)
+        XCTAssertTrue(copy.isLargeWidth)
+        XCTAssertEqual(copy.currentWidth, 600)
+        _ = focused.willResize(toWidth: 400)
+        XCTAssertTrue(copy.isLargeWidth)
     }
     
 }

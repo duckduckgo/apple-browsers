@@ -131,6 +131,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
     private var activeReasons: BlankSnapshotOverlayReason = []
 
     private let window: UIWindow
+    private let appWidthObserver: AppWidthObserver
     private let appSettings: AppSettings
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let featureFlagger: FeatureFlagger
@@ -149,8 +150,10 @@ final class OverlayWindowManager: OverlayWindowManaging {
          aiChatSettings: AIChatSettings,
          aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          mobileCustomization: MobileCustomization,
-         privacyStore: PrivacyStore = PrivacyUserDefaults()) {
+         privacyStore: PrivacyStore = PrivacyUserDefaults(),
+         appWidthObserver: AppWidthObserver = .shared) {
         self.window = window
+        self.appWidthObserver = appWidthObserver
         self.appSettings = appSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
@@ -242,7 +245,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
                                                                       appSettings: appSettings,
                                                                       mobileCustomization: mobileCustomization)
         let isPad = UIDevice.current.userInterfaceIdiom == .pad
-        let isLargeWidth = isPad && window.bounds.width >= AppWidthObserver.Constants.minPadWidth
+        let isLargeWidth = appWidthObserver.isLargeWidth
         let isMinimalChrome = !isPad && window.bounds.width > window.bounds.height
         blankSnapshotViewController.isLargeWidth = isLargeWidth
         blankSnapshotViewController.useMinimalChromeLayout = isLargeWidth || isMinimalChrome

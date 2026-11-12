@@ -24,6 +24,7 @@ import BrowserServicesKit
 #if DEBUG
 import Bookmarks
 import CoreData
+import DDGError
 #endif
 import os.log
 import PixelKit
@@ -104,8 +105,14 @@ final class PersistentStoresConfiguration {
     }
 
 #if DEBUG
-    private enum TemporaryBookmarksStoreError: Error {
-        case missingRootFolder
+    private enum TemporaryBookmarksStoreError: Int, DDGError {
+        case missingRootFolder = 1
+
+        static let errorDomain = "com.duckduckgo.temporaryBookmarksStore"
+
+        var errorCode: Int { rawValue }
+
+        var description: String { "The temporary bookmarks store is missing its root folder." }
     }
 
     private func loadTemporaryBookmarksStore() throws {

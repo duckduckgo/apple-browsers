@@ -24,6 +24,7 @@ public typealias DBPFeatureFlagging = ForegroundRunningFeatureFlagging
     & OptOutRetryErrorFeatureFlagging
     & ExtractedProfileRefreshFeatureFlagging
     & ChallengeSolverFeatureFlagging
+    & UserAssistanceFeatureFlagging
 
 public protocol ForegroundRunningFeatureFlagging {
     var isForegroundRunningOnAppActiveFeatureOn: Bool { get }
@@ -43,6 +44,10 @@ public protocol OptOutRetryErrorFeatureFlagging {
 
 public protocol ExtractedProfileRefreshFeatureFlagging {
     var isExtractedProfileRefreshOn: Bool { get }
+}
+
+public protocol UserAssistanceFeatureFlagging {
+    var isUserAssistanceOn: Bool { get }
 }
 
 public protocol ChallengeSolverFeatureFlagging {

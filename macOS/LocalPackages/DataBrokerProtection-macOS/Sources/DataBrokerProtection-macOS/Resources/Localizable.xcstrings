@@ -1,0 +1,426 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "pir.assisted.status.not-started": {
+      "comment": "Status before an assisted removal begins.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not started"
+          }
+        }
+      }
+    },
+    "pir.assisted.status.agent": {
+      "comment": "Status while DuckDuckGo fills in a removal form.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DuckDuckGo is in control"
+          }
+        }
+      }
+    },
+    "pir.assisted.status.user": {
+      "comment": "Status while the user completes a removal step.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DuckDuckGo is waiting for you"
+          }
+        }
+      }
+    },
+    "pir.assisted.status.finished": {
+      "comment": "Status after the removal request is submitted.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished"
+          }
+        }
+      }
+    },
+    "pir.assisted.close": {
+      "comment": "Closes the completed removal window.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "pir.assisted.close-stops": {
+      "comment": "Help and accessibility label for closing an unfinished removal window.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close and stop removal"
+          }
+        }
+      }
+    },
+    "pir.assisted.closing-stops": {
+      "comment": "Explains that closing an unfinished removal window cancels it.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closing stops this removal"
+          }
+        }
+      }
+    },
+    "pir.assisted.removing-from": {
+      "comment": "Window and panel title. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removing you from %@"
+          }
+        }
+      }
+    },
+    "pir.assisted.submitted-to": {
+      "comment": "Completed panel title. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request submitted to %@"
+          }
+        }
+      }
+    },
+    "pir.assisted.ready.subtitle": {
+      "comment": "Intro panel detail. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you're ready, we'll fill in %@'s opt-out form. We'll pause whenever we need your help."
+          }
+        }
+      }
+    },
+    "pir.assisted.submitted.subtitle": {
+      "comment": "Panel detail after submitting a removal request.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nice work. That's the hard part done."
+          }
+        }
+      }
+    },
+    "pir.assisted.user.subtitle": {
+      "comment": "Panel detail when user input is needed. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We've paused. %@ needs a person for this step."
+          }
+        }
+      }
+    },
+    "pir.assisted.opening": {
+      "comment": "Status while opening a broker form. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening %@…"
+          }
+        }
+      }
+    },
+    "pir.assisted.filling": {
+      "comment": "Panel detail while DuckDuckGo fills the form.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filling in your details."
+          }
+        }
+      }
+    },
+    "pir.assisted.next.title": {
+      "comment": "Heading after submitting a removal request.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What happens next"
+          }
+        }
+      }
+    },
+    "pir.assisted.next.detail": {
+      "comment": "Explains follow-up after submitting a removal request.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll follow up on the request and check your info is gone on our next scan."
+          }
+        }
+      }
+    },
+    "pir.assisted.cancel": {
+      "comment": "Cancels the removal before it begins.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "pir.assisted.back": {
+      "comment": "Closes the completed removal window and returns to the dashboard.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to dashboard"
+          }
+        }
+      }
+    },
+    "pir.assisted.stop": {
+      "comment": "Stops the current removal attempt.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop"
+          }
+        }
+      }
+    },
+    "pir.assisted.user.title": {
+      "comment": "Heading above instructions for the current user step.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your turn"
+          }
+        }
+      }
+    },
+    "pir.assisted.user.instruction": {
+      "comment": "User-turn instructions. %@ is the current step label supplied by the data broker configuration.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete this step on the page: %@. We will carry on when it is done."
+          }
+        }
+      }
+    },
+    "pir.assisted.user.instruction-fallback": {
+      "comment": "User-turn instructions when the broker does not supply a current step label.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete the highlighted part of the page. We will carry on when it is done."
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.title": {
+      "comment": "Intro heading. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to remove you from %@"
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.detail": {
+      "comment": "Explains assisted removal before the user starts.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll open their opt-out form here and fill it in for you."
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.start": {
+      "comment": "Starts an assisted removal attempt.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start request"
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.stop-anytime": {
+      "comment": "Explains that the user can cancel an assisted removal.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can stop anytime"
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.help-title": {
+      "comment": "Heading above examples of steps that may need user input.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where we need your help"
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.human-title": {
+      "comment": "Example of a removal step that may need the user.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prove you're human"
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.human-detail": {
+      "comment": "Explains possible human verification. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ may ask you to prove you're human. We'll pause and show you where."
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.review-title": {
+      "comment": "Example of a removal step that may need the user.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review and submit"
+          }
+        }
+      }
+    },
+    "pir.assisted.intro.review-detail": {
+      "comment": "Explains that form review depends on the broker workflow.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the form needs your review or confirmation, we'll pause so you can complete that step."
+          }
+        }
+      }
+    },
+    "pir.assisted.step.completed": {
+      "comment": "Accessibility status for a completed removal step.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        }
+      }
+    },
+    "pir.assisted.step.running": {
+      "comment": "Accessibility status for the current automated removal step.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        }
+      }
+    },
+    "pir.assisted.step.upcoming": {
+      "comment": "Accessibility status for a future removal step.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming"
+          }
+        }
+      }
+    },
+    "pir.assisted.address": {
+      "comment": "Accessibility label for the read-only page address. %@ is the current URL.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page address: %@"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

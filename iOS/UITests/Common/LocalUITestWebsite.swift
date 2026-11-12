@@ -18,6 +18,7 @@
 //
 
 import Swifter
+import UITestingSupport
 import XCTest
 
 final class LocalUITestWebsite {
@@ -37,17 +38,22 @@ final class LocalUITestWebsite {
     }
 
     private let server: HttpServer
+    private let requests: PageRequests
     let hostAndPort: String
 
     init() throws {
         let server = HttpServer()
+        let requests = PageRequests()
         let pages: [Page] = [.first, .second, .child] + (0..<4).map(Page.bookmark)
         for page in pages {
             let childLink = page.path == Page.first.path
                 ? "<a href=\"\(Page.child.path)\">\(Self.childLinkTitle)</a>"
                 : ""
             let html = "<title>\(page.title)</title><h1>\(page.title)</h1>\(childLink)"
-            server[page.path] = { _ in .ok(.htmlBody(html)) }
+            server[page.path] = { _ in
+                requests.receivedRequest(for: page.path)
+                return .ok(.htmlBody(html))
+            }
         }
         server.listenAddressIPv4 = "127.0.0.1"
         try server.start(0, forceIPv4: true, priority: .userInitiated)
@@ -58,6 +64,7 @@ final class LocalUITestWebsite {
             throw error
         }
         self.server = server
+        self.requests = requests
     }
 
     deinit {
@@ -65,6 +72,30 @@ final class LocalUITestWebsite {
     }
 
     func open(_ page: Page, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        app.openURL("http://\(hostAndPort)\(page.path)", expecting: page.title, file: file, line: line)
+        let request = requests.expectRequest(for: page.path)
+        app.enterSearchText("http://\(hostAndPort)\(page.path)\r", file: file, line: line)
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [request], timeout: UITestTimeouts.navigation),
+            .completed,
+            "Browser did not request the local page \(page.path).",
+            file: file,
+            line: line)
+        app.assertPageContains(page.title, file: file, line: line)
+    }
+
+    private final class PageRequests {
+        private let lock = NSLock()
+        private var pending: [String: XCTestExpectation] = [:]
+
+        func expectRequest(for path: String) -> XCTestExpectation {
+            let expectation = XCTestExpectation(description: "Request for \(path)")
+            lock.withLock { pending[path] = expectation }
+            return expectation
+        }
+
+        func receivedRequest(for path: String) {
+            let expectation = lock.withLock { pending.removeValue(forKey: path) }
+            expectation?.fulfill()
+        }
     }
 }

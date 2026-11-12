@@ -217,7 +217,7 @@ extension XCUIApplication {
         let tabs = collection.cells.matching(NSPredicate(format: "identifier BEGINSWITH %@", "TabSwitcher.Tab."))
         let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == %d", count), object: tabs)
         XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.elementExistence), .completed,
+            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation), .completed,
             "Expected \(count) tabs, found \(tabs.count).", file: file, line: line)
     }
 

@@ -240,10 +240,7 @@ final class AppLaunchUITests: UITestCase {
         start.press(forDuration: 0.1, thenDragTo: end)
         XCTAssertTrue(slider.waitForNonExistence(timeout: UITestTimeouts.navigation))
         XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
-        if dismissInput.exists {
-            dismissInput.tap()
-        }
-        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tap()
+        app.openTabSwitcher()
         let tabSwitcher = app.collectionViews["TabSwitcher.Collection.Tabs"]
         let newTabButton = tabSwitcher.buttons["Open new tab"]
         XCTAssertTrue(newTabButton.waitForExistence(timeout: UITestTimeouts.navigation))

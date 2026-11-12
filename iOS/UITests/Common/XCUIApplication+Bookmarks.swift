@@ -179,6 +179,18 @@ extension XCUIApplication {
 
             let editor = tables["Bookmarks.Editor.List"]
             let delete = editor.cells["Bookmarks.Editor.Delete"]
+            let keyboard = keyboards.firstMatch
+            if !delete.isHittable && keyboard.exists {
+                let editorFrame = editor.frame
+                let visibleHeight = keyboard.frame.minY - editorFrame.minY
+                if visibleHeight > 0 && visibleHeight < editorFrame.height {
+                    // Start above the keyboard so the table receives the scroll gesture.
+                    let top = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+                    let start = top.withOffset(CGVector(dx: 0, dy: visibleHeight * 0.85))
+                    let end = top.withOffset(CGVector(dx: 0, dy: visibleHeight * 0.3))
+                    start.press(forDuration: 0.1, thenDragTo: end)
+                }
+            }
             editor.swipeUpToReveal(delete, file: file, line: line)
             delete.tapWhenHittable(in: self, file: file, line: line)
             buttons.matching(identifier: "Bookmarks.Editor.ConfirmDelete").firstMatch

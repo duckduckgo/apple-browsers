@@ -396,8 +396,7 @@ struct OnboardingComparisonContent: Equatable {
         case ai
     }
 
-    /// `nil` hides the title.
-    let title: String?
+    let title: String
     /// When set, renders as a text-and-icons table header; absent for icon-only headers.
     let subHeader: String?
     let competitor: Competitor
@@ -410,7 +409,7 @@ struct OnboardingComparisonContent: Equatable {
     let daxAnimation: DaxAnimation?
 
     init(
-        title: String?,
+        title: String,
         subHeader: String?,
         competitor: Competitor,
         features: [RebrandedComparisonTableModel.Feature],
@@ -458,15 +457,13 @@ extension OnboardingIntroContentProvider {
         // Return default version of comparison table if download reason is nil (Duck.ai + No experiment enrolled users)
         guard let reason = downloadReasonProvider() else { return defaultSetDefaultBrowserContent }
 
-        let title: String? = switch reason {
-        case .browserPrivately, .privateAIChat:
+        let title = switch reason {
+        case .browserPrivately, .privateAIChat, .vpn:
             UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
         case .noAI:
             UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
         case .blockAds:
             UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
-        case .vpn:
-            nil
         }
 
         let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil

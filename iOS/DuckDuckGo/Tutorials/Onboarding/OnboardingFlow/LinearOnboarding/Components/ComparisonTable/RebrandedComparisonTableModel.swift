@@ -145,13 +145,10 @@ extension RebrandedComparisonTableModel {
     static func browserFeatures(for reason: OnboardingDownloadReason) -> [Feature] {
         switch reason {
         case .vpn:
-            return [
-                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked), title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.blockYouTubeAdsIcon, title: BrowserText.duckplayer, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral), title: AIText.onePlaceAccess, competitorAvailability: .unavailable, ddgAvailability: .available),
+            // The ad-blocking table without its AI chat and tracker rows, plus VPN.
+            let excludedTitles = [BrowserText.privateAIChat, BrowserText.trackerBlockers]
+            return browserFeatures(for: .blockAds).filter { !excludedTitles.contains($0.title) } + [
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.vpn), title: VPNText.vpnHideLocation, competitorAvailability: .unavailable, ddgAvailability: .subscription),
-                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.lock), title: VPNText.vpnSecureWiFi, competitorAvailability: .unavailable, ddgAvailability: .subscription),
             ]
         case .browserPrivately:
             return [

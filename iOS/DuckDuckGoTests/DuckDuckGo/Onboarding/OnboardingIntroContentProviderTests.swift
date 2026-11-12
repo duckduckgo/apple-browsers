@@ -423,15 +423,13 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.setDefaultBrowserContent
 
             // THEN
-            let expectedTitle: String? = switch reason {
-            case .browserPrivately, .privateAIChat:
+            let expectedTitle: String = switch reason {
+            case .browserPrivately, .privateAIChat, .vpn:
                 UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
             case .noAI:
                 UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
             case .blockAds:
                 UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
-            case .vpn:
-                nil
             }
             #expect(result.title == expectedTitle)
             #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
@@ -504,21 +502,21 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @available(iOS 16, macOS 13, *)
-        @Test("The VPN reason's table marks the VPN rows as part of the subscription", .timeLimit(.minutes(1)))
-        func vpnFeaturesMarkSubscriptionRows() {
+        @Test("The VPN reason's table reuses the ad-blocking rows without AI chat and trackers, then adds a subscription VPN row", .timeLimit(.minutes(1)))
+        func vpnFeaturesReuseAdBlockingRows() {
             // WHEN
             let features = RebrandedComparisonTableModel.browserFeatures(for: .vpn)
 
             // THEN
+            let adBlockingFeatures = RebrandedComparisonTableModel.browserFeatures(for: .blockAds)
+            #expect(Array(features.prefix(3)) == Array(adBlockingFeatures.prefix(3)))
             #expect(features.map(\.title) == [
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopupsAndAds,
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer,
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch,
-                UserText.Onboarding.DuckAICPP.AIComparison.Features.onePlaceAccess,
-                UserText.Onboarding.BrowsersComparison.vpnHideLocation,
-                UserText.Onboarding.BrowsersComparison.vpnSecureWiFi
+                UserText.Onboarding.BrowsersComparison.vpnHideLocation
             ])
-            #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .available, .subscription, .subscription])
+            #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .subscription])
             #expect(features.allSatisfy { $0.competitorAvailability == .unavailable })
         }
 

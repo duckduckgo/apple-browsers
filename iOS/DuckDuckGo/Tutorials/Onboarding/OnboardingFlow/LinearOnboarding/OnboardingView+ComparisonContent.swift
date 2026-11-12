@@ -54,16 +54,20 @@ extension OnboardingView {
         // the comparison table has its own animated row reveal that needs `showContent`.
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                if let title = content.title {
-                    TypingText(
-                        title,
-                        startAnimating: $shouldStartTyping,
-                        onTypingFinished: revealContent
-                    )
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
-                }
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingComparisonTableView(
@@ -94,20 +98,6 @@ extension OnboardingView {
                 .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
-            .onChange(of: shouldStartTyping) { shouldStart in
-                // Without a title there's nothing to type, so reveal the content right away.
-                if shouldStart && content.title == nil {
-                    revealContent()
-                }
-            }
-        }
-
-        private func revealContent() {
-            if reduceMotion {
-                showContent = true
-            } else {
-                withAnimation { showContent = true }
-            }
         }
 
         private var tableHeader: RebrandedOnboardingComparisonTableView.Header {

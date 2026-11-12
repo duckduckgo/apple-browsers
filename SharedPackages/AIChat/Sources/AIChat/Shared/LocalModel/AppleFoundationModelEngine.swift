@@ -158,8 +158,10 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            Logger.aiChat.error("[LocalModel] Foundation Models run failed: \(String(describing: error), privacy: .public)")
-            throw AIChatLocalModelEngineError(code: errorCode(for: error))
+            // A refusal carries the model's answer, which is based on the page, so only the code is public.
+            let code = errorCode(for: error)
+            Logger.aiChat.error("[LocalModel] Foundation Models run failed: \(code.rawValue, privacy: .public) \(String(describing: error), privacy: .private)")
+            throw AIChatLocalModelEngineError(code: code)
         }
 
         let outputTokens = await tokenCount(of: emitted, model: model)

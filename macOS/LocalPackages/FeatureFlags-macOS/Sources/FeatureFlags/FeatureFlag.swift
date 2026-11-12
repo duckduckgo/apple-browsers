@@ -387,6 +387,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Autoconsent popup mutation observer: while checking whether a popup is open, also wait for DOM changes
     /// so that popups that render late are found.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220498404318813
     case popupMutationObserver
 
     /// Cookie Pop-up Protection opt-in dialog

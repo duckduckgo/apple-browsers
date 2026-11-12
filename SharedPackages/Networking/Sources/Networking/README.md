@@ -142,6 +142,9 @@ let myDecodedObject: MyDecodableType = try await mockedAPIService.fetch(request:
 |11200|com.duckduckgo.networking.OAuthServiceError|
 |11300|com.duckduckgo.networking.TokenPayloadError|
 |11400|com.duckduckgo.networking.APIRequestV2|
+|11500|com.duckduckgo.networking.TokenBackupError|
+|11600|com.duckduckgo.networking.TokenForkError|
+|11700|com.duckduckgo.networking.OAuthRequestError|
 
 ## v1 (Legacy)
 

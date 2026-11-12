@@ -43,9 +43,10 @@ actor WebExtensionUpdatePackageStore {
         guard UUID(uuidString: installationID) != nil else { throw PackageError.invalidInstallationIdentifier }
         try Task.checkCancellation()
         let identifier = UUID()
-        let relativePath = installationID + "/" + InstalledWebExtension.packagesDirectoryName + "/" + identifier.uuidString
+        let relativePath = InstalledWebExtension.resourceIdentifier(for: installationID, packageIdentifier: identifier)
         let directory = root.appendingPathComponent(relativePath, isDirectory: true)
-        guard (try? directory.deletingLastPathComponent().resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else {
+        let installationDirectory = root.appendingPathComponent(installationID, isDirectory: true)
+        guard !isSymbolicLink(root), !isSymbolicLink(installationDirectory), !isSymbolicLink(directory.deletingLastPathComponent()) else {
             throw PackageError.invalidPackageLocation
         }
         do {
@@ -68,17 +69,37 @@ actor WebExtensionUpdatePackageStore {
     }
 
     /// Run once from the fresh startup inventory, before preparing new packages. Never collect in the publishing session.
-    func cleanup(installationIDs: Set<String>, selectedPackages: [String: UUID]) {
-        for installationID in installationIDs where UUID(uuidString: installationID) != nil {
-            let directory = root.appendingPathComponent(installationID).appendingPathComponent(InstalledWebExtension.packagesDirectoryName)
-            guard (try? directory.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else { continue }
-            guard let packages = try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { continue }
-            for package in packages {
-                guard let identifier = UUID(uuidString: package.lastPathComponent), identifier != selectedPackages[installationID] else { continue }
-                do { try fileManager.removeItem(at: package) } catch {
-                    Logger.webExtensions.error("Extension update orphan package cleanup failed: \(error.localizedDescription)")
-                }
+    func cleanup(activatedPackages: [String: UUID]) {
+        guard isRealDirectory(root) else { return }
+        let storage = WebExtensionStorageProvider(extensionsDirectory: root, fileManager: fileManager)
+        for (installationID, packageID) in activatedPackages where UUID(uuidString: installationID) != nil {
+            let installation = root.appendingPathComponent(installationID, isDirectory: true)
+            let packages = installation.appendingPathComponent(InstalledWebExtension.packagesDirectoryName, isDirectory: true)
+            let selected = packages.appendingPathComponent(packageID.uuidString, isDirectory: true)
+            let resource = InstalledWebExtension.resourceIdentifier(for: installationID, packageIdentifier: packageID)
+            guard isRealDirectory(installation), isRealDirectory(packages), isRealDirectory(selected),
+                  storage.resolveInstalledExtension(identifier: resource) != nil else { continue }
+
+            removeContents(of: packages, keeping: packageID.uuidString)
+            removeContents(of: installation, keeping: InstalledWebExtension.packagesDirectoryName)
+        }
+    }
+
+    private func removeContents(of directory: URL, keeping name: String) {
+        guard let contents = try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
+        for item in contents where item.lastPathComponent != name {
+            do { try fileManager.removeItem(at: item) } catch {
+                Logger.webExtensions.error("Extension update unused payload cleanup failed: \(error.localizedDescription)")
             }
         }
+    }
+
+    private func isSymbolicLink(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true
+    }
+
+    private func isRealDirectory(_ url: URL) -> Bool {
+        guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { return false }
+        return values.isDirectory == true && values.isSymbolicLink != true
     }
 }

@@ -59,11 +59,15 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     public let consumedVersionOverrideIdentifier: UUID?
     public var needsInitialUpdateActivationValidation: Bool
 
-    static let packagesDirectoryName = ".versions"
+    static let packagesDirectoryName = "versions"
 
     var resourceIdentifier: String {
-        guard let packageIdentifier else { return uniqueIdentifier }
-        return uniqueIdentifier + "/" + Self.packagesDirectoryName + "/" + packageIdentifier.uuidString
+        Self.resourceIdentifier(for: uniqueIdentifier, packageIdentifier: packageIdentifier)
+    }
+
+    static func resourceIdentifier(for installationID: String, packageIdentifier: UUID?) -> String {
+        guard let packageIdentifier else { return installationID }
+        return installationID + "/" + packagesDirectoryName + "/" + packageIdentifier.uuidString
     }
 
     /// CPM's private origin after data clearing, rollback or a background-load failure.

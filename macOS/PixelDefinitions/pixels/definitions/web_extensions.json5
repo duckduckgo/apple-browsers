@@ -1,4 +1,29 @@
 {
+    "web_extension_update_success_macos": {
+        "description": "Fires when a verified extension update is committed at startup, including updates left disabled because additional permissions are required. Daily counts affected installations; count counts committed updates.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_update_failure_macos": {
+        "description": "Fires when applying or recovering an extension update fails, excluding cancellation, eligibility deferrals and cleanup-only failures. Daily counts affected installations; count counts failures. No package URL, hash, version or error text is sent.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension",
+            {
+                "key": "outcome",
+                "type": "string",
+                "description": "The bounded installation failure reason",
+                "enum": ["invalid_package", "storage_failure", "load_failure"]
+            },
+            "channel"
+        ]
+    },
     "web_extension_update_download_failed_macos": {
         "description": "Fires when downloading an extension update fails, excluding cancellation. Daily counts affected installations; count counts failures. No package URL, hash or version is sent.",
         "owners": ["diegoreymendez"],

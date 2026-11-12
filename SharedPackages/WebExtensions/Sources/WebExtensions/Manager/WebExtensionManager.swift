@@ -133,6 +133,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// can re-create their contexts without re-reading and re-parsing them from disk. Cleared once
     /// consumed by a reload.
     private var unloadedExtensionsCache: [String: WKWebExtension] = [:]
+    /// Invalidated by user/lifecycle mutations so a suspended update cannot commit stale state.
+    private var extensionUpdateGenerations: [String: UUID] = [:]
+    private lazy var extensionUpdatePackages = WebExtensionUpdatePackageStore(extensionsDirectory: storageProvider.extensionsDirectory,
+                                                                                   fileManager: storageProvider.fileManager)
+    weak var startupUpdateInstaller: ChromeWebStoreUpdateInstaller?
+    /// A failed debug-state write retains the transaction for retry without failing an already committed update.
+    var didCommitStoreUpdate: (InstalledWebExtension, UUID?) -> Bool = { _, _ in true }
     /// Distinguishes the next full load as restoration after data clearing rather than initial startup.
     private var isDataClearingReloadPending = false
     /// Extensions whose data-clearing reload lifecycle began before their contexts were unloaded.
@@ -313,7 +320,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
                                                    isInspectable: configuration.isInspectable,
                                                    permissionController: permissionController,
-                                                   baseURLProvider: baseURLPolicy.baseURL)
+                                                   baseURLProvider: baseURLPolicy.baseURL, installationStore: installationStore)
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
@@ -533,6 +540,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
 
         if let oldIdentifier {
+            extensionUpdateGenerations.removeValue(forKey: oldIdentifier)
+            await startupUpdateInstaller?.cancelAndWait()
             guard let storeIdentity,
                   let installed = installationStore.installedExtension(withUniqueIdentifier: oldIdentifier),
                   installed.storeIdentity == storeIdentity else {
@@ -557,16 +566,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
         defer { permissionController?.trustedInstallations.remove(identifier) }
 
-        if metadata.requiresExtraction {
-            _ = try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
-        } else {
-            _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
-        }
-
-        Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
-
+        let packageIdentifier = storeIdentity?.store == .chromeWebStore ? UUID() : nil
+        let resourceIdentifier = InstalledWebExtension.resourceIdentifier(for: identifier, packageIdentifier: packageIdentifier)
         var replacedContext: WKWebExtensionContext?
         do {
+            if metadata.requiresExtraction {
+                _ = try storageProvider.extractExtension(from: sourceURL, identifier: resourceIdentifier)
+            } else {
+                _ = try storageProvider.copyExtension(from: sourceURL, identifier: resourceIdentifier)
+            }
+
+            Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
+
             if let oldIdentifier {
                 try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
 #if os(macOS)
@@ -586,7 +597,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
             installingStoreIdentities[identifier] = storeIdentity
             defer { installingStoreIdentities.removeValue(forKey: identifier) }
-            let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            let loadResult = try await loader.loadWebExtension(identifier: identifier, resourceIdentifier: resourceIdentifier,
+                                                             into: controller, beforeActivation: { _ in })
             unloadGuard.recordLoad(of: identifier)
 
             let webExtension = context(for: identifier)?.webExtension
@@ -598,7 +610,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 embeddedType: embeddedType,
                 storeIdentity: storeIdentity,
                 permissions: webExtension?.requiredPermissionNames,
-                matchPatterns: webExtension?.allRequestedMatchPatterns.map(\.string)
+                matchPatterns: webExtension?.allRequestedMatchPatterns.map(\.string),
+                packageIdentifier: packageIdentifier
             )
 
             installationStore.add(installedExtension)
@@ -659,6 +672,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func uninstallExtension(identifier: String) throws {
+        extensionUpdateGenerations.removeValue(forKey: identifier)
+        startupUpdateInstaller?.uninstalling(identifier)
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
         let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
@@ -757,6 +772,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func unloadAllExtensions() {
+        extensionUpdateGenerations.removeAll()
+        startupUpdateInstaller?.cancelStartup()
         isDataClearingReloadPending = true
         let contexts = controller.extensionContexts
         Logger.webExtensions.debug("🔄 Unloading all extensions from memory (count: \(contexts.count))")
@@ -838,6 +855,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     func reloadExtension(identifier: String, trigger: WebExtensionReloadTrigger) async throws {
+        extensionUpdateGenerations.removeValue(forKey: identifier)
+        await startupUpdateInstaller?.cancelAndWait()
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 
         let type = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
@@ -892,6 +911,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func disableExtension(identifier: String) async throws {
+        extensionUpdateGenerations.removeValue(forKey: identifier)
+        await startupUpdateInstaller?.cancelAndWait()
+        if isRemotelyDisabled(identifier: identifier) { startupUpdateInstaller?.uninstalling(identifier) }
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
             throw WebExtensionError.extensionNotInstalled
         }
@@ -958,24 +980,33 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func enableExtension(identifier: String) async throws {
+        let generation = beginStoreExtensionEnable(identifier: identifier)
+        defer { endStoreExtensionEnable(identifier: identifier, generation: generation) }
+        await startupUpdateInstaller?.cancelAndWait()
+        try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: nil)
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
             throw WebExtensionError.extensionNotInstalled
         }
         guard installedExtension.isDisabled else { return }
 
         Logger.webExtensions.debug("🔄 Enabling extension '\(identifier)'")
+        var enabledContext: WKWebExtensionContext?
         do {
-            _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            _ = try await loadStoreExtensionForEnable(installedExtension, generation: generation)
+            enabledContext = context(for: identifier)
             unloadGuard.recordLoad(of: identifier)
         } catch {
             // A partially completed load can leave handlers behind for a context that never became active.
             unregisterHandlers(for: identifier)
-            Logger.webExtensions.error("❌ Failed to enable extension '\(identifier)': \(error.localizedDescription)")
+            try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: installedExtension,
+                                                   ownedContext: context(for: identifier))
             throw WebExtensionError.failedToLoadWebExtension(error)
         }
 
+        try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: installedExtension, ownedContext: enabledContext)
         var enabledExtension = installedExtension
         enabledExtension.isDisabled = false
+        enabledExtension.needsInitialUpdateActivationValidation = false
         installationStore.update(enabledExtension)
         reportLifecycleEvent(.loaded(identifier: identifier, type: nil))
 
@@ -994,6 +1025,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func loadInstalledExtensions() async {
+        if let startupUpdateInstaller {
+            await startupUpdateInstaller.runOnce()
+        }
         let lifecycle: InstalledExtensionsLoadLifecycle = isDataClearingReloadPending
             ? .reloadAll(trigger: .dataClearing, identifiers: dataClearingReloadIdentifiers)
             : .initial
@@ -1257,8 +1291,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let extensions = installationStore.installedExtensions.filter { !$0.isDisabled }
         Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(extensions.count))")
 
-        let identifiers = extensions.map(\.uniqueIdentifier)
-        let results = await loader.loadWebExtensions(identifiers: identifiers, into: controller)
+        let results = await loadInstalledExtensionsWithUpdateValidation(extensions)
 
         let summary = processInstalledExtensionLoadResults(extensions: extensions, results: results, lifecycle: lifecycle)
 
@@ -1267,20 +1300,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             await unloadExtensionDisabledWhileLoading(installedExtension.uniqueIdentifier)
         }
 
-        for (identifier, error) in summary.failures {
-            // Uninstall broken 3rd-party extensions, unless they only failed to load because of a consent/settings read failure.
-            if installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == false,
-               permissionController != nil,
-               error is WebExtensionLoader.PermissionPreparationError
-            {
-                continue
-            }
-            do {
-                try uninstallExtension(identifier: identifier)
-            } catch {
-                Logger.webExtensions.error("❌ Failed to uninstall broken extension '\(identifier)': \(error.localizedDescription)")
-            }
-        }
+        await processInstalledExtensionLoadFailures(summary.failures)
 
         if summary.failures.isEmpty {
             Logger.webExtensions.info("✅ Extension loading completed: \(summary.successCount) loaded")
@@ -1304,6 +1324,25 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         notifyUpdate()
+    }
+
+    @MainActor
+    private func processInstalledExtensionLoadFailures(_ failures: [(identifier: String, error: Error)]) async {
+        for (identifier, error) in failures {
+            if Self.isUpdateInstallationDeferral(error) { continue }
+            // Uninstall broken 3rd-party extensions, unless they only failed to load because of a consent/settings read failure.
+            if installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == false,
+               permissionController != nil,
+               error is WebExtensionLoader.PermissionPreparationError
+            {
+                continue
+            }
+            do {
+                try uninstallExtension(identifier: identifier)
+            } catch {
+                Logger.webExtensions.error("❌ Failed to uninstall broken extension '\(identifier)': \(error.localizedDescription)")
+            }
+        }
     }
 
     @MainActor
@@ -1357,6 +1396,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// to reload.
     @MainActor
     public func reloadInstalledExtensions() async {
+        extensionUpdateGenerations.removeAll()
+        await startupUpdateInstaller?.cancelAndWait()
         guard !unloadedExtensionsCache.isEmpty else {
             await loadInstalledExtensions()
             return
@@ -1769,6 +1810,260 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         guard let permissionController else { return (matchPatterns, nil) }
         let granted = await permissionController.request(WebExtensionPermissionRequest(matchPatterns: matchPatterns), for: extensionContext)
         return (granted ? matchPatterns : [], nil)
+    }
+}
+
+// MARK: - Verified Store Updates
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+extension WebExtensionManager {
+    enum UpdateInstallationResult { case applied, installedDisabled }
+    enum UpdateInstallationError: Error { case installationChanged, alreadyUpdating, invalidPackage }
+
+    /// Prepare aside, then publish one complete record. Loading never restores an older package.
+    func applyVerifiedUpdate(_ update: ChromeWebStoreVerifiedUpdate,
+                             replacing installed: InstalledWebExtension,
+                             reportedInstalledVersion: String? = nil,
+                             versionOverrideIdentifier: UUID? = nil,
+                             isEligible: () -> Bool) async throws -> UpdateInstallationResult {
+        let identifier = installed.uniqueIdentifier
+        guard !installed.isEmbedded, installed.storeIdentity == .init(store: .chromeWebStore, id: update.extensionID),
+              Self.isVersionEligibleForUpdate(update.version, installedVersion: installed.version,
+                                              reportedInstalledVersion: reportedInstalledVersion) else {
+            throw UpdateInstallationError.invalidPackage
+        }
+        guard extensionUpdateGenerations[identifier] == nil, context(for: identifier) == nil else { throw UpdateInstallationError.alreadyUpdating }
+        let generation = UUID()
+        extensionUpdateGenerations[identifier] = generation
+        defer { endStoreExtensionEnable(identifier: identifier, generation: generation) }
+        func checkEligibility() throws {
+            try Task.checkCancellation()
+            guard extensionUpdateGenerations[identifier] == generation,
+                  installationStore.installedExtension(withUniqueIdentifier: identifier) == installed,
+                  context(for: identifier) == nil, isEligible() else { throw UpdateInstallationError.installationChanged }
+        }
+
+        try checkEligibility()
+        let prepared: WebExtensionUpdatePackageStore.Prepared
+        do { prepared = try await extensionUpdatePackages.prepare(update, installationID: identifier) } catch {
+            reportUpdateInstallationFailureIfNeeded(error, outcome: .storageFailure, storeIdentity: installed.storeIdentity)
+            throw error
+        }
+        do {
+            let candidate = try await WKWebExtension.makeCopyingErrors(at: prepared.validationURL)
+            guard candidate.version == update.version else { throw UpdateInstallationError.invalidPackage }
+            try checkEligibility()
+            let disabled = updateRequiresDisabling(candidate, installed: installed)
+            let replacement = InstalledWebExtension(uniqueIdentifier: identifier, filename: prepared.bundleURL.lastPathComponent,
+                                                    name: candidate.displayName, version: candidate.version, storeIdentity: installed.storeIdentity,
+                                                    permissions: candidate.requiredPermissionNames,
+                                                    matchPatterns: candidate.allRequestedMatchPatterns.map(\.string), isDisabled: disabled,
+                                                    cpmOriginIdentifier: installed.cpmOriginIdentifier, packageIdentifier: prepared.identifier,
+                                                    consumedVersionOverrideIdentifier: versionOverrideIdentifier,
+                                                    needsInitialUpdateActivationValidation: true)
+            // This is the sole publication point. No suspension or payload deletion separates the final check and update.
+            installationStore.update(replacement)
+            _ = didCommitStoreUpdate(replacement, versionOverrideIdentifier)
+            pixelFiring.fire(.updateApplied(extension: pixelExtension(for: replacement.storeIdentity)))
+            if disabled, !installed.isDisabled { reportEnabledStateChange(isEnabled: false, storeIdentity: installed.storeIdentity) }
+            notifyUpdate()
+            if let identity = replacement.storeIdentity {
+                NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self, userInfo: ["extensionId": identity.id])
+            }
+            return disabled ? .installedDisabled : .applied
+        } catch {
+            await extensionUpdatePackages.discard(prepared)
+            reportUpdateInstallationFailureIfNeeded(error, outcome: .invalidPackage, storeIdentity: installed.storeIdentity)
+            throw error
+        }
+    }
+
+    /// Collect only from the fresh startup selection, before this session publishes any package.
+    func cleanupUnselectedUpdatePackages() async {
+        let activated = installationStore.installedExtensions.compactMap { item -> (String, UUID)? in
+            guard item.storeIdentity?.store == .chromeWebStore, !item.needsInitialUpdateActivationValidation,
+                  let packageID = item.packageIdentifier else { return nil }
+            return (item.uniqueIdentifier, packageID)
+        }
+        await extensionUpdatePackages.cleanup(activatedPackages: Dictionary(uniqueKeysWithValues: activated))
+    }
+
+    /// Only the first automatic load uses full update approval. The marker survives Quit before that load.
+    private func loadInstalledExtensionsWithUpdateValidation(_ extensions: [InstalledWebExtension]) async -> [Result<WebExtensionLoadResult, Error>] {
+        guard extensions.contains(where: \.needsInitialUpdateActivationValidation) else {
+            return await loader.loadWebExtensions(identifiers: extensions.map(\.uniqueIdentifier), into: controller)
+        }
+        var results: [Result<WebExtensionLoadResult, Error>] = []
+        for installed in extensions {
+            await Task.yield()
+            do {
+                if installed.needsInitialUpdateActivationValidation {
+                    results.append(.success(try await loadInitialExtensionUpdate(installed)))
+                } else {
+                    results.append(.success(try await loader.loadWebExtension(identifier: installed.uniqueIdentifier, into: controller)))
+                }
+            } catch { results.append(.failure(error)) }
+        }
+        return results
+    }
+
+    private func loadInitialExtensionUpdate(_ installed: InstalledWebExtension) async throws -> WebExtensionLoadResult {
+        let identifier = installed.uniqueIdentifier
+        // The batch snapshot may predate a manual enable; validate it before claiming this installation.
+        try Task.checkCancellation()
+        try requireCurrentStoreActivation(installed, generation: nil, allowsDisabled: false)
+        guard extensionUpdateGenerations[identifier] == nil, context(for: identifier) == nil else {
+            throw UpdateInstallationError.installationChanged
+        }
+        let generation = UUID()
+        extensionUpdateGenerations[identifier] = generation
+        permissionController?.beginUpdate(for: identifier)
+        defer {
+            permissionController?.endUpdate(for: identifier)
+            endStoreExtensionEnable(identifier: identifier, generation: generation)
+        }
+        var parsedExtension: WKWebExtension?
+        do {
+            try Task.checkCancellation()
+            try requireCurrentStoreActivation(installed, generation: generation, allowsDisabled: false)
+            let result = try await loader.loadWebExtension(identifier: identifier, into: controller, beforeActivation: { parsed in
+                parsedExtension = parsed
+                try Task.checkCancellation()
+                guard parsed.version == installed.version else { throw UpdateInstallationError.installationChanged }
+                try self.requireCurrentStoreActivation(installed, generation: generation, allowsDisabled: false)
+                try self.requireSavedUpdateConsent(parsed, identifier: identifier)
+            })
+            try Task.checkCancellation()
+            try requireCurrentStoreActivation(installed, generation: generation, allowsDisabled: false)
+            var current = try currentStoreInstallation(installed, generation: generation)
+            current.needsInitialUpdateActivationValidation = false
+            installationStore.update(current)
+            unloadGuard.recordLoad(of: identifier)
+            return result
+        } catch {
+            if let context = context(for: identifier), context.webExtension === parsedExtension {
+                do { try loader.unloadExtension(identifier: identifier, from: controller) } catch {
+                    Logger.webExtensions.error("Extension update first-load cleanup could not unload its context: \(error.localizedDescription)")
+                }
+            }
+            // A failed unload leaves a live context that still needs its handlers.
+            if context(for: identifier) == nil, extensionUpdateGenerations[identifier] == generation {
+                unregisterHandlers(for: identifier)
+            }
+            _ = try currentStoreInstallation(installed, generation: generation)
+            if error is WebExtensionLoader.PermissionPreparationError,
+               var current = installationStore.installedExtension(withUniqueIdentifier: identifier), current.packageIdentifier == installed.packageIdentifier {
+                current.isDisabled = true
+                installationStore.update(current)
+            } else {
+                reportUpdateInstallationFailureIfNeeded(error, outcome: .loadFailure, storeIdentity: installed.storeIdentity)
+            }
+            throw error
+        }
+    }
+
+    private func currentStoreInstallation(_ installed: InstalledWebExtension, generation: UUID?) throws -> InstalledWebExtension {
+        guard let current = installationStore.installedExtension(withUniqueIdentifier: installed.uniqueIdentifier),
+              current.packageIdentifier == installed.packageIdentifier, current.storeIdentity == installed.storeIdentity,
+              current.version == installed.version,
+              generation.map({ extensionUpdateGenerations[installed.uniqueIdentifier] == $0 }) ?? true else {
+            throw UpdateInstallationError.installationChanged
+        }
+        return current
+    }
+
+    static func isVersionEligibleForUpdate(_ offeredVersion: String, installedVersion: String?, reportedInstalledVersion: String? = nil) -> Bool {
+        guard let installedVersion else { return false }
+        let comparator = SemanticVersionComparator()
+        return comparator.isVersion(offeredVersion, newerThan: reportedInstalledVersion ?? installedVersion)
+            && !comparator.isVersion(installedVersion, newerThan: offeredVersion)
+    }
+
+    static func isUpdateInstallationDeferral(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        guard let failure = error as? UpdateInstallationError else { return false }
+        switch failure {
+        case .installationChanged, .alreadyUpdating: return true
+        case .invalidPackage: return false
+        }
+    }
+
+    func reportUpdateInstallationFailure(_ failure: WebExtensionUpdateInstallFailure, storeIdentity: WebExtensionStoreIdentity?) {
+        pixelFiring.fire(.updateInstallFailed(extension: pixelExtension(for: storeIdentity), outcome: failure))
+    }
+
+    private func reportUpdateInstallationFailureIfNeeded(_ error: Error, outcome: WebExtensionUpdateInstallFailure, storeIdentity: WebExtensionStoreIdentity?) {
+        guard !Task.isCancelled, !Self.isUpdateInstallationDeferral(error) else { return }
+        reportUpdateInstallationFailure(outcome, storeIdentity: storeIdentity)
+    }
+
+    private func updateRequiresDisabling(_ candidate: WKWebExtension, installed: InstalledWebExtension) -> Bool {
+        guard !installed.isDisabled else { return true }
+        // When the permissions flag is off, updates use the loader's legacy implicit consent.
+        guard let permissionController else { return false }
+        do { try permissionController.snapshotForUpdate(for: installed.uniqueIdentifier) } catch { return true }
+        return !permissionController.canActivateUpdate(candidate, for: installed.uniqueIdentifier)
+    }
+
+    private func requireSavedUpdateConsent(_ parsed: WKWebExtension, identifier: String, requiresApprovedAccess: Bool = true) throws {
+        guard let permissionController else { return }
+        let approved = requiresApprovedAccess
+            ? permissionController.canActivateUpdate(parsed, for: identifier)
+            : permissionController.hasSavedPermissions(for: identifier)
+        guard approved else {
+            throw WebExtensionLoader.PermissionPreparationError(underlyingError: WebExtensionPermissionController.PermissionError.updateConsentRequired)
+        }
+    }
+
+    private func requireCurrentStoreActivation(_ installed: InstalledWebExtension, generation: UUID?, allowsDisabled: Bool) throws {
+        _ = try currentStoreInstallation(installed, generation: generation)
+        guard installationStore.installedExtension(withUniqueIdentifier: installed.uniqueIdentifier) == installed,
+              allowsDisabled || !installed.isDisabled, !isRemotelyDisabled(identifier: installed.uniqueIdentifier) else {
+            throw UpdateInstallationError.installationChanged
+        }
+    }
+
+    private func loadStoreExtensionForEnable(_ installed: InstalledWebExtension, generation: UUID?) async throws -> WebExtensionLoadResult {
+        let identifier = installed.uniqueIdentifier
+        guard generation != nil else { return try await loader.loadWebExtension(identifier: identifier, into: controller) }
+        permissionController?.beginUpdate(for: identifier, requiresApprovedAccess: false)
+        defer { permissionController?.endUpdate(for: identifier) }
+        return try await loader.loadWebExtension(identifier: identifier, into: controller, beforeActivation: { parsed in
+            try self.requireCurrentStoreActivation(installed, generation: generation, allowsDisabled: true)
+            try self.requireSavedUpdateConsent(parsed, identifier: identifier, requiresApprovedAccess: false)
+        })
+    }
+
+    private func beginStoreExtensionEnable(identifier: String) -> UUID? {
+        extensionUpdateGenerations.removeValue(forKey: identifier)
+        guard let installed = installationStore.installedExtension(withUniqueIdentifier: identifier),
+              installed.storeIdentity?.store == .chromeWebStore,
+              startupUpdateInstaller != nil || installed.needsInitialUpdateActivationValidation else { return nil }
+        let generation = UUID()
+        extensionUpdateGenerations[identifier] = generation
+        return generation
+    }
+
+    private func endStoreExtensionEnable(identifier: String, generation: UUID?) {
+        if let generation, extensionUpdateGenerations[identifier] == generation { extensionUpdateGenerations.removeValue(forKey: identifier) }
+    }
+
+    private func validateStoreExtensionEnable(identifier: String, generation: UUID?, installed: InstalledWebExtension?,
+                                              ownedContext: WKWebExtensionContext? = nil) async throws {
+        guard let generation else { return }
+        let current = installationStore.installedExtension(withUniqueIdentifier: identifier)
+        let generationMatches = extensionUpdateGenerations[identifier] == generation
+        let installationMatches = installed == nil || current == installed
+        if generationMatches && installationMatches { return }
+        if let ownedContext, context(for: identifier) === ownedContext {
+            await unloadGuard.awaitSettled(ownedContext)
+            if context(for: identifier) === ownedContext {
+                try loader.unloadExtension(identifier: identifier, from: controller)
+                unregisterHandlers(for: identifier)
+            }
+        }
+        throw UpdateInstallationError.installationChanged
     }
 }
 

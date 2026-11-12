@@ -1,0 +1,764 @@
+//
+//  WebExtensionUpdateInstallationTests.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import WebKit
+import XCTest
+import ZIPFoundation
+import PrivacyConfigTestsUtils
+@_spi(Testing) import Persistence
+@testable import WebExtensions
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+final class WebExtensionUpdateInstallationTests: XCTestCase {
+    private let identifier = UUID().uuidString
+    private let storeID = ChromeWebStoreID.bitwarden.rawValue
+    private let installationStore = InstalledWebExtensionStoringMock()
+    private let permissionStore = WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore())
+    private var directory: URL!
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try writePackage(version: "1.0", at: directory.appendingPathComponent(identifier))
+        installationStore.add(original)
+    }
+
+    override func tearDownWithError() throws { try FileManager.default.removeItem(at: directory) }
+
+    private var original: InstalledWebExtension {
+        .init(uniqueIdentifier: identifier, filename: identifier, name: "Fixture", version: "1.0", storeIdentity: .init(store: .chromeWebStore, id: storeID))
+    }
+
+    func testFreshStoreInstallUsesVersionedPackageAndPreservesIdentityOnReload() async throws {
+        installationStore.installedExtensions = []
+        let source = directory.appendingPathComponent("fresh")
+        try writePackage(version: "1.0", at: source)
+        let manager = makeManager()
+
+        try await manager.installExtension(from: source, storeIdentity: original.storeIdentity)
+
+        let installed = try XCTUnwrap(installationStore.installedExtensions.first)
+        let packageID = try XCTUnwrap(installed.packageIdentifier)
+        let package = directory.appendingPathComponent(installed.uniqueIdentifier)
+            .appendingPathComponent("versions").appendingPathComponent(packageID.uuidString)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: package.appendingPathComponent(source.lastPathComponent).appendingPathComponent("manifest.json").path))
+        let context = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertEqual(context.uniqueIdentifier, installed.uniqueIdentifier)
+        let baseURL = context.baseURL
+        manager.unloadAllExtensions()
+
+        try recreateInventory()
+        let reopened = makeManager()
+        await reopened.loadInstalledExtensions()
+
+        let reloaded = try XCTUnwrap(reopened.context(for: installed.uniqueIdentifier))
+        XCTAssertEqual(reloaded.baseURL, baseURL)
+        XCTAssertEqual(reloaded.webExtension.version, "1.0")
+        XCTAssertEqual(installationStore.installedExtensions, [installed])
+        reopened.unloadAllExtensions()
+    }
+
+    func testFreshStoreArchiveInstallUsesVersionedPackage() async throws {
+        installationStore.installedExtensions = []
+        let update = try makeUpdate(version: "1.0")
+        let manager = makeManager()
+
+        try await manager.installExtension(from: update.fileURL, storeIdentity: original.storeIdentity)
+
+        let installed = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertNotNil(installed.packageIdentifier)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(installed.resourceIdentifier).appendingPathComponent(update.fileURL.lastPathComponent).path))
+        XCTAssertEqual(manager.context(for: installed.uniqueIdentifier)?.webExtension.version, "1.0")
+        manager.unloadAllExtensions()
+    }
+
+    func testPreparationLeavesTheInstalledRecordAndOriginalFilesUntouched() async throws {
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+        let prepared = try await packages.prepare(makeUpdate(), installationID: identifier)
+        XCTAssertEqual(prepared.directory.path, directory.appendingPathComponent(identifier)
+            .appendingPathComponent("versions").appendingPathComponent(prepared.identifier.uuidString).path)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(identifier).appendingPathComponent("manifest.json").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: prepared.bundleURL.appendingPathComponent("manifest.json").path))
+    }
+
+    func testFailedFreshStorePreparationRemovesItsInstallationDirectory() async throws {
+        let source = directory.appendingPathComponent("fresh")
+        try writePackage(version: "1.0", at: source)
+        let before = try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted()
+        let storage = WebExtensionStorageProvider(extensionsDirectory: directory, fileManager: FailingPackageCopyFileManager())
+        let manager = WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(), controllerConfiguration: .nonPersistent(),
+                                          windowTabProvider: WebExtensionWindowTabProvidingMock(), storageProvider: storage, installationStore: installationStore)
+
+        do {
+            try await manager.installExtension(from: source, storeIdentity: original.storeIdentity)
+            XCTFail("Copying the package must fail before loading or publishing it")
+        } catch WebExtensionError.failedToLoadWebExtension { }
+
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted(), before)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        XCTAssertTrue(manager.contexts.isEmpty)
+    }
+
+    func testFailedUpdateExtractionRemovesTheIncompletePackage() async throws {
+        let archive = directory.appendingPathComponent("invalid.zip")
+        try Data("invalid archive".utf8).write(to: archive)
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+
+        do {
+            _ = try await packages.prepare(.init(extensionID: storeID, version: "2.0", fileURL: archive), installationID: identifier)
+            XCTFail("An invalid archive must not leave a prepared package")
+        } catch WebExtensionStorageError.failedToExtractExtension { }
+
+        let namespace = directory.appendingPathComponent(identifier).appendingPathComponent("versions")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: namespace.path), [])
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+    }
+
+    func testCancelledPreparationDoesNotCreateAPackageOrChangeTheSelection() async throws {
+        let update = try makeUpdate()
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+        let installationID = identifier
+        let operation = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await packages.prepare(update, installationID: installationID)
+        }
+
+        do {
+            _ = try await operation.value
+            XCTFail("Cancelled preparation must not write a package")
+        } catch is CancellationError { }
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(identifier).appendingPathComponent("versions").path))
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+    }
+
+    func testPreparationAndCleanupDoNotFollowAnExistingPackageDirectorySymlink() async throws {
+        let outside = directory.appendingPathComponent(UUID().uuidString)
+        let packageID = UUID()
+        let kept = outside.appendingPathComponent(packageID.uuidString)
+        try writePackage(version: "2.0", at: kept)
+        let link = directory.appendingPathComponent(identifier).appendingPathComponent(InstalledWebExtension.packagesDirectoryName)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: outside)
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+        do {
+            _ = try await packages.prepare(makeUpdate(), installationID: identifier)
+            XCTFail("A package-controlled symlink must not redirect update writes")
+        } catch WebExtensionUpdatePackageStore.PackageError.invalidPackageLocation { }
+        await packages.cleanup(activatedPackages: [identifier: packageID])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: kept.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(identifier).appendingPathComponent("manifest.json").path))
+    }
+
+    func testPreparationAndCleanupDoNotFollowAnInstallationDirectorySymlink() async throws {
+        let outside = directory.appendingPathComponent("outside")
+        let packageID = UUID()
+        let kept = outside.appendingPathComponent("versions").appendingPathComponent(packageID.uuidString)
+        try writePackage(version: "2.0", at: kept)
+        try writePackage(version: "1.0", at: outside)
+        let installation = directory.appendingPathComponent(identifier)
+        try FileManager.default.removeItem(at: installation)
+        try FileManager.default.createSymbolicLink(at: installation, withDestinationURL: outside)
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+
+        do {
+            _ = try await packages.prepare(makeUpdate(), installationID: identifier)
+            XCTFail("An installation symlink must not redirect update writes")
+        } catch WebExtensionUpdatePackageStore.PackageError.invalidPackageLocation { }
+        await packages.cleanup(activatedPackages: [identifier: packageID])
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outside.appendingPathComponent("manifest.json").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: kept.appendingPathComponent("manifest.json").path))
+    }
+
+    func testPublicationAndFreshManagerLoadUseTheCommittedGeneration() async throws {
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let committed = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertNotNil(committed.packageIdentifier)
+        XCTAssertTrue(committed.needsInitialUpdateActivationValidation)
+        XCTAssertNil(manager.context(for: identifier))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(identifier).appendingPathComponent("manifest.json").path))
+        try recreateInventory()
+        let reopened = makeManager()
+        await reopened.loadInstalledExtensions()
+        XCTAssertEqual(reopened.context(for: identifier)?.webExtension.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, false)
+        reopened.unloadAllExtensions()
+    }
+
+    func testLegacyImplicitConsentAppliesNewAPIAndHostPermissions() async throws {
+        let manager = makeManager()
+        let pattern = try WKWebExtension.MatchPattern(string: "https://example.com/*")
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(permissions: ["storage"], hosts: [pattern.string]), replacing: original, isEligible: { true })
+        await manager.loadInstalledExtensions()
+        let context = try XCTUnwrap(manager.context(for: identifier))
+        XCTAssertTrue(context.hasPermission(.storage))
+        XCTAssertEqual(context.permissionStatus(for: pattern), .grantedExplicitly)
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, false)
+        manager.unloadAllExtensions()
+    }
+
+    func testMissingConsentWithEnforcementInstallsDisabledWithoutLoading() async throws {
+        let manager = makeManager(enforcePermissions: true)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, true)
+        XCTAssertNil(manager.context(for: identifier))
+        XCTAssertNil(try permissionStore.settings(for: identifier))
+    }
+
+    func testPermissionIncreaseInstallsDisabledAndKeepsExistingGrants() async throws {
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let manager = makeManager(enforcePermissions: true)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(permissions: ["storage"]), replacing: original, isEligible: { true })
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
+        XCTAssertEqual(try permissionStore.settings(for: identifier)?.grantedPermissions, [:])
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testPreviouslyDisabledExtensionStaysDisabledInLegacyMode() async throws {
+        var disabled = original
+        disabled.isDisabled = true
+        installationStore.update(disabled)
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: disabled, isEligible: { true })
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testManualEnableUsesOldGrantsAndClearsInitialValidationTogether() async throws {
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let manager = makeManager(enforcePermissions: true)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(permissions: ["storage"]), replacing: original, isEligible: { true })
+        try await manager.enableExtension(identifier: identifier)
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, false)
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, false)
+        XCTAssertFalse(try XCTUnwrap(manager.context(for: identifier)).hasPermission(.storage))
+        manager.unloadAllExtensions()
+        let reopened = makeManager(enforcePermissions: true)
+        await reopened.loadInstalledExtensions()
+        XCTAssertNotNil(reopened.context(for: identifier))
+        XCTAssertFalse(try XCTUnwrap(reopened.context(for: identifier)).hasPermission(.storage))
+        reopened.unloadAllExtensions()
+    }
+
+    func testLegacyManualEnableWorksWithTheStartupInstallerPresent() async throws {
+        var disabled = original
+        disabled.isDisabled = true
+        installationStore.update(disabled)
+        let manager = makeManager()
+        let installer = ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: ChromeWebStorePendingUpdateStore(),
+                                                     isEnabled: { true }, isCatalogExtension: { _ in true })
+        manager.startupUpdateInstaller = installer
+        defer { installer.cancelStartup() }
+        await installer.runOnce()
+        try await manager.enableExtension(identifier: identifier)
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, false)
+        XCTAssertNotNil(manager.context(for: identifier))
+        manager.unloadAllExtensions()
+    }
+
+    func testConsentRemovedAfterPublicationDisablesTheSelectedPackageOnFreshLoad() async throws {
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let manager = makeManager(enforcePermissions: true)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let committed = try XCTUnwrap(installationStore.installedExtensions.first)
+        try permissionStore.removeSettings(for: identifier)
+        let reopened = makeManager(enforcePermissions: true)
+        await reopened.loadInstalledExtensions()
+        let kept = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertEqual(kept.packageIdentifier, committed.packageIdentifier)
+        XCTAssertTrue(kept.isDisabled)
+        XCTAssertTrue(kept.needsInitialUpdateActivationValidation)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(kept.resourceIdentifier).path))
+        XCTAssertNil(reopened.context(for: identifier))
+    }
+
+    func testConsentRemovedDuringParsingCannotPromptOrUninstallTheSelectedPackage() async throws {
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let (manager, loader) = makeInterceptedManager(enforcePermissions: true)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        loader.beforeLoad = { try self.permissionStore.removeSettings(for: self.identifier) }
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, true)
+        XCTAssertNil(manager.context(for: identifier))
+        XCTAssertNil(try permissionStore.settings(for: identifier))
+    }
+
+    func testUninstallDuringFirstLoadCannotActivateOrResurrectThePackage() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        loader.beforeLoad = { try manager.uninstallExtension(identifier: self.identifier) }
+        await manager.loadInstalledExtensions()
+        XCTAssertTrue(installationStore.installedExtensions.isEmpty)
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testDisableDuringFirstLoadPreservesUserStateAndPendingValidation() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        loader.beforeLoadAsync = { _ in try await manager.disableExtension(identifier: self.identifier) }
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(installationStore.installedExtensions.first?.isDisabled, true)
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, true)
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testRemoteBlockDuringFirstLoadCannotActivateThePackage() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        var blocked = false
+        manager.remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(manager: manager, configurationManager: MockPrivacyConfigurationManager(),
+                                                                        disabledExtensionIDs: { blocked ? [self.storeID] : [] })
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        loader.beforeLoad = { blocked = true }
+        await manager.loadInstalledExtensions()
+        XCTAssertNotNil(installationStore.installedExtensions.first)
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, true)
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testCancellationDuringFirstLoadKeepsTheSelectedPackageAndValidationMarker() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        loader.beforeLoad = { withUnsafeCurrentTask { $0?.cancel() } }
+        let operation = Task { await manager.loadInstalledExtensions() }
+        await operation.value
+        XCTAssertTrue(operation.isCancelled)
+        XCTAssertEqual(installationStore.installedExtensions.first?.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, true)
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testStaleFirstLoadCannotClearANewerSameVersionPackageMarker() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+        let prepared = try await packages.prepare(makeUpdate(), installationID: identifier)
+        let newer = InstalledWebExtension(uniqueIdentifier: identifier, filename: prepared.bundleURL.lastPathComponent, name: "Fixture", version: "2.0",
+                                         storeIdentity: original.storeIdentity, packageIdentifier: prepared.identifier, needsInitialUpdateActivationValidation: true)
+        loader.beforeLoad = { self.installationStore.update(newer) }
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(installationStore.installedExtensions, [newer])
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testFlatInstallationKeepsItsVersionsAssetsAndLoadsItsOwnManifest() async throws {
+        let asset = directory.appendingPathComponent(identifier).appendingPathComponent("versions").appendingPathComponent(UUID().uuidString)
+        try writePackage(version: "9.0", at: asset)
+        let manager = makeManager()
+
+        await manager.cleanupUnselectedUpdatePackages()
+        await manager.loadInstalledExtensions()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: asset.appendingPathComponent("manifest.json").path))
+        XCTAssertEqual(manager.context(for: identifier)?.webExtension.version, "1.0")
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        manager.unloadAllExtensions()
+    }
+
+    func testMissingSelectedPackageDoesNotFallBackToLegacyFilesOrOtherPackages() async throws {
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let selected = try XCTUnwrap(installationStore.installedExtensions.first)
+        try FileManager.default.removeItem(at: directory.appendingPathComponent(selected.resourceIdentifier))
+        let other = directory.appendingPathComponent(identifier).appendingPathComponent("versions").appendingPathComponent(UUID().uuidString)
+        try writePackage(version: "9.0", at: other)
+        let loader = WebExtensionLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory), installationStore: installationStore)
+        do {
+            _ = try await loader.loadWebExtension(identifier: identifier, into: manager.controller)
+            XCTFail("A missing selected package must not load the old files")
+        } catch { }
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testWorkerCopiesBelongToTheirGenerationEvenWithEqualManifestTimestamps() async throws {
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(backgroundWorker: true), replacing: original, isEligible: { true })
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(manager.context(for: identifier)?.webExtension.version, "2.0")
+        manager.unloadAllExtensions()
+        let first = try XCTUnwrap(installationStore.installedExtensions.first)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "3.0", backgroundWorker: true), replacing: first, isEligible: { true })
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(manager.context(for: identifier)?.webExtension.version, "3.0")
+        manager.unloadAllExtensions()
+    }
+
+    func testEligibilityChangeAfterPreparationDoesNotPublish() async throws {
+        let manager = makeManager()
+        let packages = directory.appendingPathComponent(identifier).appendingPathComponent(InstalledWebExtension.packagesDirectoryName)
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: {
+                !FileManager.default.fileExists(atPath: packages.path)
+            })
+            XCTFail("The final eligibility check must prevent publication")
+        } catch WebExtensionManager.UpdateInstallationError.installationChanged { }
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: packages.path), [])
+    }
+
+    func testVersionMismatchLeavesOldSelectionIntact() async throws {
+        let manager = makeManager()
+        let update = try makeUpdate()
+        do {
+            _ = try await manager.applyVerifiedUpdate(.init(extensionID: storeID, version: "3.0", fileURL: update.fileURL), replacing: original, isEligible: { true })
+            XCTFail("Advertised and package versions must match")
+        } catch WebExtensionManager.UpdateInstallationError.invalidPackage { }
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+    }
+
+    func testSameVersionRequiresOverrideAndCannotPermitRealDowngrade() async throws {
+        let manager = makeManager()
+        let update = try makeUpdate(version: "1.0")
+        do {
+            _ = try await manager.applyVerifiedUpdate(update, replacing: original, isEligible: { true })
+            XCTFail("Same version requires a debug override")
+        } catch WebExtensionManager.UpdateInstallationError.invalidPackage { }
+        let consumed = UUID()
+        _ = try await manager.applyVerifiedUpdate(update, replacing: original, reportedInstalledVersion: "0.0.0.1",
+                                                 versionOverrideIdentifier: consumed, isEligible: { true })
+        let committed = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertEqual(committed.consumedVersionOverrideIdentifier, consumed)
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "0.9"), replacing: committed,
+                                                     reportedInstalledVersion: "0.0.0.1", isEligible: { true })
+            XCTFail("Debug overrides cannot permit a real downgrade")
+        } catch WebExtensionManager.UpdateInstallationError.invalidPackage { }
+    }
+
+    func testCleanupRetainsTheFreshlySelectedGenerationAndRemovesTheOtherOne() async throws {
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let first = try XCTUnwrap(installationStore.installedExtensions.first)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "3.0"), replacing: first, isEligible: { true })
+        let second = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(first.resourceIdentifier).path))
+        await makeManager().cleanupUnselectedUpdatePackages()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(first.resourceIdentifier).path))
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(manager.context(for: identifier)?.webExtension.version, "3.0")
+        manager.unloadAllExtensions()
+        try recreateInventory()
+        await makeManager().cleanupUnselectedUpdatePackages()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(first.resourceIdentifier).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(second.resourceIdentifier).path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(identifier).appendingPathComponent("manifest.json").path))
+    }
+
+    func testCleanupRemovesLegacyAssetsOnlyAfterSuccessfulActivation() async throws {
+        let installation = directory.appendingPathComponent(identifier)
+        let legacyAsset = installation.appendingPathComponent("versions/assets")
+        try FileManager.default.createDirectory(at: legacyAsset, withIntermediateDirectories: true)
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+
+        await manager.cleanupUnselectedUpdatePackages()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: installation.appendingPathComponent("manifest.json").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: legacyAsset.path))
+        await manager.loadInstalledExtensions()
+        manager.unloadAllExtensions()
+        await makeManager().cleanupUnselectedUpdatePackages()
+
+        let selected = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: installation.appendingPathComponent("manifest.json").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: legacyAsset.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(selected.resourceIdentifier).appendingPathComponent("manifest.json").path))
+    }
+
+    func testCleanupKeepsLegacyFilesWhenSelectedPackageIsMissingOrUnresolvable() async throws {
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+        let packageID = UUID()
+        let installation = directory.appendingPathComponent(identifier)
+
+        await packages.cleanup(activatedPackages: [identifier: packageID])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: installation.appendingPathComponent("manifest.json").path))
+        try FileManager.default.createDirectory(at: installation.appendingPathComponent("versions").appendingPathComponent(packageID.uuidString), withIntermediateDirectories: true)
+        await packages.cleanup(activatedPackages: [identifier: packageID])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: installation.appendingPathComponent("manifest.json").path))
+    }
+
+    func testCleanupDoesNotFollowASelectedPackageSymlink() async throws {
+        let outside = directory.appendingPathComponent("outside")
+        try writePackage(version: "2.0", at: outside)
+        let packageID = UUID()
+        let installation = directory.appendingPathComponent(identifier)
+        let namespace = installation.appendingPathComponent("versions")
+        try FileManager.default.createDirectory(at: namespace, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: namespace.appendingPathComponent(packageID.uuidString), withDestinationURL: outside)
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+
+        await packages.cleanup(activatedPackages: [identifier: packageID])
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: installation.appendingPathComponent("manifest.json").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outside.appendingPathComponent("manifest.json").path))
+    }
+
+    func testCleanupFailureKeepsTheSelectedPackageUsable() async throws {
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        await manager.loadInstalledExtensions()
+        manager.unloadAllExtensions()
+        let selected = try XCTUnwrap(installationStore.installedExtensions.first)
+        let packageID = try XCTUnwrap(selected.packageIdentifier)
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory, fileManager: FailingPackageRemovalFileManager())
+
+        await packages.cleanup(activatedPackages: [identifier: packageID])
+        let reopened = makeManager()
+        await reopened.loadInstalledExtensions()
+
+        XCTAssertEqual(reopened.context(for: identifier)?.webExtension.version, "2.0")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(identifier).appendingPathComponent("manifest.json").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(selected.resourceIdentifier).appendingPathComponent("manifest.json").path))
+        XCTAssertEqual(installationStore.installedExtensions, [selected])
+        reopened.unloadAllExtensions()
+    }
+
+    func testLostPublicationKeepsTheOldCompleteSelectionUsable() async throws {
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let first = try XCTUnwrap(installationStore.installedExtensions.first)
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(version: "3.0"), replacing: first, isEligible: { true })
+        installationStore.installedExtensions = [first]
+        try recreateInventory()
+        let reopened = makeManager()
+        await reopened.cleanupUnselectedUpdatePackages()
+        await reopened.loadInstalledExtensions()
+        XCTAssertEqual(reopened.context(for: identifier)?.webExtension.version, "2.0")
+        reopened.unloadAllExtensions()
+    }
+
+    func testLostFirstActivationAcknowledgementRevalidatesWithoutChangingPackage() async throws {
+        let manager = makeManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let committed = try XCTUnwrap(installationStore.installedExtensions.first)
+        await manager.loadInstalledExtensions()
+        manager.unloadAllExtensions()
+        installationStore.installedExtensions = [committed]
+        let reopened = makeManager()
+        await reopened.loadInstalledExtensions()
+        XCTAssertEqual(installationStore.installedExtensions.first?.packageIdentifier, committed.packageIdentifier)
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, false)
+        reopened.unloadAllExtensions()
+    }
+
+    func testNativeLoadFailureDoesNotRestoreThePreviousVersion() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        loader.rejectLoad = true
+        await manager.loadInstalledExtensions()
+        XCTAssertTrue(installationStore.installedExtensions.isEmpty, "Normal broken-extension handling applies; do not restore the predecessor")
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testStaleBatchEntryPreservesHandlersOfTheManuallyEnabledContext() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let second = try XCTUnwrap(installationStore.installedExtensions.first)
+        let firstID = UUID().uuidString
+        try writePackage(version: "1.0", at: directory.appendingPathComponent(firstID))
+        let first = InstalledWebExtension(uniqueIdentifier: firstID, filename: firstID, name: "First fixture", version: "1.0",
+                                         storeIdentity: .init(store: .chromeWebStore, id: ChromeWebStoreID.onePassword.rawValue),
+                                         needsInitialUpdateActivationValidation: true)
+        installationStore.installedExtensions = [first, second]
+        let handler = MockMessageHandler(featureName: "update-probe")
+        var enabledContext: WKWebExtensionContext?
+        loader.beforeLoadAsync = { loadedID in
+            guard loadedID == firstID else { return }
+            try await manager.disableExtension(identifier: self.identifier)
+            try await manager.enableExtension(identifier: self.identifier)
+            enabledContext = manager.context(for: self.identifier)
+            manager.registerMessageHandler(handler, for: self.identifier)
+            XCTAssertTrue(manager.messageRouter.hasHandler(for: self.identifier, featureName: handler.handledFeatureName))
+        }
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertNotNil(enabledContext)
+        XCTAssertTrue(manager.context(for: identifier) === enabledContext)
+        XCTAssertTrue(manager.messageRouter.hasHandler(for: identifier, featureName: handler.handledFeatureName))
+        let message = WebExtensionMessage(featureName: handler.handledFeatureName, method: "probe", id: nil, context: identifier, extensionIdentifier: identifier)
+        _ = await manager.messageRouter.routeMessage(message)
+        XCTAssertEqual(handler.receivedMessages.count, 1)
+        manager.unloadAllExtensions()
+    }
+
+    func testCancelledFirstLoadPreservesLiveHandlersWhenUnloadingFails() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, isEligible: { true })
+        let handler = MockMessageHandler(featureName: "update-probe")
+        loader.rejectUnload = true
+        loader.afterLoad = {
+            XCTAssertNotNil(manager.context(for: self.identifier), "The failure must happen after actual native activation")
+            manager.registerMessageHandler(handler, for: self.identifier)
+            withUnsafeCurrentTask { $0?.cancel() }
+        }
+        let operation = Task { await manager.loadInstalledExtensions() }
+
+        await operation.value
+
+        XCTAssertTrue(operation.isCancelled)
+        XCTAssertEqual(loader.unloadAttempts, 1)
+        XCTAssertNotNil(manager.context(for: identifier))
+        XCTAssertTrue(manager.messageRouter.hasHandler(for: identifier, featureName: handler.handledFeatureName))
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, true)
+        let message = WebExtensionMessage(featureName: handler.handledFeatureName, method: "probe", id: nil, context: identifier, extensionIdentifier: identifier)
+        _ = await manager.messageRouter.routeMessage(message)
+        XCTAssertEqual(handler.receivedMessages.count, 1)
+        loader.rejectUnload = false
+        manager.unloadAllExtensions()
+    }
+
+    func testLegacyRecordDecodingDefaultsToTheOriginalLayoutWithoutActivationGate() throws {
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])
+        for key in ["packageIdentifier", "consumedVersionOverrideIdentifier", "needsInitialUpdateActivationValidation"] { object.removeValue(forKey: key) }
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(decoded.packageIdentifier)
+        XCTAssertFalse(decoded.needsInitialUpdateActivationValidation)
+        XCTAssertEqual(decoded.resourceIdentifier, identifier)
+    }
+
+    func testUnreadableOldDebugJournalDoesNotBlockLoadingOrDeleteItsBackup() async throws {
+        let backup = directory.appendingPathComponent(".update-transactions/old-debug-transaction/previous")
+        try FileManager.default.createDirectory(at: backup, withIntermediateDirectories: true)
+        try Data("unreadable journal".utf8).write(to: backup.deletingLastPathComponent().appendingPathComponent("journal.json"))
+        let manager = makeManager()
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(manager.context(for: identifier)?.webExtension.version, "1.0")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: backup.path))
+        manager.unloadAllExtensions()
+    }
+
+    private func recreateInventory() throws {
+        installationStore.installedExtensions = try JSONDecoder().decode([InstalledWebExtension].self, from: JSONEncoder().encode(installationStore.installedExtensions))
+    }
+
+    private func makeManager(enforcePermissions: Bool = false) -> WebExtensionManager {
+        let permissions = enforcePermissions ? WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: NoUpdatePrompt()) : nil
+        return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(), controllerConfiguration: .nonPersistent(),
+                                   windowTabProvider: WebExtensionWindowTabProvidingMock(), storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory),
+                                   installationStore: installationStore, permissionController: permissions)
+    }
+
+    private func makeInterceptedManager(enforcePermissions: Bool = false) -> (WebExtensionManager, UpdateTestLoader) {
+        let permissions = enforcePermissions ? WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: NoUpdatePrompt()) : nil
+        let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
+        let loader = UpdateTestLoader(storage: storage, installations: installationStore, permissions: permissions)
+        let manager = WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(), controllerConfiguration: .nonPersistent(),
+                                          windowTabProvider: WebExtensionWindowTabProvidingMock(), storageProvider: storage,
+                                          installationStore: installationStore, permissionController: permissions, loader: loader)
+        return (manager, loader)
+    }
+
+    private func makeUpdate(version: String = "2.0", permissions: [String] = [], hosts: [String] = [], backgroundWorker: Bool = false) throws -> ChromeWebStoreVerifiedUpdate {
+        let folder = directory.appendingPathComponent(UUID().uuidString)
+        try writePackage(version: version, at: folder, permissions: permissions, hosts: hosts)
+        if backgroundWorker {
+            var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: folder.appendingPathComponent("manifest.json"))) as? [String: Any])
+            manifest["background"] = ["service_worker": "worker.js"]
+            try JSONSerialization.data(withJSONObject: manifest).write(to: folder.appendingPathComponent("manifest.json"))
+            try "// Empty fixture worker".write(to: folder.appendingPathComponent("worker.js"), atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceReferenceDate: 0)], ofItemAtPath: folder.appendingPathComponent("manifest.json").path)
+        }
+        let archive = folder.appendingPathExtension("zip")
+        try FileManager.default.zipItem(at: folder, to: archive, shouldKeepParent: false)
+        try FileManager.default.removeItem(at: folder)
+        return .init(extensionID: storeID, version: version, fileURL: archive)
+    }
+
+    private func writePackage(version: String, at folder: URL, permissions: [String] = [], hosts: [String] = []) throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let manifest: [String: Any] = ["manifest_version": 3, "name": "Fixture", "version": version, "permissions": permissions, "host_permissions": hosts]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: folder.appendingPathComponent("manifest.json"))
+    }
+}
+
+private final class FailingPackageCopyFileManager: FileManager, @unchecked Sendable {
+    override func copyItem(at source: URL, to destination: URL) throws {
+        try super.copyItem(at: source, to: destination)
+        throw CocoaError(.fileWriteUnknown)
+    }
+}
+
+private final class FailingPackageRemovalFileManager: FileManager, @unchecked Sendable {
+    override func removeItem(at url: URL) throws {
+        throw CocoaError(.fileWriteNoPermission)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class UpdateTestLoader: WebExtensionLoading {
+    enum LoadError: Error { case injected, injectedUnload }
+    private let base: WebExtensionLoader
+    var beforeLoad: (() throws -> Void)?
+    var beforeLoadAsync: ((String) async throws -> Void)?
+    var afterLoad: (() -> Void)?
+    var rejectLoad = false
+    var rejectUnload = false
+    private(set) var unloadAttempts = 0
+    var delegate: WebExtensionLoadingDelegate? { get { base.delegate } set { base.delegate = newValue } }
+
+    init(storage: WebExtensionStorageProviding, installations: InstalledWebExtensionStoring, permissions: WebExtensionPermissionController?) {
+        base = WebExtensionLoader(storageProvider: storage, permissionController: permissions, installationStore: installations)
+    }
+
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        try await loadWebExtension(identifier: identifier, into: controller, beforeActivation: { _ in })
+    }
+
+    func loadWebExtension(identifier: String, resourceIdentifier: String?, into controller: WKWebExtensionController,
+                          beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
+        try beforeLoad?()
+        try await beforeLoadAsync?(identifier)
+        if rejectLoad { throw LoadError.injected }
+        let result = try await base.loadWebExtension(identifier: identifier, resourceIdentifier: resourceIdentifier,
+                                                    into: controller, beforeActivation: beforeActivation)
+        afterLoad?()
+        return result
+    }
+
+    func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+        await base.loadWebExtensions(identifiers: identifiers, into: controller)
+    }
+
+    func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
+        unloadAttempts += 1
+        if rejectUnload { throw LoadError.injectedUnload }
+        try base.unloadExtension(identifier: identifier, from: controller)
+    }
+
+    func reloadWebExtension(_ webExtension: WKWebExtension, identifier: String, into controller: WKWebExtensionController) async throws {
+        try await base.reloadWebExtension(webExtension, identifier: identifier, into: controller)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private struct NoUpdatePrompt: WebExtensionPermissionPrompting {
+    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
+        XCTFail("Automatic updates must not show an installation prompt")
+        return .denied
+    }
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        XCTFail("Automatic updates must not request new access")
+        return .denied
+    }
+}

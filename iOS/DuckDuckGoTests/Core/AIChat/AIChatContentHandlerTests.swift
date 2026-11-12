@@ -1215,6 +1215,12 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
 // swiftlint:disable inclusive_language
 final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else { return .invalidRequest(rawParams: params) }
+        return await source?.invokeBrowserTool(request) ?? .failure(callId: request.callId, error: .unavailable)
+    }
+
     var displayMode: AIChatDisplayMode?
     var isFireModeProvider: (() -> Bool)?
     var focusChatInputHandler: (@MainActor () -> Void)?
@@ -1222,7 +1228,8 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?) {}
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {}
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {}
-    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    var nativeConfigResponse: Encodable?
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? { nativeConfigResponse }
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

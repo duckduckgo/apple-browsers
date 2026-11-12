@@ -29,6 +29,50 @@ import WebKit
 
 final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
+    @MainActor
+    func testRetainedContextualSourceSurvivesTabLeaveAndParkingButClearActiveChatDetachesIt() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sheet.loadViewIfNeeded()
+        let webController = try XCTUnwrap(sut.browserToolsWebViewController)
+        webController.configureContentHandler(with: fixture.script)
+        fixture.script.webView = fixture.webView
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
+        }
+        sut.tabWillLeaveScreen()
+        sut.parkSurfaceForResize(animated: false)
+        sut.tabDidReturnToScreen(presentedFrom: host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        let retained = await performExecution { .success([:]) }
+        XCTAssertEqual(retained, .success([:]))
+        let allowed = await fixture.invoke()
+        XCTAssertEqual(allowed, fixture.success)
+        guard case .granted(let performAfterClearing) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
+        }
+        sut.clearActiveChat()
+        let cancelled = await performAfterClearing {
+            XCTFail("Cleared chat must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(cancelled)
+        let detached = await fixture.invoke()
+        XCTAssertEqual(detached, .failure(callId: "call", error: .unavailable))
+        let lateScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        webController.configureContentHandler(with: lateScript)
+        lateScript.webView = fixture.webView
+        let lateInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: lateScript)
+        XCTAssertEqual(lateInvocation, .failure(callId: "call", error: .unavailable))
+        XCTAssertNil(webController.browserToolScopeFactory)
+    }
+
     // MARK: - Mocks
 
     private final class MockPageContextHandler: AIChatPageContextHandling {

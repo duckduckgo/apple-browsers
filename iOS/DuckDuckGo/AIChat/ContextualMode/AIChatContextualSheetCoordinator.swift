@@ -121,6 +121,10 @@ final class AIChatContextualSheetCoordinator {
     private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
     private var sessionEffectCancellable: AnyCancellable?
+    weak var browserToolsOwner: Tab?
+    var browserToolsService: AIChatBrowserToolsService?
+    var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
+    private(set) weak var browserToolsWebViewController: AIChatContextualWebViewController?
     private var currentPageURLCancellable: AnyCancellable?
     private var didFinishURLCancellable: AnyCancellable?
     private var documentReadCancellable: AnyCancellable?
@@ -902,10 +906,20 @@ final class AIChatContextualSheetCoordinator {
         startSessionTimer()
     }
 
+    func detachBrowserTools() {
+        browserToolScopeFactory = nil
+        browserToolsOwner = nil
+        browserToolsService = nil
+        browserToolsWebViewController?.detachBrowserTools()
+        browserToolsWebViewController = nil
+    }
+
     // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
     // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
     // when adding side effects to handleSheetDismissed.
     func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
+        browserToolsWebViewController?.detachBrowserTools()
+        browserToolsWebViewController = nil
         let sheetInSidebar = isSheetInSidebar ? sheetViewController : nil
         let parkedSheet = parkedSheetViewController
         parkedSheetViewController = nil
@@ -1371,6 +1385,10 @@ private extension AIChatContextualSheetCoordinator {
             }
         )
 
+        webVC.browserToolsOwner = browserToolsOwner
+        webVC.browserToolsService = browserToolsService
+        webVC.browserToolScopeFactory = browserToolScopeFactory
+        browserToolsWebViewController = webVC
         webVC.setAttachedSelectionsProvider { [weak self] in
             self?.sessionState.attachedSelections ?? []
         }

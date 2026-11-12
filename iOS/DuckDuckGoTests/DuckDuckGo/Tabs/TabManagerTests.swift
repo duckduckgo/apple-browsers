@@ -34,6 +34,61 @@ import WebKit
 @MainActor
 final class TabManagerTests: XCTestCase {
 
+    func testOwnerRemovalDetachesSourcesEvenWithoutCachedController() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner) { [weak manager, weak owner = fixture.owner] in
+            guard let manager, let owner else { return nil }
+            return manager.makeBrowserToolScope(for: owner)
+        }
+        XCTAssertNil(manager.controller(for: fixture.owner))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        manager.remove(tab: fixture.owner)
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+    }
+
+    func testNormalControllerReceivesSharedServiceAndWeakOwnerScopeBeforeUse() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner, makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        controller.prepareForDataClearing()
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+        XCTAssertNil(controller.browserToolScopeFactory)
+        XCTAssertNil(controller.browserToolsService)
+        XCTAssertNil(controller.aiChatContextualSheetCoordinator.browserToolScopeFactory)
+    }
+
+    func testControllerCreatedWithParentFlagDisabledReceivesServiceThatEnablesWithoutReplacement() throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [.aiChatBrowserToolListOpenTabs])
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        defer { controller.prepareForDataClearing() }
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner,
+                                       makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        fixture.flags.triggerUpdate()
+        XCTAssertTrue(manager.current(createIfNeeded: true) === controller)
+        XCTAssertEqual(manager.browserToolsService.configuration(for: fixture.script)?.capabilities, [.listOpenTabs])
+    }
+
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
         UserDefaults.app.removeObject(forKey: UserDefaultsWrapper<Bool>.Key.faviconTabsCacheNeedsCleanup.rawValue)
@@ -1171,6 +1226,47 @@ final class TabManagerTests: XCTestCase {
             XCTAssertEqual(controller.webView.configuration.websiteDataStore.identifier,
                            WKWebViewConfiguration.persistent(fireMode: true).websiteDataStore.identifier)
         }
+    }
+
+    func testBrowserToolServiceHasStableManagerOwnership() throws {
+        let manager = try makeManager(TabsModel(desktop: false))
+        XCTAssertTrue(manager.browserToolsService === manager.browserToolsService)
+    }
+
+    func testBrowserToolScopeUsesActualOwnerAndLiveNormalModelSelection() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let selected = Tab(uid: "selected", fireTab: false)
+        let fire = Tab(uid: "fire", fireTab: true)
+        let model = TabsModel(tabs: [owner, selected], currentIndex: 1, desktop: false)
+        let manager = try makeManager(model,
+                                      fireModel: TabsModel(tabs: [fire], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertTrue(scope.isValid)
+        XCTAssertEqual(scope.selectedTabID(), selected.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid])
+        XCTAssertNil(manager.makeBrowserToolScope(for: Tab(uid: owner.uid, fireTab: false)))
+        model.select(tab: owner)
+        XCTAssertEqual(scope.selectedTabID(), owner.uid)
+        let added = Tab(fireTab: false)
+        model.insert(tab: added, placement: .atEnd, selectNewTab: true)
+        XCTAssertEqual(scope.selectedTabID(), added.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid, added.uid])
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        let fireScope = try XCTUnwrap(manager.makeBrowserToolScope(for: fire))
+        XCTAssertFalse(fireScope.isValid)
+        manager.remove(tab: owner)
+        XCTAssertFalse(scope.isValid)
+    }
+
+    func testBrowserToolScopeRejectsSelectionWithoutMainController() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let target = Tab(uid: "target", fireTab: false)
+        let model = TabsModel(tabs: [owner, target], desktop: false)
+        let manager = try makeManager(model)
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertFalse(scope.selectTab(target))
+        XCTAssertEqual(model.currentTab?.uid, owner.uid)
     }
 
     private func makeAttachmentManager() throws -> (TabManager, [Tab]) {

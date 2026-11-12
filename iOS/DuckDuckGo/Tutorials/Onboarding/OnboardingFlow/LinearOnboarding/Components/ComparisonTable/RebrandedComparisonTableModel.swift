@@ -140,7 +140,6 @@ extension RebrandedComparisonTableModel {
     private typealias Icon = OnboardingRebrandingImages.Comparison
     private typealias BrowserText = BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features
     private typealias AIText = UserText.Onboarding.DuckAICPP.AIComparison.Features
-    private typealias VPNText = UserText.Onboarding.BrowsersComparison
 
     static func browserFeatures(for reason: OnboardingDownloadReason) -> [Feature] {
         switch reason {
@@ -148,7 +147,7 @@ extension RebrandedComparisonTableModel {
             // The ad-blocking table without its AI chat and tracker rows, plus VPN.
             let excludedTitles = [BrowserText.privateAIChat, BrowserText.trackerBlockers]
             return browserFeatures(for: .blockAds).filter { !excludedTitles.contains($0.title) } + [
-                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.vpn), title: VPNText.vpnHideLocation, competitorAvailability: .unavailable, ddgAvailability: .subscription),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.vpn), title: BrowserText.hideLocationWithVPN, competitorAvailability: .unavailable, ddgAvailability: .subscription),
             ]
         case .browserPrivately:
             return [

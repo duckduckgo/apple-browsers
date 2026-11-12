@@ -514,7 +514,7 @@ struct OnboardingIntroContentProviderTests {
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopupsAndAds,
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer,
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch,
-                UserText.Onboarding.BrowsersComparison.vpnHideLocation
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.hideLocationWithVPN
             ])
             #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .subscription])
             #expect(features.allSatisfy { $0.competitorAvailability == .unavailable })

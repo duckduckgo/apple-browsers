@@ -556,7 +556,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case iPadContextualSidebar
 
     /// Full-tab Duck.ai chat on iPad uses the native chat input shared with iPhone instead of the web input.
-    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1220224098931743?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220491676775829?focus=true
     case iPadNativeChatInput
 
     /// Enables moving the AI Chat native-storage container from the shared App

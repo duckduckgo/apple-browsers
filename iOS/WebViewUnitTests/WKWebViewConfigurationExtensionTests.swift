@@ -19,9 +19,35 @@
 
 import XCTest
 import WebKit
+@_spi(Testing) import Persistence
+@testable import DuckDuckGo
 
 class WKWebViewConfigurationExtensionTests: XCTestCase {
     
+    @available(iOS 17.0, *)
+    @MainActor
+    func testFireWindowsHaveIsolatedCookiesWhileNormalWindowsShareAStore() async throws {
+        let storage = MockKeyValueStore()
+        let first = DataStoreIDManager(store: storage, windowIdentifier: "first")
+        let second = DataStoreIDManager(store: storage, windowIdentifier: "second")
+        let firstID = first.currentFireModeID
+        let secondID = second.currentFireModeID
+        let firstStore = WKWebViewConfiguration.persistent(fireMode: true, idManager: first).websiteDataStore
+        let secondStore = WKWebViewConfiguration.persistent(fireMode: true, idManager: second).websiteDataStore
+        XCTAssertNotEqual(firstStore.identifier, secondStore.identifier)
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.name: "window", .value: "first", .domain: "window.example", .path: "/"]))
+        await firstStore.httpCookieStore.setCookie(cookie)
+        let firstCookies = await firstStore.httpCookieStore.allCookies()
+        let secondCookies = await secondStore.httpCookieStore.allCookies()
+        XCTAssertEqual(firstCookies.map(\.value), ["first"])
+        XCTAssertTrue(secondCookies.isEmpty)
+        XCTAssertEqual(WKWebViewConfiguration.persistent(fireMode: false, idManager: first).websiteDataStore.identifier,
+                       WKWebViewConfiguration.persistent(fireMode: false, idManager: second).websiteDataStore.identifier)
+        await firstStore.httpCookieStore.delete(cookie)
+        try? await WKWebsiteDataStore.remove(forIdentifier: firstID)
+        try? await WKWebsiteDataStore.remove(forIdentifier: secondID)
+    }
+
     func testWhenWebViewCreatedWithNonPersistenceThenDataStoreIsNonPersistent() {
         let configuration = WKWebViewConfiguration.nonPersistent()
         let webView = WKWebView(frame: CGRect(), configuration: configuration)

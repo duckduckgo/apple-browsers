@@ -109,6 +109,7 @@ final class AIChatContextualSheetCoordinator {
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     private let isFireTab: Bool
+    private let websiteDataStoreProvider: () -> WKWebsiteDataStore?
     private let tabAttachmentSource: MultiTabAttachmentSource?
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
@@ -272,6 +273,7 @@ final class AIChatContextualSheetCoordinator {
          pageContextHandler: AIChatPageContextHandling,
          tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
+         websiteDataStoreProvider: @escaping () -> WKWebsiteDataStore? = { nil },
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          usageContextProvider: UsageContextProviding,
@@ -298,6 +300,7 @@ final class AIChatContextualSheetCoordinator {
         self.pageContextHandler = pageContextHandler
         self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
+        self.websiteDataStoreProvider = websiteDataStoreProvider
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.usageContextProvider = usageContextProvider
@@ -1335,6 +1338,7 @@ private extension AIChatContextualSheetCoordinator {
             featureFlagger: featureFlagger,
             unifiedToggleInputFeature: contextualUTIFeature,
             isFireTab: isFireTab,
+            websiteDataStore: websiteDataStoreProvider(),
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             usageContextProvider: usageContextProvider,
             downloadHandler: downloadHandler,

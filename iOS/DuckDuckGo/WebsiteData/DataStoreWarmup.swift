@@ -33,8 +33,11 @@ public class DataStoreWarmup {
     }
 
     private let pixelFiring: (any PixelKitFiring)?
+    private let idManager: DataStoreIDManaging
 
-    public init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+    public init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+                idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
+        self.idManager = idManager
         self.pixelFiring = pixelFiring
     }
 
@@ -44,6 +47,7 @@ public class DataStoreWarmup {
     public func ensureReady(applicationState: ApplicationState, fireMode: Bool) async -> Bool {
         pixelFiring?.fire(Pixel.Event.webkitWarmupStart(appState: applicationState.rawValue))
         let completed = await BlockingNavigationDelegate(fireMode: fireMode,
+                                                        idManager: idManager,
                                                         pixelFiring: pixelFiring).loadInBackgroundWebView(url: URL(string: "about:blank")!)
 
         // Only a real completion fires the finished pixel.
@@ -67,11 +71,14 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
     private var timeoutWorkItem: DispatchWorkItem?
 
     private let pixelFiring: (any PixelKitFiring)?
+    private let idManager: DataStoreIDManaging
 
     public init(fireMode: Bool,
+                idManager: DataStoreIDManaging = DataStoreIDManager.shared,
                 timeout: TimeInterval = 10,
                 pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.fireMode = fireMode
+        self.idManager = idManager
         self.timeout = timeout
         self.pixelFiring = pixelFiring
     }
@@ -100,7 +107,7 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
 
     @MainActor
     public func prepareWebView() -> WKWebView {
-        let config = WKWebViewConfiguration.persistent(fireMode: fireMode)
+        let config = WKWebViewConfiguration.persistent(fireMode: fireMode, idManager: idManager)
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
         return webView

@@ -296,6 +296,7 @@ extension MainViewController {
         controller.recentChatsReaderProvider = makeTabSwitcherRecentChatsReaderProvider()
         controller.modalPresentationStyle = .overCurrentContext
 
+        controller.appWidthObserver = appWidthObserver
         tabSwitcherController = controller
 
         present(controller, animated: true)

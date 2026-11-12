@@ -63,6 +63,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isFireTab: Bool
+    private let websiteDataStore: WKWebsiteDataStore?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let usageContextProvider: UsageContextProviding
     private var downloadHandler: DownloadHandling
@@ -161,6 +162,7 @@ final class AIChatContextualWebViewController: UIViewController {
          featureFlagger: FeatureFlagger,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          isFireTab: Bool = false,
+         websiteDataStore: WKWebsiteDataStore? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          usageContextProvider: UsageContextProviding,
          downloadHandler: DownloadHandling,
@@ -177,6 +179,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.isFireTab = isFireTab
+        self.websiteDataStore = websiteDataStore
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.usageContextProvider = usageContextProvider
         self.downloadHandler = downloadHandler
@@ -447,7 +450,8 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
-        let configuration = WKWebViewConfiguration.persistent(fireMode: isFireTab)
+        let configuration = WKWebViewConfiguration.persistent(fireMode: isFireTab && websiteDataStore == nil)
+        if let websiteDataStore { configuration.websiteDataStore = websiteDataStore }
         let userContentController = UserContentController(
             assetsPublisher: contentBlockingAssetsPublisher,
             privacyConfigurationManager: privacyConfigurationManager

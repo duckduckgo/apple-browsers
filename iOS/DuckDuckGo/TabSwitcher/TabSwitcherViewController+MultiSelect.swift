@@ -273,7 +273,7 @@ extension TabSwitcherViewController {
 extension TabSwitcherViewController {
     
     func updateUIForSelectionMode() {
-        if AppWidthObserver.shared.isLargeWidth {
+        if appWidthObserver.isLargeWidth {
             interfaceMode = isEditing ? .editingLargeSize : .largeSize
         } else {
             interfaceMode = isEditing ? .editingRegularSize : .regularSize
@@ -284,11 +284,11 @@ extension TabSwitcherViewController {
 
         let state: TabSwitcherToolbarState
         if isEditing {
-            state = AppWidthObserver.shared.isLargeWidth
+            state = appWidthObserver.isLargeWidth
                 ? .editingLargeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count)
                 : .editingRegularSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count)
         } else {
-            state = AppWidthObserver.shared.isLargeWidth
+            state = appWidthObserver.isLargeWidth
                 ? .largeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
                              containsWebPages: containsWebPages, showAIChat: showAIChatButton,
                              canDismissOnEmpty: canDismissOnEmpty)

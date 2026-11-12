@@ -42,7 +42,7 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
     func burnNormalModeData() async {
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current(fireMode: false)
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current(fireMode: false, dataStoreIDManager: idManager)
         
         let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse)
         updateWideEventWithWebsiteDataResults(websiteDataResult)
@@ -88,7 +88,7 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
     func burnTabData(tabViewModel: TabViewModel, domains: [String]) async {
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
-        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current(fireMode: tabViewModel.tab.fireTab)
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current(fireMode: tabViewModel.tab.fireTab, dataStoreIDManager: idManager)
 
         // Async tasks
         let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse,

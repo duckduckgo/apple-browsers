@@ -24,6 +24,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .iOSBrowserConfig
     }
 
+    case iPadMultiWindow
+
     /// https://app.asana.com/1/137249556945/task/1219972523893967
     case ipadMenuBar
 

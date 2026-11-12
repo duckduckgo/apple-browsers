@@ -31,8 +31,8 @@ extension MainViewController: AIChatContextualSidebarHosting {
         typealias Constants = MainViewCoordinator.Constants
         let minimumWindowWidth = Constants.contextualSidebarMinWidth + Constants.contextualSidebarMinPageWidth
         return contextualSidebarPresenter != nil
-            && AppWidthObserver.shared.isLargeWidth
-            && AppWidthObserver.shared.currentWidth >= minimumWindowWidth + margin
+            && appWidthObserver.isLargeWidth
+            && appWidthObserver.currentWidth >= minimumWindowWidth + margin
     }
 
     func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool) {

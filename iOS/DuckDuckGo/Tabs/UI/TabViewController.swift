@@ -880,6 +880,7 @@ class TabViewController: UIViewController {
             pageContextHandler: pageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
+            websiteDataStoreProvider: { [weak self] in self?.webView?.configuration.websiteDataStore },
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             usageContextProvider: usageContextProvider,
@@ -1395,7 +1396,9 @@ class TabViewController: UIViewController {
         applyContextualOnboardingTopInset(0)
         webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
-        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        let isLargeWidth = UIDevice.current.userInterfaceIdiom == .pad
+            && (view.window?.bounds.width ?? view.bounds.width) >= AppWidthObserver.Constants.minPadWidth
+        borderView.bottomAlpha = isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
         setWebViewObscuredContentInsetsIfSupported(.zero)
         if hasAppliedFloatingUIScrollViewInsets {

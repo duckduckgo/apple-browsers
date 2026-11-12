@@ -38,7 +38,7 @@ public class AppWidthObserver {
         return isPad && currentWidth >= Constants.minPadWidth
     }
 
-    private init() {}
+    init() {}
 
     func willResize(toWidth width: CGFloat) -> Bool {
         if width != currentWidth {

@@ -98,8 +98,13 @@ protocol LaunchingHandling {
 
     init() throws
 
+    func configureWindowManager() -> BrowserWindowManager?
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
 
+}
+
+extension LaunchingHandling {
+    func configureWindowManager() -> BrowserWindowManager? { nil }
 }
 
 @MainActor
@@ -190,6 +195,7 @@ final class AppStateMachine {
 
     private let terminatingStateFactory: TerminatingStateFactory
     private let launchBreadcrumb: LaunchBreadcrumb
+    private(set) var windowManager: BrowserWindowManager?
 
     init(initialState: AppState,
          terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory(),
@@ -238,6 +244,7 @@ final class AppStateMachine {
             launchBreadcrumb.startLaunch()
             do {
                 let launching = try initializing.makeLaunchingState()
+                windowManager = launching.configureWindowManager()
                 launchBreadcrumb.mark(.launched)
                 currentState = .launching(launching)
             } catch {

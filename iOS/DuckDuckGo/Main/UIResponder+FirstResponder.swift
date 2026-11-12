@@ -22,7 +22,7 @@ import UIKit
 extension UIResponder {
 
     /// Finds the current first responder in the application's key window.
-    static func currentFirstResponder() -> UIResponder? {
+    static func currentFirstResponder(in window: UIWindow? = nil) -> UIResponder? {
         var firstResponder: UIResponder?
 
         func findFirstResponder(in view: UIView) {
@@ -38,17 +38,10 @@ extension UIResponder {
             }
         }
 
-        for scene in UIApplication.shared.connectedScenes {
-            guard let windowScene = scene as? UIWindowScene else { continue }
-            for window in windowScene.windows where window.isKeyWindow {
-                findFirstResponder(in: window)
-                if firstResponder != nil {
-                    break
-                }
-            }
-            if firstResponder != nil {
-                break
-            }
+        let windows = window.map { [$0] } ?? UIApplication.shared.foregroundSceneWindows.filter(\.isKeyWindow)
+        for window in windows {
+            findFirstResponder(in: window)
+            if firstResponder != nil { break }
         }
 
         return firstResponder

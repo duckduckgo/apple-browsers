@@ -287,7 +287,7 @@ extension MainViewController {
     }
 
     func clearDuckAIWebsiteDataForResumeIfNeeded() async {
-        let dataStore = DDGWebsiteDataStoreProvider.current(fireMode: tabManager.currentBrowsingMode == .fire)
+        let dataStore = DDGWebsiteDataStoreProvider.current(fireMode: tabManager.currentBrowsingMode == .fire, dataStoreIDManager: tabManager.dataStoreIDManager)
         _ = await websiteDataManager.clear(dataStore: dataStore)
     }
 

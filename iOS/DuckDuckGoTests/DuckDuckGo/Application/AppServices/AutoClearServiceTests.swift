@@ -75,6 +75,18 @@ final class AutoClearServiceTests {
         mockAIChatSyncCleaner = MockAIChatSyncCleaning()
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Opening another window does not clear data or restart the inactivity timer", .timeLimit(.minutes(1)))
+    func additionalWindowDoesNotClearOnInit() async {
+        let service = AutoClearService(autoClear: mockAutoClear,
+                                       overlayWindowManager: mockOverlayWindowManager,
+                                       aiChatSyncCleaner: mockAIChatSyncCleaner,
+                                       clearsOnLaunch: false)
+        await service.waitForDataCleared()
+        #expect(!mockAutoClear.clearDataIfEnabledCalled)
+        #expect(!mockAutoClear.startClearingTimerCalled)
+    }
+
     @Test("autoClearService's init() should start clearing data")
     func clearDataOnInit() async {
         // When

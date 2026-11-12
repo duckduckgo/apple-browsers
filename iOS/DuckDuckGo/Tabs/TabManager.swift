@@ -97,6 +97,8 @@ protocol TrackerAnimationSuppressing {
 class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private let tabsModelProvider: TabsModelProviding
+    let dataStoreIDManager: DataStoreIDManaging
+    private let appWidthObserver: AppWidthObserver
     private var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
@@ -228,6 +230,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     init(tabsModelProvider: TabsModelProviding,
+         dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared,
+         appWidthObserver: AppWidthObserver = .shared,
          previewsSource: TabPreviewsSource,
          interactionStateSource: TabInteractionStateSource?,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -278,6 +282,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.dataStoreIDManager = dataStoreIDManager
+        self.appWidthObserver = appWidthObserver
         self.usageContextProvider = usageContextProvider
         self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
@@ -417,7 +423,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                  url: URL?,
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
-        let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
+        let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab, idManager: dataStoreIDManager)
         configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
         // iPad tabs always get the Fullscreen API, matching iPad Safari. iPhone tabs get it only in
@@ -574,9 +580,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         let tab: Tab
         if let request {
-            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab)
+            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), desktop: appWidthObserver.isLargeWidth, fireTab: shouldCreateFireTab)
         } else {
-            tab = Tab(fireTab: shouldCreateFireTab)
+            tab = Tab(desktop: appWidthObserver.isLargeWidth, fireTab: shouldCreateFireTab)
         }
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
 
@@ -649,7 +655,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func addHomeTab(in tabsModel: TabsModelManaging? = nil, placement: TabsModel.TabPlacement = .atEnd) {
         let model = tabsModel ?? currentTabsModel
-        let tab = Tab(fireTab: model.shouldCreateFireTabs)
+        let tab = Tab(desktop: appWidthObserver.isLargeWidth, fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: placement, selectNewTab: true)
         _ = save()
     }
@@ -725,7 +731,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         let link = url == nil ? nil : Link(title: nil, url: url!)
-        let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs)
+        let tab = Tab(link: link, desktop: appWidthObserver.isLargeWidth, fireTab: model.shouldCreateFireTabs)
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: !inBackground)
         if !inBackground {

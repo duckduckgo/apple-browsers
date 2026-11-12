@@ -35,10 +35,14 @@ final class VPNService: NSObject {
     private let notificationServiceManager: NotificationServiceManaging
     private var cancellables = Set<AnyCancellable>()
 
-    private let mainCoordinator: MainCoordinator
+    private var mainCoordinator: MainCoordinator
     private let subscriptionManager: any SubscriptionManager
     private let application: UIApplication
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    func focus(on coordinator: MainCoordinator) {
+        mainCoordinator = coordinator
+    }
+
     init(mainCoordinator: MainCoordinator,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          application: UIApplication = UIApplication.shared,

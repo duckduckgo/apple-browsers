@@ -69,7 +69,8 @@ struct Connected: ConnectedHandling {
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
-                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
+                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner,
+                                                clearsOnLaunch: appDependencies.windowManager?.claimLaunchAutoClear() ?? true)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
 
@@ -112,7 +113,8 @@ struct Connected: ConnectedHandling {
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
-                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
+                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner,
+                                                clearsOnLaunch: appDependencies.windowManager?.claimLaunchAutoClear() ?? true)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
@@ -144,7 +146,8 @@ struct Connected: ConnectedHandling {
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor)
         let autoClearService = AutoClearService(autoClear: autoClear,
                                                 overlayWindowManager: overlayWindowManager,
-                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner)
+                                                aiChatSyncCleaner: appDependencies.services.syncService.aiChatSyncCleaner,
+                                                clearsOnLaunch: appDependencies.windowManager?.claimLaunchAutoClear() ?? true)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,

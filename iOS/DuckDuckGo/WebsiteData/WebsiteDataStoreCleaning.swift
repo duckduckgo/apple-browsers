@@ -31,7 +31,11 @@ public protocol WebsiteDataStoreCleaning {
 
 public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
 
-    public init() { }
+    private let protectedIdentifiers: @MainActor () -> Set<UUID>
+
+    public init(protectedIdentifiers: @escaping @MainActor () -> Set<UUID> = { [] }) {
+        self.protectedIdentifiers = protectedIdentifiers
+    }
 
     @MainActor
     public func countContainers() async -> Int {
@@ -54,7 +58,7 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
                 encounteredError = error
             }
 
-            for uuid in await WKWebsiteDataStore.allDataStoreIdentifiers {
+            for uuid in await WKWebsiteDataStore.allDataStoreIdentifiers where !protectedIdentifiers().contains(uuid) {
                 do {
                     try await WKWebsiteDataStore.remove(forIdentifier: uuid)
                 } catch {

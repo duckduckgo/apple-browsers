@@ -148,6 +148,8 @@ class FireExecutor: FireExecuting {
     private let fireModeStorageController: FireModeNativeStorageController?
     private let clearAppSwitcherSnapshots: @MainActor () async -> Void
 
+    var windowBurnHandler: (@MainActor (FireRequest, DataStoreWarmup.ApplicationState) async -> Void)?
+
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
     private let dataStoreWarmupWorker: DataStoreWarmupWorker
@@ -226,6 +228,7 @@ class FireExecutor: FireExecuting {
             URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
             WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
                                   dataStore: dataStore,
+                                  idManager: idManager,
                                   dataClearingWideEventService: dataClearingWideEventService),
             AutoConsentFireWorker(autoconsentManagementProvider: autoconsentManagementProvider,
                                   dataClearingWideEventService: dataClearingWideEventService),
@@ -265,6 +268,15 @@ class FireExecutor: FireExecuting {
     @MainActor
     func burn(request: FireRequest,
               applicationState: DataStoreWarmup.ApplicationState) async {
+        if let windowBurnHandler {
+            await windowBurnHandler(request, applicationState)
+        } else {
+            await burnInWindow(request: request, applicationState: applicationState)
+        }
+    }
+
+    @MainActor
+    func burnInWindow(request: FireRequest, applicationState: DataStoreWarmup.ApplicationState) async {
         let singleTabMeasurement: DataClearingPixelsReporter.Measurement?
         let singleTabOptimizationEnabled: Bool
         if case .tab = request.scope {

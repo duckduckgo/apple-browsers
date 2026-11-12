@@ -31,6 +31,8 @@ protocol BlankSnapshotViewRecoveringDelegate: AnyObject {
 
 // Still some logic here that should be de-duplicated from MainViewController
 class BlankSnapshotViewController: UIViewController {
+
+    var isLargeWidth = AppWidthObserver.shared.isLargeWidth
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return ThemeManager.shared.currentTheme.statusBarStyle
@@ -101,7 +103,7 @@ class BlankSnapshotViewController: UIViewController {
 
         if useMinimalChromeLayout {
             viewCoordinator.toolbar.isHidden = true
-            if AppWidthObserver.shared.isLargeWidth {
+            if isLargeWidth {
                 viewCoordinator.constraints.navigationBarContainerTop.constant = 40
                 configureTabBar()
             }

@@ -40,7 +40,8 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
     private let interactionStateCacheLocation: URL
     private let pixelFiring: (any PixelKitFiring)?
 
-    init?(fileManager: FileManager = .default,
+    init?(windowIdentifier: String? = nil,
+          fileManager: FileManager = .default,
           pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.fileManager = fileManager
         self.pixelFiring = pixelFiring
@@ -49,9 +50,13 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
             pixelFiring?.fire(Pixel.Event.tabInteractionStateSourceMissingRootDirectory)
             return nil
         }
-        let interactionStateLocation = cachesUrl
+        let baseLocation = cachesUrl
             .appendingPathComponent(Bundle.main.bundleIdentifier ?? Constant.fallbackBundleIdentifier)
             .appendingPathComponent(Constant.interactionDirectoryName)
+
+        let interactionStateLocation = windowIdentifier == nil ? baseLocation
+            : BrowserWindowStorage.directory(in: baseLocation.deletingLastPathComponent(), windowIdentifier: windowIdentifier)
+                .appendingPathComponent(Constant.interactionDirectoryName)
 
         var isDirectory: ObjCBool = false
         var fileExists = fileManager.fileExists(atPath: interactionStateLocation.path, isDirectory: &isDirectory)

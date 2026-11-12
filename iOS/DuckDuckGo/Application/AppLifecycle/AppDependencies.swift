@@ -22,9 +22,11 @@ import PrivacyConfig
 
 struct AppDependencies {
 
-    let mainCoordinator: MainCoordinator
+    var mainCoordinator: MainCoordinator
+    var windowManager: BrowserWindowManager?
+    var windowIdentifier: String?
     let services: AppServices
-    let launchTaskManager: LaunchTaskManager
+    var launchTaskManager: LaunchTaskManager
     let launchSourceManager: LaunchSourceManaging
     let aiChatSettings: AIChatSettings
     let featureFlagger: FeatureFlagger

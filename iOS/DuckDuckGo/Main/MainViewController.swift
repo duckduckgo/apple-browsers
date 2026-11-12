@@ -224,6 +224,8 @@ class MainViewController: UIViewController {
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
     let toggleModeStorage: ToggleModeStoring
+    let appWidthObserver: AppWidthObserver
+    var browserWindowRequest: ((BrowsingMode) -> Void)?
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     private var isDownloadMenuAlertVisible: Bool?
@@ -736,6 +738,7 @@ class MainViewController: UIViewController {
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        appWidthObserver: AppWidthObserver = .shared,
         bookmarksDatabase: CoreDataDatabase,
         historyManager: HistoryManaging,
         homePageConfiguration: HomePageConfiguration,
@@ -822,6 +825,7 @@ class MainViewController: UIViewController {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
+        self.appWidthObserver = appWidthObserver
         self.homePageConfiguration = homePageConfiguration
         self.syncService = syncService
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -1096,7 +1100,7 @@ class MainViewController: UIViewController {
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
-        _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
+        _ = appWidthObserver.willResize(toWidth: view.frame.width)
         applyWidth()
 
         registerForApplicationEvents()
@@ -1171,7 +1175,7 @@ class MainViewController: UIViewController {
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
-        _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
+        _ = appWidthObserver.willResize(toWidth: view.frame.width)
         applyWidth()
 
         if daxDialogsManager.shouldShowFireButtonPulse {
@@ -1673,7 +1677,7 @@ class MainViewController: UIViewController {
         }
 
         // Check if first responder is within the sheet's view hierarchy
-        if let firstResponder = UIResponder.currentFirstResponder(),
+        if let firstResponder = UIResponder.currentFirstResponder(in: view.window),
            firstResponder.isInViewHierarchy(ofPresentationChainFrom: sheetVC) {
             // Keyboard is for the sheet, don't dismiss
             return
@@ -1744,7 +1748,7 @@ class MainViewController: UIViewController {
     private var isKeyboardOwnedByOmnibar: Bool {
         if omniBar.isTextFieldEditing { return true }
         if unifiedToggleInputCoordinator?.isOmnibarSession == true { return true }
-        if let firstResponder = UIResponder.currentFirstResponder(),
+        if let firstResponder = UIResponder.currentFirstResponder(in: view.window),
            firstResponder.isInViewHierarchy(of: viewCoordinator.omniBar.barView) {
             return true
         }
@@ -1914,7 +1918,7 @@ class MainViewController: UIViewController {
         webViewViewportRefreshCancellable = NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard AppWidthObserver.shared.isPad else { return }
+                guard self?.appWidthObserver.isPad == true else { return }
                 self?.refreshCurrentWebViewViewportAfterForeground()
             }
     }
@@ -2177,7 +2181,7 @@ class MainViewController: UIViewController {
         if isFloatingUIEnabled, !isAnyAITabUTIState,
            hasVisibleKeyboard || !floatingWebInputKeyboardFrame.isEmpty, !isKeyboardOwnedByOmnibar,
            let webView = currentTab?.webView,
-           let firstResponder = UIResponder.currentFirstResponder() {
+           let firstResponder = UIResponder.currentFirstResponder(in: view.window) {
             let hasStaleAccessoryGuide: Bool
             if #available(iOS 27, *) {
                 hasStaleAccessoryGuide = false
@@ -3811,7 +3815,7 @@ class MainViewController: UIViewController {
         cancelMorphAnimatorIfNeedded()
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing && !AppWidthObserver.shared.isPad {
+        if isKeyboardShowing && !appWidthObserver.isPad {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
@@ -3827,7 +3831,7 @@ class MainViewController: UIViewController {
             return snapshot
         }()
 
-        let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
+        let needsWidthUpdate = appWidthObserver.willResize(toWidth: size.width)
         if needsWidthUpdate {
             applyWidth(for: size)
         }
@@ -3957,7 +3961,7 @@ class MainViewController: UIViewController {
     private func minimalChromeDecision(isAITab: Bool, size: CGSize) -> Bool {
         MinimalChromeModeDecision.isActive(
             minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: isAITab),
-            isPad: AppWidthObserver.shared.isPad,
+            isPad: appWidthObserver.isPad,
             isLandscape: size.width > size.height
         )
     }
@@ -3976,7 +3980,7 @@ class MainViewController: UIViewController {
         isApplyingWidth = true
         defer { isApplyingWidth = false }
 
-        if AppWidthObserver.shared.isLargeWidth {
+        if appWidthObserver.isLargeWidth {
             applyLargeWidth()
         } else if isMinimalChromeMode(for: size) {
             applyMinimalChromeWidth()
@@ -4019,7 +4023,7 @@ class MainViewController: UIViewController {
     }
 
     private func applyWidthToTrayController() {
-        if AppWidthObserver.shared.isLargeWidth {
+        if appWidthObserver.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
         } else {
             self.suggestionTrayController?.coversFullScreen = isInMinimalChromeLayout
@@ -4043,7 +4047,7 @@ class MainViewController: UIViewController {
     }
 
     var isUsingSingleBar: Bool {
-        AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
+        appWidthObserver.isLargeWidth || isInMinimalChromeLayout
     }
 
     private func setMinimalChromeMode(_ enabled: Bool) {
@@ -4267,7 +4271,7 @@ class MainViewController: UIViewController {
     private func updateWindowedAddressBarCorners() {
         // Runs every layout pass; on iPhone it can only repaint the container over the unified
         // toggle input chrome, which owns it there.
-        guard AppWidthObserver.shared.isPad else { return }
+        guard appWidthObserver.isPad else { return }
 
         // Floating UI and the move animation own the container background; don't fight them. Both
         // re-run this via decorate().
@@ -4275,7 +4279,7 @@ class MainViewController: UIViewController {
 
         let barView = omniBar.barView
         let isTopPosition = !appSettings.currentAddressBarPosition.isBottom
-        let shouldRound = AppWidthObserver.shared.isLargeWidth && isTopPosition && barView.isWindowedPresentation
+        let shouldRound = appWidthObserver.isLargeWidth && isTopPosition && barView.isWindowedPresentation
 
         barView.layer.cornerCurve = .continuous
         barView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
@@ -4525,7 +4529,7 @@ class MainViewController: UIViewController {
     @available(iOS 16.0, *)
     private func hideChromeForConfirmedFindInPage() {
         guard currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
-              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
+              !appWidthObserver.isPad || !appWidthObserver.isLargeWidth,
               !isFindInPageChromeLockActive else { return }
 
         isFindInPageChromeLockActive = true
@@ -4557,7 +4561,7 @@ class MainViewController: UIViewController {
 
     private var shouldKeepChromeHiddenForFindInPage: Bool {
         guard isFindInPageChromeLockActive,
-              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth else { return false }
+              !appWidthObserver.isPad || !appWidthObserver.isLargeWidth else { return false }
         if #available(iOS 16.0, *) {
             return currentTab?.webView.findInteraction?.isFindNavigatorVisible == true
         }
@@ -6541,7 +6545,7 @@ extension MainViewController: OmniBarDelegate {
 
         let browsingMenu: BrowsingMenuViewController =
         BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                               menuEntries: menuEntries,
+                                               menuEntries: windowMenuEntries + menuEntries,
                                                daxDialogsManager: daxDialogsManager)
         browsingMenu.isUsingSingleBar = isUsingSingleBar
         browsingMenu.onDismiss = { wasActionSelected in
@@ -6575,7 +6579,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func launchSheetBrowsingMenu(in context: BrowsingMenuContext, tabController tab: TabViewController) {
-        guard let model = tab.buildSheetBrowsingMenu(
+        guard var model = tab.buildSheetBrowsingMenu(
             context: context,
             with: menuBookmarksViewModel,
             mobileCustomization: mobileCustomization,
@@ -6585,6 +6589,9 @@ extension MainViewController: OmniBarDelegate {
             viewCoordinator.menuToolbarButton.isEnabled = true
             return
         }
+
+        let windowEntries = windowMenuEntries.compactMap { BrowsingMenuModel.Entry($0) }
+        if !windowEntries.isEmpty { model.sections.insert(.init(items: windowEntries), at: 0) }
 
         let view = BrowsingMenuSheetView(model: model,
                                          headerDataSource: browsingMenuHeaderDataSource,
@@ -7238,7 +7245,7 @@ extension MainViewController: OmniBarDelegate {
         // state resolved through the same `agent(forUrl:isDesktop:)` the WebView applies. With no current
         // tab (e.g. an empty new tab) fall back to the same default a new tab uses (`Tab.init` sets
         // `desktop = isLargeWidth`, Tab.swift:156) so iPad, which navigates desktop, requests a desktop token.
-        let isDesktop = currentTab?.tabModel.isDesktop ?? AppWidthObserver.shared.isLargeWidth
+        let isDesktop = currentTab?.tabModel.isDesktop ?? appWidthObserver.isLargeWidth
         let userAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: isDesktop, url: .ddg)
         Task { await searchTokenFetcher.fetchIfNeeded(userAgent: userAgent) }
     }
@@ -9481,7 +9488,7 @@ extension MainViewController {
         if appSettings.currentAddressBarPosition == .bottom {
             color = theme.backgroundColor
         } else {
-            if AppWidthObserver.shared.isPad && traitCollection.horizontalSizeClass == .regular {
+            if appWidthObserver.isPad && traitCollection.horizontalSizeClass == .regular {
                 color = theme.tabsBarBackgroundColor
             } else {
                 color = theme.omniBarBackgroundColor

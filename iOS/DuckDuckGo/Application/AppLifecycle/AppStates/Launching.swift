@@ -61,6 +61,7 @@ struct Launching: LaunchingHandling {
     private let configuration: AppConfiguration
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
+    private(set) var windowManager: BrowserWindowManager?
     private let launchTaskManager = LaunchTaskManager()
     private let launchSourceManager = LaunchSourceManager()
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
@@ -355,7 +356,15 @@ struct Launching: LaunchingHandling {
         // This step may take some time due to loading from nibs, etc.
 
         let usageContextProvider = UsageContextProvider()
-        mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+        let multiWindowEnabled = BrowserWindowManager.isEnabled(using: featureFlagger)
+        let primarySessionID = UserDefaults.app.string(forKey: BrowserWindowManager.primarySessionKey)
+        let usesWindowStorage = multiWindowEnabled || primarySessionID != nil
+        let restoredSessions = UIApplication.shared.openSessions.map(\.persistentIdentifier).filter { $0 != primarySessionID }
+        let allWindowsTabsModel = usesWindowStorage ? try BrowserWindowTabsModel(restoringSessions: restoredSessions) : nil
+        let coordinatorConfigurationURLProvider = AppDependencyProvider.shared.configurationURLProvider
+        let coordinatorWideEvent = AppDependencyProvider.shared.wideEvent
+        let makeCoordinator: (String?, HistoryManaging?) throws -> MainCoordinator = { [configuration, idleReturnEligibilityManager, voiceSearchHelper, featureFlagger, contentScopeExperimentsManager, aiChatSettings, fireproofing, favicons, isAppLaunchedInBackground, didFinishLaunchingStartTime, launchSourceManager, onboardingManager] windowIdentifier, historyManager in
+            try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
@@ -372,7 +381,7 @@ struct Launching: LaunchingHandling {
                                               fireproofing: fireproofing,
                                               favicons: favicons,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
+                                              customConfigurationURLProvider: coordinatorConfigurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               isAppLaunchedInBackground: isAppLaunchedInBackground,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
@@ -390,12 +399,20 @@ struct Launching: LaunchingHandling {
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
-                                              wideEvent: AppDependencyProvider.shared.wideEvent,
+                                              wideEvent: coordinatorWideEvent,
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub,
                                               usageContextProvider: usageContextProvider,
-                                              promptExposureReporter: promptExposureReporter
+                                              promptExposureReporter: promptExposureReporter,
+                                              windowIdentifier: windowIdentifier,
+                                              sharedHistoryManager: historyManager,
+                                              allWindowsTabsModel: allWindowsTabsModel
         )
+        }
+        mainCoordinator = try makeCoordinator(nil, nil)
+        if usesWindowStorage {
+            windowManager = BrowserWindowManager(primaryCoordinator: mainCoordinator, allowsMultipleWindows: multiWindowEnabled, makeCoordinator: makeCoordinator)
+        }
         launchBreadcrumb.mark(.mainCoordinator)
 
         // MARK: - UI-Dependent Services Setup
@@ -445,15 +462,19 @@ struct Launching: LaunchingHandling {
         let voiceSearchHelper = self.voiceSearchHelper
         let fireModeCapability = mainCoordinator.controller.fireModeCapability
         let mainViewController = mainCoordinator.controller
+        let menuWindowManager = windowManager
+        let menuController: () -> MainViewController? = { [weak menuWindowManager, weak mainViewController] in
+            (menuWindowManager?.focusedWindow?.rootViewController as? MainViewController) ?? mainViewController
+        }
         let mainMenuBookmarks = mainViewController.mainMenuBookmarks
         let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
-        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: { [weak mainViewController] in
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
             .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
                   aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites,
-                  isOnboarding: mainViewController?.needsToShowOnboardingIntro() ?? false)
+                  isOnboarding: menuController()?.needsToShowOnboardingIntro() ?? false)
         }, deferredContent: [
-            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
-                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent {
+                await menuController()?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
             },
             .bookmarksTree: bookmarksMenuTree
         ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])
@@ -600,6 +621,8 @@ struct Launching: LaunchingHandling {
     private var appDependencies: AppDependencies {
         .init(
             mainCoordinator: mainCoordinator,
+            windowManager: windowManager,
+            windowIdentifier: nil,
             services: services,
             launchTaskManager: launchTaskManager,
             launchSourceManager: launchSourceManager,
@@ -638,6 +661,11 @@ extension Launching {
     func makeStateContext() -> StateContext {
         .init(didFinishLaunchingStartTime: didFinishLaunchingStartTime,
               appDependencies: appDependencies)
+    }
+
+    func configureWindowManager() -> BrowserWindowManager? {
+        windowManager?.configure(dependencies: appDependencies, lastBackgroundDateStorage: lastBackgroundDateStorage)
+        return windowManager
     }
 
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {

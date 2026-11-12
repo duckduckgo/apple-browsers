@@ -62,7 +62,7 @@ struct FireConfirmationPresenter {
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
-        guard let window = UIApplication.shared.firstKeyWindow else {
+        guard let window = viewController.view.window else {
             assertionFailure("No key window available")
             return
         }
@@ -118,14 +118,16 @@ struct FireConfirmationPresenter {
                               source: source,
                               sourceRect: sourceRect,
                               presentingSize: presentingSize,
+                              bottomSafeAreaInset: viewController.view.window?.safeAreaInsets.bottom ?? 0,
                               limitsLandscapeWidth: limitsLandscapeWidth)
         if limitsLandscapeWidth {
-            hostingController.onPresentingSizeChange = { [weak hostingController] size in
+            hostingController.onPresentingSizeChange = { [weak hostingController, weak viewController] size in
                 guard let hostingController else { return }
                 configurePresentation(for: hostingController,
                                       source: source,
                                       sourceRect: sourceRect,
                                       presentingSize: size,
+                                      bottomSafeAreaInset: viewController?.view.window?.safeAreaInsets.bottom ?? 0,
                                       limitsLandscapeWidth: true)
             }
         }
@@ -146,6 +148,7 @@ struct FireConfirmationPresenter {
                                                       source: AnyObject,
                                                       sourceRect: CGRect,
                                                       presentingSize: CGSize,
+                                                      bottomSafeAreaInset: CGFloat,
                                                       limitsLandscapeWidth: Bool) {
         let landscapeWidth = limitsLandscapeWidth && presentingSize.width > presentingSize.height
             ? presentingSize.height : nil
@@ -170,7 +173,6 @@ struct FireConfirmationPresenter {
         if let sheet = hostingController.sheetPresentationController {
             let isIpadFormSheet = DevicePlatform.isIpad && hostingController.popoverPresentationController == nil
             // The measured height excludes the bottom safe area, which the presented iPad sheet still applies.
-            let bottomSafeAreaInset = UIApplication.shared.firstKeyWindow?.safeAreaInsets.bottom ?? 0
             if isIpadFormSheet {
                 let sheetHeight = calculateSheetHeight(for: hostingController, width: Constants.iPadSheetWidth) + bottomSafeAreaInset
                 hostingController.preferredContentSize = CGSize(width: Constants.iPadSheetWidth, height: sheetHeight)

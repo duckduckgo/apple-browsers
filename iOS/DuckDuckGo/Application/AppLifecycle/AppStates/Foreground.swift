@@ -131,8 +131,12 @@ struct Foreground: ForegroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
-        // Close the previous session before foreground work can report another prompt.
-        appDependencies.mainCoordinator.promptExposureReporter.appDidEnterForeground()
+        let resumesSharedServices = appDependencies.windowIdentifier.map {
+            appDependencies.windowManager?.enterForeground($0) ?? true
+        } ?? true
+        if resumesSharedServices {
+            appDependencies.mainCoordinator.promptExposureReporter.appDidEnterForeground()
+        }
 
         configureAppearance()
 
@@ -162,36 +166,40 @@ struct Foreground: ForegroundHandling {
             }
         )
 
-        services.vpnService.resume()
-        services.aiChatService.resume()
-        services.configurationService.resume()
-        services.reportingService.resume()
-        services.subscriptionService.resume()
-        services.autofillService.resume()
-        services.maliciousSiteProtectionService.resume()
-        services.syncService.resume()
-        services.remoteMessagingService.resume()
-        services.statisticsService.resume()
-        services.launchTimeMetricsService.resume()
-        services.hangMetricsService.resume()
-        services.defaultBrowserPromptService.resume()
-        services.dbpService.resume()
-        services.inactivityNotificationSchedulerService.resume()
-        services.wideEventService.resume()
-        services.eventHubService.resume()
+        if resumesSharedServices {
+            services.vpnService.resume()
+            services.aiChatService.resume()
+            services.configurationService.resume()
+            services.reportingService.resume()
+            services.subscriptionService.resume()
+            services.autofillService.resume()
+            services.maliciousSiteProtectionService.resume()
+            services.syncService.resume()
+            services.remoteMessagingService.resume()
+            services.statisticsService.resume()
+            services.launchTimeMetricsService.resume()
+            services.hangMetricsService.resume()
+            services.defaultBrowserPromptService.resume()
+            services.dbpService.resume()
+            services.inactivityNotificationSchedulerService.resume()
+            services.wideEventService.resume()
+            services.eventHubService.resume()
+        }
         appDependencies.launchSourceManager.handleAppAction(launchAction)
 
         appDependencies.mainCoordinator.onForeground(isFirstForeground: isFirstForeground)
 
-        appDependencies.backgroundTaskManager.endBackgroundTask()
+        if resumesSharedServices {
+            appDependencies.backgroundTaskManager.endBackgroundTask()
 
-        fireAIFeaturesStateDailyPixel()
-        fireDuckAISettingsStateDailyPixel()
+            fireAIFeaturesStateDailyPixel()
+            fireDuckAISettingsStateDailyPixel()
 
-        appReturnInstrumentation.recordAppForeground(
-            lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
-            launchAction: launchAction
-        )
+            appReturnInstrumentation.recordAppForeground(
+                lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
+                launchAction: launchAction
+            )
+        }
     }
 
     /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.

@@ -319,9 +319,11 @@ extension MainViewController {
 
         recordDuckAISessionPendingExit(.fireTabOpened)
         recordUserOpenedTab()
-        tabManager.setBrowsingMode(.fire, source: .keyCommand)
-        performCancel()
-        newTab()
+        newTabTransitions.open {
+            tabManager.setBrowsingMode(.fire, source: .keyCommand)
+            performCancel()
+            newTab()
+        }
     }
     
     @objc func keyboardCloseTab() {

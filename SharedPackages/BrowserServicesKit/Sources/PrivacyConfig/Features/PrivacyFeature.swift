@@ -605,6 +605,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
     case chatLimitExtensionPromo
+
+    /// iOS only. Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
+    case swipeUpNewChat
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -739,6 +743,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case heuristicHitTest
     case cookiePopupOptInDialog
 }
 
@@ -751,6 +756,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow
+    case stripeProductsByPlanCountry
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
@@ -763,6 +769,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case monthlyFreeTrialExperiment2
     case subscriptionOnboardingFreeTrialsOct2026
     case subscriptionOnboardingPaidSubsOct2026
+    case subscriptionOnboardingFreeTrialsNov2026
+    case subscriptionOnboardingPaidSubsNov2026
     case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
@@ -937,19 +945,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
-    /// Controls reloading an unchanged GET document after a late background startup loses its first response.
-    case cpmLateBackgroundDocumentRecovery
-    /// Controls retrying failed embedded background content without replacing its context (P2).
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
-    case cpmBackgroundLoadRecovery
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
     case cpmBackgroundLoadRestart
-    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
-    case cpmMessagingHangRecovery
-    /// Preserve surviving shared pinned tabs when WebKit processes a macOS window close.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
-    case sharedPinnedTabWindowClose
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
     case cpmNetworkProcessRecovery
@@ -959,8 +957,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Failsafe for upgrading only CPM before launch load and carrying its origin to the replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
     case cpmUpgradeBeforeLoad
-    /// Failsafe kill switch for the CPM background-view graveyard treatment.
-    case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.
     case nativeMessaging
 }

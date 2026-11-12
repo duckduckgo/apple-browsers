@@ -165,6 +165,7 @@ extension OnboardingIntroStep {
     static let addressBarPositionSelection: Self = .renderable(.addressBarPositionSelection)
     static let searchExperienceSelection: Self = .renderable(.searchExperienceSelection)
     static let duckAIQuerySelection: Self = .renderable(.duckAIQuerySelection)
+    static let tryVPN: Self = .renderable(.tryVPN)
 
     static func introDialog(isReturningUser: Bool) -> Self {
         .renderable(.introDialog(isReturningUser: isReturningUser))
@@ -188,6 +189,7 @@ extension OnboardingIntroStep {
         case addressBarPositionSelection
         case searchExperienceSelection
         case duckAIQuerySelection
+        case tryVPN // VPN download reason: offers the VPN free trial.
     }
 
     /// Identifies which interlude experience the host should run.
@@ -220,6 +222,7 @@ extension OnboardingIntroStep {
         case .renderable(.addressBarPositionSelection): return .addressBarPositionSelection
         case .renderable(.searchExperienceSelection): return .searchExperienceSelection
         case .renderable(.duckAIQuerySelection): return .duckAIQuerySelection
+        case .renderable(.tryVPN): return .tryVPN
         case .interlude(.duckAI): return .interludeDuckAI
         }
     }
@@ -260,6 +263,7 @@ enum OnboardingResumeStep: String {
     case appIconSelection
     case addressBarPositionSelection
     case searchExperienceSelection
+    case tryVPN
     /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
     case duckAIQuerySelection
     /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
@@ -279,6 +283,9 @@ protocol OnboardingDownloadReasonHandling: AnyObject {
     /// The reason the user selected on the Download Screen, or `nil` before they've answered
     /// (and for flows without the Download Screen). Used to tailor reason-specific content.
     var currentDownloadReason: OnboardingDownloadReason? { get }
+
+    /// Whether the Download Screen offers the VPN reason: only to the experiment's treatment cohort.
+    var isVPNDownloadReasonAvailable: Bool { get }
 
     /// Enrolls the user in the VPN download-reason experiment if they qualify.
     ///
@@ -304,6 +311,10 @@ extension OnboardingManager: OnboardingDownloadReasonHandling {
 
     var currentDownloadReason: OnboardingDownloadReason? {
         tutorialSettings.onboardingDownloadReason
+    }
+
+    var isVPNDownloadReasonAvailable: Bool {
+        downloadReasonVPNExperimentCohort == .treatment
     }
 
     func enrollInDownloadReasonVPNExperimentIfNeeded() {
@@ -481,6 +492,8 @@ private extension OnboardingManager {
         switch reason {
         case .browserPrivately:
             personalisationSteps = [.searchExperienceSelection]
+        case .vpn:
+            personalisationSteps = [.tryVPN, .searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:

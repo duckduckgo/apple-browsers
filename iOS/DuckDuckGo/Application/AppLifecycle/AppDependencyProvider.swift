@@ -372,7 +372,10 @@ final class AppDependencyProvider: DependencyProvider {
                                                                },
                                                                wideEvent: wideEvent,
                                                                isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
-                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation,
+                                                               isStripeProductsByPlanCountryEnabled: {
+            featureFlagger.isFeatureOn(.stripeProductsByPlanCountry)
+                                                               })
         self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,

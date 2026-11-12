@@ -627,6 +627,28 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(manager.controller(for: laterTab.tabModel))
     }
 
+    func testWhenPageOpenedTabWaitsInTheBackgroundThenLRUCapacityDoesNotEvictIt() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let popup = manager.addURLRequest(nil, with: WKWebViewConfiguration(), inheritedAttribution: nil, inBackground: true)
+
+        let laterTab = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertTrue(manager.controller(for: popup.tabModel) === popup)
+        XCTAssertNil(manager.controller(for: laterTab.tabModel))
+    }
+
+    func testWhenPageOpenedTabHasBeenSelectedThenLRUCapacityCanEvictIt() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let currentTab = try XCTUnwrap(manager.current()?.tabModel)
+        let popup = manager.addURLRequest(nil, with: WKWebViewConfiguration(), inheritedAttribution: nil, inBackground: true)
+        _ = manager.select(popup.tabModel)
+        _ = manager.select(currentTab)
+
+        _ = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertNil(manager.controller(for: popup.tabModel))
+    }
+
     func testWhenInitialAIChatPromptIsConsumedThenLRUCapacityEvictsItsTab() throws {
         let manager = try makeManagerWithLoadedCurrentTab()
         let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("prompt", autoSubmit: true)) {}

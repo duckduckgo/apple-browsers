@@ -24,91 +24,116 @@ import XCTest
 
 final class SuggestionDebounceTests: XCTestCase {
 
-    func testDisabledFlagSendsAfter100Milliseconds() {
-        assertDebounceBoundary(enabled: false, milliseconds: 100)
-    }
-
-    func testEnabledFlagSendsAfter150Milliseconds() {
-        assertDebounceBoundary(enabled: true, milliseconds: 150)
-    }
-
-    private func assertDebounceBoundary(enabled: Bool, milliseconds: Int, file: StaticString = #filePath, line: UInt = #line) {
+    func testDisabledFlagDebouncesAllSuggestionsBy100Milliseconds() {
         let scheduler = DispatchQueue.test
         let subject = PassthroughSubject<String, Never>()
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
-        var received = [String]()
-        let subscription = subject.debounceSuggestions(using: featureFlagger, scheduler: scheduler)
+        var received = [SuggestionRequest]()
+        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: []), scheduler: scheduler)
             .sink { received.append($0) }
         defer { subscription.cancel() }
 
+        subject.send("du")
+        scheduler.advance(by: .milliseconds(99))
+        XCTAssertTrue(received.isEmpty)
         subject.send("duck")
-        scheduler.advance(by: .milliseconds(milliseconds - 1))
-        XCTAssertTrue(received.isEmpty, file: file, line: line)
+        scheduler.advance(by: .milliseconds(99))
+        XCTAssertTrue(received.isEmpty)
         scheduler.advance(by: .milliseconds(1))
-        XCTAssertEqual(received, ["duck"], file: file, line: line)
+        XCTAssertEqual(received, [SuggestionRequest(query: "duck", includeRemoteSuggestions: true)])
+        subject.send("")
+        scheduler.advance(by: .milliseconds(99))
+        XCTAssertEqual(received.count, 1)
+        scheduler.advance(by: .milliseconds(1))
+        XCTAssertEqual(received.last, SuggestionRequest(query: "", includeRemoteSuggestions: true))
     }
 
-    func testContinuedTypingCancelsPendingSuggestionInBothFlagStates() {
-        for enabled in [false, true] {
-            let scheduler = DispatchQueue.test
-            let subject = PassthroughSubject<String, Never>()
-            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
-            let delay = enabled ? 150 : 100
-            var received = [String]()
-            let subscription = subject.debounceSuggestions(using: featureFlagger, scheduler: scheduler)
-                .sink { received.append($0) }
-            defer { subscription.cancel() }
-
-            subject.send("du")
-            scheduler.advance(by: .milliseconds(delay - 1))
-            subject.send("duck")
-            scheduler.advance(by: .milliseconds(delay - 1))
-            XCTAssertTrue(received.isEmpty)
-            scheduler.advance(by: .milliseconds(1))
-            XCTAssertEqual(received, ["duck"])
-        }
-    }
-
-    func testCancellingSubscriptionDiscardsPendingQuery() {
+    func testEnabledFlagSeparatesLocalAndRemoteDebounces() {
         let scheduler = DispatchQueue.test
         let subject = PassthroughSubject<String, Never>()
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms])
-        var received = [String]()
-        let subscription = subject.debounceSuggestions(using: featureFlagger, scheduler: scheduler)
+        var received = [SuggestionRequest]()
+        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]), scheduler: scheduler)
             .sink { received.append($0) }
+        defer { subscription.cancel() }
+
+        subject.send("du")
+        XCTAssertEqual(received, [SuggestionRequest(query: "du", includeRemoteSuggestions: false)])
+        scheduler.advance(by: .milliseconds(149))
+        XCTAssertEqual(received.count, 1)
+        scheduler.advance(by: .milliseconds(1))
+        XCTAssertEqual(received.last, SuggestionRequest(query: "du", includeRemoteSuggestions: true))
 
         subject.send("duck")
-        scheduler.advance(by: .milliseconds(100))
-        subscription.cancel()
-        scheduler.advance(by: .milliseconds(200))
-        XCTAssertTrue(received.isEmpty)
+        scheduler.advance(by: .milliseconds(99))
+        XCTAssertEqual(received.count, 2)
+        scheduler.advance(by: .milliseconds(1))
+        XCTAssertEqual(received.last, SuggestionRequest(query: "duck", includeRemoteSuggestions: false))
+        scheduler.advance(by: .milliseconds(49))
+        XCTAssertEqual(received.count, 3)
+        scheduler.advance(by: .milliseconds(1))
+        XCTAssertEqual(received.last, SuggestionRequest(query: "duck", includeRemoteSuggestions: true))
     }
 
-    func testFlagChangesApplyToNextQueryWithoutResubscribing() {
+    func testTypingCancelsPendingRemoteRequestWithoutCancellingPublishedLocalRequest() {
+        let scheduler = DispatchQueue.test
+        let subject = PassthroughSubject<String, Never>()
+        var received = [SuggestionRequest]()
+        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]), scheduler: scheduler)
+            .sink { received.append($0) }
+        defer { subscription.cancel() }
+
+        subject.send("du")
+        scheduler.advance(by: .milliseconds(100))
+        subject.send("duck")
+        scheduler.advance(by: .milliseconds(100))
+        XCTAssertEqual(received, [SuggestionRequest(query: "du", includeRemoteSuggestions: false),
+                                  SuggestionRequest(query: "duck", includeRemoteSuggestions: false)])
+        scheduler.advance(by: .milliseconds(50))
+        XCTAssertEqual(received.last, SuggestionRequest(query: "duck", includeRemoteSuggestions: true))
+    }
+
+    func testClearingEnabledQueryCancelsPendingRequestsAndRestartsLeadingQuery() {
+        let scheduler = DispatchQueue.test
+        let subject = PassthroughSubject<String, Never>()
+        var received = [SuggestionRequest]()
+        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]), scheduler: scheduler)
+            .sink { received.append($0) }
+        defer { subscription.cancel() }
+
+        subject.send("du")
+        subject.send("duck")
+        subject.send("")
+        subject.send("w")
+        XCTAssertEqual(received, [SuggestionRequest(query: "du", includeRemoteSuggestions: false),
+                                  SuggestionRequest(query: "", includeRemoteSuggestions: true),
+                                  SuggestionRequest(query: "w", includeRemoteSuggestions: false)])
+        subscription.cancel()
+        scheduler.advance(by: .milliseconds(200))
+        XCTAssertEqual(received.count, 3)
+    }
+
+    func testFlagChangesApplyWithoutResubscribing() {
         let scheduler = DispatchQueue.test
         let subject = PassthroughSubject<String, Never>()
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        var received = [String]()
+        var received = [SuggestionRequest]()
         let subscription = subject.debounceSuggestions(using: featureFlagger, scheduler: scheduler)
             .sink { received.append($0) }
         defer { subscription.cancel() }
 
         subject.send("one")
         scheduler.advance(by: .milliseconds(100))
-        XCTAssertEqual(received, ["one"])
-
+        XCTAssertEqual(received, [SuggestionRequest(query: "one", includeRemoteSuggestions: true)])
         featureFlagger.enabledFeatureFlags = [.suggestionDebounce200ms]
         subject.send("two")
-        scheduler.advance(by: .milliseconds(149))
-        XCTAssertEqual(received, ["one"])
-        scheduler.advance(by: .milliseconds(1))
-        XCTAssertEqual(received, ["one", "two"])
-
+        scheduler.advance(by: .milliseconds(100))
+        XCTAssertEqual(received.last, SuggestionRequest(query: "two", includeRemoteSuggestions: false))
+        scheduler.advance(by: .milliseconds(50))
+        XCTAssertEqual(received.last, SuggestionRequest(query: "two", includeRemoteSuggestions: true))
         featureFlagger.enabledFeatureFlags = []
         subject.send("three")
         scheduler.advance(by: .milliseconds(99))
-        XCTAssertEqual(received, ["one", "two"])
+        XCTAssertEqual(received.count, 3)
         scheduler.advance(by: .milliseconds(1))
-        XCTAssertEqual(received, ["one", "two", "three"])
+        XCTAssertEqual(received.last, SuggestionRequest(query: "three", includeRemoteSuggestions: true))
     }
 }

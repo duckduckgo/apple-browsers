@@ -95,6 +95,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL) -> Bool { false }
+
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource?, newChatInputRequest: DuckDuckGo.DuckAINewChatInputRequest?) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didReportDuckAIEntry source: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {}
@@ -132,6 +134,10 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestAIChat(tab: TabViewController) {}
 
     func tabDidRequestNewAIChatTab(tab: TabViewController) {}
+
+    func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState? { nil }
+
+    func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {}
 

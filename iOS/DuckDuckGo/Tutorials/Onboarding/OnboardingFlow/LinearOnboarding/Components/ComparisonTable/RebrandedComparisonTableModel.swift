@@ -33,11 +33,15 @@ struct RebrandedComparisonTableModel {
             case available
             case partial
             case unavailable
+            /// Available with a paid subscription.
+            case subscription
 
             var image: Image {
                 switch self {
                 case .available:
                     return OnboardingRebrandingImages.Comparison.availableIcon
+                case .subscription:
+                    return Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 case .partial:
                     return OnboardingRebrandingImages.Comparison.partialIcon
                 case .unavailable:
@@ -139,6 +143,12 @@ extension RebrandedComparisonTableModel {
 
     static func browserFeatures(for reason: OnboardingDownloadReason) -> [Feature] {
         switch reason {
+        case .vpn:
+            // The ad-blocking table without its AI chat and tracker rows, plus VPN.
+            let excludedTitles = [BrowserText.privateAIChat, BrowserText.trackerBlockers]
+            return browserFeatures(for: .blockAds).filter { !excludedTitles.contains($0.title) } + [
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.vpn), title: BrowserText.hideLocationWithVPN, competitorAvailability: .unavailable, ddgAvailability: .subscription),
+            ]
         case .browserPrivately:
             return [
                 Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),

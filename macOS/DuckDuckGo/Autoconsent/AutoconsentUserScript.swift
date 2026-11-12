@@ -413,7 +413,8 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableHeuristicDetection": true,
-                "heuristicMode": consentHeuristicMode ?? "off"
+                "heuristicMode": consentHeuristicMode ?? "off",
+                "enableHeuristicHitTest": featureFlagger.isFeatureOn(.heuristicHitTest)
             ] as [String: Any?]
         ] as [String: Any?]
 

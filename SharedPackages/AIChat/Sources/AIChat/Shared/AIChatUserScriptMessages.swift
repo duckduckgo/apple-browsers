@@ -182,8 +182,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Posted (FE→native) to stop a local run.
     case cancelAIChatLocalRun
 
-    /// Requested (FE→native) when the user opts in to the local model from Duck.ai.
-    case startAIChatLocalModelSetup
+    /// Requested (FE→native) when the user asks for a summary before turning on the local model.
+    /// Native asks the user and replies with their answer.
+    case requestAIChatLocalModelAccess
 
     /// Pushed (native→FE) to every Duck.ai page when the local model's state changes.
     case submitAIChatLocalModelState

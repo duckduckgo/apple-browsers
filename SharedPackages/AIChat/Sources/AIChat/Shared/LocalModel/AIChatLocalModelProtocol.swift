@@ -100,7 +100,26 @@ public struct AIChatLocalRunCancelRequest: Codable, Equatable, Sendable {
     }
 }
 
-/// The error message `startAIChatLocalRun` and `startAIChatLocalModelSetup` reject with.
+/// The reply to `requestAIChatLocalModelAccess`.
+public struct AIChatLocalModelAccessReply: Codable, Equatable, Sendable {
+
+    public enum Result: String, Codable, Equatable, Sendable {
+        /// Turned on, now or earlier: run this summary locally.
+        case allowed
+        /// No Thanks: use the cloud.
+        case declined
+        /// Closed without an answer. The page decides between the cloud and no summary.
+        case dismissed
+    }
+
+    public let result: Result
+
+    public init(result: Result) {
+        self.result = result
+    }
+}
+
+/// The error message `startAIChatLocalRun` and `requestAIChatLocalModelAccess` reject with.
 /// The message broker sends `errorDescription` to the page as `error.message`.
 public enum AIChatLocalModelRequestError: String, DDGError, LocalizedError, Sendable {
     case unavailable

@@ -61,6 +61,126 @@
         }
       }
     },
+    "duckai.local-model-access.no-thanks" : {
+      "comment" : "Button in the local model pop-up that declines, so Duck.ai summarizes the page with a cloud model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.prompt.message" : {
+      "comment" : "Explanation in the pop-up that asks whether Duck.ai may summarize pages with Apple Intelligence on the Mac. 'Your plan' is the user's Duck.ai usage allowance",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Apple Intelligence will read this page's title, address, and text on your Mac. Nothing is sent to a cloud model, and it uses less of your plan."
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.prompt.title" : {
+      "comment" : "Title of the pop-up shown when the user asks Duck.ai to summarize a page before turning on the local model. %@ is the model's name, such as Apple Intelligence, shown as a badge",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai wants to use %@ to summarize this page"
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.turn-off" : {
+      "comment" : "Button in Settings > AI Features that stops Duck.ai from using the local model, such as Apple Intelligence",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn Off"
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.turn-on" : {
+      "comment" : "Button that lets Duck.ai use the local model, such as Apple Intelligence, for page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn On"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.apple-intelligence.caption" : {
+      "comment" : "Caption under Apple Intelligence in the Local Model Access section of Settings > AI Features, saying what Duck.ai uses it for",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Used for page summaries"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.caption" : {
+      "comment" : "Explanation under the Local Model Access title in Settings > AI Features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Local models add additional privacy and reduce Duck.ai plan usage."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.title" : {
+      "comment" : "Title of the section in Settings > AI Features where the user turns the local model on or off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Local Model Access"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.turn-on-confirmation.message" : {
+      "comment" : "Message of the alert shown when the user turns on Apple Intelligence for Duck.ai in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai will use Apple Intelligence on this Mac for page summaries. Pages are processed on your Mac, nothing is sent to a cloud model, and it uses less of your Duck.ai plan."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.turn-on-confirmation.title" : {
+      "comment" : "Title of the alert shown when the user turns on Apple Intelligence for Duck.ai in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn On Apple Intelligence?"
+          }
+        }
+      }
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {
@@ -34667,30 +34787,6 @@
         }
       }
     },
-    "duckai.apple-intelligence-setup.open-settings" : {
-      "comment" : "Button in the Apple Intelligence setup dialog that opens System Settings at Apple Intelligence & Siri",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Set Up on macOS"
-          }
-        }
-      }
-    },
-    "duckai.apple-intelligence-setup.title" : {
-      "comment" : "Title of the dialog shown when the user picks Apple Intelligence for page summaries but it isn't turned on or ready on their Mac",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Set Up Apple Intelligence with Siri to access it as a local model in Duck.ai"
-          }
-        }
-      }
-    },
     "duckai.attach-selection.context-menu-action" : {
       "comment" : "Context menu option that attaches the selected text to Duck.ai as page context",
       "extractionState" : "extracted_with_value",
@@ -35707,30 +35803,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Попробовать сейчас"
-          }
-        }
-      }
-    },
-    "duckai.local-summaries-promo.message" : {
-      "comment" : "Promo under the Duck.ai address bar inviting the user to summarize pages on their Mac with Apple Intelligence, shown after a bold 'New' badge",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Summarize pages locally with Apple Intelligence"
-          }
-        }
-      }
-    },
-    "duckai.local-summaries-promo.try" : {
-      "comment" : "Button in the local page summaries promo under the Duck.ai address bar that turns on summaries with Apple Intelligence",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Try"
           }
         }
       }
@@ -37650,54 +37722,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Иногда"
-          }
-        }
-      }
-    },
-    "duckai.settings.page-summaries.apple-intelligence" : {
-      "comment" : "Option of the Ask About Page Summaries setting that summarizes pages on the Mac with Apple Intelligence. The ellipsis shows it may ask to set up Apple Intelligence first",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Apple Intelligence…"
-          }
-        }
-      }
-    },
-    "duckai.settings.page-summaries.caption" : {
-      "comment" : "Explanation under the Ask About Page Summaries setting in Settings > AI Features",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Choose what model to use. Local models add an additional layer of privacy and help to reduce usage."
-          }
-        }
-      }
-    },
-    "duckai.settings.page-summaries.duckai-models" : {
-      "comment" : "Option of the Ask About Page Summaries setting that keeps summarizing pages with Duck.ai's cloud models",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Duck.ai Models"
-          }
-        }
-      }
-    },
-    "duckai.settings.page-summaries.title" : {
-      "comment" : "Title of the setting in Settings > AI Features that picks the model for Duck.ai page summaries",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Ask About Page Summaries"
           }
         }
       }

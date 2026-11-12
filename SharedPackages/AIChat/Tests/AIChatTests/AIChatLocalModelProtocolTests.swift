@@ -56,6 +56,14 @@ struct AIChatLocalModelProtocolTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("The access reply carries the user's answer", .timeLimit(.minutes(1)),
+          arguments: [(AIChatLocalModelAccessReply.Result.allowed, "allowed"), (.declined, "declined"), (.dismissed, "dismissed")])
+    func accessReplyUsesWireValues(result: AIChatLocalModelAccessReply.Result, wireValue: String) throws {
+        let json = try jsonObject(AIChatLocalModelAccessReply(result: result))
+        #expect(json as? [String: String] == ["result": wireValue])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("The config reports the state the way the messaging TD spells it", .timeLimit(.minutes(1)))
     func configUsesWireValues() throws {
         let config = AIChatLocalModelConfig(state: .notSetUp,

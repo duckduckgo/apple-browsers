@@ -360,8 +360,7 @@ final class MainViewController: NSViewController {
             omnibarController: aiChatOmnibarController,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             burnerMode: tabCollectionViewModel.burnerMode,
-            launcherPromo: NSApp.delegateTyped.duckAiLauncherPromo,
-            localSummariesPromo: NSApp.delegateTyped.localSummariesPromo
+            launcherPromo: NSApp.delegateTyped.duckAiLauncherPromo
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,

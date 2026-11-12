@@ -314,9 +314,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let launcherPromo: DuckAiLauncherPromo?
     private var launcherPromoCancellable: AnyCancellable?
     private var isShowingLauncherPromo = false
-    private let localSummariesPromo: LocalSummariesPromo?
-    private var localSummariesPromoCancellable: AnyCancellable?
-    private var isShowingLocalSummariesPromo = false
     private var isLauncherPromoDeferred = false
     private var didReportLauncherPromoShown = false
     private var launcherIntroductionShortcut: String?
@@ -488,14 +485,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                   omnibarController: AIChatOmnibarController,
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling?,
                   burnerMode: BurnerMode,
-                  launcherPromo: DuckAiLauncherPromo? = nil,
-                  localSummariesPromo: LocalSummariesPromo? = nil) {
+                  launcherPromo: DuckAiLauncherPromo? = nil) {
         self.themeManager = themeManager
         self.omnibarController = omnibarController
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.burnerMode = burnerMode
         self.launcherPromo = launcherPromo
-        self.localSummariesPromo = localSummariesPromo
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -1263,11 +1258,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         usageWarningCardView.onAction = { [weak self] in
             guard let self else { return }
-            if isShowingLocalSummariesPromo {
-                localSummariesPromo?.tryNow()
-                refreshUsageCard()
-                return
-            }
             if isShowingLauncherPromo {
                 launcherPromo?.tryNow(on: .addressBar)
                 return
@@ -1278,7 +1268,32 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
         }
         usageWarningCardView.onDismiss = { [weak self] in
-            self?.dismissUsageCard()
+            guard let self else { return }
+            if launcherIntroductionShortcut != nil {
+                launcherIntroductionShortcut = nil
+                refreshUsageCard()
+                return
+            }
+            if isShowingLauncherPromo {
+                launcherPromo?.dismiss(on: .addressBar)
+                refreshUsageCard()
+                return
+            }
+            // Ahead of the pixel: this card is not a usage message, so closing it must not report
+            // a dismissal against whichever usage exposure happens to be open.
+            if createImageModelSwitchNotice != nil {
+                omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
+                clearCreateImageModelSwitchNotice()
+                return
+            }
+
+            omnibarController.usageWarningMeasurement.warningDismissed()
+            if omnibarController.usageWarningViewModel?.warning != nil {
+                omnibarController.usageWarningViewModel?.dismiss()
+            } else {
+                highUsageNoticeSource?.dismissCurrent()
+            }
+            refreshUsageCard()
         }
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
@@ -1315,43 +1330,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         launcherPromoCancellable = launcherPromo?.changesPublisher.sink { [weak self] in
             self?.refreshUsageCard()
         }
-        localSummariesPromoCancellable = localSummariesPromo?.changesPublisher.sink { [weak self] in
-            self?.refreshUsageCard()
-        }
         highUsageNoticeSource?.refresh()
-    }
-
-    private func dismissUsageCard() {
-        if launcherIntroductionShortcut != nil {
-            launcherIntroductionShortcut = nil
-            refreshUsageCard()
-            return
-        }
-        if isShowingLocalSummariesPromo {
-            localSummariesPromo?.dismiss()
-            refreshUsageCard()
-            return
-        }
-        if isShowingLauncherPromo {
-            launcherPromo?.dismiss(on: .addressBar)
-            refreshUsageCard()
-            return
-        }
-        // Ahead of the pixel: this card is not a usage message, so closing it must not report
-        // a dismissal against whichever usage exposure happens to be open.
-        if createImageModelSwitchNotice != nil {
-            omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
-            clearCreateImageModelSwitchNotice()
-            return
-        }
-
-        omnibarController.usageWarningMeasurement.warningDismissed()
-        if omnibarController.usageWarningViewModel?.warning != nil {
-            omnibarController.usageWarningViewModel?.dismiss()
-        } else {
-            highUsageNoticeSource?.dismissCurrent()
-        }
-        refreshUsageCard()
     }
 
     private func subscribeToUsageWarnings() {
@@ -1371,7 +1350,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applyInputBlock(warning?.blocksInput == true)
         defer { applyTermsOfServiceDisclaimerState() }
         isShowingLauncherPromo = false
-        isShowingLocalSummariesPromo = false
 
         if let launcherIntroductionShortcut, !omnibarController.termsOfServiceDisclaimer.isRequired {
             usageWarningCardView.updateForLauncherIntroduction(shortcut: launcherIntroductionShortcut)
@@ -1479,21 +1457,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
     private func applyHighUsageNotice() {
         guard let notice = highUsageNoticeSource?.notice else {
-            return applyLocalSummariesPromo()
+            return applyLauncherPromo()
         }
         usageWarningCardView.update(with: notice)
         currentUsageWarningExposure = DuckAiUsageWarningExposure(notice: notice)
-        setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
-    }
-
-    /// Comes before the launcher promo, and is held back the same way once another message has shown.
-    private func applyLocalSummariesPromo() {
-        currentUsageWarningExposure = nil
-        guard !isLauncherPromoDeferred, let promo = localSummariesPromo?.presentation() else {
-            return applyLauncherPromo()
-        }
-        usageWarningCardView.update(with: promo, showsGlyph: false)
-        isShowingLocalSummariesPromo = true
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
     }
 
@@ -1535,7 +1502,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func setUsageWarningVisible(_ visible: Bool) {
-        if visible && !isShowingLauncherPromo && !isShowingLocalSummariesPromo {
+        if visible && !isShowingLauncherPromo {
             isLauncherPromoDeferred = true
         }
         let didChangeVisibility = applyUsageWarningVisibility(visible)
@@ -1693,7 +1660,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // The reservation has to come off too, or the next open sizes the panel as if it were up.
         highUsageNoticeSource?.clear()
         isShowingLauncherPromo = false
-        isShowingLocalSummariesPromo = false
         isLauncherPromoDeferred = false
         didReportLauncherPromoShown = false
         launcherIntroductionShortcut = nil

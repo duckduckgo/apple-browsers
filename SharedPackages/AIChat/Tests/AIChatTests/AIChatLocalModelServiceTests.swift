@@ -199,24 +199,56 @@ final class AIChatLocalModelServiceTests {
         #expect(page.states == [.notSetUp])
     }
 
-    // MARK: - Setup
+    // MARK: - Access
 
     @available(iOS 16, macOS 13, *)
-    @Test("Setup opts in when Apple Intelligence is available", .timeLimit(.minutes(1)))
-    func setUpOptsIn() throws {
-        try service.setUp()
+    @Test("Turn On in the prompt opts in", .timeLimit(.minutes(1)))
+    func allowedOptsIn() async throws {
+        let result = try await service.requestAccess { .allowed }
 
+        #expect(result == .allowed)
         #expect(storage.pageSummariesModel == .appleIntelligence)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Setup is refused when Apple Intelligence isn't available", .timeLimit(.minutes(1)))
-    func setUpRefusedWhenUnavailable() {
-        engine.availability = .modelNotReady
+    @Test("No Thanks or closing the prompt leaves the model off",
+          .timeLimit(.minutes(1)),
+          arguments: [AIChatLocalModelAccessReply.Result.declined, .dismissed])
+    func otherAnswersLeaveItOff(answer: AIChatLocalModelAccessReply.Result) async throws {
+        let result = try await service.requestAccess { answer }
 
-        #expect(throws: AIChatLocalModelRequestError.unavailable) {
-            try self.service.setUp()
+        #expect(result == answer)
+        #expect(storage.pageSummariesModel == .duckAI)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Someone who already turned it on isn't asked again", .timeLimit(.minutes(1)))
+    func optedInIsNotAsked() async throws {
+        service.optIn()
+        var asked = false
+
+        let result = try await service.requestAccess {
+            asked = true
+            return .declined
         }
+
+        #expect(result == .allowed)
+        #expect(!asked)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without Apple Intelligence the request is refused without asking", .timeLimit(.minutes(1)))
+    func refusedWhenUnavailable() async {
+        engine.availability = .modelNotReady
+        var asked = false
+
+        await #expect(throws: AIChatLocalModelRequestError.unavailable) {
+            try await self.service.requestAccess {
+                asked = true
+                return .allowed
+            }
+        }
+        #expect(!asked)
         #expect(storage.pageSummariesModel == .duckAI)
     }
 

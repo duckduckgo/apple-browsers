@@ -931,9 +931,6 @@ extension URL {
 
     static var touchIDAndPassword = URL(string: "x-apple.systempreferences:com.apple.preferences.password")!
 
-    /// The Apple Intelligence & Siri pane.
-    static var appleIntelligenceSystemSettings = URL(string: "x-apple.systempreferences:com.apple.Siri-Settings.extension")!
-
     // MARK: - Blob URLs
 
     var isBlobURL: Bool {

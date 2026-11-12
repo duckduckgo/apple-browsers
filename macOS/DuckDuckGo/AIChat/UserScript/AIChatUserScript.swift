@@ -62,14 +62,18 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let browserTools: AIChatBrowserToolsService?
     private let localModelService: AIChatLocalModelServing?
+    /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
+    private let localModelAccessPrompt: LocalModelAccessAsking?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
          browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
-         localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService) {
+         localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService,
+         localModelAccessPrompt: LocalModelAccessAsking? = nil) {
         self.handler = handler
         self.browserTools = browserTools
         self.localModelService = localModelService
+        self.localModelAccessPrompt = localModelAccessPrompt
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -285,9 +289,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             return { @MainActor [weak self] params, _ in
                 self?.cancelAIChatLocalRun(params: params)
             }
-        case .startAIChatLocalModelSetup:
+        case .requestAIChatLocalModelAccess:
             return { @MainActor [weak self] _, message in
-                try self?.startAIChatLocalModelSetup(message: message)
+                try await self?.requestAIChatLocalModelAccess(message: message)
             }
 
         default:
@@ -328,13 +332,19 @@ extension AIChatUserScript: AIChatLocalModelPushing {
         return [String: String]()
     }
 
+    /// Waits for the user's answer, so the page must not time it out.
     @MainActor
-    func startAIChatLocalModelSetup(message: UserScriptMessage) throws -> Encodable? {
+    func requestAIChatLocalModelAccess(message: UserScriptMessage) async throws -> Encodable? {
         guard let localModelService, isDuckAIPushDestination(message.messageWebView?.url) else {
             throw AIChatLocalModelRequestError.unavailable
         }
-        try localModelService.setUp()
-        return [String: String]()
+        let localModelAccessPrompt = localModelAccessPrompt ?? Application.appDelegate.localModelAccessPrompt
+        let webView = message.messageWebView
+        let modelName = localModelService.model.name
+        let result = try await localModelService.requestAccess {
+            await localModelAccessPrompt.ask(from: webView, modelName: modelName)
+        }
+        return AIChatLocalModelAccessReply(result: result)
     }
 
     @MainActor

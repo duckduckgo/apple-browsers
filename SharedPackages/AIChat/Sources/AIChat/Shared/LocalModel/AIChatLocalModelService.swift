@@ -34,13 +34,14 @@ public protocol AIChatLocalModelPushing: AnyObject {
 /// What the Duck.ai user script needs from the local model.
 @MainActor
 public protocol AIChatLocalModelServing: AnyObject {
+    var model: AIChatLocalModelInfo { get }
     /// The `localModel` config field, or nil when the feature flag is off.
     func config() -> AIChatLocalModelConfig?
     func register(_ pusher: AIChatLocalModelPushing)
     func startRun(_ request: AIChatLocalRunRequest, for pusher: AIChatLocalModelPushing) throws -> AIChatLocalRunStartReply
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing)
     func cancelRuns(ownerID: ObjectIdentifier)
-    func setUp() throws
+    func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result
 }
 
 /// Owns the local-model opt-in state and the runs. App-wide rather than per web view, because only
@@ -195,12 +196,19 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         runQueue.cancelAll(ownerID: ownerID)
     }
 
-    public func setUp() throws {
+    /// `ask` shows the platform's prompt. It isn't called when the user already turned the model on.
+    public func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
         refreshAvailability()
         guard isFeatureEnabled, availability.isAvailable else {
             throw AIChatLocalModelRequestError.unavailable
         }
-        optIn()
+        if isOptedIn { return .allowed }
+
+        let result = await ask()
+        if result == .allowed {
+            optIn()
+        }
+        return result
     }
 
     // MARK: - Pushes

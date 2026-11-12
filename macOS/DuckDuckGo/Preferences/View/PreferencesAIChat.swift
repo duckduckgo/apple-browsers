@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import DesignResourcesKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -126,28 +127,6 @@ extension Preferences {
                     }
                 }
 
-                if model.shouldShowPageSummariesSetting {
-                    PreferencePaneSection {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                TextAndImageMenuItemHeader(UserText.aiChatPageSummariesTitle,
-                                                           image: Image(nsImage: DesignSystemImages.Glyphs.Size16.aiSummary),
-                                                           bottomPadding: 2)
-                                TextMenuItemCaption(UserText.aiChatPageSummariesCaption)
-                            }
-                            Spacer()
-                            Picker("" as String, selection: model.pageSummariesModelBinding) {
-                                Text(UserText.aiChatPageSummariesDuckAIModels).tag(AIChatPageSummariesModel.duckAI)
-                                Divider()
-                                Text(UserText.aiChatPageSummariesAppleIntelligence).tag(AIChatPageSummariesModel.appleIntelligence)
-                            }
-                            .pickerStyle(.menu)
-                            .fixedSize()
-                            .accessibilityIdentifier("Preferences.AIChat.pageSummariesPicker")
-                        }
-                    }
-                }
-
                 PreferencePaneSection(UserText.aiChatShortcutsSectionTitle,
                                       spacing: 6) {
 
@@ -221,6 +200,17 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
+                if model.shouldShowLocalModelAccess {
+                    PreferencePaneSection(UserText.localModelAccessSettingsTitle, spacing: 8) {
+                        TextMenuItemCaption(UserText.localModelAccessSettingsCaption)
+                        LocalModelAccessRow(modelName: model.localModelName,
+                                            isOn: model.isLocalModelOn,
+                                            turnOn: { Task { await model.turnOnLocalModel() } },
+                                            turnOff: model.turnOffLocalModel)
+                    }
+                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
+                }
+
                 // Always shown: the button disables all AI while any is on, then greys out
                 // once everything is disabled, with the caption reinforcing the no-AI state.
                 Divider()
@@ -237,7 +227,46 @@ extension Preferences {
                     }
                 }
             }
+            .onAppear {
+                model.observeLocalModelAvailability()
+            }
         }
+    }
+}
+
+private struct LocalModelAccessRow: View {
+
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    let modelName: String
+    let isOn: Bool
+    let turnOn: () -> Void
+    let turnOff: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AppleIntelligenceGlyph(size: 20)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(modelName)
+                    .font(.system(size: 13))
+                    .foregroundColor(color(.textPrimary))
+                Text(UserText.localModelAccessSettingsAppleIntelligenceCaption)
+                    .font(.system(size: 11))
+                    .foregroundColor(color(.textSecondary))
+            }
+            Spacer()
+            Button(isOn ? UserText.localModelAccessTurnOff : UserText.localModelAccessTurnOn) {
+                isOn ? turnOff() : turnOn()
+            }
+            .accessibilityIdentifier("Preferences.AIChat.localModelAccessButton")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color(.surfaceSecondary)))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(color(.containerBorderPrimary), lineWidth: 1))
+    }
+
+    private func color(_ color: DesignSystemColor) -> Color {
+        Color(designSystemColor: color, palette: themeManager.designColorPalette)
     }
 }
 

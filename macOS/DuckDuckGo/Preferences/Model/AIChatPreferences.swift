@@ -36,7 +36,8 @@ final class AIChatPreferences: ObservableObject {
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
     let promptBarPreferences: PromptBarPreferences
     private let localModelService: AIChatLocalModelService?
-    private let presentAppleIntelligenceSetup: @MainActor () -> Void
+    private let confirmLocalModelTurnOn: @MainActor () async -> Bool
+    private var localModelAvailabilityCancellable: AnyCancellable?
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
@@ -47,7 +48,7 @@ final class AIChatPreferences: ObservableObject {
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
          promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences,
          localModelService: AIChatLocalModelService? = nil,
-         presentAppleIntelligenceSetup: @escaping @MainActor () -> Void = { AppleIntelligenceSetupDialog().show() }) {
+         confirmLocalModelTurnOn: @escaping @MainActor () async -> Bool = { NSAlert.turnOnLocalModelConfirmation().runModal() == .OK }) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
@@ -55,7 +56,7 @@ final class AIChatPreferences: ObservableObject {
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         self.promptBarPreferences = promptBarPreferences
         self.localModelService = localModelService
-        self.presentAppleIntelligenceSetup = presentAppleIntelligenceSetup
+        self.confirmLocalModelTurnOn = confirmLocalModelTurnOn
         pageSummariesModel = storage.pageSummariesModel
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
@@ -72,6 +73,19 @@ final class AIChatPreferences: ObservableObject {
         subscribeToShowInApplicationMenuSettingsChanges()
         subscribeToDuckAIChromeButtonsVisibilityChanges()
         subscribeToSERPSettingsChanges()
+    }
+
+    /// Apple Intelligence can be turned on or off in System Settings while the pane is open. Called by
+    /// the pane, because the service lives on the main actor and this init may not.
+    @MainActor
+    func observeLocalModelAvailability() {
+        guard localModelAvailabilityCancellable == nil else { return }
+        localModelAvailabilityCancellable = localModelService?.availabilityPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
     }
 
     // Refresh the Search Assist / Hide AI Images pickers when the SERP changes them on the web side.
@@ -148,38 +162,30 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
-    /// Hidden on Macs that can never run the model, because the setup dialog couldn't help there.
+    /// Only where Apple Intelligence is ready. Elsewhere a downloaded model will take its place.
     @MainActor
-    var shouldShowPageSummariesSetting: Bool {
+    var shouldShowLocalModelAccess: Bool {
         guard let localModelService, featureFlagger.isFeatureOn(.aiChatLocalModels) else { return false }
-        return localModelService.availability.isSupportedOnDevice
-    }
-
-    /// Choosing Apple Intelligence opts in to local summaries when it's ready, and otherwise asks the
-    /// user to set it up in System Settings, leaving the choice as it was.
-    @MainActor
-    var pageSummariesModelBinding: Binding<AIChatPageSummariesModel> {
-        Binding(
-            get: { self.pageSummariesModel },
-            set: { self.selectPageSummariesModel($0) }
-        )
+        return localModelService.availability.isAvailable
     }
 
     @MainActor
-    func selectPageSummariesModel(_ model: AIChatPageSummariesModel) {
-        switch model {
-        case .duckAI:
-            pageSummariesModel = .duckAI
-        case .appleIntelligence:
-            localModelService?.refreshAvailability()
-            if localModelService?.availability.isAvailable == true {
-                pageSummariesModel = .appleIntelligence
-            } else {
-                // The menu shows the new choice until the view re-reads it.
-                objectWillChange.send()
-                presentAppleIntelligenceSetup()
-            }
-        }
+    var localModelName: String {
+        localModelService?.model.name ?? ""
+    }
+
+    var isLocalModelOn: Bool {
+        pageSummariesModel == .appleIntelligence
+    }
+
+    @MainActor
+    func turnOnLocalModel() async {
+        guard await confirmLocalModelTurnOn() else { return }
+        pageSummariesModel = .appleIntelligence
+    }
+
+    func turnOffLocalModel() {
+        pageSummariesModel = .duckAI
     }
 
     var shouldShowDuckAiSettingsLink: Bool {

@@ -645,7 +645,6 @@ extension MainWindowController: NSWindowDelegate {
             !windowControllersManager.mainWindowControllers.contains(where: { $0 === self })
         }
         guard isWindowClosing,
-              (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose),
               !context.openWindows.contains(where: { $0 === self }) else { return nil }
 
         return webExtensionTabsClosing(with: windowControllersManager)

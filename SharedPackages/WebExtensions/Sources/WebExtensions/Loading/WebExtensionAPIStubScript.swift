@@ -51,7 +51,8 @@ import Foundation
 /// Chrome's enum-like constants WebKit lacks (`scripting.ExecutionWorld`, `tabs.TAB_ID_NONE`,
 /// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
 /// are defined where missing. `chrome.permissions` grants `idle` and `offscreen` itself, since the script
-/// implements them, and asks the app about `privacy`, so the user decides whether an extension gets it.
+/// implements them, and `webRequestAuthProvider`, since WebKit implements `webRequest.onAuthRequired` under
+/// `webRequest`. It asks the app about `privacy`, so the user decides whether an extension gets it.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -83,9 +84,9 @@ public enum WebExtensionAPIStubScript {
     /// returns whether it succeeded.
     public static let keepBackgroundAliveFunctionName = "__ddgKeepBackgroundAlive"
 
-    /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
-    /// without asking the user.
-    static let localPermissionNames = ["idle", "offscreen"]
+    /// Permissions WebKit doesn't know that the script implements itself, or that WebKit covers under
+    /// another name (`webRequestAuthProvider`). They are always granted, without asking the user.
+    static let localPermissionNames = ["idle", "offscreen", "webRequestAuthProvider"]
 
     /// Permissions WebKit doesn't know that the script or the app implements.
     static let providedPermissionNames = Set(localPermissionNames + WebExtensionAppPermission.allCases.map(\.rawValue))

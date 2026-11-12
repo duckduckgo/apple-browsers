@@ -39,10 +39,11 @@ final class AIChatEditHeaderView: UIView {
     weak var delegate: AIChatEditHeaderViewDelegate?
 
     private let preferredHeight: CGFloat?
+    private let usesFloatingAIChrome: Bool
 
     private var isHostEmbedded: Bool { preferredHeight == nil }
 
-    private lazy var cancelPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
+    private lazy var cancelPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2, usesFloatingAIChrome: usesFloatingAIChrome)
 
     private lazy var cancelButton: UIButton = {
         let button = UIButton(type: .system)
@@ -76,8 +77,9 @@ final class AIChatEditHeaderView: UIView {
         return view
     }()
 
-    init(preferredHeight: CGFloat? = Constants.headerHeight) {
+    init(preferredHeight: CGFloat? = Constants.headerHeight, usesFloatingAIChrome: Bool = false) {
         self.preferredHeight = preferredHeight
+        self.usesFloatingAIChrome = usesFloatingAIChrome
         super.init(frame: .zero)
         setupUI()
     }

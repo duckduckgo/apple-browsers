@@ -161,6 +161,32 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.frequency, .uniqueByNameAndParameters)
     }
 
+    func testTimeLimitPixelUsesExpectedNameReasonAndOncePerInstallFrequency() throws {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        for reason in [OnboardingSharedPixelEvent.TimeLimitReason.days, .appOpens] {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(platform: .iOS,
+                                           installTypeProvider: { .newInstall },
+                                           installDateProvider: { now.addingTimeInterval(-8 * 86_400) },
+                                           currentDateProvider: { now },
+                                           pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.timeLimit(reason), source: .default, flow: .default, variants: .init(searchExperience: .duckAISearch))
+
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.namePrefix, .custom("m_ios_"))
+            XCTAssertEqual(event.pixel.name, "onboarding_time-limit")
+            XCTAssertEqual(event.pixel.parameters, ["event": "reached", "value": reason.rawValue])
+            XCTAssertEqual(event.pixel.platformSuffixPolicy, .legacyOmitted)
+            XCTAssertEqual(event.frequency, .legacyInitial)
+            XCTAssertEqual(event.additionalParameters?["installType"], "new")
+            XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "4-10")
+            XCTAssertEqual(event.additionalParameters?["source"], "default")
+            XCTAssertEqual(event.additionalParameters?["flow"], "default")
+            XCTAssertEqual(event.additionalParameters?["variant_search_experience"], "search_plus_duckai-search")
+        }
+    }
+
     func testWhenEventTypeHasNoValueThenValueParameterIsOmitted() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)

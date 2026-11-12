@@ -35,9 +35,13 @@ class BookmarksDebugViewController: UIHostingController<BookmarksDebugRootView> 
 
 struct BookmarksDebugRootView: View {
 
-    @ObservedObject var model = BookmarksDebugViewModel()
+    @StateObject private var model: BookmarksDebugViewModel
     @State private var showingDestructiveAlert = false
     @State private var showingConvertAlert = false
+
+    init(bookmarksDatabase: CoreDataDatabase? = nil) {
+        _model = StateObject(wrappedValue: bookmarksDatabase.map(BookmarksDebugViewModel.init(database:)) ?? BookmarksDebugViewModel())
+    }
 
     @ViewBuilder func toolsSection() -> some View {
         Section {
@@ -87,6 +91,7 @@ struct BookmarksDebugRootView: View {
                 } label: {
                     Text(verbatim: "Delete All")
                 }
+                .accessibilityIdentifier("Debug.Bookmarks.DeleteAll")
             }
         }
         .alert(Text(verbatim: "Operation Complete"), isPresented: $model.showingOperationComplete) {
@@ -95,6 +100,7 @@ struct BookmarksDebugRootView: View {
             } label: {
                 Text(verbatim: "Done")
             }
+            .accessibilityIdentifier("Debug.Bookmarks.ResetComplete")
         } message: {
             Text(model.operationCompleteMessage)
         }
@@ -115,6 +121,7 @@ struct BookmarksDebugRootView: View {
             } label: {
                 Text(verbatim: "Delete")
             }
+            .accessibilityIdentifier("Debug.Bookmarks.ConfirmDelete")
         } message: {
             Text(verbatim: "Are you sure you want to delete all bookmarks? This action cannot be undone.")
         }
@@ -139,15 +146,14 @@ class BookmarksDebugViewModel: ObservableObject {
     let database: CoreDataDatabase
     let context: NSManagedObjectContext
 
-    /// All entities within the bookmarks store must exist under this root level folder. Because this value is used so frequently, it is cached here.
-    private var rootLevelFolderObjectID: NSManagedObjectID?
-
-    /// All favorites must additionally be children of this special folder. Because this value is used so frequently, it is cached here.
-    private var favoritesFolderObjectID: NSManagedObjectID?
-
-    init() {
-        database = BookmarksDatabase.make()
+    convenience init() {
+        let database = BookmarksDatabase.make()
         database.loadStore()
+        self.init(database: database)
+    }
+
+    init(database: CoreDataDatabase) {
+        self.database = database
 
         context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
         bookmarkAttributes = Array(BookmarkEntity.entity(in: context).attributesByName.keys)
@@ -187,77 +193,49 @@ class BookmarksDebugViewModel: ObservableObject {
     }
 
     func deleteAll() {
-        resetBookmarks { [weak self] _ in
-            self?.fetch()
-        }
-    }
+        deleteAllBookmarksAndFavorites { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
 
-    private func cacheReadOnlyTopLevelBookmarksFolders() {
-        context.performAndWait {
-            guard let folder = BookmarkUtils.fetchRootFolder(context) else {
-                fatalError("Top level folder missing")
+                switch result {
+                case .success:
+                    self.fetch()
+                    self.operationCompleteMessage = "Bookmarks deleted"
+                    self.showingOperationComplete = true
+                case .failure(let error):
+                    assertionFailure("Failed to delete bookmarks: \(error)")
+                }
             }
-
-            self.rootLevelFolderObjectID = folder.objectID
-            let favoritesFolderUUID = AppDependencyProvider.shared.appSettings.favoritesDisplayMode.displayedFolder.rawValue
-            self.favoritesFolderObjectID = BookmarkUtils.fetchFavoritesFolder(withUUID: favoritesFolderUUID, in: context)?.objectID
         }
     }
 
-    private func applyChangesAndSave(changes: @escaping (NSManagedObjectContext) throws -> Void,
-                                     onError: @escaping (Error) -> Void,
-                                     onDidSave: @escaping () -> Void) {
-        let maxRetries = 2
-        var iteration = 0
-
+    private func deleteAllBookmarksAndFavorites(completion: @escaping (Result<Void, Error>) -> Void) {
         context.perform { [weak self] in
             guard let context = self?.context else { return }
 
-            var lastError: Error?
-            while iteration < maxRetries {
+            let maximumAttempts = 2
+            for attempt in 0..<maximumAttempts {
                 do {
-                    try changes(context)
-
+                    let fetchRequest = BookmarkEntity.fetchRequest()
+                    let systemFolderIDs = BookmarkEntity.Constants.favoriteFoldersIDs
+                        .union([BookmarkEntity.Constants.rootFolderID])
+                    fetchRequest.predicate = NSPredicate(
+                        format: "NOT %K IN %@",
+                        #keyPath(BookmarkEntity.uuid),
+                        systemFolderIDs)
+                    try context.fetch(fetchRequest).forEach(context.delete)
                     try context.save()
-                    onDidSave()
+                    completion(.success(()))
                     return
                 } catch {
-                    let nsError = error as NSError
-                    if nsError.code == NSManagedObjectMergeError || nsError.code == NSManagedObjectConstraintMergeError {
-                        iteration += 1
-                        lastError = error
-                        context.reset()
-                    } else {
-                        onError(error)
+                    let error = error as NSError
+                    let isMergeConflict = error.code == NSManagedObjectMergeError || error.code == NSManagedObjectConstraintMergeError
+                    guard isMergeConflict, attempt + 1 < maximumAttempts else {
+                        completion(.failure(error))
                         return
                     }
+                    context.reset()
                 }
-            }
-
-            if let lastError = lastError {
-                onError(lastError)
-            }
-        }
-    }
-
-    private func resetBookmarks(completionHandler: @escaping (Error?) -> Void) {
-        applyChangesAndSave { context in
-            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: "BookmarkEntity")
-            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-
-            try context.execute(deleteRequest)
-
-            BookmarkUtils.prepareFoldersStructure(in: context)
-
-        } onError: { error in
-            assertionFailure("Failed to reset bookmarks: \(error)")
-            DispatchQueue.main.async {
-                completionHandler(error)
-            }
-        } onDidSave: { [self] in
-            DispatchQueue.main.async {
-                self.cacheReadOnlyTopLevelBookmarksFolders()
-                completionHandler(nil)
             }
         }
     }

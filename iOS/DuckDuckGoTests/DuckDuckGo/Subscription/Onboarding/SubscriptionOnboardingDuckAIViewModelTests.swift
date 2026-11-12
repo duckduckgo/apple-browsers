@@ -479,7 +479,8 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
                                activeOffers: [],
                                tier: tier,
                                availableChanges: nil,
-                               pendingPlans: nil)
+                               pendingPlans: nil,
+                               planCountry: nil)
     }
 
     private func remoteModel(id: String, accessTier: [String] = []) -> AIChatRemoteModel {

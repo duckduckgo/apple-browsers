@@ -132,6 +132,25 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenHeuristicHitTestFlagChangesThenInitConfigurationFollowsIt() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.heuristicHitTest.rawValue: false])
+        userScript = AutoconsentUserScript(
+            config: config,
+            management: AutoconsentManagement(),
+            preferences: preferences,
+            featureFlagger: featureFlagger
+        )
+
+        let disabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(disabledConfig?["enableHeuristicHitTest"] as? Bool, false)
+
+        featureFlagger.featuresStub = [FeatureFlag.heuristicHitTest.rawValue: true]
+
+        let enabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(enabledConfig?["enableHeuristicHitTest"] as? Bool, true)
+    }
+
+    @MainActor
     func testWhenNativeAutoconsentPixelsFireThenTheyAreCountedPerSiteRank() {
         let management = AutoconsentManagement()
         userScript = AutoconsentUserScript(

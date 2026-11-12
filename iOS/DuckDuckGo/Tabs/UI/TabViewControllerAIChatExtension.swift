@@ -173,3 +173,37 @@ extension TabViewController {
                                                           isLinkActivation: navigationAction.navigationType == .linkActivated)
     }
 }
+
+// MARK: - Pull up past the bottom to start a new chat
+
+extension TabViewController {
+
+    func duckAISwipeNewChatURLDidChange() {
+        installDuckAISwipeNewChatIfNeeded()
+        duckAISwipeNewChat?.webViewURLDidChange()
+    }
+
+    /// A pull only starts at the chat's end, so the chat is kept there as the input changes height.
+    var keepsDuckAIChatEndInView: Bool {
+        DuckAISwipeNewChatFeature(featureFlagger: featureFlagger).isAvailable
+    }
+
+    /// Also called as the tab appears, so the flag turning on reaches a chat that is already open.
+    func installDuckAISwipeNewChatIfNeeded() {
+        let feature = DuckAISwipeNewChatFeature(featureFlagger: featureFlagger)
+        guard isAITab, duckAISwipeNewChat == nil, feature.isAvailable else { return }
+        duckAISwipeNewChat = DuckAISwipeNewChatHandler(
+            webView: webView,
+            hostView: view,
+            isFireTab: tabModel.fireTab,
+            feature: feature,
+            chromeState: { [weak self] in
+                guard let self else { return nil }
+                return self.delegate?.duckAISwipeNewChatChromeState(for: self)
+            },
+            onStartNewChat: { [weak self] in
+                guard let self else { return }
+                self.delegate?.tabDidRequestNewChatBySwipe(self)
+            })
+    }
+}

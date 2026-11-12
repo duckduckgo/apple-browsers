@@ -171,6 +171,8 @@ jobs:
 
     - name: Run UI Tests
       id: run-ui-tests
+      # Leave time to save diagnostics if Xcode or the simulator stops responding.
+      timeout-minutes: ${{ inputs.test == 'BrowsingUITests' && 10 || 25 }}
       env:
         SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
         DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
@@ -197,15 +199,9 @@ jobs:
         2>&1 | tee ui-tests.log \
         | xcbeautify
 
-    - name: Restore simulator logging defaults
-      if: always() && steps.simulator-logging.outputs.configured == 'true'
-      env:
-        SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
-      run: |
-        xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:info,persist:default
-
     - name: Prepare test report
       if: always() && steps.checkout.outcome == 'success'
+      timeout-minutes: 2
       env:
         DESTINATION: ${{ steps.select-simulator.outputs.destination }}
       run: |
@@ -239,17 +235,6 @@ jobs:
         fi
         rm "$invalid"
 
-    # Upload test report as artifact for the test-report job
-    # that publishes a combined report for all test cases
-    - name: Upload test report
-      if: always()
-      uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: "ios-testreport-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}"
-        path: "iOS/reports/*"
-        if-no-files-found: error
-        retention-days: 3
-
     - name: Upload test logs
       if: always()
       uses: ./.github/actions/upload-artifact-with-retry
@@ -261,3 +246,22 @@ jobs:
           iOS/results-summary.json
         if-no-files-found: warn
         retention-days: 7
+
+    # Upload test report as artifact for the test-report job
+    # that publishes a combined report for all test cases
+    - name: Upload test report
+      if: always()
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: "ios-testreport-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}"
+        path: "iOS/reports/*"
+        if-no-files-found: error
+        retention-days: 3
+
+    - name: Restore simulator logging defaults
+      if: always() && steps.simulator-logging.outputs.configured == 'true'
+      timeout-minutes: 1
+      env:
+        SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
+      run: |
+        xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:info,persist:default

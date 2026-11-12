@@ -46,6 +46,11 @@ enum BrowserToolPermissionPromptText {
         case "searchDownloads": DesignSystemImages.Glyphs.Size16.downloads
         case "searchBookmarks": DesignSystemImages.Glyphs.Size16.bookmarks
         case "closeTabs": DesignSystemImages.Glyphs.Size16.tabCloseAlt
+        case "pinTab": DesignSystemImages.Glyphs.Size16.pin
+        case "openTab": DesignSystemImages.Glyphs.Size16.openIn
+        case "bookmarkTab": DesignSystemImages.Glyphs.Size16.bookmarkAdd
+        case "switchToTab": DesignSystemImages.Glyphs.Size16.arrowCircleRight
+        case "highlightInPage": DesignSystemImages.Glyphs.Size16.findInPage
         default: DesignSystemImages.Glyphs.Size16.aiChat
         }
     }

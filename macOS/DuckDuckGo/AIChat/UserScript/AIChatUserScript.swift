@@ -286,6 +286,11 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
         browserTools?.permissionPrompts.withdraw(requestID: requestID)
     }
 
+    @MainActor
+    func indicateClientToolUse(toolName: String) {
+        browserTools?.permissionPrompts.indicateUse(toolName: toolName, chatWebView: webView)
+    }
+
     /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
     /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.
     @MainActor

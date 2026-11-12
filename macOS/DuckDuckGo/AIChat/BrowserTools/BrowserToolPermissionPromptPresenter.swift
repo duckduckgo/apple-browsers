@@ -69,6 +69,14 @@ final class BrowserToolPermissionPromptPresenter {
         return true
     }
 
+    func indicateUse(toolName: String, chatWebView: WKWebView?) {
+        guard let ownerTabID = AIChatTabPickerSource.ownerTabID(for: chatWebView, in: windowControllersManager),
+              let collection = AIChatTabPickerSource.collection(containingTabID: ownerTabID, in: windowControllersManager),
+              !collection.isBurner, shown[ObjectIdentifier(collection)] == nil,
+              let tabBar = windowController(for: collection)?.mainViewController.tabBarViewController else { return }
+        tabBar.showBrowserToolUse(icon: BrowserToolPermissionPromptText.icon(toolName: toolName), title: UserText.browserToolInUse)
+    }
+
     func withdraw(requestID: String) {
         requests.removeAll { $0.prompt.requestID == requestID }
         refresh()

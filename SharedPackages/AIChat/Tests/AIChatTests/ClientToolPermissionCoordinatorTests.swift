@@ -47,6 +47,25 @@ struct ClientToolPermissionCoordinatorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func onlyCallsThatRunWithoutAskingAreIndicated() async throws {
+        let harness = ClientToolTestHarness()
+        harness.otherTool.permissionMode = .auto
+
+        _ = await (try harness.start(callID: "auto", name: "searchHistory")).value
+        #expect(harness.source.indicated == ["searchHistory"])
+
+        let asked = try harness.start(callID: "asked")
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: .always)
+        _ = await asked.value
+        #expect(harness.source.indicated == ["searchHistory"])
+
+        _ = await (try harness.start(callID: "allowed")).value
+        #expect(harness.source.indicated == ["searchHistory", "readTabContent"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.always, .never])
     func queuedCallsReusePersistentDecision(decision: ClientToolPermissionDecision) async throws {
         let harness = ClientToolTestHarness()

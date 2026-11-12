@@ -27,6 +27,12 @@ public protocol ClientToolPermissionPrompting: AnyObject {
 
     /// Closes a prompt whose call finished without an answer: deadline, chat gone or cancelled.
     func withdrawClientToolPermissionPrompt(requestID: String)
+
+    func indicateClientToolUse(toolName: String)
+}
+
+public extension ClientToolPermissionPrompting {
+    func indicateClientToolUse(toolName: String) {}
 }
 
 public struct ClientToolPermissionPrompt: Equatable, Sendable {
@@ -319,6 +325,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
             guard case .queued = entry.state else { continue }
             switch permissions.effectiveState(for: entry.tool) {
             case .allow:
+                entry.prompter?.indicateClientToolUse(toolName: entry.tool.name)
                 grant(entry)
             case .deny:
                 finish(requestID, error: .denied)

@@ -107,11 +107,16 @@ final class ClientToolTestTool: BrowserTool {
 final class ClientToolTestSource: ClientToolPermissionPrompting {
     var prompts: [ClientToolPermissionPrompt] = []
     var withdrawn: [String] = []
+    var indicated: [String] = []
     var onPush: ((ClientToolPermissionPrompt) -> Bool)?
     private var waiters: [(Int, CheckedContinuation<Void, Never>)] = []
 
     func withdrawClientToolPermissionPrompt(requestID: String) {
         withdrawn.append(requestID)
+    }
+
+    func indicateClientToolUse(toolName: String) {
+        indicated.append(toolName)
     }
 
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {

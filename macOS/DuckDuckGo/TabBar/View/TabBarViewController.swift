@@ -47,6 +47,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         static let duckAISidebarDetachedImageName = NSImage.Name("Sidebar-Detached-16")
         static let duckAIControlSpacingBeforeFireButton: CGFloat = 5
         static let browserToolPermissionSlideDuration: TimeInterval = 0.2
+        static let browserToolUseDuration: TimeInterval = 1.5
+        static let duckAIChromeHidingDelay: TimeInterval = 5
     }
 
     private let standardTabHeight: CGFloat
@@ -210,6 +212,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var browserToolPermissionAction: ((NSView) -> Void)?
     private var browserToolPermissionIcon: NSImage?
     private var browserToolPermissionHover: AnyCancellable?
+    private var browserToolUseHide: DispatchWorkItem?
+    private var duckAIChromeHidingTimer: Timer?
+    private var wasUsingBrowserTools = false
     private let browserToolPermissionCloseIcon: NSImage = {
         let icon = DesignSystemImages.Glyphs.Size16.close
         icon.isTemplate = true
@@ -936,17 +941,37 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Duck.ai browser tool permission
 
     func showBrowserToolPermissionButton(icon: NSImage, title: String, action: @escaping (NSView) -> Void, shown: @escaping (NSView) -> Void) {
+        browserToolUseHide?.cancel()
+        browserToolUseHide = nil
         browserToolPermissionAction = action
+        revealBrowserToolButton(icon: icon, title: title) { [weak self] button in
+            self?.styleBrowserToolPermissionButton(button, filled: true)
+            shown(button)
+        }
+    }
+
+    func showBrowserToolUse(icon: NSImage, title: String) {
+        guard browserToolPermissionAction == nil else { return }
+        browserToolUseHide?.cancel()
+        let hide = DispatchWorkItem { [weak self] in
+            self?.browserToolUseHide = nil
+            self?.hideBrowserToolPermissionButton()
+        }
+        browserToolUseHide = hide
+        revealBrowserToolButton(icon: icon, title: title) { _ in }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.browserToolUseDuration, execute: hide)
+    }
+
+    private func revealBrowserToolButton(icon: NSImage, title: String, revealed: @escaping (MouseOverButton) -> Void) {
         applyDuckAIChromeButtonVisibility()
         let button = browserToolPermissionButton ?? makeBrowserToolPermissionButton()
         icon.isTemplate = true
         browserToolPermissionIcon = icon
-        button.image = button.isMouseOver ? browserToolPermissionCloseIcon : icon
+        button.image = button.isMouseOver && browserToolPermissionAction != nil ? browserToolPermissionCloseIcon : icon
         button.toolTip = title
         button.setAccessibilityTitle(title)
         guard button.isHidden || button.alphaValue == 0 || browserToolPermissionButtonWidth?.constant == 0 else {
-            styleBrowserToolPermissionButton(button, filled: true)
-            shown(button)
+            revealed(button)
             return
         }
         styleBrowserToolPermissionButton(button, filled: false)
@@ -960,10 +985,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             browserToolPermissionButtonWidth?.animator().constant = theme.tabBarButtonSize - 2
             button.animator().alphaValue = 1
             rightSideStackView.layoutSubtreeIfNeeded()
-        }, completionHandler: { [weak self, weak button] in
-            guard let self, let button, !button.isHidden else { return }
-            styleBrowserToolPermissionButton(button, filled: true)
-            shown(button)
+        }, completionHandler: { [weak button] in
+            guard let button, !button.isHidden else { return }
+            revealed(button)
         })
     }
 
@@ -977,7 +1001,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             button.animator().alphaValue = 0
             rightSideStackView.layoutSubtreeIfNeeded()
         }, completionHandler: { [weak self, weak button] in
-            guard let self, browserToolPermissionAction == nil else { return }
+            guard let self, browserToolPermissionAction == nil, browserToolUseHide == nil else { return }
             button?.isHidden = true
             applyDuckAIChromeButtonVisibility()
         })
@@ -1020,7 +1044,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         browserToolPermissionHover = button.publisher(for: \.isMouseOver)
             .sink { [weak self, weak button] isMouseOver in
                 guard let self, let button else { return }
-                button.image = isMouseOver ? browserToolPermissionCloseIcon : browserToolPermissionIcon
+                button.image = isMouseOver && browserToolPermissionAction != nil ? browserToolPermissionCloseIcon : browserToolPermissionIcon
             }
 
         browserToolPermissionButton = button
@@ -1062,17 +1086,33 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func applyDuckAIChromeButtonVisibility() {
         applyDuckAIChromeUserButtonVisibility()
         guard let container = duckAIChromeControlContainer, let titleButton = duckAIChromeTitleButton else { return }
-        let showsForPermission = browserToolPermissionAction != nil && container.isHidden
-        titleButton.isEnabled = !showsForPermission
-        titleButton.alphaValue = showsForPermission ? 0.4 : 1
-        guard showsForPermission else { return }
+        let isUsingTools = browserToolPermissionAction != nil || browserToolUseHide != nil
+        if isUsingTools {
+            invalidateDuckAIChromeHidingTimer()
+        } else if wasUsingBrowserTools {
+            duckAIChromeHidingTimer = Timer.scheduledTimer(withTimeInterval: Constants.duckAIChromeHidingDelay, repeats: false) { [weak self] _ in
+                self?.invalidateDuckAIChromeHidingTimer()
+                self?.applyDuckAIChromeButtonVisibility()
+            }
+        }
+        wasUsingBrowserTools = isUsingTools
+        let showsForTools = (isUsingTools || duckAIChromeHidingTimer != nil) && container.isHidden
+        let isDisabled = isUsingTools && container.isHidden
+        titleButton.isEnabled = !isDisabled
+        titleButton.alphaValue = isDisabled ? 0.4 : 1
+        guard showsForTools else { return }
         container.isHidden = false
-        container.menu = nil
+        container.menu = isUsingTools ? nil : duckAIChromeContextMenu
         titleButton.isHidden = false
         duckAIChromeSidebarButton?.isHidden = true
         duckAIChromeDivider?.isHidden = true
         titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
         container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+    }
+
+    private func invalidateDuckAIChromeHidingTimer() {
+        duckAIChromeHidingTimer?.invalidate()
+        duckAIChromeHidingTimer = nil
     }
 
     private func applyDuckAIChromeUserButtonVisibility() {
@@ -1139,6 +1179,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         duckAIChromeButtonsVisibilityCancellable = NotificationCenter.default.publisher(for: .duckAIChromeButtonsVisibilityChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.invalidateDuckAIChromeHidingTimer()
                 self?.refreshDuckAIChromeButtonsVisibility()
             }
     }
@@ -1241,6 +1282,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         browserToolPermissionButton = nil
         browserToolPermissionButtonWidth = nil
         browserToolPermissionHover = nil
+        browserToolUseHide?.cancel()
+        browserToolUseHide = nil
+        invalidateDuckAIChromeHidingTimer()
         self.aiChatButtonHoverCancellable = nil
         self.duckAIChromeDividerInsetConstraint = nil
         self.duckAIChromeDividerFullConstraint = nil

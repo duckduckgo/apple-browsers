@@ -247,8 +247,13 @@ final class AppLaunchUITests: UITestCase {
         start.press(forDuration: 0.1, thenDragTo: end)
         XCTAssertTrue(slider.waitForNonExistence(timeout: UITestTimeouts.navigation))
         XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        let tabSwitcherButton = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        if !tabSwitcherButton.isHittableInAppWindow(in: app) {
+            // Manual Fire lets users dismiss its temporary overlay and continue browsing.
+            app.browserWindow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
         XCTAssertTrue(
-            app.buttons["Browser.Toolbar.Button.TabSwitcher"].waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
+            tabSwitcherButton.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
             "The tab switcher did not become tappable after clearing tabs and data.")
         app.openTabSwitcher()
         let tabSwitcher = app.collectionViews["TabSwitcher.Collection.Tabs"]

@@ -83,6 +83,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let oneHeading = "Floating UI Test Page One"
         static let twoHeading = "Floating UI Test Page Two"
         static let longHeading = "Floating UI Long Page"
+        static let findKeyboardHeading = "Find Keyboard Test Page"
         static let fixedFooterHeading = "Floating UI Fixed Footer"
         static let scrollEdgeHeading = "Floating UI Scroll Edge"
         static let edgeHeading = "Floating UI Edge Controls"
@@ -832,6 +833,466 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["New Tab"].exists)
     }
 
+    func verifyFindInPageGlass() {
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true"])
+        openPage(path: "/page-one", heading: Page.oneHeading)
+
+        element(withIdentifier: AccessibilityID.toolbarMenu).tap()
+        let findAction = app.buttons["Find in Page"]
+        XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
+        findAction.tap()
+
+        let findField = app.searchFields["Find in Page"]
+        XCTAssertTrue(findField.waitForHittable(timeout: timeout))
+        findField.typeText("Floating")
+        XCTAssertTrue(app.staticTexts["1 of 1"].waitForExistence(timeout: timeout))
+        let doneButton = app.buttons["Done"]
+        XCTAssertTrue(doneButton.waitForHittable(timeout: timeout))
+        XCTAssertLessThan(doneButton.frame.maxX, findField.frame.minX)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Find in Page - Floating UI"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        doneButton.tap()
+        XCTAssertTrue(findField.waitForNonExistence(timeout: timeout))
+    }
+
+    func verifyDelegateSessionLifecycle() throws {
+        guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true", "-ff.legacyFindInPageUIWithSystemFindEngine", "true"])
+        openPage(path: "/delegate-find", heading: "Delegate Find Fixture")
+        webView.buttons["Expand all sections"].tap()
+        XCTAssertTrue(webView.staticTexts["Expanded content stays open"].waitForExistence(timeout: timeout))
+        openFindFromMenu()
+        let field = app.searchFields["FindInPage.Query"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        expectDelegateCount(nil)
+        field.typeText("needle")
+        expectDelegateCount("1 of 3")
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+        }
+        captureFind("Delegate session - engine highlights including iframe")
+
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            app.typeKey("g", modifierFlags: .command)
+        } else {
+            app.buttons["Find Next"].tap()
+        }
+        expectDelegateCount("2 of 3")
+        app.buttons["Find Next"].tap()
+        expectDelegateCount("3 of 3")
+        captureFind("Delegate session - iframe result")
+        app.buttons["Find Next"].tap()
+        expectDelegateCount("1 of 3")
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            app.typeKey("g", modifierFlags: [.command, .shift])
+        } else {
+            app.buttons["Find Previous"].tap()
+        }
+        expectDelegateCount("3 of 3")
+
+        app.buttons["FindInPage.Clear"].tap()
+        field.typeText("absent-result")
+        expectDelegateCount("0 of 0")
+        app.buttons["FindInPage.Clear"].tap()
+        field.typeText("needlezz" + String(repeating: XCUIKeyboardKey.delete.rawValue, count: 2))
+        expectDelegateCount("1 of 3")
+
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.4))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.25))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(field.exists)
+        XCTAssertFalse(element(withIdentifier: AccessibilityID.toolbarMenu).isHittable)
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        expectDelegateCount("1 of 3")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(waitUntil(timeout: timeout) { self.app.frame.width > self.app.frame.height })
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        XCTAssertLessThanOrEqual(field.frame.maxX, app.frame.maxX)
+        app.buttons["Find Next"].tap()
+        expectDelegateCount("2 of 3")
+        let secondMatch = webView.staticTexts["needle second match"]
+        XCTAssertTrue(waitUntil(timeout: timeout) { secondMatch.exists && secondMatch.frame.maxY < field.frame.minY - 24 })
+        captureFind("Delegate session - compact landscape")
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(waitUntil(timeout: timeout) { self.app.frame.height > self.app.frame.width })
+        app.buttons["Done"].tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        captureFind("Delegate session - ended without overlay")
+
+        openFindFromMenu()
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        XCTAssertEqual(field.value as? String, "needle")
+        expectDelegateCount("1 of 3")
+        app.buttons["FindInPage.Clear"].tap()
+        expectDelegateCount(nil)
+        app.buttons["Done"].tap()
+        openFindFromMenu()
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        XCTAssertEqual(field.value as? String, "")
+        expectDelegateCount(nil)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            app.typeKey("f", modifierFlags: .command)
+            expectDelegateCount(nil)
+        }
+        app.buttons["Done"].tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        captureFind("Delegate session - cleared and ended")
+        XCTAssertTrue(webView.staticTexts["Expanded content stays open"].exists)
+    }
+
+    func verifyDelegateSessionBottomEdgeWithClassicUI() throws {
+        guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true", "-ff.legacyFindInPageUIWithSystemFindEngine", "true",
+                                        "-ff.floatingUIiOS26", "false", "-ff.floatingUIiOS27", "false"])
+        openPage(path: "/find-bottom-edge", heading: "Bottom edge Find fixture")
+        openFindFromMenu()
+        let field = app.searchFields["Find in Page"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("edgeword")
+        XCTAssertTrue(app.staticTexts["1 of 2"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+        app.buttons["Find Next"].tap()
+        XCTAssertTrue(app.staticTexts["2 of 2"].waitForExistence(timeout: timeout))
+        let finalMatch = webView.staticTexts["edgeword final"]
+        XCTAssertTrue(waitUntil(timeout: timeout) { finalMatch.frame.maxY < field.frame.minY - 24 })
+        XCTAssertFalse(app.searchFields["find.searchField"].firstMatch.exists)
+        captureFind("Classic Find - bottom match above keyboard")
+
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
+        app.buttons["Find Previous"].tap()
+        app.buttons["Find Next"].tap()
+        XCTAssertTrue(app.staticTexts["2 of 2"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(waitUntil(timeout: timeout) { finalMatch.frame.maxY < field.frame.minY - 24 })
+        captureFind("Classic Find - bottom match above controls")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        captureFind("Classic Find - dismissed")
+    }
+
+    func verifyLegacyFindDoesNotUndoKeyboardDismissalScroll() {
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true"])
+        openPage(path: "/find-bottom-edge", heading: "Bottom edge Find fixture")
+        openFindFromMenu()
+        let field = app.searchFields["Find in Page"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("edgeword")
+        XCTAssertTrue(app.staticTexts["1 of 2"].waitForExistence(timeout: timeout))
+        app.buttons["Find Next"].tap()
+        XCTAssertTrue(app.staticTexts["2 of 2"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+
+        let finalMatch = webView.staticTexts["edgeword final"]
+        let initialY = finalMatch.frame.minY
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(waitUntil(timeout: timeout) { finalMatch.frame.minY > initialY + 30 })
+        let afterDragY = finalMatch.frame.minY
+        Thread.sleep(forTimeInterval: 0.7)
+        XCTAssertGreaterThanOrEqual(finalMatch.frame.minY, afterDragY - 10)
+        XCTAssertFalse(element(withIdentifier: AccessibilityID.toolbarMenu).isHittable)
+        captureFind("Legacy Find - user scroll preserved after keyboard dismissal")
+        app.buttons["Done"].tap()
+    }
+
+    func verifyCustomFindAddressShortcut(usesSystemEngine: Bool) {
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true",
+                                        "-ff.legacyFindInPageUIWithSystemFindEngine", String(usesSystemEngine)])
+        openPage(path: "/find-bottom-edge", heading: "Bottom edge Find fixture")
+        openFindFromMenu()
+        let field = app.searchFields["Find in Page"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("edgeword")
+        XCTAssertTrue(app.staticTexts["1 of 2"].waitForExistence(timeout: timeout))
+        app.typeKey("l", modifierFlags: .command)
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        searchField.typeText(serverBaseURL + "/page-two")
+        captureFind("Command-L - visible address input")
+        searchField.typeText(XCUIKeyboardKey.return.rawValue)
+        XCTAssertTrue(webView.staticTexts[Page.twoHeading].waitForExistence(timeout: timeout))
+    }
+
+    func verifyDelegateSessionTabAndNavigation() throws {
+        guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true", "-ff.legacyFindInPageUIWithSystemFindEngine", "true"])
+        openPage(path: "/delegate-find", heading: "Delegate Find Fixture")
+        webView.buttons["Expand all sections"].tap()
+        openFindFromMenu()
+        let field = app.searchFields["FindInPage.Query"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("needle")
+        expectDelegateCount("1 of 3")
+        app.typeKey("t", modifierFlags: .command)
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        openPage(path: "/page-one", heading: Page.oneHeading)
+        openFindFromMenu()
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        XCTAssertEqual(field.value as? String, "")
+        field.typeText("Floating")
+        expectDelegateCount("1 of 1")
+        app.typeKey("1", modifierFlags: .command)
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        openFindFromMenu()
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        XCTAssertEqual(field.value as? String, "needle")
+        expectDelegateCount("1 of 3")
+        app.typeKey("r", modifierFlags: .command)
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(webView.staticTexts["Delegate Find Fixture"].waitForExistence(timeout: timeout))
+        captureFind("Delegate session - reloaded without overlay")
+        webView.buttons["Expand all sections"].tap()
+        openFindFromMenu()
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        XCTAssertEqual(field.value as? String, "needle")
+        expectDelegateCount("1 of 3")
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+        webView.links["Navigate away"].tap()
+        XCTAssertTrue(webView.staticTexts[Page.twoHeading].waitForExistence(timeout: timeout))
+        XCTAssertFalse(field.exists)
+    }
+
+    func verifyNativeFindWithoutExperiment() {
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "false", "-ff.legacyFindInPageUIWithSystemFindEngine", "true"])
+        openPage(path: "/delegate-find", heading: "Delegate Find Fixture")
+        webView.buttons["Expand all sections"].tap()
+        openFindFromMenu()
+        let nativeField = app.searchFields["find.searchField"].firstMatch
+        XCTAssertTrue(nativeField.waitForHittable(timeout: timeout))
+        nativeField.typeText("needle")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'of 3'")).firstMatch.waitForExistence(timeout: timeout))
+        XCTAssertFalse(app.searchFields["FindInPage.Query"].exists)
+        captureFind("Native Find - experiment disabled")
+        app.buttons["find.doneButton"].tap()
+        XCTAssertTrue(nativeField.waitForNonExistence(timeout: timeout))
+    }
+
+    func verifyLiveFindInvestigation(delegateSession: Bool) throws {
+        guard ProcessInfo.processInfo.environment["FIND_ENGINE_LIVE_TEST"] == "1" else {
+            throw XCTSkip("Opt-in live device investigation")
+        }
+        guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
+        app.terminate()
+        let arguments = [
+            "-ff.legacyFindInPage", String(delegateSession),
+            "-ff.legacyFindInPageUIWithSystemFindEngine", String(delegateSession)
+        ]
+        launchApp(additionalArguments: arguments)
+        app.typeKey("t", modifierFlags: .command)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        searchField.tap()
+        searchField.typeText("https://duckduckgo.com/whatsnew\r")
+        let quarter = webView.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Q3 2026'")).firstMatch
+        XCTAssertTrue(quarter.waitForExistence(timeout: 60))
+
+        searchField.tap()
+        let url = searchField.value as? String ?? "unknown"
+        let evidence = XCTAttachment(string: "Requested: https://duckduckgo.com/whatsnew\nAddress field after load: \(url)\nOS: \(UIDevice.current.systemVersion)")
+        evidence.name = "Live Find - URL and runtime"
+        evidence.lifetime = .keepAlways
+        add(evidence)
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+        for section in ["Q2 2026", "Q1 2026", "Q4 2025", "Q3 2025", "Q2 2025", "Q1 2025"] {
+            let button = webView.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", section)).firstMatch
+            XCTAssertTrue(button.waitForExistence(timeout: timeout), section)
+            button.tap()
+        }
+        for year in ["2024", "2023", "2022"] {
+            let yearButton = webView.buttons.matching(NSPredicate(format: "label == %@", year)).firstMatch
+            XCTAssertTrue(yearButton.waitForExistence(timeout: timeout))
+            yearButton.tap()
+            let firstQuarter = webView.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Q4 \(year)")).firstMatch
+            XCTAssertTrue(firstQuarter.waitForExistence(timeout: timeout))
+            for quarter in [3, 2, 1] {
+                let button = webView.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Q\(quarter) \(year)")).firstMatch
+                if button.exists { button.tap() }
+            }
+        }
+        let expanded = XCTAttachment(string: webView.debugDescription)
+        expanded.name = "Live Find - expansion accessibility state"
+        expanded.lifetime = .keepAlways
+        add(expanded)
+        captureFind("Live Find - all quarterly sections expanded")
+
+        openFindFromMenu()
+        let identifier = delegateSession ? "FindInPage.Query" : "find.searchField"
+        let field = app.searchFields[identifier].firstMatch
+        let doneButton = app.buttons[delegateSession ? "Done" : "find.doneButton"].firstMatch
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("privacy")
+        if delegateSession {
+            let count = app.staticTexts["FindInPage.ResultCount"]
+            XCTAssertTrue(waitUntil(timeout: 30) { count.label.hasPrefix("1 of ") })
+            XCTAssertFalse(app.searchFields["find.searchField"].firstMatch.exists)
+        } else {
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'of '")).firstMatch.waitForExistence(timeout: 30))
+        }
+        captureFind(delegateSession ? "Live delegate session - highlights" : "Live native Find - highlights")
+        doneButton.tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        captureFind(delegateSession ? "Live delegate session - ended" : "Live native Find - ended")
+        openFindFromMenu()
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        XCTAssertEqual(field.value as? String, "privacy")
+        let clear = delegateSession ? app.buttons["FindInPage.Clear"] : field.buttons["Clear text"]
+        XCTAssertTrue(clear.waitForHittable(timeout: timeout))
+        clear.tap()
+        captureFind(delegateSession ? "Live delegate session - cleared" : "Live native Find - cleared")
+        doneButton.tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        openFindFromMenu()
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        let value = field.value as? String ?? ""
+        XCTAssertTrue(value.isEmpty || value == field.placeholderValue)
+        captureFind(delegateSession ? "Live delegate session - reopened empty" : "Live native Find - reopened empty")
+        doneButton.tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+    }
+
+    private func openFindFromMenu() {
+        let menuID = UIDevice.current.userInterfaceIdiom == .pad ? "Browser.OmniBar.Button.BrowsingMenu" : AccessibilityID.toolbarMenu
+        let menu = element(withIdentifier: menuID)
+        if !menu.isHittable { webView.swipeDown() }
+        XCTAssertTrue(menu.waitForHittable(timeout: timeout))
+        menu.tap()
+        let action = app.buttons["Find in Page"]
+        XCTAssertTrue(action.waitForHittable(timeout: timeout))
+        action.tap()
+    }
+
+    private func expectDelegateCount(_ count: String?, file: StaticString = #filePath, line: UInt = #line) {
+        let counter = app.staticTexts["FindInPage.ResultCount"]
+        if let count {
+            XCTAssertTrue(waitUntil(timeout: timeout) { counter.exists && counter.label == count }, counter.label, file: file, line: line)
+        } else {
+            XCTAssertTrue(counter.waitForNonExistence(timeout: timeout), file: file, line: line)
+        }
+        XCTAssertFalse(app.searchFields["find.searchField"].firstMatch.exists, file: file, line: line)
+        XCTAssertTrue(app.staticTexts["FindInPage.ExperimentStatus"].label.contains("nativeUI=false"), file: file, line: line)
+    }
+
+    private func captureFind(_ name: String) {
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    func verifyFindResultClearsKeyboard(floatingUIEnabled: Bool) {
+        app.terminate()
+        launchApp(additionalArguments: [
+            "-ff.floatingUIiOS26", String(floatingUIEnabled),
+            "-ff.floatingUIiOS27", String(floatingUIEnabled),
+            "-ff.legacyFindInPage", "true",
+        ])
+        openPage(path: "/find-keyboard", heading: Page.findKeyboardHeading)
+
+        element(withIdentifier: AccessibilityID.toolbarMenu).tap()
+        let findAction = app.buttons["Find in Page"]
+        XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
+        findAction.tap()
+
+        let findField = app.searchFields["Find in Page"]
+        XCTAssertTrue(findField.waitForHittable(timeout: timeout))
+        let browserMenu = element(withIdentifier: AccessibilityID.toolbarMenu)
+        XCTAssertTrue(browserMenu.waitForNotHittable(timeout: timeout))
+        findField.typeText("hackers")
+        XCTAssertTrue(app.staticTexts["1 of 3"].waitForExistence(timeout: timeout))
+        let nextButton = app.buttons["Find Next"]
+        XCTAssertTrue(nextButton.waitForHittable(timeout: timeout))
+        nextButton.tap()
+        nextButton.tap()
+        let resultCount = app.staticTexts["3 of 3"]
+        XCTAssertTrue(resultCount.waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+
+        if floatingUIEnabled {
+            let clearButton = app.buttons["FindInPage.Clear"]
+            XCTAssertTrue(clearButton.waitForHittable(timeout: timeout))
+            XCTAssertLessThan(resultCount.frame.maxX, clearButton.frame.minX)
+        }
+
+        let matches = webView.staticTexts.matching(identifier: "hackers")
+        XCTAssertEqual(matches.count, 3)
+        let selectedMatch = matches.element(boundBy: 2)
+        XCTAssertTrue(waitUntil(timeout: timeout) { selectedMatch.frame.maxY < findField.frame.minY - 8 })
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Find in Page - Keyboard Clearance"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        let initialMatchY = selectedMatch.frame.minY
+        let dragStart = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+        let dragEnd = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.3))
+        dragStart.press(forDuration: 0.1, thenDragTo: dragEnd)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(findField.exists)
+        XCTAssertTrue(waitUntil(timeout: timeout) { selectedMatch.frame.minY < initialMatchY - 10 })
+        XCTAssertTrue(browserMenu.waitForNotHittable(timeout: timeout))
+        if floatingUIEnabled {
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.domainCapsule).waitForNotHittable(timeout: timeout))
+        }
+
+        let dismissedScreenshot = XCTAttachment(screenshot: app.screenshot())
+        dismissedScreenshot.name = "Find in Page - Keyboard Dismissed"
+        dismissedScreenshot.lifetime = .keepAlways
+        add(dismissedScreenshot)
+
+        if floatingUIEnabled {
+            app.buttons["FindInPage.Clear"].tap()
+            XCTAssertEqual(findField.value as? String, "")
+            XCTAssertFalse(resultCount.exists)
+        }
+
+        app.buttons["Done"].tap()
+        XCTAssertTrue(browserMenu.waitForHittable(timeout: timeout))
+    }
+
+    func verifyIPadFindInPageUsesGlassWithFloatingFlagOff() {
+        app.terminate()
+        launchApp(additionalArguments: [
+            "-ff.floatingUIiOS26", "false",
+            "-ff.floatingUIiOS27", "false",
+            "-ff.legacyFindInPage", "true",
+        ])
+        openPage(path: "/page-one", heading: Page.oneHeading)
+
+        element(withIdentifier: "Browser.OmniBar.Button.BrowsingMenu").tap()
+        let findAction = app.buttons["Find in Page"]
+        XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
+        findAction.tap()
+
+        let findField = app.searchFields["Find in Page"]
+        XCTAssertTrue(findField.waitForHittable(timeout: timeout))
+        findField.typeText("Floating")
+        XCTAssertTrue(app.staticTexts["1 of 1"].waitForExistence(timeout: timeout))
+        let clearButton = app.buttons["FindInPage.Clear"]
+        XCTAssertTrue(clearButton.waitForHittable(timeout: timeout))
+        XCTAssertLessThan(app.staticTexts["1 of 1"].frame.maxX, clearButton.frame.minX)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Find in Page - iPad Glass With Floating Flag Off"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func verifyDefaultCustomizableFireButton() {
         let fireButton = element(withIdentifier: AccessibilityID.toolbarFire)
         XCTAssertTrue(fireButton.waitForHittable(timeout: timeout))
@@ -934,6 +1395,9 @@ class FloatingUIXCUITestCase: XCTestCase {
                 "-aichat.settings.showAIChatExperimentalSearchInput", String(toggleEnabled),
             ]
         }
+        for flag in ["-ff.legacyFindInPage", "-ff.legacyFindInPageUIWithSystemFindEngine"] where !additionalArguments.contains(flag) {
+            app.launchArguments += [flag, "false"]
+        }
         app.launchArguments += additionalArguments
         app.launchEnvironment = [
             "UITEST_MODE": "1",
@@ -943,9 +1407,11 @@ class FloatingUIXCUITestCase: XCTestCase {
         app.launch()
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout), "Browser chrome did not become ready.")
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarFire).exists)
-        XCTAssertTrue(tabSwitcherButton.exists)
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarMenu).exists)
+        if UIDevice.current.userInterfaceIdiom != .pad {
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarFire).exists)
+            XCTAssertTrue(tabSwitcherButton.exists)
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarMenu).exists)
+        }
         let dismissButton = element(withIdentifier: AccessibilityID.utiDismiss)
         if dismissButton.exists, dismissButton.isHittable {
             dismissButton.tap()
@@ -1122,7 +1588,9 @@ class FloatingUIXCUITestCase: XCTestCase {
 
     private func openPage(path: String, heading: String, file: StaticString = #filePath, line: UInt = #line) {
         searchField.tap()
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout), file: file, line: line)
+        if UIDevice.current.userInterfaceIdiom != .pad {
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout), file: file, line: line)
+        }
         let activeSearchField = searchField
         XCTAssertTrue(activeSearchField.waitForHittable(timeout: timeout), file: file, line: line)
         activeSearchField.typeText("\(serverBaseURL)\(path)\r")
@@ -1147,6 +1615,32 @@ class FloatingUIXCUITestCase: XCTestCase {
         }
         server["/long-page"] = { _ in
             .ok(.html(Self.longPageHTML))
+        }
+        server["/find-keyboard"] = { _ in
+            .ok(.html(Self.findKeyboardHTML))
+        }
+        server["/delegate-find"] = { _ in
+            .ok(.html("""
+                <meta name="viewport" content="width=device-width,initial-scale=1">
+                <style>body { font: 22px/1.5 -apple-system; padding: 12px; } iframe { height: 130px; width: 95%; }</style>
+                <h1>Delegate Find Fixture</h1>
+                <button onclick="document.querySelectorAll('details').forEach(section => section.open = true)">Expand all sections</button>
+                <details><summary>Article section</summary><p>Expanded content stays open</p>
+                <p>needle first match</p><p>needle second match</p>
+                <iframe title="Same-origin frame" src="/delegate-find-frame"></iframe></details>
+                <p><a href="/page-two">Navigate away</a></p><div style="height:1200px"></div>
+                """))
+        }
+        server["/find-bottom-edge"] = { _ in
+            .ok(.html("""
+                <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+                <style>html,body { margin:0; padding:0 } body { font:24px/30px -apple-system; padding-bottom:48px } p { margin:0 }</style>
+                <h1>Bottom edge Find fixture</h1><p>edgeword first</p><div style="height:2200px"></div>
+                <p style="margin-left:240px">edgeword final</p>
+                """))
+        }
+        server["/delegate-find-frame"] = { _ in
+            .ok(.html("<style>body { font: 22px -apple-system; }</style><p>needle third match inside iframe</p>"))
         }
         server["/fixed-footer"] = { _ in
             .ok(.html(Self.fixedFooterHTML))
@@ -1200,6 +1694,22 @@ class FloatingUIXCUITestCase: XCTestCase {
     <html lang="en">
       <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page Two</title></head>
       <body><h1>\(Page.twoHeading)</h1><a href="/page-one">Previous page</a></body>
+    </html>
+    """
+
+    private static let findKeyboardHTML = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Find Keyboard Test</title>
+        <style>body { font: 24px/1.5 -apple-system; } p { margin: 320px 0; }</style>
+      </head>
+      <body>
+        <h1>\(Page.findKeyboardHeading)</h1>
+        <p>hackers</p><p>hackers</p><p>hackers</p>
+        <div style="height: 1200px"></div>
+      </body>
     </html>
     """
 
@@ -1374,6 +1884,11 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
 
     override var barPosition: FloatingUIBarPosition { .top }
 
+    func testDelegateSessionBottomEdgeWithClassicUI() throws { try verifyDelegateSessionBottomEdgeWithClassicUI() }
+    func testDelegateSessionAddressShortcut() { verifyCustomFindAddressShortcut(usesSystemEngine: true) }
+    func testLegacyFindAddressShortcut() { verifyCustomFindAddressShortcut(usesSystemEngine: false) }
+    func testLegacyFindDoesNotUndoKeyboardDismissalScroll() { verifyLegacyFindDoesNotUndoKeyboardDismissalScroll() }
+
     func testExistingSearchReplacementWithToggleEnabled() { verifyExistingSearchReplacement(toggleEnabled: true) }
     func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }
 
@@ -1385,6 +1900,13 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testAddressBarButtonSpacingAfterRotation() { verifyAddressBarButtonSpacingAfterRotation() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
+    func testFindInPageGlass() { verifyFindInPageGlass() }
+    func testDelegateSessionLifecycle() throws { try verifyDelegateSessionLifecycle() }
+    func testDelegateSessionTabAndNavigation() throws { try verifyDelegateSessionTabAndNavigation() }
+    func testNativeFindWithoutExperiment() { verifyNativeFindWithoutExperiment() }
+    func testLiveDelegateFindInvestigation() throws { try verifyLiveFindInvestigation(delegateSession: true) }
+    func testLiveNativeFindInvestigation() throws { try verifyLiveFindInvestigation(delegateSession: false) }
+    func testFindResultClearsKeyboardWithFloatingUI() { verifyFindResultClearsKeyboard(floatingUIEnabled: true) }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
@@ -1424,6 +1946,9 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testAddressBarButtonSpacingAfterRotation() { verifyAddressBarButtonSpacingAfterRotation() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
+    func testFindInPageGlass() { verifyFindInPageGlass() }
+    func testDelegateSessionLifecycle() throws { try verifyDelegateSessionLifecycle() }
+    func testFindResultClearsKeyboardWithLegacyUI() { verifyFindResultClearsKeyboard(floatingUIEnabled: false) }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
@@ -1444,4 +1969,12 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testChromeDuringSlowLoading() { verifyChromeDuringSlowLoading() }
     func testChromeOnErrorPage() { verifyChromeOnErrorPage() }
     func testFloatingSwipeTabs() { verifyFloatingSwipeTabs() }
+}
+
+final class FindInPagePadTests: FloatingUIXCUITestCase {
+
+    override var barPosition: FloatingUIBarPosition { .top }
+
+    func testGlassWithFloatingFlagOff() { verifyIPadFindInPageUsesGlassWithFloatingFlagOff() }
+    func testDelegateSessionBottomEdgeWithClassicUI() throws { try verifyDelegateSessionBottomEdgeWithClassicUI() }
 }

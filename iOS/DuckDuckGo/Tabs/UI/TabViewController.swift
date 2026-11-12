@@ -273,6 +273,29 @@ class TabViewController: UIViewController {
         get { return findInPageScript?.findInPage }
         set { findInPageScript?.findInPage = newValue }
     }
+
+    private var delegateSessionFindInPage: (any FindInPageSearching)?
+    var delegateSessionFindInPageQuery: String { tabModel.delegateSessionFindInPageQuery }
+
+    var customFindInPage: (any FindInPageSearching)? {
+        delegateSessionFindInPage ?? findInPage
+    }
+
+    func releaseCustomFindInPage() {
+        delegateSessionFindInPage = nil
+        findInPage = nil
+    }
+
+    func endCustomFindInPage() {
+        customFindInPage?.done()
+        releaseCustomFindInPage()
+    }
+
+    private func closeDelegateSessionFindInPage() {
+        guard delegateSessionFindInPage != nil else { return }
+        delegate?.closeFindInPage(tab: self)
+        endCustomFindInPage()
+    }
     
     var daxEasterEggHandler: DaxEasterEggHandling?
     var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
@@ -481,6 +504,7 @@ class TabViewController: UIViewController {
     public var url: URL? {
         willSet {
             if newValue != url {
+                closeDelegateSessionFindInPage()
                 delegate?.closeFindInPage(tab: self)
             }
         }
@@ -1116,6 +1140,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         duckAISwipeNewChat?.cancel()
 
@@ -1219,7 +1244,9 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewLayoutForKeyboard() {
-        guard floatingUIManager.isFloatingUIEnabled, webView != nil else { return }
+        guard webView != nil,
+              floatingUIManager.isFloatingUIEnabled || customFindInPage?.isDelegateSessionExperiment == true
+                || hasAppliedFloatingUIScrollViewInsets else { return }
         applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent, forceFloatingUIInsets: true)
     }
 
@@ -1452,6 +1479,15 @@ class TabViewController: UIViewController {
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
+        if let insets = chromeDelegate?.findInPageObscuredInsets(in: webView) {
+            if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
+                scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+            }
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets)
+            setWebViewObscuredContentInsetsIfSupported(insets)
+            hasAppliedFloatingUIScrollViewInsets = true
+            return
+        }
         setWebViewObscuredContentInsetsIfSupported(.zero)
         if hasAppliedFloatingUIScrollViewInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
@@ -1628,6 +1664,7 @@ class TabViewController: UIViewController {
         scrollingBeforeFloatingAIChrome = nil
         cancelWebExtensionNavigationWait()
         instrumentation.willPrepareWebView()
+        closeDelegateSessionFindInPage()
         pageContextNavigationID = UUID()
         pageContextLoadedNavigationID = nil
         pageContextNavigationInProgress = false
@@ -1873,6 +1910,7 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        closeDelegateSessionFindInPage()
         freezeMonitor.end(.fire)
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
@@ -2092,6 +2130,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        closeDelegateSessionFindInPage()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -2505,6 +2544,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
         progressWorker.progressBar = nil
@@ -2702,6 +2742,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        delegateSessionFindInPage?.done()
         webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
@@ -4004,7 +4045,10 @@ extension TabViewController: WKNavigationDelegate {
                     subscriptionDataReporter.saveSearchCount()
                 }
 
-                self.delegate?.closeFindInPage(tab: self)
+                if !self.findInPageImplementation.isDelegateSessionExperiment || webView === self.webView {
+                    self.closeDelegateSessionFindInPage()
+                    self.delegate?.closeFindInPage(tab: self)
+                }
             }
             // If navigating to the URL is allowed and we're not sideloading a special error page, forward the event to
             // the SpecialErrorPageNavigationHandler regardless of whether app links are enabled.
@@ -4858,10 +4902,12 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        guard !findInPageImplementation.isDelegateSessionExperiment || webView === self.webView else { return }
         // Before the delegate call below, which can start the next termination reload.
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            closeDelegateSessionFindInPage()
             cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)
@@ -5054,6 +5100,15 @@ extension TabViewController: UIGestureRecognizerDelegate {
     func requestFindInPage() {
         pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
 
+        if #available(iOS 27.0, *), findInPageImplementation == .delegateSessionExperiment {
+            if delegateSessionFindInPage == nil {
+                delegateSessionFindInPage = DelegateSessionFindInPage(webView: webView, query: delegateSessionFindInPageQuery) { [weak self] query in
+                    self?.tabModel.delegateSessionFindInPageQuery = query
+                }
+            }
+            delegate?.tabDidRequestFindInPage(tab: self)
+            return
+        }
         if #available(iOS 16.0, *), findInPageImplementation == .system {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction

@@ -646,6 +646,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var obscuredContentInsets: UIEdgeInsets = .zero
 
+    var findInPageInsets: UIEdgeInsets?
+
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? { findInPageInsets }
+
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { obscuredContentInsets }
 
     var floatingNewTabPageTopObscuredHeight: CGFloat = 0

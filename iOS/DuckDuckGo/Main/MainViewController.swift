@@ -139,6 +139,9 @@ class MainViewController: UIViewController {
     private var isFindInPageChromeLockActive = false
     private var didFindInPageHideChrome = false
     private var findInPageDismissalTimer: Timer?
+    private var findResultVisibilityWorkItem: DispatchWorkItem?
+    private weak var findInPagePanGestureRecognizer: UIPanGestureRecognizer?
+    private var delegateFindViewport: CGRect?
 
     weak var notificationView: UIView?
 
@@ -937,13 +940,27 @@ class MainViewController: UIViewController {
     }
 
     deinit {
+        if currentTab?.customFindInPage?.isDelegateSessionExperiment == true {
+            currentTab?.endCustomFindInPage()
+        }
         chromeMorphAnimator.cancel()
         findInPageDismissalTimer?.invalidate()
+        findResultVisibilityWorkItem?.cancel()
+        findInPagePanGestureRecognizer?.removeTarget(self, action: #selector(findInPageWebViewDidPan))
     }
 
     func loadFindInPage() {
 
         let view = FindInPageView.loadFromXib()
+        let usesFloatingUI: Bool
+        if #available(iOS 26.0, *) {
+            usesFloatingUI = isFloatingUIEnabled || UIDevice.current.userInterfaceIdiom == .pad
+            if usesFloatingUI {
+                view.applyFloatingUI()
+            }
+        } else {
+            usesFloatingUI = false
+        }
         self.view.addSubview(view)
 
         let container = view.container!
@@ -951,15 +968,20 @@ class MainViewController: UIViewController {
         // Avoids coercion swiftlint warnings
         let superview = self.view!
 
-        NSLayoutConstraint.activate([
+        var findInPageConstraints = [
 
-            container.bottomAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
+            container.bottomAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor,
+                                              constant: usesFloatingUI ? -12 : 0),
             view.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
             view.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
             view.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
             view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
 
-        ])
+        ]
+        if usesFloatingUI {
+            findInPageConstraints.append(view.topAnchor.constraint(equalTo: superview.topAnchor))
+        }
+        NSLayoutConstraint.activate(findInPageConstraints)
 
         findInPageView = view
 
@@ -2051,7 +2073,8 @@ class MainViewController: UIViewController {
 
     private func updateFloatingDomainCapsuleVisibility(for barsVisibilityPercent: CGFloat) {
         floatingDomainCapsuleController.update(addressBarPosition: appSettings.currentAddressBarPosition,
-                                               isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard,
+                                               isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard
+                                                   && findInPageView?.isHidden != false,
                                                isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
                                                isAITab: currentTab?.isAITab == true,
                                                isMinimalChromeLayout: isInMinimalChromeLayout,
@@ -2183,6 +2206,8 @@ class MainViewController: UIViewController {
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
+        let previousOverlap = view.bounds.intersection(view.convert(latestKeyboardFrame, from: nil)).height
+        let newOverlap = view.bounds.intersection(view.convert(keyboard.frame, from: nil)).height
         let animateAccessoryChange: Bool
         if #available(iOS 26, *) {
             animateAccessoryChange = isDuckAIAndInputLiquidGlassEnabled
@@ -2198,6 +2223,10 @@ class MainViewController: UIViewController {
                  in: animateAccessoryChange ? 0.25 : keyboard.duration,
                  animationCurve: animateAccessoryChange ? .curveEaseInOut : keyboard.animationCurve,
                  keyboardTargetFrame: keyboard.frame)
+        findResultVisibilityWorkItem?.cancel()
+        if newOverlap > previousOverlap {
+            scheduleCurrentFindResultVisibility(after: keyboard.duration + 0.15)
+        }
     }
 
     private var floatingWebInputKeyboardFrame: CGRect {
@@ -2237,6 +2266,11 @@ class MainViewController: UIViewController {
                   in duration: TimeInterval = 0.2,
                   animationCurve: UIView.AnimationOptions = .curveEaseInOut,
                   keyboardTargetFrame: CGRect? = nil) {
+        defer {
+            if currentTab?.customFindInPage?.isDelegateSessionExperiment == true {
+                currentTab?.updateWebViewLayoutForKeyboard()
+            }
+        }
         latestKeyboardFrame = keyboardFrame
         var keyboardHeight = keyboardFrame.size.height
 
@@ -3991,6 +4025,10 @@ class MainViewController: UIViewController {
     }
 
     private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        if findInPageView?.isHidden == false {
+            applyBarsVisibilityState(0, postChromeVisibilityNotification: false)
+            return
+        }
         if shouldKeepChromeHiddenForFindInPage {
             setBarsHidden(true, animated: false, customAnimationDuration: nil)
             return
@@ -4330,6 +4368,7 @@ class MainViewController: UIViewController {
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
         bringFindInPageToFrontIfNeeded()
+        updateDelegateFindViewportIfNeeded()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
@@ -4594,10 +4633,52 @@ class MainViewController: UIViewController {
     }
     
     func updateFindInPage() {
-        currentTab?.findInPage?.delegate = self
-        findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
+        currentTab?.customFindInPage?.delegate = self
+        findInPageView?.update(with: currentTab?.customFindInPage, updateTextField: true)
         findInPageView?.updateConstraints()
         bringFindInPageToFrontIfNeeded()
+        updateFindInPagePanGesture()
+        if findInPageView?.isHidden == false {
+            if lastChromeVisibilityPercent > 0 {
+                setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            } else {
+                updateFloatingDomainCapsuleVisibility(for: 0)
+            }
+        }
+        scheduleCurrentFindResultVisibility()
+    }
+
+    private func updateFindInPagePanGesture() {
+        let gesture = currentTab?.customFindInPage != nil ? currentTab?.webView.scrollView.panGestureRecognizer : nil
+        guard gesture !== findInPagePanGestureRecognizer else { return }
+        findInPagePanGestureRecognizer?.removeTarget(self, action: #selector(findInPageWebViewDidPan))
+        gesture?.addTarget(self, action: #selector(findInPageWebViewDidPan))
+        findInPagePanGestureRecognizer = gesture
+    }
+
+    @objc private func findInPageWebViewDidPan(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        findResultVisibilityWorkItem?.cancel()
+        guard findInPageView?.inputText.isFirstResponder == true else { return }
+        findInPageView?.resignFirstResponder()
+    }
+
+    private func scheduleCurrentFindResultVisibility(after delay: TimeInterval = 0.2) {
+        findResultVisibilityWorkItem?.cancel()
+        guard let findInPage = currentTab?.findInPage, findInPage.current > 0 else { return }
+
+        let workItem = DispatchWorkItem { [weak self, weak findInPage] in
+            guard let self, let findInPage, self.currentTab?.findInPage === findInPage,
+                  let findInPageView = self.findInPageView, !findInPageView.isHidden,
+                  let webView = self.currentTab?.webView, webView.bounds.height > 0,
+                  !webView.scrollView.isTracking, !webView.scrollView.isDragging,
+                  !webView.scrollView.isDecelerating else { return }
+            self.view.layoutIfNeeded()
+            let visibleBottom = findInPageView.container.convert(findInPageView.container.bounds, to: webView).minY
+            findInPage.keepCurrentResultVisible(visibleBottomFraction: visibleBottom / webView.bounds.height)
+        }
+        findResultVisibilityWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
     }
 
     private func bringFindInPageToFrontIfNeeded() {
@@ -4615,7 +4696,8 @@ class MainViewController: UIViewController {
 
     @available(iOS 16.0, *)
     private func hideChromeForConfirmedFindInPage() {
-        guard currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+        guard currentTab?.findInPageImplementation == .system,
+              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
               !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
               !isFindInPageChromeLockActive else { return }
 
@@ -5709,8 +5791,10 @@ class MainViewController: UIViewController {
 
 extension MainViewController: FindInPageDelegate {
     
-    func updated(findInPage: FindInPage) {
+    func updated(findInPage: any FindInPageSearching) {
+        guard currentTab?.customFindInPage === findInPage else { return }
         findInPageView?.update(with: findInPage, updateTextField: false)
+        scheduleCurrentFindResultVisibility()
     }
 
 }
@@ -5718,10 +5802,17 @@ extension MainViewController: FindInPageDelegate {
 extension MainViewController: FindInPageViewDelegate {
     
     func done(findInPageView: FindInPageView) {
-        currentTab?.findInPage = nil
+        findResultVisibilityWorkItem?.cancel()
+        if currentTab?.customFindInPage === findInPageView.findInPage {
+            currentTab?.releaseCustomFindInPage()
+        }
+        delegateFindViewport = nil
+        updateFindInPagePanGesture()
         viewCoordinator.toolbar.accessibilityElementsHidden = false
 
         viewCoordinator.showNavigationBarWithBottomPosition()
+        chromeManager.reset(animated: false)
+        currentTab?.updateWebViewLayoutForKeyboard()
     }
 }
 
@@ -5772,6 +5863,12 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
+        guard percent == 0 || findInPageView?.isHidden != false else { return }
+
+        applyBarsVisibility(percent, animated: animated, animationDuration: animationDuration)
+    }
+
+    private func applyBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         guard isViewLoaded,
               let viewCoordinator,
               viewCoordinator.toolbar != nil,
@@ -5970,6 +6067,7 @@ extension MainViewController: BrowserChromeDelegate {
     var isChromeScrollInteractionDisabled: Bool {
         if isAddressBarMoveInProgress { return true }
         if isBottomAddressBarHiddenForWebKeyboard { return true }
+        if findInPageView?.isHidden == false { return true }
         if #available(iOS 16.0, *),
            currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
             return true
@@ -6122,6 +6220,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        if let insets = delegateFindObscuredInsets { return insets }
         let chromeInsets = UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
                                        left: 0,
                                        bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
@@ -6132,6 +6231,33 @@ extension MainViewController: BrowserChromeDelegate {
                                                         ? floatingWebInputKeyboardFrame
                                                         : view.convert(latestKeyboardFrame, from: nil),
                                                     viewBounds: view.bounds)
+    }
+
+    private var delegateFindObscuredInsets: UIEdgeInsets? {
+        guard let webView = currentTab?.webView else { return nil }
+        return findInPageObscuredInsets(in: webView)
+    }
+
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? {
+        guard currentTab?.customFindInPage?.isDelegateSessionExperiment == true,
+              currentTab?.webView === webView,
+              let findInPageView, !findInPageView.isHidden else { return nil }
+        let controls = findInPageView.container.convert(findInPageView.container.bounds, to: webView)
+        let safeArea = view.convert(view.safeAreaLayoutGuide.layoutFrame, to: webView)
+        return UIEdgeInsets(top: max(0, safeArea.minY - webView.bounds.minY), left: 0,
+                            bottom: max(0, webView.bounds.maxY - min(safeArea.maxY, controls.minY - 24)), right: 0)
+    }
+
+    private func updateDelegateFindViewportIfNeeded() {
+        guard currentTab?.customFindInPage?.isDelegateSessionExperiment == true,
+              let findInPageView, !findInPageView.isHidden else {
+            delegateFindViewport = nil
+            return
+        }
+        let rect = findInPageView.container.convert(findInPageView.container.bounds, to: view)
+        guard delegateFindViewport != rect else { return }
+        delegateFindViewport = rect
+        currentTab?.updateWebViewLayoutForKeyboard()
     }
 
     /// Read off the card's applied constraints, so it honours the landscape cap and the hidden-chrome
@@ -8706,10 +8832,10 @@ extension MainViewController: TabDelegate {
 
         if tab === currentTab {
             findInPageView?.done()
-        } else {
-            tab.findInPage?.done()
-            tab.findInPage = nil
+        } else if let backend = tab.customFindInPage, findInPageView?.findInPage === backend {
+            findInPageView?.done()
         }
+        tab.endCustomFindInPage()
     }
     
     func tabDidRequestFireButtonPulse(tab: TabViewController) {

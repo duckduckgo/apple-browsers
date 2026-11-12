@@ -29,6 +29,7 @@ import enum UserScript.UserScriptError
 
 protocol DBPUIScanOps: AnyObject {
     func updateCacheWithCurrentScans() async
+    func assistedOptOutDataDidChange()
     func getBackgroundAgentMetadata() async -> DBPBackgroundAgentMetadata?
 }
 
@@ -43,6 +44,9 @@ public final class DBPUIViewModel {
     private var webView: WKWebView?
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let userAssistanceFlagger: UserAssistanceFeatureFlagging?
+    @MainActor private var assistedOptOutsPolling: Task<Void, Never>?
+    @MainActor private var lastAssistedOptOuts: AssistedOptOutList?
     private let dbpSettings: DataBrokerProtectionSettings
     @MainActor private var freeScanEntryPoint: String?
     @MainActor private var lastHandshakeFreeScanEntryPoint: String?
@@ -55,7 +59,8 @@ public final class DBPUIViewModel {
                 privacyConfig: PrivacyConfigurationManaging? = nil,
                 prefs: ContentScopeProperties? = nil,
                 webView: WKWebView? = nil,
-                dbpSettings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .dbp)) {
+                dbpSettings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .dbp),
+                userAssistanceFlagger: UserAssistanceFeatureFlagging? = nil) {
         self.dataManager = dataManager
         self.agentInterface = agentInterface
         self.vpnBypassService = vpnBypassService
@@ -65,6 +70,11 @@ public final class DBPUIViewModel {
         self.prefs = prefs
         self.webView = webView
         self.dbpSettings = dbpSettings
+        self.userAssistanceFlagger = userAssistanceFlagger
+    }
+
+    deinit {
+        assistedOptOutsPolling?.cancel()
     }
 
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration? {
@@ -78,6 +88,7 @@ public final class DBPUIViewModel {
                                                       prefs: prefs,
                                                       delegate: dataManager.communicator,
                                                       handshakeDelegate: self,
+                                                      assistedOptOutsDelegate: self,
                                                       webUISettings: webUISettings,
                                                       vpnBypassService: vpnBypassService,
                                                       dbpSettings: dbpSettings)
@@ -121,6 +132,10 @@ extension DBPUIViewModel: DBPUIHandshakeDelegate {
 }
 
 extension DBPUIViewModel: DBPUIScanOps {
+    func assistedOptOutDataDidChange() {
+        agentInterface.assistedOptOutDataDidChange()
+    }
+
     func profileSaved() {
         Task {
             await agentInterface.profileSaved()
@@ -138,5 +153,53 @@ extension DBPUIViewModel: DBPUIScanOps {
 
     func getBackgroundAgentMetadata() async -> DBPBackgroundAgentMetadata? {
         return await agentInterface.getDebugMetadata()
+    }
+}
+
+extension DBPUIViewModel: DBPUIAssistedOptOutsDelegate {
+    public var isUserAssistanceEnabled: Bool {
+        guard userAssistanceFlagger?.isUserAssistanceOn == true, let privacyConfig else { return false }
+        return UserAssistanceConfig(privacyConfig: privacyConfig.privacyConfig).isEnabled
+    }
+
+    public func getAssistedOptOuts() async -> AssistedOptOutList {
+        let list = isUserAssistanceEnabled
+            ? await agentInterface.getAssistedOptOuts(droppingSubmitted: true) : AssistedOptOutList(optOuts: [])
+        return await MainActor.run {
+            let currentList = isUserAssistanceEnabled ? (list ?? lastAssistedOptOuts ?? AssistedOptOutList(optOuts: [])) : AssistedOptOutList(optOuts: [])
+            lastAssistedOptOuts = currentList
+            return currentList
+        }
+    }
+
+    public func startAssistedOptOut(id: String) async {
+        guard isUserAssistanceEnabled else { return }
+        agentInterface.startAssistedOptOut(id: id)
+    }
+
+    @MainActor func startAssistedOptOutsPolling(in webView: WKWebView) {
+        stopAssistedOptOutsPolling()
+        assistedOptOutsPolling = Task { @MainActor [weak self, weak webView] in
+            while !Task.isCancelled {
+                do { try await Task.sleep(nanoseconds: 2_000_000_000) } catch { return }
+                guard let webView else { return }
+                await self?.pollAssistedOptOuts(in: webView)
+            }
+        }
+    }
+
+    @MainActor func stopAssistedOptOutsPolling() {
+        assistedOptOutsPolling?.cancel()
+        assistedOptOutsPolling = nil
+    }
+
+    @MainActor func pollAssistedOptOuts(in webView: WKWebView) async {
+        guard webView.window?.occlusionState.contains(.visible) == true else { return }
+        let list = isUserAssistanceEnabled
+            ? await agentInterface.getAssistedOptOuts(droppingSubmitted: false) : AssistedOptOutList(optOuts: [])
+        let currentList = isUserAssistanceEnabled ? list : AssistedOptOutList(optOuts: [])
+        guard !Task.isCancelled, let currentList, currentList != lastAssistedOptOuts else { return }
+        lastAssistedOptOuts = currentList
+        communicationLayer?.sendAssistedOptOutsDidChange(currentList, into: webView)
     }
 }

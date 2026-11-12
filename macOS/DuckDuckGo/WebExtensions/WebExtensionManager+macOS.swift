@@ -110,16 +110,31 @@ enum WebExtensionManagerFactory {
         eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
+        let windowTabProvider = WebExtensionWindowTabProvider()
+        func updateApplicationPolicy(for manager: WebExtensionManager) -> (@MainActor (String) -> Bool) {
+            { [weak manager, weak windowTabProvider] identifier in
+                guard !NSApp.isActive, let manager, let windowTabProvider else { return false }
+                guard let context = manager.context(for: identifier) else { return true }
+                return !windowTabProvider.hasOpenUpdateUI(for: context)
+            }
+        }
+        let updateActivity = Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+            windowTabProvider.updateActivityPublisher
+        ).eraseToAnyPublisher()
 #if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         if buildType.isDebugBuild, buildType.isSparkleBuild, ChromeWebStoreManualUpdateTesting.isEnabled {
             let manager = ChromeWebStoreManualUpdateTesting().makeManager(
-                configuration: WebExtensionConfigurationProvider(), windowTabProvider: WebExtensionWindowTabProvider(),
+                configuration: WebExtensionConfigurationProvider(), windowTabProvider: windowTabProvider,
                 permissionPrompter: WebExtensionPermissionPrompt(
                     windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
                 enforcesPermissions: featureFlagger.isFeatureOn(.webExtensionsPermissions),
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
                 internalSiteHandler: internalSiteHandler,
-                isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) })
+                isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+                updateApplicationPolicy: updateApplicationPolicy,
+                updateApplicationActivityUpdates: updateActivity)
             internalSiteHandler.dataSource = manager
             return manager
         }
@@ -150,7 +165,6 @@ enum WebExtensionManagerFactory {
         let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
             ? NativeMessagingHandler(installationStore: installationStore)
             : nil
-        let windowTabProvider = WebExtensionWindowTabProvider()
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: windowTabProvider,
@@ -193,16 +207,8 @@ enum WebExtensionManagerFactory {
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
-            canApplyUpdatesWhileInactive: { [weak manager, weak windowTabProvider] identifier in
-                guard !NSApp.isActive, let manager, let windowTabProvider else { return false }
-                guard let context = manager.context(for: identifier) else { return true }
-                return !windowTabProvider.hasOpenUpdateUI(for: context)
-            },
-            updateApplicationActivityUpdates: Publishers.MergeMany(
-                NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in () }.eraseToAnyPublisher(),
-                NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
-                windowTabProvider.updateActivityPublisher
-            ).eraseToAnyPublisher(),
+            canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),
+            updateApplicationActivityUpdates: updateActivity,
             keyValueStore: keyValueStore,
             pixelFiring: pixelFiring
         )

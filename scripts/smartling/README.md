@@ -8,9 +8,10 @@ release imports all of its translations in one pull request.
 1. **Merge to `main` in English only.** The "Translated Strings" check still reports untranslated strings on pull
    requests into `main`, feature branches and stacked pull requests, as a warning that doesn't block the merge. Those
    strings all end up on `main`.
-2. **Nightly job** (`smartling_nightly.yml`): every night, new strings on `main` are sent to Smartling. Jobs under the
-   cost cap are authorized automatically; above it, a review task is opened for the maintenance DRI. Nothing is
-   committed to `main`.
+2. **Merge and nightly jobs** (`smartling_on_merge.yml`, `smartling_nightly.yml`): new strings on `main` are sent to
+   Smartling when they merge, and every night for anything missed. Jobs under the cost cap are authorized
+   automatically. Above it, a review task is opened for the author of the merged pull request (merge jobs), or for the
+   platform's Smartling owner (nightly jobs, or when the author has no Asana user). Nothing is committed to `main`.
 3. **Code freeze** (`smartling_submit.yml`): the release branch is submitted as the Smartling job
    `Release <platform> <version>`.
 4. **Release import** (`smartling_release_import.yml`): once that job is complete, a pull request with the translations

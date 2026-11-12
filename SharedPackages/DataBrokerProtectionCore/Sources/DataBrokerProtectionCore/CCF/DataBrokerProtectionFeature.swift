@@ -275,6 +275,14 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     @MainActor
+    func failCurrentAction(with error: Error) {
+        removeTimers()
+        Task {
+            await delegate?.onError(error: error)
+        }
+    }
+
+    @MainActor
     private func removeTimers() {
         actionResponseTimer?.invalidate()
         actionResponseTimer = nil

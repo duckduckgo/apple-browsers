@@ -390,6 +390,17 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertEqual(harness.tooltip?.isAccessibilityEnabled(), false)
     }
 
+    func testWhenProductionWindowIsUsedThenItIsHiddenFromAccessibilityByDefault() {
+        _ = NSApplication.shared
+        let window = HoveredLinkTooltipPresenter.makeDefaultWindow()
+        let host = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        let presenter = HoveredLinkTooltipPresenter(hostView: host, backgroundColor: .windowBackgroundColor, makeWindow: { window })
+
+        XCTAssertNotNil(presenter)
+        XCTAssertEqual(window.isAccessibilityElement(), false)
+        XCTAssertEqual(window.isAccessibilityEnabled(), false)
+    }
+
     func testWhenWindowIsMadeAccessibleThenTooltipWindowIsExposedToAccessibility() {
         let harness = TooltipHarness(isWindowAccessible: true)
         harness.showFirstLink()

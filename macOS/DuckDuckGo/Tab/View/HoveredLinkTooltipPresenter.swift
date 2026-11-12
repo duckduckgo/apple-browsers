@@ -83,7 +83,7 @@ final class HoveredLinkTooltipPresenter {
         setUpWindow(backgroundColor: backgroundColor, isWindowAccessible: isWindowAccessible)
     }
 
-    private static func makeDefaultWindow() -> NSWindow {
+    static func makeDefaultWindow() -> NSWindow {
         HoveredLinkTooltipWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: true)
     }
 
@@ -133,8 +133,7 @@ final class HoveredLinkTooltipPresenter {
         window.contentView = background
         // The tooltip only mirrors the page's hovered link, so its window stays out of the accessibility tree
         // unless a UI test opts in.
-        window.setAccessibilityEnabled(isWindowAccessible)
-        window.setAccessibilityElement(isWindowAccessible)
+        window.setAccessibilityExposed(isWindowAccessible)
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false

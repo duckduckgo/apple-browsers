@@ -67,6 +67,15 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         legacyPreviewStoreDir = legacyDir
     }
     
+    convenience init(windowIdentifier: String?) {
+        guard let windowIdentifier, let base = Self.previewStoreDir else {
+            self.init()
+            return
+        }
+        self.init(storeDir: BrowserWindowStorage.directory(in: base.deletingLastPathComponent(), windowIdentifier: windowIdentifier)
+            .appendingPathComponent(Constants.previewsDirectoryName), legacyDir: nil)
+    }
+
     func prepare() {
         ensurePreviewStoreDirectoryExists()
         ensureFullScreenStoreDirectoryExists()

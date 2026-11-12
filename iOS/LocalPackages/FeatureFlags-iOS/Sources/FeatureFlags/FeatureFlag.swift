@@ -21,6 +21,8 @@ import Foundation
 import PrivacyConfig
 
 public enum FeatureFlag: String {
+    case iPadMultiWindow
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050161030255?focus=true
     case ipadMenuBar
 
@@ -765,6 +767,9 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     private var config: Config {
         switch self {
+        case .iPadMultiWindow:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadMultiWindow))
+
         case .ipadMenuBar:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
         case .sync:

@@ -36,6 +36,10 @@ import Common
         UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 
+    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
+        appStateMachine.windowManager?.discard(sceneSessions)
+    }
+
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // SwiftUI Previews run without the app group container, so skip app initialization to avoid crashing.

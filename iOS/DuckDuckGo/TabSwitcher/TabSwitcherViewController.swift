@@ -40,6 +40,8 @@ import PixelKit
 
 class TabSwitcherViewController: UIViewController {
 
+    var appWidthObserver = AppWidthObserver.shared
+
     struct Constants {
         static let preferredMinNumberOfRows: CGFloat = 2.7
 
@@ -532,7 +534,7 @@ class TabSwitcherViewController: UIViewController {
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
-        _ = AppWidthObserver.shared.willResize(toWidth: size.width)
+        _ = appWidthObserver.willResize(toWidth: size.width)
         updateUIForSelectionMode()
         chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
         for pageController in [self.firePageController, self.normalPageController].compactMap({ $0 }) {

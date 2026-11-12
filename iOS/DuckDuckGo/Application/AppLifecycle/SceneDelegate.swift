@@ -27,12 +27,45 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     private lazy var lifecycleInstrumentation = SceneLifecycleInstrumentation()
 
+    private var windowStateMachine: AppStateMachine?
+    private var connectionTask: Task<Void, Never>?
+    private var connectingWindow = false
+    private var isRejectedWindow = false
+    private var pendingEvents: [AppEvent] = []
+
     private var appStateMachine: AppStateMachine {
+        if let windowStateMachine { return windowStateMachine }
         // swiftlint:disable:next force_cast
-        (UIApplication.shared.delegate as! AppDelegate).appStateMachine
+        return (UIApplication.shared.delegate as! AppDelegate).appStateMachine
     }
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        if let manager = (UIApplication.shared.delegate as? AppDelegate)?.appStateMachine.windowManager, let windowScene = scene as? UIWindowScene {
+            if !manager.canConnect(identifier: session.persistentIdentifier), rejectAdditionalWindow(scene: scene, session: session) { return }
+            let window = UIWindow(windowScene: windowScene)
+            self.window = window
+            window.layer.speed = AppUserDefaults().slowAnimationsEnabled ? AppUserDefaults.slowAnimationsLayerSpeed : 1.0
+            connectingWindow = true
+            connectionTask = Task { @MainActor in
+                await manager.waitForBurn()
+                guard !Task.isCancelled else { return }
+                do {
+                    windowStateMachine = try manager.connect(window: window, session: session, options: connectionOptions)
+                    connectingWindow = false
+                    pendingEvents.forEach { windowStateMachine?.handle($0) }
+                    pendingEvents.removeAll()
+                    if scene.activationState == .foregroundActive {
+                        manager.focus(window: window, identifier: session.persistentIdentifier)
+                        lifecycleInstrumentation.sceneDidBecomeActive(windows: windowScene.windows, in: appStateMachine.currentState)
+                    }
+                } catch {
+                    connectingWindow = false
+                    Terminating(error: error).alertAndTerminate(window: window)
+                }
+            }
+            return
+        }
+        if rejectAdditionalWindow(scene: scene, session: session) { return }
         // Buffered before connecting, so `Connected` knows the launch action when it builds the first screen.
         if let shortcutItem = connectionOptions.shortcutItem {
             appStateMachine.handle(.handleShortcutItem(shortcutItem))
@@ -51,7 +84,31 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
     }
 
+    private func rejectAdditionalWindow(scene: UIScene, session: UISceneSession) -> Bool {
+        guard let existing = UIApplication.shared.connectedScenes.first(where: {
+            $0 !== scene && ($0.delegate as? SceneDelegate)?.window != nil
+        }) else { return false }
+        isRejectedWindow = true
+        UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
+        UIApplication.shared.requestSceneSessionActivation(existing.session, userActivity: nil, options: nil)
+        return true
+    }
+
+    private func handleWindowEvent(_ event: AppEvent) {
+        guard !isRejectedWindow else { return }
+        if connectingWindow {
+            pendingEvents.append(event)
+        } else {
+            appStateMachine.handle(event)
+        }
+    }
+
     func sceneDidDisconnect(_ scene: UIScene) {
+        guard !isRejectedWindow else { return }
+        connectionTask?.cancel()
+        connectingWindow = false
+        pendingEvents.removeAll()
+        ((UIApplication.shared.delegate as? AppDelegate)?.appStateMachine.windowManager)?.disconnect(scene.session.persistentIdentifier)
         /// This should never be triggered in our single window configuration unless the user explicitly terminates the app.
         /// To support recovery in such cases, we temporarily allow transitions from `Foreground` and `Background`
         /// back to `Connected`, where:
@@ -68,23 +125,32 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     /// See: `Foreground.swift` -> `onTransition()`
     func sceneDidBecomeActive(_ scene: UIScene) {
-        appStateMachine.handle(.didBecomeActive)
+        guard !isRejectedWindow else { return }
+        (UIApplication.shared.delegate as? AppDelegate)?.appStateMachine.windowManager?.focus(window: window, identifier: scene.session.persistentIdentifier)
+        handleWindowEvent(.didBecomeActive)
+        guard !connectingWindow else { return }
         lifecycleInstrumentation.sceneDidBecomeActive(windows: (scene as? UIWindowScene)?.windows ?? [], in: appStateMachine.currentState)
     }
 
     /// See: `Foreground.swift` -> `willLeave()`
     func sceneWillResignActive(_ scene: UIScene) {
-        appStateMachine.handle(.willResignActive)
+        handleWindowEvent(.willResignActive)
     }
 
     /// See: `Background.swift` -> `willLeave()`
     func sceneWillEnterForeground(_ scene: UIScene) {
-        appStateMachine.handle(.willEnterForeground)
+        handleWindowEvent(.willEnterForeground)
     }
 
     /// See: `Background.swift` -> `onTransition()`
     func sceneDidEnterBackground(_ scene: UIScene) {
-        appStateMachine.handle(.didEnterBackground)
+        handleWindowEvent(.didEnterBackground)
+    }
+
+    func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
+        guard let controller = window?.rootViewController as? MainViewController,
+              windowStateMachine != nil else { return nil }
+        return BrowserWindowManager.activity(fireMode: controller.tabManager.currentBrowsingMode == .fire)
     }
 
     func scene(_ scene: UIScene, willContinueUserActivity userActivity: NSUserActivity) -> Bool {

@@ -3334,6 +3334,12 @@ https://duckduckgo.com/mac";
 /* A label for the access point to customization of the Toolbar. */
 "mobile.customization.toolbar.title" = "Toolbar";
 
+/* Open a Fire mode window */
+"multiWindowNewFireWindow" = "New Fire Window";
+
+/* Open a browser window */
+"multiWindowNewWindow" = "New Window";
+
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Back";
 

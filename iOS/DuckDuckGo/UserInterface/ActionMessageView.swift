@@ -157,6 +157,13 @@ class ActionMessageView: UIView, ActionMessagePresenting {
                                       onDidDismiss: onDidDismiss)
     }
 
+    static func present(message: String, in window: UIWindow,
+                        presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false)) {
+        let messageView = loadFromXib()
+        messageView.message.setAttributedTextString(message)
+        _ = present(messageView: messageView, message: message, in: window, presentationLocation: presentationLocation)
+    }
+
     /// Presents a message and returns the exact view so a feature-owned message can be dismissed
     /// without affecting unrelated messages.
     @discardableResult
@@ -180,12 +187,13 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     @discardableResult
     private static func present(messageView: ActionMessageView,
                                 message: String,
+                                in targetWindow: UIWindow? = nil,
                                 actionTitle: String? = nil,
                                 presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false),
                                 duration: TimeInterval = Constants.duration,
                                 onAction: @escaping () -> Void = {},
                                 onDidDismiss: @escaping () -> Void = {}) -> ActionMessageView? {
-        guard let window = UIApplication.shared.firstKeyWindow else { return nil }
+        guard let window = targetWindow ?? UIApplication.shared.firstKeyWindow else { return nil }
         
         dismissAllMessages()
                 

@@ -65,6 +65,9 @@ protocol UserActivityHandling {
 final class MainCoordinator {
 
     let controller: MainViewController
+    let historyManager: HistoryManaging
+    private let windowIdentifier: String?
+    private let allWindowsTabsModel: BrowserWindowTabsModel?
 
     private(set) var tabManager: TabManager
     private(set) var interactionStateSource: TabInteractionStateSource?
@@ -151,9 +154,14 @@ final class MainCoordinator {
          onboardingManager: OnboardingManaging,
          eventHub: EventHubManaging,
          usageContextProvider: UsageContextProviding,
-         promptExposureReporter: PromptExposureReporting
+         promptExposureReporter: PromptExposureReporting,
+         windowIdentifier: String? = nil,
+         sharedHistoryManager: HistoryManaging? = nil,
+         allWindowsTabsModel: BrowserWindowTabsModel? = nil
     ) throws {
         self.subscriptionManager = subscriptionManager
+        self.windowIdentifier = windowIdentifier
+        self.allWindowsTabsModel = allWindowsTabsModel
         self.featureFlagger = featureFlagger
         self.daxDialogs = daxDialogs
         self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
@@ -166,9 +174,11 @@ final class MainCoordinator {
         self.eventHub = eventHub
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
-        FireModeCapability.resolve(using: featureFlagger)
-        UnifiedToggleInputFeature.resolve(using: featureFlagger)
+        if windowIdentifier == nil { FireModeCapability.resolve(using: featureFlagger) }
+        if windowIdentifier == nil { UnifiedToggleInputFeature.resolve(using: featureFlagger) }
         let fireModeCapability = FireModeCapability.create()
+        let appWidthObserver = allWindowsTabsModel == nil ? AppWidthObserver.shared
+            : AppWidthObserver(usesWindowLayout: UIApplication.shared.supportsMultipleScenes)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -177,11 +187,25 @@ final class MainCoordinator {
                                                           isRMFAdmissionEnabled: !isAppLaunchedInBackground,
                                                           promptExposureReporter: promptExposureReporter)
         self.homePageConfiguration = homePageConfiguration
-        let previewsSource = DefaultTabPreviewsSource()
-        let tabsPersistence = try TabsModelPersistence()
+        let idManager: DataStoreIDManaging = windowIdentifier.map { DataStoreIDManager(windowIdentifier: $0) } ?? DataStoreIDManager.shared
+        let fireModeStorageController = windowIdentifier == nil ? contentBlockingService.fireModeStorageController : FireModeNativeStorageController(
+            featureFlagger: featureFlagger,
+            dataStoreIDManager: idManager,
+            consentSeedSource: contentBlockingService.duckAiNativeStorageHandler,
+            appConfigurationGroupName: Global.appConfigurationGroupName,
+            keyValueStore: keyValueStore
+        )
+        let fireModeStorageHandler = windowIdentifier == nil ? contentBlockingService.duckAiFireModeStorageHandler : fireModeStorageController
+        let previewsSource = DefaultTabPreviewsSource(windowIdentifier: windowIdentifier)
+        let tabsPersistence = try TabsModelPersistence(windowIdentifier: windowIdentifier)
         let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
-        let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
-        reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
+        allWindowsTabsModel?.include(tabsModelProvider.aggregateTabsModel, windowIdentifier: windowIdentifier)
+        let aggregateModel: TabsModelReading = allWindowsTabsModel ?? tabsModelProvider.aggregateTabsModel
+        let historyManager = try sharedHistoryManager ?? Self.makeHistoryManager(tabsModel: aggregateModel)
+        self.historyManager = historyManager
+        if windowIdentifier == nil {
+            reportingService.subscriptionDataReporter.injectTabsModel(aggregateModel)
+        }
         let daxDialogsFactory = ContextualDaxDialogFactory(
             contextualOnboardingLogic: daxDialogs,
             contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter
@@ -189,8 +213,8 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider(eventHub: eventHub)
-        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
-        interactionStateSource = TabInteractionStateDiskSource()
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger, dataStoreIDManager: idManager)
+        interactionStateSource = TabInteractionStateDiskSource(windowIdentifier: windowIdentifier)
         self.launchSourceManager = launchSourceManager
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
@@ -215,6 +239,8 @@ final class MainCoordinator {
         }
         WebContentFreezeMonitor.reportFreezeEndedWithApp(featureFlagger: featureFlagger)
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
+                                dataStoreIDManager: idManager,
+                                appWidthObserver: appWidthObserver,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
                                 privacyConfigurationManager: privacyConfigurationManager,
@@ -249,7 +275,7 @@ final class MainCoordinator {
                                 launchSourceManager: launchSourceManager,
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
-                                duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                duckAiFireModeStorageHandler: fireModeStorageHandler,
                                 usageContextProvider: usageContextProvider,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
@@ -274,20 +300,25 @@ final class MainCoordinator {
                                         sitePermissionsStore: tabManager.sitePermissionsStore,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
-                                        fireModeStorageController: contentBlockingService.fireModeStorageController,
+                                        fireModeStorageController: fireModeStorageController,
                                         wideEvent: wideEvent,
+                                        idManager: idManager,
+                                        dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: {
+                                            await DataStoreWarmup(idManager: idManager).ensureReady(applicationState: $0, fireMode: $1)
+                                        }),
                                         clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
             syncService: syncService.sync
         )
-        let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
+        let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings, largeWidthProvider: appWidthObserver)
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
         )
         let lastTabShortcutAdapter = LastTabShortcutAdapter(keyValueStore: keyValueStore)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
+                                        appWidthObserver: appWidthObserver,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,
@@ -296,7 +327,7 @@ final class MainCoordinator {
                                         userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
-                                        duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                        duckAiFireModeStorageHandler: fireModeStorageHandler,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
@@ -368,6 +399,10 @@ final class MainCoordinator {
             tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
         }
 
+    }
+
+    func discardWindowTabs() {
+        allWindowsTabsModel?.remove(windowIdentifier: windowIdentifier)
     }
 
     func start(drawsIdleReturnNewTabPage: Bool) {
@@ -652,9 +687,14 @@ final class MainCoordinator {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
                         dataStoreIDManager: dataStoreIDManager,
+                        dataStoreCleaner: DefaultWebsiteDataStoreCleaner(protectedIdentifiers: { DataStoreIDManager.activeFireModeIDs() }),
                         featureFlagger: featureFlagger,
-                        memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
-                        fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
+                        memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: {
+                            DDGWebsiteDataStoreProvider.current(fireMode: false, dataStoreIDManager: dataStoreIDManager)
+                        }),
+                        fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: {
+                            DDGWebsiteDataStoreProvider.current(fireMode: true, dataStoreIDManager: dataStoreIDManager)
+                        }))
     }
 
     private static func makePrivacyStats() -> PrivacyStatsProviding {

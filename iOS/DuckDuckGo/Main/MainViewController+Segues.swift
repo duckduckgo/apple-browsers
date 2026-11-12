@@ -296,6 +296,7 @@ extension MainViewController {
         controller.recentChatsReaderProvider = makeTabSwitcherRecentChatsReaderProvider()
         controller.modalPresentationStyle = .overCurrentContext
 
+        controller.appWidthObserver = appWidthObserver
         tabSwitcherController = controller
 
         // Released as the tab manager starts covering the page, so the keyboard leaves with it and stays down on Done.

@@ -131,6 +131,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
     private var activeReasons: BlankSnapshotOverlayReason = []
 
     private let window: UIWindow
+    private let appWidthObserver: AppWidthObserver
     private let appSettings: AppSettings
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let featureFlagger: FeatureFlagger
@@ -149,8 +150,10 @@ final class OverlayWindowManager: OverlayWindowManaging {
          aiChatSettings: AIChatSettings,
          aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          mobileCustomization: MobileCustomization,
-         privacyStore: PrivacyStore = PrivacyUserDefaults()) {
+         privacyStore: PrivacyStore = PrivacyUserDefaults(),
+         appWidthObserver: AppWidthObserver = .shared) {
         self.window = window
+        self.appWidthObserver = appWidthObserver
         self.appSettings = appSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
@@ -241,9 +244,11 @@ final class OverlayWindowManager: OverlayWindowManaging {
                                                                       isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                                                       appSettings: appSettings,
                                                                       mobileCustomization: mobileCustomization)
-        let isMinimalChrome = !AppWidthObserver.shared.isPad
-            && window.bounds.width > window.bounds.height
-        blankSnapshotViewController.useMinimalChromeLayout = AppWidthObserver.shared.isLargeWidth || isMinimalChrome
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        let isLargeWidth = appWidthObserver.isLargeWidth
+        let isMinimalChrome = !isPad && window.bounds.width > window.bounds.height
+        blankSnapshotViewController.isLargeWidth = isLargeWidth
+        blankSnapshotViewController.useMinimalChromeLayout = isLargeWidth || isMinimalChrome
         blankSnapshotViewController.delegate = self
         return blankSnapshotViewController
     }
@@ -274,7 +279,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
     }
 
     private func obtainOverlayWindow() -> UIWindow? {
-        UIApplication.shared.foregroundSceneWindows.first {
+        window.windowScene?.windows.first {
             $0 !== preparedOverlayWindow
                 && !$0.isHidden
                 && $0.rootViewController is BlankSnapshotViewController

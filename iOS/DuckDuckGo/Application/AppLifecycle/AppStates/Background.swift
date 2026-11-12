@@ -59,10 +59,18 @@ struct Background: BackgroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
+        let suspendsSharedServices = appDependencies.windowIdentifier.map {
+            appDependencies.windowManager?.leaveForeground($0) ?? true
+        } ?? true
+        let wasUnlocked = sceneDependencies.authenticationService.isUnlocked
+        sceneDependencies.authenticationService.suspend()
+        appDependencies.mainCoordinator.onBackground()
+        guard suspendsSharedServices else { return }
+
         services.applicationShortcutItemsService.suspend()
         // Skipped while the app is locked: a background launch or leaving at the lock prompt isn't use,
         // so the next return measures from the last real one. Written before `suspend()` locks the app.
-        if sceneDependencies.authenticationService.isUnlocked {
+        if wasUnlocked {
             try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
         }
         appDependencies.backgroundTaskManager.startBackgroundTask()
@@ -70,14 +78,11 @@ struct Background: BackgroundHandling {
         services.dbpService.onBackground()
         services.vpnService.suspend()
         services.aiChatService.suspend()
-        sceneDependencies.authenticationService.suspend()
         sceneDependencies.autoClearService.suspend()
         services.autofillService.suspend()
         services.syncService.suspend()
         services.reportingService.suspend()
         services.eventHubService.suspend()
-
-        appDependencies.mainCoordinator.onBackground()
 
         cleanScreenTimeDataOniOS26()
     }

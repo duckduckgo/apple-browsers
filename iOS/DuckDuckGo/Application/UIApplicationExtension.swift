@@ -53,13 +53,15 @@ extension UIApplication {
     // MARK: foreground scene windows
 
     var foregroundSceneWindows: [UIWindow] {
-        guard let scene = UIApplication.shared.connectedScenes.first(where: {
-            $0.activationState != .background
-        }) as? UIWindowScene else {
-            return []
+        let focusedScene = (delegate as? AppDelegate)?.appStateMachine.windowManager?.focusedWindow?.windowScene
+        let scenes = connectedScenes.compactMap { $0 as? UIWindowScene }.filter {
+            $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive
         }
-
-        return scene.windows
+        func priority(_ scene: UIWindowScene) -> Int {
+            if scene === focusedScene { return 0 }
+            return scene.activationState == .foregroundActive ? 1 : 2
+        }
+        return scenes.sorted { priority($0) < priority($1) }.flatMap(\.windows)
     }
 
     var firstKeyWindow: UIWindow? {

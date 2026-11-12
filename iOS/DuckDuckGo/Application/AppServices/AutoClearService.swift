@@ -49,14 +49,17 @@ final class AutoClearService: AutoClearServiceProtocol {
     init(autoClear: AutoClearing,
          overlayWindowManager: OverlayWindowManaging,
          aiChatSyncCleaner: AIChatSyncCleaning,
-         application: UIApplication = UIApplication.shared) {
+         application: UIApplication = UIApplication.shared,
+         clearsOnLaunch: Bool = true) {
         self.autoClear = autoClear
         self.overlayWindowManager = overlayWindowManager
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.application = application
 
         autoClearTask = Task {
-            await autoClear.clearDataIfEnabled(launching: true, applicationState: .init(with: application.applicationState))
+            if clearsOnLaunch {
+                await autoClear.clearDataIfEnabled(launching: true, applicationState: .init(with: application.applicationState))
+            }
         }
     }
 

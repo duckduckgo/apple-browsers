@@ -33,20 +33,26 @@ public class AppWidthObserver {
     // mutable for testing
     var isPad = UIDevice.current.userInterfaceIdiom == .pad
     var currentWidth: CGFloat = 0
+    private(set) var usesWindowLayout: Bool
     
     public var isLargeWidth: Bool {
-        return isPad && currentWidth >= Constants.minPadWidth
+        return (isPad || usesWindowLayout) && currentWidth >= Constants.minPadWidth
     }
 
-    private init() {}
+    init(usesWindowLayout: Bool = false) {
+        self.usesWindowLayout = usesWindowLayout
+    }
 
     func willResize(toWidth width: CGFloat) -> Bool {
-        if width != currentWidth {
-            currentWidth = width
-            return true
-        }
+        let previousWidth = currentWidth
+        currentWidth = width
+        return previousWidth != width
+    }
 
-        return false
+    func update(from observer: AppWidthObserver) {
+        usesWindowLayout = observer.usesWindowLayout
+        currentWidth = observer.currentWidth
+        isPad = observer.isPad
     }
 
 }

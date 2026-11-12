@@ -85,6 +85,8 @@ class ThemeManager: ThemeManaging {
 
 extension ThemeManaging {
     func updateUserInterfaceStyle() {
-        updateUserInterfaceStyle(window: UIApplication.shared.firstKeyWindow)
+        let windows = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows)
+        if windows.isEmpty { updateUserInterfaceStyle(window: nil) }
+        windows.forEach { updateUserInterfaceStyle(window: $0) }
     }
 }

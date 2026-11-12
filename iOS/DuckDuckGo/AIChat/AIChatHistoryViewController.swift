@@ -493,7 +493,7 @@ final class AIChatHistoryViewController: UIViewController {
     /// reactively falls through to its empty state without dismissing the sheet.
     private func burnAllChats() {
         let viewModel = self.viewModel
-        fireButtonAnimator.animate {
+        fireButtonAnimator.animate(in: [view.window].compactMap { $0 }) {
             await viewModel.burnAllChats()
         } onTransitionCompleted: {
         } completion: {
@@ -502,7 +502,7 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func burnSelectedChats(chatIds: [String]) {
         let viewModel = self.viewModel
-        fireButtonAnimator.animate {
+        fireButtonAnimator.animate(in: [view.window].compactMap { $0 }) {
             await viewModel.burnSelectedChats(chatIds: chatIds)
         } onTransitionCompleted: {
         } completion: {

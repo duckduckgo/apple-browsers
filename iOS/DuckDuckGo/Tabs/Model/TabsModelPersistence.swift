@@ -64,13 +64,14 @@ class TabsModelPersistence: TabsModelPersisting {
     private let normalStore: ThrowingKeyValueStoring
     private let fireStore: ThrowingKeyValueStoring
     private let legacyStore: KeyValueStoring
+    private let migratesLegacyTabs: Bool
 
     /// Serial queue for off-main writes. Shared by normal and fire stores so `flush()` drains both.
     /// `userInitiated` QoS so the queue does not get starved by background work and
     /// `flushPendingSave()` on terminate / resign-active does not block main on a backlog.
     private let persistQueue = DispatchQueue(label: "com.duckduckgo.tabsmodel.persist", qos: .userInitiated)
 
-    convenience init() throws {
+    convenience init(windowIdentifier: String? = nil) throws {
 
         guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             // Move app to Terminating state
@@ -78,11 +79,14 @@ class TabsModelPersistence: TabsModelPersisting {
         }
 
         do {
-            let normalStore = try KeyValueFileStore(location: appSupportDir, name: Constants.normalStorageName)
-            let fireStore = try KeyValueFileStore(location: appSupportDir, name: Constants.fireStorageName)
+            let location = BrowserWindowStorage.directory(in: appSupportDir, windowIdentifier: windowIdentifier)
+            try FileManager.default.createDirectory(at: location, withIntermediateDirectories: true)
+            let normalStore = try KeyValueFileStore(location: location, name: Constants.normalStorageName)
+            let fireStore = try KeyValueFileStore(location: location, name: Constants.fireStorageName)
             self.init(normalStore: normalStore,
                       fireStore: fireStore,
-                      legacyStore: UserDefaults.app)
+                      legacyStore: UserDefaults.app,
+                      migratesLegacyTabs: windowIdentifier == nil)
         } catch {
             // Move app to Terminating state
             throw TerminationError.tabsPersistence(.storeInit)
@@ -91,10 +95,12 @@ class TabsModelPersistence: TabsModelPersisting {
 
     init(normalStore: ThrowingKeyValueStoring,
          fireStore: ThrowingKeyValueStoring,
-         legacyStore: KeyValueStoring) {
+         legacyStore: KeyValueStoring,
+         migratesLegacyTabs: Bool = true) {
         self.normalStore = normalStore
         self.fireStore = fireStore
         self.legacyStore = legacyStore
+        self.migratesLegacyTabs = migratesLegacyTabs
     }
 
     private func store(for key: TabsModelStorageKey) -> ThrowingKeyValueStoring {
@@ -128,7 +134,7 @@ class TabsModelPersistence: TabsModelPersisting {
             return unarchive(data: data)
         }
 
-        guard key == .normal else { return nil }
+        guard key == .normal, migratesLegacyTabs else { return nil }
 
         if let legacyData = legacyStore.object(forKey: Constants.legacyUDKey) as? Data,
            let model = unarchive(data: legacyData) {
@@ -145,7 +151,7 @@ class TabsModelPersistence: TabsModelPersisting {
 
     public func clear(for key: TabsModelStorageKey) {
         try? store(for: key).removeObject(forKey: Constants.storageKey)
-        if key == .normal {
+        if key == .normal, migratesLegacyTabs {
             legacyStore.removeObject(forKey: Constants.legacyUDKey)
         }
     }
@@ -153,7 +159,9 @@ class TabsModelPersistence: TabsModelPersisting {
     public func clearAll() {
         try? normalStore.removeObject(forKey: Constants.storageKey)
         try? fireStore.removeObject(forKey: Constants.storageKey)
-        legacyStore.removeObject(forKey: Constants.legacyUDKey)
+        if migratesLegacyTabs {
+            legacyStore.removeObject(forKey: Constants.legacyUDKey)
+        }
     }
 
     public func save(model: TabsModel, for key: TabsModelStorageKey) -> Result<Void, Error> {

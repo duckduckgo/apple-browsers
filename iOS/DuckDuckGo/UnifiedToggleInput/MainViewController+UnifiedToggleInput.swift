@@ -161,7 +161,7 @@ extension MainViewController {
     private func toolbarVisibilityDecision() -> ToolbarVisibilityDecision {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
-            isLargeWidth: AppWidthObserver.shared.isLargeWidth,
+            isLargeWidth: appWidthObserver.isLargeWidth,
             isInMinimalChromeLayout: isInMinimalChromeLayout,
             isFloatingWebInputEditing: viewCoordinator.isWebInputEditing
         ))

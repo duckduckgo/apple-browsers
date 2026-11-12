@@ -61,6 +61,7 @@ public final class DBPUIUserScript: UserScriptsProvider {
          prefs: ContentScopeProperties,
          delegate: DBPUICommunicationDelegate,
          handshakeDelegate: DBPUIHandshakeDelegate,
+         assistedOptOutsDelegate: DBPUIAssistedOptOutsDelegate? = nil,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
          vpnBypassService: VPNBypassServiceProvider?,
          dbpSettings: DataBrokerProtectionSettings) throws {
@@ -73,6 +74,7 @@ public final class DBPUIUserScript: UserScriptsProvider {
         contentScopeUserScriptIsolated.messageNames = ["dbpui"]
         dbpUICommunicationLayer = DBPUICommunicationLayer(webURLSettings: webUISettings,
                                                           handshakeDelegate: handshakeDelegate,
+                                                          assistedOptOutsDelegate: assistedOptOutsDelegate,
                                                           vpnBypassService: vpnBypassService,
                                                           privacyConfig: privacyConfig,
                                                           keyRevocationChecker: BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfig,
@@ -107,6 +109,7 @@ extension WKWebViewConfiguration {
                                         prefs: ContentScopeProperties,
                                         delegate: DBPUICommunicationDelegate,
                                         handshakeDelegate: DBPUIHandshakeDelegate,
+                                        assistedOptOutsDelegate: DBPUIAssistedOptOutsDelegate? = nil,
                                         webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                                         vpnBypassService: VPNBypassServiceProvider?,
                                         dbpSettings: DataBrokerProtectionSettings) throws {
@@ -115,6 +118,7 @@ extension WKWebViewConfiguration {
                                                   prefs: prefs,
                                                   delegate: delegate,
                                                   handshakeDelegate: handshakeDelegate,
+                                                  assistedOptOutsDelegate: assistedOptOutsDelegate,
                                                   webUISettings: webUISettings,
                                                   vpnBypassService: vpnBypassService,
                                                   dbpSettings: dbpSettings)

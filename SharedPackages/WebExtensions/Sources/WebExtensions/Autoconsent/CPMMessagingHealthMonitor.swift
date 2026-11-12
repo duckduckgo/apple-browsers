@@ -36,13 +36,17 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
 /// Facts supplied by tabs, the native messaging handler, and the extension manager.
 @available(macOS 15.4, iOS 18.4, *)
 public enum CPMMessagingHealthEvent: Sendable {
-    /// A main-frame document committed, with the kind of navigation that loaded it.
+    /// A main-frame document committed, with the kind of navigation that loaded it. `extensionIsLoaded` is not used
+    /// yet: the stacked breakage metric waits for the extension only on pages that commit with it loaded.
     case navigationCommitted(tabIdentifier: String, url: URL, navigationKind: CPMNavigationKind, extensionIsLoaded: Bool)
     case tabClosed(tabIdentifier: String)
     case webContentProcessTerminated(tabIdentifier: String)
-    case dashboardResponse(extensionTabIdentifier: Int?, url: URL, extensionIdentifier: String? = nil)
+    /// The extension refreshed the dashboard of a page. `url` is not used yet: the stacked breakage metric
+    /// matches it to the pages tabs committed.
+    case dashboardResponse(url: URL, extensionIdentifier: String? = nil)
     case extensionLifecycle(WebExtensionLifecycleEvent)
-    /// The process may stop running: iOS entered the background, or macOS is going to sleep.
+    /// The process may stop running: iOS entered the background, or macOS is going to sleep. Not used yet: the
+    /// stacked breakage metric keeps suspended time out of its waits.
     case interruptionBegan
     /// The app is running again: iOS returns to the foreground, or macOS woke.
     case interruptionEnded
@@ -54,8 +58,8 @@ public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
     func handle(_ event: CPMMessagingHealthEvent)
 }
 
-/// Follows which extension tab belongs to which app tab, and reports through `onHealthyResponse` when the
-/// current embedded extension answers.
+/// Reports through `onHealthyResponse` when the current embedded extension answers, and keeps the page each tab
+/// committed for the breakage metric that is stacked on this change.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
@@ -68,10 +72,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Debug-only switch that makes dashboard responses invisible to the health algorithm.
     public private(set) var isCPMMessagingBreakageSimulationEnabled = false
 
-    /// The latest eligible page of each app tab, which a message from the extension can belong to.
+    /// The latest eligible page of each app tab. Nothing reads it yet: the stacked breakage metric matches the
+    /// extension's messages to these pages.
     private var committedPages: [String: URL] = [:]
-    /// The extension's tab identifier of each app tab, learned from the first message that matches one page.
-    private var extensionTabMappings: [Int: String] = [:]
 
     public init() {}
 
@@ -82,15 +85,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         Logger.webExtensions.debug("[CPM Health Monitor] Breakage simulation changed: enabled=\(isEnabled)")
     }
 
-    /// The app tab learned for an extension tab, if any.
-    func tabIdentifier(forExtensionTab extensionTabIdentifier: Int) -> String? {
-        extensionTabMappings[extensionTabIdentifier]
-    }
-
     /// Applies one tab, native-message, or extension-lifecycle event.
     public func handle(_ event: CPMMessagingHealthEvent) {
         defer {
-            let state = "tabs=\(committedPages.count) mappings=\(extensionTabMappings.count)"
+            let state = "tabs=\(committedPages.count)"
             Logger.webExtensions.debug("[CPM Health Monitor] \(event.logDescription, privacy: .public) -> \(state, privacy: .public)")
         }
 
@@ -99,18 +97,13 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             committedPages[tabIdentifier] = isEligible(url: url, navigationKind: navigationKind) ? url : nil
         case .tabClosed(let tabIdentifier):
             committedPages.removeValue(forKey: tabIdentifier)
-            extensionTabMappings = extensionTabMappings.filter { $0.value != tabIdentifier }
         case .webContentProcessTerminated(let tabIdentifier):
             committedPages.removeValue(forKey: tabIdentifier)
-        case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier):
+        case .dashboardResponse(_, let extensionIdentifier):
             if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
             guard !isCPMMessagingBreakageSimulationEnabled else { return }
-            learnTab(forExtensionTab: extensionTabIdentifier, url: url)
             onHealthyResponse?()
-        case .extensionLifecycle(let lifecycleEvent):
-            handle(lifecycleEvent)
-        case .interruptionBegan, .interruptionEnded:
-            // Suspension does not change which tab a message belongs to.
+        case .extensionLifecycle, .interruptionBegan, .interruptionEnded:
             break
         }
     }
@@ -120,27 +113,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func isEligible(url: URL, navigationKind: CPMNavigationKind) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return false }
         return navigationKind == .other
-    }
-
-    /// Learns the app tab of an extension tab when the message's page matches exactly one tab's page.
-    private func learnTab(forExtensionTab extensionTabIdentifier: Int?, url: URL) {
-        guard let extensionTabIdentifier, extensionTabMappings[extensionTabIdentifier] == nil else { return }
-        let candidates = committedPages.filter { $0.value.matchesCPMDashboardStatePage(url) }
-        guard candidates.count == 1, let tabIdentifier = candidates.keys.first else { return }
-        extensionTabMappings[extensionTabIdentifier] = tabIdentifier
-    }
-
-    /// Updates state from an extension-manager lifecycle event. A reload creates new extension tabs, so the
-    /// learned identifiers no longer apply; the open pages stay, so the tabs can be learned again.
-    func handle(_ event: WebExtensionLifecycleEvent) {
-        guard event.extensionType == .embedded else { return }
-
-        switch event {
-        case .willReload, .reloaded:
-            extensionTabMappings.removeAll()
-        case .loaded, .reloadFailed:
-            break
-        }
     }
 }
 
@@ -166,8 +138,8 @@ private extension CPMMessagingHealthEvent {
             return "tabClosed tab=\(tabIdentifier)"
         case .webContentProcessTerminated(let tabIdentifier):
             return "webContentProcessTerminated tab=\(tabIdentifier)"
-        case .dashboardResponse(let extensionTabIdentifier, _, _):
-            return "dashboardResponse extensionTab=\(extensionTabIdentifier.map(String.init) ?? "none")"
+        case .dashboardResponse:
+            return "dashboardResponse"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"
         case .interruptionBegan:
@@ -205,18 +177,5 @@ public extension URL {
 
     private var normalizedCPMPath: String {
         path.isEmpty ? "/" : path
-    }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-private extension WebExtensionLifecycleEvent {
-    var extensionType: DuckDuckGoWebExtensionType? {
-        switch self {
-        case .loaded(_, let type),
-             .willReload(_, let type, _),
-             .reloaded(_, let type, _),
-             .reloadFailed(_, let type, _):
-            return type
-        }
     }
 }

@@ -26,7 +26,9 @@ import UIKit
 import AppKit
 #endif
 
-/// Tells the health monitor when the process may stop running, so waits do not count suspended time.
+/// Tells the health monitor when the process may stop running. The monitor does not act on it yet: the
+/// breakage metric stacked on this change keeps suspended time out of its waits. The recovery hook
+/// `onRecoveryReady` is what this change uses.
 ///
 /// iOS suspends the app after it enters the background; macOS stops it while the system sleeps.
 /// Merely becoming inactive does not stop either, so it is not an interruption.

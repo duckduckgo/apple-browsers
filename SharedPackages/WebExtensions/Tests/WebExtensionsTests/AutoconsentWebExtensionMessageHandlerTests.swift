@@ -132,7 +132,6 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
         _ = await handler.handleMessage(message)
 
-        XCTAssertEqual(monitor.extensionTabIdentifier, 42)
         XCTAssertEqual(monitor.extensionIdentifier, message.extensionIdentifier)
         XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
     }
@@ -848,13 +847,11 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
-    private(set) var extensionTabIdentifier: Int?
     private(set) var extensionIdentifier: String?
     private(set) var url: URL?
 
     func handle(_ event: CPMMessagingHealthEvent) {
-        guard case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier) = event else { return }
-        self.extensionTabIdentifier = extensionTabIdentifier
+        guard case .dashboardResponse(let url, let extensionIdentifier) = event else { return }
         self.extensionIdentifier = extensionIdentifier
         self.url = url
     }

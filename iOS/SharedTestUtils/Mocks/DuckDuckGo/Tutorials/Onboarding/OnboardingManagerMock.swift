@@ -45,6 +45,12 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadRe
         capturedURL = url
     }
 
+    private(set) var enrollInDownloadReasonVPNExperimentCallCount = 0
+
+    func enrollInDownloadReasonVPNExperimentIfNeeded() {
+        enrollInDownloadReasonVPNExperimentCallCount += 1
+    }
+
     func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [DuckDuckGo.OnboardingIntroStep] {
         didCallSelectDownloadReason = true
         capturedDownloadReason = reason

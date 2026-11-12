@@ -1446,7 +1446,44 @@ extension OnboardingIntroViewModelTests {
 
 extension OnboardingIntroViewModelTests {
 
-    // MARK: - Download Reason Experiment
+    // MARK: - Download Reason VPN Experiment
+
+    func testWhenStartOnboardingActionFromIntroThenEnrollsInVPNExperiment() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneDownloadReasonSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false))
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN
+        XCTAssertEqual(onboardingManagerMock.enrollInDownloadReasonVPNExperimentCallCount, 1)
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .downloadReasonDialog(content: .mock), step: .hidden)))
+    }
+
+    func testWhenStartOnboardingActionResumingThenDoesNotEnrollInVPNExperiment() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneDownloadReasonSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false))
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: true)
+
+        // THEN
+        XCTAssertEqual(onboardingManagerMock.enrollInDownloadReasonVPNExperimentCallCount, 0)
+    }
+
+    func testWhenStartOnboardingActionPastTheIntroThenDoesNotEnrollInVPNExperiment() {
+        // GIVEN — a restored checkpoint already placed the user further into the flow.
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN
+        XCTAssertEqual(onboardingManagerMock.enrollInDownloadReasonVPNExperimentCallCount, 0)
+    }
 
     func testWhenCurrentStepIsDownloadReasonThenViewStateIsDownloadReasonDialogWithHiddenProgress() {
         // GIVEN

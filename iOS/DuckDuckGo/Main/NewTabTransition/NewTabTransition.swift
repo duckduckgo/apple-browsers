@@ -35,7 +35,6 @@ final class NewTabTransition: NewTabTransitioning {
     private let origin: Tuning.Origin
     private let motion: Tuning.Motion
     private let duration: TimeInterval
-    private let tapLocation: CGPoint?
 
     /// Focus the new tab asks for waits here, so its keyboard lands with the tab.
     let keyboardGate = NewTabKeyboardGate()
@@ -63,13 +62,12 @@ final class NewTabTransition: NewTabTransitioning {
                       dimmedBy startDimming: CGFloat = 0,
                       newPageRaisesKeyboard: Bool,
                       from entryPoint: Tuning.EntryPoint,
-                      tapLocation: CGPoint?,
                       configuration: NewTabTransitionConfiguration) -> NewTabTransition? {
         guard configuration.isEnabled,
               UIDevice.current.userInterfaceIdiom == .phone,
               let window = (oldScreen as? UIWindow) ?? oldScreen.window,
               let screenSnapshot = oldScreen.snapshotView(afterScreenUpdates: false) else { return nil }
-        let transition = NewTabTransition(window: window, entryPoint: entryPoint, tapLocation: tapLocation, configuration: configuration)
+        let transition = NewTabTransition(window: window, entryPoint: entryPoint, configuration: configuration)
         transition.pageContent = pageContent
         transition.coverScreen(with: screenSnapshot, dimmedBy: startDimming)
         // Taps wait for the new tab, as they do during a system transition.
@@ -88,11 +86,10 @@ final class NewTabTransition: NewTabTransitioning {
         }
     }
 
-    private init(window: UIWindow, entryPoint: Tuning.EntryPoint, tapLocation: CGPoint?, configuration: NewTabTransitionConfiguration) {
+    private init(window: UIWindow, entryPoint: Tuning.EntryPoint, configuration: NewTabTransitionConfiguration) {
         self.window = window
         self.configuration = configuration
         self.entryPoint = entryPoint
-        self.tapLocation = tapLocation
         origin = configuration.origin(for: entryPoint)
         motion = configuration.motion(for: origin)
         duration = configuration.duration(of: motion)
@@ -366,18 +363,6 @@ final class NewTabTransition: NewTabTransitioning {
             return CGPoint(x: motion.offset * screenBounds.width, y: 0)
         case .belowCenter:
             return CGPoint(x: 0, y: motion.offset * screenBounds.height)
-        case .tapLocation:
-            guard let tapLocation else { return CGPoint(x: motion.offset * screenBounds.width, y: 0) }
-            return offsetCenteringCard(on: tapLocation)
         }
-    }
-
-    /// Moves the card's center toward the tap, but keeps the card inside the screen.
-    private func offsetCenteringCard(on point: CGPoint) -> CGPoint {
-        let maxX = screenBounds.width * (1 - motion.startScale) / 2
-        let maxY = screenBounds.height * (1 - motion.startScale) / 2
-        let dx = point.x - screenBounds.midX
-        let dy = point.y - screenBounds.midY
-        return CGPoint(x: min(max(dx, -maxX), maxX), y: min(max(dy, -maxY), maxY))
     }
 }

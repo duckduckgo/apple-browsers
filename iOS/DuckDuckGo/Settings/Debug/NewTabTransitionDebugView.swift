@@ -47,7 +47,7 @@ struct NewTabTransitionDebugView: View {
 
             Section {
                 Picker("Edit", selection: $editedOrigin) {
-                    ForEach(Origin.editableMotions, id: \.self) { Text($0.title).tag($0) }
+                    ForEach(Origin.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 MotionSliders(motion: motionBinding(for: editedOrigin), origin: editedOrigin)
@@ -79,7 +79,7 @@ struct NewTabTransitionDebugView: View {
 
     private func motionBinding(for origin: Origin) -> Binding<NewTabTransitionTuning.Motion> {
         switch origin {
-        case .rightOfCenter, .tapLocation: return $store.configuration.rightOfCenter
+        case .rightOfCenter: return $store.configuration.rightOfCenter
         case .belowCenter: return $store.configuration.belowCenter
         }
     }
@@ -153,10 +153,6 @@ private extension NewTabTransitionTuning.Origin {
         switch self {
         case .rightOfCenter: return "Right of center"
         case .belowCenter: return "Below center"
-        case .tapLocation: return "Where you tapped"
         }
     }
-
-    /// Where you tapped reuses the right-of-center values, so it has no motion of its own to edit.
-    static let editableMotions: [Self] = [.rightOfCenter, .belowCenter]
 }

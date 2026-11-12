@@ -40,7 +40,6 @@ extension MainViewController: NewTabTransitionHost {
                                       dimmedBy: dimmingOverOldScreen(for: start),
                                       newPageRaisesKeyboard: raisesKeyboard,
                                       from: start == .tabManager ? .tabManager : .inTab,
-                                      tapLocation: newTabTouchLocationRecorder.lastTouchLocation,
                                       configuration: NewTabTransitionConfigurationStore.load())
     }
 
@@ -65,13 +64,21 @@ extension MainViewController: NewTabTransitionHost {
 
     /// Without the transition there is nothing to wait for, as before.
     func afterKeyboardLeaves(_ action: @escaping () -> Void) {
-        guard isNewTabTransitionEnabled, keyboardShowing, let window = view.window else { return action() }
-        var observer: NSObjectProtocol?
-        observer = NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { _ in
-            observer.map(NotificationCenter.default.removeObserver)
+        guard isNewTabTransitionEnabled, let window = view.window else { return action() }
+        let departure = NewTabKeyboardDeparture.plan(keyboardShowing: keyboardShowing,
+                                                     isHiding: isKeyboardHiding,
+                                                     hasFocusedField: UIResponder.currentFirstResponder() != nil)
+        switch departure {
+        case .openNow:
             action()
+        case .waitForHide:
+            NewTabKeyboardHideWait(then: action).start()
+        case .resignThenWaitForHide:
+            let wait = NewTabKeyboardHideWait(then: action)
+            wait.start()
+            // A field that keeps the keyboard sends no hide to wait for.
+            if !window.endEditing(true) { wait.finish() }
         }
-        window.endEditing(true)
     }
 
     /// The screen the new tab replaces: the browser alone, the browser with what it presents, or the tab manager.
@@ -99,10 +106,5 @@ extension MainViewController: NewTabTransitionHost {
             self?.newTabPageWasUncovered()
             releaseKeyboard?()
         }
-    }
-
-    func installNewTabTouchLocationRecorderIfNeeded() {
-        guard let window = view.window, newTabTouchLocationRecorder.view !== window else { return }
-        window.addGestureRecognizer(newTabTouchLocationRecorder)
     }
 }

@@ -25,8 +25,6 @@ enum NewTabTransitionTuning {
     enum Origin: String, Codable, CaseIterable {
         case rightOfCenter
         case belowCenter
-        /// Grows from where the user tapped, with the right-of-center motion values.
-        case tapLocation
     }
 
     /// What happens to a keyboard left up on the old screen.

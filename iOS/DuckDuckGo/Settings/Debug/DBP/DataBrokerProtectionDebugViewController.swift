@@ -697,10 +697,13 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private func handleDebugAction(for row: DebugActionRows) {
         switch row {
         case .runPIRDebugMode:
-            let debugModeViewController = RunDBPDebugModeViewController(
-                freemiumPIRDebugSettings: freemiumPIRDebugSettings
-            )
-            self.navigationController?.pushViewController(debugModeViewController, animated: true)
+            do {
+                guard let runner = try debuggingDelegate?.makeDebugModeRunner() else { return }
+                let debugModeViewController = RunDBPDebugModeViewController(runner: runner)
+                self.navigationController?.pushViewController(debugModeViewController, animated: true)
+            } catch {
+                presentAlert(title: "PIR Debug Mode", message: "Failed to open the PIR database: \(error.localizedDescription)")
+            }
         case .forceBrokerJSONRefresh:
             Task { @MainActor in
                 try await debuggingDelegate?.refreshRemoteBrokerJSON()

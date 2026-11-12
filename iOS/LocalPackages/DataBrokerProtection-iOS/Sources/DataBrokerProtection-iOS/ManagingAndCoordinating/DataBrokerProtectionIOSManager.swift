@@ -85,6 +85,8 @@ public class DBPIOSInterface {
         func startDebugServer() async -> Bool
         func stopDebugServer()
         var debugServerPort: UInt16? { get }
+
+        func makeDebugModeRunner() throws -> DebugModeRunner
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -891,7 +893,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         }
     }
 
-    private func makeDebugModeRunner() throws -> DebugModeRunner {
+    public func makeDebugModeRunner() throws -> DebugModeRunner {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)

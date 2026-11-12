@@ -127,7 +127,8 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
     public func scan(_ query: BrokerProfileQueryData,
                      showWebView: Bool,
                      timeout: TimeInterval?,
-                     stageCalculator: FakeStageDurationCalculator) async throws -> [ExtractedProfile] {
+                     stageCalculator: FakeStageDurationCalculator,
+                     onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws -> [ExtractedProfile] {
         let runner = BrokerProfileScanSubJobWebRunner(
             privacyConfig: privacyConfigManager,
             prefs: contentScopeProperties,
@@ -141,6 +142,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             contentBlocking: contentBlocking,
             shouldRunNextStep: { true }
         )
+        onWebRunnerStarted?(runner)
         let extractedProfiles = try await withOptionalTimeout(timeout) {
             try await runner.scan(showWebView: showWebView) { true }
         }
@@ -159,7 +161,8 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                        dataBroker: DataBroker,
                        showWebView: Bool,
                        timeout: TimeInterval?,
-                       stageCalculator: FakeStageDurationCalculator) async throws -> Bool {
+                       stageCalculator: FakeStageDurationCalculator,
+                       onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws -> Bool {
         let runner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: privacyConfigManager,
             prefs: contentScopeProperties,
@@ -174,6 +177,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             contentBlocking: contentBlocking,
             shouldRunNextStep: { true }
         )
+        onWebRunnerStarted?(runner)
 
         try await withOptionalTimeout(timeout) {
             try await runner.optOut(extractedProfile: scanResult.extractedProfile,
@@ -191,7 +195,8 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                                confirmationURL: URL,
                                showWebView: Bool,
                                timeout: TimeInterval? = nil,
-                               stageCalculator: FakeStageDurationCalculator) async throws {
+                               stageCalculator: FakeStageDurationCalculator,
+                               onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws {
         let runner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: privacyConfigManager,
             prefs: contentScopeProperties,
@@ -206,6 +211,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             contentBlocking: contentBlocking,
             shouldRunNextStep: { true }
         )
+        onWebRunnerStarted?(runner)
 
         try await withOptionalTimeout(timeout) {
             try await runner.optOut(extractedProfile: scanResult.extractedProfile,

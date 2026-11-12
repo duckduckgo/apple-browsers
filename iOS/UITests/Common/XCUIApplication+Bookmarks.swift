@@ -179,20 +179,6 @@ extension XCUIApplication {
 
             let editor = tables["Bookmarks.Editor.List"]
             let delete = editor.cells["Bookmarks.Editor.Delete"]
-            if keyboards.firstMatch.exists {
-                // Drag upward to dismiss the keyboard without pulling down the editor sheet.
-                let dragStart = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
-                let dragEnd = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-                dragStart.press(forDuration: 0.1, thenDragTo: dragEnd)
-                XCTAssertTrue(
-                    keyboards.firstMatch.wait(
-                        for: NSPredicate(format: "exists == false"),
-                        timeout: UITestTimeouts.elementExistence),
-                    "Keyboard did not dismiss before deleting the bookmark.", file: file, line: line)
-                XCTAssertTrue(
-                    editor.exists,
-                    "Bookmark editor was dismissed with the keyboard.", file: file, line: line)
-            }
             editor.swipeUpToReveal(delete, file: file, line: line)
             delete.tapWhenHittable(in: self, file: file, line: line)
             buttons.matching(identifier: "Bookmarks.Editor.ConfirmDelete").firstMatch

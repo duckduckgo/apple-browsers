@@ -48,13 +48,11 @@ public struct AIChatLocalModelConfig: Codable, Equatable, Sendable {
     public let state: AIChatLocalModelState
     public let tasks: [AIChatLocalModelTask]
     public let model: AIChatLocalModelInfo
-    public let downloadBytes: Int64
 
-    public init(state: AIChatLocalModelState, tasks: [AIChatLocalModelTask], model: AIChatLocalModelInfo, downloadBytes: Int64) {
+    public init(state: AIChatLocalModelState, tasks: [AIChatLocalModelTask], model: AIChatLocalModelInfo) {
         self.state = state
         self.tasks = tasks
         self.model = model
-        self.downloadBytes = downloadBytes
     }
 }
 
@@ -106,10 +104,11 @@ public struct AIChatLocalModelAccessReply: Codable, Equatable, Sendable {
     public enum Result: String, Codable, Equatable, Sendable {
         /// Turned on, now or earlier: run this summary locally.
         case allowed
-        /// No Thanks: use the cloud.
+        /// Install on a model that needs a download. This page uses the cloud, and native pushes
+        /// `downloading`, then `ready`. macOS offers no such model yet, so it never sends this.
+        case installing
+        /// No Thanks, or closed without an answer: use the cloud.
         case declined
-        /// Closed without an answer. The page decides between the cloud and no summary.
-        case dismissed
     }
 
     public let result: Result

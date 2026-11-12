@@ -70,7 +70,7 @@ final class AIChatLocalModelServiceTests {
     func availableNotOptedInIsNotSetUp() {
         let config = service.config()
 
-        #expect(config == AIChatLocalModelConfig(state: .notSetUp, tasks: [.summarize, .title], model: engine.model, downloadBytes: 0))
+        #expect(config == AIChatLocalModelConfig(state: .notSetUp, tasks: [.summarize, .title], model: engine.model))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -211,13 +211,11 @@ final class AIChatLocalModelServiceTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("No Thanks or closing the prompt leaves the model off",
-          .timeLimit(.minutes(1)),
-          arguments: [AIChatLocalModelAccessReply.Result.declined, .dismissed])
-    func otherAnswersLeaveItOff(answer: AIChatLocalModelAccessReply.Result) async throws {
-        let result = try await service.requestAccess { answer }
+    @Test("No Thanks or closing the prompt leaves the model off", .timeLimit(.minutes(1)))
+    func declinedLeavesItOff() async throws {
+        let result = try await service.requestAccess { .declined }
 
-        #expect(result == answer)
+        #expect(result == .declined)
         #expect(storage.pageSummariesModel == .duckAI)
     }
 

@@ -167,7 +167,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
     public func config() -> AIChatLocalModelConfig? {
         refreshAvailability()
         guard let state = currentState else { return nil }
-        return AIChatLocalModelConfig(state: state, tasks: Self.supportedTasks, model: engine.model, downloadBytes: 0)
+        return AIChatLocalModelConfig(state: state, tasks: Self.supportedTasks, model: engine.model)
     }
 
     public func register(_ pusher: AIChatLocalModelPushing) {

@@ -57,7 +57,7 @@ struct AIChatLocalModelProtocolTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("The access reply carries the user's answer", .timeLimit(.minutes(1)),
-          arguments: [(AIChatLocalModelAccessReply.Result.allowed, "allowed"), (.declined, "declined"), (.dismissed, "dismissed")])
+          arguments: [(AIChatLocalModelAccessReply.Result.allowed, "allowed"), (.installing, "installing"), (.declined, "declined")])
     func accessReplyUsesWireValues(result: AIChatLocalModelAccessReply.Result, wireValue: String) throws {
         let json = try jsonObject(AIChatLocalModelAccessReply(result: result))
         #expect(json as? [String: String] == ["result": wireValue])
@@ -68,12 +68,11 @@ struct AIChatLocalModelProtocolTests {
     func configUsesWireValues() throws {
         let config = AIChatLocalModelConfig(state: .notSetUp,
                                             tasks: [.summarize, .title],
-                                            model: AIChatLocalModelInfo(id: "apple-foundation-models", name: "Apple Intelligence"),
-                                            downloadBytes: 0)
+                                            model: AIChatLocalModelInfo(id: "apple-foundation-models", name: "Apple Intelligence"))
         let json = try jsonObject(config)
+        #expect(Set(json.keys) == ["state", "tasks", "model"])
         #expect(json["state"] as? String == "not_set_up")
         #expect(json["tasks"] as? [String] == ["summarize", "title"])
-        #expect(json["downloadBytes"] as? Int == 0)
         let model = try #require(json["model"] as? [String: Any])
         #expect(model["id"] as? String == "apple-foundation-models")
     }
@@ -85,7 +84,7 @@ struct AIChatLocalModelProtocolTests {
         #expect(try jsonObject(config)["localModel"] == nil)
 
         config.localModel = AIChatLocalModelConfig(state: .ready, tasks: [.summarize],
-                                                   model: AIChatLocalModelInfo(id: "id", name: "name"), downloadBytes: 0)
+                                                   model: AIChatLocalModelInfo(id: "id", name: "name"))
         let localModel = try #require(try jsonObject(config)["localModel"] as? [String: Any])
         #expect(localModel["state"] as? String == "ready")
     }

@@ -107,7 +107,7 @@ final class AIChatUserScriptTests: XCTestCase {
     @MainActor func testLocalModelIsOfferedOnlyToPagesThatGetItsPushes() async throws {
         var baseConfig = AIChatNativeConfigValues.defaultValues
         baseConfig.localModel = AIChatLocalModelConfig(state: .ready, tasks: [.summarize],
-                                                       model: AIChatLocalModelInfo(id: "m", name: "M"), downloadBytes: 0)
+                                                       model: AIChatLocalModelInfo(id: "m", name: "M"))
         mockHandler.configResponse = baseConfig
         let webView = ClientToolsDocumentWebView()
 

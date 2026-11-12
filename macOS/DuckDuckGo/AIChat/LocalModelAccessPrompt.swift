@@ -47,7 +47,7 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
             // A second request while the pop-up is up, from a double click or another window, gets the same answer.
             guard popover == nil else { return }
             if !show(from: webView, modelName: modelName) {
-                finish(.dismissed)
+                finish(.declined)
             }
         }
     }
@@ -104,9 +104,9 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
 
 extension LocalModelAccessPrompt: NSPopoverDelegate {
 
-    /// Every way the pop-up closes ends here, so Escape or a click outside answers `dismissed`.
+    /// Every way the pop-up closes ends here, so Escape or a click outside answers `declined`.
     func popoverDidClose(_ notification: Notification) {
-        finish(answer ?? .dismissed)
+        finish(answer ?? .declined)
     }
 }
 

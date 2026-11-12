@@ -61,6 +61,23 @@ final class ChromeWebStorePendingUpdateStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: pending.fileURL), Data("4.9".utf8))
     }
 
+    func testCleanupPreservesReferencedArchiveInABaseRelativeDirectory() async throws {
+        let base = directory.appendingPathComponent("base", isDirectory: true)
+        let relativeDirectory = try XCTUnwrap(URL(string: "pending/", relativeTo: base))
+        let persistentStore = ChromeWebStorePendingUpdateStore(persistentDirectory: relativeDirectory)
+        _ = try await persistentStore.store(update(version: "4.9"))
+        try await persistentStore.cleanupAbandonedInstallationCopies()
+
+        let pending = await persistentStore.pendingUpdate(for: identifier)
+        let accepted = try XCTUnwrap(pending)
+        XCTAssertEqual(try Data(contentsOf: accepted.fileURL), Data("4.9".utf8))
+
+        let recreated = ChromeWebStorePendingUpdateStore(persistentDirectory: relativeDirectory.absoluteURL)
+        let restored = await recreated.pendingUpdate(for: identifier)
+        XCTAssertEqual(restored?.version, "4.9")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(restored).fileURL), Data("4.9".utf8))
+    }
+
     func testNewerVersionReplacesAndDeletesPreviousPackageUsingNumericOrder() async throws {
         _ = try await store.store(update(version: "4.9"))
         let old = try await pendingUpdate()
@@ -123,5 +140,82 @@ final class ChromeWebStorePendingUpdateStoreTests: XCTestCase {
         XCTAssertEqual(second?.version, "1.0")
         XCTAssertNotEqual(first?.fileURL, second?.fileURL)
         XCTAssertEqual(try Data(contentsOf: XCTUnwrap(second).fileURL), Data("1.0".utf8))
+    }
+
+    func testPersistentPendingPackageRetainsLogicalInstallationAcrossStoreRecreation() async throws {
+        let location = directory.appendingPathComponent("persistent")
+        var durable: ChromeWebStorePendingUpdateStore? = ChromeWebStorePendingUpdateStore(persistentDirectory: location)
+        let offered = try update(version: "2.0")
+        let installationID = UUID().uuidString
+        _ = try await durable?.store(.init(extensionID: offered.extensionID, version: offered.version, fileURL: offered.fileURL,
+                                          installationIdentifier: installationID))
+        durable = nil
+
+        let reopened = ChromeWebStorePendingUpdateStore(persistentDirectory: location)
+        let restored = await reopened.pendingUpdate(for: identifier)
+
+        XCTAssertEqual(restored?.version, "2.0")
+        XCTAssertEqual(restored?.installationIdentifier, installationID)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(restored).fileURL), Data("2.0".utf8))
+    }
+
+    func testStartupCopySurvivesNewerPendingReplacementAndConditionalRemoval() async throws {
+        _ = try await store.store(update(version: "2.0"))
+        let source = try await pendingUpdate()
+        let copied = try await store.copyForInstallation(source)
+        let copy = try XCTUnwrap(copied)
+        _ = try await store.store(update(version: "3.0"))
+
+        try await store.remove(source)
+
+        XCTAssertEqual(try Data(contentsOf: copy.fileURL), Data("2.0".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: source.fileURL.path))
+        let newer = await store.pendingUpdate(for: identifier)
+        XCTAssertEqual(newer?.version, "3.0")
+        try await store.removeInstallationCopy(copy)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copy.fileURL.path))
+    }
+
+    func testStartupCleanupDropsAbandonedCopiesAndRetainsPendingOriginal() async throws {
+        let location = directory.appendingPathComponent("persistent")
+        let durable = ChromeWebStorePendingUpdateStore(persistentDirectory: location)
+        _ = try await durable.store(update(version: "2.0"))
+        let pending = await durable.pendingUpdate(for: identifier)
+        let copied = try await durable.copyForInstallation(XCTUnwrap(pending))
+        let copy = try XCTUnwrap(copied)
+        let reopened = ChromeWebStorePendingUpdateStore(persistentDirectory: location)
+
+        try await reopened.cleanupAbandonedInstallationCopies()
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copy.fileURL.path))
+        let restored = await reopened.pendingUpdate(for: identifier)
+        XCTAssertEqual(restored, pending)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(restored).fileURL.path))
+    }
+
+    func testPersistentMetadataRejectsPayloadPathsOutsideOwnedDirectory() async throws {
+        let location = directory.appendingPathComponent("persistent")
+        try FileManager.default.createDirectory(at: location, withIntermediateDirectories: true)
+        let outside = directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("zip")
+        try Data("outside".utf8).write(to: outside)
+        let metadata = [["extensionID": identifier, "version": "2.0", "archiveName": "../" + outside.lastPathComponent]]
+        try JSONSerialization.data(withJSONObject: metadata).write(to: location.appendingPathComponent("pending.json"))
+        let durable = ChromeWebStorePendingUpdateStore(persistentDirectory: location)
+
+        do {
+            _ = try await durable.allPendingUpdates()
+            XCTFail("Relative traversal must never become an installable pending package")
+        } catch { }
+
+        XCTAssertEqual(try Data(contentsOf: outside), Data("outside".utf8))
+    }
+
+    func testAcceptedStoreNotifiesItsOwnerWithoutDependingOnProducerReporting() async throws {
+        let stored = expectation(description: "store acceptance notification")
+        await store.setUpdateStoredHandler { _ in stored.fulfill() }
+
+        _ = try await store.store(update(version: "2.0"))
+
+        await fulfillment(of: [stored], timeout: 1)
     }
 }

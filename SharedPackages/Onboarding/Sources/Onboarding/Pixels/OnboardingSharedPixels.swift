@@ -82,13 +82,14 @@ public enum OnboardingPixelParameter {
 
 public extension OnboardingPixelParameter.DownloadReasonVariant {
     /// Maps the domain download reason to its pixel variant, so the selected reason can be
-    /// recorded on the segmented-onboarding pixels for cohort segmentation.
-    init(_ reason: OnboardingDownloadReason) {
+    /// recorded on the segmented-onboarding pixels for cohort segmentation. `nil` for reasons that aren't measured yet.
+    init?(_ reason: OnboardingDownloadReason) {
         switch reason {
         case .browserPrivately: self = .downloadReasonSearch
         case .privateAIChat:    self = .downloadReasonAIChat
         case .noAI:             self = .downloadReasonNoAI
         case .blockAds:         self = .downloadReasonAdBlocking
+        case .vpn:              return nil
         }
     }
 }

@@ -93,7 +93,8 @@ actor ChromeWebStoreUpdater {
 
     private func process(_ update: ChromeWebStoreUpdateChecker.Update) async {
         guard ChromeWebStoreURL.isValidExtensionID(update.extensionID),
-              let installed = await installation(update.extensionID), !installed.identifiers.isEmpty else { return }
+              let installed = await installation(update.extensionID), installed.identifiers.count == 1,
+              let installationIdentifier = installed.identifiers.first else { return }
         do {
             try Task.checkCancellation()
             if let pending = await pendingUpdates.pendingUpdate(for: update.extensionID),
@@ -113,7 +114,8 @@ actor ChromeWebStoreUpdater {
             do {
                 try archive.data.write(to: file, options: .atomic)
                 try Task.checkCancellation()
-                let accepted = try await pendingUpdates.store(.init(extensionID: update.extensionID, version: update.version, fileURL: file))
+                let accepted = try await pendingUpdates.store(.init(extensionID: update.extensionID, version: update.version, fileURL: file,
+                                                                    installationIdentifier: installationIdentifier))
                 ownsFile = !accepted
                 try Task.checkCancellation()
                 guard accepted else { return }

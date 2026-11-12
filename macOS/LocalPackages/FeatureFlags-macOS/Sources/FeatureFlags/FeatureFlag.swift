@@ -134,25 +134,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
 
-    /// Opt-in one-document GET recovery after the five-second background-readiness wait expires.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219588497257482
-    case cpmLateBackgroundDocumentRecovery
-
-    /// Retries a failed embedded background load in the same context, independently of hang recovery.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
-    case cpmBackgroundLoadRecovery
-
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
     case cpmBackgroundLoadRestart
-
-    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
-    /// https://app.asana.com/0/0/1218855001685906
-    case cpmMessagingHangRecovery
-
-    /// Preserve surviving shared pinned tabs when WebKit processes a window close.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
-    case webExtensionSharedPinnedTabWindowClose
 
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
@@ -164,10 +148,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Failsafe for upgrading only CPM before launch load; evaluated when the manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
     case cpmUpgradeBeforeLoad
-
-    /// Remotely activated Web Extension background Web View graveyard treatment.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
-    case cpmBackgroundGraveyardTreatment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
@@ -396,6 +376,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// Autoconsent heuristic action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
+
+    /// Autoconsent heuristic hit-testing: probe the viewport with elementFromPoint before the DOM walk
+    /// to find cookie popups that aren't fixed, sticky or dialog-like.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220464829991571
+    case heuristicHitTest
 
     /// Cookie Pop-up Protection opt-in dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
@@ -830,26 +815,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
         case .cpmDiagnosticsRecorder:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
-        case .cpmLateBackgroundDocumentRecovery:
-            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmLateBackgroundDocumentRecovery), category: .webExtensions)
-        case .cpmBackgroundLoadRecovery:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRecovery), category: .webExtensions)
         case .cpmBackgroundLoadRestart:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRestart), category: .webExtensions)
-        case .cpmMessagingHangRecovery:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
-        case .webExtensionSharedPinnedTabWindowClose:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.sharedPinnedTabWindowClose), category: .webExtensions)
         case .cpmNetworkProcessRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
         case .cpmStableBaseURL:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
         case .cpmUpgradeBeforeLoad:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad), category: .webExtensions)
-        case .cpmBackgroundGraveyardTreatment:
-            Config(defaultValue: .disabled,
-                   source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
-                   category: .webExtensions)
         case .webExtensionNativeMessaging:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
         case .webExtensionBitwarden:
@@ -996,6 +969,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
+        case .heuristicHitTest:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AutoconsentSubfeature.heuristicHitTest), category: .popupBlocking)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
         case .crashCollectionLimitCallStackTreeDepth:

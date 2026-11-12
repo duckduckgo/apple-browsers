@@ -70,7 +70,7 @@ struct OnboardingStepsHelper {
 
         let personalisationSteps: [OnboardingIntroStep]
         switch reason {
-        case .browserPrivately:
+        case .browserPrivately, .vpn:
             personalisationSteps = [.searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]

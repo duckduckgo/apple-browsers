@@ -280,6 +280,9 @@ protocol OnboardingDownloadReasonHandling: AnyObject {
     /// (and for flows without the Download Screen). Used to tailor reason-specific content.
     var currentDownloadReason: OnboardingDownloadReason? { get }
 
+    /// Whether the Download Screen offers the VPN reason: only to the experiment's treatment cohort.
+    var isVPNDownloadReasonAvailable: Bool { get }
+
     /// Enrolls the user in the VPN download-reason experiment if they qualify.
     ///
     /// Called when the user taps the intro CTA to start onboarding.
@@ -304,6 +307,10 @@ extension OnboardingManager: OnboardingDownloadReasonHandling {
 
     var currentDownloadReason: OnboardingDownloadReason? {
         tutorialSettings.onboardingDownloadReason
+    }
+
+    var isVPNDownloadReasonAvailable: Bool {
+        downloadReasonVPNExperimentCohort == .treatment
     }
 
     func enrollInDownloadReasonVPNExperimentIfNeeded() {
@@ -480,6 +487,9 @@ private extension OnboardingManager {
         let personalisationSteps: [OnboardingIntroStep]
         switch reason {
         case .browserPrivately:
+            personalisationSteps = [.searchExperienceSelection]
+        case .vpn:
+            // TODO: Replace with the "Try VPN" steps once they land.
             personalisationSteps = [.searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]

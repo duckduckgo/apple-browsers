@@ -139,7 +139,7 @@ extension RebrandedComparisonTableModel {
 
     static func browserFeatures(for reason: OnboardingDownloadReason) -> [Feature] {
         switch reason {
-        case .browserPrivately:
+        case .browserPrivately, .vpn:
             return [
                 Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.shield), title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),

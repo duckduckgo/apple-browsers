@@ -141,6 +141,7 @@ public extension DesignSystemImages {
             public static var askSiri: DesignSystemImage { .init(resource: .askSiriColor24) }
             public static var autofill: DesignSystemImage { .init(resource: .autofillColor24) }
             public static var bitwarden: DesignSystemImage { .init(resource: .bitwardenColor24) }
+            public static var block: DesignSystemImage { .init(resource: .blockColor24) }
             public static var bookmark: DesignSystemImage { .init(resource: .bookmarkColor24) }
             public static var bookmarkFavorite: DesignSystemImage { .init(resource: .bookmarkFavoriteColor24) }
             public static var bookmarkImport: DesignSystemImage { .init(resource: .bookmarkImportColor24) }

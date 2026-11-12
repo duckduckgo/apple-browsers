@@ -51,11 +51,12 @@ extension OnboardingDownloadReasonContent {
     static let mock = OnboardingDownloadReasonContent(
         title: "Download Reason Title",
         message: "Download Reason Message",
+        layout: .grid,
         options: [
-            .init(reason: .browserPrivately, animation: .search, title: "Search and browse privately"),
-            .init(reason: .privateAIChat, animation: .duckAIChat, title: "Chat with AI privately"),
-            .init(reason: .noAI, animation: .noAI, title: "Remove AI from search results"),
-            .init(reason: .blockAds, animation: .imageSweep, title: "Block ads and pop-ups")
+            .init(reason: .browserPrivately, asset: .animation(.search), title: "Search and browse privately"),
+            .init(reason: .privateAIChat, asset: .animation(.duckAIChat), title: "Chat with AI privately"),
+            .init(reason: .noAI, asset: .animation(.noAI), title: "Remove AI from search results"),
+            .init(reason: .blockAds, asset: .animation(.imageSweep), title: "Block ads and pop-ups")
         ],
         primaryCTA: "Download Reason Primary",
         daxAnimation: .wingBottom

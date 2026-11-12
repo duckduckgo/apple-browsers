@@ -345,7 +345,7 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertIdentical(manager.embeddedBackgroundContextForNavigation, replacement)
         XCTAssertIdentical(manager.context(for: "embedded"), old)
         // The old context's late reply must not heal the replacement.
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: oldURL, extensionIdentifier: "embedded"))
+        monitor.handle(.dashboardResponse(url: oldURL, extensionIdentifier: "embedded"))
         requestError6Restart(in: manager, context: replacement)
         await assertNoFurtherRestart(in: replacement, unloads: 3)
     }
@@ -365,7 +365,7 @@ final class WebExtensionManagerTests: XCTestCase {
         let replacement = try await loadDeferredEmbeddedContext("upgraded", into: manager)
         manager.reportLifecycleEvent(.loaded(identifier: "upgraded", type: .embedded))
         let url = URL(string: "https://new-document.example")!
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url, extensionIdentifier: "upgraded"))
+        monitor.handle(.dashboardResponse(url: url, extensionIdentifier: "upgraded"))
         try await applyError6Restart(in: manager, context: replacement)
         XCTAssertEqual(webExtensionLoadingMock.unloadCallCount, 4)
     }
@@ -476,12 +476,12 @@ final class WebExtensionManagerTests: XCTestCase {
         // The Debug simulation hides responses, so a hidden response is no evidence that the extension works.
         let url = URL(string: "https://current.example/")!
         monitor.setBreakageSimulationEnabled(true)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url))
+        monitor.handle(.dashboardResponse(url: url))
         requestError6Restart(in: manager, context: context)
         await assertNoFurtherRestart(in: context, unloads: 3)
 
         monitor.setBreakageSimulationEnabled(false)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url))
+        monitor.handle(.dashboardResponse(url: url))
         for _ in 0..<3 {
             try await applyError6Restart(in: manager, context: context)
             date += 61
@@ -509,7 +509,7 @@ final class WebExtensionManagerTests: XCTestCase {
         await assertNoFurtherRestart(in: context, unloads: 4)
 
         let url = URL(string: "https://recovered.example/")!
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url))
+        monitor.handle(.dashboardResponse(url: url))
         try await applyError6Restart(in: manager, context: context)
         XCTAssertEqual(webExtensionLoadingMock.unloadCallCount, 5)
     }

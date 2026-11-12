@@ -106,7 +106,7 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
     public func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
-        onTabClosed?(oldTab)
+        if !isSuppressingTabLifecycleEvents { onTabClosed?(oldTab) }
         notifyController { $0.didReplaceTab(oldTab, with: tab) }
     }
 

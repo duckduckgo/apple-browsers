@@ -41,6 +41,12 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
         guard let type = mimeType?.lowercased(), !type.isEmpty else { return true }
         return type == "text/html" || type == "application/xhtml+xml"
     }
+
+    /// The kind once the response is known: only an ordinary navigation can turn out to be a non-HTML document.
+    public func resolved(forMimeType mimeType: String?) -> CPMNavigationKind {
+        guard self == .other, !Self.isHTMLDocument(mimeType: mimeType) else { return self }
+        return .nonHTMLDocument
+    }
 }
 
 /// Facts supplied by tabs, the native messaging handler, and the extension manager.
@@ -50,10 +56,9 @@ public enum CPMMessagingHealthEvent: Sendable {
     case navigationCommitted(tabIdentifier: String, url: URL, navigationKind: CPMNavigationKind, extensionIsLoaded: Bool)
     case tabClosed(tabIdentifier: String)
     case webContentProcessTerminated(tabIdentifier: String)
-    /// The extension refreshed the dashboard of a page. `extensionTabIdentifier` is only logged: a message is
-    /// matched to tabs by its page. `isAnswer` is false when it said it cannot answer the page's init (no
-    /// configuration, no settings): the extension is running, but the page stays unanswered.
-    case dashboardResponse(extensionTabIdentifier: Int?, url: URL, extensionIdentifier: String? = nil, isAnswer: Bool = true)
+    /// The extension refreshed the dashboard of a page. `isAnswer` is false when it said it cannot answer the
+    /// page's init (no configuration, no settings): the extension is running, but the page stays unanswered.
+    case dashboardResponse(url: URL, extensionIdentifier: String? = nil, isAnswer: Bool = true)
     case extensionLifecycle(WebExtensionLifecycleEvent)
     /// The process may stop running: iOS entered the background, or macOS is going to sleep.
     case interruptionBegan
@@ -130,7 +135,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             Logger.webExtensions.debug("[CPM Health Monitor] \(event.logDescription, privacy: .public) -> \(state, privacy: .public)")
         }
 
-        if case .dashboardResponse(_, let url, let extensionIdentifier, let isAnswer) = event {
+        if case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event {
             // The answer is applied before the check, so a slow answer is never counted as silence.
             receiveResponse(url: url, extensionIdentifier: extensionIdentifier, isAnswer: isAnswer)
             reportSilentTabs()
@@ -195,14 +200,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         didReportPersistentBreakage = false
     }
 
-    /// The tabs still waiting on the message's page. When none waits on it, the page may have changed its path
-    /// before the extension messaged: the tabs waiting on that host may be the one. Either way the error
-    /// direction stays a missed breakage.
+    /// The tabs still waiting on the message's page. Two tabs on one page both get the message.
     private func answeredTabs(url: URL) -> [String] {
-        let waiting = Array(pendingCommits.keys)
-        let samePage = waiting.filter { committedPages[$0]?.matchesCPMDashboardStatePage(url) == true }
-        guard samePage.isEmpty else { return samePage }
-        return waiting.filter { committedPages[$0]?.host == url.host }
+        committedPages.filter { pendingCommits[$0.key] != nil && $0.value.matchesCPMDashboardStatePage(url) }.map(\.key)
     }
 
     /// Reports the tabs whose page has waited for the extension longer than the window.
@@ -265,8 +265,8 @@ private extension CPMMessagingHealthEvent {
             return "tabClosed tab=\(tabIdentifier)"
         case .webContentProcessTerminated(let tabIdentifier):
             return "webContentProcessTerminated tab=\(tabIdentifier)"
-        case .dashboardResponse(let extensionTabIdentifier, _, _, _):
-            return "dashboardResponse extensionTab=\(extensionTabIdentifier.map(String.init) ?? "none")"
+        case .dashboardResponse:
+            return "dashboardResponse"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"
         case .interruptionBegan:

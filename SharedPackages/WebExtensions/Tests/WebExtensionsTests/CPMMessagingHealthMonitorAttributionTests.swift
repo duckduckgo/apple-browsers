@@ -33,33 +33,33 @@ final class CPMMessagingHealthMonitorAttributionTests: XCTestCase {
     }
 
     func testResponseFromTheCurrentExtensionIsAHealthyResponse() {
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: pageURL))
+        monitor.handle(.dashboardResponse(url: pageURL))
 
         XCTAssertEqual(healthyResponses, 1)
     }
 
     func testResponseFromAnOldEmbeddedExtensionIsIgnored() {
         monitor.isCurrentEmbeddedExtension = { $0 == "current" }
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: pageURL, extensionIdentifier: "old"))
+        monitor.handle(.dashboardResponse(url: pageURL, extensionIdentifier: "old"))
         XCTAssertEqual(healthyResponses, 0)
 
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: pageURL, extensionIdentifier: "current"))
+        monitor.handle(.dashboardResponse(url: pageURL, extensionIdentifier: "current"))
         XCTAssertEqual(healthyResponses, 1)
     }
 
     func testBreakageSimulationHidesResponses() {
         monitor.setBreakageSimulationEnabled(true)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: pageURL))
+        monitor.handle(.dashboardResponse(url: pageURL))
         XCTAssertEqual(healthyResponses, 0)
 
         monitor.setBreakageSimulationEnabled(false)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: pageURL))
+        monitor.handle(.dashboardResponse(url: pageURL))
         XCTAssertEqual(healthyResponses, 1)
     }
 
     func testResponseWithoutAnExtensionTabIsStillAHealthyResponse() {
         commit("tab", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: pageURL))
+        monitor.handle(.dashboardResponse(url: pageURL))
 
         XCTAssertEqual(healthyResponses, 1)
     }

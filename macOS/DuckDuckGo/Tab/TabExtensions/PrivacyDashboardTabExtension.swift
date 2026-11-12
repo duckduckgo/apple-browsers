@@ -282,11 +282,8 @@ extension Navigation {
         if initialNavigationType == .sessionRestoration {
             return .sessionRestoration
         }
-        if initialNavigationType.isBackForward {
-            return .backForward
-        }
-        let isHTMLDocument = CPMNavigationKind.isHTMLDocument(mimeType: navigationResponse?.response.mimeType)
-        return isHTMLDocument ? .other : .nonHTMLDocument
+        let kind: CPMNavigationKind = initialNavigationType.isBackForward ? .backForward : .other
+        return kind.resolved(forMimeType: navigationResponse?.response.mimeType)
     }
 }
 

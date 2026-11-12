@@ -56,14 +56,14 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testSlowAnswerIsNotReported() {
         commit("a", path: "a")
         advance(300)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a")))
+        monitor.handle(.dashboardResponse(url: url("a")))
 
         XCTAssertTrue(pixels.breakages.isEmpty)
     }
 
     func testMessageLongBeforeTheCommitDoesNotAnswerIt() {
         commit("a", path: "a")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a")))
+        monitor.handle(.dashboardResponse(url: url("a")))
         advance(10)
         commit("a", path: "b")
         advance(30)
@@ -145,6 +145,16 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixels.breakages.isEmpty)
     }
 
+    func testOnlyAnOrdinaryNavigationBecomesANonHTMLDocument() {
+        XCTAssertEqual(CPMNavigationKind.other.resolved(forMimeType: "application/pdf"), .nonHTMLDocument)
+        XCTAssertEqual(CPMNavigationKind.other.resolved(forMimeType: "text/html"), .other)
+        XCTAssertEqual(CPMNavigationKind.other.resolved(forMimeType: nil), .other)
+        for kind in [CPMNavigationKind.sessionRestoration, .backForward, .errorPage, .nonHTMLDocument] {
+            XCTAssertEqual(kind.resolved(forMimeType: "application/pdf"), kind)
+            XCTAssertEqual(kind.resolved(forMimeType: "text/html"), kind)
+        }
+    }
+
     func testOnlyHTMLResponsesAreHTMLDocuments() {
         XCTAssertTrue(CPMNavigationKind.isHTMLDocument(mimeType: "text/html"))
         XCTAssertTrue(CPMNavigationKind.isHTMLDocument(mimeType: "TEXT/HTML"))
@@ -200,28 +210,29 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testMessageFromAnotherTabDoesNotAnswerThisTab() {
         commit("a", path: "a")
         commit("b", path: "b")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url("b")))
+        monitor.handle(.dashboardResponse(url: url("b")))
         advance(31)
         monitor.handle(.interruptionEnded)
 
         XCTAssertEqual(pixels.breakages, [report(.one)])
     }
 
-    func testMessageGoesToTheWaitingTabWhenOnlyAnAnsweredTabShowsItsPage() {
+    func testMessageGoesOnlyToTheWaitingTabsShowingItsPage() {
         commit("c", path: "y")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("y")))
-        commit("a", path: "x")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url("y")))
+        monitor.handle(.dashboardResponse(url: url("y")))
+        commit("a", path: "y")
+        commit("b", path: "x")
+        monitor.handle(.dashboardResponse(url: url("y")))
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertTrue(pixels.breakages.isEmpty, "the tab still waiting on that host got the message")
+        XCTAssertEqual(pixels.breakages, [report(.one)], "a got the message, b waits on another page")
     }
 
     func testMessageThatMatchesTwoTabsAnswersBoth() {
         commit("a", path: "same")
         commit("b", path: "same")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 9, url: url("same")))
+        monitor.handle(.dashboardResponse(url: url("same")))
         advance(100)
         monitor.handle(.interruptionEnded)
 
@@ -230,7 +241,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
     func testMessageWithoutATabAnswersTheTabsItMatches() {
         commit("a", path: "a")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: url("a")))
+        monitor.handle(.dashboardResponse(url: url("a")))
         advance(100)
         monitor.handle(.interruptionEnded)
 
@@ -240,7 +251,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testSimulationHidesMessagesSoTheTabIsReported() {
         monitor.setBreakageSimulationEnabled(true)
         commit("a", path: "a")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a")))
+        monitor.handle(.dashboardResponse(url: url("a")))
         advance(31)
         monitor.handle(.interruptionEnded)
 
@@ -250,7 +261,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testMessageFromAnOldExtensionDoesNotAnswer() {
         monitor.isCurrentEmbeddedExtension = { $0 == "current" }
         commit("a", path: "a")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a"), extensionIdentifier: "old"))
+        monitor.handle(.dashboardResponse(url: url("a"), extensionIdentifier: "old"))
         advance(31)
         monitor.handle(.interruptionEnded)
 
@@ -310,7 +321,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         commit("a", path: "a")
         advance(31)
         monitor.handle(.interruptionEnded)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: url("other")))
+        monitor.handle(.dashboardResponse(url: url("other")))
         commit("b", path: "b")
         advance(31)
         monitor.handle(.interruptionEnded)
@@ -325,7 +336,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
             commit("b\(series)", path: "b")
             advance(31)
             monitor.handle(.interruptionEnded)
-            monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: url("none")))
+            monitor.handle(.dashboardResponse(url: url("none")))
         }
 
         XCTAssertEqual(pixels.persistentCount, 2)
@@ -343,22 +354,22 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
-    // MARK: - Page that changed its path before the message
+    // MARK: - Message for another page
 
-    func testMessageAfterThePathChangedAnswersTheWaitingTabOfThatHost() {
+    func testMessageForAPageNoTabShowsAnswersNobody() {
         commit("a", path: "x")
         advance(1)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: url("y")))
+        monitor.handle(.dashboardResponse(url: url("y")))
         advance(40)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertTrue(pixels.breakages.isEmpty)
+        XCTAssertEqual(pixels.breakages, [report(.one)])
     }
 
     func testMessageOfAnotherHostDoesNotAnswerTheWaitingTab() {
         commit("a", path: "x")
         advance(1)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: URL(string: "https://other.example/x")!))
+        monitor.handle(.dashboardResponse(url: URL(string: "https://other.example/x")!))
         advance(40)
         monitor.handle(.interruptionEnded)
 
@@ -369,7 +380,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
     func testRefreshThatCannotAnswerLeavesThePageSilent() {
         commit("a", path: "a")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a"), isAnswer: false))
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
         advance(31)
         monitor.handle(.interruptionEnded)
 
@@ -380,7 +391,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         var healthyCount = 0
         monitor.onHealthyResponse = { healthyCount += 1 }
         commit("a", path: "a")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a"), isAnswer: false))
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
 
         XCTAssertEqual(healthyCount, 1)
     }
@@ -389,7 +400,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         commit("a", path: "a")
         advance(31)
         monitor.handle(.interruptionEnded)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: url("other"), isAnswer: false))
+        monitor.handle(.dashboardResponse(url: url("other"), isAnswer: false))
         commit("b", path: "b")
         advance(31)
         monitor.handle(.interruptionEnded)
@@ -404,7 +415,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.setBreakageSimulationEnabled(true)
         monitor.setBreakageSimulationEnabled(false)
         commit("a", path: "a")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a")))
+        monitor.handle(.dashboardResponse(url: url("a")))
         advance(100)
         monitor.handle(.interruptionEnded)
 
@@ -460,7 +471,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testMessageThatAnswersAPageBeforeTheCheckAppliesFirst() {
         commit("a", path: "a")
         advance(31)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("a")))
+        monitor.handle(.dashboardResponse(url: url("a")))
 
         XCTAssertTrue(pixels.breakages.isEmpty, "the answer is applied before the check")
     }

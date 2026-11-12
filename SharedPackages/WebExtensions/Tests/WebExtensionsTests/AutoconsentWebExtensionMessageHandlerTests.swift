@@ -108,7 +108,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRefreshCpmDashboardStateThenForwardsTabIdentifierAndURLToHealthMonitor() async {
+    func testWhenRefreshCpmDashboardStateThenForwardsURLAndExtensionToHealthMonitor() async {
         let monitor = RecordingCPMMessagingHealthMonitor()
         let handler = AutoconsentWebExtensionMessageHandler(
             privacyConfigurationManager: mockPrivacyConfigurationManager,
@@ -132,7 +132,6 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
         _ = await handler.handleMessage(message)
 
-        XCTAssertEqual(monitor.extensionTabIdentifier, 42)
         XCTAssertEqual(monitor.extensionIdentifier, message.extensionIdentifier)
         XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
     }
@@ -177,28 +176,6 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
         XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
         XCTAssertEqual(monitor.isAnswer, true)
-    }
-
-    @MainActor
-    func testWhenRefreshCpmDashboardStateHasNoTabIdentifierThenItIsStillForwarded() async {
-        let monitor = RecordingCPMMessagingHealthMonitor()
-        let handler = AutoconsentWebExtensionMessageHandler(
-            privacyConfigurationManager: mockPrivacyConfigurationManager,
-            autoconsentPreferences: mockAutoconsentPreferences,
-            cpmMessagingHealthMonitor: monitor
-        )
-        for tabId: Any in [NSNull(), "7"] {
-            let message = createMessage(method: "refreshCpmDashboardState", params: [
-                "tabId": tabId,
-                "url": "https://example.com/article",
-                "consentStatus": ["consentManaged": false, "cpmStage": "site_disabled"]
-            ])
-
-            _ = await handler.handleMessage(message)
-
-            XCTAssertNil(monitor.extensionTabIdentifier)
-            XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
-        }
     }
 
     // MARK: - showCpmAnimation
@@ -912,14 +889,12 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
-    private(set) var extensionTabIdentifier: Int?
     private(set) var extensionIdentifier: String?
     private(set) var url: URL?
     private(set) var isAnswer: Bool?
 
     func handle(_ event: CPMMessagingHealthEvent) {
-        guard case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier, let isAnswer) = event else { return }
-        self.extensionTabIdentifier = extensionTabIdentifier
+        guard case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event else { return }
         self.extensionIdentifier = extensionIdentifier
         self.url = url
         self.isAnswer = isAnswer

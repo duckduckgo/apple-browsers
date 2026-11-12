@@ -146,9 +146,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         // These stages mean the background will never answer the page's init: the extension is running, but
         // the page stays unanswered and its tab is reported.
         let isUnanswerable = consentStatus.cpmStage == "config_unavailable" || consentStatus.cpmStage == "settings_missing"
-        let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
-        let event = CPMMessagingHealthEvent.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier,
-                                                              url: url,
+        let event = CPMMessagingHealthEvent.dashboardResponse(url: url,
                                                               extensionIdentifier: extensionIdentifier,
                                                               isAnswer: !isUnanswerable)
         await cpmMessagingHealthMonitor?.handle(event)

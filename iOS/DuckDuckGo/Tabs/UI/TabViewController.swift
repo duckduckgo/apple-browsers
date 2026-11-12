@@ -2748,10 +2748,8 @@ extension TabViewController: WKNavigationDelegate {
             // The Network process can change after action policy. Repair before document-start scripts run.
             webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
         }
-        if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame, committingNavigationKind == .other {
-            if !CPMNavigationKind.isHTMLDocument(mimeType: navigationResponse.response.mimeType) {
-                committingNavigationKind = .nonHTMLDocument
-            }
+        if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame {
+            committingNavigationKind = committingNavigationKind.resolved(forMimeType: navigationResponse.response.mimeType)
         }
         if webView === self.webView {
             captureSitePermissionsGeolocationPolicy(from: navigationResponse.response,

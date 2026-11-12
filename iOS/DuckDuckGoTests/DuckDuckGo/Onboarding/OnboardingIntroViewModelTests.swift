@@ -2178,6 +2178,10 @@ final class MockOnboardingTryVPNFollowUpProvider: OnboardingTryVPNFollowUpProvid
         hasVPNAccessCallCount += 1
         return hasVPNAccessValue
     }
+
+    func makeVPNActivationViewModel() -> SubscriptionOnboardingVPNActivationViewModel {
+        .preview(state: .off, originalConnectionInfo: nil)
+    }
 }
 
 @MainActor

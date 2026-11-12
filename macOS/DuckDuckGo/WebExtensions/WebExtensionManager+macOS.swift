@@ -140,9 +140,10 @@ enum WebExtensionManagerFactory {
         let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
             ? NativeMessagingHandler(installationStore: installationStore)
             : nil
+        let windowTabProvider = WebExtensionWindowTabProvider()
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
-            windowTabProvider: WebExtensionWindowTabProvider(),
+            windowTabProvider: windowTabProvider,
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             installationStore: installationStore,
             permissionController: permissionController,
@@ -191,6 +192,16 @@ enum WebExtensionManagerFactory {
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            canApplyUpdatesWhileInactive: { [weak manager, weak windowTabProvider] identifier in
+                guard !NSApp.isActive, let manager, let windowTabProvider else { return false }
+                guard let context = manager.context(for: identifier) else { return true }
+                return !windowTabProvider.hasOpenUpdateUI(for: context)
+            },
+            updateApplicationActivityUpdates: Publishers.MergeMany(
+                NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+                NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+                windowTabProvider.updateActivityPublisher
+            ).eraseToAnyPublisher(),
             keyValueStore: keyValueStore,
             pixelFiring: pixelFiring
         )

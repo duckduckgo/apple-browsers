@@ -232,6 +232,323 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertNil(remaining)
     }
 
+    func testRuntimeReadyPackageAppliesWhenAlreadyInactive() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "runtime update applied")
+        proxy.onRemove = { update in if update.version == "2.0" { applied.fulfill() } }
+        let owner = makeInstaller(store: proxy, canApplyWhileInactive: { _ in true })
+        await manager.loadInstalledExtensions()
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertTrue(owner.isSnapshotReady)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, false)
+    }
+
+    func testRuntimeApplicationWaitsForTheStartupApplicationAndInitialLoad() async throws {
+        let pixels = WebExtensionUpdatePixelFiringMock()
+        manager = makeManager(pixels: pixels)
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let copying = expectation(description: "startup installation copy in progress")
+        let applied = expectation(description: "later runtime package applied")
+        var resumeStartup: CheckedContinuation<Void, Never>?
+        var copies = 0
+        var activeCopies = 0
+        var maximumActiveCopies = 0
+        proxy.onCopy = {
+            copies += 1
+            activeCopies += 1
+            maximumActiveCopies = max(maximumActiveCopies, activeCopies)
+            if copies == 1 {
+                copying.fulfill()
+                await withCheckedContinuation { resumeStartup = $0 }
+            }
+        }
+        proxy.onInstallationCopyRemoved = { activeCopies -= 1 }
+        proxy.onRemove = { update in if update.version == "3.0" { applied.fulfill() } }
+        let owner = makeInstaller(store: proxy, canApplyWhileInactive: { _ in true })
+        let loading = Task { await manager.loadInstalledExtensions() }
+        await fulfillment(of: [copying], timeout: 2)
+
+        _ = try await pending.store(makeUpdate(version: "3.0"))
+        owner.activityDidChange()
+        XCTAssertEqual(copies, 1)
+        resumeStartup?.resume()
+        await loading.value
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertEqual(maximumActiveCopies, 1)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "3.0")
+        XCTAssertFalse(pixels.events.contains { if case .failed = $0 { return true }; return false })
+    }
+
+    func testRuntimeActivityCancelsTheWaitingPhaseAndCanRetryLater() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let waiting = expectation(description: "inactive grace period started")
+        let applied = expectation(description: "runtime update applied after another inactive event")
+        proxy.onRemove = { update in if update.version == "2.0" { applied.fulfill() } }
+        var allowed = true
+        var pause = true
+        let owner = makeInstaller(store: proxy, canApplyWhileInactive: { _ in allowed }, sleep: { _ in
+            if pause {
+                waiting.fulfill()
+                try await Task.sleep(for: .seconds(60))
+            }
+        })
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: installationID))
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [waiting], timeout: 2)
+
+        allowed = false
+        owner.activityDidChange()
+        await owner.cancelAndWait()
+        XCTAssertTrue(manager.context(for: installationID) === incumbent)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+
+        pause = false
+        allowed = true
+        owner.activityDidChange()
+        await fulfillment(of: [applied], timeout: 2)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+    }
+
+    func testRuntimeWithoutPendingPackagesDoesNotStartAnIdleDelay() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let checked = expectation(description: "runtime queue checked its pending store")
+        var reads = 0
+        proxy.onRead = {
+            reads += 1
+            if reads == 2 { checked.fulfill() }
+        }
+        _ = makeInstaller(store: proxy, canApplyWhileInactive: { _ in true }, sleep: { _ in
+            XCTFail("No pending package means there must be no idle delay")
+        })
+
+        await manager.loadInstalledExtensions()
+        await fulfillment(of: [checked], timeout: 2)
+
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+    }
+
+    func testRuntimeReactivationDuringCopyKeepsTheIncumbentAndPendingPackage() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let finished = expectation(description: "deferred installation copy cleaned")
+        proxy.onInstallationCopyRemoved = { finished.fulfill() }
+        var allowed = true
+        proxy.onCopy = { allowed = false }
+        _ = makeInstaller(store: proxy, canApplyWhileInactive: { _ in allowed })
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: installationID))
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [finished], timeout: 2)
+
+        XCTAssertTrue(manager.context(for: installationID) === incumbent)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        let remaining = await pending.pendingUpdate(for: storeID)
+        XCTAssertEqual(remaining?.version, "2.0")
+    }
+
+    func testRuntimeActivityFollowingPublicationDoesNotCancelActivation() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "committed runtime update finished activating")
+        proxy.onRemove = { update in if update.version == "2.0" { applied.fulfill() } }
+        var allowed = true
+        weak var owner: ChromeWebStoreUpdateInstaller?
+        let installer = makeInstaller(store: proxy, canApplyWhileInactive: { _ in allowed })
+        owner = installer
+        manager.didCommitStoreUpdate = { _, _ in
+            allowed = false
+            owner?.activityDidChange()
+            return true
+        }
+        await manager.loadInstalledExtensions()
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertFalse(allowed)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, false)
+    }
+
+    func testRuntimeTransientActivityDuringCopyRequiresANewQuietPeriod() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "runtime update applied after a fresh quiet period")
+        var allowed = true
+        var copies = 0
+        var delays = 0
+        weak var owner: ChromeWebStoreUpdateInstaller?
+        proxy.onCopy = {
+            copies += 1
+            if copies == 1 {
+                allowed = false
+                owner?.activityDidChange()
+                allowed = true
+                owner?.activityDidChange()
+            }
+        }
+        proxy.onInstallationCopyRemoved = {
+            if copies == 1 { XCTAssertEqual(self.manager.context(for: self.installationID)?.webExtension.version, "1.0") }
+        }
+        proxy.onRemove = { update in if update.version == "2.0" { applied.fulfill() } }
+        let installer = makeInstaller(store: proxy, canApplyWhileInactive: { _ in allowed }, sleep: { _ in delays += 1 })
+        owner = installer
+        await manager.loadInstalledExtensions()
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertEqual(copies, 2)
+        XCTAssertEqual(delays, 2)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+    }
+
+    func testRuntimeTransientActivityDuringThePostDelaySnapshotRequiresANewQuietPeriod() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "runtime update applied after a new post-snapshot quiet period")
+        var allowed = true
+        var delays = 0
+        var injectedAtDelay: Int?
+        weak var owner: ChromeWebStoreUpdateInstaller?
+        proxy.onRead = {
+            if delays > 0, injectedAtDelay == nil {
+                injectedAtDelay = delays
+                allowed = false
+                owner?.activityDidChange()
+                allowed = true
+                owner?.activityDidChange()
+            }
+        }
+        proxy.onCopy = { XCTAssertGreaterThan(delays, try XCTUnwrap(injectedAtDelay)) }
+        proxy.onRemove = { update in if update.version == "2.0" { applied.fulfill() } }
+        let installer = makeInstaller(store: proxy, canApplyWhileInactive: { _ in allowed }, sleep: { _ in delays += 1 })
+        owner = installer
+        await manager.loadInstalledExtensions()
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertNotNil(injectedAtDelay)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+    }
+
+    func testRuntimeActivityDuringTheFirstActivationRequiresANewQuietPeriodForTheNextExtension() async throws {
+        let otherID = UUID().uuidString
+        let otherStoreID = ChromeWebStoreID.onePassword.rawValue
+        try writePackage(version: "1.0", at: extensionsDirectory.appendingPathComponent(otherID))
+        installationStore.add(.init(uniqueIdentifier: otherID, filename: otherID, name: "Second fixture", version: "1.0",
+                                     storeIdentity: .init(store: .chromeWebStore, id: otherStoreID)))
+        try permissionStore.save(WebExtensionPermissionSettings(), for: otherID)
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "both runtime updates applied")
+        applied.expectedFulfillmentCount = 2
+        var allowed = false
+        var delays = 0
+        var firstCommitDelay: Int?
+        weak var owner: ChromeWebStoreUpdateInstaller?
+        proxy.onCopy = {
+            if let firstCommitDelay { XCTAssertGreaterThan(delays, firstCommitDelay) }
+        }
+        proxy.onRemove = { _ in applied.fulfill() }
+        let installer = makeInstaller(store: proxy, canApplyWhileInactive: { _ in allowed }, sleep: { _ in delays += 1 })
+        owner = installer
+        manager.didCommitStoreUpdate = { _, _ in
+            if firstCommitDelay == nil {
+                firstCommitDelay = delays
+                allowed = false
+                owner?.activityDidChange()
+                allowed = true
+                owner?.activityDidChange()
+            }
+            return true
+        }
+        await manager.loadInstalledExtensions()
+        let other = try makeUpdate(version: "2.0", binding: otherID)
+        _ = try await pending.store(.init(extensionID: otherStoreID, version: other.version, fileURL: other.fileURL, installationIdentifier: otherID))
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+
+        allowed = true
+        owner?.activityDidChange()
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+        XCTAssertEqual(manager.context(for: otherID)?.webExtension.version, "2.0")
+    }
+
+    func testRuntimeNewerArrivalRemainsPendingAndAppliesSeriallyAfterTheInFlightCopy() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "newest runtime package applied")
+        var copied = 0
+        proxy.onCopy = {
+            copied += 1
+            if copied == 1 { _ = try await self.pending.store(self.makeUpdate(version: "3.0")) }
+        }
+        proxy.onRemove = { update in if update.version == "3.0" { applied.fulfill() } }
+        _ = makeInstaller(store: proxy, canApplyWhileInactive: { _ in true })
+        await manager.loadInstalledExtensions()
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertEqual(copied, 2)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "3.0")
+        let remaining = await pending.pendingUpdate(for: storeID)
+        XCTAssertNil(remaining)
+    }
+
+    func testUnchangedActivityDoesNotRestartThePendingGracePeriod() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "runtime update applied despite unchanged activity notifications")
+        proxy.onRemove = { update in if update.version == "2.0" { applied.fulfill() } }
+        var delays = 0
+        weak var owner: ChromeWebStoreUpdateInstaller?
+        let installer = makeInstaller(store: proxy, canApplyWhileInactive: { _ in true }, sleep: { _ in
+            delays += 1
+            owner?.activityDidChange()
+            try Task.checkCancellation()
+        })
+        owner = installer
+        await manager.loadInstalledExtensions()
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertEqual(delays, 1)
+    }
+
+    func testNewPackageDuringTheEmptyCompletionSnapshotCannotLoseItsWakeup() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let applied = expectation(description: "package accepted during completion snapshot applied")
+        var finishedFirst = false
+        var injected = false
+        weak var owner: ChromeWebStoreUpdateInstaller?
+        proxy.onRemove = { update in
+            if update.version == "2.0" { finishedFirst = true }
+            if update.version == "3.0" { applied.fulfill() }
+        }
+        proxy.onReadAsync = {
+            if finishedFirst, !injected {
+                injected = true
+                _ = try await self.pending.store(self.makeUpdate(version: "3.0"))
+                owner?.activityDidChange(force: true)
+            }
+        }
+        let installer = makeInstaller(store: proxy, canApplyWhileInactive: { _ in true })
+        owner = installer
+        await manager.loadInstalledExtensions()
+
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [applied], timeout: 2)
+
+        XCTAssertTrue(injected)
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "3.0")
+    }
+
     private func makeManager(fileManager: FileManager = .default, pixels: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionManager {
         let permissions = WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: StartupNoPrompt())
         return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(), controllerConfiguration: .nonPersistent(),
@@ -241,11 +558,14 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
     }
 
     @discardableResult
-    private func makeInstaller(store: (any ChromeWebStorePendingUpdateStoring)? = nil, isEnabled: @escaping () -> Bool = { true }) -> ChromeWebStoreUpdateInstaller {
+    private func makeInstaller(store: (any ChromeWebStorePendingUpdateStoring)? = nil, isEnabled: @escaping () -> Bool = { true },
+                               canApplyWhileInactive: ((String) -> Bool)? = nil,
+                               sleep: @escaping (TimeInterval) async throws -> Void = { _ in }) -> ChromeWebStoreUpdateInstaller {
         let owner = ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: store ?? pending,
-                                                  isEnabled: isEnabled, isCatalogExtension: { _ in true })
+                                                  isEnabled: isEnabled, isCatalogExtension: { _ in true },
+                                                  canApplyWhileInactive: canApplyWhileInactive, sleep: sleep)
         installer = owner
-        manager.startupUpdateInstaller = owner
+        manager.updateInstaller = owner
         return owner
     }
 
@@ -277,17 +597,28 @@ private final class StartupPendingStoreProxy: ChromeWebStorePendingUpdateStoring
     let base: ChromeWebStorePendingUpdateStore
     var onCopy: (() async throws -> Void)?
     var onRemove: ((ChromeWebStoreVerifiedUpdate) -> Void)?
+    var onRead: (() -> Void)?
+    var onReadAsync: (() async throws -> Void)?
+    var onInstallationCopyRemoved: (() -> Void)?
     init(base: ChromeWebStorePendingUpdateStore) { self.base = base }
     func pendingUpdate(for extensionID: String) async -> ChromeWebStoreVerifiedUpdate? { await base.pendingUpdate(for: extensionID) }
     func store(_ update: ChromeWebStoreVerifiedUpdate) async throws -> Bool { try await base.store(update) }
-    func allPendingUpdates() async throws -> [ChromeWebStoreVerifiedUpdate] { try await base.allPendingUpdates() }
+    func allPendingUpdates() async throws -> [ChromeWebStoreVerifiedUpdate] {
+        let updates = try await base.allPendingUpdates()
+        onRead?()
+        try await onReadAsync?()
+        return updates
+    }
     func copyForInstallation(_ update: ChromeWebStoreVerifiedUpdate) async throws -> ChromeWebStoreVerifiedUpdate? {
         let copy = try await base.copyForInstallation(update)
         try await onCopy?()
         return copy
     }
     func remove(_ update: ChromeWebStoreVerifiedUpdate) async throws { try await base.remove(update); onRemove?(update) }
-    func removeInstallationCopy(_ update: ChromeWebStoreVerifiedUpdate) async throws { try await base.removeInstallationCopy(update) }
+    func removeInstallationCopy(_ update: ChromeWebStoreVerifiedUpdate) async throws {
+        try await base.removeInstallationCopy(update)
+        onInstallationCopyRemoved?()
+    }
     func cleanupAbandonedInstallationCopies() async throws { try await base.cleanupAbandonedInstallationCopies() }
     func setUpdateStoredHandler(_ handler: (@Sendable (ChromeWebStoreVerifiedUpdate) -> Void)?) async { await base.setUpdateStoredHandler(handler) }
 }

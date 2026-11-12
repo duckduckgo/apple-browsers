@@ -72,6 +72,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             subscriptionManager: mockSubscriptionManager,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
@@ -642,6 +643,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in
                 didRequestContext = true
@@ -698,6 +700,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in
                 XCTAssertEqual(script.cancelPendingTabContextSubmissionCallCount, 1)
@@ -744,6 +747,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in pageContext }
         )
@@ -773,6 +777,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in nil }
         )

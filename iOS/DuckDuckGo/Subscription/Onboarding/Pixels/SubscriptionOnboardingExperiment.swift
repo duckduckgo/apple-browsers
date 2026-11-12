@@ -24,6 +24,7 @@ import PixelKit
 import PixelExperimentKit
 import FeatureFlags_iOS
 import AIChat
+import Persistence
 
 /// Two mutually exclusive ABN tests split by trial status: free-trials vs. paid-subs. Click-through per step
 /// is reported separately via `SubscriptionOnboardingInstrumentation`, not here.
@@ -112,11 +113,12 @@ enum SubscriptionOnboardingExperiment {
         fireActivationMetric(Metric.vpnActivated)
     }
 
-    /// Reports a paid Duck.ai chat while the subscription is active, unless already recorded. No-ops if not
-    /// enrolled in either experiment.
-    static func fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: Bool, isAlreadyActivated: Bool) {
-        guard isSubscriptionActive, !isAlreadyActivated else { return }
+    /// Reports a paid Duck.ai chat while the subscription is active, unless already recorded. Sends nothing if not
+    /// enrolled in either experiment; the recorded flag is cleared again on fresh enrollment.
+    static func fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: Bool, metricStore: SubscriptionOnboardingExperimentMetricStoring) {
+        guard isSubscriptionActive, !metricStore.hasSentDuckAIPaidUsed else { return }
         fireActivationMetric(Metric.duckAiPaidUsed)
+        metricStore.markDuckAIPaidUsedSent()
     }
 
     /// Reports PIR activation while the subscription is active, unless already recorded. No-ops if not
@@ -140,5 +142,42 @@ enum SubscriptionOnboardingExperiment {
             PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric + "_d1", conversionWindowDays: d1Window, value: "1")
             PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric + target.suffix, conversionWindowDays: target.window, value: "1")
         }
+    }
+}
+
+/// Remembers whether the duckAiPaidUsed experiment metric was already sent. Kept apart from the onboarding
+/// checklist, which the onboarding flow's Start chat completes before any paid prompt is sent.
+protocol SubscriptionOnboardingExperimentMetricStoring {
+    var hasSentDuckAIPaidUsed: Bool { get }
+    func markDuckAIPaidUsedSent()
+    func resetDuckAIPaidUsedSent()
+}
+
+enum SubscriptionOnboardingExperimentMetricStorageKeys: String, StorageKeyDescribing {
+    case duckAIPaidUsedSent = "com_duckduckgo_ios_subscriptionOnboardingExperiment_duckAIPaidUsedSent"
+}
+
+struct SubscriptionOnboardingExperimentMetricKeys: StoringKeys {
+    let duckAIPaidUsedSent = StorageKey<Bool>(SubscriptionOnboardingExperimentMetricStorageKeys.duckAIPaidUsedSent)
+}
+
+struct SubscriptionOnboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring {
+
+    private let storage: any ThrowingKeyedStoring<SubscriptionOnboardingExperimentMetricKeys>
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.storage = keyValueStore.throwingKeyedStoring()
+    }
+
+    var hasSentDuckAIPaidUsed: Bool {
+        (try? storage.value(for: \.duckAIPaidUsedSent)) ?? false
+    }
+
+    func markDuckAIPaidUsedSent() {
+        try? storage.set(true, for: \.duckAIPaidUsedSent)
+    }
+
+    func resetDuckAIPaidUsedSent() {
+        try? storage.removeValue(for: \.duckAIPaidUsedSent)
     }
 }

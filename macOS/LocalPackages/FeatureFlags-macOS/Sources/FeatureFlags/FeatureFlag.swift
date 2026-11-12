@@ -397,6 +397,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
 
+    /// Autoconsent heuristic hit-testing: probe the viewport with elementFromPoint before the DOM walk
+    /// to find cookie popups that aren't fixed, sticky or dialog-like.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220464829991571
+    case heuristicHitTest
+
     /// Cookie Pop-up Protection opt-in dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
@@ -996,6 +1001,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
+        case .heuristicHitTest:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AutoconsentSubfeature.heuristicHitTest), category: .popupBlocking)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
         case .crashCollectionLimitCallStackTreeDepth:

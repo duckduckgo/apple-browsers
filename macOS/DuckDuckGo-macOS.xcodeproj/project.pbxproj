@@ -894,18 +894,13 @@
 		14505A07256084EF00272CC6 /* UserAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAgent.swift; sourceTree = "<group>"; };
 		1D36E657298AA3BA00AA485D /* InternalUserDeciderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalUserDeciderStore.swift; sourceTree = "<group>"; };
 		1DA84D312C119AE70011C80F /* SparkleUpdateMenuItemFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateMenuItemFactory.swift; sourceTree = "<group>"; };
-		1E7D3C332F2232890099611C /* WebExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WebExtensions; path = ../SharedPackages/WebExtensions; sourceTree = SOURCE_ROOT; };
 		1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockingRulesUpdateObserver.swift; sourceTree = "<group>"; };
 		1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardPermissionHandler.swift; sourceTree = "<group>"; };
-		1E862A882A9FC01200F84D4B /* SubscriptionUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SubscriptionUI; sourceTree = "<group>"; };
 		1EF51A7B2F89407D003ED865 /* AdBlockingNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBlockingNavigationHandler.swift; sourceTree = "<group>"; };
 		2026FB0CABDEF00100AA00A3 /* YouTubeAdBlockPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeAdBlockPopover.swift; sourceTree = "<group>"; };
-		2644631CDBDA424A80C1127B /* AppUpdater */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AppUpdater; path = LocalPackages/AppUpdater; sourceTree = SOURCE_ROOT; };
 		26AA0ED38F7EA8BACD220B2F /* YouTubeAdBlockingTelemetryConsentRequirement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeAdBlockingTelemetryConsentRequirement.swift; sourceTree = "<group>"; };
 		315AA06F28CA5CC800200030 /* YoutubePlayerNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubePlayerNavigationHandler.swift; sourceTree = "<group>"; };
 		3199AF632C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckPlayerOnboardingDecider.swift; sourceTree = "<group>"; };
-		31B649382DB2899500A7AEE0 /* AIChat */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AIChat; path = ../SharedPackages/AIChat; sourceTree = SOURCE_ROOT; };
-		31D49A392DC2948D00262F26 /* UIComponents */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = UIComponents; path = ../SharedPackages/UIComponents; sourceTree = SOURCE_ROOT; };
 		31E163BF293A581900963C10 /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Res/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
 		31F28C4C28C8EEC500119F70 /* YoutubePlayerUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = YoutubePlayerUserScript.swift; sourceTree = "<group>"; };
 		31F28C4E28C8EEC500119F70 /* YoutubeOverlayUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = YoutubeOverlayUserScript.swift; sourceTree = "<group>"; };
@@ -917,12 +912,8 @@
 		3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Integration Tests App Store.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		370AB88A2E263AF100BBBDE0 /* DuckDuckGoAppStoreAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreAlpha.entitlements; sourceTree = "<group>"; };
 		370AB88B2E2641C500BBBDE0 /* DuckDuckGoAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAlpha.entitlements; sourceTree = "<group>"; };
-		3719B13C2E72386100757539 /* URLPredictor */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = URLPredictor; path = ../SharedPackages/URLPredictor; sourceTree = SOURCE_ROOT; };
-		3720B7F82D00DA4500D20F23 /* WebKitExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = WebKitExtensions; sourceTree = "<group>"; };
 		373A26962964CF0B0043FC57 /* TestsTargetsBase.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = TestsTargetsBase.xcconfig; sourceTree = "<group>"; };
-		373DE97A2D3916FD000577EE /* UserScriptActionsManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UserScriptActionsManager; sourceTree = "<group>"; };
 		374348BE2E26F21B00C37230 /* Sparkle.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Sparkle.xcconfig; sourceTree = "<group>"; };
-		374F18B32D006F940032EA4E /* NewTabPage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NewTabPage; sourceTree = "<group>"; };
 		376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SyncE2EUITests.xcconfig; sourceTree = "<group>"; };
 		376113D42B29CD5B00E794BB /* SyncE2EUITests App Store.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SyncE2EUITests App Store.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SyncE2EUITestsAppStore.xcconfig; sourceTree = "<group>"; };
@@ -931,7 +922,6 @@
 		376CC8B4296EB630006B63A7 /* AppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppStore.xcconfig; sourceTree = "<group>"; };
 		376CC8B5296EBA8F006B63A7 /* BuildNumber.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildNumber.xcconfig; sourceTree = "<group>"; };
 		37717E66296B5A20002FAEDF /* Global.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Global.xcconfig; sourceTree = "<group>"; };
-		3772BEDF2D01A1400019B9EF /* Utilities */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Utilities; sourceTree = "<group>"; };
 		377E54382937B7C400780A0A /* DuckDuckGoAppStoreCI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreCI.entitlements; sourceTree = "<group>"; };
 		378B5887295CF2A4002C0CC0 /* Version.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		378B5888295CF2A4002C0CC0 /* Common.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Common.xcconfig; sourceTree = "<group>"; };
@@ -942,9 +932,6 @@
 		378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGo.xcconfig; sourceTree = "<group>"; };
 		378CA39E2FBC79290043CF38 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		378E2799296F6FDE00FCADA2 /* ManualAppStoreRelease.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ManualAppStoreRelease.xcconfig; sourceTree = "<group>"; };
-		378E279D2970217400FCADA2 /* BuildToolPlugins */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = BuildToolPlugins; sourceTree = "<group>"; };
-		378F44E229B4B7B600899924 /* SwiftUIExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SwiftUIExtensions; sourceTree = "<group>"; };
-		379D7A422D384E4F00E6E1CC /* HistoryView */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = HistoryView; sourceTree = "<group>"; };
 		37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifier.swift; sourceTree = "<group>"; };
 		37C3210B2F1E80A1008F4604 /* Performance Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Performance Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = MemoryUsageTests.xcconfig; sourceTree = "<group>"; };
@@ -981,11 +968,7 @@
 		4B677428255DBEB800025BD8 /* httpsMobileV2Bloom.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = httpsMobileV2Bloom.bin; sourceTree = "<group>"; };
 		4B67742A255DBEB800025BD8 /* httpsMobileV2FalsePositives.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = httpsMobileV2FalsePositives.json; sourceTree = "<group>"; };
 		4B6785432AA8DE1F008A5004 /* VPNUninstaller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNUninstaller.swift; sourceTree = "<group>"; };
-		4B94B7512D471E7E0014AAB8 /* SyncUI-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "SyncUI-macOS"; sourceTree = "<group>"; };
 		4BA808FF2CDE78F600338EE4 /* DuckDuckGoAppStoreReview.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreReview.entitlements; sourceTree = "<group>"; };
-		4BC5E8612E174B7D00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
-		4BCB82792E92E25F004B7543 /* AttributedMetric */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AttributedMetric; path = ../SharedPackages/AttributedMetric; sourceTree = SOURCE_ROOT; };
-		4BE4D0BA2D8D2DE400D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
 		5048679EC47B87A0A4E718D9 /* UpdatePromptStageDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatePromptStageDebugMenu.swift; sourceTree = "<group>"; };
 		565E46DD2B2725DC0013AC2A /* SyncE2EUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SyncE2EUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		567311252D71DDDB002DAF62 /* scamFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = scamFilterSet.json; sourceTree = "<group>"; };
@@ -999,28 +982,19 @@
 		7B122A972DE4716800B84F63 /* AppStoreInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppStoreInfo.plist; sourceTree = "<group>"; };
 		7B122A982DE4716800B84F63 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7B22D86D2CCFD7B7006A76E1 /* TipKitController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitController.swift; sourceTree = "<group>"; };
-		7B25FE322AD12C990012AFAB /* NetworkProtectionMac */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NetworkProtectionMac; sourceTree = "<group>"; };
 		7B2BF16C2F9F68FA0025F707 /* DefaultInstallOriginVariantProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultInstallOriginVariantProvider.swift; sourceTree = "<group>"; };
 		7B2E365F2D6DEFBB00A08CB7 /* com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = "com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B2E36722D6DF04000A08CB7 /* DuckDuckGoVPNSysexAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPNSysexAppStore.xcconfig; sourceTree = "<group>"; };
 		7B307A712DCCE16200A07FB0 /* AppStore.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppStore.xcstrings; sourceTree = "<group>"; };
-		7B3A16402D4B798000D4C869 /* AppInfoRetriever */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppInfoRetriever; sourceTree = "<group>"; };
-		7B4659A02FAC000000CCB375 /* AddressBarPerformance */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AddressBarPerformance; sourceTree = "<group>"; };
 		7B4CE8DA26F02108009134B1 /* UI Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "UI Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B5291892A169BC90022E406 /* DeveloperID.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DeveloperID.xcconfig; sourceTree = "<group>"; };
 		7B5886382EAFEF310079F8B1 /* SparkleDebugHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleDebugHelper.swift; sourceTree = "<group>"; };
 		7B6EC5E42AE2D8AF004FE6DF /* DuckDuckGoDBPAgentAppStore.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = DuckDuckGoDBPAgentAppStore.xcconfig; sourceTree = "<group>"; };
 		7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = DuckDuckGoDBPAgent.xcconfig; sourceTree = "<group>"; };
-		7B76E6852AD5D77600186A84 /* XPCHelper */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = XPCHelper; sourceTree = "<group>"; };
-		7B8594172B5B25FB0007EB3E /* UDSHelper */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UDSHelper; sourceTree = "<group>"; };
-		7B8FDD1E2CDD877000720907 /* FeatureFlags-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "FeatureFlags-macOS"; sourceTree = "<group>"; };
-		7B9167A82C09E88800322310 /* AppLauncher */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppLauncher; sourceTree = "<group>"; };
 		7B99CF302EEAC1A5003FA486 /* UserNotificationAuthorizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserNotificationAuthorizationService.swift; sourceTree = "<group>"; };
 		7BA7CC0B2AD11D1E0042E5CE /* DuckDuckGoVPNAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPNAppStore.xcconfig; sourceTree = "<group>"; };
 		7BA7CC0C2AD11D1E0042E5CE /* DuckDuckGoVPN.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPN.xcconfig; sourceTree = "<group>"; };
-		7BB9F8E72DFC1AB700741690 /* VPN */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = VPN; path = ../SharedPackages/VPN; sourceTree = SOURCE_ROOT; };
 		7BBBD8962ED8DA51003A7DA5 /* NotificationIconFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationIconFetcher.swift; sourceTree = "<group>"; };
-		7BC5F7DF2D49044C0005B3D9 /* PreferencesUI-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "PreferencesUI-macOS"; sourceTree = "<group>"; };
 		7BC641142DD1FBD600272A9D /* UpdatesDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesDebugMenu.swift; sourceTree = "<group>"; };
 		7BD8679A2A9E9E000063B9F7 /* VPNFeatureGatekeeper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNFeatureGatekeeper.swift; sourceTree = "<group>"; };
 		7BDA36E52B7E037100AD5388 /* VPNProxyExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VPNProxyExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1030,41 +1004,26 @@
 		7BDBAD122CBFF633000379B7 /* TipKitController+ConvenienceInitializers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TipKitController+ConvenienceInitializers.swift"; sourceTree = "<group>"; };
 		7BDBAD132CBFF633000379B7 /* TipKitDebugOptionsUIActionHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitDebugOptionsUIActionHandling.swift; sourceTree = "<group>"; };
 		7BE207382DCCC4230037394C /* DeveloperID.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = DeveloperID.xcstrings; sourceTree = "<group>"; };
-		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
 		7BFF35722C10D75000F89673 /* IPCServiceLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCServiceLauncher.swift; sourceTree = "<group>"; };
-		84225D6C2F56C00900A75315 /* BWIntegration */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = BWIntegration; sourceTree = "<group>"; };
 		8440B2B62EF136D200E32722 /* QuitSurveyPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyPresenter.swift; sourceTree = "<group>"; };
 		848231832F57E3FE00553470 /* CrashReportingFactory+makeCrashReporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CrashReportingFactory+makeCrashReporting.swift"; sourceTree = "<group>"; };
-		84AECC4E2DFBF75700438ACC /* CommonObjCExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CommonObjCExtensions; sourceTree = "<group>"; };
-		84AECC4F2DFBF76400438ACC /* LetsMove */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = LetsMove; sourceTree = "<group>"; };
 		84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareFilterSet.json; sourceTree = "<group>"; };
 		84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareHashPrefixes.json; sourceTree = "<group>"; };
-		84DD05892E9793B70043A25E /* TestUtilities */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = TestUtilities; sourceTree = "<group>"; };
 		84DD892A2E9793B70043A25E /* Punycode.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Punycode.xcodeproj; sourceTree = "<group>"; };
 		84DDBF682E9793B70043A25E /* OCTest.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OCTest.xcodeproj; sourceTree = "<group>"; };
 		84DDDEA62E9793B70043A25E /* Punycode.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Punycode.xcodeproj; sourceTree = "<group>"; };
 		84E2FC432E0DAB15000874F7 /* Testing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Testing.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework; sourceTree = DEVELOPER_DIR; };
-		8518F1302F74314900B53C75 /* ScreenTimeDataCleaner */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ScreenTimeDataCleaner; path = ../SharedPackages/ScreenTimeDataCleaner; sourceTree = SOURCE_ROOT; };
 		85378D9D274E664C007C5CBF /* PopoverMessageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverMessageViewController.swift; sourceTree = "<group>"; };
 		85378D9F274E6F42007C5CBF /* NSNotificationName+EmailManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSNotificationName+EmailManager.swift"; sourceTree = "<group>"; };
 		85378DA1274E7F25007C5CBF /* EmailManagerRequestDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailManagerRequestDelegate.swift; sourceTree = "<group>"; };
 		85480FCE25D1AA22009424E3 /* ConfigurationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationStore.swift; sourceTree = "<group>"; };
 		85AE2FF124A33A2D002D507F /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
-		85B6ABB72DE5E4E4009C85C7 /* Onboarding */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Onboarding; path = ../SharedPackages/Onboarding; sourceTree = SOURCE_ROOT; };
 		85D33F1125C82EB3002B91A6 /* ConfigurationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationManager.swift; sourceTree = "<group>"; };
 		9D02C9012CDA4A9E001A6E78 /* PIRE2ETests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = PIRE2ETests.xcconfig; sourceTree = "<group>"; };
 		9D84E43C2CD4E66F0046CD8B /* DBPE2ETests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DBPE2ETests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D9AE86A2AA76CF90026E7DC /* LoginItemsManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginItemsManager.swift; sourceTree = "<group>"; };
 		9D9AE8D12AAA39A70026E7DC /* DuckDuckGo Personal Information Removal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DuckDuckGo Personal Information Removal.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D9AE8F22AAA39D30026E7DC /* DuckDuckGo Personal Information Removal App Store.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DuckDuckGo Personal Information Removal App Store.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		9D9DE5712C63A96400D20B15 /* AppKitExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppKitExtensions; sourceTree = "<group>"; };
-		9DB6E7222AA0DA7A00A17F3C /* LoginItems */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = LoginItems; sourceTree = "<group>"; };
-		9DB980122D96AF8600B174B3 /* DataBrokerProtection-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DataBrokerProtection-macOS"; sourceTree = "<group>"; };
-		9DB9801B2D96B3FE00B174B3 /* DataBrokerProtectionCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionCore; path = ../../SharedPackages/DataBrokerProtectionCore; sourceTree = "<group>"; };
-		9DF2DB592C73B52F0025F43C /* Freemium */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Freemium; sourceTree = "<group>"; };
-		9F9845152E8D35DC004D5C9B /* SystemFrameworksExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SystemFrameworksExtensions; path = ../SharedPackages/Infrastructure/SystemFrameworksExtensions; sourceTree = SOURCE_ROOT; };
-		A1A1A1A12F50000500A0A0A0 /* CrashReporting */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = CrashReporting; path = LocalPackages/CrashReporting; sourceTree = SOURCE_ROOT; };
-		A7C3D1E82F4B5A000654B4E /* SERPInstallOrigin */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPInstallOrigin; path = ../SharedPackages/SERPInstallOrigin; sourceTree = SOURCE_ROOT; };
 		A86EE9A7B2E24D47BACF8241 /* AdBlockingAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBlockingAvailability.swift; sourceTree = "<group>"; };
 		AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DuckDuckGo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA585D85248FD31400E9A3E2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -1094,9 +1053,7 @@
 		BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdatesDebugMenu.swift; sourceTree = "<group>"; };
 		BB6B4EE42EE7483D00FE23E2 /* QuitSurveyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyView.swift; sourceTree = "<group>"; };
 		BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyViewModel.swift; sourceTree = "<group>"; };
-		BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/Infrastructure/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
 		BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyDecider.swift; sourceTree = "<group>"; };
-		BBD9C3952E9D72050060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
 		BBFE24462EF0622200D47B95 /* QuitSurveyPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyPixels.swift; sourceTree = "<group>"; };
 		BBFE24492EF08CF000D47B95 /* QuitSurveyReturnUserHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyReturnUserHandler.swift; sourceTree = "<group>"; };
 		BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromotionViewCoordinator.swift; sourceTree = "<group>"; };
@@ -1121,8 +1078,6 @@
 		CDE248A52C821FFE00F9399D /* MaliciousSiteProtectionPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferences.swift; sourceTree = "<group>"; };
 		CDE248A62C821FFE00F9399D /* phishingFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = phishingFilterSet.json; sourceTree = "<group>"; };
 		CDE248A72C821FFE00F9399D /* MaliciousSiteProtectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionState.swift; sourceTree = "<group>"; };
-		D65D0F9D2E7236D80075A784 /* NetworkQualityMonitor */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NetworkQualityMonitor; sourceTree = "<group>"; };
-		D65D0FA22E7239740075A784 /* PerformanceTest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = PerformanceTest; sourceTree = "<group>"; };
 		D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerOverlayPixels.swift; sourceTree = "<group>"; };
 		DA11B00200000000001A0001 /* DuckPlayerOverlayObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerOverlayObserver.swift; sourceTree = "<group>"; };
 		DD4063303C52EE98D9AC6FAC /* MacOSEventHubIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSEventHubIntegration.swift; sourceTree = "<group>"; };
@@ -1138,9 +1093,7 @@
 		F156E39A2FB5FBCC004A8424 /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
 		F17E63312DCCD8310072B3BC /* LogExporterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogExporterView.swift; sourceTree = "<group>"; };
 		F17E63342DCCDB150072B3BC /* MainViewController+LogExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+LogExporter.swift"; sourceTree = "<group>"; };
-		F19EDA9F2FB3B0E20065427A /* Waitlist-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "Waitlist-macOS"; sourceTree = "<group>"; };
 		F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogExporter.swift; sourceTree = "<group>"; };
-		FA57C0DE0000000000000017 /* HangMetrics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HangMetrics; path = ../SharedPackages/HangMetrics; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -2371,53 +2324,6 @@
 		378E279C2970217400FCADA2 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
-				7B4659A02FAC000000CCB375 /* AddressBarPerformance */,
-				31B649382DB2899500A7AEE0 /* AIChat */,
-				7B3A16402D4B798000D4C869 /* AppInfoRetriever */,
-				9D9DE5712C63A96400D20B15 /* AppKitExtensions */,
-				7B9167A82C09E88800322310 /* AppLauncher */,
-				2644631CDBDA424A80C1127B /* AppUpdater */,
-				4BCB82792E92E25F004B7543 /* AttributedMetric */,
-				4BE4D0BA2D8D2DE400D63840 /* BrowserServicesKit */,
-				378E279D2970217400FCADA2 /* BuildToolPlugins */,
-				84225D6C2F56C00900A75315 /* BWIntegration */,
-				84AECC4E2DFBF75700438ACC /* CommonObjCExtensions */,
-				A1A1A1A12F50000500A0A0A0 /* CrashReporting */,
-				9DB980122D96AF8600B174B3 /* DataBrokerProtection-macOS */,
-				9DB9801B2D96B3FE00B174B3 /* DataBrokerProtectionCore */,
-				4BC5E8612E174B7D00391C19 /* DesignResourcesKit */,
-				BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */,
-				7B8FDD1E2CDD877000720907 /* FeatureFlags-macOS */,
-				9DF2DB592C73B52F0025F43C /* Freemium */,
-				FA57C0DE0000000000000017 /* HangMetrics */,
-				379D7A422D384E4F00E6E1CC /* HistoryView */,
-				84AECC4F2DFBF76400438ACC /* LetsMove */,
-				9DB6E7222AA0DA7A00A17F3C /* LoginItems */,
-				7B25FE322AD12C990012AFAB /* NetworkProtectionMac */,
-				D65D0F9D2E7236D80075A784 /* NetworkQualityMonitor */,
-				374F18B32D006F940032EA4E /* NewTabPage */,
-				85B6ABB72DE5E4E4009C85C7 /* Onboarding */,
-				D65D0FA22E7239740075A784 /* PerformanceTest */,
-				7BC5F7DF2D49044C0005B3D9 /* PreferencesUI-macOS */,
-				8518F1302F74314900B53C75 /* ScreenTimeDataCleaner */,
-				A7C3D1E82F4B5A000654B4E /* SERPInstallOrigin */,
-				BBD9C3952E9D72050060A6E8 /* SERPSettings */,
-				1E862A882A9FC01200F84D4B /* SubscriptionUI */,
-				378F44E229B4B7B600899924 /* SwiftUIExtensions */,
-				4B94B7512D471E7E0014AAB8 /* SyncUI-macOS */,
-				7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */,
-				9F9845152E8D35DC004D5C9B /* SystemFrameworksExtensions */,
-				84DD05892E9793B70043A25E /* TestUtilities */,
-				7B8594172B5B25FB0007EB3E /* UDSHelper */,
-				31D49A392DC2948D00262F26 /* UIComponents */,
-				3719B13C2E72386100757539 /* URLPredictor */,
-				373DE97A2D3916FD000577EE /* UserScriptActionsManager */,
-				3772BEDF2D01A1400019B9EF /* Utilities */,
-				7BB9F8E72DFC1AB700741690 /* VPN */,
-				F19EDA9F2FB3B0E20065427A /* Waitlist-macOS */,
-				1E7D3C332F2232890099611C /* WebExtensions */,
-				3720B7F82D00DA4500D20F23 /* WebKitExtensions */,
-				7B76E6852AD5D77600186A84 /* XPCHelper */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";
@@ -4153,6 +4059,47 @@
 				55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */,
 				A7B000052F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */,
 				A91A00113031000100000011 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */,
+				ED525E1DF090E205A79DEB5F /* XCLocalSwiftPackageReference "../SharedPackages/AIChat" */,
+				D6166BE9B1222FB0823F9EC0 /* XCLocalSwiftPackageReference "../SharedPackages/AttributedMetric" */,
+				959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */,
+				D794D8AA7B27C9E555E5E5A7 /* XCLocalSwiftPackageReference "../SharedPackages/DataBrokerProtectionCore" */,
+				6810CA7541899EC49C833441 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKit" */,
+				6EE68ED03C35F8A028AC7CA2 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKitIcons" */,
+				A41D6934F076A44E2D411270 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/SystemFrameworksExtensions" */,
+				6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */,
+				E51538A19EB61713C44F2184 /* XCLocalSwiftPackageReference "../SharedPackages/Onboarding" */,
+				537E739E21B238693D8701FF /* XCLocalSwiftPackageReference "../SharedPackages/SERPInstallOrigin" */,
+				3286C5E4FA63A11E310F47E0 /* XCLocalSwiftPackageReference "../SharedPackages/SERPSettings" */,
+				D291BBE95D5C153B6FA96815 /* XCLocalSwiftPackageReference "../SharedPackages/ScreenTimeDataCleaner" */,
+				9251821F060BC2299F0318FD /* XCLocalSwiftPackageReference "../SharedPackages/UIComponents" */,
+				4BEE8353D9FC7CD90063F596 /* XCLocalSwiftPackageReference "../SharedPackages/URLPredictor" */,
+				36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */,
+				078AB7B44EB3FD1AFC3C56A0 /* XCLocalSwiftPackageReference "../SharedPackages/WebExtensions" */,
+				E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */,
+				4DA157EA927AAD66A07BE700 /* XCLocalSwiftPackageReference "LocalPackages/AddressBarPerformance" */,
+				DF184039C22D16DC01AA9B01 /* XCLocalSwiftPackageReference "LocalPackages/AppInfoRetriever" */,
+				C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */,
+				BC71A33517C89671F88A2E1B /* XCLocalSwiftPackageReference "LocalPackages/AppLauncher" */,
+				32516B640411262EA9A10280 /* XCLocalSwiftPackageReference "LocalPackages/DataBrokerProtection-macOS" */,
+				6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */,
+				DCDAD030117CDBDE68FE0113 /* XCLocalSwiftPackageReference "LocalPackages/Freemium" */,
+				BC9D8AE06B87123E0662A17E /* XCLocalSwiftPackageReference "LocalPackages/HistoryView" */,
+				0EED3BFC9652D91CA9B8B4A7 /* XCLocalSwiftPackageReference "LocalPackages/LoginItems" */,
+				170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */,
+				E54AF575488EBC64722998F2 /* XCLocalSwiftPackageReference "LocalPackages/NetworkQualityMonitor" */,
+				2C917F0D39EAB033ABF13C41 /* XCLocalSwiftPackageReference "LocalPackages/NewTabPage" */,
+				2C454613F6A292179133E369 /* XCLocalSwiftPackageReference "LocalPackages/PerformanceTest" */,
+				0B5CD6430B7FC70B55B9DEA1 /* XCLocalSwiftPackageReference "LocalPackages/PreferencesUI-macOS" */,
+				3A4BD07E5E5E18D35C0EAECD /* XCLocalSwiftPackageReference "LocalPackages/SubscriptionUI" */,
+				0E9277EF8BACC9B3D7A4FFC1 /* XCLocalSwiftPackageReference "LocalPackages/SwiftUIExtensions" */,
+				FF0CE1B018CF45CB5F375EED /* XCLocalSwiftPackageReference "LocalPackages/SyncUI-macOS" */,
+				42DB450981B58764AE7B8D9A /* XCLocalSwiftPackageReference "LocalPackages/SystemExtensionManager" */,
+				7595651943E33760228273A1 /* XCLocalSwiftPackageReference "LocalPackages/UDSHelper" */,
+				EEBCBC98A18307BA928B91C1 /* XCLocalSwiftPackageReference "LocalPackages/UserScriptActionsManager" */,
+				98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */,
+				87FFA7356D2AC9ACD7638E55 /* XCLocalSwiftPackageReference "LocalPackages/Waitlist-macOS" */,
+				E1CB34F0C0E4ED284D1322A2 /* XCLocalSwiftPackageReference "LocalPackages/WebKitExtensions" */,
+				8A0FD3327CAC88A16CE9F700 /* XCLocalSwiftPackageReference "LocalPackages/XPCHelper" */,
 			);
 			productRefGroup = AA585D7F248FD31100E9A3E2 /* Products */;
 			projectDirPath = "";
@@ -6315,13 +6262,93 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		078AB7B44EB3FD1AFC3C56A0 /* XCLocalSwiftPackageReference "../SharedPackages/WebExtensions" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/WebExtensions;
+		};
+		0B5CD6430B7FC70B55B9DEA1 /* XCLocalSwiftPackageReference "LocalPackages/PreferencesUI-macOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "LocalPackages/PreferencesUI-macOS";
+		};
+		0E9277EF8BACC9B3D7A4FFC1 /* XCLocalSwiftPackageReference "LocalPackages/SwiftUIExtensions" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/SwiftUIExtensions;
+		};
+		0EED3BFC9652D91CA9B8B4A7 /* XCLocalSwiftPackageReference "LocalPackages/LoginItems" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/LoginItems;
+		};
+		170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/NetworkProtectionMac;
+		};
+		2C454613F6A292179133E369 /* XCLocalSwiftPackageReference "LocalPackages/PerformanceTest" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/PerformanceTest;
+		};
+		2C917F0D39EAB033ABF13C41 /* XCLocalSwiftPackageReference "LocalPackages/NewTabPage" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/NewTabPage;
+		};
 		315E395D2F86A36200D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
 		};
+		32516B640411262EA9A10280 /* XCLocalSwiftPackageReference "LocalPackages/DataBrokerProtection-macOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "LocalPackages/DataBrokerProtection-macOS";
+		};
+		3286C5E4FA63A11E310F47E0 /* XCLocalSwiftPackageReference "../SharedPackages/SERPSettings" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/SERPSettings;
+		};
+		36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/VPN;
+		};
+		3A4BD07E5E5E18D35C0EAECD /* XCLocalSwiftPackageReference "LocalPackages/SubscriptionUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/SubscriptionUI;
+		};
+		42DB450981B58764AE7B8D9A /* XCLocalSwiftPackageReference "LocalPackages/SystemExtensionManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/SystemExtensionManager;
+		};
+		4BEE8353D9FC7CD90063F596 /* XCLocalSwiftPackageReference "../SharedPackages/URLPredictor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/URLPredictor;
+		};
+		4DA157EA927AAD66A07BE700 /* XCLocalSwiftPackageReference "LocalPackages/AddressBarPerformance" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/AddressBarPerformance;
+		};
+		537E739E21B238693D8701FF /* XCLocalSwiftPackageReference "../SharedPackages/SERPInstallOrigin" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/SERPInstallOrigin;
+		};
 		55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/EventHub;
+		};
+		6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "LocalPackages/FeatureFlags-macOS";
+		};
+		6810CA7541899EC49C833441 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Infrastructure/DesignResourcesKit;
+		};
+		6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Networking;
+		};
+		6EE68ED03C35F8A028AC7CA2 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKitIcons" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Infrastructure/DesignResourcesKitIcons;
+		};
+		7595651943E33760228273A1 /* XCLocalSwiftPackageReference "LocalPackages/UDSHelper" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/UDSHelper;
 		};
 		7B11B30C2EF304B6005F0687 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -6347,6 +6374,26 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/TestUtilities;
 		};
+		87FFA7356D2AC9ACD7638E55 /* XCLocalSwiftPackageReference "LocalPackages/Waitlist-macOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "LocalPackages/Waitlist-macOS";
+		};
+		8A0FD3327CAC88A16CE9F700 /* XCLocalSwiftPackageReference "LocalPackages/XPCHelper" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/XPCHelper;
+		};
+		9251821F060BC2299F0318FD /* XCLocalSwiftPackageReference "../SharedPackages/UIComponents" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/UIComponents;
+		};
+		959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/BrowserServicesKit;
+		};
+		98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/Utilities;
+		};
 		A1A1A1A12F50000600A0A0A0 /* XCLocalSwiftPackageReference "LocalPackages/CrashReporting" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/CrashReporting;
@@ -6355,6 +6402,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/BWIntegration;
 		};
+		A41D6934F076A44E2D411270 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/SystemFrameworksExtensions" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Infrastructure/SystemFrameworksExtensions;
+		};
 		A7B000052F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/SnapshotTestingSupport;
@@ -6362,6 +6413,62 @@
 		A91A00113031000100000011 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/UITestingSupport;
+		};
+		BC71A33517C89671F88A2E1B /* XCLocalSwiftPackageReference "LocalPackages/AppLauncher" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/AppLauncher;
+		};
+		BC9D8AE06B87123E0662A17E /* XCLocalSwiftPackageReference "LocalPackages/HistoryView" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/HistoryView;
+		};
+		C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/AppKitExtensions;
+		};
+		D291BBE95D5C153B6FA96815 /* XCLocalSwiftPackageReference "../SharedPackages/ScreenTimeDataCleaner" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/ScreenTimeDataCleaner;
+		};
+		D6166BE9B1222FB0823F9EC0 /* XCLocalSwiftPackageReference "../SharedPackages/AttributedMetric" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/AttributedMetric;
+		};
+		D794D8AA7B27C9E555E5E5A7 /* XCLocalSwiftPackageReference "../SharedPackages/DataBrokerProtectionCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/DataBrokerProtectionCore;
+		};
+		DCDAD030117CDBDE68FE0113 /* XCLocalSwiftPackageReference "LocalPackages/Freemium" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/Freemium;
+		};
+		DF184039C22D16DC01AA9B01 /* XCLocalSwiftPackageReference "LocalPackages/AppInfoRetriever" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/AppInfoRetriever;
+		};
+		E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/WideEvent;
+		};
+		E1CB34F0C0E4ED284D1322A2 /* XCLocalSwiftPackageReference "LocalPackages/WebKitExtensions" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/WebKitExtensions;
+		};
+		E51538A19EB61713C44F2184 /* XCLocalSwiftPackageReference "../SharedPackages/Onboarding" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Onboarding;
+		};
+		E54AF575488EBC64722998F2 /* XCLocalSwiftPackageReference "LocalPackages/NetworkQualityMonitor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/NetworkQualityMonitor;
+		};
+		ED525E1DF090E205A79DEB5F /* XCLocalSwiftPackageReference "../SharedPackages/AIChat" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/AIChat;
+		};
+		EEBCBC98A18307BA928B91C1 /* XCLocalSwiftPackageReference "LocalPackages/UserScriptActionsManager" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/UserScriptActionsManager;
 		};
 		FA57C0DE0000000000000015 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -6382,6 +6489,10 @@
 		FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/PixelKit;
+		};
+		FF0CE1B018CF45CB5F375EED /* XCLocalSwiftPackageReference "LocalPackages/SyncUI-macOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "LocalPackages/SyncUI-macOS";
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -6497,14 +6608,17 @@
 /* Begin XCSwiftPackageProductDependency section */
 		02CEB1343E11D5F92293C1F5 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		052E3BE94C5927500125A19C /* AIChatDebugServer */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = ED525E1DF090E205A79DEB5F /* XCLocalSwiftPackageReference "../SharedPackages/AIChat" */;
 			productName = AIChatDebugServer;
 		};
 		083E8F2C1E9FFCBA04A4C9EB /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		08D4923DC968236E22E373E2 /* Crashes */ = {
@@ -6514,78 +6628,97 @@
 		};
 		1168B916E0045A81F307E9A8 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		1E54E8E72EB3A33F00EB24CD /* AutoconsentStats */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = AutoconsentStats;
 		};
 		1E5921BE2CF479E600E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		1E5921C02CF479EE00E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		1E5921C22CF47A0700E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		1E5921C42CF47A0F00E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		1E5F7A242EBB78F600928A06 /* AutoconsentStats */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = AutoconsentStats;
 		};
 		1E7D3C2F2F2232620099611C /* WebExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 078AB7B44EB3FD1AFC3C56A0 /* XCLocalSwiftPackageReference "../SharedPackages/WebExtensions" */;
 			productName = WebExtensions;
 		};
 		1E7D3C312F2232690099611C /* WebExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 078AB7B44EB3FD1AFC3C56A0 /* XCLocalSwiftPackageReference "../SharedPackages/WebExtensions" */;
 			productName = WebExtensions;
 		};
 		1EA7B8D22B7E078C000330A4 /* SubscriptionUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 3A4BD07E5E5E18D35C0EAECD /* XCLocalSwiftPackageReference "LocalPackages/SubscriptionUI" */;
 			productName = SubscriptionUI;
 		};
 		2B6E79CFC9F345A68F8AD44B /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		2E3F209A3A786E44DFEE3D9A /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		30EF23C27554D957E2FCC6EE /* AIChatDebugServer */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = ED525E1DF090E205A79DEB5F /* XCLocalSwiftPackageReference "../SharedPackages/AIChat" */;
 			productName = AIChatDebugServer;
 		};
 		315E395E2F86A37000D2289D /* DebugServer */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 315E395D2F86A36200D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */;
 			productName = DebugServer;
 		};
 		316AC7882DC28DDA003D9770 /* UIComponents */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 9251821F060BC2299F0318FD /* XCLocalSwiftPackageReference "../SharedPackages/UIComponents" */;
 			productName = UIComponents;
 		};
 		31B649392DB289A600A7AEE0 /* AIChat */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = ED525E1DF090E205A79DEB5F /* XCLocalSwiftPackageReference "../SharedPackages/AIChat" */;
 			productName = AIChat;
 		};
 		31B6493B2DB289B100A7AEE0 /* AIChat */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = ED525E1DF090E205A79DEB5F /* XCLocalSwiftPackageReference "../SharedPackages/AIChat" */;
 			productName = AIChat;
 		};
 		31D49A3A2DC294A200262F26 /* UIComponents */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 9251821F060BC2299F0318FD /* XCLocalSwiftPackageReference "../SharedPackages/UIComponents" */;
 			productName = UIComponents;
 		};
 		370245382F95F3690068F91B /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		3706FA71293F65D500E42796 /* BrowserServicesKit */ = {
@@ -6620,150 +6753,187 @@
 		};
 		371BBC562D00C891008FA0C7 /* NewTabPage */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 2C917F0D39EAB033ABF13C41 /* XCLocalSwiftPackageReference "LocalPackages/NewTabPage" */;
 			productName = NewTabPage;
 		};
 		371BBC582D00C897008FA0C7 /* NewTabPage */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 2C917F0D39EAB033ABF13C41 /* XCLocalSwiftPackageReference "LocalPackages/NewTabPage" */;
 			productName = NewTabPage;
 		};
 		372E9DC32F92107D0002DD06 /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		372E9DC52F9210820002DD06 /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		372E9DC72F9210920002DD06 /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		372E9DC92F9210980002DD06 /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		372E9DCB2F92109D0002DD06 /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		374EFDEA2D01A1D800B30939 /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */;
 			productName = Utilities;
 		};
 		374EFDEC2D01A1DE00B30939 /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */;
 			productName = Utilities;
 		};
 		374EFDEE2D01C70300B30939 /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */;
 			productName = Utilities;
 		};
 		374EFDF02D01C70A00B30939 /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */;
 			productName = Utilities;
 		};
 		378F44E329B4BDE900899924 /* SwiftUIExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0E9277EF8BACC9B3D7A4FFC1 /* XCLocalSwiftPackageReference "LocalPackages/SwiftUIExtensions" */;
 			productName = SwiftUIExtensions;
 		};
 		378F44E529B4BDEE00899924 /* SwiftUIExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0E9277EF8BACC9B3D7A4FFC1 /* XCLocalSwiftPackageReference "LocalPackages/SwiftUIExtensions" */;
 			productName = SwiftUIExtensions;
 		};
 		379230932D38527E0019E130 /* HistoryView */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = BC9D8AE06B87123E0662A17E /* XCLocalSwiftPackageReference "LocalPackages/HistoryView" */;
 			productName = HistoryView;
 		};
 		379230952D3852860019E130 /* HistoryView */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = BC9D8AE06B87123E0662A17E /* XCLocalSwiftPackageReference "LocalPackages/HistoryView" */;
 			productName = HistoryView;
 		};
 		379C3E4B2E7238D800058C52 /* URLPredictor */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 4BEE8353D9FC7CD90063F596 /* XCLocalSwiftPackageReference "../SharedPackages/URLPredictor" */;
 			productName = URLPredictor;
 		};
 		379C3E4D2E7238E100058C52 /* URLPredictor */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 4BEE8353D9FC7CD90063F596 /* XCLocalSwiftPackageReference "../SharedPackages/URLPredictor" */;
 			productName = URLPredictor;
 		};
 		379C68DE30933642007A52B1 /* DesignResourcesKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6810CA7541899EC49C833441 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKit" */;
 			productName = DesignResourcesKit;
 		};
 		379C68E030933649007A52B1 /* DesignResourcesKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6810CA7541899EC49C833441 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKit" */;
 			productName = DesignResourcesKit;
 		};
 		37C320BB2F1E80A1008F4604 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		37C320BC2F1E80A1008F4604 /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		37C320BD2F1E80A1008F4604 /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = SharedTestUtilities;
 		};
 		37C320BE2F1E80A1008F4604 /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */;
 			productName = Utilities;
 		};
 		37DF37042CF38B96005ED34B /* PrivacyStats */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyStats;
 		};
 		37DF37062CF38B9F005ED34B /* PrivacyStats */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyStats;
 		};
 		37EACB032EF4C3B6002C06F9 /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		37EACB052EF4C3BD002C06F9 /* PrivacyConfig */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfig;
 		};
 		37EACB0A2EF53969002C06F9 /* PrivacyConfigTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfigTestsUtils;
 		};
 		37EACB0F2EF53F4C002C06F9 /* PrivacyConfigTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfigTestsUtils;
 		};
 		37EACB112EF53F5B002C06F9 /* PrivacyConfigTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfigTestsUtils;
 		};
 		37EACB132EF53F62002C06F9 /* PrivacyConfigTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfigTestsUtils;
 		};
 		37EACB152EF54224002C06F9 /* PrivacyConfigTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfigTestsUtils;
 		};
 		37EACB172EF5422C002C06F9 /* PrivacyConfigTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyConfigTestsUtils;
 		};
 		37EE81402D00DBC40068034A /* WebKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E1CB34F0C0E4ED284D1322A2 /* XCLocalSwiftPackageReference "LocalPackages/WebKitExtensions" */;
 			productName = WebKitExtensions;
 		};
 		37EE81422D00DBCC0068034A /* WebKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E1CB34F0C0E4ED284D1322A2 /* XCLocalSwiftPackageReference "LocalPackages/WebKitExtensions" */;
 			productName = WebKitExtensions;
 		};
 		4B2D067E2A1334D700DE1F49 /* NetworkProtectionUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionUI;
 		};
 		4B41EDAA2B1544B2001EEDF4 /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0EED3BFC9652D91CA9B8B4A7 /* XCLocalSwiftPackageReference "LocalPackages/LoginItems" */;
 			productName = LoginItems;
 		};
 		4B4D60522A0B29CB00BCD287 /* NetworkProtection */ = {
@@ -6772,6 +6942,7 @@
 		};
 		4B4D60B02A0C83B900BCD287 /* NetworkProtectionUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionUI;
 		};
 		4B5235442C7BB14D00AFAF64 /* WireGuard */ = {
@@ -6786,350 +6957,437 @@
 		};
 		4B5F14FD2A1529230060320F /* InputFilesChecker */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 7BBE51062DC27EAB004F08B3 /* XCLocalSwiftPackageReference "LocalPackages/BuildToolPlugins" */;
 			productName = "plugin:InputFilesChecker";
 		};
 		4B94B7982D4731E80014AAB8 /* SyncUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FF0CE1B018CF45CB5F375EED /* XCLocalSwiftPackageReference "LocalPackages/SyncUI-macOS" */;
 			productName = "SyncUI-macOS";
 		};
 		4B94B79A2D4731F00014AAB8 /* SyncUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FF0CE1B018CF45CB5F375EED /* XCLocalSwiftPackageReference "LocalPackages/SyncUI-macOS" */;
 			productName = "SyncUI-macOS";
 		};
 		4B9EE3132D76C7F900DDC75C /* Bookmarks */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Bookmarks;
 		};
 		4B9EE3152D76C80000DDC75C /* BrokenSitePrompt */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = BrokenSitePrompt;
 		};
 		4B9EE3172D76C80800DDC75C /* BrowserServicesKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = BrowserServicesKit;
 		};
 		4B9EE3192D76C80F00DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE31B2D76C81600DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE31D2D76C81E00DDC75C /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = ContentBlocking;
 		};
 		4B9EE31F2D76C83100DDC75C /* DDGSync */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = DDGSync;
 		};
 		4B9EE3212D76C83900DDC75C /* DuckPlayer */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = DuckPlayer;
 		};
 		4B9EE3232D76C84800DDC75C /* History */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = History;
 		};
 		4B9EE3252D76C85100DDC75C /* MaliciousSiteProtection */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = MaliciousSiteProtection;
 		};
 		4B9EE3272D76C85900DDC75C /* DDGNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = DDGNavigation;
 		};
 		4B9EE32B2D76C87100DDC75C /* Onboarding */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E51538A19EB61713C44F2184 /* XCLocalSwiftPackageReference "../SharedPackages/Onboarding" */;
 			productName = Onboarding;
 		};
 		4B9EE32D2D76C87C00DDC75C /* PageRefreshMonitor */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PageRefreshMonitor;
 		};
 		4B9EE32F2D76C88300DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE3312D76C89500DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE3332D76C89D00DDC75C /* RemoteMessaging */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = RemoteMessaging;
 		};
 		4B9EE3352D76C8A600DDC75C /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		4B9EE3372D76C8B200DDC75C /* Suggestions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Suggestions;
 		};
 		4B9EE3392D76C8BD00DDC75C /* SyncDataProviders */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SyncDataProviders;
 		};
 		4B9EE33B2D76C8C700DDC75C /* UserScript */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = UserScript;
 		};
 		4B9EE33D2D76C90600DDC75C /* PrivacyDashboard */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PrivacyDashboard;
 		};
 		4B9EE33F2D76C91000DDC75C /* SpecialErrorPages */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SpecialErrorPages;
 		};
 		4B9EE3412D76C93300DDC75C /* Bookmarks */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Bookmarks;
 		};
 		4B9EE3432D76C93D00DDC75C /* BrokenSitePrompt */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = BrokenSitePrompt;
 		};
 		4B9EE3452D76C94800DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE3472D76C96800DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE3492D76C97C00DDC75C /* DDGSync */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = DDGSync;
 		};
 		4B9EE34B2D76C98800DDC75C /* DuckPlayer */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = DuckPlayer;
 		};
 		4B9EE34D2D76C9B900DDC75C /* History */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = History;
 		};
 		4B9EE34F2D76C9DA00DDC75C /* MaliciousSiteProtection */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = MaliciousSiteProtection;
 		};
 		4B9EE3512D76C9EB00DDC75C /* DDGNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = DDGNavigation;
 		};
 		4B9EE3552D76CA1500DDC75C /* Onboarding */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E51538A19EB61713C44F2184 /* XCLocalSwiftPackageReference "../SharedPackages/Onboarding" */;
 			productName = Onboarding;
 		};
 		4B9EE3572D76CA3500DDC75C /* PageRefreshMonitor */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PageRefreshMonitor;
 		};
 		4B9EE3592D76CA4100DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE35B2D76CA6600DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE35D2D76CA6F00DDC75C /* RemoteMessaging */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = RemoteMessaging;
 		};
 		4B9EE35F2D76CA7900DDC75C /* SpecialErrorPages */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SpecialErrorPages;
 		};
 		4B9EE3612D76CA8F00DDC75C /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		4B9EE3632D76CA9700DDC75C /* Suggestions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Suggestions;
 		};
 		4B9EE3652D76CABB00DDC75C /* SyncDataProviders */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SyncDataProviders;
 		};
 		4B9EE3672D76CB1600DDC75C /* SubscriptionTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SubscriptionTestingUtilities;
 		};
 		4B9EE3692D76CB2300DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE36B2D76CB3800DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE36D2D76CB4000DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE36F2D76CB5600DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE3712D76CB5F00DDC75C /* SubscriptionTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SubscriptionTestingUtilities;
 		};
 		4B9EE3732D76CB6D00DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE3752D76CBD000DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE3772D76CBD600DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE3792D76CBE100DDC75C /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		4B9EE37D2D76CBEE00DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE37F2D76CBF400DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE3812D76CC0400DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE3832D76CC0A00DDC75C /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		4B9EE3852D76CC1A00DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE3872D76CC2000DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE3892D76CC2800DDC75C /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		4B9EE38D2D76CC3C00DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE38F2D76CC4300DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE3912D76CC4C00DDC75C /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		4B9EE39D2D76CCA200DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE39F2D76CCA200DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE3A32D76CCB300DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE3A52D76CCB300DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE3A72D76CCC700DDC75C /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		4B9EE3A92D76CCC700DDC75C /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		4B9EE3AB2D76CCE500DDC75C /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		4B9EE3AD2D76CCE500DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE3AF2D76CCE500DDC75C /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		4B9EE3B32D76CD1C00DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE3B52D76CD1C00DDC75C /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		4B9EE3B72D76CD1C00DDC75C /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		4B9EE3B92D76CD3900DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE3BB2D76CD3900DDC75C /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		4B9EE3BD2D76CD3900DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE3BF2D76CD3900DDC75C /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		4B9EE3C12D76CD7100DDC75C /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		4B9EE3C32D76CD7100DDC75C /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		4B9EE3C52D76CD7100DDC75C /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		4B9EE3C72D76CD7100DDC75C /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		4BA7C4DC2B3F64E500AFE511 /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0EED3BFC9652D91CA9B8B4A7 /* XCLocalSwiftPackageReference "LocalPackages/LoginItems" */;
 			productName = LoginItems;
 		};
 		4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 3A4BD07E5E5E18D35C0EAECD /* XCLocalSwiftPackageReference "LocalPackages/SubscriptionUI" */;
 			productName = SubscriptionUI;
 		};
 		4BF97AD02B43C43F00EB4240 /* NetworkProtectionIPC */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionIPC;
 		};
 		4BF97AD22B43C43F00EB4240 /* NetworkProtectionUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionUI;
 		};
 		537FC71EA5115A983FAF3170 /* Crashes */ = {
@@ -7139,26 +7397,32 @@
 		};
 		5641734A2CFE168700F4B716 /* PixelExperimentKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PixelExperimentKit;
 		};
 		5641734C2CFE169400F4B716 /* PixelExperimentKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = PixelExperimentKit;
 		};
 		5AE9295C2BD02B4D08BA79E4 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		7B00997C2B6508B700FE7C31 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionProxy;
 		};
 		7B00997E2B6508C200FE7C31 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionProxy;
 		};
 		7B0450802DFBE88F0000A210 /* VPNNotifications */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNNotifications;
 		};
 		7B11B3092EF304B6005F0687 /* AutomationServer */ = {
@@ -7173,190 +7437,237 @@
 		};
 		7B1459562B7D43E500047F2C /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionProxy;
 		};
 		7B2366832C09FAC2002D393F /* VPNAppLauncher */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppLauncher;
 		};
 		7B2366852C09FACD002D393F /* VPNAppLauncher */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppLauncher;
 		};
 		7B2366872C09FADA002D393F /* VPNAppLauncher */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppLauncher;
 		};
 		7B23668B2C09FAF1002D393F /* VPNAppLauncher */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppLauncher;
 		};
 		7B23668D2C09FAFA002D393F /* VPNAppLauncher */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppLauncher;
 		};
 		7B25856D2BA2F2ED00D49F79 /* NetworkProtectionUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionUI;
 		};
 		7B31FD8B2AD125620086AA24 /* NetworkProtectionIPC */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionIPC;
 		};
 		7B3A16412D4B7A9600D4C869 /* AppInfoRetriever */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DF184039C22D16DC01AA9B01 /* XCLocalSwiftPackageReference "LocalPackages/AppInfoRetriever" */;
 			productName = AppInfoRetriever;
 		};
 		7B3A16432D4B7A9C00D4C869 /* AppInfoRetriever */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DF184039C22D16DC01AA9B01 /* XCLocalSwiftPackageReference "LocalPackages/AppInfoRetriever" */;
 			productName = AppInfoRetriever;
 		};
 		7B4659A12FAC000000CCB375 /* AddressBarPerformance */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 4DA157EA927AAD66A07BE700 /* XCLocalSwiftPackageReference "LocalPackages/AddressBarPerformance" */;
 			productName = AddressBarPerformance;
 		};
 		7B4659A32FAC000000CCB375 /* AddressBarPerformance */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 4DA157EA927AAD66A07BE700 /* XCLocalSwiftPackageReference "LocalPackages/AddressBarPerformance" */;
 			productName = AddressBarPerformance;
 		};
 		7B4659A52FAC000000CCB375 /* AddressBarPerformance */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 4DA157EA927AAD66A07BE700 /* XCLocalSwiftPackageReference "LocalPackages/AddressBarPerformance" */;
 			productName = AddressBarPerformance;
 		};
 		7B4659A72FAC000000CCB375 /* AddressBarPerformance */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 4DA157EA927AAD66A07BE700 /* XCLocalSwiftPackageReference "LocalPackages/AddressBarPerformance" */;
 			productName = AddressBarPerformance;
 		};
 		7B6413512E1922FC0035D14D /* VPNNotifications */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNNotifications;
 		};
 		7B7614362D79F85800BC6293 /* VPNAppState */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppState;
 		};
 		7B7614382D79F85D00BC6293 /* VPNAppState */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppState;
 		};
 		7B76143A2D79F86600BC6293 /* VPNAppState */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNAppState;
 		};
 		7B7BD94E2DFBE2B50074633C /* VPNNotifications */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNNotifications;
 		};
 		7B7BD9502DFBE2BF0074633C /* VPNNotifications */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNNotifications;
 		};
 		7B8594182B5B26230007EB3E /* UDSHelper */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 7595651943E33760228273A1 /* XCLocalSwiftPackageReference "LocalPackages/UDSHelper" */;
 			productName = UDSHelper;
 		};
 		7B8FDD1F2CDD88C500720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		7B8FDD212CDD88CB00720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		7B8FDD232CDD88D300720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		7B8FDD252CDD88D900720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 42DB450981B58764AE7B8D9A /* XCLocalSwiftPackageReference "LocalPackages/SystemExtensionManager" */;
 			productName = SystemExtensionManager;
 		};
 		7B97CD582B7E0B57004FEF43 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionProxy;
 		};
 		7BA076BA2B65D61400D7FB72 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionProxy;
 		};
 		7BA59C9A2AE18B49009A97B1 /* SystemExtensionManager */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 42DB450981B58764AE7B8D9A /* XCLocalSwiftPackageReference "LocalPackages/SystemExtensionManager" */;
 			productName = SystemExtensionManager;
 		};
 		7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionProxy;
 		};
 		7BC15A1B2E1917D6000062C8 /* VPNNotifications */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = VPNNotifications;
 		};
 		7BC26CA32DFC103D00E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */;
 			productName = VPN;
 		};
 		7BC26CA52DFC104700E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */;
 			productName = VPN;
 		};
 		7BC26CA72DFC105400E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */;
 			productName = VPN;
 		};
 		7BC26CA92DFC11D800E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */;
 			productName = VPN;
 		};
 		7BC26CAB2DFC11E200E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */;
 			productName = VPN;
 		};
 		7BC26CAD2DFC11EB00E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */;
 			productName = VPN;
 		};
 		7BC26CAF2DFC11F300E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 36A3D3B0D7DE72B185EB69C4 /* XCLocalSwiftPackageReference "../SharedPackages/VPN" */;
 			productName = VPN;
 		};
 		7BC3E44F2D6DF658009787CD /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		7BC3E4532D6DF664009787CD /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		7BC3E4552D6DF66C009787CD /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Configuration;
 		};
 		7BC3E4572D6DF670009787CD /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6686105219842C5578DED5D2 /* XCLocalSwiftPackageReference "LocalPackages/FeatureFlags-macOS" */;
 			productName = "FeatureFlags-macOS";
 		};
 		7BC3E4592D6DF67B009787CD /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		7BC3E45D2D6DF69A009787CD /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionProxy;
 		};
 		7BC3E45F2D6DF6A0009787CD /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		7BC3E4612D6DF6AC009787CD /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		7BC3E4632D6DF6B2009787CD /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = Subscription;
 		};
 		7BC3E4652D6DF6B8009787CD /* WireGuard */ = {
@@ -7366,58 +7677,72 @@
 		};
 		7BEC182E2AD5D8DC00D30536 /* SystemExtensionManager */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 42DB450981B58764AE7B8D9A /* XCLocalSwiftPackageReference "LocalPackages/SystemExtensionManager" */;
 			productName = SystemExtensionManager;
 		};
 		7BECF1A82D4905DA00C1D691 /* PreferencesUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0B5CD6430B7FC70B55B9DEA1 /* XCLocalSwiftPackageReference "LocalPackages/PreferencesUI-macOS" */;
 			productName = "PreferencesUI-macOS";
 		};
 		7BECF1AA2D4905E000C1D691 /* PreferencesUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0B5CD6430B7FC70B55B9DEA1 /* XCLocalSwiftPackageReference "LocalPackages/PreferencesUI-macOS" */;
 			productName = "PreferencesUI-macOS";
 		};
 		7BEEA5112AD1235B00A9E72B /* NetworkProtectionIPC */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionIPC;
 		};
 		7BEEA5132AD1236300A9E72B /* NetworkProtectionIPC */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionIPC;
 		};
 		7BEEA5152AD1236E00A9E72B /* NetworkProtectionUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 170C9DE5559B5380A9F789A5 /* XCLocalSwiftPackageReference "LocalPackages/NetworkProtectionMac" */;
 			productName = NetworkProtectionUI;
 		};
 		8417B7CE2D958D5E00C0A379 /* InputFilesChecker */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 7BBE51062DC27EAB004F08B3 /* XCLocalSwiftPackageReference "LocalPackages/BuildToolPlugins" */;
 			productName = "plugin:InputFilesChecker";
 		};
 		842211642F2B85080051A0E8 /* AppUpdaterShared */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 824807EDEA064B408B39E114 /* XCLocalSwiftPackageReference "LocalPackages/AppUpdater" */;
 			productName = AppUpdaterShared;
 		};
 		842211662F2B85080051A0E8 /* SparkleAppUpdater */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 824807EDEA064B408B39E114 /* XCLocalSwiftPackageReference "LocalPackages/AppUpdater" */;
 			productName = SparkleAppUpdater;
 		};
 		842211772F2C5B240051A0E8 /* AppStoreAppUpdater */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 824807EDEA064B408B39E114 /* XCLocalSwiftPackageReference "LocalPackages/AppUpdater" */;
 			productName = AppStoreAppUpdater;
 		};
 		842211792F2C5B240051A0E8 /* AppUpdaterShared */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 824807EDEA064B408B39E114 /* XCLocalSwiftPackageReference "LocalPackages/AppUpdater" */;
 			productName = AppUpdaterShared;
 		};
 		84225D702F56C1EC00A75315 /* BWManagement */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1F0D1A32F60000100C0FFEE /* XCLocalSwiftPackageReference "LocalPackages/BWIntegration" */;
 			productName = BWManagement;
 		};
 		84225D722F56C1EC00A75315 /* BWManagementShared */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1F0D1A32F60000100C0FFEE /* XCLocalSwiftPackageReference "LocalPackages/BWIntegration" */;
 			productName = BWManagementShared;
 		};
 		84225D742F56C1F500A75315 /* BWManagementShared */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1F0D1A32F60000100C0FFEE /* XCLocalSwiftPackageReference "LocalPackages/BWIntegration" */;
 			productName = BWManagementShared;
 		};
 		844801692E3BA41A00E8A2C1 /* Clocks */ = {
@@ -7442,42 +7767,52 @@
 		};
 		845F56FE2E97BFD100C7F78A /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = SharedTestUtilities;
 		};
 		845F57022E97BFE600C7F78A /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = SharedTestUtilities;
 		};
 		845F57062E97BFF100C7F78A /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = SharedTestUtilities;
 		};
 		845F570A2E97BFF900C7F78A /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = SharedTestUtilities;
 		};
 		845F57142E97CE8E00C7F78A /* NoARCObjCTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = NoARCObjCTestUtilities;
 		};
 		845F57162E97CE9300C7F78A /* NoARCObjCTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = NoARCObjCTestUtilities;
 		};
 		845F57182E97CE9600C7F78A /* NoARCObjCTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = NoARCObjCTestUtilities;
 		};
 		845F571A2E97CE9B00C7F78A /* NoARCObjCTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = NoARCObjCTestUtilities;
 		};
 		845F57342E98036F00C7F78A /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = SharedTestUtilities;
 		};
 		845F573C2E982B2600C7F78A /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = SharedTestUtilities;
 		};
 		846F4CDE2E048A0500266DB7 /* BWIntegration */ = {
@@ -7487,10 +7822,12 @@
 		};
 		84AA55192E3256BA009FCC70 /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		84AA551B2E9999990099FCFF /* FoundationExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A41D6934F076A44E2D411270 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/SystemFrameworksExtensions" */;
 			productName = FoundationExtensions;
 		};
 		84B49F0C2CB10F0900FF08BB /* OHHTTPStubs */ = {
@@ -7505,10 +7842,12 @@
 		};
 		84BDE7292E1BE3C60082075D /* NoARCObjCTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */;
 			productName = NoARCObjCTestUtilities;
 		};
 		84C176382DF02556001DEEC7 /* CommonObjCExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 84C176372DF02556001DEEC7 /* XCLocalSwiftPackageReference "LocalPackages/CommonObjCExtensions" */;
 			productName = CommonObjCExtensions;
 		};
 		84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */ = {
@@ -7538,14 +7877,17 @@
 		};
 		8518F1312F74318B00B53C75 /* ScreenTimeDataCleaner */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D291BBE95D5C153B6FA96815 /* XCLocalSwiftPackageReference "../SharedPackages/ScreenTimeDataCleaner" */;
 			productName = ScreenTimeDataCleaner;
 		};
 		859401D12F72D2D200DE46F3 /* ScreenTimeDataCleaner */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D291BBE95D5C153B6FA96815 /* XCLocalSwiftPackageReference "../SharedPackages/ScreenTimeDataCleaner" */;
 			productName = ScreenTimeDataCleaner;
 		};
 		85F592DD2DE1E9FE00117D5E /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6EE68ED03C35F8A028AC7CA2 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKitIcons" */;
 			productName = DesignResourcesKitIcons;
 		};
 		8714BC081D36DA291FF7A650 /* EventHub */ = {
@@ -7563,130 +7905,162 @@
 		};
 		9D84E4042CD4E66F0046CD8B /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		9D84E4062CD4E66F0046CD8B /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D84E4072CD4E66F0046CD8B /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */;
 			productName = Common;
 		};
 		9D9DE5722C63AA0700D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D9DE5742C63AA0C00D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D9DE5762C63AA1600D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D9DE5782C63AA1A00D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D9DE57A2C63AA1F00D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D9DE57E2C63B64F00D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D9DE5802C63BA0B00D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9D9DE5822C63BE9600D20B15 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9DB980092D96AD2B00B174B3 /* DataBrokerProtectionCore */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D794D8AA7B27C9E555E5E5A7 /* XCLocalSwiftPackageReference "../SharedPackages/DataBrokerProtectionCore" */;
 			productName = DataBrokerProtectionCore;
 		};
 		9DB9800B2D96AD2F00B174B3 /* DataBrokerProtectionCore */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D794D8AA7B27C9E555E5E5A7 /* XCLocalSwiftPackageReference "../SharedPackages/DataBrokerProtectionCore" */;
 			productName = DataBrokerProtectionCore;
 		};
 		9DB9800D2D96AD3400B174B3 /* DataBrokerProtectionCore */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D794D8AA7B27C9E555E5E5A7 /* XCLocalSwiftPackageReference "../SharedPackages/DataBrokerProtectionCore" */;
 			productName = DataBrokerProtectionCore;
 		};
 		9DB9800F2D96AD3900B174B3 /* DataBrokerProtectionCore */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D794D8AA7B27C9E555E5E5A7 /* XCLocalSwiftPackageReference "../SharedPackages/DataBrokerProtectionCore" */;
 			productName = DataBrokerProtectionCore;
 		};
 		9DB980132D96AFEA00B174B3 /* DataBrokerProtection-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 32516B640411262EA9A10280 /* XCLocalSwiftPackageReference "LocalPackages/DataBrokerProtection-macOS" */;
 			productName = "DataBrokerProtection-macOS";
 		};
 		9DB980152D96AFF000B174B3 /* DataBrokerProtection-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 32516B640411262EA9A10280 /* XCLocalSwiftPackageReference "LocalPackages/DataBrokerProtection-macOS" */;
 			productName = "DataBrokerProtection-macOS";
 		};
 		9DB980172D96AFF400B174B3 /* DataBrokerProtection-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 32516B640411262EA9A10280 /* XCLocalSwiftPackageReference "LocalPackages/DataBrokerProtection-macOS" */;
 			productName = "DataBrokerProtection-macOS";
 		};
 		9DB980192D96AFF900B174B3 /* DataBrokerProtection-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 32516B640411262EA9A10280 /* XCLocalSwiftPackageReference "LocalPackages/DataBrokerProtection-macOS" */;
 			productName = "DataBrokerProtection-macOS";
 		};
 		9DC5FAC42C6B8A010011F068 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9DC5FAC62C6B8A080011F068 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9DC5FAC82C6B8B910011F068 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9DC5FACA2C6B8E050011F068 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9DC5FACC2C6B8E620011F068 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9DC5FACE2C6BA23C0011F068 /* AppKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = C15BEC81AD1BFCFC876EF7B8 /* XCLocalSwiftPackageReference "LocalPackages/AppKitExtensions" */;
 			productName = AppKitExtensions;
 		};
 		9DC70B192AA1FA5B005A844B /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0EED3BFC9652D91CA9B8B4A7 /* XCLocalSwiftPackageReference "LocalPackages/LoginItems" */;
 			productName = LoginItems;
 		};
 		9F0F469F2E865AFE00A9FC4D /* RemoteMessagingTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = RemoteMessagingTestsUtils;
 		};
 		9F0F46A12E865BEC00A9FC4D /* RemoteMessagingTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = RemoteMessagingTestsUtils;
 		};
 		9F3303392E8E605A00D6F0C9 /* RemoteMessagingTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = RemoteMessagingTestsUtils;
 		};
 		9F33033B2E8E606400D6F0C9 /* RemoteMessagingTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = RemoteMessagingTestsUtils;
 		};
 		9F5003282E8D1B73002F98D1 /* FoundationExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A41D6934F076A44E2D411270 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/SystemFrameworksExtensions" */;
 			productName = FoundationExtensions;
 		};
 		9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A41D6934F076A44E2D411270 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/SystemFrameworksExtensions" */;
 			productName = FoundationExtensions;
 		};
 		9FF521452BAA908500B9819B /* Lottie */ = {
@@ -7701,18 +8075,22 @@
 		};
 		A1A1A1A12F50000700A0A0A0 /* AppStoreCrashCollection */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1A1A1A12F50000600A0A0A0 /* XCLocalSwiftPackageReference "LocalPackages/CrashReporting" */;
 			productName = AppStoreCrashCollection;
 		};
 		A1A1A1A12F50000800A0A0A0 /* CrashReportingShared */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1A1A1A12F50000600A0A0A0 /* XCLocalSwiftPackageReference "LocalPackages/CrashReporting" */;
 			productName = CrashReportingShared;
 		};
 		A1A1A1A12F50000900A0A0A0 /* CrashReporting */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1A1A1A12F50000600A0A0A0 /* XCLocalSwiftPackageReference "LocalPackages/CrashReporting" */;
 			productName = CrashReporting;
 		};
 		A1A1A1A12F50000A00A0A0A0 /* CrashReportingShared */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = A1A1A1A12F50000600A0A0A0 /* XCLocalSwiftPackageReference "LocalPackages/CrashReporting" */;
 			productName = CrashReportingShared;
 		};
 		A7B000062F6A000100000001 /* SnapshotTestingSupport */ = {
@@ -7727,10 +8105,12 @@
 		};
 		A7C3D1EA2F4B5A200654B4E /* SERPInstallOrigin */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 537E739E21B238693D8701FF /* XCLocalSwiftPackageReference "../SharedPackages/SERPInstallOrigin" */;
 			productName = SERPInstallOrigin;
 		};
 		A7C3D1EC2F4B5A400654B4E /* SERPInstallOrigin */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 537E739E21B238693D8701FF /* XCLocalSwiftPackageReference "../SharedPackages/SERPInstallOrigin" */;
 			productName = SERPInstallOrigin;
 		};
 		A91A00123031000100000012 /* UITestingSupport */ = {
@@ -7765,14 +8145,17 @@
 		};
 		BB7D100B2DE0D9430027222A /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6EE68ED03C35F8A028AC7CA2 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKitIcons" */;
 			productName = DesignResourcesKitIcons;
 		};
 		BBD9C3982E9D737B0060A6E8 /* SERPSettings */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 3286C5E4FA63A11E310F47E0 /* XCLocalSwiftPackageReference "../SharedPackages/SERPSettings" */;
 			productName = SERPSettings;
 		};
 		BBD9C39A2E9D73880060A6E8 /* SERPSettings */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 3286C5E4FA63A11E310F47E0 /* XCLocalSwiftPackageReference "../SharedPackages/SERPSettings" */;
 			productName = SERPSettings;
 		};
 		BDADBDC82BD2BC2200421B9B /* Lottie */ = {
@@ -7787,26 +8170,32 @@
 		};
 		BF3F0F4DE57A5A76B79334EB /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		C18BF9CB2C73678500ED6B8A /* Freemium */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DCDAD030117CDBDE68FE0113 /* XCLocalSwiftPackageReference "LocalPackages/Freemium" */;
 			productName = Freemium;
 		};
 		C18BF9CD2C73678C00ED6B8A /* Freemium */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DCDAD030117CDBDE68FE0113 /* XCLocalSwiftPackageReference "LocalPackages/Freemium" */;
 			productName = Freemium;
 		};
 		C18BF9CF2C736C9100ED6B8A /* Freemium */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DCDAD030117CDBDE68FE0113 /* XCLocalSwiftPackageReference "LocalPackages/Freemium" */;
 			productName = Freemium;
 		};
 		C18BF9D12C736C9700ED6B8A /* Freemium */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DCDAD030117CDBDE68FE0113 /* XCLocalSwiftPackageReference "LocalPackages/Freemium" */;
 			productName = Freemium;
 		};
 		CA57AD4FC8F1853F05E21997 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		CA7335A53836D5A56E2F5B4A /* EventHub */ = {
@@ -7816,22 +8205,27 @@
 		};
 		CC55B2332E82BD0D0032E8BD /* BrowserServicesKitTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = BrowserServicesKitTestsUtils;
 		};
 		CC55B2352E82BD160032E8BD /* BrowserServicesKitTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = BrowserServicesKitTestsUtils;
 		};
 		CC55B23A2E82BF430032E8BD /* BrowserServicesKitTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = BrowserServicesKitTestsUtils;
 		};
 		CC55B23C2E82BF4D0032E8BD /* BrowserServicesKitTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = BrowserServicesKitTestsUtils;
 		};
 		CCC403452ED5E00400381DBB /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 98E2C727D5C1A43A00C13B0F /* XCLocalSwiftPackageReference "LocalPackages/Utilities" */;
 			productName = Utilities;
 		};
 		CCF78AD52F34996900263097 /* CombineSchedulers */ = {
@@ -7846,30 +8240,37 @@
 		};
 		D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E54AF575488EBC64722998F2 /* XCLocalSwiftPackageReference "LocalPackages/NetworkQualityMonitor" */;
 			productName = NetworkQualityMonitor;
 		};
 		D65D0FA02E7239730075A784 /* NetworkQualityMonitor */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E54AF575488EBC64722998F2 /* XCLocalSwiftPackageReference "LocalPackages/NetworkQualityMonitor" */;
 			productName = NetworkQualityMonitor;
 		};
 		D65D0FA42E7239750075A784 /* PerformanceTest */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 2C454613F6A292179133E369 /* XCLocalSwiftPackageReference "LocalPackages/PerformanceTest" */;
 			productName = PerformanceTest;
 		};
 		D66840172E82BDED007DAAB2 /* PerformanceTest */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 2C454613F6A292179133E369 /* XCLocalSwiftPackageReference "LocalPackages/PerformanceTest" */;
 			productName = PerformanceTest;
 		};
 		D66840192E82BE25007DAAB2 /* PerformanceTest */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 2C454613F6A292179133E369 /* XCLocalSwiftPackageReference "LocalPackages/PerformanceTest" */;
 			productName = PerformanceTest;
 		};
 		D668401B2E82BE31007DAAB2 /* PerformanceTest */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 2C454613F6A292179133E369 /* XCLocalSwiftPackageReference "LocalPackages/PerformanceTest" */;
 			productName = PerformanceTest;
 		};
 		D854723383E90F0652D58F43 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		DC3F73D49B2D44464AFEFCD8 /* Subscription */ = {
@@ -7879,10 +8280,12 @@
 		};
 		E2E9392DAE76D4A028C3D79E /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		E59994348B609380F6349489 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		EC2E83ED38F4FAB06EE3D557 /* EventHub */ = {
@@ -7892,38 +8295,47 @@
 		};
 		EEC3BD292E5897310093F638 /* SyncUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FF0CE1B018CF45CB5F375EED /* XCLocalSwiftPackageReference "LocalPackages/SyncUI-macOS" */;
 			productName = "SyncUI-macOS";
 		};
 		EEC3BD2B2E5897310093F638 /* SyncUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FF0CE1B018CF45CB5F375EED /* XCLocalSwiftPackageReference "LocalPackages/SyncUI-macOS" */;
 			productName = "SyncUI-macOS";
 		};
 		EEC3BD2D2E5897310093F638 /* PreferencesUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0B5CD6430B7FC70B55B9DEA1 /* XCLocalSwiftPackageReference "LocalPackages/PreferencesUI-macOS" */;
 			productName = "PreferencesUI-macOS";
 		};
 		EEC3BD2F2E5897310093F638 /* SwiftUIExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0E9277EF8BACC9B3D7A4FFC1 /* XCLocalSwiftPackageReference "LocalPackages/SwiftUIExtensions" */;
 			productName = SwiftUIExtensions;
 		};
 		EEC3BD312E5897310093F638 /* PreferencesUI-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0B5CD6430B7FC70B55B9DEA1 /* XCLocalSwiftPackageReference "LocalPackages/PreferencesUI-macOS" */;
 			productName = "PreferencesUI-macOS";
 		};
 		EEC3BD332E5897310093F638 /* SwiftUIExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0E9277EF8BACC9B3D7A4FFC1 /* XCLocalSwiftPackageReference "LocalPackages/SwiftUIExtensions" */;
 			productName = SwiftUIExtensions;
 		};
 		EEC3BD352E5897310093F638 /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6EE68ED03C35F8A028AC7CA2 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKitIcons" */;
 			productName = DesignResourcesKitIcons;
 		};
 		EEC3BD372E5897310093F638 /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6EE68ED03C35F8A028AC7CA2 /* XCLocalSwiftPackageReference "../SharedPackages/Infrastructure/DesignResourcesKitIcons" */;
 			productName = DesignResourcesKitIcons;
 		};
 		EED0B49B79AB56CC526105EB /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 		F07A89FE5A0959D49AF0E27F /* EventHub */ = {
@@ -7933,62 +8345,77 @@
 		};
 		F124E0DC2D6E12190035C7BA /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		F124E0DE2D6E12190035C7BA /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		F124E0E02D6E12260035C7BA /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		F124E0E22D6E12260035C7BA /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		F124E0E42D6E12260035C7BA /* SubscriptionTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SubscriptionTestingUtilities;
 		};
 		F124E0E62D6E122F0035C7BA /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		F124E0E82D6E122F0035C7BA /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		F124E0EA2D6E123A0035C7BA /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 6D2AFA2FEA409221AB7C98FB /* XCLocalSwiftPackageReference "../SharedPackages/Networking" */;
 			productName = Networking;
 		};
 		F124E0EC2D6E123A0035C7BA /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */;
 			productName = Persistence;
 		};
 		F124E0EE2D6E123A0035C7BA /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */;
 			productName = PixelKit;
 		};
 		F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = SubscriptionTestingUtilities;
 		};
 		F158DE012E9E992C00628DD0 /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = ContentBlocking;
 		};
 		F158DE032E9E995F00628DD0 /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = ContentBlocking;
 		};
 		F158DE052E9E9DF100628DD0 /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = ContentBlocking;
 		};
 		F158DE072E9E9DF700628DD0 /* ContentBlocking */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 959BA72FA81F48859C569C4C /* XCLocalSwiftPackageReference "../SharedPackages/BrowserServicesKit" */;
 			productName = ContentBlocking;
 		};
 		F198C71D2BD18D88000BF24D /* SwiftLintTool */ = {
@@ -8003,10 +8430,12 @@
 		};
 		F1A9DD002E9E42C400D37BE0 /* AttributedMetricTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D6166BE9B1222FB0823F9EC0 /* XCLocalSwiftPackageReference "../SharedPackages/AttributedMetric" */;
 			productName = AttributedMetricTestsUtils;
 		};
 		F1A9DD022E9E42C900D37BE0 /* AttributedMetricTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D6166BE9B1222FB0823F9EC0 /* XCLocalSwiftPackageReference "../SharedPackages/AttributedMetric" */;
 			productName = AttributedMetricTestsUtils;
 		};
 		F1D43AF22B98E47800BAB743 /* BareBonesBrowserKit */ = {
@@ -8021,14 +8450,17 @@
 		};
 		F1DF95E62BD188B60045E591 /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0EED3BFC9652D91CA9B8B4A7 /* XCLocalSwiftPackageReference "LocalPackages/LoginItems" */;
 			productName = LoginItems;
 		};
 		F1E720B22E9D585E00654B4E /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D6166BE9B1222FB0823F9EC0 /* XCLocalSwiftPackageReference "../SharedPackages/AttributedMetric" */;
 			productName = AttributedMetric;
 		};
 		F1E720B42E9D586700654B4E /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = D6166BE9B1222FB0823F9EC0 /* XCLocalSwiftPackageReference "../SharedPackages/AttributedMetric" */;
 			productName = AttributedMetric;
 		};
 		FA57C0DE0000000000000010 /* HangMetrics */ = {
@@ -8043,6 +8475,7 @@
 		};
 		FBC1C50F9D49079832EBBECE /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = E13B676AD5E4959E5A3898D3 /* XCLocalSwiftPackageReference "../SharedPackages/WideEvent" */;
 			productName = WideEvent;
 		};
 /* End XCSwiftPackageProductDependency section */

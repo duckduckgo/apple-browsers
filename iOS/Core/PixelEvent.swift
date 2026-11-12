@@ -4182,11 +4182,11 @@ public extension Pixel.Event {
             case .matchesApiFailure:
                 // Only logged.
                 return nil
-            case .dataSetUpdateTime, .dataSetSize, .dataSetLoadTime, .dataSetAggregateUpdateTime, .dataSetAggregateSize:
-                // Fired as `MaliciousSiteProtectionDebugPixel`.
-                return nil
             case .failedToDownloadInitialDataSets(category: let category, type: let type):
                 self = .failedToDownloadInitialDataSets(category: category, type: type)
+            default:
+                // The other events are fired as `MaliciousSiteProtectionDebugPixel`.
+                return nil
             }
         }
 

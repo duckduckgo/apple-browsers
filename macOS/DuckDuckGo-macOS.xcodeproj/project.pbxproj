@@ -482,41 +482,6 @@
 			remoteGlobalIDString = 4B2537592A11BE7300610219;
 			remoteInfo = NetworkProtectionSystemExtension;
 		};
-		84DD05922E9793BF0043A25E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 84DDBF682E9793B70043A25E /* OCTest.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 4A63D2A514E3C1A900F615CB;
-			remoteInfo = OCTest;
-		};
-		84DD05962E9793BF0043A25E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 84DDDEA62E9793B70043A25E /* Punycode.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = A75359AF2C7ABA7C00564274;
-			remoteInfo = Punycode;
-		};
-		84DD05982E9793BF0043A25E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 84DDDEA62E9793B70043A25E /* Punycode.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = A75359B72C7ABA7D00564274;
-			remoteInfo = PunycodeTests;
-		};
-		84DD059C2E9793BF0043A25E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 84DD892A2E9793B70043A25E /* Punycode.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = A75359AF2C7ABA7C00564274;
-			remoteInfo = Punycode;
-		};
-		84DD059E2E9793BF0043A25E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 84DD892A2E9793B70043A25E /* Punycode.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = A75359B72C7ABA7D00564274;
-			remoteInfo = PunycodeTests;
-		};
 		9D84E3FC2CD4E66F0046CD8B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA585D76248FD31100E9A3E2 /* Project object */;
@@ -652,9 +617,6 @@
 		84AECC4E2DFBF75700438ACC /* CommonObjCExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CommonObjCExtensions; sourceTree = "<group>"; };
 		84AECC4F2DFBF76400438ACC /* LetsMove */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = LetsMove; sourceTree = "<group>"; };
 		84DD05892E9793B70043A25E /* TestUtilities */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = TestUtilities; sourceTree = "<group>"; };
-		84DD892A2E9793B70043A25E /* Punycode.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Punycode.xcodeproj; sourceTree = "<group>"; };
-		84DDBF682E9793B70043A25E /* OCTest.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OCTest.xcodeproj; sourceTree = "<group>"; };
-		84DDDEA62E9793B70043A25E /* Punycode.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Punycode.xcodeproj; sourceTree = "<group>"; };
 		84E2FC432E0DAB15000874F7 /* Testing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Testing.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework; sourceTree = DEVELOPER_DIR; };
 		8518F1302F74314900B53C75 /* ScreenTimeDataCleaner */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ScreenTimeDataCleaner; path = ../SharedPackages/ScreenTimeDataCleaner; sourceTree = SOURCE_ROOT; };
 		85AE2FF124A33A2D002D507F /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
@@ -1598,16 +1560,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		377DF177306D44F800CDD6A7 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				84DDDEA62E9793B70043A25E /* Punycode.xcodeproj */,
-				84DDBF682E9793B70043A25E /* OCTest.xcodeproj */,
-				84DD892A2E9793B70043A25E /* Punycode.xcodeproj */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
 		378E279C2970217400FCADA2 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
@@ -1662,32 +1614,6 @@
 			path = LocalPackages;
 			sourceTree = "<group>";
 		};
-		84DD058A2E9793B70043A25E /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				84DD05932E9793BF0043A25E /* OCTest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		84DD058C2E9793B70043A25E /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				84DD059D2E9793BF0043A25E /* Punycode.framework */,
-				84DD059F2E9793BF0043A25E /* PunycodeTests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		84DD058E2E9793B70043A25E /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				84DD05972E9793BF0043A25E /* Punycode.framework */,
-				84DD05992E9793BF0043A25E /* PunycodeTests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		85AE2FF024A33A2D002D507F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -1722,7 +1648,6 @@
 				968FD581309202D9000D6B12 /* UITests */,
 				968F03CF30936AE6000D6B12 /* UnitTests */,
 				961FCCFA30A22781000B767F /* VPNProxyExtension */,
-				377DF177306D44F800CDD6A7 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -2708,20 +2633,6 @@
 			);
 			productRefGroup = AA585D7F248FD31100E9A3E2 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 84DD058A2E9793B70043A25E /* Products */;
-					ProjectRef = 84DDBF682E9793B70043A25E /* OCTest.xcodeproj */;
-				},
-				{
-					ProductGroup = 84DD058E2E9793B70043A25E /* Products */;
-					ProjectRef = 84DDDEA62E9793B70043A25E /* Punycode.xcodeproj */;
-				},
-				{
-					ProductGroup = 84DD058C2E9793B70043A25E /* Products */;
-					ProjectRef = 84DD892A2E9793B70043A25E /* Punycode.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				AA585D7D248FD31100E9A3E2 /* DuckDuckGo Privacy Browser */,
@@ -2747,44 +2658,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		84DD05932E9793BF0043A25E /* OCTest */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.executable";
-			path = OCTest;
-			remoteRef = 84DD05922E9793BF0043A25E /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		84DD05972E9793BF0043A25E /* Punycode.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = Punycode.framework;
-			remoteRef = 84DD05962E9793BF0043A25E /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		84DD05992E9793BF0043A25E /* PunycodeTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = PunycodeTests.xctest;
-			remoteRef = 84DD05982E9793BF0043A25E /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		84DD059D2E9793BF0043A25E /* Punycode.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = Punycode.framework;
-			remoteRef = 84DD059C2E9793BF0043A25E /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		84DD059F2E9793BF0043A25E /* PunycodeTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = PunycodeTests.xctest;
-			remoteRef = 84DD059E2E9793BF0043A25E /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		3706FCB1293F65D500E42796 /* Resources */ = {

@@ -18,8 +18,7 @@
 //
 
 import DesignResourcesKit
-import DesignResourcesKitIcons
-import UIKit
+import UIKit.UIGestureRecognizerSubclass
 import WebKit
 
 struct DuckAISwipeNewChatChromeState {
@@ -41,7 +40,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private let chromeState: () -> DuckAISwipeNewChatChromeState?
     private let onStartNewChat: () -> Void
 
-    private let pan = UIPanGestureRecognizer()
+    private let pan = TouchDownPanGestureRecognizer()
     private let tickHaptic = UIImpactFeedbackGenerator(style: .light)
     private let armHaptic = UIImpactFeedbackGenerator(style: .medium)
     private let indicator: DuckAISwipeNewChatIndicatorView
@@ -52,8 +51,10 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     private var pull = DuckAISwipeNewChat.Pull.idle
     private var panStart: (velocity: CGPoint, y: CGFloat, bottomInsetMinY: CGFloat, isHeld: Bool)?
     private var touchDownTime: TimeInterval?
-    /// Bumped to make late page replies and animation completions from an earlier interaction do nothing.
-    private var generation = 0
+    /// Bumped to make late page replies from an earlier touch do nothing.
+    private var pageQuery = 0
+    /// Bumped to make completions of animations that something newer has taken over do nothing.
+    private var animation = 0
     private var commitState = DuckAISwipeNewChat.Commit.idle
 
     private var movesContent: Bool { !UIAccessibility.isReduceMotionEnabled }
@@ -80,8 +81,12 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         indicator = DuckAISwipeNewChatIndicatorView(isFireTab: isFireTab)
         super.init()
         backdrop.isHidden = true
+        backdrop.isUserInteractionEnabled = false
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        buildIndicator(in: hostView)
         pan.addTarget(self, action: #selector(handlePan(_:)))
         pan.delegate = self
+        pan.onFirstTouchDown = { [weak self] touch in self?.touchedDown(touch) }
         pan.cancelsTouchesInView = false
         pan.delaysTouchesEnded = false
         webView.addGestureRecognizer(pan)
@@ -99,7 +104,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     /// Drops any pull or page reply that belongs to the previous chat.
     func webViewURLDidChange() {
         if pull != .idle {
-            generation += 1
+            pageQuery += 1
             apply(pull.handle(.cancelled))
         }
         apply(commitState.handle(.urlChanged(chatID: chatID)))
@@ -185,18 +190,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             case .fadeOut:
                 fadeOut()
             case .requestNewChat:
-                // Opening the tab snapshots this one, so the chat is put back first.
-                webView?.transform = .identity
-                webView?.alpha = 1
-                setIndicatorSlotHeight(0)
-                indicator.reset()
                 onStartNewChat()
-            case .scheduleTimeout:
-                let generation = generation
-                DispatchQueue.main.asyncAfter(deadline: .now() + DuckAISwipeNewChat.Constants.newTabTimeout) { [weak self] in
-                    guard let self, generation == self.generation else { return }
-                    self.apply(self.commitState.handle(.timedOut))
-                }
             case .restore:
                 restore()
             }
@@ -212,6 +206,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             setIndicatorSlotHeight(constants.triggerDistance)
             return
         }
+        animation += 1
         let revealed = constants.indicatorSpacing + DuckAISwipeNewChatIndicatorView.circleDiameter
         indicator.update(progress: max(0, min((offset - revealed) / (constants.triggerDistance - revealed), 1)), isArmed: isArmed)
         if backdrop.isHidden {
@@ -222,7 +217,7 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 
     private func springBack() {
-        let generation = generation
+        let animation = animation
         UIView.animate(withDuration: DuckAISwipeNewChat.Constants.springBackDuration, delay: 0,
                        usingSpringWithDamping: 0.85, initialSpringVelocity: 0,
                        options: [.beginFromCurrentState, .allowUserInteraction]) {
@@ -230,14 +225,14 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             self.setIndicatorSlotHeight(0)
             self.indicator.alpha = 0
         } completion: { _ in
-            guard generation == self.generation else { return }
+            guard animation == self.animation else { return }
             self.hideBackdrop()
         }
     }
 
     private func fadeOut() {
         let constants = DuckAISwipeNewChat.Constants.self
-        let generation = generation
+        let animation = animation
         UIView.animate(withDuration: constants.commitDuration, delay: 0, options: [.beginFromCurrentState, .curveEaseIn]) {
             if self.movesContent, let webView = self.webView {
                 webView.transform = webView.transform.translatedBy(x: 0, y: -constants.triggerDistance)
@@ -245,14 +240,15 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
             self.webView?.alpha = 0
             self.indicator.alpha = 0
         } completion: { _ in
-            guard generation == self.generation else { return }
+            guard animation == self.animation else { return }
             self.apply(self.commitState.handle(.fadedOut(chatID: self.chatID,
                                                          isEligible: self.isStillEligible())))
         }
     }
 
     private func restore() {
-        generation += 1
+        pageQuery += 1
+        animation += 1
         webView?.transform = .identity
         webView?.alpha = 1
         setIndicatorSlotHeight(0)
@@ -261,24 +257,22 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         hideBackdrop()
     }
 
+    private func buildIndicator(in hostView: UIView) {
+        indicatorSlot.isUserInteractionEnabled = false
+        indicatorSlot.clipsToBounds = true
+        indicatorSlot.addSubview(indicator)
+        let centered = indicator.centerYAnchor.constraint(equalTo: indicatorSlot.centerYAnchor)
+        centered.priority = .defaultHigh
+        NSLayoutConstraint.activate([
+            centered,
+            indicator.centerXAnchor.constraint(equalTo: indicatorSlot.centerXAnchor),
+            indicator.topAnchor.constraint(greaterThanOrEqualTo: indicatorSlot.topAnchor,
+                                           constant: DuckAISwipeNewChat.Constants.indicatorSpacing),
+        ])
+        hostView.addSubview(indicatorSlot)
+    }
+
     private func placeIndicator(in hostView: UIView, above chromeMinYInWindow: CGFloat) {
-        if indicatorSlot.superview !== hostView {
-            indicatorSlot.removeFromSuperview()
-            indicatorSlot.isUserInteractionEnabled = false
-            indicatorSlot.clipsToBounds = true
-            if indicator.superview !== indicatorSlot {
-                indicatorSlot.addSubview(indicator)
-                let centered = indicator.centerYAnchor.constraint(equalTo: indicatorSlot.centerYAnchor)
-                centered.priority = .defaultHigh
-                NSLayoutConstraint.activate([
-                    centered,
-                    indicator.centerXAnchor.constraint(equalTo: indicatorSlot.centerXAnchor),
-                    indicator.topAnchor.constraint(greaterThanOrEqualTo: indicatorSlot.topAnchor,
-                                                   constant: DuckAISwipeNewChat.Constants.indicatorSpacing),
-                ])
-            }
-            hostView.addSubview(indicatorSlot)
-        }
         hostView.bringSubviewToFront(indicatorSlot)
         indicatorSlotBottomY = min(hostView.convert(CGPoint(x: 0, y: chromeMinYInWindow), from: nil).y, hostView.bounds.maxY)
         setIndicatorSlotHeight(0)
@@ -292,9 +286,9 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
 
     private func checkAtBottom() {
         guard let webView, webView.bounds.width > 0, webView.bounds.height > 0 else { return }
-        let generation = generation
+        let pageQuery = pageQuery
         webView.evaluateJavaScript(Self.canPullExpression) { [weak self] result, _ in
-            guard let self, generation == self.generation, let hostView = self.hostView else { return }
+            guard let self, pageQuery == self.pageQuery, let hostView = self.hostView else { return }
             self.apply(self.pull.handle(.pageAnswered(isAtBottom: result as? Bool == true,
                                                       translation: self.pan.translation(in: hostView).y)))
         }
@@ -305,8 +299,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
         guard let webView, let container = webView.superview else { return }
         if backdrop.superview !== container {
             backdrop.removeFromSuperview()
-            backdrop.translatesAutoresizingMaskIntoConstraints = false
-            backdrop.isUserInteractionEnabled = false
             container.insertSubview(backdrop, belowSubview: webView)
             NSLayoutConstraint.activate([
                 backdrop.topAnchor.constraint(equalTo: webView.topAnchor),
@@ -315,7 +307,6 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
                 backdrop.trailingAnchor.constraint(equalTo: webView.trailingAnchor),
             ])
         }
-        container.insertSubview(backdrop, belowSubview: webView)
         backdrop.backgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
         backdrop.isHidden = false
     }
@@ -325,13 +316,11 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 
     /// Asks the page at touch-down, before the chat scrolls with the finger.
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        guard pan.numberOfTouches == 0, feature.isAvailable, commitState == .idle,
-              chatID != nil else { return true }
-        generation += 1
+    private func touchedDown(_ touch: UITouch) {
+        guard feature.isAvailable, commitState == .idle, chatID != nil else { return }
+        pageQuery += 1
         touchDownTime = touch.timestamp
         apply(pull.handle(.touchedDown))
-        return true
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -344,126 +333,22 @@ final class DuckAISwipeNewChatHandler: NSObject, UIGestureRecognizerDelegate {
     }
 }
 
-/// A ring that fills as the pull nears the trigger, then becomes a button styled like the input's send button.
-private final class DuckAISwipeNewChatIndicatorView: UIView {
+/// Reports the first finger landing, before the pan decides anything.
+private final class TouchDownPanGestureRecognizer: UIPanGestureRecognizer {
 
-    private enum Metrics {
-        static let diameter: CGFloat = 48
-        static let lineWidth: CGFloat = 2.5
-        static let labelSpacing: CGFloat = 6
-        static let fadeInProgress: CGFloat = 0.3
-        static let collapsed = CGAffineTransform(scaleX: 0.01, y: 0.01)
-    }
+    var onFirstTouchDown: ((UITouch) -> Void)?
+    private var isTouched = false
 
-    static var circleDiameter: CGFloat { Metrics.diameter }
-
-    private let circle = UIView()
-    private let ring = CAShapeLayer()
-    private let button = CircularButton()
-    private let label = UILabel()
-    private var isArmed = false
-
-    init(isFireTab: Bool) {
-        super.init(frame: .zero)
-        translatesAutoresizingMaskIntoConstraints = false
-        isUserInteractionEnabled = false
-        alpha = 0
-
-        circle.translatesAutoresizingMaskIntoConstraints = false
-        ring.fillColor = UIColor.clear.cgColor
-        ring.lineWidth = Metrics.lineWidth
-        ring.lineCap = .round
-        ring.strokeEnd = 0
-        circle.layer.addSublayer(ring)
-
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.isShadowHidden = true
-        button.setIcon(DesignSystemImages.Glyphs.Size24.compose)
-        button.applySubmitStyle(isActive: true, isFireTab: isFireTab,
-                                activeForeground: isFireTab ? .white : UIColor(designSystemColor: .accentContentPrimary))
-        circle.addSubview(button)
-
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .daxCaption()
-        label.adjustsFontForContentSizeCategory = true
-        label.textColor = UIColor(designSystemColor: .textSecondary)
-        label.text = UserText.actionNewAIChat
-
-        addSubview(circle)
-        addSubview(label)
-        NSLayoutConstraint.activate([
-            circle.topAnchor.constraint(equalTo: topAnchor),
-            circle.centerXAnchor.constraint(equalTo: centerXAnchor),
-            circle.widthAnchor.constraint(equalToConstant: Metrics.diameter),
-            circle.heightAnchor.constraint(equalToConstant: Metrics.diameter),
-            button.topAnchor.constraint(equalTo: circle.topAnchor),
-            button.bottomAnchor.constraint(equalTo: circle.bottomAnchor),
-            button.leadingAnchor.constraint(equalTo: circle.leadingAnchor),
-            button.trailingAnchor.constraint(equalTo: circle.trailingAnchor),
-            label.topAnchor.constraint(equalTo: circle.bottomAnchor, constant: Metrics.labelSpacing),
-            label.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor),
-            label.centerXAnchor.constraint(equalTo: centerXAnchor),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-        reset()
-        applyRingColor()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let radius = (Metrics.diameter - Metrics.lineWidth) / 2
-        let center = CGPoint(x: Metrics.diameter / 2, y: Metrics.diameter / 2)
-        ring.path = UIBezierPath(arcCenter: center, radius: radius, startAngle: -.pi / 2, endAngle: 1.5 * .pi, clockwise: true).cgPath
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            applyRingColor()
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        if !isTouched, let touch = touches.first {
+            isTouched = true
+            onFirstTouchDown?(touch)
         }
+        super.touchesBegan(touches, with: event)
     }
 
-    private func applyRingColor() {
-        ring.strokeColor = button.backgroundColor?.resolvedColor(with: traitCollection).cgColor
-    }
-
-    func reset() {
-        isArmed = false
-        showButton(false)
-        ring.strokeEnd = 0
-    }
-
-    func update(progress: CGFloat, isArmed: Bool) {
-        layer.removeAllAnimations()
-        alpha = min(progress / Metrics.fadeInProgress, 1)
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        ring.strokeEnd = progress
-        CATransaction.commit()
-
-        guard isArmed != self.isArmed else { return }
-        self.isArmed = isArmed
-        if UIAccessibility.isReduceMotionEnabled {
-            UIView.animate(withDuration: 0.15) { self.showButton(isArmed) }
-        } else {
-            UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0,
-                           options: [.beginFromCurrentState, .allowUserInteraction]) {
-                self.showButton(isArmed)
-            }
-        }
-    }
-
-    private func showButton(_ isShown: Bool) {
-        if UIAccessibility.isReduceMotionEnabled {
-            button.transform = .identity
-            button.alpha = isShown ? 1 : 0
-        } else {
-            button.alpha = 1
-            button.transform = isShown ? .identity : Metrics.collapsed
-        }
+    override func reset() {
+        super.reset()
+        isTouched = false
     }
 }

@@ -25,50 +25,11 @@ import AIChat
 import WebKit
 import Combine
 
-/// Duck.ai scrolls its conversation in an inner element, not the page. Native code that needs that element
-/// finds it here, so there is one guess at the page's layout.
-enum DuckAIChatScroller {
-
-    /// The conversation's scrolling element, or null: the outermost vertical scroller that is most of the viewport
-    /// tall and starts near its top. Cached on the page while it still fits.
-    static let expression = """
-    (() => {
-        const fits = element => {
-            const overflow = getComputedStyle(element).overflowY;
-            if (overflow !== 'auto' && overflow !== 'scroll') return false;
-            const rect = element.getBoundingClientRect();
-            return rect.height >= innerHeight * 0.65 && rect.top <= innerHeight * 0.25;
-        };
-        const cache = window.__ddgDuckAIChatScroller ??= {};
-        if (cache.element?.isConnected && fits(cache.element)) return cache.element;
-        let best = null;
-        for (const element of document.querySelectorAll('div')) {
-            if (best?.contains(element) || !fits(element)) continue;
-            if (!best || element.clientHeight > best.clientHeight) best = element;
-        }
-        cache.element = best;
-        return best;
-    })()
-    """
-
-    /// Whether the end of the conversation is in view above the bottom inset. One too short to scroll is; no
-    /// conversation is not. A scroll that stops short counts while the inset spacer's spare room still shows.
-    static let isAtBottomExpression = """
-    (() => {
-        const chat = \(expression);
-        if (!chat) return false;
-        const insets = window.__ddgNativeScrollInsets;
-        const spacer = insets?.spacer?.parentElement === chat ? insets.spacer.getBoundingClientRect().height : 0;
-        const slack = Math.max(4, spacer - (insets?.bottom ?? 0));
-        return chat.scrollTop + chat.clientHeight >= chat.scrollHeight - slack;
-    })()
-    """
-}
-
 @MainActor
 enum DuckAIChatScrollInsetStyler {
 
-    static func apply(_ insets: UIEdgeInsets, to webView: WKWebView) {
+    /// `keepsEndInView` scrolls a conversation at its end back there when the inset spacer changes height.
+    static func apply(_ insets: UIEdgeInsets, keepsEndInView: Bool = false, to webView: WKWebView) {
         let top = max(0, insets.top)
         let bottom = max(0, insets.bottom)
         let script = """
@@ -136,7 +97,7 @@ enum DuckAIChatScrollInsetStyler {
                         const previousHeight = state.spacer.getBoundingClientRect().height;
                         state.spacer.style.height = `${height}px`;
                         if (Math.abs(height - previousHeight) > 0.5) {
-                            if (wasAtBottom) state.target.scrollTop = state.target.scrollHeight;
+                            if (wasAtBottom && state.keepsEndInView) state.target.scrollTop = state.target.scrollHeight;
                             // Auto margins move without resizing content.
                             state.schedule();
                         }
@@ -163,6 +124,7 @@ enum DuckAIChatScrollInsetStyler {
             }
             state.top = \(top);
             state.bottom = \(bottom);
+            state.keepsEndInView = \(keepsEndInView);
             state.apply();
         })();
         """

@@ -48,7 +48,7 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
 
     @MainActor
     @discardableResult
-    func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
+    func loadWebExtension(identifier: String, resourceIdentifier: String?, into controller: WKWebExtensionController,
                           beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
         loadWebExtensionCalled = true
         loadedIdentifiers.append(identifier)

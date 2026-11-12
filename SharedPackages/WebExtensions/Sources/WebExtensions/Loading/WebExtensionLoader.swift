@@ -40,9 +40,10 @@ public protocol WebExtensionLoading: AnyObject {
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     /// Revalidates after parsing and immediately before native activation; required so protocol dispatch cannot bypass the gate.
+    /// An explicit resource identifier loads a new package before its installation record is published.
     @MainActor
     @discardableResult
-    func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
+    func loadWebExtension(identifier: String, resourceIdentifier: String?, into controller: WKWebExtensionController,
                           beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
     @MainActor
@@ -51,6 +52,16 @@ public protocol WebExtensionLoading: AnyObject {
     /// Reloads an already-parsed extension into the controller, reusing the in-memory
     /// `WKWebExtension` to skip disk resolution and manifest parsing.
     func reloadWebExtension(_ webExtension: WKWebExtension, identifier: String, into controller: WKWebExtensionController) async throws
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WebExtensionLoading {
+    @MainActor
+    @discardableResult
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
+                          beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
+        try await loadWebExtension(identifier: identifier, resourceIdentifier: nil, into: controller, beforeActivation: beforeActivation)
+    }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -103,9 +114,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
     @MainActor
     @discardableResult
-    public func loadWebExtension(identifier: String, into controller: WKWebExtensionController,
+    public func loadWebExtension(identifier: String, resourceIdentifier: String?, into controller: WKWebExtensionController,
                                  beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
-        let resourceIdentifier = installationStore?.installedExtension(withUniqueIdentifier: identifier)?.resourceIdentifier ?? identifier
+        let resourceIdentifier = resourceIdentifier ?? installationStore?.installedExtension(withUniqueIdentifier: identifier)?.resourceIdentifier ?? identifier
         // Check if extension is already loaded (idempotent operation)
         if let existingContext = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifier }) {
             try beforeActivation(existingContext.webExtension)

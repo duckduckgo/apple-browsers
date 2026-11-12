@@ -114,7 +114,7 @@ enum WebExtensionManagerFactory {
         eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         if buildType.isDebugBuild, buildType.isSparkleBuild, ChromeWebStoreManualUpdateTesting.isEnabled {
             let manager = ChromeWebStoreManualUpdateTesting().makeManager(
                 configuration: WebExtensionConfigurationProvider(), windowTabProvider: WebExtensionWindowTabProvider(),

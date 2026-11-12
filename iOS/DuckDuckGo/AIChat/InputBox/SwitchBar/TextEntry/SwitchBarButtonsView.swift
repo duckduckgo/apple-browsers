@@ -118,6 +118,17 @@ class SwitchBarButtonsView: UIView {
         }
     }
 
+    var usesFloatingAIStopButtonSpacing = false {
+        didSet { updateTrailingInset() }
+    }
+
+    var hidesStopButtonBackground = false {
+        didSet {
+            stopGeneratingBackdrop.isHidden = hidesStopButtonBackground
+            updateTrailingInset()
+        }
+    }
+
     var voiceButtonStyle: VoiceButtonStyle = .microphone {
         didSet {
             updateVoiceButtonAppearance()
@@ -274,11 +285,18 @@ class SwitchBarButtonsView: UIView {
     }
 
     private func updateButtonsVisibility() {
+        updateTrailingInset()
         clearButton.isHidden = !buttonState.showsClearButton
         stopGeneratingButton.isHidden = !buttonState.showsStopGeneratingButton
         voiceButton.isHidden = !buttonState.showsVoiceButton
         aiChatShortcutButton.isHidden = !buttonState.showsAIChatShortcutButton
         separatorView.isHidden = !buttonState.showsSeparator
+    }
+
+    private func updateTrailingInset() {
+        let trailing = usesFloatingAIStopButtonSpacing && buttonState == .stopGeneratingOnly ? 0 : Constants.stackTrailingInset
+        let stopButtonInset: CGFloat = hidesStopButtonBackground && buttonState == .stopGeneratingOnly ? 2 : 0
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: trailing + stopButtonInset)
     }
 
     /// Iterates the stack so newly-added buttons are auto-covered — the duck.ai chip stays

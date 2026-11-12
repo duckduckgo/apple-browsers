@@ -566,16 +566,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
         defer { permissionController?.trustedInstallations.remove(identifier) }
 
-        if metadata.requiresExtraction {
-            _ = try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
-        } else {
-            _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
-        }
-
-        Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
-
+        let packageIdentifier = storeIdentity?.store == .chromeWebStore ? UUID() : nil
+        let resourceIdentifier = InstalledWebExtension.resourceIdentifier(for: identifier, packageIdentifier: packageIdentifier)
         var replacedContext: WKWebExtensionContext?
         do {
+            if metadata.requiresExtraction {
+                _ = try storageProvider.extractExtension(from: sourceURL, identifier: resourceIdentifier)
+            } else {
+                _ = try storageProvider.copyExtension(from: sourceURL, identifier: resourceIdentifier)
+            }
+
+            Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
+
             if let oldIdentifier {
                 try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
 #if os(macOS)
@@ -595,7 +597,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
             installingStoreIdentities[identifier] = storeIdentity
             defer { installingStoreIdentities.removeValue(forKey: identifier) }
-            let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            let loadResult = try await loader.loadWebExtension(identifier: identifier, resourceIdentifier: resourceIdentifier,
+                                                             into: controller, beforeActivation: { _ in })
             unloadGuard.recordLoad(of: identifier)
 
             let webExtension = context(for: identifier)?.webExtension
@@ -607,7 +610,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 embeddedType: embeddedType,
                 storeIdentity: storeIdentity,
                 permissions: webExtension?.requiredPermissionNames,
-                matchPatterns: webExtension?.allRequestedMatchPatterns.map(\.string)
+                matchPatterns: webExtension?.allRequestedMatchPatterns.map(\.string),
+                packageIdentifier: packageIdentifier
             )
 
             installationStore.add(installedExtension)
@@ -1877,9 +1881,12 @@ extension WebExtensionManager {
 
     /// Collect only from the fresh startup selection, before this session publishes any package.
     func cleanupUnselectedUpdatePackages() async {
-        let installed = installationStore.installedExtensions
-        let selected = Dictionary(uniqueKeysWithValues: installed.compactMap { item in item.packageIdentifier.map { (item.uniqueIdentifier, $0) } })
-        await extensionUpdatePackages.cleanup(installationIDs: Set(installed.map(\.uniqueIdentifier)), selectedPackages: selected)
+        let activated = installationStore.installedExtensions.compactMap { item -> (String, UUID)? in
+            guard item.storeIdentity?.store == .chromeWebStore, !item.needsInitialUpdateActivationValidation,
+                  let packageID = item.packageIdentifier else { return nil }
+            return (item.uniqueIdentifier, packageID)
+        }
+        await extensionUpdatePackages.cleanup(activatedPackages: Dictionary(uniqueKeysWithValues: activated))
     }
 
     /// Only the first automatic load uses full update approval. The marker survives Quit before that load.

@@ -27,7 +27,7 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
 
     private let webExtensionManager: WebExtensionManaging
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
     private let updateTestServer = ChromeWebStoreManualUpdateServer()
 #endif
 
@@ -89,7 +89,7 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         addItem(apiCompatibilityLogMenuItem)
         addItem(backdateInstallDatesMenuItem)
         addItem(NSMenuItem(title: "Check for Updates…", action: #selector(showUpdateVersions), target: self))
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         addItem(.separator())
         let testingMenu = NSMenu()
         let serverTitle = updateTestServer.isRunning ? "Open Local Server…" : "Start Local Server…"
@@ -168,7 +168,7 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         if menuItem.action == #selector(installUpdateTestFixture) {
             return updateTestServer.isRunning && (webExtensionManager as? WebExtensionManager).map { ChromeWebStoreManualUpdateTesting().owns($0) } == true
         }
@@ -193,7 +193,7 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         WebExtensionUpdateVersionsWindowPresenter.show(manager: webExtensionManager)
     }
 
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
     @objc private func startUpdateTestServer() {
         Task { @MainActor in
             do {

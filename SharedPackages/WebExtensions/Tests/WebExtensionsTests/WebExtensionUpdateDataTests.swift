@@ -74,30 +74,42 @@ final class WebExtensionUpdateDataTests: XCTestCase {
         try loader.unloadExtension(identifier: installationID, from: controller)
     }
 
-    func testSameIdentityPreservesDataAcrossResourceDirectoryChangeAndControllerRecreation() async throws {
+    func testSameIdentityPreservesDataFromFlatToVersionedPackagesAndControllerRecreation() async throws {
         let store = WebExtensionPermissionStore(keyValueStore: keyValueStore)
         var approved = WebExtensionPermissionSettings()
         approved.grantedPermissions = ["storage": .distantFuture]
         approved.hasAccessToPrivateData = true
         try store.save(approved, for: installationID)
-        let firstRoot = directory.appendingPathComponent("first-package", isDirectory: true)
-        let secondRoot = directory.appendingPathComponent("second-package", isDirectory: true)
-        try writeFixture(version: "1.0", extensionsDirectory: firstRoot)
-        try writeFixture(version: "2.0", extensionsDirectory: secondRoot)
+        let installed = InstalledWebExtension(uniqueIdentifier: installationID, filename: installationID, name: "Update data fixture", version: "1.0",
+                                              storeIdentity: .init(store: .chromeWebStore, id: ChromeWebStoreID.bitwarden.rawValue))
+        installationStore.add(installed)
+        try writeFixture(version: "1.0")
         var controller = makeController()
-        var loader = makeLoader(store: store, extensionsDirectory: firstRoot)
+        var loader = makeLoader(store: store)
         let before = try await readGeneration(controller: controller, loader: loader, version: "1.0", seed: true)
 
-        try loader.unloadExtension(identifier: installationID, from: controller)
-        loader = makeLoader(store: store, extensionsDirectory: secondRoot)
-        assertPreserved(before, try await readGeneration(controller: controller, loader: loader, version: "2.0"))
+        for version in ["2.0", "3.0"] {
+            try loader.unloadExtension(identifier: installationID, from: controller)
+            let replacement = InstalledWebExtension(uniqueIdentifier: installationID, filename: installationID, name: installed.name, version: version,
+                                                    storeIdentity: installed.storeIdentity, packageIdentifier: UUID())
+            try writeFixture(version: version, resourceIdentifier: replacement.resourceIdentifier)
+            installationStore.update(replacement)
+            loader = makeLoader(store: store)
+            assertPreserved(before, try await readGeneration(controller: controller, loader: loader, version: version))
+        }
 
         try loader.unloadExtension(identifier: installationID, from: controller)
+        let selected = try XCTUnwrap(installationStore.installedExtensions.first?.packageIdentifier)
+        let packages = WebExtensionUpdatePackageStore(extensionsDirectory: directory)
+        await packages.cleanup(activatedPackages: [installationID: selected])
+        let installation = directory.appendingPathComponent(installationID)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: installation.appendingPathComponent("manifest.json").path))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: installation.appendingPathComponent("versions").path), [selected.uuidString])
         weak var previousController = controller
         controller = makeController()
-        loader = makeLoader(store: store, extensionsDirectory: secondRoot)
+        loader = makeLoader(store: store)
         XCTAssertNil(previousController, "The relaunch probe must release its old controller and views")
-        assertPreserved(before, try await readGeneration(controller: controller, loader: loader, version: "2.0"))
+        assertPreserved(before, try await readGeneration(controller: controller, loader: loader, version: "3.0"))
         XCTAssertEqual(try store.settings(for: installationID), approved)
         try loader.unloadExtension(identifier: installationID, from: controller)
     }
@@ -108,13 +120,13 @@ final class WebExtensionUpdateDataTests: XCTestCase {
         return WKWebExtensionController(configuration: configuration)
     }
 
-    private func makeLoader(store: WebExtensionPermissionStore, extensionsDirectory: URL? = nil) -> WebExtensionLoader {
+    private func makeLoader(store: WebExtensionPermissionStore) -> WebExtensionLoader {
         let permissions = WebExtensionPermissionController(store: store, installationStore: installationStore, prompter: UnexpectedPrompt())
-        return WebExtensionLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory ?? directory), permissionController: permissions)
+        return WebExtensionLoader(storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory), permissionController: permissions, installationStore: installationStore)
     }
 
-    private func writeFixture(version: String, extensionsDirectory: URL? = nil) throws {
-        let folder = (extensionsDirectory ?? directory).appendingPathComponent(installationID)
+    private func writeFixture(version: String, resourceIdentifier: String? = nil) throws {
+        let folder = directory.appendingPathComponent(resourceIdentifier ?? installationID)
         if FileManager.default.fileExists(atPath: folder.path) { try FileManager.default.removeItem(at: folder) }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let manifest: [String: Any] = ["manifest_version": 3, "name": "Update data fixture", "version": version,

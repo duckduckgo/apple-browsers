@@ -700,7 +700,8 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
             // The installer must clean up only the failed replacement.
         }
 
-        let newIdentifier = try XCTUnwrap(storage.copyExtensionIdentifier)
+        let copiedResourceIdentifier = try XCTUnwrap(storage.copyExtensionIdentifier)
+        let newIdentifier = String(try XCTUnwrap(copiedResourceIdentifier.split(separator: "/").first))
         XCTAssertNotEqual(newIdentifier, oldContext.uniqueIdentifier)
         XCTAssertNil(try store.settings(for: newIdentifier))
         XCTAssertEqual(storage.removeExtensionIdentifier, newIdentifier)

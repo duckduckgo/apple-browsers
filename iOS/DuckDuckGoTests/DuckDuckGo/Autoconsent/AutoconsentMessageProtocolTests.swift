@@ -139,6 +139,27 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenHeuristicHitTestFlagChangesThenInitConfigurationFollowsIt() {
+        let preferences = MockAutoconsentPreferences()
+        preferences.cookiePopupPreference = .default
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        userScript = AutoconsentUserScript(
+            config: MockPrivacyConfiguration(),
+            preferences: preferences,
+            featureFlagger: featureFlagger
+        )
+        userScript.management = MockAutoconsentManagement()
+
+        let disabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(disabledConfig?["enableHeuristicHitTest"] as? Bool, false)
+
+        featureFlagger.enabledFeatureFlags = [.heuristicHitTest]
+
+        let enabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(enabledConfig?["enableHeuristicHitTest"] as? Bool, true)
+    }
+
+    @MainActor
     func testWhenNativeAutoconsentPixelFiresThenTheSiteRankOfTheTopUrlIsPassed() {
         let management = MockAutoconsentManagement()
         userScript.management = management

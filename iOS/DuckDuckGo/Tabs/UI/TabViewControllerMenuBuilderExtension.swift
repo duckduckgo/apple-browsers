@@ -230,6 +230,7 @@ extension TabViewController {
         return .regular(name: UserText.actionNewTab,
                         accessibilityLabel: UserText.keyCommandNewTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
+                        tag: .newTab,
                         action: { [weak self] in
             self?.onNewTabAction()
         })
@@ -239,6 +240,7 @@ extension TabViewController {
         return .regular(name: UserText.actionNewFireTab,
                         accessibilityLabel: UserText.actionNewFireTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
+                        tag: .newTab,
                         action: { [weak self] in
             self?.onNewFireTabAction()
         })
@@ -286,6 +288,7 @@ extension TabViewController {
         if state == .newTab {
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
                                                      image: DesignSystemImages.Glyphs.Size16.add,
+                                                     tag: .newTab,
                                                      action: { [weak self] in
                 self?.onNewTabAction()
             }))
@@ -552,6 +555,7 @@ extension TabViewController {
 
         return BrowsingMenuEntry.regular(name: UserText.actionSaveBookmark,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.bookmark : DesignSystemImages.Glyphs.Size24.bookmark,
+                                         accessibilityIdentifier: "Browser.Menu.AddBookmark",
                                          action: { [weak self] in
                                            self?.performSaveBookmarkAction(for: link,
                                                                            with: bookmarksInterface)
@@ -561,6 +565,7 @@ extension TabViewController {
     private func buildOpenBookmarksEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         BrowsingMenuEntry.regular(name: UserText.actionOpenBookmarks,
                                   image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.bookmarks : DesignSystemImages.Glyphs.Size24.bookmarks,
+                                  accessibilityIdentifier: "Browser.Menu.Bookmarks",
                                   action: { [weak self] in
             self?.onOpenBookmarksAction()
         })
@@ -712,6 +717,7 @@ extension TabViewController {
 
             let entry = BrowsingMenuEntry.regular(name: UserText.actionRemoveFavorite,
                                                   image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favoriteSolid : DesignSystemImages.Glyphs.Size24.favoriteSolid,
+                                                  accessibilityIdentifier: "Browser.Menu.RemoveFavorite",
                                                   action: action)
             return entry
 
@@ -723,6 +729,7 @@ extension TabViewController {
         let entry = BrowsingMenuEntry.regular(name: UserText.actionSaveFavorite,
                                               image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favorite : DesignSystemImages.Glyphs.Size24.favorite,
                                               tag: .favorite,
+                                              accessibilityIdentifier: "Browser.Menu.AddFavorite",
                                               action: { [weak self] in
             PixelKit.fire(addToFavoriteFlow ? Pixel.Event.browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
             PixelKit.fire(Pixel.Event.addFavoriteDaily, frequency: .legacyDailyNoSuffix)

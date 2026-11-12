@@ -22,20 +22,26 @@ import Foundation
 public enum HTTPStatusCode: Int, Sendable, Hashable {
     case ok = 200
     case created = 201
+    case accepted = 202
     case noContent = 204
     case badRequest = 400
+    case forbidden = 403
     case notFound = 404
     case methodNotAllowed = 405
+    case conflict = 409
     case internalServerError = 500
 
     var reasonPhrase: String {
         switch self {
         case .ok: return "OK"
         case .created: return "Created"
+        case .accepted: return "Accepted"
         case .noContent: return "No Content"
         case .badRequest: return "Bad Request"
+        case .forbidden: return "Forbidden"
         case .notFound: return "Not Found"
         case .methodNotAllowed: return "Method Not Allowed"
+        case .conflict: return "Conflict"
         case .internalServerError: return "Internal Server Error"
         }
     }

@@ -119,6 +119,20 @@ final class AIChatHistoryViewController: UIViewController {
         navigationController?.setToolbarHidden(false, animated: animated)
     }
 
+    /// Reported as the sheet starts closing, so what's underneath can move with it; a swipe counts once it's committed.
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        guard navigationController?.isBeingDismissed == true else { return }
+        guard let transition = transitionCoordinator, transition.isInteractive else {
+            viewModel.screenWillClose()
+            return
+        }
+        transition.notifyWhenInteractionChanges { [weak self] context in
+            guard !context.isCancelled else { return }
+            self?.viewModel.screenWillClose()
+        }
+    }
+
     private func setupViews() {
         view.addSubview(tableView)
 

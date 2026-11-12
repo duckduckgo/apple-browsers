@@ -34,7 +34,7 @@ private struct WebExtensionUpdateVersionsView: View {
     @State private var refreshedAt: Date?
 
     private var localFixtureIdentifier: String? {
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         guard let manager = manager as? WebExtensionManager, ChromeWebStoreManualUpdateTesting().owns(manager) else { return nil }
         return ChromeWebStoreManualUpdateTesting.extensionID
 #else
@@ -64,7 +64,7 @@ private struct WebExtensionUpdateVersionsView: View {
             Text(verbatim: "Available shows the local server offer, or a verified download. Updates apply at the next launch.")
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
                 if isLocalProfile {
                     Button { NSWorkspace.shared.open(ChromeWebStoreManualUpdateTesting.controlPageURL) } label: {
                         Text(verbatim: "Open Local Server")
@@ -150,7 +150,7 @@ private struct WebExtensionUpdateVersionsView: View {
             if let service = manager.chromeWebStore as? ChromeWebStoreService {
                 pending = try await service.pendingUpdates.allPendingUpdates()
             }
-#if DEBUG
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
             if isLocalProfile {
                 offeredVersion = try await ChromeWebStoreManualUpdateTesting().offeredVersion()
             }

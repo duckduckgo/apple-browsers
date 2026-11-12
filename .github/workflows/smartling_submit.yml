@@ -316,12 +316,12 @@ jobs:
           SHA: ${{ github.sha }}
         run: python3 ./scripts/smartling/commit_author.py --sha "$SHA" --user-map "$RUNNER_TEMP/user_map.yml"
 
-      # The platform's owner gets nightly and release review tasks, merge review tasks whose author has no Asana user,
-      # and failure tasks.
+      # The platform's owner gets nightly and release review tasks, merge review tasks whose author has no Asana user or
+      # is rejected by Asana, and failure tasks.
       # TODO: assign a merge run's failure task to the author of the merged commit instead of the platform's owner.
       - name: Resolve ${{ inputs.platform }} task assignee
         id: task-assignee
-        if: ${{ !cancelled() && steps.task.outputs.kind != '' && steps.merge-author.outputs.asana_gid == '' }}
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
         continue-on-error: true  # A review task falls back to the triage DRI and a failure task to no one.
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
@@ -339,6 +339,7 @@ jobs:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           TASK_KIND: ${{ steps.task.outputs.kind }}
           ASSIGNEE: ${{ steps.merge-author.outputs.asana_gid || steps.task-assignee.outputs.asanaUserId }}
+          FALLBACK_ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
           TASK_NAME: "${{ steps.task.outputs.kind == 'review' && 'Smartling job needs review' || 'Smartling submission failed' }}: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.name.outputs.job_name || steps.job.outputs.job_name) }}"
           TASK_NOTES: |
             ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized.{2}', inputs.platform, inputs.kind, steps.submit.outputs.job_id && ' The job created before the failure is left in Smartling.' || '') }}
@@ -355,6 +356,7 @@ jobs:
           task_args=()
           [ "$TASK_KIND" != review ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")
           [ -z "$ASSIGNEE" ] || task_args+=(--assignee "$ASSIGNEE")
+          [ -z "$FALLBACK_ASSIGNEE" ] || task_args+=(--fallback-assignee "$FALLBACK_ASSIGNEE")
           python3 ./scripts/smartling/asana_review_task.py \
             --project "$ASANA_PROJECT_ID" \
             --section-name "$ASANA_INCOMING_SECTION_NAME" \

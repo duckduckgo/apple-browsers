@@ -123,7 +123,7 @@ struct SearchResultsSkeletonTests {
         let header = Self.makeHeader(width: 402)
         #expect(memory.header(for: .light, width: 402) == nil)
 
-        memory.record(header, for: .light)
+        memory.record(header, for: .light, capturedIn: memory.generation)
 
         #expect(memory.header(for: .light, width: 402) === header)
         #expect(memory.header(for: .dark, width: 402) == nil)
@@ -172,13 +172,27 @@ struct SearchResultsSkeletonTests {
     @Test("Clearing forgets every remembered header", .timeLimit(.minutes(1)))
     func clearForgetsHeaders() {
         let memory = SearchPageHeaderMemory()
-        memory.record(Self.makeHeader(width: 402), for: .light)
-        memory.record(Self.makeHeader(width: 402), for: .dark)
+        memory.record(Self.makeHeader(width: 402), for: .light, capturedIn: memory.generation)
+        memory.record(Self.makeHeader(width: 402), for: .dark, capturedIn: memory.generation)
 
         memory.clear()
 
         #expect(memory.header(for: .light, width: 402) == nil)
         #expect(memory.header(for: .dark, width: 402) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A capture that started before a burn lands too late to bring the header back", .timeLimit(.minutes(1)))
+    func captureBeforeClearIsDiscarded() {
+        let memory = SearchPageHeaderMemory()
+        let startedIn = memory.generation
+
+        memory.clear()
+        memory.record(Self.makeHeader(width: 402), for: .light, capturedIn: startedIn)
+        #expect(memory.header(for: .light, width: 402) == nil)
+
+        memory.record(Self.makeHeader(width: 402), for: .light, capturedIn: memory.generation)
+        #expect(memory.header(for: .light, width: 402) != nil)
     }
 
     @available(iOS 16, macOS 13, *)

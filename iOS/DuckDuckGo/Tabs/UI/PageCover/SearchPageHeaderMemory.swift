@@ -28,19 +28,24 @@ final class SearchPageHeaderMemory {
 
     private var headers: [UIUserInterfaceStyle: UIImage] = [:]
 
+    /// Moves on with every clear, so a capture started before a burn can't put the old header back.
+    private(set) var generation = 0
+
     /// Nil unless a header was captured in this appearance at this width; other widths lay out differently.
     func header(for style: UIUserInterfaceStyle, width: CGFloat) -> UIImage? {
         guard let image = headers[style], Self.matches(image, width: width) else { return nil }
         return image
     }
 
-    func record(_ header: UIImage, for style: UIUserInterfaceStyle) {
-        guard header.size.width > 0, header.size.height > 0 else { return }
+    /// `generation` is the value read when the capture started; anything cleared since then wins.
+    func record(_ header: UIImage, for style: UIUserInterfaceStyle, capturedIn generation: Int) {
+        guard generation == self.generation, header.size.width > 0, header.size.height > 0 else { return }
         headers[style] = header
     }
 
     func clear() {
         headers.removeAll()
+        generation += 1
     }
 
     nonisolated static func matches(_ header: UIImage, width: CGFloat) -> Bool {

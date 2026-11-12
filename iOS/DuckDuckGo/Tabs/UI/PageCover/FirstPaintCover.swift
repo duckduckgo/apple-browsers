@@ -105,6 +105,8 @@ final class FirstPaintCover {
     private var armedAt: CFTimeInterval?
     private var cancelHold: (() -> Void)?
     private var contentCheck: ContentCheck?
+    /// Moves on with every arm, so a content answer for an earlier load can't lift a later cover.
+    private var armGeneration = 0
     private var cancelContentPoll: (() -> Void)?
 
     /// The navigation the cover waits for; anything else belongs to the previous page.
@@ -131,6 +133,7 @@ final class FirstPaintCover {
         cancelDebugHold()
         cancelContentPolling()
         armedAt = CACurrentMediaTime()
+        armGeneration += 1
         contentCheck = handoff.isContentReady
 
         let view = coverView ?? makeCoverView()
@@ -272,14 +275,19 @@ final class FirstPaintCover {
     }
 
     private func pollContent(_ check: @escaping ContentCheck) {
+        let generation = armGeneration
         check { [weak self] isReady in
-            guard let self, self.phase == .awaitingContent else { return }
+            guard let self, self.isAwaitingContent(armedIn: generation) else { return }
             guard !isReady else { return self.reveal(animated: true) }
             self.cancelContentPoll = self.scheduler(Constants.contentPollInterval) { [weak self] in
-                guard let self, self.phase == .awaitingContent else { return }
+                guard let self, self.isAwaitingContent(armedIn: generation) else { return }
                 self.pollContent(check)
             }
         }
+    }
+
+    private func isAwaitingContent(armedIn generation: Int) -> Bool {
+        phase == .awaitingContent && armGeneration == generation
     }
 
     private func cancelContentPolling() {

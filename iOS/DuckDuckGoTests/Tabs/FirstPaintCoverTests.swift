@@ -779,6 +779,45 @@ struct FirstPaintCoverTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("An earlier search's answer can't lift the cover of a later search", .timeLimit(.minutes(1)))
+    func earlierSearchAnswerIsIgnored() {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        #expect(checks.value.count == 2)
+
+        checks.value[0](true)
+        #expect(harness.cover.phase == .awaitingContent)
+        #expect(harness.pendingFades.isEmpty)
+
+        checks.value[1](true)
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A poll scheduled for an earlier search doesn't ask again for a later one", .timeLimit(.minutes(1)))
+    func earlierSearchPollIsIgnored() throws {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        checks.value[0](false)
+        let stalePoll = try #require(harness.timeouts.last)
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        #expect(checks.value.count == 2)
+
+        stalePoll.action()
+
+        #expect(checks.value.count == 2)
+        #expect(harness.cover.phase == .awaitingContent)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("The remembered header is in place as soon as the cover is armed", .timeLimit(.minutes(1)))
     func headerIsPlacedOnArm() throws {
         let harness = Harness()

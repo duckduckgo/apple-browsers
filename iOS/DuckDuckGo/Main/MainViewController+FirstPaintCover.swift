@@ -60,9 +60,10 @@ extension MainViewController {
         guard tab === currentTab,
               let url = tab.url,
               Self.learnsSearchPageHeader(from: url, isFireTab: tab.tabModel.fireTab, featureFlagger: featureFlagger) else { return }
+        let generation = searchPageHeaderMemory.generation
         tab.captureSearchPageHeader { [weak self] header in
             guard let self, let header, self.traitCollection.userInterfaceStyle == style else { return }
-            self.searchPageHeaderMemory.record(header, for: style)
+            self.searchPageHeaderMemory.record(header, for: style, capturedIn: generation)
         }
     }
 

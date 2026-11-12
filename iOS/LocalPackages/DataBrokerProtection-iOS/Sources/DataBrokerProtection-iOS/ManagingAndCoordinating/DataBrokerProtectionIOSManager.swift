@@ -1106,8 +1106,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
 #if targetEnvironment(simulator)
             Logger.dataBrokerProtection.log("Background task not supported in simulator")
-            return
-#endif
+#else
 
             let isAuthenticatedUser = await refreshFreeScanState()
 
@@ -1139,6 +1138,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
                 self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error))
             }
+#endif
         }
     }
 

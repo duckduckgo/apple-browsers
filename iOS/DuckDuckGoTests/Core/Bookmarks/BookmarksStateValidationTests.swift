@@ -71,7 +71,7 @@ class BookmarksStateValidationTests: XCTestCase {
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
             XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
-            validator.validateBookmarksStructure(context: testContext)
+            _ = validator.validateBookmarksStructure(context: testContext)
         }
     }
 
@@ -108,7 +108,7 @@ class BookmarksStateValidationTests: XCTestCase {
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
             XCTAssertFalse(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
-            validator.validateBookmarksStructure(context: testContext)
+            _ = validator.validateBookmarksStructure(context: testContext)
         }
 
         wait(for: [expectation1, expectation2], timeout: 5.0)
@@ -149,7 +149,7 @@ class BookmarksStateValidationTests: XCTestCase {
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
             XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
-            validator.validateBookmarksStructure(context: testContext)
+            _ = validator.validateBookmarksStructure(context: testContext)
         }
 
         wait(for: [expectation], timeout: 5.0)
@@ -189,7 +189,7 @@ class BookmarksStateValidationTests: XCTestCase {
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
             XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
-            validator.validateBookmarksStructure(context: testContext)
+            _ = validator.validateBookmarksStructure(context: testContext)
         }
 
         wait(for: [expectation], timeout: 5.0)

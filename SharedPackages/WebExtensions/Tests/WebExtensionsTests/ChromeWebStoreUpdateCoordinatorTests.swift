@@ -426,27 +426,27 @@ final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
             }
             return .init(outcome: .failure(.cancelled), retryNotBefore: nil)
         })
-        weak var weakCoordinator = coordinator
+        let weakCoordinator = { [weak coordinator] in coordinator }
         let caller = Task { [weak coordinator] in await coordinator?.checkForUpdatesNow() }
         await fulfillment(of: [entered], timeout: 1)
         await coordinator?.stop()
         await caller.value
         await fulfillment(of: [cancelled], timeout: 1)
         coordinator = nil
-        XCTAssertNil(weakCoordinator)
+        XCTAssertNil(weakCoordinator())
     }
 
     func testStopReleasesStoredProviderCaptures() async {
         var token: CallbackToken? = CallbackToken()
-        weak var weakToken = token
+        let weakToken = { [weak token] in token }
         let coordinator = coordinator(identifiers: { [token] in
             _ = token
             return []
         }, check: { _, _ in .init(outcome: .noUpdate, retryNotBefore: nil) })
         token = nil
-        XCTAssertNotNil(weakToken)
+        XCTAssertNotNil(weakToken())
         await coordinator.stop()
-        XCTAssertNil(weakToken)
+        XCTAssertNil(weakToken())
     }
 
     func testEmptyInstallationSetDoesNotMakeRequests() async {

@@ -28,7 +28,7 @@ import FeatureFlags_iOS
 struct AfterInactivityEffectiveOptionResolverTests {
 
     private func makeStorage() throws -> (store: MockKeyValueFileStore, storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>) {
-        let store = try MockKeyValueFileStore()
+        let store = MockKeyValueFileStore()
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
         return (store, storage)
     }

@@ -295,11 +295,11 @@ final class FireExecutorTests: XCTestCase {
 
     func testWhenSingleTabIsBurnedThenAppSwitcherSnapshotCleanupFollowsTabWorkAndPrecedesCompletion() async {
         var didClearSnapshots = false
-        let executor = makeFireExecutor {
+        let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
             XCTAssertTrue(self.mockDelegate.didFinishBurningTabsCalled)
             XCTAssertFalse(self.mockDelegate.didFinishBurningCalled)
             didClearSnapshots = true
-        }
+        })
 
         await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel())), applicationState: .unknown)
 
@@ -426,9 +426,9 @@ final class FireExecutorTests: XCTestCase {
 
     func testWhenDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
         var cleanupCallCount = 0
-        let executor = makeFireExecutor {
+        let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
             cleanupCallCount += 1
-        }
+        })
 
         _ = await executor.burnChat(chatID: "chat", isFireMode: false)
         _ = await executor.burnChats(chatIDs: ["chat-1", "chat-2"], isFireMode: false)
@@ -440,9 +440,9 @@ final class FireExecutorTests: XCTestCase {
     func testWhenDirectAIChatBurnFailsThenAppSwitcherSnapshotsAreNotCleared() async {
         mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
         var didClearSnapshots = false
-        let executor = makeFireExecutor {
+        let executor = makeFireExecutor(clearAppSwitcherSnapshots: {
             didClearSnapshots = true
-        }
+        })
 
         _ = await executor.burnChat(chatID: "chat", isFireMode: false)
 

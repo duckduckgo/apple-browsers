@@ -889,10 +889,10 @@ final class ChromeWebStoreServiceTests: XCTestCase {
             }
             return .init(outcome: .failure(.cancelled), retryNotBefore: nil)
         }
-        weak var weakService = service
+        let weakService = { [weak service] in service }
         await fulfillment(of: [started], timeout: 1)
         service = nil
-        XCTAssertNil(weakService)
+        XCTAssertNil(weakService())
         await fulfillment(of: [cancelled], timeout: 1)
     }
 

@@ -219,6 +219,9 @@ public enum FeatureFlag: String {
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432678359933
+    case stripeProductsByPlanCountry
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611730044
     case personalInformationRemoval
 
@@ -884,6 +887,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutofillSubfeature.canPromoteImportPasswordsInBrowser), supportsLocalOverriding: false)
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+        case .stripeProductsByPlanCountry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.stripeProductsByPlanCountry))
         case .personalInformationRemoval:
             Config(source: .remoteReleasable(DBPSubfeature.pirRollout))
         case .widgetReporting:

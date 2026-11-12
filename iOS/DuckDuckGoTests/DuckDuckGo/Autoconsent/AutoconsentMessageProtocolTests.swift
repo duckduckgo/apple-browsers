@@ -160,6 +160,51 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPopupMutationObserverFlagChangesThenInitConfigurationFollowsIt() {
+        let preferences = MockAutoconsentPreferences()
+        preferences.cookiePopupPreference = .default
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        userScript = AutoconsentUserScript(
+            config: MockPrivacyConfiguration(),
+            preferences: preferences,
+            featureFlagger: featureFlagger
+        )
+        userScript.management = MockAutoconsentManagement()
+
+        let disabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(disabledConfig?["enablePopupMutationObserver"] as? Bool, false)
+
+        featureFlagger.enabledFeatureFlags = [.popupMutationObserver]
+
+        let enabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(enabledConfig?["enablePopupMutationObserver"] as? Bool, true)
+    }
+
+    @MainActor
+    func testWhenHeuristicPopupSearchTimeoutSettingChangesThenInitConfigurationFollowsIt() {
+        let preferences = MockAutoconsentPreferences()
+        preferences.cookiePopupPreference = .default
+        let config = MockPrivacyConfiguration()
+        userScript = AutoconsentUserScript(
+            config: config,
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])
+        )
+        userScript.management = MockAutoconsentManagement()
+
+        config.featureSettings = ["heuristicPopupSearchTimeout": 250]
+        let configuredConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(configuredConfig?["heuristicPopupSearchTimeout"] as? Int, 250)
+
+        let invalidSettings: [[String: Any]] = [[:], ["heuristicPopupSearchTimeout": 0], ["heuristicPopupSearchTimeout": "fast"]]
+        for settings in invalidSettings {
+            config.featureSettings = settings
+            let defaultConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+            XCTAssertEqual(defaultConfig?["heuristicPopupSearchTimeout"] as? Int, 100, "settings: \(settings)")
+        }
+    }
+
+    @MainActor
     func testWhenNativeAutoconsentPixelFiresThenTheSiteRankOfTheTopUrlIsPassed() {
         let management = MockAutoconsentManagement()
         userScript.management = management

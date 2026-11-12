@@ -151,6 +151,44 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPopupMutationObserverFlagChangesThenInitConfigurationFollowsIt() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.popupMutationObserver.rawValue: false])
+        userScript = AutoconsentUserScript(
+            config: config,
+            management: AutoconsentManagement(),
+            preferences: preferences,
+            featureFlagger: featureFlagger
+        )
+
+        let disabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(disabledConfig?["enablePopupMutationObserver"] as? Bool, false)
+
+        featureFlagger.featuresStub = [FeatureFlag.popupMutationObserver.rawValue: true]
+
+        let enabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(enabledConfig?["enablePopupMutationObserver"] as? Bool, true)
+    }
+
+    @MainActor
+    func testWhenHeuristicPopupSearchTimeoutIsSetThenInitConfigurationPassesIt() {
+        config.featureSettings = ["heuristicPopupSearchTimeout": 250]
+
+        let initConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(initConfig?["heuristicPopupSearchTimeout"] as? Int, 250)
+    }
+
+    @MainActor
+    func testWhenHeuristicPopupSearchTimeoutIsMissingOrInvalidThenInitConfigurationUsesTheDefault() {
+        let invalidSettings: [[String: Any]] = [[:], ["heuristicPopupSearchTimeout": 0], ["heuristicPopupSearchTimeout": "fast"]]
+        for settings in invalidSettings {
+            config.featureSettings = settings
+
+            let initConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+            XCTAssertEqual(initConfig?["heuristicPopupSearchTimeout"] as? Int, 100, "settings: \(settings)")
+        }
+    }
+
+    @MainActor
     func testWhenNativeAutoconsentPixelsFireThenTheyAreCountedPerSiteRank() {
         let management = AutoconsentManagement()
         userScript = AutoconsentUserScript(

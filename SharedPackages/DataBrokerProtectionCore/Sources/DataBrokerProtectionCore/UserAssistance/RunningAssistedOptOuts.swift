@@ -21,19 +21,36 @@ import Foundation
 /// The opt-out records running right now. Scheduled and assisted runs both claim a record here, so it never runs twice at once.
 public final class RunningAssistedOptOuts: @unchecked Sendable {
     private let lock = NSLock()
-    private var ids: Set<AssistedOptOutID> = []
+    private enum Owner { case regular, assisted }
+    private var owners: [AssistedOptOutID: Owner] = [:]
 
     public init() {}
 
     public func contains(_ id: AssistedOptOutID) -> Bool {
-        lock.withLock { ids.contains(id) }
+        lock.withLock { owners[id] != nil }
     }
 
-    public func insert(_ id: AssistedOptOutID) {
-        lock.withLock { _ = ids.insert(id) }
+    public func isRegularRunning(_ id: AssistedOptOutID) -> Bool {
+        lock.withLock { owners[id] == .regular }
+    }
+
+    public func tryInsertRegular(_ id: AssistedOptOutID) -> Bool {
+        tryInsert(id, as: .regular)
+    }
+
+    public func tryInsertAssisted(_ id: AssistedOptOutID) -> Bool {
+        tryInsert(id, as: .assisted)
+    }
+
+    private func tryInsert(_ id: AssistedOptOutID, as owner: Owner) -> Bool {
+        lock.withLock {
+            guard owners[id] == nil else { return false }
+            owners[id] = owner
+            return true
+        }
     }
 
     public func remove(_ id: AssistedOptOutID) {
-        lock.withLock { _ = ids.remove(id) }
+        lock.withLock { owners[id] = nil }
     }
 }

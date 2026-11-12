@@ -24,6 +24,7 @@ public struct HistoryEvent: Identifiable, Sendable {
         case matchesFound(count: Int)
         case error(error: DataBrokerProtectionError)
         case optOutStarted
+        case optOutAwaitingUserAssistance
         case optOutRequested
         case optOutSubmittedAndAwaitingEmailConfirmation
         case optOutConfirmed

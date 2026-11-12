@@ -272,6 +272,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    /// The simplified prompt box: the attach button is ⊕, and with no tools button for the chip to
+    /// stand in for, the chip keeps its ✕ at every width so the selected tool can always be turned off.
+    var usesSimplifiedPromptBox: Bool = false {
+        didSet {
+            guard oldValue != usesSimplifiedPromptBox else { return }
+            updateAttachButtonImage()
+            updateChipVisibility()
+            setNeedsLayout()
+        }
+    }
+
     var isToolsButtonHidden: Bool {
         get { toolsButtonExplicitlyHidden }
         set {
@@ -572,6 +583,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         RowFit(showsAttachButton: !imageButton.isHidden,
                showsToolsButton: !toolsButtonExplicitlyHidden,
                showsModeChip: selectedTool != nil,
+               allowsMergedTools: !usesSimplifiedPromptBox,
                showsReasoningButton: !reasoningButton.isHidden,
                modelChipWidth: modelChipExplicitlyHidden ? nil : fullModelChipWidth,
                showsReturnKey: !returnKeyButton.isHidden,
@@ -616,6 +628,7 @@ extension UnifiedToggleInputToolbarView {
         var showsAttachButton = true
         var showsToolsButton = true
         var showsModeChip = false
+        var allowsMergedTools = true
         var showsReasoningButton = true
         /// The pill showing its name, or nil while it is hidden.
         var modelChipWidth: CGFloat?
@@ -623,13 +636,14 @@ extension UnifiedToggleInputToolbarView {
         var submitButtonWidth = Constants.toolButtonSize
 
         func level(forToolbarWidth width: CGFloat) -> UTIToolbarCompactLevel {
-            UTIToolbarCompactLevel.allCases.first { minimumToolbarWidth(at: $0) <= width } ?? .mergedTools
+            let levels = allowsMergedTools ? UTIToolbarCompactLevel.allCases : UTIToolbarCompactLevel.allCases.filter { $0 < .mergedTools }
+            return levels.first { minimumToolbarWidth(at: $0) <= width } ?? levels.last ?? .full
         }
 
         /// The narrowest toolbar that holds the row at `level`.
         func minimumToolbarWidth(at level: UTIToolbarCompactLevel) -> CGFloat {
             let button = Constants.toolButtonSize
-            let mergesTools = level >= .mergedTools && showsModeChip
+            let mergesTools = allowsMergedTools && level >= .mergedTools && showsModeChip
             var leadingWidths: [CGFloat] = showsAttachButton ? [button] : []
             if showsToolsButton && !mergesTools { leadingWidths.append(button) }
             if showsModeChip { leadingWidths.append(mergesTools ? Self.mergedToolChipWidth : Self.toolChipWidth) }
@@ -807,8 +821,17 @@ private extension UnifiedToggleInputToolbarView {
         reasoningButton.tintColor = mode.unifiedToggleInputButtonTintColor
     }
 
+    private func updateAttachButtonImage() {
+        let image = usesSimplifiedPromptBox ? DesignSystemImages.Glyphs.Size24.addCircle : DesignSystemImages.Glyphs.Size24.attach
+        if #available(iOS 26, *), imageButton.configuration != nil {
+            imageButton.configuration?.image = image
+        } else {
+            imageButton.setImage(image, for: .normal)
+        }
+    }
+
     private func updateChipVisibility() {
-        let mergesTools = compactLevel >= .mergedTools && selectedTool != nil
+        let mergesTools = !usesSimplifiedPromptBox && compactLevel >= .mergedTools && selectedTool != nil
         modelChipButton.isHidden = modelChipExplicitlyHidden
         toolsButton.isHidden = toolsButtonExplicitlyHidden || mergesTools
         selectedToolChipView.isHidden = (selectedTool == nil)

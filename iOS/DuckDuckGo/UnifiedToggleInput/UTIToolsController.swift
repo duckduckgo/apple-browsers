@@ -88,7 +88,7 @@ final class UTIToolsController {
     }
 
     private func hasActionableMenuItem(toolsMenu: UTIToolsMenu) -> Bool {
-        toolsMenu.items.contains { $0.isEnabled }
+        toolsMenu.hasEnabledItem
     }
 }
 
@@ -207,6 +207,16 @@ struct UTIToolsMenu {
     }
 
     let items: [Item]
+
+    var hasEnabledItem: Bool {
+        items.contains { $0.isEnabled }
+    }
+}
+
+/// The tools the attach menu shows below the attachment rows when the prompt box is simplified.
+struct UTIAttachMenuTools {
+    let menu: UTIToolsMenu
+    let onSelect: (UTIToolsMenu.Item.Identifier) -> Void
 }
 
 struct UTIToolsMenuFactory {
@@ -226,19 +236,30 @@ struct UTIToolsMenuFactory {
         return UIMenu(children: children)
     }
 
-    private func makeAction(_ item: UTIToolsMenu.Item, onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIAction {
+    /// The tools as the attach menu's last section. The chip in the input carries the selection,
+    /// so the rows never show a checkmark, and Customize Responses has no row here.
+    func makeAttachMenuSection(_ menu: UTIToolsMenu, onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIMenu {
+        let toolActions = menu.items
+            .filter { $0.identifier != .customizeResponses }
+            .map { makeAction($0, showsSelection: false, onSelect: onSelect) }
+        return UIMenu(options: .displayInline, children: toolActions)
+    }
+
+    private func makeAction(_ item: UTIToolsMenu.Item,
+                            showsSelection: Bool = true,
+                            onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIAction {
         switch item {
         case .customizeResponses:
             return makeCustomizeResponsesAction(onSelect: onSelect)
         case let .webSearch(isSelected, isEnabled):
             return makeWebSearchAction(
-                isSelected: isSelected,
+                isSelected: showsSelection && isSelected,
                 isEnabled: isEnabled,
                 onSelect: onSelect
             )
         case let .imageGeneration(isSelected, isEnabled, subtitle):
             return makeImageGenerationAction(
-                isSelected: isSelected,
+                isSelected: showsSelection && isSelected,
                 isEnabled: isEnabled,
                 subtitle: subtitle,
                 onSelect: onSelect

@@ -76,6 +76,13 @@ final class AIChatHistoryViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatHistoryMultiselect)
     }
 
+    /// The simplified Duck.ai prompt box puts a Duck.ai Settings button next to the overflow menu. iPad keeps today's header.
+    var showsDuckAISettingsButton: Bool {
+        isRedesignEnabled
+            && UIDevice.current.userInterfaceIdiom == .phone
+            && featureFlagger.isFeatureOn(.unifiedToggleInputSimplifiedPromptBox)
+    }
+
     weak var delegate: AIChatHistoryViewModelDelegate?
 
     init(
@@ -220,6 +227,10 @@ final class AIChatHistoryViewModel: ObservableObject {
     func openChatProtection() {
         instrumentation.chatProtectionTapped()
         delegate?.viewModelDidRequestChatProtection()
+    }
+
+    func openDuckAISettings() {
+        delegate?.viewModelDidRequestDuckAISettings()
     }
 
     func deleteChat(chatId: String) {
@@ -416,6 +427,9 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 
     /// Dismiss the sheet and open the Duck.ai chat protection page.
     func viewModelDidRequestChatProtection()
+
+    /// Dismiss the sheet and open Duck.ai Settings.
+    func viewModelDidRequestDuckAISettings()
 
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app

@@ -415,6 +415,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Simplifies the Duck.ai prompt box: one ⊕ attach menu that also holds the tools, and no tools button.
+    /// https://app.asana.com/0/0/1219231050400064/f
+    case unifiedToggleInputSimplifiedPromptBox
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
 

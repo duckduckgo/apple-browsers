@@ -232,6 +232,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var attachmentController: UTIAttachmentController!
     private(set) var promptLengthGate: UTIPromptLengthGate!
     private var isPastedTextEnabled: Bool { featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) }
+    /// Read live so the debug-menu toggle applies on the next refresh. iPad keeps today's prompt box.
+    var isSimplifiedPromptBoxEnabled: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone && featureFlagger.isFeatureOn(.unifiedToggleInputSimplifiedPromptBox)
+    }
     private var tabAttachmentContext: MultiTabAttachmentContext?
     private var tabAttachmentPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
     private var transferredTabAttachmentIDs = Set<UUID>()
@@ -607,7 +611,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 isPastedTextEnabled: { [weak self] in self?.isPastedTextEnabled ?? false },
                 isEditing: { [weak self] in self?.isEditing ?? false },
                 isVoiceSessionActive: { [weak self] in self?.isVoiceSessionActive ?? false },
-                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) }
+                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) },
+                usesSimplifiedAttachMenu: { [weak self] in self?.isSimplifiedPromptBoxEnabled ?? false },
+                attachMenuTools: { [weak self] in self?.attachMenuTools }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -2253,6 +2259,26 @@ extension UnifiedToggleInputCoordinator {
         recordUserChoiceToStore()
     }
 
+    /// Menu rows only turn a tool on: picking the active one changes nothing and picking the other swaps it.
+    /// The chip's ✕ is the only way to turn a tool off.
+    func handleAttachMenuToolSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        let previousTool = toolsController.selectedTool
+        switch identifier {
+        case .webSearch:
+            toolsController.select(.webSearch, for: modelStore)
+        case .imageGeneration:
+            guard previousTool != .imageGeneration else { return }
+            selectImageGeneration(entryPoint: .toolsMenu)
+        case .customizeResponses:
+            return
+        }
+        let currentTool = toolsController.selectedTool
+        guard currentTool != previousTool else { return }
+        fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
+        refreshToolsPresentation()
+        recordUserChoiceToStore()
+    }
+
     /// Selecting Create Image on a model that can't generate images moves the user to one that can, and says so in the footer.
     private func toggleImageGenerationSelection() {
         let notice = createImageModelSwitcher.toggle(
@@ -2868,25 +2894,35 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func refreshToolsPresentation() {
-        let presentation = toolsController.presentation(
-            isActive: isActive,
-            modelStore: modelStore,
-            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem,
-            createImagePolicy: createImageMenuPolicy
-        )
+        let usesSimplifiedPromptBox = isSimplifiedPromptBoxEnabled
+        let presentation = toolsPresentation
         if toolsController.selectedTool != .imageGeneration {
             footerController?.clearModelSwitchNotice()
         }
-        let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
-            self?.toolsMenuFactory.makeMenu(menu) { identifier in
-                self?.handleToolsMenuSelection(identifier)
-            }
-        } ?? nil
-        viewController.applyToolsPresentation(
-            isToolsButtonHidden: presentation.isToolsButtonHidden,
-            selectedTool: presentation.selectedTool,
-            toolsMenu: toolsMenu
-        )
+        viewController.usesSimplifiedPromptBox = usesSimplifiedPromptBox
+        if usesSimplifiedPromptBox {
+            // The tools live in the attach menu, and the chip carries the selection.
+            viewController.applyToolsPresentation(
+                isToolsButtonHidden: true,
+                selectedTool: presentation.selectedTool,
+                toolsMenu: nil
+            )
+        } else {
+            let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
+                self?.toolsMenuFactory.makeMenu(menu) { identifier in
+                    self?.handleToolsMenuSelection(identifier)
+                }
+            } ?? nil
+            viewController.applyToolsPresentation(
+                isToolsButtonHidden: presentation.isToolsButtonHidden,
+                selectedTool: presentation.selectedTool,
+                toolsMenu: toolsMenu
+            )
+        }
+        if usesSimplifiedPromptBox {
+            // The attach menu's tool rows follow the model and the active state.
+            attachmentController?.updateAttachButtonPresentation()
+        }
         // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
         // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
         modelSelector.updateModelChipVisibility()
@@ -2900,6 +2936,24 @@ private extension UnifiedToggleInputCoordinator {
     func resetToolsSelection() {
         toolsController.clearSelection()
         refreshToolsPresentation()
+    }
+
+    /// Customize Responses leaves the input in the simplified prompt box; Duck.ai Settings becomes its home.
+    private var toolsPresentation: UTIToolsController.Presentation {
+        toolsController.presentation(
+            isActive: isActive,
+            modelStore: modelStore,
+            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem && !isSimplifiedPromptBoxEnabled,
+            createImagePolicy: createImageMenuPolicy
+        )
+    }
+
+    /// The tools the simplified attach menu shows below the attachment rows.
+    var attachMenuTools: UTIAttachMenuTools? {
+        guard isSimplifiedPromptBoxEnabled, let menu = toolsPresentation.toolsMenu else { return nil }
+        return UTIAttachMenuTools(menu: menu) { [weak self] identifier in
+            self?.handleAttachMenuToolSelection(identifier)
+        }
     }
 
     var createImageMenuPolicy: CreateImageMenuPolicy {

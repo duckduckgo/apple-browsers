@@ -212,11 +212,16 @@ final class AIChatHistoryViewController: UIViewController {
             navigationItem.rightBarButtonItems = [makeSelectionDoneItem()]
         } else {
             navigationItem.leftBarButtonItem = closeBarButtonItem
-            if #available(iOS 26, *) {
-                navigationItem.rightBarButtonItems = [makeOverflowMenuItem(), .fixedSpace(), makeSearchBarButtonItem()]
-            } else {
-                navigationItem.rightBarButtonItems = [makeOverflowMenuItem(), makeSearchBarButtonItem()]
+            var items = [makeOverflowMenuItem()]
+            if viewModel.showsDuckAISettingsButton {
+                items.append(makeDuckAISettingsBarButtonItem())
             }
+            items.append(makeSearchBarButtonItem())
+            if #available(iOS 26, *) {
+                // Fixed spaces keep each button in its own glass circle.
+                items = Array(items.map { [$0, .fixedSpace()] }.joined().dropLast())
+            }
+            navigationItem.rightBarButtonItems = items
         }
     }
 
@@ -229,6 +234,21 @@ final class AIChatHistoryViewController: UIViewController {
         )
         item.accessibilityLabel = UserText.aiChatHistorySearchAccessibilityLabel
         return item
+    }
+
+    private func makeDuckAISettingsBarButtonItem() -> UIBarButtonItem {
+        let item = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.aiChatSettings,
+            style: .plain,
+            target: self,
+            action: #selector(duckAISettingsButtonTapped)
+        )
+        item.accessibilityLabel = UserText.actionAIChatSettings
+        return item
+    }
+
+    @objc private func duckAISettingsButtonTapped() {
+        viewModel.openDuckAISettings()
     }
 
     private func makeSelectionDoneItem() -> UIBarButtonItem {

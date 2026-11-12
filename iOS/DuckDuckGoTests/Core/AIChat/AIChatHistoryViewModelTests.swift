@@ -20,6 +20,7 @@
 import Combine
 import XCTest
 import AIChat
+import PrivacyConfig
 @testable import DuckDuckGo
 @testable import Core
 
@@ -141,6 +142,30 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         sut.openChatProtection()
 
         XCTAssertTrue(delegate.didRequestChatProtection)
+    }
+
+    func testOpenDuckAISettings_notifiesDelegate() {
+        let sut = makeSUT(chats: [])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.openDuckAISettings()
+
+        XCTAssertTrue(delegate.didRequestDuckAISettings)
+    }
+
+    func testShowsDuckAISettingsButton_followsSimplifiedPromptBoxFlag() {
+        let flagOn = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [
+            .aiChatHistoryMultiselect, .unifiedToggleInputSimplifiedPromptBox
+        ]))
+        let flagOff = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatHistoryMultiselect]))
+        let redesignOff = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [
+            .unifiedToggleInputSimplifiedPromptBox
+        ]))
+
+        XCTAssertTrue(flagOn.showsDuckAISettingsButton)
+        XCTAssertFalse(flagOff.showsDuckAISettingsButton)
+        XCTAssertFalse(redesignOff.showsDuckAISettingsButton, "The button sits next to the overflow menu, which only the redesign has")
     }
 
     func testChatId_forValidIndexPath_returnsChatId() {
@@ -692,10 +717,12 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
         mutationQueue: DispatchQueue = .main,
-        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation()
+        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation(),
+        featureFlagger: FeatureFlagger? = nil
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
+            featureFlagger: featureFlagger ?? AppDependencyProvider.shared.featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
             pinner: pinner,
@@ -745,6 +772,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
         func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
+        private(set) var didRequestDuckAISettings = false
+        func viewModelDidRequestDuckAISettings() { didRequestDuckAISettings = true }
         func viewModelWillClose() {}
     }
 

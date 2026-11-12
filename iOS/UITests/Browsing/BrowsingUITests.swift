@@ -26,6 +26,10 @@ final class BrowsingUITests: UITestCase {
     private let server = HttpServer()
     private let page = LocalPage()
 
+    override var additionalLaunchEnvironment: [String: String] {
+        ["UITEST_DISABLE_ANIMATIONS": "1"]
+    }
+
     private var pageURL: String {
         get throws { "http://127.0.0.1:\(try server.port())/browsing-test" }
     }

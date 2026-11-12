@@ -525,6 +525,8 @@ class TabViewController: UIViewController {
         return activeLink.merge(with: storedLink)
     }
     
+    var duckAISwipeNewChat: DuckAISwipeNewChatHandler?
+
     /// Convenience property which passes back the value of `isAITab` from the underlying `TabModel`
     var isAITab: Bool {
         tabModel.isAITab
@@ -1099,6 +1101,7 @@ class TabViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setSitePermissionsGeolocationActive(true)
+        installDuckAISwipeNewChatIfNeeded()
         
         registerForResignActive()
         registerForCreditCardAutofillKeyboardNotifications()
@@ -1107,6 +1110,7 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         setSitePermissionsGeolocationActive(false)
+        duckAISwipeNewChat?.cancel()
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
@@ -1358,7 +1362,7 @@ class TabViewController: UIViewController {
             if isAITab, usesFloatingAIChrome || lastDuckAIInnerScrollInsets != nil {
                 let innerInsets = usesFloatingAIChrome ? obscuredInsets : .zero
                 if lastDuckAIInnerScrollInsets != innerInsets {
-                    DuckAIChatScrollInsetStyler.apply(innerInsets, to: webView)
+                    DuckAIChatScrollInsetStyler.apply(innerInsets, keepsEndInView: keepsDuckAIChatEndInView, to: webView)
                     lastDuckAIInnerScrollInsets = innerInsets
                 }
             }
@@ -1889,6 +1893,7 @@ class TabViewController: UIViewController {
                 }
                 self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
                 self.webView.scrollView.alwaysBounceVertical = !self.isAITab
+                self.duckAISwipeNewChatURLDidChange()
                 (self.webView as? WebView)?.setInputAccessoryViewHidden(self.isAITab)
                 if #available(iOS 18.4, *) {
                     self.notifyWebExtensionOfPropertyChange([.URL])
@@ -3007,7 +3012,9 @@ extension TabViewController: WKNavigationDelegate {
         terminationReloadMonitor.didFinish()
         if isAITab, #available(iOS 26, *),
            floatingUIManager.isDuckAIAndInputLiquidGlassEnabled {
-            DuckAIChatScrollInsetStyler.apply(lastDuckAIInnerScrollInsets ?? .zero, to: webView)
+            DuckAIChatScrollInsetStyler.apply(lastDuckAIInnerScrollInsets ?? .zero,
+                                              keepsEndInView: keepsDuckAIChatEndInView,
+                                              to: webView)
         }
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)

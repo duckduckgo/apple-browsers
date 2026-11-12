@@ -8481,6 +8481,30 @@ extension MainViewController: TabDelegate {
         tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource, inputRequest: focusRequest)
     }
 
+    func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState? {
+        guard tab === currentTab else { return nil }
+        let aiTabChrome = aiTabChromeDecision()
+        return DuckAISwipeNewChatChromeState(isGenerating: unifiedToggleInputCoordinator?.viewController.isGenerating ?? false,
+                                             isVoiceSessionActive: aiTabChrome.voiceChromeActive,
+                                             isInputHidden: aiTabChrome.hidesInputBar,
+                                             bottomChromeMinY: bottomChromeMinYInWindow())
+    }
+
+    func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {
+        guard tab === currentTab else { return }
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
+        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
+    }
+
+    /// Top of the Duck.ai input card; nil when it isn't showing.
+    private func bottomChromeMinYInWindow() -> CGFloat? {
+        guard view.window != nil, viewCoordinator.isUnifiedToggleInputVisible,
+              let input = unifiedToggleInputCoordinator?.viewController, input.isViewLoaded else { return nil }
+        let card = input.inputCardFrame(in: view)
+        guard !card.isEmpty else { return nil }
+        return view.convert(card, to: nil).minY
+    }
+
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
         // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
         fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: true)

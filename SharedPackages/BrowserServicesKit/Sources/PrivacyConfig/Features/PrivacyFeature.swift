@@ -605,6 +605,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
     case chatLimitExtensionPromo
+
+    /// iOS only. Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
+    case swipeUpNewChat
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool

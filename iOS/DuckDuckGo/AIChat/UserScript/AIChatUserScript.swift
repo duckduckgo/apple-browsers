@@ -28,7 +28,8 @@ import Combine
 @MainActor
 enum DuckAIChatScrollInsetStyler {
 
-    static func apply(_ insets: UIEdgeInsets, to webView: WKWebView) {
+    /// `keepsEndInView` scrolls a conversation at its end back there when the inset spacer changes height.
+    static func apply(_ insets: UIEdgeInsets, keepsEndInView: Bool = false, to webView: WKWebView) {
         let top = max(0, insets.top)
         let bottom = max(0, insets.bottom)
         let script = """
@@ -38,18 +39,7 @@ enum DuckAIChatScrollInsetStyler {
             let state = window[key];
             if (!state) {
                 state = { top: 0, bottom: 0, target: null, scheduled: false };
-                state.find = () => {
-                    let best = null;
-                    for (const element of document.querySelectorAll('div')) {
-                        if (best?.contains(element)) continue;
-                        const overflow = getComputedStyle(element).overflowY;
-                        if (overflow !== 'auto' && overflow !== 'scroll') continue;
-                        const rect = element.getBoundingClientRect();
-                        if (rect.height < innerHeight * 0.65 || rect.top > innerHeight * 0.25) continue;
-                        if (!best || element.clientHeight > best.clientHeight) best = element;
-                    }
-                    return best;
-                };
+                state.find = () => \(DuckAIChatScroller.expression);
                 state.apply = () => {
                     if (!state.target?.isConnected) {
                         state.target = state.find();
@@ -68,6 +58,7 @@ enum DuckAIChatScrollInsetStyler {
                     const scrollTop = state.top ? `${state.top}px` : state.original.scrollTop;
                     const scrollBottom = state.bottom ? `${state.bottom}px` : state.original.scrollBottom;
                     if (state.bottom > 0) {
+                        const wasAtBottom = state.target.scrollTop + state.target.clientHeight >= state.target.scrollHeight - 4;
                         if (state.spacer?.parentElement !== state.target) {
                             state.spacer = document.createElement('div');
                             state.spacer.setAttribute('aria-hidden', 'true');
@@ -105,8 +96,11 @@ enum DuckAIChatScrollInsetStyler {
                         const height = Math.max(0, overlap - existingClearance);
                         const previousHeight = state.spacer.getBoundingClientRect().height;
                         state.spacer.style.height = `${height}px`;
-                        // Auto margins move without resizing content.
-                        if (Math.abs(height - previousHeight) > 0.5) state.schedule();
+                        if (Math.abs(height - previousHeight) > 0.5) {
+                            if (wasAtBottom && state.keepsEndInView) state.target.scrollTop = state.target.scrollHeight;
+                            // Auto margins move without resizing content.
+                            state.schedule();
+                        }
                     } else if (state.spacer?.parentElement === state.target) {
                         state.spacer.remove();
                     }
@@ -130,6 +124,7 @@ enum DuckAIChatScrollInsetStyler {
             }
             state.top = \(top);
             state.bottom = \(bottom);
+            state.keepsEndInView = \(keepsEndInView);
             state.apply();
         })();
         """

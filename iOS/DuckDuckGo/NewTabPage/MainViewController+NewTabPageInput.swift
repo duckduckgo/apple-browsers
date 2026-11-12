@@ -78,6 +78,12 @@ extension MainViewController {
             transitionSource?.setSearchInputEditing(true)
         }
         viewCoordinator.setNewTabPageInputPresentation(presentation)
+        if currentTab?.isAITab == true {
+            DispatchQueue.main.async { [weak self] in
+                guard self?.currentTab?.isAITab == true else { return }
+                self?.unifiedToggleInputCoordinator?.viewController.refreshGlassAfterReappearing()
+            }
+        }
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
         if presentation.hidesNavigationContainer {
             // Restore scrolling only after the resting chrome and safe area have settled.

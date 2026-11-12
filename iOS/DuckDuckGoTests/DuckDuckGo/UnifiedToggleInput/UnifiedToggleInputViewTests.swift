@@ -354,6 +354,49 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     }
 
     @available(iOS 26, *)
+    func testRefreshingReappearedGlassPreservesLayoutDraftAndFocus() {
+        for isFocused in [false, true] {
+            let parent = UIViewController()
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+            window.rootViewController = parent
+            window.makeKeyAndVisible()
+            let sut = UnifiedToggleInputViewController(isToggleEnabled: true, usesFloatingUI: true)
+            parent.addChild(sut)
+            parent.view.addSubview(UIView())
+            parent.view.addSubview(sut.view)
+            parent.view.addSubview(UIView())
+            sut.didMove(toParent: parent)
+            sut.view.translatesAutoresizingMaskIntoConstraints = false
+            let constraints = [
+                sut.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                sut.view.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                sut.view.bottomAnchor.constraint(equalTo: parent.view.safeAreaLayoutGuide.bottomAnchor),
+                sut.view.topAnchor.constraint(equalTo: parent.view.topAnchor, constant: 600)
+            ]
+            NSLayoutConstraint.activate(constraints)
+            sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+            sut.text = "Draft reply"
+            if isFocused { sut.activateInput() }
+            parent.view.layoutIfNeeded()
+            defer {
+                sut.deactivateInput()
+                window.isHidden = true
+            }
+            XCTAssertEqual(sut.isInputFirstResponder, isFocused)
+            let frame = sut.view.frame
+            let subviews = parent.view.subviews
+
+            sut.refreshGlassAfterReappearing()
+
+            XCTAssertEqual(parent.view.subviews, subviews)
+            XCTAssertEqual(sut.view.frame, frame)
+            XCTAssertTrue(constraints.allSatisfy(\.isActive))
+            XCTAssertEqual(sut.text, "Draft reply")
+            XCTAssertEqual(sut.isInputFirstResponder, isFocused)
+        }
+    }
+
+    @available(iOS 26, *)
     func testFloatingGlassKeepsFireModeTintThroughFocusAndModeChanges() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isFireTab: true)
         let sut = UnifiedToggleInputView(handler: handler, usesFloatingUI: true)

@@ -187,7 +187,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     }
 
     private func answerPages(url: URL) {
-        // A message that cannot be tied to one tab answers every tab it could belong to.
+        // A message that cannot be tied to one tab answers every waiting tab it could belong to.
         for tabIdentifier in answeredTabs(url: url) {
             pendingCommits[tabIdentifier] = nil
         }
@@ -195,12 +195,14 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         didReportPersistentBreakage = false
     }
 
+    /// The tabs still waiting on the message's page. When none waits on it, the page may have changed its path
+    /// before the extension messaged: the tabs waiting on that host may be the one. Either way the error
+    /// direction stays a missed breakage.
     private func answeredTabs(url: URL) -> [String] {
-        let matching = committedPages.filter { $0.value.matchesCPMDashboardStatePage(url) }.map(\.key)
-        guard matching.isEmpty else { return matching }
-        // The page can change its path before the extension messages. The tabs still waiting on that host may
-        // be the one; this answers them, so the error direction stays a missed breakage.
-        return pendingCommits.keys.filter { committedPages[$0]?.host == url.host }
+        let waiting = Array(pendingCommits.keys)
+        let samePage = waiting.filter { committedPages[$0]?.matchesCPMDashboardStatePage(url) == true }
+        guard samePage.isEmpty else { return samePage }
+        return waiting.filter { committedPages[$0]?.host == url.host }
     }
 
     /// Reports the tabs whose page has waited for the extension longer than the window.

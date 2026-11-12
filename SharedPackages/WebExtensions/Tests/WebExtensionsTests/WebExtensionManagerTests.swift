@@ -1915,6 +1915,16 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenATabIsReplacedThenTheHealthMonitorIsToldTheOldTabClosed() throws {
+        let monitor = CapturingCPMTabClosedMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
+
+        manager.eventsListener.didReplaceTab(MonitoredStubTab(identifier: "old"), with: MonitoredStubTab(identifier: "new"))
+
+        XCTAssertEqual(monitor.closedTabs, ["old"], "the replaced tab no longer waits for a message")
+    }
+
+    @MainActor
     func testWhenExtensionsAreUnloadedForDataClearingThenWillReloadIsReportedImmediately() async throws {
         let monitor = CapturingCPMLifecycleMonitor()
         let manager = makeManager(cpmMessagingHealthMonitor: monitor)

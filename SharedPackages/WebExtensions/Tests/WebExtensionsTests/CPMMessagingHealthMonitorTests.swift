@@ -207,6 +207,17 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixels.breakages, [report(.one)])
     }
 
+    func testMessageGoesToTheWaitingTabWhenOnlyAnAnsweredTabShowsItsPage() {
+        commit("c", path: "y")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("y")))
+        commit("a", path: "x")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url("y")))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertTrue(pixels.breakages.isEmpty, "the tab still waiting on that host got the message")
+    }
+
     func testMessageThatMatchesTwoTabsAnswersBoth() {
         commit("a", path: "same")
         commit("b", path: "same")

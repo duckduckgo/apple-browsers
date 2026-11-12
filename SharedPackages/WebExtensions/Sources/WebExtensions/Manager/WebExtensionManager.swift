@@ -323,7 +323,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         listener.onTabClosed = { [weak monitor = self.cpmMessagingHealthMonitor] tab in
             MainActor.assumeMainThread {
-                guard let identifier = (tab as? CPMMonitoredTab)?.cpmTabIdentifier else { return }
+                guard let identifier = (tab as? CPMMonitoredTab)?.cpmTabIdentifier else {
+                    Logger.webExtensions.error("[CPM Health Monitor] A closed tab has no CPM identifier, so its wait is not dropped")
+                    return
+                }
                 monitor?.handle(.tabClosed(tabIdentifier: identifier))
             }
         }

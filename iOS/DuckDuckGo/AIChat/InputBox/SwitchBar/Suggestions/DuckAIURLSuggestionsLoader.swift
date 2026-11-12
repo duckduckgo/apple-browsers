@@ -38,8 +38,13 @@ final class DuckAIURLSuggestionsLoader {
         shouldLoadSuggestionsForUserInput: { _ in true },
         isUrlIgnored: { _ in false }
     )
+    private lazy var localLoader = SuggestionLoader(
+        shouldLoadSuggestionsForUserInput: { _ in false },
+        isUrlIgnored: { _ in false }
+    )
     /// Out-of-order guard: `SuggestionLoader` has no cancellation, so a slow callback for a stale query would otherwise win.
     private var latestQuery: String?
+    private var fetchID = UUID()
     /// Settle marker: callers compare against current text to detect "fetcher hasn't caught up yet" and gate Dax visibility.
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
@@ -58,11 +63,19 @@ final class DuckAIURLSuggestionsLoader {
     func subscribeToTextChanges<P: Publisher, S: Scheduler>(_ textPublisher: P, scheduler: S = DispatchQueue.main)
         where P.Output == String, P.Failure == Never {
         textPublisher
-            .removeDuplicates()
-            .handleEvents(receiveOutput: { [weak self] text in self?.latestQuery = text })
+            .removeDuplicates(by: { [featureFlagger] previous, current in
+                featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+            })
+            .handleEvents(receiveOutput: { [weak self] text in
+                guard let self, self.featureFlagger.isFeatureOn(.suggestionDebounce200ms) else { return }
+                self.latestQuery = text
+            })
             .debounceSuggestions(using: featureFlagger, scheduler: scheduler)
-            .sink { [weak self] text in
-                self?.fetch(query: text)
+            .removeDuplicates(by: { [featureFlagger] previous, current in
+                !featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+            })
+            .sink { [weak self] request in
+                self?.fetch(query: request.query, includeRemoteSuggestions: request.includeRemoteSuggestions)
             }
             .store(in: &cancellables)
     }
@@ -71,8 +84,11 @@ final class DuckAIURLSuggestionsLoader {
         fetch(query: latestQuery ?? "")
     }
 
-    func fetch(query: String) {
+    func fetch(query: String, includeRemoteSuggestions: Bool = true) {
+        let usesSeparateDebounce = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
         latestQuery = query
+        let fetchID = UUID()
+        self.fetchID = fetchID
         guard !query.isEmpty else {
             // Skip re-emitting an already-empty list — @Published emits unconditionally and would trigger a needless reload.
             if !topURLs.isEmpty { topURLs = [] }
@@ -80,11 +96,13 @@ final class DuckAIURLSuggestionsLoader {
             return
         }
 
+        let loader = includeRemoteSuggestions ? self.loader : localLoader
         loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
             guard let self else { return }
-            guard self.latestQuery == query else { return }
+            guard !usesSeparateDebounce || self.fetchID == fetchID,
+                  self.latestQuery == query || (usesSeparateDebounce && self.topURLs.isEmpty && self.latestQuery?.hasPrefix(query) == true) else { return }
             // Always settle, even on error — otherwise `hasSettled` stays false forever and Dax suppression never clears.
-            self.lastCompletedFetchQuery = query
+            if includeRemoteSuggestions { self.lastCompletedFetchQuery = query }
             // Local matches (bookmarks/history/open tabs) come back even when the remote API errors — keep them.
             if let result {
                 self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
@@ -96,6 +114,7 @@ final class DuckAIURLSuggestionsLoader {
 
     func tearDown() {
         cancellables.removeAll()
+        fetchID = UUID()
         latestQuery = nil
         lastCompletedFetchQuery = nil
         topURLs = []

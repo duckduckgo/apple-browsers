@@ -159,7 +159,8 @@ extension XCUIApplication {
             addFolder.tapWhenHittable(in: self, file: file, line: line)
 
             let title = textFields["Bookmarks.Editor.FolderTitle"]
-            title.tapWhenHittable(in: self, file: file, line: line)
+            // The folder editor focuses its title field when it appears.
+            XCTAssertTrue(title.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
             title.typeText(name)
             buttons["Bookmarks.Editor.FolderSave"]
                 .tapWhenHittable(in: self, file: file, line: line)

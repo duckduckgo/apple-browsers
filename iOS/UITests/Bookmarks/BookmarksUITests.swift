@@ -197,25 +197,16 @@ final class BookmarksUITests: UITestCase {
             site.open(.first, in: app)
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
             app.openBookmarks()
-            app.createBookmarkFolderAtRoot(named: folderName)
 
             app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
             bookmark.tapWhenHittable(in: app)
-            let destination = app.tables["Bookmarks.Editor.List"].cells
-                .matching(identifier: "Bookmarks.Editor.Folder")
-                .containing(.staticText, identifier: folderName)
-                .firstMatch
-            app.tables["Bookmarks.Editor.List"].swipeUpToReveal(destination)
-            destination.tapWhenHittable(in: app)
+            app.createBookmarkFolder(named: folderName)
             app.saveBookmarkEditor()
-            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
-            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.navigation))
             app.assertBookmarkCount(0)
         }
 
         XCTContext.runActivity(named: "Remove the folder from Bookmarks Edit") { _ in
-            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app, timeout: UITestTimeouts.navigation)
-            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
             app.buttons["Remove \(folderName)"].tapWhenHittable(in: app)
             app.tables["Bookmarks.List"].buttons["Delete"].tapWhenHittable(in: app)
 

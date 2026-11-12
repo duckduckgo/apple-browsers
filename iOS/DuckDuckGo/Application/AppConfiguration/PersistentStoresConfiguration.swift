@@ -104,14 +104,26 @@ final class PersistentStoresConfiguration {
     }
 
 #if DEBUG
+    private enum TemporaryBookmarksStoreError: Error {
+        case missingRootFolder
+    }
+
     private func loadTemporaryBookmarksStore() throws {
-        // Prepare the empty store before the app creates any bookmark or sync services.
+        // Prepare the store before the app creates any bookmark or sync services.
+        let folderTitle = ProcessInfo.processInfo.environment["UITEST_BOOKMARKS_FOLDER_WITH_ONE_BOOKMARK"]
         var storeError: Error?
         bookmarksDatabase.loadStore { context, error in
             storeError = error
             if let context {
                 BookmarkUtils.prepareFoldersStructure(in: context)
                 do {
+                    if let folderTitle {
+                        guard let root = BookmarkUtils.fetchRootFolder(context) else {
+                            throw TemporaryBookmarksStoreError.missingRootFolder
+                        }
+                        let folder = BookmarkEntity.makeFolder(title: folderTitle, parent: root, context: context)
+                        _ = BookmarkEntity.makeBookmark(title: "Example", url: "https://example.com", parent: folder, context: context)
+                    }
                     try context.save()
                 } catch {
                     storeError = error

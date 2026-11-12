@@ -266,7 +266,12 @@ jobs:
         RUN_ATTEMPT: ${{ github.run_attempt }}
       run: |
         artifact_name="ios-ui-tests-build-${RUN_ID}-${RUN_ATTEMPT}"
-        tar -czf build-products.tar.gz -C DerivedData Build/Products
+        cd DerivedData
+        # Keep runnable bundles intact and omit standalone symbols and linker inputs.
+        find Build/Products \
+          \( -type d \( -name '*.app' -o -name '*.appex' -o -name '*.bundle' -o -name '*.framework' -o -name '*.xctest' \) \) -prune -o \
+          \( -name '*.dSYM' -o -name '*.a' -o -name '*.o' \) -prune -print > build-products-exclusions.txt
+        tar -czf ../build-products.tar.gz -X build-products-exclusions.txt Build/Products
         echo "artifact-name=$artifact_name" >> "$GITHUB_OUTPUT"
 
     - name: Upload immutable build products
@@ -275,6 +280,15 @@ jobs:
         name: ${{ steps.package.outputs.artifact-name }}
         path: iOS/build-products.tar.gz
         if-no-files-found: error
+        retention-days: 1
+
+    - name: Upload debug symbols
+      uses: ./.github/actions/upload-artifact-with-retry
+      continue-on-error: true
+      with:
+        name: "ios-ui-tests-symbols-${{ github.run_id }}-${{ github.run_attempt }}"
+        path: "iOS/DerivedData/Build/Products/**/*.dSYM"
+        if-no-files-found: ignore
         retention-days: 1
 
     - name: Upload build logs when the build fails

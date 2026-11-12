@@ -30,7 +30,12 @@ final class BookmarksUITests: UITestCase {
         ]
     }
 
+    override var launchesAppInSetUp: Bool {
+        false
+    }
+
     func testWhenPageIsBookmarkedThenItCanBeOpenedAndDeleted() {
+        app.launch()
         let bookmark = app.tables["Bookmarks.List"].cells["Bookmarks.Item"].firstMatch
 
         XCTContext.runActivity(named: "Bookmark the test page") { _ in
@@ -62,6 +67,7 @@ final class BookmarksUITests: UITestCase {
     }
 
     func testWhenBookmarkIsMovedThroughNestedFoldersThenItCanBeDeletedWithItsFolders() {
+        app.launch()
         let firstFolderName = "Test Folder"
         let secondFolderName = "Test Folder 2"
         let bookmarksList = app.tables["Bookmarks.List"]
@@ -124,6 +130,7 @@ final class BookmarksUITests: UITestCase {
     }
 
     func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() {
+        app.launch()
         let folderName = "Examples"
         let bookmarksList = app.tables["Bookmarks.List"]
         let bookmarks = bookmarksList.cells.matching(identifier: "Bookmarks.Item")
@@ -175,29 +182,12 @@ final class BookmarksUITests: UITestCase {
 
     func testWhenFolderIsRemovedFromBookmarksEditThenItCanBeDeleted() {
         let folderName = "Removable Folder"
-        let bookmarksList = app.tables["Bookmarks.List"]
-        let bookmark = bookmarksList.cells["Bookmarks.Item"].firstMatch
-        let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
-
-        XCTContext.runActivity(named: "Create a bookmark inside a folder") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
-            app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
-            app.openBookmarks()
-            app.createBookmarkFolderAtRoot(named: folderName)
-
-            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
-            bookmark.tapWhenHittable(in: app)
-            let destination = app.tables["Bookmarks.Editor.List"].cells
-                .matching(identifier: "Bookmarks.Editor.Folder")
-                .containing(.staticText, identifier: folderName)
-                .firstMatch
-            app.tables["Bookmarks.Editor.List"].swipeUpToReveal(destination)
-            destination.tapWhenHittable(in: app)
-            app.saveBookmarkEditor()
-            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
-            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
-            app.assertBookmarkCount(0)
-        }
+        app.launchEnvironment["UITEST_BOOKMARKS_FOLDER_WITH_ONE_BOOKMARK"] = folderName
+        app.launch()
+        app.openBookmarks()
+        let folder = app.tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Folder")
+            .containing(.staticText, identifier: folderName).firstMatch
+        app.assertBookmarkCount(0)
 
         XCTContext.runActivity(named: "Remove the folder from Bookmarks Edit") { _ in
             app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
@@ -221,6 +211,7 @@ final class BookmarksUITests: UITestCase {
     }
 
     func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() {
+        app.launch()
         let expectedTitles = ["Privacy Test Pages - Home", "Ad Click Flow"]
 
         XCTContext.runActivity(named: "Create two bookmarkable tabs") { _ in

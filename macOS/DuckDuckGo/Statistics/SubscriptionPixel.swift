@@ -425,6 +425,54 @@ enum SubscriptionPixel: PixelKit.Event {
 
 }
 
+/// The AuthV2 backup token pixels: restores from the backup, its renewal and its keychain item.
+enum SubscriptionBackupTokenPixel: PixelKit.Event {
+    /// The names are complete: `_macos` replaces the `m_mac_` prefix.
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    /// The backup restored the session, in a recovery with the associated trigger.
+    case restored(TokenRecoveryTrigger)
+    /// A backup restore was tried, in a recovery with the associated trigger, and failed or was discarded.
+    case restoreFailed(TokenRecoveryTrigger, BackupRestoreFailureReason, Error)
+    /// A new backup was stored after a refresh.
+    case renewed
+    /// Renewing the backup failed.
+    case renewalFailed(Error)
+    /// Reading, writing or deleting the backup's keychain item failed, during the client action given, or nil when the keychain storage
+    /// found the problem on its own.
+    case keychainError(TokenBackupAction?, TokenBackupStorageOperation, Error)
+
+    private static let triggerKey = "trigger"
+    private static let reasonKey = "reason"
+    private static let actionKey = "action"
+    private static let operationKey = "operation"
+
+    var name: String {
+        switch self {
+        case .restored: return "subscription_auth-backup_restored_macos"
+        case .restoreFailed: return "subscription_auth-backup_restore_failed_macos"
+        case .renewed: return "subscription_auth-backup_renewed_macos"
+        case .renewalFailed: return "subscription_auth-backup_renewal_failed_macos"
+        case .keychainError: return "subscription_auth-backup_keychain_error_macos"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .restored(let trigger):
+            return [Self.triggerKey: trigger.rawValue]
+        case .restoreFailed(let trigger, let reason, _):
+            return [Self.triggerKey: trigger.rawValue, Self.reasonKey: reason.rawValue]
+        case .keychainError(let action, let operation, _):
+            return [Self.actionKey: action?.rawValue ?? "none", Self.operationKey: operation.rawValue]
+        case .renewed, .renewalFailed:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
 enum SubscriptionErrorPixel: PixelKit.Event {
 
     case subscriptionKeychainAccessError(accessType: AccountKeychainAccessType,

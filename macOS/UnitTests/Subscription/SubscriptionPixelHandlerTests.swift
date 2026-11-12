@@ -263,6 +263,108 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         )
     }
 
+    // MARK: - Backup token
+
+    func testBackupRestoredPixel() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .backupRestored(.missingToken))
+
+        assertDailyAndCountPixel(
+            baseName: "subscription_auth-backup_restored_macos",
+            expectedParameters: [
+                "trigger": "missing_token",
+                PixelKit.Parameters.appVersion: "1.0.0"
+            ]
+        )
+    }
+
+    func testBackupRestoreFailedPixel() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .backupRestoreFailed(.invalidToken, .accountMismatch, TokenBackupError.accountMismatch))
+
+        assertDailyAndCountPixel(
+            baseName: "subscription_auth-backup_restore_failed_macos",
+            expectedParameters: [
+                "trigger": "invalid_token",
+                "reason": "account_mismatch",
+                PixelKit.Parameters.appVersion: "1.0.0",
+                PixelKit.Parameters.errorCode: "11501",
+                PixelKit.Parameters.errorDomain: TokenBackupError.errorDomain
+            ]
+        )
+    }
+
+    func testBackupRenewedPixel() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .backupRenewed)
+
+        assertStandardPixel(
+            name: "subscription_auth-backup_renewed_macos",
+            expectedParameters: [
+                PixelKit.Parameters.appVersion: "1.0.0"
+            ]
+        )
+    }
+
+    func testBackupRenewalFailedPixel() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .backupRenewalFailed(URLError(.timedOut)))
+
+        assertDailyAndCountPixel(
+            baseName: "subscription_auth-backup_renewal_failed_macos",
+            expectedParameters: [
+                PixelKit.Parameters.appVersion: "1.0.0",
+                PixelKit.Parameters.errorCode: String(URLError.timedOut.rawValue),
+                PixelKit.Parameters.errorDomain: NSURLErrorDomain
+            ]
+        )
+    }
+
+    func testBackupKeychainErrorPixel() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .backupKeychainError(.restore, .write, AccountKeychainAccessError.keychainSaveFailure(errSecIO)))
+
+        assertDailyAndCountPixel(
+            baseName: "subscription_auth-backup_keychain_error_macos",
+            expectedParameters: [
+                "action": "restore",
+                "operation": "write",
+                PixelKit.Parameters.appVersion: "1.0.0",
+                PixelKit.Parameters.errorCode: "12404",
+                PixelKit.Parameters.errorDomain: AccountKeychainAccessError.errorDomain,
+                PixelKit.Parameters.underlyingErrorCode: String(errSecIO),
+                PixelKit.Parameters.underlyingErrorDomain: AccountKeychainAccessError.errorDomain
+            ]
+        )
+    }
+
+    func testBackupKeychainErrorPixel_foundByTheStorage_reportsNoAction() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .backupKeychainError(nil, .read, AccountKeychainAccessError.failedToDecodeKeychainData))
+
+        assertDailyAndCountPixel(
+            baseName: "subscription_auth-backup_keychain_error_macos",
+            expectedParameters: [
+                "action": "none",
+                "operation": "read",
+                PixelKit.Parameters.appVersion: "1.0.0",
+                PixelKit.Parameters.errorCode: "12400",
+                PixelKit.Parameters.errorDomain: AccountKeychainAccessError.errorDomain
+            ]
+        )
+    }
+
+    private func assertStandardPixel(name: String, expectedParameters: [String: String]) {
+        let pixel = firedPixels.first(where: { $0.name == name })
+        XCTAssertNotNil(pixel, "Expected pixel \(name). Fired: \(firedPixels.map(\.name))")
+
+        var modifiedExpectedParameters = expectedParameters
+        if pixel?.parameters[PixelKit.Parameters.test] != nil {
+            modifiedExpectedParameters[PixelKit.Parameters.test] = "1"
+        }
+        assertParameters(modifiedExpectedParameters, in: pixel?.parameters)
+    }
+
     private func assertDailyAndCountPixel(baseName: String, expectedParameters: [String: String]) {
         let dailyName = baseName + "_daily"
         let countName = baseName + "_count"

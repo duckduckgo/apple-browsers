@@ -73,5 +73,87 @@
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod"]
+    },
+    // Backup token
+    "subscription_auth-backup_restored_macos": {
+        "description": "Fired when the main app restores the subscription session from the backup token, so the user stays signed in",
+        "owners": ["federicocappelli"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "trigger",
+                "type": "string",
+                "description": "What started the token recovery: invalid_token when the auth server rejected the current refresh token, missing_token when no current token is stored",
+                "enum": ["invalid_token", "missing_token"]
+            }
+        ]
+    },
+    "subscription_auth-backup_restore_failed_macos": {
+        "description": "Fired when the main app tries to restore the subscription session from the backup token and the restore fails or is discarded. Not fired when no backup is stored or a restore is skipped after a recent failure",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "trigger",
+                "type": "string",
+                "description": "What started the token recovery: invalid_token when the auth server rejected the current refresh token, missing_token when no current token is stored",
+                "enum": ["invalid_token", "missing_token"]
+            },
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Why the restore didn't restore the session: the backup belongs to another account, was issued before the last sign-out, or has expired; the auth server rejected it; a temporary failure such as no connection, a server error or a backup that can't be read; the user signed out, signed in or switched account during the restore; or any other failure",
+                "enum": ["account_mismatch", "predates_sign_out", "expired", "server_rejected", "temporary", "session_changed", "unknown"]
+            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
+    },
+    "subscription_auth-backup_renewed_macos": {
+        "description": "Fired when the main app stores a new backup token after a token refresh, which happens when there is no usable backup or it is older than 14 days",
+        "owners": ["federicocappelli"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "channel"]
+    },
+    "subscription_auth-backup_renewal_failed_macos": {
+        "description": "Fired when the main app fails to mint or store a new backup token after a token refresh",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_auth-backup_keychain_error_macos": {
+        "description": "Fired when the main app can't read, write or delete the backup token keychain item, can't decode it, or finds an expected backup token missing",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "action",
+                "type": "string",
+                "description": "The action that accessed the backup token: renewal after a token refresh, restore from the backup, sign_out recording the cut-off and deleting the backup, local_sign_out removing the account and its backup without contacting the server (when the server doesn't know the account), sign_in deleting a backup of another account, or none when the keychain storage found the problem on its own (an undecodable item or an expected backup token missing)",
+                "enum": ["renewal", "restore", "sign_out", "local_sign_out", "sign_in", "none"]
+            },
+            {
+                "key": "operation",
+                "type": "string",
+                "description": "Whether reading, writing or deleting the backup token keychain item failed",
+                "enum": ["read", "write", "delete"]
+            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
     }
 }

@@ -82,6 +82,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var fetchedEmail: String?
     public var emailData: ExtractedEmailData = [:]
     private let actionsHandlerMode: ActionsHandlerMode
+    public let assistanceObserver: OptOutAssistanceObserving?
 
     public var retriesCountOnError: Int = 0
 
@@ -98,7 +99,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 executionConfig: BrokerJobExecutionConfig,
                 actionsHandlerMode: ActionsHandlerMode,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
+                assistanceObserver: OptOutAssistanceObserving? = nil,
                 shouldRunNextStep: @escaping () -> Bool) {
+        self.assistanceObserver = assistanceObserver
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.context = context
@@ -135,6 +138,12 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
                 guard self.shouldRunNextStep() else {
                     failed(with: DataBrokerProtectionError.cancelled)
+                    return
+                }
+
+                guard assistanceObserver != nil
+                        || context.dataBroker.optOutStep()?.actions.contains(where: \.requiresUserAssistance) != true else {
+                    failed(with: DataBrokerProtectionError.userAssistanceRequired)
                     return
                 }
 

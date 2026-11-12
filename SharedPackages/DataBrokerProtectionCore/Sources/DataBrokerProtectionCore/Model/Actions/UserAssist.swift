@@ -62,3 +62,9 @@ struct UserAssistAction: Action {
         UserAssistAction(id: id, actionType: actionType, highlight: highlight, handOffAfterMs: handOffAfterMs, json: json)
     }
 }
+
+extension Action {
+    var requiresUserAssistance: Bool {
+        actionType == .userAssist || nestedActionObjects.contains { $0["actionType"] as? String == ActionType.userAssist.rawValue }
+    }
+}

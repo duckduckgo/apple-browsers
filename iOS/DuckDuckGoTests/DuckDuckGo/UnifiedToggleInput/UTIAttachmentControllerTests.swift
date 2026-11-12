@@ -294,10 +294,17 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let topLevelTitles = children.compactMap { ($0 as? UIAction)?.title }
         XCTAssertEqual(Array(topLevelTitles.suffix(1)), [UserText.aiChatAttachmentOptionAddTabs])
         XCTAssertFalse(children.contains { ($0 as? UIMenu)?.title == UserText.aiChatAttachmentRecentTabsSectionTitle })
+        XCTAssertEqual(Array(topLevelTitles.prefix(3)), [UserText.aiChatAttachmentOptionTakePhoto,
+                                                        UserText.aiChatAttachmentOptionAddImages,
+                                                        UserText.aiChatAttachmentOptionAddFiles])
         let toolsSection = try XCTUnwrap(children.last as? UIMenu)
         XCTAssertTrue(toolsSection.options.contains(.displayInline))
-        XCTAssertEqual(toolsSection.children.compactMap { ($0 as? UIAction)?.title },
+        let toolActions = toolsSection.children.compactMap { $0 as? UIAction }
+        XCTAssertEqual(toolActions.map(\.title),
                        [UserText.aiChatToolbarImageGenerationToolTitle, UserText.aiChatToolbarWebSearchToolTitle])
+        if #available(iOS 16, *) {
+            XCTAssertTrue(toolActions.allSatisfy { $0.subtitle == nil }, "Tool rows look like the attachment rows: title and icon only")
+        }
     }
 
     func testSimplifiedMenuOff_keepsRecentTabsAndHasNoTools() throws {
@@ -312,6 +319,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let children = try XCTUnwrap(view.attachmentMenu?.children)
         XCTAssertTrue(children.contains { ($0 as? UIMenu)?.title == UserText.aiChatAttachmentRecentTabsSectionTitle })
         let topLevelTitles = children.compactMap { ($0 as? UIAction)?.title }
+        XCTAssertTrue(topLevelTitles.contains(UserText.aiChatAttachmentOptionAttachPhoto))
         XCTAssertFalse(topLevelTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
         XCTAssertFalse(children.contains { ($0 as? UIMenu)?.children.contains { ($0 as? UIAction)?.title == UserText.aiChatToolbarWebSearchToolTitle } == true })
     }

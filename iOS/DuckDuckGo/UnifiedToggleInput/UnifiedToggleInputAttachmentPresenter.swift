@@ -103,7 +103,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         tabAttachmentLimit: Int = 0,
         isTabSelectionAvailable: @escaping () -> Bool = { false },
         tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult)? = nil,
-        showsRecentTabs: Bool = true,
+        isSimplified: Bool = false,
         tools: UTIAttachMenuTools? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
@@ -126,7 +126,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 self?.presentCamera(from: presenter)
             },
             UIAction(
-                title: UserText.aiChatAttachmentOptionAttachPhoto,
+                title: isSimplified ? UserText.aiChatAttachmentOptionAddImages : UserText.aiChatAttachmentOptionAttachPhoto,
                 image: DesignSystemImages.Glyphs.Size16.image,
                 attributes: canAttachPhoto ? [] : .disabled
             ) { [weak self] _ in
@@ -136,7 +136,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
             },
             UIAction(
-                title: UserText.aiChatAttachmentOptionAttachFile,
+                title: isSimplified ? UserText.aiChatAttachmentOptionAddFiles : UserText.aiChatAttachmentOptionAttachFile,
                 image: DesignSystemImages.Glyphs.Size16.folder,
                 attributes: canAttachAllowedFile ? [] : .disabled
             ) { [weak self] _ in
@@ -167,7 +167,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                           attachableTabs: attachableTabs,
                           attachedTabIds: attachedTabIds,
                           attachmentLimit: tabAttachmentLimit,
-                          showsRecentTabs: showsRecentTabs,
+                          showsRecentTabs: !isSimplified,
                           isAvailable: isTabSelectionAvailable,
                           onItemSelected: onItemSelected,
                           tabActionHandler: tabActionHandler)

@@ -40,6 +40,9 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let chipHeight: CGFloat = 40
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
+        /// The simplified prompt box's chip: 8pt padding and a 16pt ✕, 60pt wide in all.
+        static let simplifiedChipHorizontalPadding: CGFloat = 8
+        static let simplifiedClearButtonSize: CGFloat = 16
         static let chipSpacing: CGFloat = 4
         static let minimumGroupGap: CGFloat = 8
     }
@@ -278,6 +281,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet {
             guard oldValue != usesSimplifiedPromptBox else { return }
             updateAttachButtonImage()
+            updateSelectedToolChipStyle()
             updateChipVisibility()
             setNeedsLayout()
         }
@@ -419,12 +423,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.tintColor = UIColor(designSystemColor: .textPrimary)
         button.accessibilityLabel = UserText.aiChatToolbarClearSelectedToolAccessibilityLabel
         button.addTarget(self, action: #selector(selectedToolClearTapped), for: .primaryActionTriggered)
-        NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
-            button.heightAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
-        ])
+        let width = button.widthAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize)
+        let height = button.heightAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize)
+        selectedToolClearButtonWidth = width
+        selectedToolClearButtonHeight = height
+        NSLayoutConstraint.activate([width, height])
         return button
     }()
+
+    private var selectedToolClearButtonWidth: NSLayoutConstraint?
+    private var selectedToolClearButtonHeight: NSLayoutConstraint?
+    private var selectedToolChipLeading: NSLayoutConstraint?
+    private var selectedToolChipTrailing: NSLayoutConstraint?
 
     private lazy var selectedToolChipView: UIView = {
         let view = UIView()
@@ -442,10 +452,14 @@ final class UnifiedToggleInputToolbarView: UIView {
 
         view.addSubview(selectedToolMenuButton)
 
+        let leading = stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.chipHorizontalPadding)
+        let trailing = stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.chipHorizontalPadding)
+        selectedToolChipLeading = leading
+        selectedToolChipTrailing = trailing
         NSLayoutConstraint.activate([
             view.heightAnchor.constraint(equalToConstant: Constants.chipHeight),
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.chipHorizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.chipHorizontalPadding),
+            leading,
+            trailing,
             stackView.topAnchor.constraint(equalTo: view.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             selectedToolMenuButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -584,6 +598,7 @@ final class UnifiedToggleInputToolbarView: UIView {
                showsToolsButton: !toolsButtonExplicitlyHidden,
                showsModeChip: selectedTool != nil,
                allowsMergedTools: !usesSimplifiedPromptBox,
+               usesSimplifiedToolChip: usesSimplifiedPromptBox,
                showsReasoningButton: !reasoningButton.isHidden,
                modelChipWidth: modelChipExplicitlyHidden ? nil : fullModelChipWidth,
                showsReturnKey: !returnKeyButton.isHidden,
@@ -629,6 +644,8 @@ extension UnifiedToggleInputToolbarView {
         var showsToolsButton = true
         var showsModeChip = false
         var allowsMergedTools = true
+        /// The simplified prompt box's narrower chip.
+        var usesSimplifiedToolChip = false
         var showsReasoningButton = true
         /// The pill showing its name, or nil while it is hidden.
         var modelChipWidth: CGFloat?
@@ -646,7 +663,10 @@ extension UnifiedToggleInputToolbarView {
             let mergesTools = allowsMergedTools && level >= .mergedTools && showsModeChip
             var leadingWidths: [CGFloat] = showsAttachButton ? [button] : []
             if showsToolsButton && !mergesTools { leadingWidths.append(button) }
-            if showsModeChip { leadingWidths.append(mergesTools ? Self.mergedToolChipWidth : Self.toolChipWidth) }
+            if showsModeChip {
+                leadingWidths.append(mergesTools ? Self.mergedToolChipWidth
+                                                 : usesSimplifiedToolChip ? Self.simplifiedToolChipWidth : Self.toolChipWidth)
+            }
             var pickerWidths: [CGFloat] = showsReasoningButton ? [button] : []
             if let modelChipWidth { pickerWidths.append(level >= .modelIcon ? button : modelChipWidth) }
             let pickers = Self.stackWidth(pickerWidths, spacing: Constants.rightGroupSpacing)
@@ -659,6 +679,8 @@ extension UnifiedToggleInputToolbarView {
 
         static let toolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
             + Constants.chipSpacing + Constants.selectedToolClearButtonSize
+        static let simplifiedToolChipWidth = 2 * Constants.simplifiedChipHorizontalPadding + Constants.selectedToolIconSize
+            + Constants.chipSpacing + Constants.simplifiedClearButtonSize
         static let mergedToolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
 
         private static func stackWidth(_ widths: [CGFloat], spacing: CGFloat) -> CGFloat {
@@ -828,6 +850,21 @@ private extension UnifiedToggleInputToolbarView {
         } else {
             imageButton.setImage(image, for: .normal)
         }
+        imageButton.accessibilityLabel = usesSimplifiedPromptBox
+            ? UserText.aiChatToolbarAddButtonAccessibilityLabel
+            : UserText.aiChatToolbarAttachButtonAccessibilityLabel
+    }
+
+    private func updateSelectedToolChipStyle() {
+        _ = selectedToolChipView
+        let padding = usesSimplifiedPromptBox ? Constants.simplifiedChipHorizontalPadding : Constants.chipHorizontalPadding
+        let clearSize = usesSimplifiedPromptBox ? Constants.simplifiedClearButtonSize : Constants.selectedToolClearButtonSize
+        selectedToolChipLeading?.constant = padding
+        selectedToolChipTrailing?.constant = -padding
+        selectedToolClearButtonWidth?.constant = clearSize
+        selectedToolClearButtonHeight?.constant = clearSize
+        selectedToolClearButton.setImage(usesSimplifiedPromptBox ? DesignSystemImages.Glyphs.Size16.closeSmall
+                                                                 : DesignSystemImages.Glyphs.Size16.close, for: .normal)
     }
 
     private func updateChipVisibility() {

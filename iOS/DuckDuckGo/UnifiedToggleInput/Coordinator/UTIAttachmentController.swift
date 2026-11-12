@@ -450,7 +450,7 @@ final class UTIAttachmentController {
                 guard let self, self.pasteContextIdentity == tabSelectionContextIdentity else { return .rejected }
                 return self.setTabAttachment(candidate, isAttached: isAttached, attachmentSource: source)
             },
-            showsRecentTabs: !environment.usesSimplifiedAttachMenu(),
+            isSimplified: environment.usesSimplifiedAttachMenu(),
             tools: simplifiedAttachMenuTools
         )
     }

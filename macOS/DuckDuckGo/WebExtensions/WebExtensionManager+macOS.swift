@@ -38,10 +38,6 @@ private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsP
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
-    var isBackgroundGraveyardTreatmentEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
-    }
-
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -150,21 +146,12 @@ enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
-            isCPMMessagingHangRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
-            },
             isCPMNetworkProcessRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
             cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
-            isCPMBackgroundLoadRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
-            },
             isCPMBackgroundLoadRestartEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
-            },
-            isCPMLateBackgroundDocumentRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
             isCPMStableBaseURLEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)

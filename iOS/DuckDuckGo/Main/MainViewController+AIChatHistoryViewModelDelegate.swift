@@ -76,10 +76,18 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
+    /// Same routing as the browser menu's Duck.ai Settings: in place on a Duck.ai tab, a new tab elsewhere.
     func viewModelDidRequestDuckAISettings() {
         duckAIInputFocus.forget()
         dismiss(animated: true) { [weak self] in
-            self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
+            guard let self else { return }
+            if let tab = self.currentTab, tab.isAITab {
+                tab.submitOpenSettingsAction()
+            } else if let tab = self.currentTab {
+                tab.openSettingsInNewTab()
+            } else {
+                self.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
+            }
         }
     }
 

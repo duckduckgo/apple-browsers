@@ -238,7 +238,7 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func makeDuckAISettingsBarButtonItem() -> UIBarButtonItem {
         let item = UIBarButtonItem(
-            image: DesignSystemImages.Glyphs.Size24.aiChatSettings,
+            image: DesignSystemImages.Glyphs.Size24.settingsAiChat,
             style: .plain,
             target: self,
             action: #selector(duckAISettingsButtonTapped)
@@ -283,7 +283,14 @@ final class AIChatHistoryViewController: UIViewController {
             ) { [weak self] _ in
                 self?.enterSelectionMode()
             }
-            completion([selectChats, chatProtection])
+            var items: [UIMenuElement] = [selectChats, chatProtection]
+            if self.viewModel.showsDuckAISettingsButton {
+                items.append(UIAction(title: UserText.actionAIChatSettings,
+                                      image: DesignSystemImages.Glyphs.Size16.aiChatSettings) { [weak self] _ in
+                    self?.viewModel.openDuckAISettings()
+                })
+            }
+            completion(items)
         }
         let item = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,

@@ -18,7 +18,6 @@
 
 import Foundation
 
-/// A stored decision for an `ask` tool. `ask` is the absence of one.
 public enum BrowserToolPermissionState: String, Equatable, Sendable {
     case ask
     case allow
@@ -27,10 +26,9 @@ public enum BrowserToolPermissionState: String, Equatable, Sendable {
 
 @MainActor
 public protocol BrowserToolPermissionStoring: AnyObject {
-    func state(forToolNamed name: String) -> BrowserToolPermissionState
-
-    /// `.ask` forgets the tool's decision.
-    func setState(_ state: BrowserToolPermissionState, forToolNamed name: String)
+    /// `nil` when the tool follows its default.
+    func state(forToolNamed name: String) -> BrowserToolPermissionState?
+    func setState(_ state: BrowserToolPermissionState?, forToolNamed name: String)
 
     var storedDecisions: [String: BrowserToolPermissionState] { get }
     func clearAll()
@@ -38,8 +36,13 @@ public protocol BrowserToolPermissionStoring: AnyObject {
 
 public extension BrowserToolPermissionStoring {
 
-    /// An `auto` tool is always allowed; only `ask` tools have a stored decision.
     func effectiveState(for tool: any BrowserTool) -> BrowserToolPermissionState {
-        tool.permissionMode == .auto ? .allow : state(forToolNamed: tool.name)
+        state(forToolNamed: tool.name) ?? tool.permissionMode.defaultState
+    }
+}
+
+public extension BrowserToolPermissionMode {
+    var defaultState: BrowserToolPermissionState {
+        self == .auto ? .allow : .ask
     }
 }

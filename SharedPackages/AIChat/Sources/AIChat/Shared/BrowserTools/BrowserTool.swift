@@ -25,7 +25,7 @@ public protocol BrowserTool: AnyObject {
     /// Stable capability identifier.
     var name: String { get }
 
-    /// `auto` never prompts; `ask` is subject to a stored Always/Never decision.
+    /// The default when the user hasn't chosen one in the prompt or in settings.
     var permissionMode: BrowserToolPermissionMode { get }
 
     var inputSchema: JSONValue { get }
@@ -43,7 +43,6 @@ public extension BrowserTool {
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
 }
 
-/// A tool's declared default. Distinct from the *stored* decision, which only Ask tools have.
 public enum BrowserToolPermissionMode: String, Equatable, Sendable {
     case auto
     case ask

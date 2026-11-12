@@ -30,33 +30,35 @@ final class BrowserToolSitePermissions: BrowserToolPermissionStoring {
         self.permissionManager = permissionManager
     }
 
-    func state(forToolNamed name: String) -> BrowserToolPermissionState {
+    func state(forToolNamed name: String) -> BrowserToolPermissionState? {
         switch permissionManager.persistedDecision(forDomain: Self.domain, permissionType: .browserTool(name: name)) {
         case .allow: .allow
         case .deny: .deny
-        case .ask, nil: .ask
+        case .ask: .ask
+        case nil: nil
         }
     }
 
-    func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {
+    func setState(_ state: BrowserToolPermissionState?, forToolNamed name: String) {
+        let type = PermissionType.browserTool(name: name)
         switch state {
-        case .ask: permissionManager.removePermission(forDomain: Self.domain, permissionType: .browserTool(name: name))
-        case .allow: permissionManager.setPermission(.allow, forDomain: Self.domain, permissionType: .browserTool(name: name))
-        case .deny: permissionManager.setPermission(.deny, forDomain: Self.domain, permissionType: .browserTool(name: name))
+        case nil: permissionManager.removePermission(forDomain: Self.domain, permissionType: type)
+        case .ask: permissionManager.setPermission(.ask, forDomain: Self.domain, permissionType: type)
+        case .allow: permissionManager.setPermission(.allow, forDomain: Self.domain, permissionType: type)
+        case .deny: permissionManager.setPermission(.deny, forDomain: Self.domain, permissionType: type)
         }
     }
 
     var storedDecisions: [String: BrowserToolPermissionState] {
         permissionManager.persistedPermissionTypes(forDomain: Self.domain).reduce(into: [:]) { result, type in
             guard case .browserTool(let name) = type else { return }
-            let state = state(forToolNamed: name)
-            if state != .ask { result[name] = state }
+            result[name] = state(forToolNamed: name)
         }
     }
 
     func clearAll() {
         for name in storedDecisions.keys {
-            setState(.ask, forToolNamed: name)
+            setState(nil, forToolNamed: name)
         }
     }
 }

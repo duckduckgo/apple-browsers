@@ -38,8 +38,8 @@ final class BrowserToolSitePermissionsTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenNothingIsStoredThenEveryToolAsks() {
-        XCTAssertEqual(permissions.state(forToolNamed: "listOpenTabs"), .ask)
+    func testWhenNothingIsStoredThenEveryToolFollowsItsDefault() {
+        XCTAssertNil(permissions.state(forToolNamed: "listOpenTabs"))
         XCTAssertEqual(permissions.storedDecisions, [:])
     }
 
@@ -52,19 +52,27 @@ final class BrowserToolSitePermissionsTests: XCTestCase {
         XCTAssertEqual(permissions.storedDecisions, ["listOpenTabs": .allow, "searchHistory": .deny])
     }
 
-    func testWhenSetToAskThenTheChoiceIsRemoved() {
+    func testWhenSetToAskThenAskIsStored() {
+        permissions.setState(.ask, forToolNamed: "pinTab")
+
+        XCTAssertEqual(manager.persistedDecision(forDomain: BrowserToolSitePermissions.domain, permissionType: .browserTool(name: "pinTab")), .ask)
+        XCTAssertEqual(permissions.storedDecisions, ["pinTab": .ask])
+    }
+
+    func testWhenResetThenTheChoiceIsRemoved() {
         permissions.setState(.allow, forToolNamed: "listOpenTabs")
 
-        permissions.setState(.ask, forToolNamed: "listOpenTabs")
+        permissions.setState(nil, forToolNamed: "listOpenTabs")
 
         XCTAssertFalse(manager.hasPermissionPersisted(forDomain: BrowserToolSitePermissions.domain, permissionType: .browserTool(name: "listOpenTabs")))
-        XCTAssertEqual(permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testWhenClearedThenOnlyToolChoicesAreRemoved() {
         manager.setPermission(.allow, forDomain: BrowserToolSitePermissions.domain, permissionType: .microphone)
         permissions.setState(.allow, forToolNamed: "listOpenTabs")
         permissions.setState(.deny, forToolNamed: "searchHistory")
+        permissions.setState(.ask, forToolNamed: "pinTab")
 
         permissions.clearAll()
 

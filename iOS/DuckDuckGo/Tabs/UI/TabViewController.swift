@@ -168,6 +168,7 @@ class TabViewController: UIViewController {
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var webViewLayoutConstraints: [NSLayoutConstraint] = []
     private var fullscreenStateObserver: NSKeyValueObservation?
+    private var webViewBackgroundsBeforeFullscreen: (webView: UIColor?, scrollView: UIColor?)?
     var daxContextualOnboardingController: UIViewController? {
         didSet {
             // Floating UI reserves the obscured top region while a dialog is up, so relayout on both.
@@ -2507,6 +2508,7 @@ class TabViewController: UIViewController {
         }
 
         suspendWebViewHostedChrome()
+        applyFullscreenWebViewBackground()
     }
 
     /// These are subviews of the web view, so WebKit carries them into the fullscreen window: the border
@@ -2514,6 +2516,23 @@ class TabViewController: UIViewController {
     private func suspendWebViewHostedChrome() {
         borderView.isHidden = true
         pullToRefreshViewAdapter?.setPullSuspended(true)
+    }
+
+    /// WebKit insets the fullscreen page by the safe area and the web view's background fills the gap,
+    /// so the light theme color would frame the video. Black matches Safari.
+    private func applyFullscreenWebViewBackground() {
+        if webViewBackgroundsBeforeFullscreen == nil {
+            webViewBackgroundsBeforeFullscreen = (webView.backgroundColor, webView.scrollView.backgroundColor)
+        }
+        webView.backgroundColor = .black
+        webView.scrollView.backgroundColor = .black
+    }
+
+    private func restoreWebViewBackgroundAfterFullscreen() {
+        guard let previous = webViewBackgroundsBeforeFullscreen else { return }
+        webView.backgroundColor = previous.webView
+        webView.scrollView.backgroundColor = previous.scrollView
+        webViewBackgroundsBeforeFullscreen = nil
     }
 
     /// Leaving the container zeroes the frame. Seeding the rect it occupied on screen keeps the already
@@ -2531,6 +2550,7 @@ class TabViewController: UIViewController {
         pinWebViewToContainer()
         webViewContainer.layoutIfNeeded()
 
+        restoreWebViewBackgroundAfterFullscreen()
         updateBorderViewForFloatingUIIfNeeded()
         pullToRefreshViewAdapter?.setPullSuspended(false)
     }

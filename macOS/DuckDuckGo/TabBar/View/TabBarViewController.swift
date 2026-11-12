@@ -1600,6 +1600,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             menu.addItem(chatsItem)
         }
 
+        let browserTools = NSApp.delegateTyped.aiChatBrowserToolsService
+        if BrowserToolPermissionsPreferences.hasAllowedTool(catalog: browserTools.catalog, permissions: browserTools.permissions) {
+            menu.addItem(.separator())
+
+            let permissionsItem = NSMenuItem(title: UserText.browserToolSettingsTitle, action: #selector(duckAIMenuBrowserPermissionsAction), keyEquivalent: "")
+            permissionsItem.target = self
+            permissionsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.options), visibleOnMacOS27: true)
+            menu.addItem(permissionsItem)
+        }
+
         return menu
     }
 
@@ -1659,6 +1669,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
         mainViewController.openNewDuckAIChatTab()
+    }
+
+    @objc private func duckAIMenuBrowserPermissionsAction() {
+        (parent as? MainViewController)?.openSettings(at: .browserToolPermissions)
     }
 
     @objc private func duckAIMenuChatsAction() {

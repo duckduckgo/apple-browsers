@@ -83,6 +83,10 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     var canResetAll: Bool {
         rows.contains { storedStates[$0.name] != nil }
     }
+
+    static func hasAllowedTool(catalog: BrowserToolCatalog, permissions: BrowserToolPermissionStoring) -> Bool {
+        catalog.enabledTools.contains { permissions.state(forToolNamed: $0.name) == .allow }
+    }
 }
 
 struct PreferencesBrowserToolPermissionsView: View {
@@ -114,6 +118,7 @@ struct PreferencesBrowserToolPermissionsView: View {
                     }
                 }
             }
+            .id(PreferencesScrollAnchor.browserToolPermissions)
             .onAppear(perform: model.reload)
         }
     }

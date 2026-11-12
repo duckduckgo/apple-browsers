@@ -57,107 +57,11 @@ final class CPMMessagingHealthMonitorAttributionTests: XCTestCase {
         XCTAssertEqual(healthyResponses, 1)
     }
 
-    func testExtensionTabIsLearnedFromTheOnePageThatMatches() {
-        commit("tab", url: pageURL)
-        commit("other", url: URL(string: "https://other.example/")!)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: pageURL))
-
-        XCTAssertEqual(monitor.tabIdentifier(forExtensionTab: 5), "tab")
-    }
-
-    func testLearnedMappingIsKeptWhenThePageLaterMatchesTwoTabs() {
-        let second = URL(string: "https://example.com/second")!
-        commit("tab", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: pageURL))
-        commit("tab", url: second)
-        commit("other", url: second)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: second))
-
-        XCTAssertEqual(monitor.tabIdentifier(forExtensionTab: 5), "tab")
-        XCTAssertEqual(healthyResponses, 2)
-    }
-
-    func testResponseThatMatchesTwoTabsLearnsNothing() {
-        commit("one", url: pageURL)
-        commit("two", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: pageURL))
-
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 5))
-    }
-
-    func testResponseWithoutAnExtensionTabLearnsNothing() {
+    func testResponseWithoutAnExtensionTabIsStillAHealthyResponse() {
         commit("tab", url: pageURL)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: pageURL))
 
         XCTAssertEqual(healthyResponses, 1)
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 0))
-    }
-
-    func testOnlyAnOrdinaryHttpPageIsKept() {
-        let ineligible: [(URL, CPMNavigationKind)] = [
-            (pageURL, .errorPage),
-            (pageURL, .backForward),
-            (pageURL, .sessionRestoration),
-            (URL(string: "duck://newtab")!, .other),
-        ]
-        for (index, (url, kind)) in ineligible.enumerated() {
-            commit("tab\(index)", url: pageURL)
-            commit("tab\(index)", url: url, kind: kind)
-            monitor.handle(.dashboardResponse(extensionTabIdentifier: index, url: pageURL))
-
-            XCTAssertNil(monitor.tabIdentifier(forExtensionTab: index), "\(url.scheme ?? "") \(kind) erases the tab's page")
-        }
-        let ordinaryURL = URL(string: "https://example.com/ordinary")!
-        commit("ordinary", url: ordinaryURL, kind: .other)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 9, url: ordinaryURL))
-        XCTAssertEqual(monitor.tabIdentifier(forExtensionTab: 9), "ordinary")
-    }
-
-    func testClosedTabAndTerminatedProcessEraseThePageOfTheTab() {
-        commit("closed", url: pageURL)
-        monitor.handle(.tabClosed(tabIdentifier: "closed"))
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: pageURL))
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 1))
-
-        commit("crashed", url: pageURL)
-        monitor.handle(.webContentProcessTerminated(tabIdentifier: "crashed"))
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: pageURL))
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 2))
-    }
-
-    func testClosingATabForgetsItsExtensionTab() {
-        commit("tab", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: pageURL))
-        monitor.handle(.tabClosed(tabIdentifier: "tab"))
-
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 5))
-    }
-
-    func testExtensionReloadForgetsMappingsAndTheTabIsLearnedAgainWhenItWaitsForAMessage() {
-        commit("tab", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: pageURL))
-        monitor.handle(.extensionLifecycle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit)))
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 5))
-
-        commit("tab", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 6, url: pageURL))
-        XCTAssertEqual(monitor.tabIdentifier(forExtensionTab: 6), "tab")
-    }
-
-    func testWillReloadForgetsMappingsBeforeTheReloadCompletes() {
-        commit("tab", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: pageURL))
-        monitor.handle(.extensionLifecycle(.willReload(identifier: "embedded", type: .embedded, trigger: .explicit)))
-
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 5))
-    }
-
-    func testLifecycleOfAnotherExtensionTypeIsIgnored() {
-        commit("tab", url: pageURL)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 5, url: pageURL))
-        monitor.handle(.extensionLifecycle(.reloaded(identifier: "other", type: .darkReader, trigger: .explicit)))
-
-        XCTAssertEqual(monitor.tabIdentifier(forExtensionTab: 5), "tab")
     }
 
     private func commit(_ tab: String, url: URL, kind: CPMNavigationKind = .other) {

@@ -18,7 +18,14 @@
 //
 
 import UIKit
+import WebExtensions
 import WebKit
+
+@available(iOS 18.4, *)
+@MainActor
+extension TabViewController: CPMMonitoredTab {
+    var cpmTabIdentifier: String { tabModel.uid }
+}
 
 @available(iOS 18.4, *)
 @MainActor

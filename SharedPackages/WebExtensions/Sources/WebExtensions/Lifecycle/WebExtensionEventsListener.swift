@@ -19,6 +19,12 @@
 import WebKit
 import os.log
 
+/// A tab that the CPM health monitor follows by an identifier.
+@MainActor
+public protocol CPMMonitoredTab: AnyObject {
+    var cpmTabIdentifier: String { get }
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionEventsListening {
 
@@ -52,6 +58,8 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     weak var controller: WKWebExtensionController?
     public private(set) var droppedCallbacksCount = 0
     public var onBrowsingActivity: (() -> Void)?
+    /// Called when a tab closes, not when it only moves between windows.
+    public var onTabClosed: ((WKWebExtensionTab) -> Void)?
 
     private var isSuppressingTabLifecycleEvents = false
 
@@ -76,6 +84,7 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {
         guard !isSuppressingTabLifecycleEvents else { return }
+        onTabClosed?(tab)
         notifyController { $0.didCloseTab(tab, windowIsClosing: windowIsClosing) }
     }
 

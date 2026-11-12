@@ -21,6 +21,12 @@ import WebKit
 
 @available(macOS 15.4, *)
 @MainActor
+extension Tab: CPMMonitoredTab {
+    var cpmTabIdentifier: String { uuid }
+}
+
+@available(macOS 15.4, *)
+@MainActor
 extension Tab: WKWebExtensionTab {
 
     enum WebExtensionTabError: Error {

@@ -2578,11 +2578,6 @@ class TabViewController: UIViewController {
 
     deinit {
         webExtensionNavigationTask?.cancel()
-        if #available(iOS 18.4, *) {
-            DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
-                webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
-            }
-        }
         // Tab removal closes synchronously; this also covers controllers released outside the tab cache.
         Task { @MainActor [sitePermissionsState, freezeMonitor] in
             sitePermissionsState.close()
@@ -2752,6 +2747,11 @@ extension TabViewController: WKNavigationDelegate {
            let url = navigationResponse.response.url, url.isHttp || url.isHttps {
             // The Network process can change after action policy. Repair before document-start scripts run.
             webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+        }
+        if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame, committingNavigationKind == .other {
+            if !CPMNavigationKind.isHTMLDocument(mimeType: navigationResponse.response.mimeType) {
+                committingNavigationKind = .nonHTMLDocument
+            }
         }
         if webView === self.webView {
             captureSitePermissionsGeolocationPolicy(from: navigationResponse.response,

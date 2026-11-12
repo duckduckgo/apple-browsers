@@ -321,6 +321,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         super.init()
 
+        listener.onTabClosed = { [weak monitor = self.cpmMessagingHealthMonitor] tab in
+            MainActor.assumeMainThread {
+                guard let identifier = (tab as? CPMMonitoredTab)?.cpmTabIdentifier else { return }
+                monitor?.handle(.tabClosed(tabIdentifier: identifier))
+            }
+        }
+
         badgeColorHandler.store = badgeColors
         badgeColorHandler.extensionContext = { [weak self] url in
             self?.extensionContext(for: url)

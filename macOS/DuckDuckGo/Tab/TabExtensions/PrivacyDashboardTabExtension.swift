@@ -131,13 +131,6 @@ final class PrivacyDashboardTabExtension {
         }
     }
 
-    deinit {
-        DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, tabIdentifier] in
-            guard #available(macOS 15.4, *) else { return }
-            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: tabIdentifier))
-        }
-    }
-
     @available(macOS 15.4, *)
     @MainActor
     private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
@@ -289,7 +282,11 @@ extension Navigation {
         if initialNavigationType == .sessionRestoration {
             return .sessionRestoration
         }
-        return initialNavigationType.isBackForward ? .backForward : .other
+        if initialNavigationType.isBackForward {
+            return .backForward
+        }
+        let isHTMLDocument = CPMNavigationKind.isHTMLDocument(mimeType: navigationResponse?.response.mimeType)
+        return isHTMLDocument ? .other : .nonHTMLDocument
     }
 }
 

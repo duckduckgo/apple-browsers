@@ -1887,19 +1887,31 @@ final class WebExtensionManagerTests: XCTestCase {
         webExtensionLoadingMock.mockLoadResults = [
             .success(WebExtensionLoadResult(identifier: "extension1", filename: "extension.zip", displayName: "Extension 1", version: "1.0"))
         ]
-        let manager = makeManager()
+        let monitor = CapturingCPMLifecycleMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
         try await loadRealContext(identifier: "extension1", into: manager.controller)
-
-        let monitor = try XCTUnwrap(manager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)
-        let url = URL(string: "https://example.com/")!
-        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: url, navigationKind: .other, extensionIsLoaded: true))
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 7, url: url))
-        XCTAssertEqual(monitor.tabIdentifier(forExtensionTab: 7), "tab")
 
         manager.unloadAllExtensions()
         await manager.loadInstalledExtensions()
 
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 7), "The reload creates new extension tabs, so learned identifiers are dropped")
+        XCTAssertTrue(monitor.lifecycleEvents.contains { event in
+            if case .reloaded = event { return true }
+            return false
+        })
+    }
+
+    @MainActor
+    func testWhenATabClosesThenTheHealthMonitorIsToldItsIdentifier() throws {
+        let monitor = CapturingCPMTabClosedMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
+        let tab = MonitoredStubTab(identifier: "tab-1")
+
+        manager.eventsListener.didCloseTab(tab, windowIsClosing: false)
+        manager.eventsListener.withTabLifecycleEventsSuppressed {
+            manager.eventsListener.didCloseTab(MonitoredStubTab(identifier: "moved"), windowIsClosing: false)
+        }
+
+        XCTAssertEqual(monitor.closedTabs, ["tab-1"], "a tab that only moves between windows is not closed")
     }
 
     @MainActor
@@ -3039,6 +3051,27 @@ private actor LaunchBlockingScriptletFetcher: ScriptletFetching {
         isReleased = true
         continuation?.resume()
         continuation = nil
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class CapturingCPMTabClosedMonitor: CPMMessagingHealthMonitoring {
+    private(set) var closedTabs: [String] = []
+
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .tabClosed(let tabIdentifier) = event else { return }
+        closedTabs.append(tabIdentifier)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class MonitoredStubTab: NSObject, WKWebExtensionTab, CPMMonitoredTab {
+    let cpmTabIdentifier: String
+
+    init(identifier: String) {
+        cpmTabIdentifier = identifier
     }
 }
 

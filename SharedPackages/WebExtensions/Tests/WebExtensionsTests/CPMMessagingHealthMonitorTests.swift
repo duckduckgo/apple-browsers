@@ -137,6 +137,27 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixels.breakages.isEmpty)
     }
 
+    func testNonHTMLDocumentIsNotMeasured() {
+        commit("a", path: "file.pdf", kind: .nonHTMLDocument)
+        advance(100)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertTrue(pixels.breakages.isEmpty)
+    }
+
+    func testOnlyHTMLResponsesAreHTMLDocuments() {
+        XCTAssertTrue(CPMNavigationKind.isHTMLDocument(mimeType: "text/html"))
+        XCTAssertTrue(CPMNavigationKind.isHTMLDocument(mimeType: "TEXT/HTML"))
+        XCTAssertTrue(CPMNavigationKind.isHTMLDocument(mimeType: "application/xhtml+xml"))
+        XCTAssertTrue(CPMNavigationKind.isHTMLDocument(mimeType: nil), "an unknown type is measured")
+        XCTAssertTrue(CPMNavigationKind.isHTMLDocument(mimeType: ""))
+        XCTAssertFalse(CPMNavigationKind.isHTMLDocument(mimeType: "application/pdf"))
+        XCTAssertFalse(CPMNavigationKind.isHTMLDocument(mimeType: "image/png"))
+        XCTAssertFalse(CPMNavigationKind.isHTMLDocument(mimeType: "video/mp4"))
+        XCTAssertFalse(CPMNavigationKind.isHTMLDocument(mimeType: "text/plain"))
+        XCTAssertFalse(CPMNavigationKind.isHTMLDocument(mimeType: "application/json"))
+    }
+
     func testPageCommittedWithoutTheExtensionLoadedIsNotMeasured() {
         monitor.handle(.navigationCommitted(tabIdentifier: "a", url: url("a"), navigationKind: .other, extensionIsLoaded: false))
         advance(100)
@@ -184,20 +205,6 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.interruptionEnded)
 
         XCTAssertEqual(pixels.breakages, [report(.one)])
-        XCTAssertEqual(monitor.tabIdentifier(forExtensionTab: 2), "b")
-    }
-
-    func testLearnedMappingAnswersLaterPagesOfTheTabEvenWhenUrlsCollide() {
-        commit("a", path: "x")
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("x")))
-        commit("a", path: "y")
-        commit("b", path: "y")
-        advance(10)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("y")))
-        advance(31)
-        monitor.handle(.interruptionEnded)
-
-        XCTAssertEqual(pixels.breakages, [report(.one)], "only tab b stayed silent")
     }
 
     func testMessageThatMatchesTwoTabsAnswersBoth() {
@@ -335,7 +342,6 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.interruptionEnded)
 
         XCTAssertTrue(pixels.breakages.isEmpty)
-        XCTAssertNil(monitor.tabIdentifier(forExtensionTab: 5), "a host match answers but does not teach a tab")
     }
 
     func testMessageOfAnotherHostDoesNotAnswerTheWaitingTab() {

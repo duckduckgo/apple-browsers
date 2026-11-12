@@ -700,7 +700,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // setting the custom URL in the Debug menu. A registered default is never saved, so installs
         // go back to duck.ai once this is gone. A URL set in the Debug menu still wins.
         if case .normal = AppVersion.runType {
-            UserDefaults.standard.register(defaults: [UserDefaultsKeys.aiChatDebugURLSettings.rawValue: "https://alavrenchuk.duck.ai/"])
+            UserDefaults.standard.register(defaults: [UserDefaultsKeys.aiChatDebugURLSettings.rawValue: "https://euw-serp-dev-testing3.duck.ai/"])
         }
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {

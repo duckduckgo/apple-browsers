@@ -1,11 +1,29 @@
-const marker = '<!-- ios-alpha-version -->';
+const platforms = {
+    ios: {
+        name: 'iOS',
+        directory: 'iOS',
+        workflow: 'ios_alpha.yml',
+        uploadJobs: ['Upload to TestFlight'],
+        availability: 'in TestFlight',
+    },
+    macos: {
+        name: 'macOS',
+        directory: 'macOS',
+        workflow: 'macos_alpha_release.yml',
+        uploadJobs: ['Publish Alpha DMG', 'Upload App Store Connect Release'],
+        availability: 'through alpha updates and in TestFlight',
+    },
+};
 
-module.exports = async function commentOnAlphaPRs({ github, context, core, version }) {
+module.exports = async function commentOnAlphaPRs({ github, context, core, version, platform }) {
+    const config = platforms[platform];
+    if (!config) throw new Error(`Unsupported alpha platform: ${platform}`);
+    const marker = `<!-- ${platform}-alpha-version -->`;
     const repo = context.repo;
     let previousRun;
     for await (const { data } of github.paginate.iterator(github.rest.actions.listWorkflowRuns, {
         ...repo,
-        workflow_id: 'ios_alpha.yml',
+        workflow_id: config.workflow,
         branch: 'main',
         status: 'completed',
         per_page: 100,
@@ -16,7 +34,8 @@ module.exports = async function commentOnAlphaPRs({ github, context, core, versi
                 run_id: run.id,
                 per_page: 100,
             });
-            if (jobs.some(job => job.name === 'Upload to TestFlight' && job.conclusion === 'success')) {
+            if (config.uploadJobs.every(name => jobs.some(job =>
+                (job.name === name || job.name.endsWith(` / ${name}`)) && job.conclusion === 'success'))) {
                 previousRun = run;
                 break;
             }
@@ -48,8 +67,8 @@ module.exports = async function commentOnAlphaPRs({ github, context, core, versi
     }
 
     const runURL = `${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`;
-    const body = `${marker}\nThis PR is included in the iOS alpha targeting **${version}**.\n\n`
-        + `It will be available in TestFlight once the [alpha build and upload](${runURL}) succeed.`;
+    const body = `${marker}\nThis PR is included in the ${config.name} alpha targeting **${version}**.\n\n`
+        + `It will be available ${config.availability} once the [alpha build and upload](${runURL}) succeed.`;
 
     for (const pull_number of pullRequests.keys()) {
         try {
@@ -59,7 +78,7 @@ module.exports = async function commentOnAlphaPRs({ github, context, core, versi
                 per_page: 100,
             });
             if (!files.some(file => [file.filename, file.previous_filename]
-                .some(path => path && /^(iOS|SharedPackages)\//.test(path)))) continue;
+                .some(path => path && [config.directory, 'SharedPackages'].some(directory => path.startsWith(`${directory}/`))))) continue;
 
             const comments = await github.paginate(github.rest.issues.listComments, {
                 ...repo,

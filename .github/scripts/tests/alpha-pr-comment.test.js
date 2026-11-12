@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const commentOnAlphaPRs = require('../ios-alpha-pr-comment.js');
+const commentOnAlphaPRs = require('../alpha-pr-comment.js');
 
 function fixture({ runs = [], jobs = {}, commits = ['head'], prs = {}, files = {}, comments = {}, failPR } = {}) {
     const calls = [];
@@ -25,7 +25,8 @@ function fixture({ runs = [], jobs = {}, commits = ['head'], prs = {}, files = {
         if (method === rest.issues.listComments) return comments[params.issue_number] || [];
         throw new Error('Unexpected API call');
     };
-    paginate.iterator = async function* () {
+    paginate.iterator = async function* (method, params) {
+        calls.push({ name: 'listWorkflowRuns', ...params });
         for (const data of runs) yield { data };
     };
     return {
@@ -36,6 +37,7 @@ function fixture({ runs = [], jobs = {}, commits = ['head'], prs = {}, files = {
             context: { repo: { owner: 'duckduckgo', repo: 'apple-browsers' }, sha: 'head', runId: 100, serverUrl: 'https://github.com' },
             core: { warning: message => warnings.push(message) },
             version: '7.244.0-23',
+            platform: 'ios',
         },
     };
 }
@@ -117,4 +119,80 @@ test('does not change comments when rerunning an already uploaded commit', async
     });
     await commentOnAlphaPRs(options);
     assert.ok(!calls.some(call => ['createComment', 'updateComment'].includes(call.name)));
+});
+
+test('macOS comments include its alpha version and both distribution channels, excluding iOS-only PRs', async () => {
+    const { options, calls } = fixture({
+        prs: { head: [pr(1), pr(2), pr(3)] },
+        files: {
+            1: [{ filename: 'iOS/App.swift' }],
+            2: [{ filename: 'macOS/App.swift' }],
+            3: [{ filename: 'SharedPackages/Feature.swift' }],
+        },
+    });
+    await commentOnAlphaPRs({ ...options, platform: 'macos', version: '9999.9.9-123' });
+    const comments = calls.filter(call => call.name === 'createComment');
+    assert.deepEqual(comments.map(call => call.issue_number), [2, 3]);
+    assert.match(comments[0].body, /^<!-- macos-alpha-version -->\nThis PR is included in the macOS alpha/);
+    assert.match(comments[0].body, /\*\*9999\.9\.9-123\*\*/);
+    assert.match(comments[0].body, /through alpha updates and in TestFlight/);
+    assert.equal(calls.find(call => call.name === 'listWorkflowRuns').workflow_id, 'macos_alpha_release.yml');
+});
+
+test('shared PRs get separate iOS and macOS comments, and macOS reruns only update macOS', async () => {
+    const comments = { 1: [] };
+    const { options, calls } = fixture({
+        prs: { head: [pr(1)] },
+        files: { 1: [{ filename: 'SharedPackages/Feature.swift' }] },
+        comments,
+    });
+    await commentOnAlphaPRs(options);
+    comments[1].push({ id: 10, user: { type: 'Bot' }, body: calls.find(call => call.name === 'createComment').body });
+
+    await commentOnAlphaPRs({ ...options, platform: 'macos', version: '9999.9.9-123' });
+    const created = calls.filter(call => call.name === 'createComment');
+    assert.equal(created.length, 2);
+    assert.match(created[1].body, /^<!-- macos-alpha-version -->/);
+    comments[1].push({ id: 11, user: { type: 'Bot' }, body: created[1].body });
+
+    await commentOnAlphaPRs({ ...options, platform: 'macos', version: '9999.9.9-124' });
+    const updated = calls.filter(call => call.name === 'updateComment');
+    assert.equal(updated.length, 1);
+    assert.equal(updated[0].comment_id, 11);
+    assert.match(updated[0].body, /9999\.9\.9-124/);
+});
+
+test('macOS catches up partially published builds using the last run with both uploads successful', async () => {
+    const { options, calls } = fixture({
+        runs: [[{ id: 99 }, { id: 98 }, { id: 97, head_sha: 'published' }]],
+        jobs: {
+            99: [
+                { name: 'Publish Alpha DMG', conclusion: 'success' },
+                { name: 'Prepare AppStore Release / Upload App Store Connect Release', conclusion: 'cancelled' },
+            ],
+            98: [
+                { name: 'Publish Alpha DMG', conclusion: 'failure' },
+                { name: 'Prepare AppStore Release / Upload App Store Connect Release', conclusion: 'success' },
+            ],
+            97: [
+                { name: 'Publish Alpha DMG', conclusion: 'success' },
+                { name: 'Prepare AppStore Release / Upload App Store Connect Release', conclusion: 'success' },
+            ],
+        },
+        commits: ['earlier', 'head'],
+        prs: { earlier: [pr(1, 'earlier')], head: [pr(2)] },
+        files: { 1: [{ filename: 'macOS/App.swift' }], 2: [{ filename: 'macOS/Feature.swift' }] },
+    });
+    await commentOnAlphaPRs({ ...options, platform: 'macos', version: '9999.9.9-123' });
+    assert.equal(calls.find(call => call.name === 'compareCommitsWithBasehead').basehead, 'published...head');
+    assert.deepEqual(calls.filter(call => call.name === 'createComment').map(call => call.issue_number), [1, 2]);
+});
+
+test('macOS includes a PR moving a file out of macOS', async () => {
+    const { options, calls } = fixture({
+        prs: { head: [pr(1)] },
+        files: { 1: [{ filename: 'iOS/Moved.swift', previous_filename: 'macOS/Moved.swift' }] },
+    });
+    await commentOnAlphaPRs({ ...options, platform: 'macos', version: '9999.9.9-123' });
+    assert.equal(calls.filter(call => call.name === 'createComment').length, 1);
 });

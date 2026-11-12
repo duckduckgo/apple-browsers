@@ -167,8 +167,8 @@ jobs:
         ALPHA_VERSION: ${{ steps.alpha-version.outputs.app_version }}-${{ steps.alpha-version.outputs.build_version }}
       with:
         script: |
-          const commentOnAlphaPRs = require('./.github/scripts/ios-alpha-pr-comment.js');
-          await commentOnAlphaPRs({ github, context, core, version: process.env.ALPHA_VERSION });
+          const commentOnAlphaPRs = require('./.github/scripts/alpha-pr-comment.js');
+          await commentOnAlphaPRs({ github, context, core, version: process.env.ALPHA_VERSION, platform: 'ios' });
 
     - name: Archive the app
       if: steps.check-upload.outputs.should_skip != 'true'

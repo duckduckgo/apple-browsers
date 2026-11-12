@@ -10,12 +10,14 @@ no project change: SwiftPM reads them from disk. For everything else, what to do
 destination folder is represented in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj` or
 `macOS/DuckDuckGo-macOS.xcodeproj/project.pbxproj`.
 
-1. **Classify the destination.** On macOS, every folder outside `macOS/LocalPackages/` is a
-   **buildable folder**: go to step 2. On iOS, for each ancestor folder, nearest first, run
+1. **Classify the destination.** For each ancestor folder, nearest first, run
    `grep "path = <FolderName>;" <project.pbxproj> | grep PBXFileSystemSynchronizedRootGroup`.
    A match is a **buildable folder**; no match all the way up is a **group**. If a folder name is
-   ambiguous, confirm the match's ID is listed in the parent group's `children`.
-   `iOS/DuckDuckGo/` itself and `iOS/DuckDuckGoTests/` are still groups.
+   ambiguous, confirm the match's ID is listed in the parent group's `children`. On macOS, every
+   top-level folder in the project (`macOS/DuckDuckGo/`, `macOS/UnitTests/`, the VPN, extension
+   and test target folders) is a buildable folder, so anything inside them is too. A new
+   top-level folder directly under `macOS/` isn't: ask the user to add it in Xcode as a folder.
+   On iOS, `iOS/DuckDuckGo/` itself and `iOS/DuckDuckGoTests/` are still groups.
 2. **Buildable folder:** create, move or delete the file on disk and stop. A pbxproj entry on top
    of that compiles the file twice. The folder decides the targets: on macOS, a file under
    `macOS/DuckDuckGo/` builds into both `DuckDuckGo Privacy Browser` and
@@ -36,7 +38,7 @@ destination folder is represented in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxpr
 4. **Edit surgically.** Insert or delete lines anchored on the sibling's exact lines. Never
    re-serialize the file, for example with the `xcodeproj` gem: it rewrites package references and
    produces an unreviewable diff.
-5. **New directory under an iOS group:** ask the user to create it in Xcode as a folder
+5. **New directory under an iOS group or directly under `macOS/`:** ask the user to create it in Xcode as a folder
    (File ▸ New ▸ Folder) so it becomes a buildable folder. Converting existing groups belongs in
    dedicated migration PRs that use Xcode's Convert to Folder.
 

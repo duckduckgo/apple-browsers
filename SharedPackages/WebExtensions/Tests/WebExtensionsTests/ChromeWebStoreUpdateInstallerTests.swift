@@ -334,6 +334,135 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertEqual(installationStore.installedExtensions, [original])
     }
 
+    func testReloadingAnotherExtensionDoesNotCancelCommittedRuntimeActivation() async throws {
+        try await performDuringRuntimeActivation { otherID in
+            try await self.manager.reloadExtension(identifier: otherID)
+        }
+
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtension(withUniqueIdentifier: installationID)?.needsInitialUpdateActivationValidation, false)
+    }
+
+    func testCancelAndWaitStillCancelsTheRuntimeGracePeriod() async throws {
+        let waiting = expectation(description: "runtime grace period started")
+        let owner = makeInstaller(canApplyWhileInactive: { _ in true }, sleep: { _ in
+            waiting.fulfill()
+            try await Task.sleep(for: .seconds(60))
+        })
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: installationID))
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [waiting], timeout: 2)
+
+        await owner.cancelAndWait()
+
+        XCTAssertTrue(manager.context(for: installationID) === incumbent)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        let remaining = await pending.pendingUpdate(for: storeID)
+        XCTAssertEqual(remaining?.version, "2.0")
+    }
+
+    func testCancelAndWaitDefersRuntimeWorkThatHasNotCommitted() async throws {
+        let proxy = StartupPendingStoreProxy(base: pending)
+        let copying = expectation(description: "runtime package copy paused")
+        var resumeCopy: CheckedContinuation<Void, Never>?
+        defer { resumeCopy?.resume() }
+        proxy.onCopy = { await withCheckedContinuation { resumeCopy = $0; copying.fulfill() } }
+        let owner = makeInstaller(store: proxy, canApplyWhileInactive: { _ in true })
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: installationID))
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [copying], timeout: 2)
+
+        let cancelling = expectation(description: "runtime cancellation requested before commit")
+        let cancellation = Task { cancelling.fulfill(); await owner.cancelAndWait() }
+        await fulfillment(of: [cancelling], timeout: 2)
+        resumeCopy?.resume()
+        resumeCopy = nil
+        await cancellation.value
+
+        XCTAssertTrue(manager.context(for: installationID) === incumbent)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        let remaining = await pending.pendingUpdate(for: storeID)
+        XCTAssertEqual(remaining?.version, "2.0")
+    }
+
+    func testUninstallingAnotherExtensionDoesNotCancelCommittedRuntimeActivation() async throws {
+        try await performDuringRuntimeActivation { otherID in
+            try self.manager.uninstallExtension(identifier: otherID)
+        }
+
+        XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtension(withUniqueIdentifier: installationID)?.needsInitialUpdateActivationValidation, false)
+    }
+
+    func testDisablingTheUpdatingExtensionStillPreventsRuntimeActivation() async throws {
+        try await performDuringRuntimeActivation { _ in
+            try await self.manager.disableExtension(identifier: self.installationID)
+        }
+
+        XCTAssertNil(manager.context(for: installationID))
+        XCTAssertEqual(installationStore.installedExtension(withUniqueIdentifier: installationID)?.isDisabled, true)
+    }
+
+    func testUninstallingTheUpdatingExtensionStillPreventsRuntimeActivation() async throws {
+        try await performDuringRuntimeActivation { _ in
+            try self.manager.uninstallExtension(identifier: self.installationID)
+        }
+
+        XCTAssertNil(manager.context(for: installationID))
+        XCTAssertNil(installationStore.installedExtension(withUniqueIdentifier: installationID))
+        let remaining = await pending.pendingUpdate(for: storeID)
+        XCTAssertNil(remaining)
+    }
+
+    func testUnloadingAllExtensionsStillCancelsRuntimeActivation() async throws {
+        try await performDuringRuntimeActivation { _ in
+            self.manager.unloadAllExtensions()
+        }
+
+        XCTAssertTrue(manager.controller.extensionContexts.isEmpty)
+        XCTAssertEqual(installationStore.installedExtension(withUniqueIdentifier: installationID)?.needsInitialUpdateActivationValidation, true)
+    }
+
+    func testCancelAndWaitStopsTheRemainingRuntimeBatch() async throws {
+        let otherID = try addOtherInstallation()
+        let activating = expectation(description: "first replacement is activating")
+        var resumeActivation: CheckedContinuation<Void, Never>?
+        defer { resumeActivation?.resume() }
+        var committedID: String?
+        manager = makeManager(beforeLoad: { identifier in
+            guard self.installationStore.installedExtension(withUniqueIdentifier: identifier)?.version == "2.0" else { return }
+            guard committedID == nil else { return XCTFail("Cancellation must stop the next update in the batch") }
+            committedID = identifier
+            await withCheckedContinuation { resumeActivation = $0; activating.fulfill() }
+        })
+        var allowed = false
+        let owner = makeInstaller(canApplyWhileInactive: { _ in allowed })
+        await manager.loadInstalledExtensions()
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        let otherUpdate = try makeUpdate(version: "2.0", binding: otherID)
+        _ = try await pending.store(.init(extensionID: ChromeWebStoreID.onePassword.rawValue, version: "2.0",
+                                          fileURL: otherUpdate.fileURL, installationIdentifier: otherID))
+        allowed = true
+        owner.activityDidChange(force: true)
+        await fulfillment(of: [activating], timeout: 2)
+
+        let cancelling = expectation(description: "batch cancellation requested")
+        let cancellation = Task { cancelling.fulfill(); await owner.cancelAndWait() }
+        await fulfillment(of: [cancelling], timeout: 2)
+        resumeActivation?.resume()
+        resumeActivation = nil
+        await cancellation.value
+
+        let updatedID = try XCTUnwrap(committedID)
+        let deferredID = updatedID == installationID ? otherID : installationID
+        XCTAssertEqual(manager.context(for: updatedID)?.webExtension.version, "2.0")
+        XCTAssertEqual(manager.context(for: deferredID)?.webExtension.version, "1.0")
+        let remaining = try await pending.allPendingUpdates()
+        XCTAssertEqual(remaining.map(\.installationIdentifier), [deferredID])
+    }
+
     func testRuntimeReactivationDuringCopyKeepsTheIncumbentAndPendingPackage() async throws {
         let proxy = StartupPendingStoreProxy(base: pending)
         let finished = expectation(description: "deferred installation copy cleaned")
@@ -549,12 +678,47 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         XCTAssertEqual(manager.context(for: installationID)?.webExtension.version, "3.0")
     }
 
-    private func makeManager(fileManager: FileManager = .default, pixels: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionManager {
+    private func performDuringRuntimeActivation(_ operation: @escaping (String) async throws -> Void) async throws {
+        let otherID = try addOtherInstallation()
+        let activating = expectation(description: "committed replacement is activating")
+        var resumeActivation: CheckedContinuation<Void, Never>?
+        defer { resumeActivation?.resume() }
+        manager = makeManager(beforeLoad: { identifier in
+            guard identifier == self.installationID,
+                  self.installationStore.installedExtension(withUniqueIdentifier: identifier)?.version == "2.0" else { return }
+            await withCheckedContinuation { resumeActivation = $0; activating.fulfill() }
+        })
+        let owner = makeInstaller(canApplyWhileInactive: { _ in true })
+        await manager.loadInstalledExtensions()
+        _ = try await pending.store(makeUpdate(version: "2.0"))
+        await fulfillment(of: [activating], timeout: 2)
+
+        let starting = expectation(description: "extension lifecycle operation started")
+        let lifecycle = Task { starting.fulfill(); try await operation(otherID) }
+        await fulfillment(of: [starting], timeout: 2)
+        resumeActivation?.resume()
+        resumeActivation = nil
+        try await lifecycle.value
+        await owner.cancelAndWait()
+    }
+
+    private func addOtherInstallation() throws -> String {
+        let identifier = UUID().uuidString
+        try writePackage(version: "1.0", at: extensionsDirectory.appendingPathComponent(identifier))
+        installationStore.add(.init(uniqueIdentifier: identifier, filename: identifier, name: "Second fixture", version: "1.0",
+                                     storeIdentity: .init(store: .chromeWebStore, id: ChromeWebStoreID.onePassword.rawValue)))
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        return identifier
+    }
+
+    private func makeManager(fileManager: FileManager = .default, pixels: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                             beforeLoad: ((String) async throws -> Void)? = nil) -> WebExtensionManager {
         let permissions = WebExtensionPermissionController(store: permissionStore, installationStore: installationStore, prompter: StartupNoPrompt())
+        let storage = WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory, fileManager: fileManager)
+        let loader = beforeLoad.map { StartupActivationLoader(storage: storage, installations: installationStore, permissions: permissions, beforeLoad: $0) }
         return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(), controllerConfiguration: .nonPersistent(),
                                    windowTabProvider: WebExtensionWindowTabProvidingMock(),
-                                   storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory, fileManager: fileManager),
-                                   installationStore: installationStore, permissionController: permissions, pixelFiring: pixels)
+                                   storageProvider: storage, installationStore: installationStore, permissionController: permissions, loader: loader, pixelFiring: pixels)
     }
 
     @discardableResult
@@ -588,6 +752,43 @@ final class ChromeWebStoreUpdateInstallerTests: XCTestCase {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         let manifest: [String: Any] = ["manifest_version": 3, "name": "Startup fixture", "version": version, "permissions": permissions]
         try JSONSerialization.data(withJSONObject: manifest).write(to: url.appendingPathComponent("manifest.json"))
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class StartupActivationLoader: WebExtensionLoading {
+    private let base: WebExtensionLoader
+    private let beforeLoad: (String) async throws -> Void
+    var delegate: WebExtensionLoadingDelegate? { get { base.delegate } set { base.delegate = newValue } }
+
+    init(storage: WebExtensionStorageProviding, installations: InstalledWebExtensionStoring,
+         permissions: WebExtensionPermissionController, beforeLoad: @escaping (String) async throws -> Void) {
+        base = WebExtensionLoader(storageProvider: storage, permissionController: permissions, installationStore: installations)
+        self.beforeLoad = beforeLoad
+    }
+
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        try await loadWebExtension(identifier: identifier, into: controller, beforeActivation: { _ in })
+    }
+
+    func loadWebExtension(identifier: String, resourceIdentifier: String?, into controller: WKWebExtensionController,
+                          beforeActivation: @MainActor (WKWebExtension) throws -> Void) async throws -> WebExtensionLoadResult {
+        try await beforeLoad(identifier)
+        return try await base.loadWebExtension(identifier: identifier, resourceIdentifier: resourceIdentifier,
+                                               into: controller, beforeActivation: beforeActivation)
+    }
+
+    func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+        await base.loadWebExtensions(identifiers: identifiers, into: controller)
+    }
+
+    func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
+        try base.unloadExtension(identifier: identifier, from: controller)
+    }
+
+    func reloadWebExtension(_ webExtension: WKWebExtension, identifier: String, into controller: WKWebExtensionController) async throws {
+        try await base.reloadWebExtension(webExtension, identifier: identifier, into: controller)
     }
 }
 

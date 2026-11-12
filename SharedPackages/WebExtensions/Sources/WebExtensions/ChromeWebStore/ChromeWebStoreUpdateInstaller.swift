@@ -284,7 +284,9 @@ final class ChromeWebStoreUpdateInstaller {
         isCancelling = true
         defer { isCancelling = false }
         shouldReconsiderRuntime = false
-        runtimeTask?.cancel()
+        activityRevision &+= 1
+        // Stop uncommitted work through revision checks; let committed activation finish.
+        if !isApplyingRuntimeUpdate { runtimeTask?.cancel() }
         startupTask?.cancel()
         _ = await startupTask?.value
         _ = await runtimeTask?.value
@@ -298,7 +300,8 @@ final class ChromeWebStoreUpdateInstaller {
 
     func uninstalling(_ identifier: String) {
         shouldReconsiderRuntime = false
-        runtimeTask?.cancel()
+        activityRevision &+= 1
+        if !isApplyingRuntimeUpdate { runtimeTask?.cancel() }
         startupTask?.cancel()
         Task { [pendingUpdates] in
             for update in (try? await pendingUpdates.allPendingUpdates()) ?? [] where update.installationIdentifier == identifier {

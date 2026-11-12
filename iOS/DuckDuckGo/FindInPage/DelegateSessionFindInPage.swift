@@ -107,7 +107,17 @@ final class DelegateSessionFindInPage: FindInPageSearching {
     private(set) var searchTerm: String
     private(set) var current = 0
     private(set) var total = 0
+    let isDelegateSessionExperiment = true
     private(set) var diagnosticStatus: String?
+    private let diagnosticsEnabled: Bool
+
+    static var diagnosticsEnabledByDefault: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
 
     private var session: (any DelegateFindSession)?
     private var observationTimer: Timer?
@@ -117,12 +127,14 @@ final class DelegateSessionFindInPage: FindInPageSearching {
     private let queryChanged: (String) -> Void
 
     init(webView: WKWebView, query: String, queryChanged: @escaping (String) -> Void,
+         diagnosticsEnabled: Bool = DelegateSessionFindInPage.diagnosticsEnabledByDefault,
          sessionFactory: (WKWebView) throws -> any DelegateFindSession = { try WebKitDelegateFindSession(webView: $0) }) {
         searchTerm = query
+        self.diagnosticsEnabled = diagnosticsEnabled
         self.queryChanged = queryChanged
         do {
             session = try sessionFactory(webView)
-            diagnosticStatus = "EXPERIMENT · WebKit delegate session · nativeUI=false"
+            diagnosticStatus = diagnosticsEnabled ? "EXPERIMENT · WebKit delegate session · nativeUI=false" : nil
             if !query.isEmpty {
                 session?.search(query)
                 pendingDirection = .forward
@@ -130,7 +142,7 @@ final class DelegateSessionFindInPage: FindInPageSearching {
             observeResults()
         } catch {
             let reason = (error as? WebKitDelegateFindSession.Failure)?.rawValue ?? error.localizedDescription
-            diagnosticStatus = "EXPERIMENT FAILED · \(reason)"
+            diagnosticStatus = diagnosticsEnabled ? "EXPERIMENT FAILED · \(reason)" : nil
         }
     }
 
@@ -186,7 +198,7 @@ final class DelegateSessionFindInPage: FindInPageSearching {
         }
         let index = session.highlightedResultIndex
         let newCurrent = index >= 0 && index < newTotal ? index + 1 : 0
-        let status = "EXPERIMENT · WebKit delegate session · nativeUI=\(session.isNativeUIVisible)"
+        let status = diagnosticsEnabled ? "EXPERIMENT · WebKit delegate session · nativeUI=\(session.isNativeUIVisible)" : nil
         guard current != newCurrent || total != newTotal || diagnosticStatus != status else { return }
         current = newCurrent
         total = newTotal

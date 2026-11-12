@@ -57,6 +57,7 @@ protocol FindInPageSearching: AnyObject {
     var searchTerm: String { get }
     var current: Int { get }
     var total: Int { get }
+    var isDelegateSessionExperiment: Bool { get }
     var diagnosticStatus: String? { get }
     func search(forText text: String) -> Bool
     func next()
@@ -66,6 +67,7 @@ protocol FindInPageSearching: AnyObject {
 }
 
 extension FindInPageSearching {
+    var isDelegateSessionExperiment: Bool { false }
     var diagnosticStatus: String? { nil }
     func keepCurrentResultVisible(visibleBottomFraction: CGFloat) {}
 }

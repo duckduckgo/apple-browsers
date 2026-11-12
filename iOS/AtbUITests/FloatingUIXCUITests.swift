@@ -776,6 +776,86 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(webView.staticTexts["Expanded content stays open"].exists)
     }
 
+    func verifyDelegateSessionBottomEdgeWithClassicUI() throws {
+        guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true", "-ff.legacyFindInPageUIWithSystemFindEngine", "true",
+                                        "-ff.floatingUIiOS26", "false", "-ff.floatingUIiOS27", "false"])
+        openPage(path: "/find-bottom-edge", heading: "Bottom edge Find fixture")
+        openFindFromMenu()
+        let field = app.searchFields["Find in Page"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("edgeword")
+        XCTAssertTrue(app.staticTexts["1 of 2"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+        app.buttons["Find Next"].tap()
+        XCTAssertTrue(app.staticTexts["2 of 2"].waitForExistence(timeout: timeout))
+        let finalMatch = webView.staticTexts["edgeword final"]
+        XCTAssertTrue(waitUntil(timeout: timeout) { finalMatch.frame.maxY < field.frame.minY - 24 })
+        XCTAssertFalse(app.searchFields["find.searchField"].firstMatch.exists)
+        captureFind("Classic Find - bottom match above keyboard")
+
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
+        app.buttons["Find Previous"].tap()
+        app.buttons["Find Next"].tap()
+        XCTAssertTrue(app.staticTexts["2 of 2"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(waitUntil(timeout: timeout) { finalMatch.frame.maxY < field.frame.minY - 24 })
+        captureFind("Classic Find - bottom match above controls")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        captureFind("Classic Find - dismissed")
+    }
+
+    func verifyLegacyFindDoesNotUndoKeyboardDismissalScroll() {
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true"])
+        openPage(path: "/find-bottom-edge", heading: "Bottom edge Find fixture")
+        openFindFromMenu()
+        let field = app.searchFields["Find in Page"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("edgeword")
+        XCTAssertTrue(app.staticTexts["1 of 2"].waitForExistence(timeout: timeout))
+        app.buttons["Find Next"].tap()
+        XCTAssertTrue(app.staticTexts["2 of 2"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+
+        let finalMatch = webView.staticTexts["edgeword final"]
+        let initialY = finalMatch.frame.minY
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(waitUntil(timeout: timeout) { finalMatch.frame.minY > initialY + 30 })
+        let afterDragY = finalMatch.frame.minY
+        Thread.sleep(forTimeInterval: 0.7)
+        XCTAssertGreaterThanOrEqual(finalMatch.frame.minY, afterDragY - 10)
+        XCTAssertFalse(element(withIdentifier: AccessibilityID.toolbarMenu).isHittable)
+        captureFind("Legacy Find - user scroll preserved after keyboard dismissal")
+        app.buttons["Done"].tap()
+    }
+
+    func verifyCustomFindAddressShortcut(usesSystemEngine: Bool) {
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true",
+                                        "-ff.legacyFindInPageUIWithSystemFindEngine", String(usesSystemEngine)])
+        openPage(path: "/find-bottom-edge", heading: "Bottom edge Find fixture")
+        openFindFromMenu()
+        let field = app.searchFields["Find in Page"]
+        XCTAssertTrue(field.waitForHittable(timeout: timeout))
+        field.typeText("edgeword")
+        XCTAssertTrue(app.staticTexts["1 of 2"].waitForExistence(timeout: timeout))
+        app.typeKey("l", modifierFlags: .command)
+        XCTAssertTrue(field.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        searchField.typeText(serverBaseURL + "/page-two")
+        captureFind("Command-L - visible address input")
+        searchField.typeText(XCUIKeyboardKey.return.rawValue)
+        XCTAssertTrue(webView.staticTexts[Page.twoHeading].waitForExistence(timeout: timeout))
+    }
+
     func verifyDelegateSessionTabAndNavigation() throws {
         guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
         app.terminate()
@@ -1380,6 +1460,14 @@ class FloatingUIXCUITestCase: XCTestCase {
                 <p><a href="/page-two">Navigate away</a></p><div style="height:1200px"></div>
                 """))
         }
+        server["/find-bottom-edge"] = { _ in
+            .ok(.html("""
+                <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+                <style>html,body { margin:0; padding:0 } body { font:24px/30px -apple-system; padding-bottom:48px } p { margin:0 }</style>
+                <h1>Bottom edge Find fixture</h1><p>edgeword first</p><div style="height:2200px"></div>
+                <p style="margin-left:240px">edgeword final</p>
+                """))
+        }
         server["/delegate-find-frame"] = { _ in
             .ok(.html("<style>body { font: 22px -apple-system; }</style><p>needle third match inside iframe</p>"))
         }
@@ -1598,6 +1686,11 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
 
     override var barPosition: FloatingUIBarPosition { .top }
 
+    func testDelegateSessionBottomEdgeWithClassicUI() throws { try verifyDelegateSessionBottomEdgeWithClassicUI() }
+    func testDelegateSessionAddressShortcut() { verifyCustomFindAddressShortcut(usesSystemEngine: true) }
+    func testLegacyFindAddressShortcut() { verifyCustomFindAddressShortcut(usesSystemEngine: false) }
+    func testLegacyFindDoesNotUndoKeyboardDismissalScroll() { verifyLegacyFindDoesNotUndoKeyboardDismissalScroll() }
+
     func testExistingSearchReplacementWithToggleEnabled() { verifyExistingSearchReplacement(toggleEnabled: true) }
     func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }
 
@@ -1682,4 +1775,5 @@ final class FindInPagePadTests: FloatingUIXCUITestCase {
     override var barPosition: FloatingUIBarPosition { .top }
 
     func testGlassWithFloatingFlagOff() { verifyIPadFindInPageUsesGlassWithFloatingFlagOff() }
+    func testDelegateSessionBottomEdgeWithClassicUI() throws { try verifyDelegateSessionBottomEdgeWithClassicUI() }
 }

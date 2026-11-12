@@ -938,7 +938,7 @@ class MainViewController: UIViewController {
     }
 
     deinit {
-        if currentTab?.customFindInPage?.diagnosticStatus != nil {
+        if currentTab?.customFindInPage?.isDelegateSessionExperiment == true {
             currentTab?.endCustomFindInPage()
         }
         chromeMorphAnimator.cancel()
@@ -2170,6 +2170,8 @@ class MainViewController: UIViewController {
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
+        let previousOverlap = view.bounds.intersection(view.convert(latestKeyboardFrame, from: nil)).height
+        let newOverlap = view.bounds.intersection(view.convert(keyboard.frame, from: nil)).height
         let animateAccessoryChange: Bool
         if #available(iOS 26, *) {
             animateAccessoryChange = isDuckAIAndInputLiquidGlassEnabled
@@ -2185,7 +2187,10 @@ class MainViewController: UIViewController {
                  in: animateAccessoryChange ? 0.25 : keyboard.duration,
                  animationCurve: animateAccessoryChange ? .curveEaseInOut : keyboard.animationCurve,
                  keyboardTargetFrame: keyboard.frame)
-        scheduleCurrentFindResultVisibility(after: keyboard.duration + 0.15)
+        findResultVisibilityWorkItem?.cancel()
+        if newOverlap > previousOverlap {
+            scheduleCurrentFindResultVisibility(after: keyboard.duration + 0.15)
+        }
     }
 
     private var floatingWebInputKeyboardFrame: CGRect {
@@ -2225,6 +2230,11 @@ class MainViewController: UIViewController {
                   in duration: TimeInterval = 0.2,
                   animationCurve: UIView.AnimationOptions = .curveEaseInOut,
                   keyboardTargetFrame: CGRect? = nil) {
+        defer {
+            if currentTab?.customFindInPage?.isDelegateSessionExperiment == true {
+                currentTab?.updateWebViewLayoutForKeyboard()
+            }
+        }
         latestKeyboardFrame = keyboardFrame
         var keyboardHeight = keyboardFrame.size.height
 
@@ -4556,7 +4566,9 @@ class MainViewController: UIViewController {
     }
 
     @objc private func findInPageWebViewDidPan(_ gesture: UIPanGestureRecognizer) {
-        guard gesture.state == .began, findInPageView?.inputText.isFirstResponder == true else { return }
+        guard gesture.state == .began else { return }
+        findResultVisibilityWorkItem?.cancel()
+        guard findInPageView?.inputText.isFirstResponder == true else { return }
         findInPageView?.resignFirstResponder()
     }
 
@@ -4567,7 +4579,9 @@ class MainViewController: UIViewController {
         let workItem = DispatchWorkItem { [weak self, weak findInPage] in
             guard let self, let findInPage, self.currentTab?.findInPage === findInPage,
                   let findInPageView = self.findInPageView, !findInPageView.isHidden,
-                  let webView = self.currentTab?.webView, webView.bounds.height > 0 else { return }
+                  let webView = self.currentTab?.webView, webView.bounds.height > 0,
+                  !webView.scrollView.isTracking, !webView.scrollView.isDragging,
+                  !webView.scrollView.isDecelerating else { return }
             self.view.layoutIfNeeded()
             let visibleBottom = findInPageView.container.convert(findInPageView.container.bounds, to: webView).minY
             findInPage.keepCurrentResultVisible(visibleBottomFraction: visibleBottom / webView.bounds.height)
@@ -5702,6 +5716,7 @@ extension MainViewController: FindInPageViewDelegate {
 
         viewCoordinator.showNavigationBarWithBottomPosition()
         chromeManager.reset(animated: false)
+        currentTab?.updateWebViewLayoutForKeyboard()
     }
 }
 
@@ -6105,15 +6120,22 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     private var delegateFindObscuredInsets: UIEdgeInsets? {
-        guard currentTab?.customFindInPage?.diagnosticStatus != nil,
+        guard let webView = currentTab?.webView else { return nil }
+        return findInPageObscuredInsets(in: webView)
+    }
+
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? {
+        guard currentTab?.customFindInPage?.isDelegateSessionExperiment == true,
+              currentTab?.webView === webView,
               let findInPageView, !findInPageView.isHidden else { return nil }
-        let controls = findInPageView.container.convert(findInPageView.container.bounds, to: view)
-        return UIEdgeInsets(top: view.safeAreaInsets.top, left: 0,
-                            bottom: max(view.safeAreaInsets.bottom, view.bounds.maxY - controls.minY + 24), right: 0)
+        let controls = findInPageView.container.convert(findInPageView.container.bounds, to: webView)
+        let safeArea = view.convert(view.safeAreaLayoutGuide.layoutFrame, to: webView)
+        return UIEdgeInsets(top: max(0, safeArea.minY - webView.bounds.minY), left: 0,
+                            bottom: max(0, webView.bounds.maxY - min(safeArea.maxY, controls.minY - 24)), right: 0)
     }
 
     private func updateDelegateFindViewportIfNeeded() {
-        guard currentTab?.customFindInPage?.diagnosticStatus != nil,
+        guard currentTab?.customFindInPage?.isDelegateSessionExperiment == true,
               let findInPageView, !findInPageView.isHidden else {
             delegateFindViewport = nil
             return
@@ -8580,7 +8602,9 @@ extension MainViewController: TabDelegate {
             return
         }
 
-        if let backend = tab.customFindInPage, findInPageView?.findInPage === backend {
+        if tab === currentTab {
+            findInPageView?.done()
+        } else if let backend = tab.customFindInPage, findInPageView?.findInPage === backend {
             findInPageView?.done()
         }
         tab.endCustomFindInPage()

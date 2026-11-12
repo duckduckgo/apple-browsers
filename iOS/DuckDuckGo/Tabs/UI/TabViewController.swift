@@ -1234,7 +1234,9 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewLayoutForKeyboard() {
-        guard floatingUIManager.isFloatingUIEnabled, webView != nil else { return }
+        guard webView != nil,
+              floatingUIManager.isFloatingUIEnabled || customFindInPage?.isDelegateSessionExperiment == true
+                || hasAppliedFloatingUIScrollViewInsets else { return }
         applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent, forceFloatingUIInsets: true)
     }
 
@@ -1422,6 +1424,15 @@ class TabViewController: UIViewController {
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
+        if let insets = chromeDelegate?.findInPageObscuredInsets(in: webView) {
+            if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
+                scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+            }
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets)
+            setWebViewObscuredContentInsetsIfSupported(insets)
+            hasAppliedFloatingUIScrollViewInsets = true
+            return
+        }
         setWebViewObscuredContentInsetsIfSupported(.zero)
         if hasAppliedFloatingUIScrollViewInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)

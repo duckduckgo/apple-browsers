@@ -240,6 +240,7 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
 
+        findInPageView?.done()
         showBars()
         // A tap only counts when it starts editing; ⌘L on an already focused bar is the same.
         if !isInputFocused {

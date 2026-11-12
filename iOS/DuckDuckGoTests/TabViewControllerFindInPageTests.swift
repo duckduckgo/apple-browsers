@@ -130,6 +130,37 @@ final class TabViewControllerFindInPageTests: XCTestCase {
         }
     }
 
+    func testClassicLayoutAppliesAndRestoresExperimentalFindInsets() async throws {
+        guard #available(iOS 27.0, *) else { throw XCTSkip("Experiment targets iOS 27") }
+        let tab = try await makeTabWithUserScripts(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+                                                 implementation: .delegateSessionExperiment)
+        defer { tab.prepareForDataClearing() }
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        tab.chromeDelegate = chrome
+        let scrollView = tab.webView.scrollView
+        let originalAdjustment = scrollView.contentInsetAdjustmentBehavior
+        let originalIndicatorAdjustment = scrollView.automaticallyAdjustsScrollIndicatorInsets
+        tab.requestFindInPage()
+
+        for bottom in [CGFloat(390), 120, 440] {
+            let insets = UIEdgeInsets(top: 0, left: 0, bottom: bottom, right: 0)
+            chrome.findInPageInsets = insets
+            tab.updateWebViewLayoutForKeyboard()
+            XCTAssertEqual(tab.webView.obscuredContentInsets, insets)
+            XCTAssertEqual(scrollView.contentInset, insets)
+            XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, insets)
+            XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, .never)
+        }
+
+        tab.endCustomFindInPage()
+        chrome.findInPageInsets = nil
+        tab.updateWebViewLayoutForKeyboard()
+        XCTAssertEqual(tab.webView.obscuredContentInsets, .zero)
+        XCTAssertEqual(scrollView.contentInset, .zero)
+        XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, originalAdjustment)
+        XCTAssertEqual(scrollView.automaticallyAdjustsScrollIndicatorInsets, originalIndicatorAdjustment)
+    }
+
     func testSystemEngineRequiresBothFlags() {
         for flags in findFlagStates {
             let flagger = MockFeatureFlagger(enabledFeatureFlags: flags)

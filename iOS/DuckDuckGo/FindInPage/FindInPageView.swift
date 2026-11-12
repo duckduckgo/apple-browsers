@@ -195,7 +195,7 @@ class FindInPageView: UIView {
             inputText?.text = findInPage?.searchTerm
         }
         counterLabel.isHidden = findInPage?.searchTerm.isEmpty != false
-            || (findInPage?.diagnosticStatus == nil && (findInPage?.total ?? 0) == 0)
+            || (findInPage?.isDelegateSessionExperiment != true && (findInPage?.total ?? 0) == 0)
 
         let current = findInPage?.current ?? 0
         let total = findInPage?.total ?? 0
@@ -306,7 +306,7 @@ final class FindInPageTextField: UITextField {
     weak var findControls: FindInPageView?
 
     override var keyCommands: [UIKeyCommand]? {
-        guard findControls?.findInPage?.diagnosticStatus != nil else { return super.keyCommands }
+        guard findControls?.findInPage?.isDelegateSessionExperiment == true else { return super.keyCommands }
         let commands = [
             UIKeyCommand(input: "g", modifierFlags: .command, action: #selector(nextExperimentResult)),
             UIKeyCommand(input: "g", modifierFlags: [.command, .shift], action: #selector(previousExperimentResult)),
@@ -319,7 +319,7 @@ final class FindInPageTextField: UITextField {
     }
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-        if findControls?.findInPage?.diagnosticStatus != nil,
+        if findControls?.findInPage?.isDelegateSessionExperiment == true,
            presses.contains(where: { $0.key?.keyCode == .keyboardEscape }) {
             findControls?.done()
             return

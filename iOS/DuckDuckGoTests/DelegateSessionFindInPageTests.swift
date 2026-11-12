@@ -24,6 +24,38 @@ import XCTest
 @available(iOS 16.0, *)
 @MainActor
 final class DelegateSessionFindInPageTests: XCTestCase {
+    func testDisablingDiagnosticsPreservesExperimentControlsAndResults() {
+        let session = SessionSpy()
+        let find = DelegateSessionFindInPage(webView: WKWebView(), query: "needle", queryChanged: { _ in },
+                                           diagnosticsEnabled: false, sessionFactory: { _ in session })
+        defer { find.done() }
+        let view = FindInPageView.loadFromXib()
+        view.update(with: find, updateTextField: true)
+
+        XCTAssertTrue(find.isDelegateSessionExperiment)
+        XCTAssertNil(find.diagnosticStatus)
+        XCTAssertFalse(view.counterLabel.isHidden)
+        XCTAssertFalse(view.subviews.contains { $0.accessibilityIdentifier == "FindInPage.ExperimentStatus" })
+        XCTAssertTrue(view.inputText.keyCommands?.contains { $0.input == "g" && $0.modifierFlags == .command } == true)
+
+        session.resultCount = 2
+        session.highlightedResultIndex = 1
+        find.refreshResults(generation: 0)
+        XCTAssertEqual(find.total, 2)
+        XCTAssertEqual(find.current, 2)
+        XCTAssertNil(find.diagnosticStatus)
+    }
+
+    func testDisablingDiagnosticsDoesNotChangeFailedExperimentIdentity() {
+        let find = DelegateSessionFindInPage(webView: WKWebView(), query: "", queryChanged: { _ in },
+                                           diagnosticsEnabled: false) { _ in
+            throw WebKitDelegateFindSession.Failure.sessionUnavailable
+        }
+        defer { find.done() }
+        XCTAssertTrue(find.isDelegateSessionExperiment)
+        XCTAssertNil(find.diagnosticStatus)
+    }
+
     func testCounterHidesForEmptyQueryAndReappearsForSearchResults() {
         let session = SessionSpy()
         let find = makeFind(session: session)

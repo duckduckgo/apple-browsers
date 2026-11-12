@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 import Foundation
 import os.log
 
@@ -72,7 +73,6 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     private let source: DefaultBrowserConfirmationSource
     private let store: DefaultBrowserConfirmationStoring
     private let defaultBrowserProvider: DefaultBrowserProvider
-    private let notificationCenter: NotificationCenter
     private let timerFactory: TimerCreating
     private let dateProvider: () -> Date
     private let afterClickDelay: TimeInterval
@@ -86,7 +86,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     }
     private var afterClickTimer: TimerInterface?
     private var deadlineTimer: TimerInterface?
-    private var observers: [NSObjectProtocol] = []
+    private var appActiveCancellable: AnyCancellable?
 
     init(source: DefaultBrowserConfirmationSource,
          store: DefaultBrowserConfirmationStoring,
@@ -100,22 +100,19 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
         self.source = source
         self.store = store
         self.defaultBrowserProvider = defaultBrowserProvider
-        self.notificationCenter = notificationCenter
         self.timerFactory = timerFactory
         self.dateProvider = dateProvider
         self.afterClickDelay = afterClickDelay
         self.deadlineInterval = deadlineInterval
         self.report = report
 
-        observers = [
-            notificationCenter.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: nil) { [weak self] _ in
+        appActiveCancellable = notificationCenter.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
                 self?.handle(.appBecameActive)
             }
-        ]
     }
 
     deinit {
-        observers.forEach(notificationCenter.removeObserver)
         invalidateTimers()
     }
 

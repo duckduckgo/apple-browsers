@@ -110,6 +110,8 @@ struct ActionRequest: Encodable {
             try container.encode(solveCaptcha, forKey: .action)
         case let conditionAction as ConditionAction:
             try container.encode(conditionAction, forKey: .action)
+        case let userAssistAction as UserAssistAction:
+            try container.encode(userAssistAction, forKey: .action)
         default:
             assertionFailure("Action not found. Please add the missing action to the encoding list.")
         }

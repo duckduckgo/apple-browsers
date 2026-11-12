@@ -614,7 +614,7 @@ class TabViewController: UIViewController {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                        errorReporting: Self.debugEvents,
-                       isFastTrackingParameterFilterEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.fastTrackingParameterFilter) })
+                       isFastTrackingParameterFilterEnabled: { true })
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {

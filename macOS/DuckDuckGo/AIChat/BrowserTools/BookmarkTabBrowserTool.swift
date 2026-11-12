@@ -155,7 +155,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
     }
 
     static func folderPath(from arguments: JSONValue?) -> [String]? {
-        guard let value = arguments?["folder"] else { return [] }
+        guard let value = arguments?["folder"], value != .null else { return [] }
         guard let values = value.arrayValue, (1...maxFolderDepth).contains(values.count) else { return nil }
         let names = values.compactMap { value -> String? in
             guard let name = value.stringValue, (1...maxFolderNameLength).contains(name.unicodeScalars.count) else { return nil }

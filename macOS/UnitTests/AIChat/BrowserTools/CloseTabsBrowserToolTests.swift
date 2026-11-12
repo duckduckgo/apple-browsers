@@ -35,7 +35,7 @@ final class CloseTabsBrowserToolTests: XCTestCase {
         let owner = collection.tabCollection.tabs[0].uuid
         let (tool, context) = make(collection: collection, ownerTabID: owner)
 
-        let result = await tool.execute(arguments: [:], context: context)
+        let result = await tool.execute(arguments: ["tabIds": .null], context: context)
 
         XCTAssertEqual(result, .success(closed([owner: true])))
         XCTAssertEqual(collection.tabCollection.tabs.count, 2)
@@ -93,7 +93,7 @@ final class CloseTabsBrowserToolTests: XCTestCase {
         let (tool, context) = make(collection: collection, ownerTabID: collection.tabCollection.tabs[0].uuid)
         let tooMany = JSONValue.array(Array(repeating: "id", count: CloseTabsBrowserTool.maxTabIDs + 1))
 
-        for tabIDs: JSONValue in [[], .null, "id", [1], [" "], tooMany] {
+        for tabIDs: JSONValue in [[], "id", [1], [" "], tooMany] {
             let result = await tool.execute(arguments: ["tabIds": tabIDs], context: context)
             XCTAssertEqual(result, .failure(.invalidArguments), "\(tabIDs)")
         }

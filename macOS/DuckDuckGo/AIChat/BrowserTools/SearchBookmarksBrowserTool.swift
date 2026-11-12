@@ -57,7 +57,7 @@ final class SearchBookmarksBrowserTool: BrowserTool {
         guard !context.isBurner else { return .failure(.unavailable) }
 
         var query: String?
-        if let value = arguments?["query"] {
+        if let value = arguments?["query"], value != .null {
             guard let text = value.stringValue, BrowserToolOutputLimits.fits(text, within: BrowserToolOutputLimits.query) else {
                 return .failure(.invalidArguments)
             }
@@ -65,7 +65,7 @@ final class SearchBookmarksBrowserTool: BrowserTool {
         }
         guard let folderPath = BookmarkTabBrowserTool.folderPath(from: arguments) else { return .failure(.invalidArguments) }
         var limit = Self.defaultLimit
-        if let limitValue = arguments?["limit"] {
+        if let limitValue = arguments?["limit"], limitValue != .null {
             guard let parsed = limitValue.intValue, (1...Self.maxLimit).contains(parsed) else { return .failure(.invalidArguments) }
             limit = parsed
         }
@@ -105,7 +105,7 @@ final class SearchBookmarksBrowserTool: BrowserTool {
                         into: &results)
             } else if let bookmark = entity as? Bookmark, let url = bookmark.urlObject, url.isHttpOrHttps {
                 results.append(Result(title: BrowserToolOutputLimits.clip(bookmark.title, to: BrowserToolOutputLimits.title),
-                                      url: BrowserToolOutputLimits.urlWithoutQueryOrFragment(url.absoluteString),
+                                      url: BrowserToolOutputLimits.redactedURL(url.absoluteString),
                                       folder: path))
             }
         }

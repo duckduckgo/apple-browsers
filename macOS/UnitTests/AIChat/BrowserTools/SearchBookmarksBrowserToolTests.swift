@@ -26,9 +26,9 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
     private let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
 
     private func tree() -> [BaseBookmarkEntity] {
-        let grand = bookmark("grand", "Grand Hotel", "https://grand.example/rooms?promo=secret#top", parent: "hotels")
+        let grand = bookmark("grand", "Grand Hotel", "https://guest:hunter2@grand.example/rooms?promo=secret#top", parent: "hotels")
         let hotels = BookmarkFolder(id: "hotels", title: "Hotels", parentFolderUUID: "disney", children: [grand])
-        let parks = bookmark("parks", "Parks", "https://disney.example/parks", parent: "disney")
+        let parks = bookmark("parks", "Parks", "https://disney.example/@parks", parent: "disney")
         let disney = BookmarkFolder(id: "disney", title: "Disney", parentFolderUUID: "travel", children: [parks, hotels])
         let paris = bookmark("paris", "Louvre", "https://louvre.example", parent: "travel")
         let travel = BookmarkFolder(id: "travel", title: "Travel", children: [disney, paris])
@@ -39,11 +39,11 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
     func testWhenNothingIsGivenThenWebBookmarksAreReturnedInTreeOrderWithTheirFolderAndNoQuery() async {
         let tool = make(tree())
 
-        let result = await tool.execute(arguments: [:], context: context)
+        let result = await tool.execute(arguments: ["query": .null, "folder": .null, "limit": .null], context: context)
 
         XCTAssertEqual(result, .success(["results": [
             entry("News", "https://news.example", []),
-            entry("Parks", "https://disney.example/parks", ["Travel", "Disney"]),
+            entry("Parks", "https://disney.example/@parks", ["Travel", "Disney"]),
             entry("Grand Hotel", "https://grand.example/rooms", ["Travel", "Disney", "Hotels"]),
             entry("Louvre", "https://louvre.example", ["Travel"])
         ]]))
@@ -62,9 +62,11 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
 
         let byFolder = await tool.execute(arguments: ["query": "disney"], context: context)
         let byQueryString = await tool.execute(arguments: ["query": "secret"], context: context)
+        let byPassword = await tool.execute(arguments: ["query": "hunter2"], context: context)
 
         XCTAssertEqual(byFolder.titles, ["Parks", "Grand Hotel"])
         XCTAssertEqual(byQueryString.titles, [])
+        XCTAssertEqual(byPassword.titles, [])
     }
 
     func testWhenTheFolderDoesNotExistThenThereAreNoResults() async {

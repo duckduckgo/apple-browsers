@@ -36,7 +36,7 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
     func testWhenNoFolderIsGivenThenTheCurrentTabIsBookmarkedAtTheTopLevel() async {
         let (tool, context, manager, owner) = make()
 
-        let result = await tool.execute(arguments: [:], context: context)
+        let result = await tool.execute(arguments: ["tabId": .null, "folder": .null], context: context)
 
         XCTAssertEqual(result, .success(response(tabID: owner, alreadyBookmarked: false, folderCreated: false)))
         let bookmark = manager.getBookmark(forUrl: pageURL)
@@ -152,7 +152,7 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         let tooDeep = JSONValue.array(Array(repeating: "a", count: BookmarkTabBrowserTool.maxFolderDepth + 1))
         let tooLong = JSONValue.string(String(repeating: "a", count: BookmarkTabBrowserTool.maxFolderNameLength + 1))
 
-        for folder: JSONValue in [[], .null, "Travel", [1], [""], tooDeep, .array([tooLong])] {
+        for folder: JSONValue in [[], "Travel", [1], [""], tooDeep, .array([tooLong])] {
             let result = await tool.execute(arguments: ["folder": folder], context: context)
             XCTAssertEqual(result, .failure(.invalidArguments), "\(folder)")
         }

@@ -87,7 +87,7 @@ enum BrowserToolTargetTab {
     }
 
     static func tabIDs(from arguments: JSONValue?, maxCount: Int = 50) -> TabIDsArgument {
-        guard let value = arguments?["tabIds"] else { return .absent }
+        guard let value = arguments?["tabIds"], value != .null else { return .absent }
         guard let values = value.arrayValue, (1...maxCount).contains(values.count) else { return .invalid }
         let tabIDs = values.compactMap { $0.stringValue?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         return tabIDs.count == values.count ? .ids(tabIDs) : .invalid
@@ -135,15 +135,21 @@ enum BrowserToolOutputLimits {
         value.unicodeScalars.count <= limit
     }
 
-    // Query and fragment can hold tokens.
-    static func urlWithoutQueryOrFragment(_ url: String) -> String {
-        let cut = url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex
-        return clip(String(url[..<cut]), to: self.url)
+    // Userinfo, query and fragment can hold credentials or tokens.
+    static func redactedURL(_ url: String) -> String {
+        var redacted = String(url[..<(url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex)])
+        if let scheme = redacted.range(of: "://") {
+            let authorityEnd = redacted[scheme.upperBound...].firstIndex(of: "/") ?? redacted.endIndex
+            if let at = redacted[scheme.upperBound..<authorityEnd].lastIndex(of: "@") {
+                redacted.removeSubrange(scheme.upperBound...at)
+            }
+        }
+        return clip(redacted, to: self.url)
     }
 
-    static func urlWithoutQueryOrFragment(_ value: JSONValue?) -> JSONValue? {
+    static func redactedURL(_ value: JSONValue?) -> JSONValue? {
         guard case .string(let text)? = value else { return value }
-        return .string(urlWithoutQueryOrFragment(text))
+        return .string(redactedURL(text))
     }
 }
 

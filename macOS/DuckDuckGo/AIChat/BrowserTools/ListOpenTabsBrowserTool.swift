@@ -83,7 +83,7 @@ final class ListOpenTabsBrowserTool: BrowserTool {
         return .success(["tabs": .array(tabs.map { tab in
             var fields = tab.objectValue ?? [:]
             fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
-            fields["url"] = BrowserToolOutputLimits.urlWithoutQueryOrFragment(fields["url"])
+            fields["url"] = BrowserToolOutputLimits.redactedURL(fields["url"])
             return .object(fields)
         })])
     }

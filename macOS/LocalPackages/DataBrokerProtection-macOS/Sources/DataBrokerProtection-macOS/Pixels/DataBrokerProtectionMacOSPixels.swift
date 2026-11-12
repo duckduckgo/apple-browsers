@@ -25,6 +25,9 @@ import PixelKit
 import DataBrokerProtectionCore
 
 public enum DataBrokerProtectionMacOSPixels {
+    case assistedOptOutStarted
+    case assistedOptOutUserTurn(durationBucket: String)
+    case assistedOptOutEnded(outcome: AssistedOptOutOutcome, totalDurationBucket: String, userTurnDurationBucket: String)
 
     // Initialisation failure errors
     case mainAppSetUpFailedSecureVaultInitFailed(error: Error?)
@@ -109,8 +112,18 @@ public enum DataBrokerProtectionMacOSPixels {
 }
 
 extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
+    public var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .assistedOptOutStarted, .assistedOptOutUserTurn, .assistedOptOutEnded: return .none
+        default: return .platformDefault
+        }
+    }
+
     public var name: String {
         switch self {
+        case .assistedOptOutStarted: return "pir_assisted_opt_out_started_macos"
+        case .assistedOptOutUserTurn: return "pir_assisted_opt_out_user_turn_macos"
+        case .assistedOptOutEnded: return "pir_assisted_opt_out_ended_macos"
 
         case .mainAppSetUpFailedSecureVaultInitFailed: return "m_mac_dbp_main-app_set-up-failed_secure-vault-init-failed"
         case .backgroundAgentSetUpFailedSecureVaultInitFailed: return "m_mac_dbp_background-agent_set-up-failed_secure-vault-init-failed"
@@ -185,6 +198,13 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
 
     public var parameters: [String: String]? {
         switch self {
+        case .assistedOptOutStarted:
+            return [:]
+        case .assistedOptOutUserTurn(let durationBucket):
+            return ["duration_bucket": durationBucket]
+        case .assistedOptOutEnded(let outcome, let totalDurationBucket, let userTurnDurationBucket):
+            return ["outcome": outcome.rawValue, "total_duration_bucket": totalDurationBucket,
+                    "user_turn_duration_bucket": userTurnDurationBucket]
         case .webUILoadingStarted(let environment):
             return [DataBrokerProtectionSharedPixels.Consts.environmentKey: environment]
         case .webUILoadingSuccess(let environment, let subscribed):
@@ -265,6 +285,8 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
 
     public var standardParameters: [PixelKitStandardParameter]? {
         switch self {
+        case .assistedOptOutStarted, .assistedOptOutUserTurn, .assistedOptOutEnded:
+            return []
         case .mainAppSetUpFailedSecureVaultInitFailed,
                 .backgroundAgentSetUpFailedSecureVaultInitFailed,
                 .backgroundAgentStarted,
@@ -316,6 +338,8 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
     public init() {
         super.init { event, _, _, _ in
             switch event {
+            case .assistedOptOutStarted, .assistedOptOutUserTurn, .assistedOptOutEnded:
+                PixelKit.fire(event)
             case .mainAppSetUpFailedSecureVaultInitFailed(error: let error),
                     .backgroundAgentSetUpFailedSecureVaultInitFailed(error: let error),
 

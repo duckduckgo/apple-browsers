@@ -341,14 +341,13 @@ final class AppLaunchUITests: UITestCase {
         XCTAssertTrue(modal.wait(for: expectedWidth, timeout: UITestTimeouts.navigation))
     }
 
-    func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
-        func enableFloatingToolbarFlags() {
-            for flag in ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"] {
-                let indices = app.launchArguments.indices.filter { app.launchArguments[$0] == flag }
-                XCTAssertEqual(indices.count, 1, "Expected one launch value for \(flag).")
-                if let index = indices.first {
-                    app.launchArguments[index + 1] = "true"
-                }
+    func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() throws {
+        let site = try localWebsite()
+        for flag in ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"] {
+            let indices = app.launchArguments.indices.filter { app.launchArguments[$0] == flag }
+            XCTAssertEqual(indices.count, 1, "Expected one launch value for \(flag).")
+            if let index = indices.first {
+                app.launchArguments[index + 1] = "true"
             }
         }
 
@@ -356,22 +355,25 @@ final class AppLaunchUITests: UITestCase {
             "-ff.fireMode", "true",
             // The launch keyboard covers the tab switcher button, so the tap would race it.
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
-            "-com.duckduckgo.app.autoClearActionKey", "3",
-            "-com.duckduckgo.app.autoClearTimingKey", "0",
         ]
-        enableFloatingToolbarFlags()
         app.launch()
-        XCTAssertTrue(app.descendants(matching: .any)["searchEntry"].waitForExistence(timeout: UITestTimeouts.navigation))
+        site.open(.first, in: app)
 
         app.terminate()
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
-        enableFloatingToolbarFlags()
+        app.launchArguments += [
+            "-com.duckduckgo.app.autoClearActionKey", "3",
+            "-com.duckduckgo.app.autoClearTimingKey", "0",
+        ]
         app.launch()
 
-        let tabSwitcherButton = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
+        let window = app.browserWindow
+        let newTabPage = NSPredicate { _, _ in
+            !window.webViews.firstMatch.exists && window.scrollViews.firstMatch.isHittable
+        }
         XCTAssertTrue(
-            tabSwitcherButton.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
-            "Tab switcher button did not become ready after automatic tab clearing.")
+            window.wait(for: newTabPage, timeout: UITestTimeouts.navigation),
+            "The New Tab page did not appear after automatic tab clearing.")
         app.openTabSwitcher()
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())

@@ -81,23 +81,21 @@ enum DuckAISwipeNewChat {
         case startNewChat
     }
 
-    /// A pan that starts above the bottom scrolls the chat, and starts pulling once it reaches the bottom while the
-    /// finger is still down. Momentum after release never pulls.
+    /// Only a pan that starts with the chat already at its bottom pulls, so scrolling to the bottom doesn't carry on
+    /// into a new chat.
     enum Pull: Equatable {
         case idle
         /// `isAtBottom` is nil until the page answers.
         case touched(isAtBottom: Bool?)
         /// Eligible, waiting for the page's answer.
         case tracking
-        /// Scrolling toward the bottom; the page is asked again as the finger moves, one question at a time.
-        case seeking(isAsking: Bool)
         case pulling(baseline: CGFloat, step: Int)
         case armed(baseline: CGFloat)
 
         /// A tap leaves `.touched` behind, which doesn't count, since nothing has moved.
         var isUnderway: Bool {
             switch self {
-            case .tracking, .seeking, .pulling, .armed: true
+            case .tracking, .pulling, .armed: true
             case .idle, .touched: false
             }
         }
@@ -112,14 +110,9 @@ enum DuckAISwipeNewChat {
                 self = .touched(isAtBottom: isAtBottom)
                 return []
 
-            case (.tracking, .pageAnswered(let isAtBottom, let translation)),
-                 (.seeking, .pageAnswered(let isAtBottom, let translation)):
-                self = isAtBottom ? .pulling(baseline: translation, step: 0) : .seeking(isAsking: false)
+            case (.tracking, .pageAnswered(let isAtBottom, let translation)):
+                self = isAtBottom ? .pulling(baseline: translation, step: 0) : .idle
                 return []
-
-            case (.seeking(false), .moved):
-                self = .seeking(isAsking: true)
-                return [.checkAtBottom]
 
             case (_, .began(false, _)):
                 self = .idle
@@ -130,7 +123,7 @@ enum DuckAISwipeNewChat {
                 return []
 
             case (.touched(false), .began(true, _)):
-                self = .seeking(isAsking: false)
+                self = .idle
                 return []
 
             case (.touched(nil), .began(true, _)):
@@ -156,12 +149,11 @@ enum DuckAISwipeNewChat {
                 self = .idle
                 return [.springBack]
 
-            case (.touched, .ended), (.touched, .cancelled), (.tracking, .ended), (.tracking, .cancelled),
-                 (.seeking, .ended), (.seeking, .cancelled):
+            case (.touched, .ended), (.touched, .cancelled), (.tracking, .ended), (.tracking, .cancelled):
                 self = .idle
                 return []
 
-            case (.idle, _), (.touched, _), (.tracking, _), (.seeking, _), (.pulling, _), (.armed, _):
+            case (.idle, _), (.touched, _), (.tracking, _), (.pulling, _), (.armed, _):
                 return []
             }
         }

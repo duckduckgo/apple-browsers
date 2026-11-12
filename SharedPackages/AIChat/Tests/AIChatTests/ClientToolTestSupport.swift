@@ -107,7 +107,7 @@ final class ClientToolTestTool: BrowserTool {
 final class ClientToolTestSource: ClientToolPermissionPrompting {
     var prompts: [ClientToolPermissionPrompt] = []
     var withdrawn: [String] = []
-    var indicated: [String] = []
+    var uses: [String] = []
     var onPush: ((ClientToolPermissionPrompt) -> Bool)?
     private var waiters: [(Int, CheckedContinuation<Void, Never>)] = []
 
@@ -115,8 +115,12 @@ final class ClientToolTestSource: ClientToolPermissionPrompting {
         withdrawn.append(requestID)
     }
 
-    func indicateClientToolUse(toolName: String) {
-        indicated.append(toolName)
+    func clientToolUseDidStart(requestID: String, toolName: String) {
+        uses.append("start \(toolName)")
+    }
+
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {
+        uses.append(completed ? "end" : "end cancelled")
     }
 
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {

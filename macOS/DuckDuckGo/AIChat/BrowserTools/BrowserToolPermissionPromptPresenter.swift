@@ -41,10 +41,17 @@ final class BrowserToolPermissionPromptPresenter {
         let keyMonitor: Any?
     }
 
+    private struct Use {
+        let key: ObjectIdentifier
+        weak var tabBar: TabBarViewController?
+        let toolName: String
+    }
+
     private let windowControllersManager: WindowControllersManagerProtocol
     private let respond: Respond
     private var requests: [Request] = []
     private var shown: [ObjectIdentifier: Shown] = [:]
+    private var uses: [String: Use] = [:]
     private var selectionChanges: [ObjectIdentifier: AnyCancellable] = [:]
 
     init(windowControllersManager: WindowControllersManagerProtocol, respond: @escaping Respond) {
@@ -69,11 +76,27 @@ final class BrowserToolPermissionPromptPresenter {
         return true
     }
 
-    func indicateUse(toolName: String, chatWebView: WKWebView?) {
+    func startUse(requestID: String, toolName: String, chatWebView: WKWebView?) {
         guard let ownerTabID = AIChatTabPickerSource.ownerTabID(for: chatWebView, in: windowControllersManager),
               let collection = AIChatTabPickerSource.collection(containingTabID: ownerTabID, in: windowControllersManager),
-              !collection.isBurner, shown[ObjectIdentifier(collection)] == nil,
+              !collection.isBurner,
               let tabBar = windowController(for: collection)?.mainViewController.tabBarViewController else { return }
+        let key = ObjectIdentifier(collection)
+        uses[requestID] = Use(key: key, tabBar: tabBar, toolName: toolName)
+        if shown[key] == nil { showUse(toolName: toolName, in: tabBar) }
+    }
+
+    func endUse(requestID: String, completed: Bool) {
+        guard let use = uses.removeValue(forKey: requestID),
+              shown[use.key] == nil, !uses.values.contains(where: { $0.key == use.key }) else { return }
+        if completed {
+            use.tabBar?.finishBrowserToolUse()
+        } else {
+            use.tabBar?.hideBrowserToolPermissionButton()
+        }
+    }
+
+    private func showUse(toolName: String, in tabBar: TabBarViewController) {
         tabBar.showBrowserToolUse(icon: BrowserToolPermissionPromptText.icon(toolName: toolName), title: UserText.browserToolInUse)
     }
 
@@ -85,9 +108,11 @@ final class BrowserToolPermissionPromptPresenter {
     private func answer(_ requestID: String, with decision: ClientToolPermissionDecision) {
         guard let index = requests.firstIndex(where: { $0.prompt.requestID == requestID }) else { return }
         let request = requests.remove(at: index)
+        // Before refresh, so an allowed call's use has started when its prompt closes.
+        if let prompter = request.prompter {
+            respond(request.prompt, decision, prompter)
+        }
         refresh()
-        guard let prompter = request.prompter else { return }
-        respond(request.prompt, decision, prompter)
     }
 
     private func refresh() {
@@ -101,7 +126,12 @@ final class BrowserToolPermissionPromptPresenter {
             shown[key] = nil
             current.popover.close()
             current.keyMonitor.map(NSEvent.removeMonitor)
-            if next == nil { current.tabBar?.hideBrowserToolPermissionButton() }
+            guard next == nil, let tabBar = current.tabBar else { continue }
+            if let use = uses.values.first(where: { $0.key == key }) {
+                showUse(toolName: use.toolName, in: tabBar)
+            } else {
+                tabBar.hideBrowserToolPermissionButton()
+            }
         }
         for (key, collection) in collections where shown[key] == nil {
             guard let request = oldestRequest(selectedIn: collection) else { continue }

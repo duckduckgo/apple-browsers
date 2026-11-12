@@ -28,11 +28,13 @@ public protocol ClientToolPermissionPrompting: AnyObject {
     /// Closes a prompt whose call finished without an answer: deadline, chat gone or cancelled.
     func withdrawClientToolPermissionPrompt(requestID: String)
 
-    func indicateClientToolUse(toolName: String)
+    func clientToolUseDidStart(requestID: String, toolName: String)
+    func clientToolUseDidEnd(requestID: String, completed: Bool)
 }
 
 public extension ClientToolPermissionPrompting {
-    func indicateClientToolUse(toolName: String) {}
+    func clientToolUseDidStart(requestID: String, toolName: String) {}
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {}
 }
 
 public struct ClientToolPermissionPrompt: Equatable, Sendable {
@@ -249,6 +251,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         entry.executionTask = nil
         let continuation = entry.executionContinuation
         entry.executionContinuation = nil
+        entry.prompter?.clientToolUseDidEnd(requestID: requestID, completed: !entry.isCancelled)
         continuation?.resume(returning: entry.isCancelled ? nil : result)
     }
 
@@ -263,6 +266,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     private func grant(_ entry: Entry) {
         guard entries[entry.requestID] === entry else { return }
         entry.state = .granted
+        entry.prompter?.clientToolUseDidStart(requestID: entry.requestID, toolName: entry.tool.name)
         releaseQueue(entry)
         let continuation = entry.continuation
         entry.continuation = nil
@@ -276,8 +280,13 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     /// - Parameter withdrawingPrompt: false when the prompt is already gone: answered or never shown.
     private func finish(_ requestID: String, error: ClientToolError, withdrawingPrompt: Bool = true) {
         guard let entry = entries.removeValue(forKey: requestID) else { return }
-        if withdrawingPrompt, case .awaitingDecision = entry.state {
+        switch entry.state {
+        case .awaitingDecision where withdrawingPrompt:
             entry.prompter?.withdrawClientToolPermissionPrompt(requestID: requestID)
+        case .granted, .executing:
+            entry.prompter?.clientToolUseDidEnd(requestID: requestID, completed: false)
+        default:
+            break
         }
         entry.executionTask?.cancel()
         entry.executionTask = nil
@@ -325,7 +334,6 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
             guard case .queued = entry.state else { continue }
             switch permissions.effectiveState(for: entry.tool) {
             case .allow:
-                entry.prompter?.indicateClientToolUse(toolName: entry.tool.name)
                 grant(entry)
             case .deny:
                 finish(requestID, error: .denied)

@@ -1696,7 +1696,7 @@ struct UserText {
     static let websitePermissionsDefaultAccessibilityLabel = NSLocalizedString("preferences.website-permissions.default.accessibility", value: "Default behavior for %@", comment: "Accessibility label for the default behavior radio group, %@ is the permission name")
     // MARK: - Duck.ai browser tool permission prompt
 
-    static let browserToolInUse = NotLocalizedString("browser-tool.in-use", value: "Duck.ai used a browser tool", comment: "Tooltip on the tab bar icon shown while Duck.ai runs a browser tool without asking")
+    static let browserToolInUse = NotLocalizedString("browser-tool.in-use", value: "Duck.ai is using a browser tool", comment: "Tooltip on the tab bar icon shown while Duck.ai runs a browser tool")
     static let browserToolPermissionAllowOnce = NotLocalizedString("browser-tool.permission.allow-once", value: "Allow once", comment: "Duck.ai browser tool permission prompt button that lets one tool call run")
     static let browserToolPermissionTitleListOpenTabs = NotLocalizedString("browser-tool.permission.title.list-open-tabs", value: "Allow Duck.ai to see your open tabs?", comment: "Duck.ai browser tool permission prompt title")
     static let browserToolPermissionTitleSearchHistory = NotLocalizedString("browser-tool.permission.title.search-history", value: "Allow Duck.ai to search your browsing history?", comment: "Duck.ai browser tool permission prompt title")

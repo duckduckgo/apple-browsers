@@ -48,21 +48,41 @@ struct ClientToolPermissionCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func onlyCallsThatRunWithoutAskingAreIndicated() async throws {
+    func onlyCallsThatRunReportTheirUse() async throws {
         let harness = ClientToolTestHarness()
         harness.otherTool.permissionMode = .auto
 
         _ = await (try harness.start(callID: "auto", name: "searchHistory")).value
-        #expect(harness.source.indicated == ["searchHistory"])
+        #expect(harness.source.uses == ["start searchHistory", "end"])
 
-        let asked = try harness.start(callID: "asked")
+        let dismissed = try harness.start(callID: "dismissed")
         await harness.source.waitForPrompts(1)
-        harness.answer(harness.source.prompts[0], decision: .always)
-        _ = await asked.value
-        #expect(harness.source.indicated == ["searchHistory"])
+        harness.answer(harness.source.prompts[0], decision: .dismiss)
+        _ = await dismissed.value
+        #expect(harness.source.uses == ["start searchHistory", "end"])
 
-        _ = await (try harness.start(callID: "allowed")).value
-        #expect(harness.source.indicated == ["searchHistory", "readTabContent"])
+        let allowed = try harness.start(callID: "allowed")
+        await harness.source.waitForPrompts(2)
+        harness.answer(harness.source.prompts[1], decision: .allowOnce)
+        _ = await allowed.value
+        #expect(harness.source.uses == ["start searchHistory", "end", "start readTabContent", "end"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func cancellingARunningCallEndsItsUseAsCancelled() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.permissionMode = .auto
+        var release: CheckedContinuation<Void, Never>?
+        harness.tool.onExecute = { await withCheckedContinuation { release = $0 } }
+
+        let task = try harness.start()
+        while harness.tool.calls.isEmpty { await Task.yield() }
+        task.cancel()
+        _ = await task.value
+        release?.resume()
+
+        #expect(harness.source.uses == ["start readTabContent", "end cancelled"])
     }
 
     @available(iOS 16, macOS 13, *)

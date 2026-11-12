@@ -287,8 +287,13 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
     }
 
     @MainActor
-    func indicateClientToolUse(toolName: String) {
-        browserTools?.permissionPrompts.indicateUse(toolName: toolName, chatWebView: webView)
+    func clientToolUseDidStart(requestID: String, toolName: String) {
+        browserTools?.permissionPrompts.startUse(requestID: requestID, toolName: toolName, chatWebView: webView)
+    }
+
+    @MainActor
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {
+        browserTools?.permissionPrompts.endUse(requestID: requestID, completed: completed)
     }
 
     /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as

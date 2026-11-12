@@ -26,23 +26,18 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
     private var manager: PermissionManagerMock!
     private var permissions: BrowserToolSitePermissions!
     private var model: BrowserToolPermissionsPreferences!
-    private var configuration: FakeConfiguration!
-    private var catalog: BrowserToolCatalog!
 
     override func setUp() {
         super.setUp()
         manager = PermissionManagerMock()
         permissions = BrowserToolSitePermissions(permissionManager: manager)
         let tools = [FakeTool(name: "pinTab", permissionMode: .auto), FakeTool(name: "listOpenTabs", permissionMode: .ask)]
-        configuration = FakeConfiguration()
-        catalog = BrowserToolCatalog(tools: tools, configuration: configuration)
+        let catalog = BrowserToolCatalog(tools: tools, configuration: FakeConfiguration())
         model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager)
     }
 
     override func tearDown() {
         model = nil
-        catalog = nil
-        configuration = nil
         permissions = nil
         manager = nil
         super.tearDown()
@@ -96,19 +91,6 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         cancellable.cancel()
     }
 
-    func testOnlyAStoredAllowForAnEnabledToolCountsAsAllowed() {
-        XCTAssertFalse(BrowserToolPermissionsPreferences.hasAllowedTool(catalog: catalog, permissions: permissions))
-
-        permissions.setState(.ask, forToolNamed: "pinTab")
-        permissions.setState(.deny, forToolNamed: "listOpenTabs")
-        XCTAssertFalse(BrowserToolPermissionsPreferences.hasAllowedTool(catalog: catalog, permissions: permissions))
-
-        permissions.setState(.allow, forToolNamed: "listOpenTabs")
-        XCTAssertTrue(BrowserToolPermissionsPreferences.hasAllowedTool(catalog: catalog, permissions: permissions))
-
-        configuration.disabled = ["listOpenTabs"]
-        XCTAssertFalse(BrowserToolPermissionsPreferences.hasAllowedTool(catalog: catalog, permissions: permissions))
-    }
 }
 
 @MainActor
@@ -130,6 +112,5 @@ private final class FakeTool: BrowserTool {
 @MainActor
 private final class FakeConfiguration: BrowserToolsConfiguration {
     var isEnabled: Bool { true }
-    var disabled: Set<String> = []
-    func isToolEnabled(named name: String) -> Bool { !disabled.contains(name) }
+    func isToolEnabled(named name: String) -> Bool { true }
 }

@@ -215,6 +215,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var browserToolPermissionIcon: NSImage?
     private var browserToolPermissionHover: AnyCancellable?
     private var isShowingBrowserToolUse = false
+    private var browserToolPermissionsPanel: NSPopover?
+    private var browserToolPermissionsPanelClose: AnyCancellable?
     private var browserToolUseSlideOut: DispatchWorkItem?
     private let browserToolPermissionCloseIcon: NSImage = {
         let icon = DesignSystemImages.Glyphs.Size16.close
@@ -942,6 +944,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Duck.ai browser tool permission
 
     func showBrowserToolPermissionButton(icon: NSImage, title: String, action: @escaping (NSView) -> Void, shown: @escaping (NSView) -> Void) {
+        dismissBrowserToolPermissionsPanel()
         cancelBrowserToolUseSlideOut()
         isShowingBrowserToolUse = false
         browserToolPermissionAction = action
@@ -952,6 +955,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     func showBrowserToolUse(icon: NSImage, title: String) {
+        dismissBrowserToolPermissionsPanel()
         cancelBrowserToolUseSlideOut()
         isShowingBrowserToolUse = true
         browserToolPermissionAction = nil
@@ -1042,6 +1046,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     func hideBrowserToolPermissionButton() {
+        dismissBrowserToolPermissionsPanel()
         cancelBrowserToolUseSlideOut()
         browserToolPermissionAction = nil
         isShowingBrowserToolUse = false
@@ -1055,6 +1060,46 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             button.isHidden = true
         }
         applyDuckAIChromeButtonVisibility()
+    }
+
+    private func showBrowserToolPermissionsPanel() {
+        // A waiting prompt or a running tool owns the button.
+        guard browserToolPermissionAction == nil, !isShowingBrowserToolUse else {
+            openBrowserToolPermissionsSettings()
+            return
+        }
+        let popover = NSPopover()
+        popover.behavior = .transient
+        let content = NSHostingController(rootView: BrowserToolPermissionsPanelView { [weak self] in
+            self?.hideBrowserToolPermissionButton()
+            self?.openBrowserToolPermissionsSettings()
+        })
+        popover.contentViewController = content
+        popover.contentSize = content.view.fittingSize
+        if #available(macOS 13.0, *) {
+            // Resetting a row shrinks the panel.
+            content.sizingOptions = .preferredContentSize
+        }
+        browserToolPermissionsPanel = popover
+        browserToolPermissionsPanelClose = NotificationCenter.default.publisher(for: NSPopover.didCloseNotification, object: popover)
+            .sink { [weak self] _ in self?.hideBrowserToolPermissionButton() }
+        browserToolPermissionAction = { [weak self] _ in self?.hideBrowserToolPermissionButton() }
+        revealBrowserToolButton(icon: DesignSystemImages.Glyphs.Size16.options, title: UserText.browserToolPanelClose) { [weak self, weak popover] button in
+            guard let self, let popover, popover === browserToolPermissionsPanel, !popover.isShown else { return }
+            styleBrowserToolPermissionButton(button, filled: true)
+            popover.show(positionedBelow: button.bounds.insetFromLineOfDeath(flipped: button.isFlipped), in: button)
+        }
+    }
+
+    private func dismissBrowserToolPermissionsPanel() {
+        guard let popover = browserToolPermissionsPanel else { return }
+        browserToolPermissionsPanel = nil
+        browserToolPermissionsPanelClose = nil
+        popover.close()
+    }
+
+    private func openBrowserToolPermissionsSettings() {
+        (parent as? MainViewController)?.openSettings(at: .browserToolPermissions)
     }
 
     private func makeBrowserToolPermissionButton() -> MouseOverButton {
@@ -1600,8 +1645,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             menu.addItem(chatsItem)
         }
 
-        let browserTools = NSApp.delegateTyped.aiChatBrowserToolsService
-        if BrowserToolPermissionsPreferences.hasAllowedTool(catalog: browserTools.catalog, permissions: browserTools.permissions) {
+        if !NSApp.delegateTyped.aiChatBrowserToolsService.catalog.enabledTools.isEmpty {
             menu.addItem(.separator())
 
             let permissionsItem = NSMenuItem(title: UserText.browserToolSettingsTitle, action: #selector(duckAIMenuBrowserPermissionsAction), keyEquivalent: "")
@@ -1672,7 +1716,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuBrowserPermissionsAction() {
-        (parent as? MainViewController)?.openSettings(at: .browserToolPermissions)
+        showBrowserToolPermissionsPanel()
     }
 
     @objc private func duckAIMenuChatsAction() {

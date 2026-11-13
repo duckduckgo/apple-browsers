@@ -693,6 +693,11 @@ public enum FeatureFlag: String {
     /// On-device web page translation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
     case webPageTranslation
+
+    /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
+    /// Internal-only for the first version.
+    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    case aiChatLocalModels
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1187,6 +1192,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         case .webPageTranslation:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
+        case .aiChatLocalModels:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels))
         }
     }
 

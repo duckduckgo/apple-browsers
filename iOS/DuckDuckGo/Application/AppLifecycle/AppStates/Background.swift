@@ -35,7 +35,8 @@ struct Background: BackgroundHandling {
     private let appDependencies: AppDependencies
     private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
-    /// Passed on to the next foreground, for a launch that drew the page but went to the background first.
+    /// Passed on to the next foreground, which records the page: drawn by a launch that went to the background first,
+    /// or by a warm return's `willLeave`.
     private var drewIdleReturnNewTabPage: Bool
     private var services: AppServices { appDependencies.services }
 

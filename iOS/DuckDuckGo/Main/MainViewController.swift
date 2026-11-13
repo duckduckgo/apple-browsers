@@ -2643,7 +2643,11 @@ class MainViewController: UIViewController {
     func releaseHeldNewTabPage() {
         guard isAfterIdlePresentationPending, let page = newTabPageViewController else { return }
         isAfterIdlePresentationPending = false
-        tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
+        if let tabModel = tabManager.currentTabsModel.currentTab, tabModel.openedAfterIdle {
+            tabModel.openedAfterIdle = false
+            // Saved like the attach saves it, so a relaunch doesn't restore the tab as after-idle.
+            tabManager.save()
+        }
         clearEscapeHatch()
         newTabPagePresentation.schedule(for: page, shown: { [weak self] in
             guard let self else { return }

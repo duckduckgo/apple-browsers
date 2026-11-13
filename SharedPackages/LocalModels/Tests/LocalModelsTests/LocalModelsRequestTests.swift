@@ -20,34 +20,37 @@ import Foundation
 import Testing
 @testable import LocalModels
 
-@Suite(.serialized)
-struct LocalModelsRequestTests {
+extension StubbedNetworkTests {
 
-    @available(iOS 16, macOS 13, *)
-    @Test("localModels session sends fixed headers and no cookies", .timeLimit(.minutes(1)))
-    func sessionHeaders() async throws {
-        StubURLProtocol.requests = []
-        StubURLProtocol.handler = { request in
-            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data())
+    @Suite
+    struct LocalModelsRequestTests {
+
+        @available(iOS 16, macOS 13, *)
+        @Test("localModels session sends fixed headers and no cookies", .timeLimit(.minutes(1)))
+        func sessionHeaders() async throws {
+            StubURLProtocol.reset()
+            StubURLProtocol.handler = { request in
+                (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data())
+            }
+            let session = URLSession.localModels(configuration: StubURLProtocol.configuration())
+
+            _ = try await session.data(from: URL(string: "https://example.com/x")!)
+
+            let request = try #require(StubURLProtocol.requests.first)
+            #expect(request.value(forHTTPHeaderField: "User-Agent") == "DuckDuckGo")
+            #expect(request.value(forHTTPHeaderField: "Accept-Language") == "")
+            #expect(session.configuration.urlCache == nil)
+            #expect(session.configuration.httpShouldSetCookies == false)
         }
-        let session = URLSession.localModels(configuration: StubURLProtocol.configuration())
 
-        _ = try await session.data(from: URL(string: "https://example.com/x")!)
+        @available(iOS 16, macOS 13, *)
+        @Test("sha256Hex streams a file", .timeLimit(.minutes(1)))
+        func sha256OfFile() throws {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try Data("hello".utf8).write(to: url)
+            defer { try? FileManager.default.removeItem(at: url) }
 
-        let request = try #require(StubURLProtocol.requests.first)
-        #expect(request.value(forHTTPHeaderField: "User-Agent") == "DuckDuckGo")
-        #expect(request.value(forHTTPHeaderField: "Accept-Language") == "")
-        #expect(session.configuration.urlCache == nil)
-        #expect(session.configuration.httpShouldSetCookies == false)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("sha256Hex streams a file", .timeLimit(.minutes(1)))
-    func sha256OfFile() throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try Data("hello".utf8).write(to: url)
-        defer { try? FileManager.default.removeItem(at: url) }
-
-        #expect(try FileHash.sha256Hex(of: url) == "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
+            #expect(try FileHash.sha256Hex(of: url) == "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
+        }
     }
 }

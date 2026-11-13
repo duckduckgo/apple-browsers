@@ -3,8 +3,8 @@ name: Smartling - On Merge
 # Submits a platform's new strings to Smartling as soon as a merge into main changes its English strings, instead of
 # waiting for the nightly, so a PR's label job is less likely to take them first. The nightly still runs as a safety
 # net for merges this misses and runs that fail.
-# Each merge gets its own job and works like the nightly: it's authorized up to the same limit, and a review or a
-# failure gets the same Asana task.
+# Each merge gets its own job and works like the nightly: it's authorized up to the same limit, and a failure gets the
+# same Asana task. A review task goes to the author of the merged pull request instead of the platform's owner.
 # To test the trigger and job name without writing to Smartling or Asana, run it manually with dry_run set.
 on:
   push:

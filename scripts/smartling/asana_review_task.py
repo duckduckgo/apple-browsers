@@ -210,6 +210,7 @@ def main():
     parser.add_argument('--name', required=True)
     parser.add_argument('--notes', required=True, help='Plain text; "Label: value" lines get a bold label, URLs become links')
     parser.add_argument('--assignee', help='Assign to this user (GID, email or "me") instead of the triage DRI')
+    parser.add_argument('--fallback-assignee', help='Assign to this user instead if Asana rejects the assignee, e.g. one who has left')
     parser.add_argument('--dry-run', action='store_true', help='Look everything up and print the task instead of creating it')
     args = parser.parse_args()
 
@@ -225,7 +226,7 @@ def main():
         print(json.dumps(body, indent=2, ensure_ascii=False))
         return
     try:
-        task = client.create_task(body)
+        task = create_task(client, body, args.fallback_assignee)
     except RuntimeError as error:
         log(f"❌ {error}")
         sys.exit(1)

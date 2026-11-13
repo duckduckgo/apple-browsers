@@ -534,15 +534,22 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return false
         }
 
-        let style: UpdateBannerView.Style = switch menuPrompt {
-        case .row: .row(title: updateController.updateBannerRowTitle)
-        case .card: .card
+        let style: UpdateBannerView.Style
+        let surface: UpdatePromptSurface
+        switch menuPrompt {
+        case .row:
+            style = .row(title: updateController.updateBannerRowTitle)
+            surface = .menuRow
+        case .card:
+            style = .card
+            surface = .menuCard
         }
 
         let banner = UpdateBannerView(style: style,
                                       version: update.version,
                                       buttonTitle: updateController.updateBannerButtonTitle) { [weak self] in
             self?.cancelTracking()
+            MoreOptionsMenuPixel.fireUpdateClicked(on: surface)
             updateController.runUpdateFromPrompt()
         }
 
@@ -852,7 +859,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         if let item = item(at: index), item == updateMenuItem {
-            PixelKit.fire(MoreOptionsMenuPixel.updateActionClicked, frequency: .daily)
+            MoreOptionsMenuPixel.fireUpdateClicked(on: .menuItem)
         }
         super.performActionForItem(at: index)
     }

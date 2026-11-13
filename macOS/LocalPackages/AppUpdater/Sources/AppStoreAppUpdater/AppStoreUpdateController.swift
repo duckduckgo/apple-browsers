@@ -45,6 +45,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                                    pixelFiring: PixelFiring?,
                                    notificationPresenter: any UpdateNotificationPresenting,
                                    keyValueStore: any ThrowingKeyValueStoring,
+                                   applicationUpdateDetector: any ApplicationUpdateDetecting,
                                    isOnboardingFinished: @escaping () -> Bool) -> any UpdateController {
         AppStoreUpdateController(internalUserDecider: internalUserDecider,
                                  featureFlagger: featureFlagger,
@@ -52,6 +53,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                                  pixelFiring: pixelFiring,
                                  notificationPresenter: notificationPresenter,
                                  keyValueStore: keyValueStore,
+                                 applicationUpdateDetector: applicationUpdateDetector,
                                  isOnboardingFinished: isOnboardingFinished)
     }
 }
@@ -112,6 +114,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: any ApplicationUpdateDetecting,
                             isOnboardingFinished: @escaping () -> Bool) {
         let promptSettings = {
             MoreProminentUpdatesSettings(privacyConfig: privacyConfigurationManager.privacyConfig,
@@ -137,6 +140,9 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                 self?.notificationDotSubject.send(value)
             }
             .store(in: &cancellables)
+
+        reportCompletedUpdate(status: applicationUpdateDetector.isApplicationUpdated(),
+                              promptAttribution: UpdatePromptAttribution(settings: keyValueStore.throwingKeyedStoring()))
 
         // Start automatic update checking
         checkForUpdateAutomatically()
@@ -285,6 +291,24 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                 self.lastUpdateCheckDate = Date()
             }
         }
+    }
+
+    /// Fires the update success pixel on the first launch after the App Store installs a newer version.
+    /// The App Store doesn't tell the app how the update started, so only the prompt surface is known.
+    func reportCompletedUpdate(status: AppUpdateStatus, promptAttribution: UpdatePromptAttribution) {
+        guard status == .updated else { return }
+
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        pixelFiring?.fire(UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "unknown",
+            sourceBuild: "unknown",
+            targetVersion: appVersion.versionNumber,
+            targetBuild: appVersion.buildNumber,
+            initiationType: "unknown",
+            updateConfiguration: "unknown",
+            osVersion: "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)",
+            promptSurface: promptAttribution.consumePromptSurface()
+        ), frequency: .dailyAndCount)
     }
 
     @objc public func openUpdatesPage() {

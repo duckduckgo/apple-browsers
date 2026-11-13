@@ -29,9 +29,11 @@ import PixelKit
 /// update completion after restart.
 public final class SparkleUpdateCompletionValidator {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
+    private let promptAttribution: UpdatePromptAttribution
 
-    public init(settings: any ThrowingKeyedStoring<UpdateControllerSettings>) {
+    public init(settings: any ThrowingKeyedStoring<UpdateControllerSettings>, now: @escaping () -> Date = Date.init) {
         self.settings = settings
+        self.promptAttribution = UpdatePromptAttribution(settings: settings, now: now)
     }
 
     /// Store metadata when update is about to happen (before app restarts)
@@ -98,7 +100,8 @@ public final class SparkleUpdateCompletionValidator {
                     targetBuild: currentBuild,
                     initiationType: initiationType,
                     updateConfiguration: updateConfiguration,
-                    osVersion: osVersionString
+                    osVersion: osVersionString,
+                    promptSurface: promptAttribution.consumePromptSurface()
                 ), frequency: .dailyAndCount)
             } else {
                 // Unexpected - update detected outside Sparkle flow

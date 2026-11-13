@@ -78,6 +78,7 @@ public enum UpdateFlowPixels: PixelKit.Event {
      * - initiationType: How update was initiated (automatic, manual)
      * - updateConfiguration: User's automatic update setting (automatic, manual)
      * - osVersion: macOS version
+     * - promptSurface: The `UpdatePromptSurface` clicked in the 7 days before the update, or `none`
      */
     case updateApplicationSuccess(
         sourceVersion: String,
@@ -86,7 +87,8 @@ public enum UpdateFlowPixels: PixelKit.Event {
         targetBuild: String,
         initiationType: String,
         updateConfiguration: String,
-        osVersion: String
+        osVersion: String,
+        promptSurface: String
     )
 
     case updateApplicationFailure(
@@ -160,7 +162,7 @@ public enum UpdateFlowPixels: PixelKit.Event {
         switch self {
         case .updateApplicationSuccess(let sourceVersion, let sourceBuild, let targetVersion,
                                         let targetBuild, let initiationType, let updateConfiguration,
-                                        let osVersion):
+                                        let osVersion, let promptSurface):
             return [
                 "sourceVersion": sourceVersion,
                 "sourceBuild": sourceBuild,
@@ -168,7 +170,8 @@ public enum UpdateFlowPixels: PixelKit.Event {
                 "targetBuild": targetBuild,
                 "initiationType": initiationType,
                 "updateConfiguration": updateConfiguration,
-                "osVersion": osVersion
+                "osVersion": osVersion,
+                "promptSurface": promptSurface
             ]
         case .updateApplicationFailure(let sourceVersion, let sourceBuild, let expectedVersion,
                                         let expectedBuild, let actualVersion, let actualBuild,

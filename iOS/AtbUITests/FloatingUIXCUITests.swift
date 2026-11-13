@@ -579,16 +579,37 @@ class FloatingUIXCUITestCase: XCTestCase {
                       "Footer should sit just above the pill: footer \(footer.frame), pill \(domainCapsule.frame).")
         XCTAssertLessThanOrEqual(resizes() - resizesBeforeCollapse, 3, "The page got a resize for every frame of the collapse.")
 
+        let collapsedScreenshot = XCTAttachment(screenshot: app.screenshot())
+        collapsedScreenshot.name = "Fixed footer above collapsed glass"
+        collapsedScreenshot.lifetime = .keepAlways
+        add(collapsedScreenshot)
+
         let resizesBeforeExpand = resizes()
         webView.swipeDown(velocity: .fast)
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         let footerRestsOnBar = waitUntil(timeout: 5) {
             let gap = self.searchField.frame.minY - self.footer(footer).maxY
-            return gap >= 0 && gap < 60
+            return gap >= -1 && gap < 60
         }
         XCTAssertTrue(footerRestsOnBar,
                       "Footer should sit just above the bar: footer \(footer.frame), field \(searchField.frame).")
         XCTAssertLessThanOrEqual(resizes() - resizesBeforeExpand, 3, "The page got a resize for every frame of the expand.")
+
+        guard let trace = try? chromeMorphTrace(endingAt: 1), let expanded = trace.last else {
+            return XCTFail("No expanded glass frame was recorded.")
+        }
+        let glassTop = expanded.midY - expanded.height / 2
+        XCTAssertLessThanOrEqual(Double(self.footer(footer).maxY), glassTop + 1,
+                                 "The whole footer must clear the glass, including on devices without a bottom safe area.")
+        for sample in trace where (0...1).contains(sample.percent) {
+            let glassObscuredHeight = Double(app.frame.height) - sample.midY + sample.height / 2
+            XCTAssertGreaterThanOrEqual(sample.bottomObscuredHeight + 1, glassObscuredHeight,
+                                       "The website inset must clear the glass throughout the morph (p=\(sample.percent)).")
+        }
+        let expandedScreenshot = XCTAttachment(screenshot: app.screenshot())
+        expandedScreenshot.name = "Fixed footer above expanded glass"
+        expandedScreenshot.lifetime = .keepAlways
+        add(expandedScreenshot)
     }
 
     /// The footer's frame from its label, which is vertically centred in the 56pt footer.

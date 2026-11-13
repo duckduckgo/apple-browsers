@@ -42,6 +42,7 @@ public protocol ScriptSourceProviding {
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
     var aiChatBonusOffer: AIChatBonusOfferDependencies { get }
+    var aiChatLocalModel: AIChatLocalModelDependencies? { get }
 
 }
 
@@ -58,6 +59,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let syncErrorHandler: SyncErrorHandling
         let webExtensionAvailability: WebExtensionAvailabilityProviding?
         let aiChatBonusOffer: AIChatBonusOfferDependencies
+        var aiChatLocalModel: AIChatLocalModelDependencies?
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -79,6 +81,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let aiChatBonusOffer: AIChatBonusOfferDependencies
+    let aiChatLocalModel: AIChatLocalModelDependencies?
 
     init(dependencies: Dependencies) {
 
@@ -96,6 +99,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
         aiChatBonusOffer = dependencies.aiChatBonusOffer
+        aiChatLocalModel = dependencies.aiChatLocalModel
         trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager
         )

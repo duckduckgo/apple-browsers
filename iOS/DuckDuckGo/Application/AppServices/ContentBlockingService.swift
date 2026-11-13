@@ -49,7 +49,8 @@ final class ContentBlockingService {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         aiChatBonusOffer: AIChatBonusOfferDependencies) {
+         aiChatBonusOffer: AIChatBonusOfferDependencies,
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
 
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.fireModeStorageController = fireModeStorageController
@@ -65,7 +66,8 @@ final class ContentBlockingService {
                                                                            internalUserDecider: internalUserDecider,
                                                                            syncErrorHandler: syncErrorHandler,
                                                                            webExtensionAvailability: webExtensionAvailability,
-                                                                           aiChatBonusOffer: aiChatBonusOffer)
+                                                                           aiChatBonusOffer: aiChatBonusOffer,
+                                                                           aiChatLocalModel: aiChatLocalModel)
 
         sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,

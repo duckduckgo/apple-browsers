@@ -152,7 +152,9 @@ final class UserScripts: UserScriptsProvider {
                                                           bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings,
-                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
+                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog,
+                                            localModelService: sourceProvider.aiChatLocalModel?.service,
+                                            localModelAccessPrompt: sourceProvider.aiChatLocalModel?.accessPrompt)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
 
         if isNativeStorageBridgeAvailable,

@@ -28,6 +28,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
     private var promptStore: MockDefaultBrowserAndDockPromptStore!
     private var uiHosting: MockDefaultBrowserAndDockPromptUIHosting!
     private var modal: MockDefaultBrowserAndDockPromptModal!
+    private var confirmationMonitor: MockDefaultBrowserConfirmationMonitor!
     private var isFeatureEnabled = true
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
     private var capturedTypes: [DefaultBrowserAndDockPromptType] = []
@@ -45,6 +46,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         uiHosting = MockDefaultBrowserAndDockPromptUIHosting()
         uiHosting.modalAnchor = NSWindow()
         modal = MockDefaultBrowserAndDockPromptModal()
+        confirmationMonitor = MockDefaultBrowserConfirmationMonitor()
         isFeatureEnabled = true
         capturedTypes = []
         onConfirm = nil
@@ -58,6 +60,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         promptStore = nil
         uiHosting = nil
         modal = nil
+        confirmationMonitor = nil
         capturedTypes = []
         onConfirm = nil
         onDismiss = nil
@@ -69,6 +72,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
             actionPerformer: actionPerformer,
             churnState: churnState,
             promptStore: promptStore,
+            confirmationMonitor: confirmationMonitor,
             isFeatureEnabled: { [unowned self] in isFeatureEnabled },
             uiHosting: { [unowned self] in uiHosting },
             modalFactory: { [unowned self] type, onConfirm, onDismiss in
@@ -195,6 +199,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(result, .actioned())
         XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 1)
+        XCTAssertEqual(confirmationMonitor.startClickDates, [now])
         XCTAssertEqual(promptStore.inactiveUserModalShownDate, now.timeIntervalSince1970)
         XCTAssertEqual(modal.dismissCallCount, 0)
     }
@@ -208,6 +213,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(result, .ignored())
         XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 0)
+        XCTAssertTrue(confirmationMonitor.startClickDates.isEmpty)
         XCTAssertEqual(promptStore.inactiveUserModalShownDate, now.timeIntervalSince1970)
         XCTAssertEqual(modal.dismissCallCount, 0)
     }
@@ -236,6 +242,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         try XCTUnwrap(onConfirm)()
 
         XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 0)
+        XCTAssertTrue(confirmationMonitor.startClickDates.isEmpty)
         XCTAssertNil(promptStore.inactiveUserModalShownDate)
     }
 }

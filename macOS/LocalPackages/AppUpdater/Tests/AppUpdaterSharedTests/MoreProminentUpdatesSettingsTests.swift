@@ -36,8 +36,8 @@ struct MoreProminentUpdatesSettingsTests {
         let settings = makeSettings(nil)
 
         #expect(settings.firstPromptDelay == .hours(48))
-        #expect(settings.secondPromptDelay == .hours(168))
-        #expect(settings.thirdPromptDelay == .hours(336))
+        #expect(settings.secondPromptDelay == .hours(216))
+        #expect(settings.thirdPromptDelay == .hours(384))
         #expect(settings.appStoreUpdateAvailableDelay == .hours(24))
     }
 
@@ -96,7 +96,7 @@ struct MoreProminentUpdatesSettingsTests {
 
         #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48,
                                                          hoursUntilSecondPrompt: 100,
-                                                         hoursUntilThirdPrompt: 336,
+                                                         hoursUntilThirdPrompt: 384,
                                                          hoursUntilAppStoreUpdateAvailable: 24))
     }
 
@@ -110,8 +110,8 @@ struct MoreProminentUpdatesSettingsTests {
         let settings = makeSettings(json)
 
         #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48,
-                                                         hoursUntilSecondPrompt: 168,
-                                                         hoursUntilThirdPrompt: 336,
+                                                         hoursUntilSecondPrompt: 216,
+                                                         hoursUntilThirdPrompt: 384,
                                                          hoursUntilAppStoreUpdateAvailable: 12))
     }
 

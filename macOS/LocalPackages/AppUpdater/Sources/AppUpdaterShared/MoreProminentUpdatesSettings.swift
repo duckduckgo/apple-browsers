@@ -34,9 +34,9 @@ public struct MoreProminentUpdatesSettings: Equatable {
         public let hoursUntilThirdPrompt: Double
         public let hoursUntilAppStoreUpdateAvailable: Double
 
-        public static let external = Defaults(hoursUntilFirstPrompt: 48,
-                                              hoursUntilSecondPrompt: 168,
-                                              hoursUntilThirdPrompt: 336,
+        public static let external = Defaults(hoursUntilFirstPrompt: 48,    // 2 days
+                                              hoursUntilSecondPrompt: 216,  // 9 days
+                                              hoursUntilThirdPrompt: 384,   // 16 days
                                               hoursUntilAppStoreUpdateAvailable: 24)
         public static let `internal` = Defaults(hoursUntilFirstPrompt: 2,
                                                 hoursUntilSecondPrompt: 4,

@@ -81,7 +81,7 @@ public class DBPIOSInterface {
 
         func resetAllNotificationStatesForDebug()
 
-#if DEBUG
+#if DEBUG || true // ship review build
         func seedEmailOptOutTestRecords() throws -> [String]
 #endif
 
@@ -866,7 +866,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         userNotificationService.resetAllNotificationStatesForDebug()
     }
 
-#if DEBUG
+#if DEBUG || true // ship review build
     public func seedEmailOptOutTestRecords() throws -> [String] {
         try DataBrokerProtectionDebugEmailOptOutSeeder(database: vaultResources().database).seed()
     }
@@ -1033,14 +1033,25 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionViewControllerProvider {
+    static let shipReviewDashboardURL = "https://euw-dev1.duckduckgo.com/dbp"
+
     public func dataBrokerProtectionViewController(freeScanEntryPoint: FreemiumDBPEntryPoint?) -> DataBrokerProtectionViewController {
+        // Ship review build: point the dashboard at the dev box and add the test records, so testers set nothing up.
+        // A developer's own Debug build keeps the Custom Web URL from the debug screen.
+        let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
+#if !DEBUG
+        webUISettings.setCustomURL(Self.shipReviewDashboardURL)
+        webUISettings.setURLType(.custom)
+#endif
+        _ = try? seedEmailOptOutTestRecords()
+
         return DataBrokerProtectionViewController(authenticationDelegate: self,
                                                   databaseDelegate: self,
                                                   userEventsDelegate: self,
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: contentScopeProperties,
                                                   emailOptOutFeatureFlagger: featureFlagger,
-                                                  webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
+                                                  webUISettings: webUISettings,
                                                   openURLHandler: quickLinkOpenURLHandler,
                                                   feedbackViewCreator: feedbackViewCreator,
                                                   isWebViewInspectable: isWebViewInspectable,

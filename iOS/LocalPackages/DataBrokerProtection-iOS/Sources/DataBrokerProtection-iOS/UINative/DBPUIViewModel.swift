@@ -48,9 +48,7 @@ public final class DBPUIViewModel {
     private let freeScanEntryPoint: FreemiumDBPEntryPoint?
     private let emailOptOutFeatureFlagger: EmailOptOutFeatureFlagging
     private let emailComposer: DBPOptOutEmailComposing
-#if DEBUG
     var emailOptOutDebugSettings = DBPEmailOptOutDebugSettings()
-#endif
 
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
@@ -270,7 +268,8 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     }
 
     public func isEmailOptOutEnabled() -> Bool {
-        emailOptOutFeatureFlagger.isEmailOptOutEnabled
+        // Ship review build: email opt-out is always on, so testers don't need the flag or Internal User.
+        true
     }
 
     public func canSendEmail() -> Bool {
@@ -281,11 +280,9 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     public func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult {
         guard isEmailOptOutEnabled() else { return DBPUIOpenOptOutEmailResult(sent: false) }
 
-#if DEBUG
         if !emailComposer.canSendMail, isCanSendEmailForcedForDebug {
             return DBPUIOpenOptOutEmailResult(sent: await emailComposer.simulateSend(request))
         }
-#endif
         let result = await emailComposer.compose(request)
         return DBPUIOpenOptOutEmailResult(sent: result == .sent)
     }
@@ -300,11 +297,8 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
         }
     }
 
+    // Ship review build: a device without Mail gets the Simulate Send alert, with no switch to turn on.
     private var isCanSendEmailForcedForDebug: Bool {
-#if DEBUG
-        privacyConfigManager.internalUserDecider.isInternalUser && emailOptOutDebugSettings.isCanSendEmailForced
-#else
-        false
-#endif
+        true
     }
 }

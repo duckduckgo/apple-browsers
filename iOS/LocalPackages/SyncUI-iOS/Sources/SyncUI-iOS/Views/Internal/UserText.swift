@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 
 public struct UserText {
 
@@ -66,6 +67,27 @@ public struct UserText {
 
     // Recovery Section
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
+
+    // Sync notification settings
+    static let syncNotificationsTitle = NotLocalizedString("sync.notifications.title", bundle: Bundle.module, value: "Safety Notifications", comment: "Sync login notification setting and permission card title")
+    static var syncNotificationsDescription: String {
+        syncNotificationsDescription(for: UIDevice.current.userInterfaceIdiom)
+    }
+
+    static func syncNotificationsDescription(for idiom: UIUserInterfaceIdiom) -> String {
+        switch idiom {
+        case .phone:
+            return NotLocalizedString("sync.notifications.description.iphone", bundle: Bundle.module, value: "Get notified whenever a new device syncs with this iPhone.", comment: "Explains Sync notifications on iPhone")
+        case .pad:
+            return NotLocalizedString("sync.notifications.description.ipad", bundle: Bundle.module, value: "Get notified whenever a new device syncs with this iPad.", comment: "Explains Sync notifications on iPad")
+        default:
+            return NotLocalizedString("sync.notifications.description", bundle: Bundle.module, value: "Get notified whenever a new device syncs with this device.", comment: "Fallback description for Sync notifications on other device types")
+        }
+    }
+    static let syncNotificationsEnable = NotLocalizedString("sync.notifications.enable", bundle: Bundle.module, value: "Enable Notifications", comment: "Button requesting notification permission")
+    static let syncNotificationsDismiss = NotLocalizedString("sync.notifications.dismiss", bundle: Bundle.module, value: "Dismiss notification suggestion", comment: "Accessibility label for dismissing the permission card")
+    static let syncNotificationsSettingsTitle = NotLocalizedString("sync.notifications.settings.title", bundle: Bundle.module, value: "Turn On Notifications?", comment: "Title shown when notification permission was denied")
+    static let syncNotificationsOpenSettings = NotLocalizedString("sync.notifications.settings.open", bundle: Bundle.module, value: "Go to Settings…", comment: "Opens app notification settings")
 
     // Device Activity
     static let deviceActivityNotYetReviewed = NotLocalizedString("sync.device.activity.not.yet.reviewed", bundle: Bundle.module, value: "Not yet reviewed", comment: "Accessibility value for an unreviewed device activity row")

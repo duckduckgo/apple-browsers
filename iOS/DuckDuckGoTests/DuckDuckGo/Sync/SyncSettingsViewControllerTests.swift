@@ -395,6 +395,22 @@ final class SyncSettingsViewControllerTests: XCTestCase {
     }
 
     @MainActor
+    func testSyncNotificationUIRequiresBothFlagsAndTracksRuntimeChanges() async {
+        XCTAssertNotNil(vc.viewModel.notificationSettingsViewModel)
+        for flags: [FeatureFlag] in [[], [.syncLoginAuditLog], [.syncLoginNotification],
+                                    [.syncLoginAuditLog, .syncLoginNotification], []] {
+            let updated = expectation(description: "Notification settings flags applied")
+            vc.viewModel.$areSyncNotificationsAvailable.dropFirst().prefix(1)
+                .sink { _ in updated.fulfill() }.store(in: &cancellables)
+            featureFlagger.enabledFeatureFlags = flags
+            featureFlagger.triggerUpdate()
+            await fulfillment(of: [updated], timeout: 1)
+            XCTAssertEqual(vc.viewModel.areSyncNotificationsAvailable,
+                           flags.contains(.syncLoginAuditLog) && flags.contains(.syncLoginNotification))
+        }
+    }
+
+    @MainActor
     func testDeviceActivityViewReviewsHistoryAfterThreeSeconds() async throws {
         let activeScene = try XCTUnwrap(UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }

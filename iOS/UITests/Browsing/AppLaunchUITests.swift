@@ -203,7 +203,6 @@ final class AppLaunchUITests: UITestCase {
             "-ff.slideToDelete", "true",
             "-ff.fireMode", "true",
             "-ff.fireButtonRefinements", "true",
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
             "-com.duckduckgo.app.currentFireButtonAnimationKey", "none",
         ]
@@ -326,13 +325,7 @@ final class AppLaunchUITests: UITestCase {
 
     private func openFireConfirmationForWidthTest(slideToDelete: Bool, orientation: UIDeviceOrientation) {
         XCUIDevice.shared.orientation = orientation
-        app.launchArguments += [
-            "-ff.slideToDelete", String(slideToDelete),
-            "-ff.fireMode", "true",
-            "-ff.fireButtonRefinements", "true",
-            // Keep automatic keyboard focus out of the Fire modal layout tests.
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
-        ]
+        app.launchArguments += ["-ff.slideToDelete", String(slideToDelete), "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
         let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
             "UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"
@@ -367,7 +360,7 @@ final class AppLaunchUITests: UITestCase {
 
         app.launchArguments += [
             "-ff.fireMode", "true",
-            // Keep the keyboard from covering the tab switcher during setup.
+            // The launch keyboard covers the tab switcher button, so the tap would race it.
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
         ]

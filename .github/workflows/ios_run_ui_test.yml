@@ -216,6 +216,14 @@ jobs:
         2>&1 | tee ui-tests.log \
         | xcbeautify
 
+    - name: Restore simulator logging defaults
+      if: always() && steps.simulator-logging.outputs.configured == 'true'
+      timeout-minutes: 1
+      env:
+        SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
+      run: |
+        xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:info,persist:default
+
     - name: Prepare test report
       if: always() && steps.checkout.outcome == 'success'
       timeout-minutes: 2
@@ -252,18 +260,6 @@ jobs:
         fi
         rm "$invalid"
 
-    - name: Upload test logs
-      if: always()
-      uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: "ios-uitest-logs-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}-attempt${{ github.run_attempt }}"
-        path: |
-          iOS/ui-tests.log
-          iOS/TestResults.xcresult
-          iOS/results-summary.json
-        if-no-files-found: warn
-        retention-days: 7
-
     # Upload test report as artifact for the test-report job
     # that publishes a combined report for all test cases
     - name: Upload test report
@@ -275,10 +271,14 @@ jobs:
         if-no-files-found: error
         retention-days: 3
 
-    - name: Restore simulator logging defaults
-      if: always() && steps.simulator-logging.outputs.configured == 'true'
-      timeout-minutes: 1
-      env:
-        SIMULATOR_UDID: ${{ steps.simulator.outputs.simulator-udid }}
-      run: |
-        xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:info,persist:default
+    - name: Upload test logs
+      if: always()
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: "ios-uitest-logs-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}-attempt${{ github.run_attempt }}"
+        path: |
+          iOS/ui-tests.log
+          iOS/TestResults.xcresult
+          iOS/results-summary.json
+        if-no-files-found: warn
+        retention-days: 7

@@ -112,7 +112,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             "consentManaged": true,
             "cosmetic": false,
             "optoutFailed": false,
-            "selftestFailed": nil as Any?,
+            "selftestFailed": Optional<Any>.none as Any,
             "consentReloadLoop": false,
             "consentRule": "test-rule",
             "consentHeuristicEnabled": true,

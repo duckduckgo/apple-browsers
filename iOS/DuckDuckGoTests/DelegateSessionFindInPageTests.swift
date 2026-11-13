@@ -156,7 +156,7 @@ final class DelegateSessionFindInPageTests: XCTestCase {
     func testEndIsIdempotentAndTimerDoesNotRetainTheAdapter() {
         let session = SessionSpy()
         var find: DelegateSessionFindInPage? = makeFind(session: session)
-        weak var weakFind = find
+        weak let weakFind = find
         find?.done()
         find?.done()
         XCTAssertFalse(find?.search(forText: "late") ?? true)
@@ -173,7 +173,7 @@ final class DelegateSessionFindInPageTests: XCTestCase {
     func testDeinitializationEndsAnUnclosedSession() {
         let session = SessionSpy()
         var find: DelegateSessionFindInPage? = makeFind(session: session)
-        weak var weakFind = find
+        weak let weakFind = find
         find = nil
         XCTAssertNil(weakFind)
         XCTAssertEqual(session.ends, 1)

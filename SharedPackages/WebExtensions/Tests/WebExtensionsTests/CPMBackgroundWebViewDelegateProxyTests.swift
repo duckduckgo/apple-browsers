@@ -281,7 +281,7 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
 
     func testProxyDoesNotRetainOriginal() {
         var original: OriginalDelegate? = OriginalDelegate()
-        weak var weakOriginal = original
+        weak let weakOriginal = original
         let proxy = CPMBackgroundWebViewDelegateProxy(original: original, delegate: Delegate())
         original = nil
 

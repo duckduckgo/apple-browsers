@@ -4660,7 +4660,7 @@ class MainViewController: UIViewController {
         guard gesture.state == .began else { return }
         findResultVisibilityWorkItem?.cancel()
         guard findInPageView?.inputText.isFirstResponder == true else { return }
-        findInPageView?.resignFirstResponder()
+        _ = findInPageView?.resignFirstResponder()
     }
 
     private func scheduleCurrentFindResultVisibility(after delay: TimeInterval = 0.2) {

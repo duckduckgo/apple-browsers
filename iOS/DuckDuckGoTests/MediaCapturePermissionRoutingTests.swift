@@ -259,7 +259,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let toast = try XCTUnwrap(window.subviews.compactMap { $0 as? ActionMessageView }.first)
             toast.onDeinit { toastReleased.fulfill() }
         }
-        weak var releasedTab = tab
+        weak let releasedTab = tab
         let retainedTab = Unmanaged.passRetained(try XCTUnwrap(tab))
         tab = nil
         DispatchQueue.global().async {
@@ -646,7 +646,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
         let sut = makeSUT(featureFlagger: featureFlagger)
         var userScript: MediaCaptureUserScript? = MediaCaptureUserScript()
-        weak var retainedUserScript = userScript
+        weak let retainedUserScript = userScript
         sut.configureSitePermissionsMediaCapture(with: userScript)
 
         featureFlagger.enabledFeatureFlags = []
@@ -673,7 +673,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     func testWebContentProcessTerminationRetainsHandlerForReinjectedNewDocument() async throws {
         let sut = makeSUT()
         var userScript: MediaCaptureUserScript? = MediaCaptureUserScript()
-        weak var retainedUserScript = userScript
+        weak let retainedUserScript = userScript
         sut.configureSitePermissionsMediaCapture(with: userScript)
         userScript = nil
 

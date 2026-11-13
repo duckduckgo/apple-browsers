@@ -28,7 +28,7 @@ final class AutofillServiceTests {
     private var mockFeatureFlagger: MockFeatureFlagger!
 
     init() throws {
-        let store = try MockKeyValueFileStore()
+        let store = MockKeyValueFileStore()
         mockKeyValueStore = store
         mockFeatureFlagger = MockFeatureFlagger()
     }

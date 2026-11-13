@@ -460,6 +460,11 @@ def load(path):
     live = getattr(mod, "LIVE", [])
     if not isinstance(live, list) or not all(isinstance(s, str) for s in live):
         problems.append("LIVE must be a list of service names")
+    input_env = getattr(mod, "INPUT_ENV", [])
+    if not isinstance(input_env, list) or not all(isinstance(s, str) and s.isidentifier() for s in input_env):
+        problems.append("INPUT_ENV must be a list of environment variable names")
+    else:
+        problems += [f"set {name}: the proof reads its input from it" for name in input_env if not os.environ.get(name)]
     flags = getattr(mod, "FLAGS", {})
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map feature flag names to True/False")
@@ -583,7 +588,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
         _ignore_signals()   # writing the manifest and report must not be interrupted
     try:
         manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log,
-                             evidence_dir, video)
+                             evidence_dir, video, getattr(mod, "INPUT_ENV", []))
         with open(f"{attempt}/manifest.json", "w") as f:
             json.dump(manifest, f, indent=1)
         with open(f"{attempt}/report.md", "w") as f:
@@ -744,8 +749,10 @@ def _skill_hash():
 
 
 def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None, evidence_dir=None,
-              video=True):
+              video=True, input_env=()):
     xcode = run(["xcodebuild", "-version"]).stdout.split()
+    inputs = {name: os.environ.get(name, "") for name in input_env}
+    prefix = "".join(f"{name}={shlex.quote(value)} " for name, value in inputs.items())
     hosts = sorted({h for r in results for h in r.get("liveHostsSeen", [])})
     return dict(
         proof=os.path.relpath(proof_path, attempt),
@@ -761,8 +768,9 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
                     for r in results if r.get("device") in env.DEVICE_TYPES},
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",
+        inputEnv=inputs,
         # the checkout comes from the working directory, so the rerun names it (a before/after run proves another one)
-        rerun=f"cd {shlex.quote(ROOT)} && " + shlex.join([f"{SKILL}/bin/verify-ios", "prove", proof_path,
+        rerun=f"cd {shlex.quote(ROOT)} && {prefix}" + shlex.join([f"{SKILL}/bin/verify-ios", "prove", proof_path,
                                                           "--devices", ",".join(devices)]
                                                          + evidence_args(decision_log, evidence_dir)
                                                          + ([] if video else ["--no-video"])),

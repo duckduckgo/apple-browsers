@@ -74,6 +74,12 @@ struct Launching: LaunchingHandling {
 
         Logger.lifecycle.info("Launching: \(#function)")
 
+        // TEMPORARY, REVERT BEFORE MERGE: test builds open the Duck.ai test server, and let it talk to the app,
+        // without anyone setting it in the Debug menu. Registered defaults are never saved, so installs go back
+        // to duck.ai once this is gone. Values set in the Debug menu still win.
+        UserDefaults.standard.register(defaults: ["aichat.debug.customURL": "https://euw-serp-dev-testing3.duck.ai/",
+                                                  "aichat.debug.messagePolicyHostname": "euw-serp-dev-testing3.duck.ai"])
+
         // First thing after PixelKit is set up (by the `AppDependencyProvider.shared` properties above), so a launch
         // that hangs or crashes later in this init still reports the previous one.
         let launchBreadcrumb = LaunchBreadcrumb()

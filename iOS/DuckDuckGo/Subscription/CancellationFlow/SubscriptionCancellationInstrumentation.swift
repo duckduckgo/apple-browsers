@@ -39,8 +39,8 @@ extension SubscriptionDaysSincePurchaseBucket {
 protocol SubscriptionCancellationInstrumenting {
     func cancelSubscriptionTapped(subscription: DuckDuckGoSubscription?)
     func manageSubscriptionTapped(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?)
-    func manageSubscriptionFailed(_ error: Error)
-    func manageSubscriptionClosed(entry: SubscriptionCancellationEntry, subscriptionBefore: DuckDuckGoSubscription, subscriptionAfter: DuckDuckGoSubscription?)
+    func cancelSubscriptionFailed(_ error: Error)
+    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription)
     func flowLoadFailed(_ error: Error)
     func featureInfoFailed(entitlement: SubscriptionEntitlement)
 }
@@ -87,7 +87,7 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
         ))
     }
 
-    func manageSubscriptionFailed(_ error: Error) {
+    func cancelSubscriptionFailed(_ error: Error) {
         failPendingCancellation(error)
     }
 
@@ -99,13 +99,11 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
         }
     }
 
-    func manageSubscriptionClosed(entry: SubscriptionCancellationEntry, subscriptionBefore: DuckDuckGoSubscription, subscriptionAfter: DuckDuckGoSubscription?) {
-        if subscriptionBefore.platform == .apple, subscriptionBefore.status == .autoRenewable, subscriptionAfter?.status == .notAutoRenewable {
-            let daysSincePurchase = SubscriptionDaysSincePurchaseBucket(startedAt: subscriptionBefore.startedAt, now: now())
-            pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry,
-                                                                                          isTrial: subscriptionBefore.hasActiveTrialOffer,
-                                                                                          daysSincePurchase: daysSincePurchase))
-        }
+    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription) {
+        let daysSincePurchase = SubscriptionDaysSincePurchaseBucket(startedAt: subscription.startedAt, now: now())
+        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry,
+                                                                                      isTrial: subscription.hasActiveTrialOffer,
+                                                                                      daysSincePurchase: daysSincePurchase))
     }
 
     func flowLoadFailed(_ error: Error) {

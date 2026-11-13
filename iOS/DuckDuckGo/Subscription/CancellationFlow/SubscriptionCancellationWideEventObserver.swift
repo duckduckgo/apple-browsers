@@ -31,17 +31,14 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
     private let wideEvent: WideEventManaging
     private let notificationCenter: NotificationCenter
     private let subscriptionFetcher: () async throws -> DuckDuckGoSubscription?
-    private let now: () -> Date
     private var subscriptionObserver: NSObjectProtocol?
 
     init(wideEvent: WideEventManaging,
-         notificationCenter: NotificationCenter = .default,
-         subscriptionFetcher: @escaping () async throws -> DuckDuckGoSubscription?,
-         now: @escaping () -> Date = Date.init) {
+                notificationCenter: NotificationCenter = .default,
+                subscriptionFetcher: @escaping () async throws -> DuckDuckGoSubscription?) {
         self.wideEvent = wideEvent
         self.notificationCenter = notificationCenter
         self.subscriptionFetcher = subscriptionFetcher
-        self.now = now
     }
 
     deinit {
@@ -76,8 +73,38 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
         }
 
         for data in pendingFlows {
-            guard case .complete(let status) = data.completionDecision(for: subscription, now: now()) else { continue }
-            _ = try? await wideEvent.completeFlow(data, status: status)
+            guard let reason = Self.statusReason(for: subscription, subscriptionIdentifier: data.subscriptionIdentifier) else { continue }
+            data.statusReason = reason
+            _ = try? await wideEvent.completeFlow(data, status: Self.status(for: reason))
+        }
+    }
+
+    private static func statusReason(for subscription: DuckDuckGoSubscription?,
+                                     subscriptionIdentifier: String) -> SubscriptionCancellationWideEventData.StatusReason? {
+        guard let subscription else { return .noSubscription }
+
+        switch subscription.status {
+        case .notAutoRenewable:
+            return .notAutoRenewable
+        case .autoRenewable:
+            return subscription.productId == subscriptionIdentifier ? nil : .planChanged
+        case .gracePeriod:
+            return .gracePeriod
+        case .expired:
+            return .expired
+        case .inactive, .unknown:
+            return .partialData
+        }
+    }
+
+    private static func status(for reason: SubscriptionCancellationWideEventData.StatusReason) -> WideEventStatus {
+        switch reason {
+        case .notAutoRenewable:
+            return .success(reason: reason.rawValue)
+        case .planChanged:
+            return .cancelled
+        case .timeout, .noSubscription, .expired, .gracePeriod, .partialData:
+            return .unknown(reason: reason.rawValue)
         }
     }
 }

@@ -53,7 +53,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
-    private var subscriptionBeforeStripePortal: DuckDuckGoSubscription?
+    private var shouldRefreshAfterStripePortal = false
     let withdrawal: SubscriptionWithdrawalModel
     private var withdrawalCancellable: AnyCancellable?
 
@@ -400,7 +400,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         case .google:
             displayGoogleView(true)
         case .stripe:
-            subscriptionBeforeStripePortal = state.subscriptionInfo
+            shouldRefreshAfterStripePortal = true
             Task { await manageStripeSubscription() }
         case .unknown:
             manageInternalSubscription()
@@ -578,10 +578,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         if value != state.isShowingStripeView {
             state.isShowingStripeView = value
         }
-        if !value, let subscriptionBefore = subscriptionBeforeStripePortal {
-            subscriptionBeforeStripePortal = nil
+        if !value, shouldRefreshAfterStripePortal {
+            shouldRefreshAfterStripePortal = false
             Task { @MainActor in
-                await refetchAndDetectCancellation(since: subscriptionBefore, entry: .manage)
+                _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
             }
         }
     }
@@ -643,7 +643,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                     try await AppStore.showManageSubscriptions(in: windowScene)
                     await refetchAndDetectCancellation(since: subscriptionBefore, entry: entry)
                 } catch {
-                    cancellationInstrumentation.manageSubscriptionFailed(error)
+                    cancellationInstrumentation.cancelSubscriptionFailed(error)
                     self.openURL(url)
                 }
             } else {
@@ -655,7 +655,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     @MainActor private func refetchAndDetectCancellation(since subscriptionBefore: DuckDuckGoSubscription, entry: SubscriptionCancellationEntry) async {
         // Force a refetch so the status reflects any change made in the App Store, and update Settings with it.
         _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
-        cancellationInstrumentation.manageSubscriptionClosed(entry: entry, subscriptionBefore: subscriptionBefore, subscriptionAfter: state.subscriptionInfo)
+        guard subscriptionBefore.status == .autoRenewable,
+              state.subscriptionInfo?.status == .notAutoRenewable else { return }
+        cancellationInstrumentation.appStoreSubscriptionCancelled(entry: entry, subscription: subscriptionBefore)
     }
 
     private func manageStripeSubscription() async {
@@ -679,7 +681,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
         } catch {
             Logger.subscription.error("Failed to get Stripe customer portal URL: \(error, privacy: .public)")
-            cancellationInstrumentation.manageSubscriptionFailed(error)
+            cancellationInstrumentation.cancelSubscriptionFailed(error)
         }
         Task { @MainActor in
             self.displayStripeView(true)

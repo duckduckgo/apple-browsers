@@ -22,11 +22,13 @@ import FoundationExtensions
 import Subscription
 import WideEvent
 
+// Will be moved to a shared package later with macOS change.
 final class SubscriptionCancellationWideEventData: WideEventData {
     static let metadata = WideEventMetadata(
         pixelName: "subscription_cancellation",
         featureName: "subscription-cancellation",
         mobileMetaType: "ios-subscription-cancellation",
+        // The macOS version of this wide event will be added later.
         desktopMetaType: "macos-subscription-cancellation",
         version: "1.1.0"
     )
@@ -36,6 +38,7 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     var globalData: WideEventGlobalData
     var contextData: WideEventContextData
     var appData: WideEventAppData
+    var errorData: WideEventErrorData?
 
     let entryPoint: EntryPoint
     let purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform
@@ -44,20 +47,18 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     let daysSincePurchase: SubscriptionDaysSincePurchaseBucket
     let daysUntilRenewal: SubscriptionDaysSincePurchaseBucket
     let startDate: Date
-
-    var errorData: WideEventErrorData?
     var statusReason: StatusReason?
 
     init(entryPoint: EntryPoint,
-         purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform,
-         isTrial: Bool,
-         subscriptionIdentifier: String,
-         daysSincePurchase: SubscriptionDaysSincePurchaseBucket,
-         daysUntilRenewal: SubscriptionDaysSincePurchaseBucket,
-         startDate: Date,
-         contextData: WideEventContextData = WideEventContextData(),
-         appData: WideEventAppData = WideEventAppData(),
-         globalData: WideEventGlobalData = WideEventGlobalData()) {
+                purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform,
+                isTrial: Bool,
+                subscriptionIdentifier: String,
+                daysSincePurchase: SubscriptionDaysSincePurchaseBucket,
+                daysUntilRenewal: SubscriptionDaysSincePurchaseBucket,
+                startDate: Date,
+                contextData: WideEventContextData = WideEventContextData(),
+                appData: WideEventAppData = WideEventAppData(),
+                globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.entryPoint = entryPoint
         self.purchasePlatform = purchasePlatform
         self.isTrial = isTrial
@@ -73,34 +74,11 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         switch trigger {
         case .appLaunch:
-            return timeoutDecision(now: Date())
-        }
-    }
-
-    func completionDecision(for subscription: DuckDuckGoSubscription?, now: Date) -> WideEventCompletionDecision {
-        guard let subscription else {
-            return .complete(.unknown(reason: StatusReason.noSubscription.rawValue))
-        }
-
-        switch subscription.status {
-        case .notAutoRenewable:
-            return .complete(.success(reason: StatusReason.autoRenewDisabled.rawValue))
-        case .autoRenewable, .gracePeriod:
-            if subscription.productId != subscriptionIdentifier {
-                statusReason = .planChanged
-                return .complete(.cancelled)
+            guard Date() >= startDate.addingTimeInterval(Self.cancellationTimeout) else {
+                return .keepPending
             }
-            return timeoutDecision(now: now)
-        case .expired, .inactive, .unknown:
-            return .complete(.unknown(reason: StatusReason.partialData.rawValue))
-        }
-    }
-
-    private func timeoutDecision(now: Date) -> WideEventCompletionDecision {
-        if now >= startDate.addingTimeInterval(Self.cancellationTimeout) {
             return .complete(.unknown(reason: StatusReason.timeout.rawValue))
         }
-        return .keepPending
     }
 }
 
@@ -113,11 +91,13 @@ extension SubscriptionCancellationWideEventData {
         case changePlan = "change_plan"
     }
 
-    enum StatusReason: String, Codable {
-        case autoRenewDisabled = "auto_renew_disabled"
+    enum StatusReason: String, Codable, CaseIterable {
+        case notAutoRenewable = "not_auto_renewable"
         case timeout
         case planChanged = "plan_changed"
         case noSubscription = "no_subscription"
+        case expired
+        case gracePeriod = "grace_period"
         case partialData = "partial_data"
     }
 

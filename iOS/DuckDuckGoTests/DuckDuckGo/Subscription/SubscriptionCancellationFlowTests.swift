@@ -206,8 +206,7 @@ struct SubscriptionCancellationInstrumentationTests {
         let now = Calendar.current.date(byAdding: .day, value: daysSincePurchase, to: subscription.startedAt)!
         let expectedPixel = SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry, isTrial: isTrial, daysSincePurchase: expectedBucket)
 
-        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit, now: { now })
-            .manageSubscriptionClosed(entry: entry, subscriptionBefore: subscription, subscriptionAfter: SubscriptionMockFactory.subscription(status: .notAutoRenewable))
+        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit, now: { now }).appStoreSubscriptionCancelled(entry: entry, subscription: subscription)
 
         #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: expectedPixel, frequency: .standard)])
         #expect(pixelKit.actualFireCalls.first?.pixel.parameters == ["entry": entry.rawValue,

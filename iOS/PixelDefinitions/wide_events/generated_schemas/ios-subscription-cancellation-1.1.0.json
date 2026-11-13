@@ -62,8 +62,16 @@
                             "properties": {
                                 "status_reason": {
                                     "type": "string",
-                                    "description": "Reason for the outcome. `auto_renew_disabled` (SUCCESS) = a subscription change showed the subscription no longer auto-renewing; `timeout` (UNKNOWN) = no cancellation was seen within 24 hours of the entry tap. FAILURE carries no reason: it is sent as soon as an error stops the user from cancelling (e.g. the App Store sheet or the cancellation flow failed to load), described by the error parameters; `plan_changed` (CANCELLED) = a subscription change showed it still auto-renewing but on a different product than at the entry tap, so the user changed plans instead of cancelling; `no_subscription` (UNKNOWN) = a subscription change found no subscription; `partial_data` (UNKNOWN) = a subscription change showed the subscription expired, inactive or unreadable.",
-                                    "enum": ["auto_renew_disabled", "timeout", "plan_changed", "no_subscription", "partial_data"]
+                                    "description": "Why the journey ended: `not_auto_renewable` on SUCCESS; `plan_changed` on CANCELLED; `timeout`, `no_subscription`, `expired`, `grace_period` or `partial_data` on UNKNOWN. Not sent on FAILURE.",
+                                    "enum": [
+                                        "not_auto_renewable",
+                                        "timeout",
+                                        "plan_changed",
+                                        "no_subscription",
+                                        "expired",
+                                        "grace_period",
+                                        "partial_data"
+                                    ]
                                 },
                                 "entry_point": {
                                     "type": "string",

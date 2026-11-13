@@ -823,8 +823,8 @@
             {
                 "key": "feature.data.ext.status_reason",
                 "type": "string",
-                "description": "Reason for the outcome: auto_renew_disabled on SUCCESS; plan_changed on CANCELLED; timeout, no_subscription or partial_data on UNKNOWN; none on FAILURE (see the error parameters)",
-                "enum": ["auto_renew_disabled", "timeout", "plan_changed", "no_subscription", "partial_data"]
+                "description": "Reason for the outcome: not_auto_renewable on SUCCESS; plan_changed on CANCELLED; timeout, no_subscription, expired, grace_period or partial_data on UNKNOWN; none on FAILURE (see the error parameters)",
+                "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "grace_period", "partial_data"]
             },
             {
                 "key": "feature.data.ext.entry_point",

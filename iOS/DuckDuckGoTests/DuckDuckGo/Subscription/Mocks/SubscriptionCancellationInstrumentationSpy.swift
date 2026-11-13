@@ -25,8 +25,8 @@ import Subscription
 final class SubscriptionCancellationInstrumentationSpy: SubscriptionCancellationInstrumenting {
     private(set) var cancelSubscriptionTappedCount = 0
     private(set) var manageSubscriptionTappedEntryPoints: [SubscriptionCancellationWideEventData.EntryPoint] = []
-    private(set) var manageSubscriptionFailures: [Error] = []
-    private(set) var manageSubscriptionClosedCount = 0
+    private(set) var cancelSubscriptionFailures: [Error] = []
+    private(set) var appStoreSubscriptionCancelledCount = 0
     private(set) var flowLoadFailures: [Error] = []
     private(set) var featureInfoFailures: [SubscriptionEntitlement] = []
 
@@ -34,17 +34,13 @@ final class SubscriptionCancellationInstrumentationSpy: SubscriptionCancellation
     func manageSubscriptionTapped(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?) {
         manageSubscriptionTappedEntryPoints.append(entryPoint)
     }
-    var onManageSubscriptionFailed: (() -> Void)?
-    var onManageSubscriptionClosed: (() -> Void)?
+    var onCancelSubscriptionFailed: (() -> Void)?
 
-    func manageSubscriptionFailed(_ error: Error) {
-        manageSubscriptionFailures.append(error)
-        onManageSubscriptionFailed?()
+    func cancelSubscriptionFailed(_ error: Error) {
+        cancelSubscriptionFailures.append(error)
+        onCancelSubscriptionFailed?()
     }
-    func manageSubscriptionClosed(entry: SubscriptionCancellationEntry, subscriptionBefore: DuckDuckGoSubscription, subscriptionAfter: DuckDuckGoSubscription?) {
-        manageSubscriptionClosedCount += 1
-        onManageSubscriptionClosed?()
-    }
+    func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription) { appStoreSubscriptionCancelledCount += 1 }
     func flowLoadFailed(_ error: Error) { flowLoadFailures.append(error) }
     func featureInfoFailed(entitlement: SubscriptionEntitlement) { featureInfoFailures.append(entitlement) }
 }

@@ -125,7 +125,6 @@ struct SubscriptionCancellationWideEventTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @available(iOS 16, macOS 13, *)
     @Test("A failure that blocks cancelling completes the pending flow with FAILURE and the error", .timeLimit(.minutes(1)), arguments: [true, false])
     func blockingFailureCompletesWithFailure(isFlowLoadFailure: Bool) throws {
         let wideEvent = WideEventMock()
@@ -135,7 +134,7 @@ struct SubscriptionCancellationWideEventTests {
         if isFlowLoadFailure {
             instrumentation.flowLoadFailed(TestError())
         } else {
-            instrumentation.manageSubscriptionFailed(TestError())
+            instrumentation.cancelSubscriptionFailed(TestError())
         }
 
         let completion = try #require(wideEvent.completions.first)
@@ -151,7 +150,7 @@ struct SubscriptionCancellationWideEventTests {
         let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: nil, wideEvent: wideEvent)
         let renewing = subscription(status: .autoRenewable)
         instrumentation.cancelSubscriptionTapped(subscription: renewing)
-        instrumentation.manageSubscriptionFailed(TestError())
+        instrumentation.cancelSubscriptionFailed(TestError())
 
         instrumentation.manageSubscriptionTapped(entryPoint: .manageSubscription, subscription: renewing)
 
@@ -159,114 +158,25 @@ struct SubscriptionCancellationWideEventTests {
         #expect(wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self).count == 1)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("A subscription no longer auto-renewing completes with SUCCESS auto_renew_disabled", .timeLimit(.minutes(1)))
-    func autoRenewDisabledCompletesWithSuccess() {
-        let decision = makeData().completionDecision(for: subscription(status: .notAutoRenewable), now: tapDate.addingTimeInterval(.minutes(2)))
-
-        guard case .complete(.success(reason: "auto_renew_disabled")) = decision else {
-            Issue.record("Unexpected decision \(decision)")
-            return
-        }
+    private func subscriptionChange(_ subscription: DuckDuckGoSubscription?) -> Notification {
+        Notification(name: .subscriptionDidChange,
+                     object: nil,
+                     userInfo: subscription.map { [UserDefaultsCacheKey.subscription: $0] })
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("A refresh showing a different plan that still auto-renews completes as CANCELLED and sends plan_changed as the status reason", .timeLimit(.minutes(1)))
-    func planChangeCompletesAsCancelledWithReason() {
-        let data = makeData()
-        let decision = data.completionDecision(for: subscription(status: .autoRenewable, productId: "ddg.privacy.pro.yearly.renews.us"),
-                                               now: tapDate.addingTimeInterval(.minutes(5)))
-
-        guard case .complete(.cancelled) = decision else {
-            Issue.record("Unexpected decision \(decision)")
-            return
-        }
-        #expect(data.jsonParameters()[WideEventParameter.Feature.statusReason] as? String == "plan_changed")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Outcomes other than a plan change don't add a status reason of their own", .timeLimit(.minutes(1)))
-    func nonPlanChangeOutcomesLeaveStatusReasonToTheSender() {
-        let data = makeData()
-        _ = data.completionDecision(for: subscription(status: .notAutoRenewable), now: tapDate)
-
-        #expect(data.jsonParameters()[WideEventParameter.Feature.statusReason] == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A same-plan auto-renewing subscription stays pending before 24h and times out after", .timeLimit(.minutes(1)))
-    func samePlanAutoRenewingTimesOutAfter24Hours() {
-        let data = makeData()
-        let renewing = subscription(status: .autoRenewable)
-
-        guard case .keepPending = data.completionDecision(for: renewing, now: tapDate.addingTimeInterval(.hours(23))) else {
-            Issue.record("Expected pending before 24h")
-            return
-        }
-        guard case .complete(.unknown(reason: "timeout")) = data.completionDecision(for: renewing, now: tapDate.addingTimeInterval(.hours(24))) else {
-            Issue.record("Expected timeout at 24h")
-            return
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("No subscription completes with UNKNOWN no_subscription", .timeLimit(.minutes(1)))
-    func missingSubscriptionCompletesWithNoSubscription() {
-        let decision = makeData().completionDecision(for: nil, now: tapDate.addingTimeInterval(.minutes(1)))
-
-        guard case .complete(.unknown(reason: "no_subscription")) = decision else {
-            Issue.record("Unexpected decision \(decision)")
-            return
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("An expired, inactive or unreadable subscription completes with UNKNOWN partial_data", .timeLimit(.minutes(1)), arguments: [
-        DuckDuckGoSubscription.Status.expired,
-        .inactive,
-        .unknown
-    ])
-    func unusableSubscriptionCompletesWithPartialData(status: DuckDuckGoSubscription.Status) {
-        let decision = makeData().completionDecision(for: subscription(status: status), now: tapDate.addingTimeInterval(.minutes(1)))
-
-        guard case .complete(.unknown(reason: "partial_data")) = decision else {
-            Issue.record("Unexpected decision \(decision)")
-            return
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Closing the App Store sheet after cancelling fires the cancelled pixel and leaves completing the wide event to the observer", .timeLimit(.minutes(1)))
-    func manageSubscriptionClosedAfterCancellingFiresPixelOnly() {
-        let pixelKit = PixelKitMock()
+    private func makePendingObserver(notificationCenter: NotificationCenter = .default,
+                                     fetcher: @escaping () async throws -> DuckDuckGoSubscription? = { nil })
+    -> (WideEventMock, SubscriptionCancellationWideEventObserver) {
         let wideEvent = WideEventMock()
-        let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: pixelKit, wideEvent: wideEvent, now: { tapDate })
-        let before = subscription(status: .autoRenewable)
-        instrumentation.cancelSubscriptionTapped(subscription: before)
-
-        instrumentation.manageSubscriptionClosed(entry: .cancellation, subscriptionBefore: before, subscriptionAfter: subscription(status: .notAutoRenewable))
-
-        #expect(pixelKit.actualFireCalls == [
-            ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationCancelClick, frequency: .standard),
-            ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: .cancellation, isTrial: false, daysSincePurchase: .d8To30),
-                             frequency: .standard)
-        ])
-        #expect(wideEvent.completions.isEmpty)
+        wideEvent.startFlow(makeData())
+        let observer = SubscriptionCancellationWideEventObserver(wideEvent: wideEvent,
+                                                                 notificationCenter: notificationCenter,
+                                                                 subscriptionFetcher: fetcher)
+        return (wideEvent, observer)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("Closing the App Store sheet without cancelling fires no cancelled pixel and keeps the wide event pending", .timeLimit(.minutes(1)))
-    func manageSubscriptionClosedWithoutCancellingKeepsWideEventPending() {
-        let pixelKit = PixelKitMock()
-        let wideEvent = WideEventMock()
-        let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: pixelKit, wideEvent: wideEvent, now: { tapDate })
-        let before = subscription(status: .autoRenewable)
-        instrumentation.manageSubscriptionTapped(entryPoint: .manageSubscription, subscription: before)
-
-        instrumentation.manageSubscriptionClosed(entry: .manage, subscriptionBefore: before, subscriptionAfter: before)
-
-        #expect(pixelKit.actualFireCalls.isEmpty)
-        #expect(wideEvent.completions.isEmpty)
+    enum FallbackFetch: CaseIterable {
+        case cancelledSubscription, noSubscription, failure
     }
 
     @available(iOS 16, macOS 13, *)
@@ -289,41 +199,30 @@ struct SubscriptionCancellationWideEventTests {
         }
     }
 
-    private func subscriptionChange(_ subscription: DuckDuckGoSubscription?) -> Notification {
-        Notification(name: .subscriptionDidChange,
-                     object: nil,
-                     userInfo: subscription.map { [UserDefaultsCacheKey.subscription: $0] })
-    }
-
-    private func makePendingObserver(notificationCenter: NotificationCenter = .default,
-                                     fetcher: @escaping () async throws -> DuckDuckGoSubscription? = { nil })
-    -> (WideEventMock, SubscriptionCancellationWideEventObserver) {
-        let wideEvent = WideEventMock()
-        wideEvent.startFlow(makeData())
-        let observer = SubscriptionCancellationWideEventObserver(wideEvent: wideEvent,
-                                                                 notificationCenter: notificationCenter,
-                                                                 subscriptionFetcher: fetcher,
-                                                                 now: { tapDate })
-        return (wideEvent, observer)
-    }
-
-    enum FallbackFetch: CaseIterable {
-        case cancelledSubscription, noSubscription, failure
-    }
-
     @available(iOS 16, macOS 13, *)
-    @Test("A subscription change payload decides the pending flow", .timeLimit(.minutes(1)), arguments: [
-        (DuckDuckGoSubscription.Status.notAutoRenewable, false, [WideEventStatus.success(reason: "auto_renew_disabled")]),
-        (.autoRenewable, true, [.cancelled]),
-        (.autoRenewable, false, [])
+    @Test("A subscription change payload decides the pending flow and sends the status reason", .timeLimit(.minutes(1)), arguments: [
+        (DuckDuckGoSubscription.Status.notAutoRenewable, false, [WideEventStatus.success(reason: "not_auto_renewable")], String?.some("not_auto_renewable")),
+        (.autoRenewable, true, [.cancelled], "plan_changed"),
+        (.gracePeriod, true, [.unknown(reason: "grace_period")], "grace_period"),
+        (.expired, false, [.unknown(reason: "expired")], "expired"),
+        (.inactive, false, [.unknown(reason: "partial_data")], "partial_data"),
+        (.unknown, false, [.unknown(reason: "partial_data")], "partial_data"),
+        (.autoRenewable, false, [], nil),
+        (.gracePeriod, false, [.unknown(reason: "grace_period")], "grace_period")
     ])
-    func subscriptionChangePayloadDecidesPendingFlow(status: DuckDuckGoSubscription.Status, planChanged: Bool, expectedStatuses: [WideEventStatus]) async {
+    func subscriptionChangePayloadDecidesPendingFlow(status: DuckDuckGoSubscription.Status,
+                                                     planChanged: Bool,
+                                                     expectedStatuses: [WideEventStatus],
+                                                     expectedReason: String?) async {
         let (wideEvent, observer) = makePendingObserver()
         let changed = subscription(status: status, productId: planChanged ? "ddg.privacy.pro.yearly.renews.us" : nil)
 
         await observer.handleSubscriptionChange(subscriptionChange(changed))
 
         #expect(wideEvent.completions.map(\.1) == expectedStatuses)
+        let sentReason = (wideEvent.completions.first?.0 as? SubscriptionCancellationWideEventData)?
+            .jsonParameters()[WideEventParameter.Feature.statusReason] as? String
+        #expect(sentReason == expectedReason)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -341,7 +240,7 @@ struct SubscriptionCancellationWideEventTests {
         await observer.handleSubscriptionChange(subscriptionChange(nil))
 
         let expectedStatuses: [WideEventStatus] = switch fetch {
-        case .cancelledSubscription: [.success(reason: "auto_renew_disabled")]
+        case .cancelledSubscription: [.success(reason: "not_auto_renewable")]
         case .noSubscription: [.unknown(reason: "no_subscription")]
         case .failure: []
         }
@@ -360,6 +259,6 @@ struct SubscriptionCancellationWideEventTests {
             notificationCenter.post(subscriptionChange(subscription(status: .notAutoRenewable)))
         }
 
-        #expect(status == .success(reason: "auto_renew_disabled"))
+        #expect(status == .success(reason: "not_auto_renewable"))
     }
 }

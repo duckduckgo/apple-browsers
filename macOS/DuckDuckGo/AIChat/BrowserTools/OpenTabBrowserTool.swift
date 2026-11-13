@@ -23,7 +23,7 @@ import Foundation
 final class OpenTabBrowserTool: BrowserTool {
 
     let name = "openTab"
-    let permissionMode = BrowserToolPermissionMode.auto
+    let permissionMode = BrowserToolPermissionMode.ask
 
     let inputSchema: JSONValue = [
         "type": "object",

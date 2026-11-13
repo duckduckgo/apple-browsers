@@ -28,7 +28,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
     static let maxFolderNameLength = 256
 
     let name = "bookmarkTab"
-    let permissionMode = BrowserToolPermissionMode.auto
+    let permissionMode = BrowserToolPermissionMode.ask
 
     let inputSchema: JSONValue = [
         "type": "object",

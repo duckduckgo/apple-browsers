@@ -2362,7 +2362,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     private func addAddressBarUpdateButton(title: String, for updateController: any UpdateController) {
         let button = AddressBarUpdateButton(title: title) {
-            MoreOptionsMenuPixel.fireUpdateClicked(on: .toolbarButton)
+            UpdateClickReporter().reportClick(on: .toolbarButton)
             updateController.runUpdateFromPrompt()
         }.embeddedInHostingView()
 

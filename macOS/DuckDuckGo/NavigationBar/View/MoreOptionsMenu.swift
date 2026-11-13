@@ -549,7 +549,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                       version: update.version,
                                       buttonTitle: updateController.updateBannerButtonTitle) { [weak self] in
             self?.cancelTracking()
-            MoreOptionsMenuPixel.fireUpdateClicked(on: surface)
+            UpdateClickReporter().reportClick(on: surface)
             updateController.runUpdateFromPrompt()
         }
 
@@ -859,7 +859,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         if let item = item(at: index), item == updateMenuItem {
-            MoreOptionsMenuPixel.fireUpdateClicked(on: .menuItem)
+            UpdateClickReporter().reportClick(on: .menuItem)
         }
         super.performActionForItem(at: index)
     }

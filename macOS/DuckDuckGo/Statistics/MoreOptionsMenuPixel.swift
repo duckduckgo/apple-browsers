@@ -167,11 +167,20 @@ enum MoreOptionsMenuPixel: PixelKit.Event {
 
 }
 
-extension MoreOptionsMenuPixel {
+/// Fires the update click pixel and remembers the surface, so the update success pixel can name it after the update.
+struct UpdateClickReporter {
 
-    /// Fires the update click pixel and remembers the surface, so the update success pixel can name it after the update.
-    static func fireUpdateClicked(on surface: UpdatePromptSurface) {
-        PixelKit.fire(MoreOptionsMenuPixel.updateActionClicked(promptSurface: surface), frequency: .daily)
-        UpdatePromptAttribution(settings: UserDefaults.standard.throwingKeyedStoring()).recordClick(on: surface)
+    private let pixelFiring: (any PixelKitFiring)?
+    private let attribution: UpdatePromptAttribution
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         settings: any ThrowingKeyedStoring<UpdateControllerSettings> = UserDefaults.standard.throwingKeyedStoring()) {
+        self.pixelFiring = pixelFiring
+        self.attribution = UpdatePromptAttribution(settings: settings)
+    }
+
+    func reportClick(on surface: UpdatePromptSurface) {
+        pixelFiring?.fire(MoreOptionsMenuPixel.updateActionClicked(promptSurface: surface), frequency: .daily)
+        attribution.recordClick(on: surface)
     }
 }

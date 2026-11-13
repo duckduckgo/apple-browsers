@@ -85,8 +85,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
                                                             isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
 
        let jsonGenerator = privacyConfigurationJSONGenerator ??
-            ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: featureFlagger,
-                                                          privacyConfigurationManager: scriptSourceProvider.privacyConfigurationManager)
+            ContentScopePrivacyConfigurationJSONGenerator(privacyConfigurationManager: scriptSourceProvider.privacyConfigurationManager)
 
        do {
            self.contentScopeUserScripts = try contentScopeUserScripts ??

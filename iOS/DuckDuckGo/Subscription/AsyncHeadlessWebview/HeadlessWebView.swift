@@ -91,7 +91,7 @@ struct HeadlessWebView: UIViewRepresentable {
             do {
                 let contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                     properties: sourceProvider.contentScopeProperties,
-                                                                    privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                    privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
                 userContentController.addUserScript(contentScopeUserScript.makeWKUserScriptSync())
             } catch {
                 if let error = error as? UserScriptError {

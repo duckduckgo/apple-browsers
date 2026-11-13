@@ -180,11 +180,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             // Windows found injecting it broke the aiChat message bridge, which is shared code.
             let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
-                featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                 excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue] + nativeOnlyFeatures)
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
-                featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                 excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)

@@ -25,7 +25,8 @@ import Subscription
 final class SubscriptionCancellationInstrumentationSpy: SubscriptionCancellationInstrumenting {
     private(set) var cancelSubscriptionTappedCount = 0
     private(set) var manageSubscriptionTappedEntryPoints: [SubscriptionCancellationWideEventData.EntryPoint] = []
-    private(set) var cancelSubscriptionFailures: [Error] = []
+    private(set) var appStoreSheetFailures: [Error] = []
+    private(set) var stripePortalFailures: [Error] = []
     private(set) var appStoreSubscriptionCancelledCount = 0
     private(set) var manageSubscriptionSheetShownCount = 0
     private(set) var flowLoadFailures: [Error] = []
@@ -35,12 +36,13 @@ final class SubscriptionCancellationInstrumentationSpy: SubscriptionCancellation
     func manageSubscriptionTapped(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?) {
         manageSubscriptionTappedEntryPoints.append(entryPoint)
     }
-    var onCancelSubscriptionFailed: (() -> Void)?
+    var onStripePortalFailed: (() -> Void)?
     var onManageSubscriptionSheetShown: (() -> Void)?
 
-    func cancelSubscriptionFailed(_ error: Error) {
-        cancelSubscriptionFailures.append(error)
-        onCancelSubscriptionFailed?()
+    func appStoreSheetFailed(_ error: Error) { appStoreSheetFailures.append(error) }
+    func stripePortalFailed(_ error: Error) {
+        stripePortalFailures.append(error)
+        onStripePortalFailed?()
     }
     func manageSubscriptionSheetShown() {
         manageSubscriptionSheetShownCount += 1

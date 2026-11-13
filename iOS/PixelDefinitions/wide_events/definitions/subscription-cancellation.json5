@@ -1,6 +1,6 @@
 {
     "ios-subscription-cancellation": {
-        "description": "Sent at the end of a subscription cancellation journey, from the moment an auto-renewing subscriber taps Cancel Subscription, Manage Subscription, Manage Payment or Cancel, or Change Plan in Subscription Settings, until a subscription change shows auto-renew turned off, the plan changed, no subscription, or unusable data, an error stops the user from cancelling (FAILURE), or 24 hours pass without a cancellation (UNKNOWN). Tapping an entry again after a FAILURE starts a new journey.",
+        "description": "Sent at the end of a subscription cancellation journey, from the moment an auto-renewing subscriber taps Cancel Subscription, Manage Subscription, Manage Payment or Cancel, or Change Plan in Subscription Settings. It ends when a subscription change within 24 hours of the tap shows auto-renew turned off or the subscription expired (SUCCESS), the plan changed (CANCELLED), or no subscription or unreadable data (UNKNOWN). After 24 hours it ends as UNKNOWN timeout, whatever the subscription shows. It ends as FAILURE when an error stops the user from cancelling and no other cancellation path is shown; errors that fall back to another path are sent with the eventual outcome.",
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-subscription-cancellation",
@@ -13,7 +13,7 @@
                 "ext": {
                     "status_reason": {
                         "type": "string",
-                        "description": "Why the journey ended: `not_auto_renewable` or `expired` on SUCCESS; `plan_changed` on CANCELLED; `timeout`, `no_subscription` or `partial_data` on UNKNOWN. Not sent on FAILURE.",
+                        "description": "Why the journey ended: `not_auto_renewable` or `expired` on SUCCESS; `plan_changed` (product changed; deferred changes are not detected) on CANCELLED; `timeout`, `no_subscription` or `partial_data` on UNKNOWN. Not sent on FAILURE.",
                         "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "partial_data"]
                     },
                     "entry_point": {

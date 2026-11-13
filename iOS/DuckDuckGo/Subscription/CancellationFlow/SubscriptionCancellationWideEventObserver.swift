@@ -28,17 +28,22 @@ protocol SubscriptionCancellationWideEventObserving: AnyObject {
 
 final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationWideEventObserving {
 
+    private typealias CancellationData = SubscriptionCancellationWideEventData
+
     private let wideEvent: WideEventManaging
     private let notificationCenter: NotificationCenter
     private let subscriptionFetcher: () async throws -> DuckDuckGoSubscription?
+    private let now: () -> Date
     private var subscriptionObserver: NSObjectProtocol?
 
     init(wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
-         subscriptionFetcher: @escaping () async throws -> DuckDuckGoSubscription?) {
+         subscriptionFetcher: @escaping () async throws -> DuckDuckGoSubscription?,
+         now: @escaping () -> Date = Date.init) {
         self.wideEvent = wideEvent
         self.notificationCenter = notificationCenter
         self.subscriptionFetcher = subscriptionFetcher
+        self.now = now
     }
 
     deinit {
@@ -58,7 +63,7 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
     }
 
     func handleSubscriptionChange(_ notification: Notification) async {
-        let pendingFlows = wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self)
+        let pendingFlows = wideEvent.getAllFlowData(CancellationData.self)
         guard !pendingFlows.isEmpty else { return }
 
         let subscription: DuckDuckGoSubscription?
@@ -72,37 +77,18 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
             }
         }
 
+        let now = now()
         for data in pendingFlows {
-            guard let reason = Self.statusReason(for: subscription, subscriptionIdentifier: data.subscriptionIdentifier) else { continue }
-            data.statusReason = reason
-            _ = try? await wideEvent.completeFlow(data, status: Self.status(for: reason))
+            let reason: CancellationData.StatusReason? = data.hasTimedOut(at: now)
+                ? .timeout
+                : CancellationData.statusReason(for: subscription, subscriptionIdentifier: data.subscriptionIdentifier)
+            guard let reason else { continue }
+            await complete(data, reason: reason)
         }
     }
 
-    private static func statusReason(for subscription: DuckDuckGoSubscription?,
-                                     subscriptionIdentifier: String) -> SubscriptionCancellationWideEventData.StatusReason? {
-        guard let subscription else { return .noSubscription }
-
-        switch subscription.status {
-        case .notAutoRenewable:
-            return .notAutoRenewable
-        case .autoRenewable, .gracePeriod:
-            return subscription.productId == subscriptionIdentifier ? nil : .planChanged
-        case .expired:
-            return .expired
-        case .inactive, .unknown:
-            return .partialData
-        }
-    }
-
-    private static func status(for reason: SubscriptionCancellationWideEventData.StatusReason) -> WideEventStatus {
-        switch reason {
-        case .notAutoRenewable, .expired:
-            return .success(reason: reason.rawValue)
-        case .planChanged:
-            return .cancelled
-        case .timeout, .noSubscription, .partialData:
-            return .unknown(reason: reason.rawValue)
-        }
+    private func complete(_ data: CancellationData, reason: CancellationData.StatusReason) async {
+        data.statusReason = reason
+        _ = try? await wideEvent.completeFlow(data, status: CancellationData.status(for: reason))
     }
 }

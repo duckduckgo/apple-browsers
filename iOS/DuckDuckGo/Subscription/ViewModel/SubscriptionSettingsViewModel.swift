@@ -644,7 +644,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                     cancellationInstrumentation.manageSubscriptionSheetShown()
                     await refetchAndDetectCancellation(since: subscriptionBefore, entry: entry)
                 } catch {
-                    cancellationInstrumentation.cancelSubscriptionFailed(error)
+                    cancellationInstrumentation.appStoreSheetFailed(error)
                     self.openURL(url)
                 }
             } else {
@@ -683,7 +683,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
         } catch {
             Logger.subscription.error("Failed to get Stripe customer portal URL: \(error, privacy: .public)")
-            cancellationInstrumentation.cancelSubscriptionFailed(error)
+            cancellationInstrumentation.stripePortalFailed(error)
         }
         Task { @MainActor in
             self.displayStripeView(true)

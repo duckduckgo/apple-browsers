@@ -789,7 +789,7 @@
         ]
     },
     "m_ios_wide_subscription_cancellation": {
-        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription change shows the outcome, an error stops the user from cancelling, or 24 hours pass after the entry tap",
+        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription change within 24 hours of the entry tap shows the outcome, when an error with no other cancellation path stops the user, or when 24 hours pass",
         "owners": ["hanyutang-sandra"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily"],
@@ -823,7 +823,7 @@
             {
                 "key": "feature.data.ext.status_reason",
                 "type": "string",
-                "description": "Reason for the outcome: not_auto_renewable or expired on SUCCESS; plan_changed on CANCELLED; timeout, no_subscription or partial_data on UNKNOWN; none on FAILURE (see the error parameters)",
+                "description": "Reason for the outcome: not_auto_renewable or expired on SUCCESS; plan_changed (product changed; deferred changes are not detected) on CANCELLED; timeout, no_subscription or partial_data on UNKNOWN; none on FAILURE",
                 "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "partial_data"]
             },
             {

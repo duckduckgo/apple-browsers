@@ -39,7 +39,8 @@ extension SubscriptionDaysSincePurchaseBucket {
 protocol SubscriptionCancellationInstrumenting {
     func cancelSubscriptionTapped(subscription: DuckDuckGoSubscription?)
     func manageSubscriptionTapped(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?)
-    func cancelSubscriptionFailed(_ error: Error)
+    func appStoreSheetFailed(_ error: Error)
+    func stripePortalFailed(_ error: Error)
     func manageSubscriptionSheetShown()
     func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription)
     func flowLoadFailed(_ error: Error)
@@ -88,8 +89,13 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
         ))
     }
 
-    func cancelSubscriptionFailed(_ error: Error) {
-        failPendingCancellation(error)
+    func appStoreSheetFailed(_ error: Error) {
+        // The App Store web page opens as a fallback, so the user can still cancel there.
+        recordError(error, completingPendingCancellation: false)
+    }
+
+    func stripePortalFailed(_ error: Error) {
+        recordError(error, completingPendingCancellation: true)
     }
 
     func manageSubscriptionSheetShown() {
@@ -100,11 +106,15 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
         }
     }
 
-    private func failPendingCancellation(_ error: Error) {
+    private func recordError(_ error: Error, completingPendingCancellation: Bool) {
         guard let wideEvent else { return }
         for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
             data.errorData = WideEventErrorData(error: error)
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            if completingPendingCancellation {
+                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            } else {
+                wideEvent.updateFlow(data)
+            }
         }
     }
 
@@ -117,7 +127,8 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
 
     func flowLoadFailed(_ error: Error) {
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(error), frequency: .dailyAndCount)
-        failPendingCancellation(error)
+        // The store cancellation opens as a fallback, so the user can still cancel there.
+        recordError(error, completingPendingCancellation: false)
     }
 
     func featureInfoFailed(entitlement: SubscriptionEntitlement) {

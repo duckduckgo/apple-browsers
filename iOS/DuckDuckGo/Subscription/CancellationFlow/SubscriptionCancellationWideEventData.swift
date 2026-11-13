@@ -75,10 +75,40 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         switch trigger {
         case .appLaunch:
-            guard Date() >= startDate.addingTimeInterval(Self.cancellationTimeout) else {
+            guard hasTimedOut(at: Date()) else {
                 return .keepPending
             }
             return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+        }
+    }
+
+    func hasTimedOut(at now: Date) -> Bool {
+        now >= startDate.addingTimeInterval(Self.cancellationTimeout)
+    }
+
+    static func statusReason(for subscription: DuckDuckGoSubscription?, subscriptionIdentifier: String) -> StatusReason? {
+        guard let subscription else { return .noSubscription }
+
+        switch subscription.status {
+        case .notAutoRenewable:
+            return .notAutoRenewable
+        case .autoRenewable, .gracePeriod:
+            return subscription.productId == subscriptionIdentifier ? nil : .planChanged
+        case .expired:
+            return .expired
+        case .inactive, .unknown:
+            return .partialData
+        }
+    }
+
+    static func status(for reason: StatusReason) -> WideEventStatus {
+        switch reason {
+        case .notAutoRenewable, .expired:
+            return .success(reason: reason.rawValue)
+        case .planChanged:
+            return .cancelled
+        case .timeout, .noSubscription, .partialData:
+            return .unknown(reason: reason.rawValue)
         }
     }
 }

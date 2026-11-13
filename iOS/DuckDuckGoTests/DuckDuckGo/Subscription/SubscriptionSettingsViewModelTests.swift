@@ -939,23 +939,23 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
         await fulfillment(of: [shown], timeout: 5.0)
         XCTAssertEqual(instrumentation.manageSubscriptionSheetShownCount, 1)
-        XCTAssertTrue(instrumentation.cancelSubscriptionFailures.isEmpty)
+        XCTAssertTrue(instrumentation.stripePortalFailures.isEmpty)
     }
 
-    func testManageSubscription_WhenStripePortalURLFails_ReportsCancelSubscriptionFailed() async {
+    func testManageSubscription_WhenStripePortalURLFails_ReportsStripePortalFailed() async {
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockSubscriptionManager.customerPortalURL = nil
         let instrumentation = SubscriptionCancellationInstrumentationSpy()
         sut = makeSUT(cancellationInstrumentation: instrumentation)
         await loadSubscriptionWithoutRefresh()
-        let failed = expectation(description: "Cancel subscription failure reported")
-        instrumentation.onCancelSubscriptionFailed = { failed.fulfill() }
+        let failed = expectation(description: "Stripe portal failure reported")
+        instrumentation.onStripePortalFailed = { failed.fulfill() }
 
         sut.manageSubscription()
 
         await fulfillment(of: [failed], timeout: 5.0)
-        XCTAssertEqual(instrumentation.cancelSubscriptionFailures.count, 1)
+        XCTAssertEqual(instrumentation.stripePortalFailures.count, 1)
     }
 
     func testDisplayStripeView_WhenPortalClosesAfterManageSubscription_RefreshesSubscriptionWithoutAppStorePixel() async {

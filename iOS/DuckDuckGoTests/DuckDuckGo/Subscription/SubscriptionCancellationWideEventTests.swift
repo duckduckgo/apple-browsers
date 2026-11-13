@@ -126,8 +126,8 @@ struct SubscriptionCancellationWideEventTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A failure that blocks cancelling completes the pending flow with FAILURE and the error", .timeLimit(.minutes(1)), arguments: [true, false])
-    func blockingFailureCompletesWithFailure(isFlowLoadFailure: Bool) throws {
+    @Test("An error that falls back to another cancellation path is recorded without completing the flow", .timeLimit(.minutes(1)), arguments: [true, false])
+    func fallbackErrorIsRecordedOnPendingFlow(isFlowLoadFailure: Bool) throws {
         let wideEvent = WideEventMock()
         let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: nil, wideEvent: wideEvent)
         instrumentation.cancelSubscriptionTapped(subscription: subscription(status: .autoRenewable))
@@ -135,8 +135,22 @@ struct SubscriptionCancellationWideEventTests {
         if isFlowLoadFailure {
             instrumentation.flowLoadFailed(TestError())
         } else {
-            instrumentation.cancelSubscriptionFailed(TestError())
+            instrumentation.appStoreSheetFailed(TestError())
         }
+
+        #expect(wideEvent.completions.isEmpty)
+        let data = try #require(wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self).first)
+        #expect(data.errorData != nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An error with no fallback completes the flow with FAILURE and the error", .timeLimit(.minutes(1)))
+    func errorWithoutFallbackCompletesWithFailure() throws {
+        let wideEvent = WideEventMock()
+        let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: nil, wideEvent: wideEvent)
+        instrumentation.cancelSubscriptionTapped(subscription: subscription(status: .autoRenewable))
+
+        instrumentation.stripePortalFailed(TestError())
 
         let completion = try #require(wideEvent.completions.first)
         #expect(wideEvent.completions.count == 1)
@@ -160,18 +174,24 @@ struct SubscriptionCancellationWideEventTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Tapping an entry again after a failure starts a new flow", .timeLimit(.minutes(1)))
-    func entryTapAfterFailureStartsNewFlow() {
+    @Test("A recorded error is sent with the eventual outcome", .timeLimit(.minutes(1)))
+    func recordedErrorIsSentWithEventualOutcome() async throws {
         let wideEvent = WideEventMock()
-        let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: nil, wideEvent: wideEvent)
-        let renewing = subscription(status: .autoRenewable)
-        instrumentation.cancelSubscriptionTapped(subscription: renewing)
-        instrumentation.cancelSubscriptionFailed(TestError())
+        let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: nil, wideEvent: wideEvent, now: { tapDate })
+        instrumentation.cancelSubscriptionTapped(subscription: subscription(status: .autoRenewable))
+        instrumentation.appStoreSheetFailed(TestError())
+        let observer = SubscriptionCancellationWideEventObserver(wideEvent: wideEvent, subscriptionFetcher: { nil }, now: { tapDate })
 
-        instrumentation.manageSubscriptionTapped(entryPoint: .manageSubscription, subscription: renewing)
+        await observer.handleSubscriptionChange(subscriptionChange(subscription(status: .notAutoRenewable)))
 
-        #expect(wideEvent.started.count == 2)
-        #expect(wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self).count == 1)
+        let completion = try #require(wideEvent.completions.first)
+        #expect(completion.1 == .success(reason: "not_auto_renewable"))
+        #expect((completion.0 as? SubscriptionCancellationWideEventData)?.errorData != nil)
+    }
+
+    private func sentStatusReason(_ wideEvent: WideEventMock) -> String? {
+        (wideEvent.completions.first?.0 as? SubscriptionCancellationWideEventData)?
+            .jsonParameters()[WideEventParameter.Feature.statusReason] as? String
     }
 
     private func subscriptionChange(_ subscription: DuckDuckGoSubscription?) -> Notification {
@@ -181,14 +201,33 @@ struct SubscriptionCancellationWideEventTests {
     }
 
     private func makePendingObserver(notificationCenter: NotificationCenter = .default,
+                                     hoursSinceTap: Int = 1,
                                      fetcher: @escaping () async throws -> DuckDuckGoSubscription? = { nil })
     -> (WideEventMock, SubscriptionCancellationWideEventObserver) {
         let wideEvent = WideEventMock()
         wideEvent.startFlow(makeData())
         let observer = SubscriptionCancellationWideEventObserver(wideEvent: wideEvent,
                                                                  notificationCenter: notificationCenter,
-                                                                 subscriptionFetcher: fetcher)
+                                                                 subscriptionFetcher: fetcher,
+                                                                 now: { tapDate.addingTimeInterval(.hours(hoursSinceTap)) })
         return (wideEvent, observer)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("After 24h, a subscription change completes with UNKNOWN timeout, whatever the subscription shows", .timeLimit(.minutes(1)), arguments: [
+        DuckDuckGoSubscription.Status.notAutoRenewable,
+        .expired,
+        .autoRenewable,
+        .gracePeriod,
+        .inactive
+    ])
+    func subscriptionChangeAfterTimeoutCompletesWithTimeout(status: DuckDuckGoSubscription.Status) async {
+        let (wideEvent, observer) = makePendingObserver(hoursSinceTap: 25)
+
+        await observer.handleSubscriptionChange(subscriptionChange(subscription(status: status)))
+
+        #expect(wideEvent.completions.map(\.1) == [.unknown(reason: "timeout")])
+        #expect(sentStatusReason(wideEvent) == "timeout")
     }
 
     enum FallbackFetch: CaseIterable {
@@ -196,7 +235,7 @@ struct SubscriptionCancellationWideEventTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("On launch, the flow stays pending before 24h and completes with timeout after", .timeLimit(.minutes(1)), arguments: [
+    @Test("On launch, the flow stays pending before 24h and completes with UNKNOWN timeout after", .timeLimit(.minutes(1)), arguments: [
         (1, String?.none),
         (25, "timeout")
     ])
@@ -236,9 +275,7 @@ struct SubscriptionCancellationWideEventTests {
         await observer.handleSubscriptionChange(subscriptionChange(changed))
 
         #expect(wideEvent.completions.map(\.1) == expectedStatuses)
-        let sentReason = (wideEvent.completions.first?.0 as? SubscriptionCancellationWideEventData)?
-            .jsonParameters()[WideEventParameter.Feature.statusReason] as? String
-        #expect(sentReason == expectedReason)
+        #expect(sentStatusReason(wideEvent) == expectedReason)
     }
 
     @available(iOS 16, macOS 13, *)

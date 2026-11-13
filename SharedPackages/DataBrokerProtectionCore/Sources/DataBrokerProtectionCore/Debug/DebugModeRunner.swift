@@ -19,28 +19,25 @@
 import BrowserServicesKit
 import Common
 import ConcurrencyExtensions
-import ContentScopeScripts
-import DataBrokerProtectionCore
 import Foundation
 import os.log
-import PixelKit
 import PrivacyConfig
 
 /// Nothing it runs is saved to the PIR database.
-final class DebugModeRunner: DebugModeEmailConfirmationLookup {
+public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
 
-    let debugEmailConfirmationStore = DebugEmailConfirmationStore()
+    public let debugEmailConfirmationStore = DebugEmailConfirmationStore()
     let captchaService: CaptchaService
     let privacyConfigManager: PrivacyConfigurationManaging
-    let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
         Logger.dataBrokerProtection.debug("Debug event: \(String(describing: event), privacy: .public)")
     }
     let contentScopeProperties: ContentScopeProperties
-    let featureFlagger: DBPFeatureFlagging
-    let brokerJobExecutionConfig = BrokerJobExecutionConfig()
+    public let featureFlagger: DBPFeatureFlagging
+    public let brokerJobExecutionConfig = BrokerJobExecutionConfig()
 
-    var emailConfirmationEventHandler: ((String) -> Void)? {
+    public var emailConfirmationEventHandler: ((String) -> Void)? {
         get { emailConfirmationEvents.handler }
         set { emailConfirmationEvents.handler = newValue }
     }
@@ -48,14 +45,24 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
     let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let emailConfirmationEvents: EmailConfirmationEvents
     private let vault: any DataBrokerProtectionSecureVault
+    private let contentBlocking: DBPWebViewContentBlocking?
 
-    var emailConfirmationStore: EmailConfirmationSupporting {
+    public var emailConfirmationStore: EmailConfirmationSupporting {
         debugEmailConfirmationStore
     }
 
-    init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-         featureFlagger: DBPFeatureFlagging) throws {
+    public init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                featureFlagger: DBPFeatureFlagging,
+                privacyConfigManager: PrivacyConfigurationManaging,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                vault: any DataBrokerProtectionSecureVault,
+                settings dbpSettings: DataBrokerProtectionSettings,
+                contentBlocking: DBPWebViewContentBlocking? = nil) {
         self.featureFlagger = featureFlagger
+        self.privacyConfigManager = privacyConfigManager
+        self.pixelHandler = pixelHandler
+        self.vault = vault
+        self.contentBlocking = contentBlocking
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -76,7 +83,6 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                                                              messageSecret: UUID().uuidString,
                                                              featureToggles: features)
 
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: fakePixelHandler,
                                                                                    settings: dbpSettings)
         let emailService = EmailService(authenticationManager: authenticationManager,
@@ -89,34 +95,23 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                                              settings: dbpSettings,
                                              servicePixel: backendServicePixels)
 
-        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        self.privacyConfigManager = privacyConfigurationManager
-
-        let pixelKit = PixelKit.shared!
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
-        self.pixelHandler = sharedPixelsHandler
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigurationManager)
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-        self.vault = try vaultFactory.makeVault(reporter: reporter)
-
         let emailConfirmationEvents = EmailConfirmationEvents()
         self.emailConfirmationEvents = emailConfirmationEvents
         self.emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: debugEmailConfirmationStore,
                                                                          database: nil,
                                                                          emailServiceV0: emailService,
                                                                          emailServiceV1: emailServiceV1,
-                                                                         pixelHandler: sharedPixelsHandler,
+                                                                         pixelHandler: pixelHandler,
                                                                          debugEventHandler: { message in
                                                                             emailConfirmationEvents.handler?(message)
                                                                          })
     }
 
-    func storedBrokerResources() throws -> [BrokerResource] {
+    public func storedBrokerResources() throws -> [BrokerResource] {
         try vault.fetchAllBrokerResources()
     }
 
-    func brokerProfileQueryData(for broker: DataBroker, profile: DataBrokerProtectionProfile) -> [BrokerProfileQueryData] {
+    public func brokerProfileQueryData(for broker: DataBroker, profile: DataBrokerProtectionProfile) -> [BrokerProfileQueryData] {
         let resolvedBroker = broker.with(id: DebugHelper.stableId(for: broker))
         return profile.profileQueries.map { profileQuery in
             let profileQueryId = DebugHelper.stableId(for: profileQuery)
@@ -129,10 +124,11 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
         }
     }
 
-    func scan(_ query: BrokerProfileQueryData,
-              showWebView: Bool,
-              timeout: TimeInterval?,
-              stageCalculator: FakeStageDurationCalculator) async throws -> [ExtractedProfile] {
+    public func scan(_ query: BrokerProfileQueryData,
+                     showWebView: Bool,
+                     timeout: TimeInterval?,
+                     stageCalculator: FakeStageDurationCalculator,
+                     onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws -> [ExtractedProfile] {
         let runner = BrokerProfileScanSubJobWebRunner(
             privacyConfig: privacyConfigManager,
             prefs: contentScopeProperties,
@@ -143,8 +139,10 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             stageDurationCalculator: stageCalculator,
             pixelHandler: fakePixelHandler,
             executionConfig: brokerJobExecutionConfig,
+            contentBlocking: contentBlocking,
             shouldRunNextStep: { true }
         )
+        onWebRunnerStarted?(runner)
         let extractedProfiles = try await withOptionalTimeout(timeout) {
             try await runner.scan(showWebView: showWebView) { true }
         }
@@ -159,11 +157,12 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
     }
 
     /// Returns `true` when the opt-out still needs its email confirmation link.
-    func optOut(_ scanResult: DebugScanResult,
-                dataBroker: DataBroker,
-                showWebView: Bool,
-                timeout: TimeInterval?,
-                stageCalculator: FakeStageDurationCalculator) async throws -> Bool {
+    public func optOut(_ scanResult: DebugScanResult,
+                       dataBroker: DataBroker,
+                       showWebView: Bool,
+                       timeout: TimeInterval?,
+                       stageCalculator: FakeStageDurationCalculator,
+                       onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws -> Bool {
         let runner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: privacyConfigManager,
             prefs: contentScopeProperties,
@@ -175,8 +174,10 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             pixelHandler: fakePixelHandler,
             executionConfig: brokerJobExecutionConfig,
             actionsHandlerMode: .optOut,
+            contentBlocking: contentBlocking,
             shouldRunNextStep: { true }
         )
+        onWebRunnerStarted?(runner)
 
         try await withOptionalTimeout(timeout) {
             try await runner.optOut(extractedProfile: scanResult.extractedProfile,
@@ -186,15 +187,16 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
         return scanResult.dataBroker.requiresEmailConfirmationDuringOptOut()
     }
 
-    func checkForEmailConfirmation() async throws {
+    public func checkForEmailConfirmation() async throws {
         try await emailConfirmationDataService.checkForEmailConfirmationData()
     }
 
-    func continueOptOut(_ scanResult: DebugScanResult,
-                        confirmationURL: URL,
-                        showWebView: Bool,
-                        timeout: TimeInterval? = nil,
-                        stageCalculator: FakeStageDurationCalculator) async throws {
+    public func continueOptOut(_ scanResult: DebugScanResult,
+                               confirmationURL: URL,
+                               showWebView: Bool,
+                               timeout: TimeInterval? = nil,
+                               stageCalculator: FakeStageDurationCalculator,
+                               onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws {
         let runner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: privacyConfigManager,
             prefs: contentScopeProperties,
@@ -206,8 +208,10 @@ final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             pixelHandler: fakePixelHandler,
             executionConfig: .init(),
             actionsHandlerMode: .emailConfirmation(confirmationURL),
+            contentBlocking: contentBlocking,
             shouldRunNextStep: { true }
         )
+        onWebRunnerStarted?(runner)
 
         try await withOptionalTimeout(timeout) {
             try await runner.optOut(extractedProfile: scanResult.extractedProfile,
@@ -246,20 +250,20 @@ private final class EmailConfirmationEvents: @unchecked Sendable {
 
 extension DebugModeRunner {
 
-    static func actionSummary(stepType: StepType, actionType: ActionType?) -> String {
+    public static func actionSummary(stepType: StepType, actionType: ActionType?) -> String {
         let typeText = actionType?.rawValue ?? "unknown"
         return "\(stepType.rawValue) > \(typeText)"
     }
 
-    static func currentActionText(stepType: StepType, actionType: ActionType?, prefix: String) -> String {
+    public static func currentActionText(stepType: StepType, actionType: ActionType?, prefix: String) -> String {
         let typeText = actionType?.rawValue ?? "unknown"
         return "\(prefix): \(stepType.rawValue) > \(typeText)"
     }
 
-    static func runnerEventText(kind: DebugEventKind,
-                                actionType: ActionType?,
-                                stepType: StepType,
-                                broker: DataBroker) -> (summary: String, progressText: String) {
+    public static func runnerEventText(kind: DebugEventKind,
+                                       actionType: ActionType?,
+                                       stepType: StepType,
+                                       broker: DataBroker) -> (summary: String, progressText: String) {
         guard kind != .challenge else {
             return ("\(broker.name) > Challenge", "Challenge: \(broker.name)")
         }
@@ -267,13 +271,13 @@ extension DebugModeRunner {
                 currentActionText(stepType: stepType, actionType: actionType, prefix: kind.rawValue))
     }
 
-    static func profileQueryText(for profileQuery: ProfileQuery) -> String {
+    public static func profileQueryText(for profileQuery: ProfileQuery) -> String {
         let nameText = "\(profileQuery.firstName) \(profileQuery.lastName)"
         let locationText = "\(profileQuery.city) \(profileQuery.state)"
         return "\(nameText) x \(locationText)"
     }
 
-    static func historyEventDescription(_ type: HistoryEvent.EventType) -> String {
+    public static func historyEventDescription(_ type: HistoryEvent.EventType) -> String {
         switch type {
         case .noMatchFound: return "No Match"
         case .matchesFound(let count): return "Matches (\(count))"
@@ -288,7 +292,7 @@ extension DebugModeRunner {
         }
     }
 
-    static func historyError(_ error: Error) -> HistoryEvent.EventType {
+    public static func historyError(_ error: Error) -> HistoryEvent.EventType {
         .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))
     }
 }

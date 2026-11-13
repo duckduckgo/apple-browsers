@@ -1,0 +1,60 @@
+name: Shared - Agent Context Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '**/AGENTS.md'
+      - '**/CLAUDE.md'
+      - '.claude/skills/**'
+      - 'REVIEW*.md'
+      - 'scripts/agent-context-check/**'
+      - '.github/workflows/agent_context_check.yml'
+
+jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
+  agent-context:
+    name: Agent Context Check
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fetch base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags --depth=1 origin "$BASE_REF"
+
+      - name: Test the checker
+        run: python3 -m unittest discover -s scripts/agent-context-check
+
+      - name: Check budgets and references
+        id: check
+        run: |
+          set +e
+          python3 scripts/agent-context-check/agent_context_check.py \
+            --base FETCH_HEAD --markdown agent-context-report.md
+          status=$?
+          cat agent-context-report.md >> "$GITHUB_STEP_SUMMARY"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on the PR
+        # Fork PRs get a read-only token; their report stays in the job summary.
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: agent-context
+          path: agent-context-report.md
+
+      - name: Fail on problems
+        if: steps.check.outputs.status != '0'
+        run: exit 1

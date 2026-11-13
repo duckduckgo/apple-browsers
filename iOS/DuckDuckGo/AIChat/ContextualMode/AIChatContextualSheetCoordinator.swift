@@ -41,6 +41,7 @@ private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeaturePro
     let isAvailable: Bool
     let isToggleHiddenOnDuckAITab: Bool
     let isAttachmentPasteEnabled: Bool
+    let isFullTabChatInputAvailable: Bool
 }
 
 /// Delegate protocol for coordinating actions that require interaction with the browser.
@@ -112,6 +113,7 @@ final class AIChatContextualSheetCoordinator {
     private let usageContextProvider: UsageContextProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring
     private let isFireTab: Bool
     private let tabAttachmentSource: MultiTabAttachmentSource?
     static let contextualContextCollectionTimeout: TimeInterval = 5
@@ -281,6 +283,7 @@ final class AIChatContextualSheetCoordinator {
          usageContextProvider: UsageContextProviding,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
@@ -307,6 +310,7 @@ final class AIChatContextualSheetCoordinator {
         self.usageContextProvider = usageContextProvider
         self.debugSettings = debugSettings
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingExperimentMetricStore = onboardingExperimentMetricStore
         self.pixelHandler = pixelHandler
         self.selectionJourneyInstrumentation = selectionJourneyInstrumentation ?? DefaultDuckAISelectionJourneyInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -1328,7 +1332,8 @@ private extension AIChatContextualSheetCoordinator {
         let contextualUTIFeature = ContextualUnifiedToggleInputFeature(
             isAvailable: isWebUTIEnabled,
             isToggleHiddenOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
-            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            isFullTabChatInputAvailable: unifiedToggleInputFeature.isFullTabChatInputAvailable
         )
 
         let webVC = AIChatContextualWebViewController(
@@ -1355,6 +1360,7 @@ private extension AIChatContextualSheetCoordinator {
             },
             pixelHandler: pixelHandler,
             onboardingActivationRecorder: onboardingActivationRecorder,
+            onboardingExperimentMetricStore: onboardingExperimentMetricStore,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 guard self.isWebUTIEnabled else { return nil }

@@ -26,7 +26,7 @@ final class HoveredLinkTooltipUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: ["hoveredLinkTooltipAccessibility": true])
         app.enforceSingleWindow()
     }
 

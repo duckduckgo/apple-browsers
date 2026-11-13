@@ -1072,7 +1072,8 @@ extension TabViewController {
         sitePermissionsState.mediaCapturePreapprovals.removeAll { staleRequestIDs.contains($0.requestID) }
 
         let trustedOrigin = SitePermissionSecurityOrigin(frame.securityOrigin)
-        guard trustedOrigin == SitePermissionSecurityOrigin(origin),
+        // WebKit passes the top-level origin here; the requesting frame's origin is frame.securityOrigin.
+        guard isSameOriginAsCommittedMainFrame(SitePermissionSecurityOrigin(origin)),
               let index = sitePermissionsState.mediaCapturePreapprovals.firstIndex(where: {
                   $0.permissionTypes == permissionTypes
                       && $0.origin == trustedOrigin
@@ -1281,6 +1282,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
     func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
                                 requestPermissionFor permissionTypes: Set<SitePermissionType>,
                                 requestID: String,
+                                topLevelOrigin: SitePermissionSecurityOrigin,
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
         guard isSitePermissionsEnabled else {
@@ -1296,7 +1298,11 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         pruneExpiredMediaCapturePreapprovals()
         guard webView === self.webView,
               !isLinkPreview,
-              isSameOriginAsCommittedMainFrame(origin),
+              // Cross-origin frames may ask too: WebKit enforces iframe delegation before capture,
+              // and the prompt and saved decision belong to the top-level site. The request must come
+              // from the committed page, not from one the tab is leaving.
+              origin.isPotentiallyTrustworthy,
+              isSameOriginAsCommittedMainFrame(frame.isMainFrame ? origin : topLevelOrigin),
               sitePermissionsState.committedMediaPolicyBlocks.isDisjoint(with: permissionTypes),
               sitePermissionsState.pendingBridgeRequests[requestID] == nil,
               !sitePermissionsState.handledBridgeRequestIDs.contains(requestID),

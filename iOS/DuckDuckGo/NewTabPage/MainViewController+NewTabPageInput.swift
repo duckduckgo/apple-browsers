@@ -26,7 +26,7 @@ extension MainViewController {
         let hasInlineInput = newTabPageViewController?.hasInlineSearchInput == true
         return NewTabPageInputPresentation.resolve(
             hasInlineInput: hasInlineInput,
-            usesUnifiedInput: unifiedToggleInputCoordinator != nil,
+            usesUnifiedInput: unifiedToggleInputCoordinator != nil && !isIPadFullTabChatInput,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isHandingOff: isAddressBarHandOffInProgress || isPerformingOnboardingInputHandoff,
@@ -90,7 +90,7 @@ extension MainViewController {
         guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
         if isPresentingNewTabInputDirectly {
             restingNewTabPageSnapshot = nil
-        } else if unifiedToggleInputCoordinator != nil {
+        } else if unifiedToggleInputCoordinator != nil, !isIPadFullTabChatInput {
             captureRestingNewTabPageSnapshot()
         }
         isAddressBarHandOffInProgress = true

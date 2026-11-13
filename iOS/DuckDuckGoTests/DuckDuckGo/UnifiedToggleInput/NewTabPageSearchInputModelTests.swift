@@ -170,7 +170,7 @@ final class NewTabPageSearchInputModelTests: XCTestCase {
         var model: NewTabPageSearchInputModel? = NewTabPageSearchInputModel(notificationCenter: notifications, readSettings: {
             .init(isModeToggleShown: false, isAIChatShortcutEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
         })
-        weak var weakModel = model
+        weak let weakModel = model
         model = nil
         XCTAssertNil(weakModel)
     }

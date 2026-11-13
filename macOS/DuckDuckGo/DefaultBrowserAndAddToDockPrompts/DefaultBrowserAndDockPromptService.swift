@@ -44,15 +44,11 @@ final class DefaultBrowserAndDockPromptService {
     ) {
 
         var defaultBrowserAndDockPromptDebugStore: DefaultBrowserAndDockPromptDebugStore?
-        var debugSimulatedDateStore: DebugSimulatedDateStore?
         let buildType = StandardApplicationBuildType()
         if buildType.isDebugBuild || buildType.isReviewBuild {
-            debugSimulatedDateStore = DebugSimulatedDateStore(keyValueStore: keyValueStore)
             defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
         }
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = {
-            debugSimulatedDateStore?.simulatedDate ?? Date()
-        }
+        let defaultBrowserAndDockPromptDateProvider = DebugSimulatedDateStore.makeDateProvider(keyValueStore: keyValueStore)
         let defaultBrowserAndDockInstallDateProvider: () -> Date? = {
             defaultBrowserAndDockPromptDebugStore?.simulatedInstallDate ?? LocalStatisticsStore().installDate
         }

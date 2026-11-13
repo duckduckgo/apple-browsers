@@ -28,6 +28,8 @@ public enum WasUsedBeforeFeature: String {
     case aiChat
     /// Set once the user has submitted their first Duck.ai prompt on this install.
     case duckAIPrompt
+    /// Set once the user has pulled up past a Duck.ai chat to start a new chat (iOS).
+    case duckAISwipeNewChat
     case duckPlayer
     case vpn
     case privacyDashboard

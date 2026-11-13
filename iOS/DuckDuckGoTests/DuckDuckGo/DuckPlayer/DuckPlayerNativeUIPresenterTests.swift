@@ -476,7 +476,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }
         
         // Verify the content controller is a hosting controller with DuckPlayerView
-        guard let hostingController = roundedSheetController.contentViewController as? UIHostingController<DuckPlayerView> else {
+        guard roundedSheetController.contentViewController is UIHostingController<DuckPlayerView> else {
             XCTFail("Content controller should be UIHostingController<DuckPlayerView>")
             return
         }
@@ -1335,7 +1335,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         )
         
         // Store weak reference
-        weak var weakPresenter = presenter
+        weak let weakPresenter = presenter
         
         // When
         presenter = nil
@@ -2060,10 +2060,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let source: DuckPlayer.VideoNavigationSource = .youtube
         mockDuckPlayerSettings.welcomeMessageShown = false
         mockDuckPlayerSettings.primingMessagePresented = true
-        
-        // Store initial state values
-        let initialTimestamp = sut.state.timestamp
-        let initialWelcomeShown = mockDuckPlayerSettings.welcomeMessageShown
         
         // Present the DuckPlayer
         _ = sut.presentDuckPlayer(

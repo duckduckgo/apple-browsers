@@ -173,6 +173,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the `debug://` custom URL scheme handler and Debug menu entries for UI test / debug pages.
     case debugURLScheme
 
+    /// Keeps the hovered-link tooltip window in the accessibility tree for UI tests that explicitly opt in.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220477819387307
+    case hoveredLinkTooltipAccessibility
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
@@ -676,6 +680,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
     case aiChatDragPromptBar
 
+    /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
+    /// Internal-only for the first version.
+    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    case aiChatLocalModels
+
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
@@ -849,6 +858,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashDebugging:
             Config(source: .disabled)
         case .debugURLScheme:
+            Config(source: .disabled)
+        case .hoveredLinkTooltipAccessibility:
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))
@@ -1075,7 +1086,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .promoQueueAutofillEmptyStatePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .defaultBrowserWinBackPromo:
-            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -1143,6 +1154,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
         case .aiChatDragPromptBar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.dragPromptBar), category: .duckAI)
+        case .aiChatLocalModels:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

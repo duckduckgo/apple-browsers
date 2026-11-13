@@ -313,6 +313,18 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(try store.settings(for: context.uniqueIdentifier)?.hasAccessToPrivateData, false)
     }
 
+    func testWhenPrivateAccessIsReadThenItMatchesTheSavedValue() async throws {
+        let controller = makeController()
+        let context = try await makeContext()
+        XCTAssertNil(controller.hasAccessToPrivateData(for: context.uniqueIdentifier))
+
+        try await controller.prepare(context)
+        XCTAssertEqual(controller.hasAccessToPrivateData(for: context.uniqueIdentifier), false)
+
+        try controller.setHasAccessToPrivateData(true, for: context.uniqueIdentifier)
+        XCTAssertEqual(makeController().hasAccessToPrivateData(for: context.uniqueIdentifier), true)
+    }
+
     func testWhenAdditionalPermissionsAreDeniedThenGrantsDoNotChange() async throws {
         let controller = makeController()
         let context = try await makeContext()

@@ -111,7 +111,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
             inputsPublisher: inputs.handleEvents(receiveCancel: { cancellations += 1 }).eraseToAnyPublisher(),
             dismissPublisher: dismissal.eraseToAnyPublisher(),
             fireTabPublisher: fireTab.eraseToAnyPublisher())
-        weak var weakPresentation = presentation
+        weak let weakPresentation = presentation
         XCTAssertNotNil(weakPresentation)
         presentation = nil
         XCTAssertNil(weakPresentation)

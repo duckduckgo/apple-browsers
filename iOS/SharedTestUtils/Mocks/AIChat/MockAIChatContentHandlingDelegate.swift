@@ -66,6 +66,12 @@ final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProv
     var isAvailable: Bool
     var isToggleHiddenOnDuckAITab: Bool
     var isAttachmentPasteEnabled: Bool
+    /// Follows `isAvailable` (as production does on iPhone) until a test sets it for iPad.
+    var isFullTabChatInputAvailable: Bool {
+        get { fullTabChatInputAvailableOverride ?? isAvailable }
+        set { fullTabChatInputAvailableOverride = newValue }
+    }
+    private var fullTabChatInputAvailableOverride: Bool?
 
     init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false, isAttachmentPasteEnabled: Bool = false) {
         self.isAvailable = isAvailable

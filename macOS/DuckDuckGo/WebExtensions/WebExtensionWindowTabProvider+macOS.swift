@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import Common
 import os.log
 import WebExtensions
 import WebKit
@@ -31,6 +32,47 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
     /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab,
     /// or when another browser window becomes active, as Chrome does.
     private var popupDismissalCancellable: AnyCancellable?
+    private let presentedPopupIdentifiers = NSMapTable<NSPopover, NSString>.weakToStrongObjects()
+    private let updateActivity = PassthroughSubject<Void, Never>()
+    private var popupCloseCancellable: AnyCancellable?
+
+    var updateActivityPublisher: AnyPublisher<Void, Never> { updateActivity.eraseToAnyPublisher() }
+
+    init() {
+        popupCloseCancellable = NotificationCenter.default.publisher(for: NSPopover.didCloseNotification).sink { [weak self] notification in
+            MainActor.assumeMainThread {
+                guard let self, let popup = notification.object as? NSPopover,
+                      self.presentedPopupIdentifiers.object(forKey: popup) != nil else { return }
+                self.presentedPopupIdentifiers.removeObject(forKey: popup)
+                self.updateActivity.send(())
+            }
+        }
+    }
+
+    /// Read actual presented popovers; querying a WebKit action's popup can preload its web view.
+    func willPresentPopup(_ popup: NSPopover, for context: WKWebExtensionContext) {
+        presentedPopupIdentifiers.setObject(context.uniqueIdentifier as NSString, forKey: popup)
+        updateActivity.send(())
+    }
+
+    func hasOpenUpdateUI(for context: WKWebExtensionContext, tabs: [AnyTab]) -> Bool {
+        if presentedPopupIdentifiers.objectEnumerator()?.allObjects.contains(where: { ($0 as? String) == context.uniqueIdentifier }) == true { return true }
+        return tabs.contains { tab in
+            var urls = [tab.url]
+            if case .loaded(let loaded) = tab {
+                urls += [loaded.webExtensionPageWebView?.url, loaded.webView.url]
+            }
+            return urls.contains { $0?.equals(context.baseURL, by: [.scheme, .host, .port]) == true }
+        }
+    }
+
+    func hasOpenUpdateUI(for context: WKWebExtensionContext) -> Bool {
+        let tabs = windowControllersManager.mainWindowControllers.flatMap { controller in
+            let viewModel = controller.mainViewController.tabCollectionViewModel
+            return viewModel.tabs + (viewModel.pinnedTabsCollection?.tabs ?? [])
+        }
+        return hasOpenUpdateUI(for: context, tabs: tabs)
+    }
 
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
@@ -168,6 +210,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
                 popupWebView?.appearance = app.effectiveAppearance
             }
         }
+        willPresentPopup(popupPopover, for: context)
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
 
         let selectedTabChange = windowController.mainViewController.tabCollectionViewModel

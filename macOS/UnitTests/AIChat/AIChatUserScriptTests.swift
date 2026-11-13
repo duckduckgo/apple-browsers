@@ -104,6 +104,65 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertNil(missingURLConfig.clientTools)
     }
 
+    @MainActor func testLocalModelIsOfferedOnlyToPagesThatGetItsPushes() async throws {
+        var baseConfig = AIChatNativeConfigValues.defaultValues
+        baseConfig.localModel = AIChatLocalModelConfig(state: .ready, tasks: [.summarize],
+                                                       model: AIChatLocalModelInfo(id: "m", name: "M"))
+        mockHandler.configResponse = baseConfig
+        let webView = ClientToolsDocumentWebView()
+
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+        let duckAIConfig = try await nativeConfig(from: webView)
+        XCTAssertEqual(duckAIConfig.localModel?.state, .ready)
+
+        webView.documentURL = URL(string: "https://duckduckgo.com/?q=hi&ia=chat")
+        let serpChatConfig = try await nativeConfig(from: webView)
+        XCTAssertNil(serpChatConfig.localModel)
+    }
+
+    @MainActor func testLocalRunIsRefusedOnPagesThatDontGetItsPushes() async throws {
+        let service = RecordingLocalModelService()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil, localModelService: service)
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.startAIChatLocalRun.rawValue))
+        let params: [String: Any] = ["requestId": "r1", "task": "summarize", "instruction": "Summarize", "content": "Page text"]
+        let webView = ClientToolsDocumentWebView()
+
+        webView.documentURL = URL(string: "https://duckduckgo.com/?q=hi&ia=chat")
+        do {
+            _ = try await handler(params, WKScriptMessage.mock(webView: webView))
+            XCTFail("The run should be refused")
+        } catch {
+            XCTAssertEqual(error as? AIChatLocalModelRequestError, .unavailable)
+        }
+        XCTAssertEqual(service.startedRequestIds, [])
+
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+        _ = try await handler(params, WKScriptMessage.mock(webView: webView))
+        XCTAssertEqual(service.startedRequestIds, ["r1"])
+    }
+
+    @MainActor func testLocalModelAccessIsAskedOnlyOnPagesThatGetItsPushes() async throws {
+        let prompt = StubLocalModelAccessPrompt(answer: .allowed)
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil,
+                                      localModelService: RecordingLocalModelService(), localModelAccessPrompt: prompt)
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.requestAIChatLocalModelAccess.rawValue))
+        let webView = ClientToolsDocumentWebView()
+
+        webView.documentURL = URL(string: "https://duckduckgo.com/?q=hi&ia=chat")
+        do {
+            _ = try await handler([String: String](), WKScriptMessage.mock(webView: webView))
+            XCTFail("The request should be refused")
+        } catch {
+            XCTAssertEqual(error as? AIChatLocalModelRequestError, .unavailable)
+        }
+        XCTAssertEqual(prompt.askedModelNames, [])
+
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+        let reply = try await handler([String: String](), WKScriptMessage.mock(webView: webView)) as? AIChatLocalModelAccessReply
+        XCTAssertEqual(reply, AIChatLocalModelAccessReply(result: .allowed))
+        XCTAssertEqual(prompt.askedModelNames, ["M"])
+    }
+
     @MainActor func testNativeConfigIncludesClientToolsForCustomChatHost() async throws {
         let service = makeBrowserToolsService()
         let settings = AIChatMockDebugSettings()
@@ -879,4 +938,40 @@ private final class ClientToolsChangePusherSpy: AIChatBrowserToolsPushing {
     }
 
     func pushTabChanged(_ data: AIChatTabChangedData) {}
+}
+
+@MainActor
+private final class RecordingLocalModelService: AIChatLocalModelServing {
+    private(set) var startedRequestIds: [String] = []
+    let model = AIChatLocalModelInfo(id: "m", name: "M")
+
+    func config() -> AIChatLocalModelConfig? { nil }
+    func register(_ pusher: AIChatLocalModelPushing) {}
+
+    func startRun(_ request: AIChatLocalRunRequest, for pusher: AIChatLocalModelPushing) throws -> AIChatLocalRunStartReply {
+        startedRequestIds.append(request.requestId)
+        return AIChatLocalRunStartReply(model: AIChatLocalModelInfo(id: "m", name: "M"))
+    }
+
+    func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
+    func cancelRuns(ownerID: ObjectIdentifier) {}
+
+    func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
+        await ask()
+    }
+}
+
+@MainActor
+private final class StubLocalModelAccessPrompt: LocalModelAccessAsking {
+    let answer: AIChatLocalModelAccessReply.Result
+    private(set) var askedModelNames: [String] = []
+
+    init(answer: AIChatLocalModelAccessReply.Result) {
+        self.answer = answer
+    }
+
+    func ask(from webView: WKWebView?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
+        askedModelNames.append(modelName)
+        return answer
+    }
 }

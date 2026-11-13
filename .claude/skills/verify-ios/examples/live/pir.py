@@ -171,7 +171,7 @@ def selected(run, expected, result_id=None):
 
 
 def history(run, summary, query=None):
-    return any(e.get("kind") == "history" and e.get("summary") == summary
+    return any(e.get("kind") == "History" and e.get("summary") == summary
                and (query is None or e.get("profileQuery") == query) for e in run.get("events", []))
 
 

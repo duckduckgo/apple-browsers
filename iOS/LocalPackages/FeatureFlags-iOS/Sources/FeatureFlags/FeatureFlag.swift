@@ -219,6 +219,9 @@ public enum FeatureFlag: String {
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432678359933
+    case stripeProductsByPlanCountry
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611730044
     case personalInformationRemoval
 
@@ -450,21 +453,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444896174
     case cpmDiagnosticsRecorder
 
-    /// Opt-in one-document GET recovery after the five-second background-readiness wait expires.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219588320073672
-    case cpmLateBackgroundDocumentRecovery
-
-    /// Retries a failed embedded background load in the same context, independently of hang recovery.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
-    case cpmBackgroundLoadRecovery
-
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
     case cpmBackgroundLoadRestart
-
-    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
-    /// https://app.asana.com/0/0/1218855001659655
-    case cpmMessagingHangRecovery
 
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
@@ -476,10 +467,6 @@ public enum FeatureFlag: String {
     /// Failsafe for upgrading only CPM before launch load; evaluated when the manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
     case cpmUpgradeBeforeLoad
-
-    /// Remotely activated Web Extension background Web View graveyard treatment.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343
-    case cpmBackgroundGraveyardTreatment
 
     /// Failsafe kill switch for deferring web-extension load/install until protected data is
     /// available. On by default; disable remotely to load/install immediately (previous flow).
@@ -593,6 +580,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
     case duckAINativeTermsOfService
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220469546567099
+    case duckAITermsOfServiceRecordRestore
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUIiOS26
 
@@ -605,6 +595,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220385578839193?focus=true
+    case legacyFindInPageUIWithSystemFindEngine
+
     /// Container transform when a new tab opens: the new page grows from a card over the receding old one.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220324835587117
     case newTabTransition
@@ -614,6 +607,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
     case aiChatTabHandoffImprovements
+
+    /// Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
+    case aiChatSwipeUpNewChat
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
     case aiChatSwipeChromeRefinements
@@ -900,6 +897,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutofillSubfeature.canPromoteImportPasswordsInBrowser), supportsLocalOverriding: false)
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+        case .stripeProductsByPlanCountry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.stripeProductsByPlanCountry))
         case .personalInformationRemoval:
             Config(source: .remoteReleasable(DBPSubfeature.pirRollout))
         case .widgetReporting:
@@ -938,6 +937,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .duckAINativeTermsOfService:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService))
+        case .duckAITermsOfServiceRecordRestore:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.termsOfServiceRecordRestore))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:
@@ -1050,22 +1051,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy))
         case .cpmDiagnosticsRecorder:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
-        case .cpmLateBackgroundDocumentRecovery:
-            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmLateBackgroundDocumentRecovery))
-        case .cpmBackgroundLoadRecovery:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRecovery))
         case .cpmBackgroundLoadRestart:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRestart))
-        case .cpmMessagingHangRecovery:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
         case .cpmNetworkProcessRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery))
         case .cpmStableBaseURL:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL))
         case .cpmUpgradeBeforeLoad:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad))
-        case .cpmBackgroundGraveyardTreatment:
-            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
         case .webExtensionProtectedDataLoadGate:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
         case .webExtensionStateRestorationGate:
@@ -1142,12 +1135,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIAndInputLiquidGlass))
         case .legacyFindInPage:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
+        case .legacyFindInPageUIWithSystemFindEngine:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPageUIWithSystemFindEngine))
         case .newTabTransition:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabTransition))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .aiChatTabHandoffImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
+        case .aiChatSwipeUpNewChat:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeUpNewChat))
         case .aiChatSwipeChromeRefinements:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeChromeRefinements))
         case .syncScopedAccessCredentials:

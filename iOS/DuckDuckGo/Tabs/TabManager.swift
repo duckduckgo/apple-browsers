@@ -648,7 +648,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.applyInheritedAttribution(inheritedAttribution)
         addToCache(controller)
 
-        _ = save()
+        save()
         return controller
     }
 
@@ -657,7 +657,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: placement, selectNewTab: true)
-        _ = save()
+        save()
     }
 
     @MainActor
@@ -670,7 +670,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
         tab.viewed = true
         addToCache(controller)
-        _ = save()
+        save()
         return controller
     }
 
@@ -713,7 +713,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         model.select(tab: tab)
         tabsAwaitingFirstSelection.remove(ObjectIdentifier(tab))
-        _ = save()
+        save()
         let controller = current(createIfNeeded: true)
         markAsMostRecentlyViewed(controller)
         return controller
@@ -743,7 +743,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         prepareBeforeCaching?(controller)
         addToCache(controller)
 
-        _ = save()
+        save()
         return controller
     }
 
@@ -755,7 +755,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
-        _ = save()
+        save()
         notifyIfLastFireTabClosed(removedTabs: tabs)
     }
 
@@ -765,7 +765,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? self.tabsModel(for: tab.mode)
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
-        _ = save()
+        save()
         notifyIfLastFireTabClosed(removedTabs: [tab])
     }
 
@@ -790,7 +790,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
             clean(tabs: [tab], clearTabHistory: clearTabHistory)
         }
-        _ = save()
+        save()
     }
 
     @MainActor

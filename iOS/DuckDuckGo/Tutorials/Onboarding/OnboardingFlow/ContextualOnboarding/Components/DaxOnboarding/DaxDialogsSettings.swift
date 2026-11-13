@@ -102,32 +102,32 @@ final class ContextualOnboardingTimeLimit {
     var startDate: Date {
         get {
             if let override = launchOptionsHandler.contextualOnboardingStartDate { return override }
-            if let stored = try? store.object(forKey: Key.startDate) as? Date { return stored }
+            if let stored = store.object(forKey: Key.startDate) as? Date { return stored }
             let date = statisticsStore.installDate ?? dateProvider()
-            try? store.set(date, forKey: Key.startDate)
+            store.set(date, forKey: Key.startDate)
             return date
         }
-        set { try? store.set(newValue, forKey: Key.startDate) }
+        set { store.set(newValue, forKey: Key.startDate) }
     }
 
     var appOpens: Int {
-        get { (try? store.object(forKey: Key.appOpens) as? Int) ?? 0 }
-        set { try? store.set(newValue, forKey: Key.appOpens) }
+        get { store.object(forKey: Key.appOpens) as? Int ?? 0 }
+        set { store.set(newValue, forKey: Key.appOpens) }
     }
 
     var endedByTimeLimit: Bool {
-        get { (try? store.object(forKey: Key.ended) as? Bool) ?? false }
-        set { try? store.set(newValue, forKey: Key.ended) }
+        get { store.object(forKey: Key.ended) as? Bool ?? false }
+        set { store.set(newValue, forKey: Key.ended) }
     }
 
     var maxDaysOverride: Int? {
-        get { try? store.object(forKey: Key.maxDaysOverride) as? Int }
-        set { try? store.set(newValue, forKey: Key.maxDaysOverride) }
+        get { store.object(forKey: Key.maxDaysOverride) as? Int }
+        set { store.set(newValue, forKey: Key.maxDaysOverride) }
     }
 
     var maxAppOpensOverride: Int? {
-        get { try? store.object(forKey: Key.maxAppOpensOverride) as? Int }
-        set { try? store.set(newValue, forKey: Key.maxAppOpensOverride) }
+        get { store.object(forKey: Key.maxAppOpensOverride) as? Int }
+        set { store.set(newValue, forKey: Key.maxAppOpensOverride) }
     }
 
     var maxDaysSinceInstall: Int {
@@ -168,7 +168,7 @@ final class ContextualOnboardingTimeLimit {
 
     func clear() {
         for key in [Key.startDate, Key.appOpens, Key.ended, Key.maxDaysOverride, Key.maxAppOpensOverride] {
-            try? store.removeObject(forKey: key)
+            store.removeObject(forKey: key)
         }
     }
 
@@ -238,13 +238,13 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     private let chatPathStore: KeyValueStoring = UserDefaults.standard
 
     var chatPathVisitSiteSeen: Bool {
-        get { (try? chatPathStore.object(forKey: ChatPathKey.visitSiteSeen) as? Bool) ?? false }
-        set { try? chatPathStore.set(newValue, forKey: ChatPathKey.visitSiteSeen) }
+        get { chatPathStore.object(forKey: ChatPathKey.visitSiteSeen) as? Bool ?? false }
+        set { chatPathStore.set(newValue, forKey: ChatPathKey.visitSiteSeen) }
     }
 
     var isChatFirstPath: Bool {
-        get { (try? chatPathStore.object(forKey: ChatPathKey.isChatFirstPath) as? Bool) ?? false }
-        set { try? chatPathStore.set(newValue, forKey: ChatPathKey.isChatFirstPath) }
+        get { chatPathStore.object(forKey: ChatPathKey.isChatFirstPath) as? Bool ?? false }
+        set { chatPathStore.set(newValue, forKey: ChatPathKey.isChatFirstPath) }
     }
 
     var chatPathPhase: DaxDialogs.ChatPathPhase {

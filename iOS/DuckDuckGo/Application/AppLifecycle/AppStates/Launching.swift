@@ -500,6 +500,9 @@ struct Launching: LaunchingHandling {
         launchTaskManager.register(task: BlockLaunchTask(name: "Initialize PIR Secure Vault") { taskContext in
             Task {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
+#if DEBUG
+                await dbpService.startDebugServerIfRequestedAtLaunch()
+#endif
                 taskContext.finish()
             }
         })

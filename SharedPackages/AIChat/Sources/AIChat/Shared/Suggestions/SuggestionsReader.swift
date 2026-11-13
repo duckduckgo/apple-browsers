@@ -77,6 +77,8 @@ public final class SuggestionsReader: SuggestionsReading {
     private var fetchContinuation: CheckedContinuation<Result<(pinned: [AIChatSuggestion], recent: [AIChatSuggestion]), Error>, Never>?
     private var isWebViewReady = false
     private var isSettingUp = false
+    /// Bumped by `tearDown()`, so a setup that was waiting for its script source when the reader was torn down is dropped.
+    private var setupGeneration = 0
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
@@ -121,10 +123,16 @@ public final class SuggestionsReader: SuggestionsReading {
         // Lazy initialization: set up WebView on first call
         if !isWebViewReady {
             isSettingUp = true
-            defer { isSettingUp = false }
+            let generation = setupGeneration
+            defer {
+                // A teardown during setup already cleared the flag, and a newer setup may have set it since
+                if generation == setupGeneration {
+                    isSettingUp = false
+                }
+            }
 
             do {
-                try await setupWebView()
+                try await setupWebView(generation: generation)
                 isWebViewReady = true
             } catch {
                 Logger.aiChat.error("SuggestionsReader: Setup failed: \(error.localizedDescription)")
@@ -210,6 +218,7 @@ public final class SuggestionsReader: SuggestionsReading {
         contentScopeUserScript = nil
         isWebViewReady = false
         isSettingUp = false
+        setupGeneration += 1
 
         // Resume any pending continuations to avoid hanging tasks
         navigationContinuation?.resume(returning: .failure(ReaderError.webViewNotInitialized))
@@ -221,7 +230,7 @@ public final class SuggestionsReader: SuggestionsReading {
     // MARK: - WebView Setup
 
     @MainActor
-    private func setupWebView() async throws {
+    private func setupWebView(generation: Int) async throws {
         let suggestionsScript = AIChatSuggestionsUserScript()
 
         let features = ContentScopeFeatureToggles(
@@ -256,6 +265,10 @@ public final class SuggestionsReader: SuggestionsReading {
             scriptContext: .aiChatHistory,
             privacyConfigurationJSONGenerator: nil
         )
+        guard generation == setupGeneration else {
+            // Torn down while the source was being generated
+            throw ReaderError.operationSuperseded
+        }
         let contentScope = ContentScopeUserScript(source: contentScopeSource,
                                                   allowedNonisolatedFeatures: [suggestionsScript.featureName])
         contentScope.registerSubfeature(delegate: suggestionsScript)

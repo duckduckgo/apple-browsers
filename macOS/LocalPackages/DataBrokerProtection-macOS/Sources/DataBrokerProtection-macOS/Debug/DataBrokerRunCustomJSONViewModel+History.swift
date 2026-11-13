@@ -78,18 +78,7 @@ extension DataBrokerRunCustomJSONViewModel {
     }
 
     func historyEventDescription(_ event: HistoryEvent) -> String {
-        switch event.type {
-        case .noMatchFound: return "No Match"
-        case .matchesFound(let count): return "Matches (\(count))"
-        case .error(let error): return "Error: \(error.name) - \(error.localizedDescription)"
-        case .optOutStarted: return "Opt-out Started"
-        case .optOutRequested: return "Opt-out Requested"
-        case .optOutSubmittedAndAwaitingEmailConfirmation: return "Opt-out Awaiting Email"
-        case .optOutConfirmed: return "Opt-out Confirmed"
-        case .scanStarted: return "Scan Started"
-        case .reAppearence: return "Reappearance"
-        case .matchRemovedByUser: return "Removed by User"
-        }
+        DebugModeRunner.historyEventDescription(event.type)
     }
 
     func historyEventDetails(_ event: HistoryEvent) -> String {

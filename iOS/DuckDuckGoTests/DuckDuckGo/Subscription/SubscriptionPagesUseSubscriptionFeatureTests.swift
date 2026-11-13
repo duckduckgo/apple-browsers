@@ -36,6 +36,19 @@ private struct SubscriptionExperimentAttributionProviderStub: SubscriptionExperi
     }
 }
 
+private final class PurchaseEventRecorder {
+    var events: [String] = []
+}
+
+private struct RecordingSubscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding {
+    let recorder: PurchaseEventRecorder
+
+    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
+        recorder.events.append("attribution")
+        return nil
+    }
+}
+
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     
     var sut: DefaultSubscriptionPagesUseSubscriptionFeature!
@@ -498,6 +511,46 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(completion.1, .success(reason: nil))
     }
 
+    @MainActor
+    func testSubscriptionSelected_WhenAppStorePurchaseSucceeds_ReportsTransactionBeforeBuildingExperimentAttribution() async {
+        let recorder = PurchaseEventRecorder()
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: true, accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+        mockSubscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMock()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(),
+                              appStorePurchaseFlow: purchaseFlow,
+                              attributionProvider: RecordingSubscriptionExperimentAttributionProvider(recorder: recorder))
+        var reportedIsFreeTrial: Bool?
+        sut.onAppStoreTransactionCompleted = { isFreeTrial in
+            reportedIsFreeTrial = isFreeTrial
+            recorder.events.append("transactionCompleted")
+        }
+        let webView = MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        XCTAssertEqual(recorder.events, ["transactionCompleted", "attribution"])
+        XCTAssertEqual(reportedIsFreeTrial, true)
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenAppStorePurchaseIsCancelled_DoesNotReportTransaction() async {
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+        mockSubscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMock()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), appStorePurchaseFlow: purchaseFlow)
+        var didReportTransaction = false
+        sut.onAppStoreTransactionCompleted = { _ in didReportTransaction = true }
+        let webView = MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        XCTAssertFalse(didReportTransaction)
+    }
+
     func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
         XCTAssertEqual(
             SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
@@ -942,7 +995,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1008,7 +1062,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1064,7 +1119,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1123,7 +1179,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .pro,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(existingSubscription)
 
@@ -1182,7 +1239,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(stripeSubscription)
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
@@ -1219,7 +1277,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(stripeSubscription)
         mockSubscriptionManager.resultTokenContainer = nil
@@ -1254,7 +1313,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(googleSubscription)
 
@@ -1284,7 +1344,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             activeOffers: [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(unknownSubscription)
 
@@ -1302,7 +1363,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private func makeFeature(notificationCenter: MockUNUserNotificationCenter,
                              scheduler: SubscriptionExpirationReminderSchedulerMock? = nil,
                              appStorePurchaseFlow: AppStorePurchaseFlowMock? = nil,
-                             isExpirationReminderFeatureEnabled: @escaping () -> Bool = { true }) -> DefaultSubscriptionPagesUseSubscriptionFeature {
+                             isExpirationReminderFeatureEnabled: @escaping () -> Bool = { true },
+                             attributionProvider: SubscriptionExperimentAttributionProviding = SubscriptionExperimentAttributionProviderStub()) -> DefaultSubscriptionPagesUseSubscriptionFeature {
         let purchaseFlow = appStorePurchaseFlow ?? mockAppStorePurchaseFlow!
         let executer = DefaultSubscriptionFlowsExecuter(
             subscriptionManager: mockSubscriptionManager,
@@ -1326,7 +1388,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             userNotificationCenter: notificationCenter,
             expirationReminderScheduler: scheduler,
             isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled,
-            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+            subscriptionExperimentAttributionProvider: attributionProvider
         )
     }
 

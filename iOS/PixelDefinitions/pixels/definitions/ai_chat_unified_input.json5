@@ -128,6 +128,29 @@
             }
         ]
     },
+    "m_aichat_unified_input_attach_menu_shown": {
+        "description": "Fires when the user opens the attach (+) menu in the Unified Toggle Input or the iPad address bar. Not fired when the attach button is disabled or has no menu.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_attach_menu_item_selected": {
+        "description": "Fires when the user picks an enabled item from the attach (+) menu in the Unified Toggle Input or the iPad address bar. Fires on the pick, before any picker or sheet opens, so it counts picks that are later cancelled.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "item",
+                "description": "The menu item picked: camera (Take Photo), photo_library (Add Image), file_picker (Add File), page (Ask About Page), recent_tab (a tab in the recent tabs section, attaching or detaching it), tab_picker (Add Tabs).",
+                "type": "string",
+                "enum": ["camera", "photo_library", "file_picker", "page", "recent_tab", "tab_picker"]
+            }
+        ]
+    },
     "m_aichat_unified_input_image_attached": {
         "description": "Fires when the user attaches an image (camera, photo library, or paste) in the Unified Toggle Input.",
         "owners": ["pikorddg", "aataraxiaa"],
@@ -508,6 +531,7 @@
                     "deep_link_other",
                     "browsing_menu_duckai",
                     "duck_ai_new_chat",
+                    "swipe_up_new_chat",
                     "tab_switcher_existing_chat",
                     "tabs_bar_existing_chat",
                     "return_to_chat_card",

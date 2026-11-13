@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppUpdaterShared
 import DesignResourcesKit
 import SwiftUI
 
@@ -210,8 +211,29 @@ extension UpdateBannerView {
     }
 }
 
+extension UpdateController {
+
+    /// "Restart now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update now".
+    var updatePromptButtonTitle: String {
+        (self as? any SparkleUpdateControlling)?.isAtRestartCheckpoint == true ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
+    }
+
+    var updateBannerButtonTitle: String {
+        self is any SparkleUpdateControlling ? updatePromptButtonTitle : UserText.updateBannerOpenAppStoreButton
+    }
+
+    /// Opens the release notes to show progress when a Sparkle update still has to download, otherwise runs the update.
+    func runUpdateFromPrompt() {
+        if let sparkleUpdateController = self as? any SparkleUpdateControlling, !sparkleUpdateController.isAtRestartCheckpoint {
+            sparkleUpdateController.runUpdateFromMenuItem()
+        } else {
+            runUpdate()
+        }
+    }
+}
+
 #Preview("Row") {
-    UpdateBannerView(style: .row, version: "1.301.2", buttonTitle: UserText.updateBannerOpenAppStoreButton) {}
+    UpdateBannerView(style: .row, version: "1.301.2", buttonTitle: UserText.updatePromptRestartButton) {}
         .frame(width: 334)
         .padding()
 }

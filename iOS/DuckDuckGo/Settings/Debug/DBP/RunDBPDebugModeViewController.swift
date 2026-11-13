@@ -39,8 +39,8 @@ import WebKit
 final class RunDBPDebugModeViewController: UIHostingController<RunDBPDebugModeView> {
     private var viewModel: RunDBPDebugModeViewModel
     
-    init(freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
-        let viewModel = RunDBPDebugModeViewModel(freemiumPIRDebugSettings: freemiumPIRDebugSettings)
+    init(runner: DebugModeRunner) {
+        let viewModel = RunDBPDebugModeViewModel(runner: runner)
         let contentView = RunDBPDebugModeView(viewModel: viewModel)
         self.viewModel = viewModel
         super.init(rootView: contentView)
@@ -364,29 +364,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var optOutInProgress: Set<UUID> = []
     @Published var isWebViewAvailable: Bool = false
 
-    @Published private var currentRunner: BrokerProfileScanSubJobWebRunner?
-    private var currentOptOutRunner: BrokerProfileOptOutSubJobWebRunner?
+    private var currentWebRunner: (any SubJobWebRunning)?
 
     private var currentWebViewManager: DBPDebugWebViewWindowManager?
     var cancellables = Set<AnyCancellable>()
     private var currentTask: Task<Void, Never>?
-    
-    private var privacyConfigManager: PrivacyConfigurationManaging {
-        return ContentBlocking.shared.privacyConfigurationManager
-    }
 
-    private func makeContentBlocking() -> DBPWebViewContentBlocking {
-        DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
-    }
-
-    private let contentScopeProperties: ContentScopeProperties
-    private let emailConfirmationDataService: EmailConfirmationDataService
-    private let debugEmailConfirmationStore: DebugEmailConfirmationStore
-    private let captchaService: CaptchaService
-    private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
-    private let executionConfig: BrokerJobExecutionConfig
-    private let featureFlagger: DBPFeatureFlagging
+    private let runner: DebugModeRunner
 
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
@@ -404,104 +388,16 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }
     
-    init(freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
-        let features = ContentScopeFeatureToggles(
-            emailProtection: false,
-            emailProtectionIncontextSignup: false,
-            credentialsAutofill: false,
-            identitiesAutofill: false,
-            creditCardsAutofill: false,
-            credentialsSaving: false,
-            passwordGeneration: false,
-            inlineIconCredentials: false,
-            thirdPartyCredentialsProvider: false,
-            unknownUsernameCategorization: false,
-            partialFormSaves: false,
-            passwordVariantCategorization: false,
-            inputFocusApi: false,
-            autocompleteAttributeSupport: false
-        )
-        
-        let sessionKey = UUID().uuidString
-        let messageSecret = UUID().uuidString
-
-        self.contentScopeProperties = ContentScopeProperties(
-            gpcEnabled: false,
-            sessionKey: sessionKey,
-            messageSecret: messageSecret,
-            featureToggles: features
-        )
-        
-        self.fakePixelHandler = EventMapping { event, _, _, _ in
-            Logger.general.debug("Debug Pixel: \(String(describing: event), privacy: .public)")
-        }
-        if let pixelKit = PixelKit.shared {
-            self.pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
-        }
-
-        let appDependencies = AppDependencyProvider.shared
-        self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
-                                                freemiumPIRDebugSettings: freemiumPIRDebugSettings)
-        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: appDependencies.subscriptionManager,
-            runTypeProvider: appDependencies.dbpSettings
-        )
-        
-        let authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-        let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(
-            pixelHandler: fakePixelHandler,
-            settings: dbpSettings
-        )
-        
-        let emailService = EmailService(
-            authenticationManager: authenticationManager,
-            settings: dbpSettings,
-            servicePixel: backendServicePixels
-        )
-        
-        let emailServiceV1 = EmailServiceV1(
-            authenticationManager: authenticationManager,
-            settings: dbpSettings,
-            servicePixel: backendServicePixels
-        )
-        
-        self.debugEmailConfirmationStore = DebugEmailConfirmationStore()
-        
-        self.emailConfirmationDataService = EmailConfirmationDataService(
-            emailConfirmationStore: debugEmailConfirmationStore,
-            database: nil,
-            emailServiceV0: emailService,
-            emailServiceV1: emailServiceV1,
-            pixelHandler: fakePixelHandler
-        )
-        
-        self.captchaService = CaptchaService(
-            authenticationManager: authenticationManager,
-            settings: dbpSettings,
-            servicePixel: backendServicePixels
-        )
-
-        self.executionConfig = BrokerJobExecutionConfig()
-
+    init(runner: DebugModeRunner) {
+        self.runner = runner
         loadBrokers()
     }
-    
+
     private func loadBrokers() {
-        Task { @MainActor in
-            do {
-                let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
-                    directoryName: DatabaseConstants.directoryName,
-                    fileName: DatabaseConstants.fileName,
-                    appGroupIdentifier: nil
-                )
-                
-                let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
-                let vault = try vaultFactory.makeVault(reporter: nil)
-                self.brokerResources = try vault.fetchAllBrokerResources()
-            } catch {
-                showAlert(title: "Error", message: "Failed to load brokers: \(error.localizedDescription)")
-            }
+        do {
+            brokerResources = try runner.storedBrokerResources()
+        } catch {
+            showAlert(title: "Error", message: "Failed to load brokers: \(error.localizedDescription)")
         }
     }
 
@@ -533,63 +429,25 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         
         isRunning = true
         results.removeAll()
-        debugEmailConfirmationStore.reset()
+        runner.debugEmailConfirmationStore.reset()
         updateWebViewAvailability()
         
         currentTask = Task { @MainActor in
-            let profile = createProfile()
-            let queries = profile.profileQueries
+            let queries = runner.brokerProfileQueryData(for: broker, profile: createProfile())
             var allResults: [DebugScanResult] = []
 
             for query in queries {
-                let queryWithId = query.with(id: DebugHelper.stableId(for: query))
-                    let brokerId = DebugHelper.stableId(for: broker)
-                    let profileQueryId = DebugHelper.stableId(for: queryWithId)
-                    let brokerProfileQueryData = BrokerProfileQueryData(
-                        dataBroker: broker,
-                        profileQuery: queryWithId,
-                        scanJobData: ScanJobData(brokerId: brokerId,
-                                                 profileQueryId: profileQueryId,
-                                                 historyEvents: [])
-                    )
-                
                 do {
-                    let runner = BrokerProfileScanSubJobWebRunner(
-                        privacyConfig: privacyConfigManager,
-                        prefs: contentScopeProperties,
-                        context: brokerProfileQueryData,
-                        emailConfirmationDataService: emailConfirmationDataService,
-                        captchaService: captchaService,
-                        featureFlagger: featureFlagger,
-                        stageDurationCalculator: FakeStageDurationCalculator(),
-                        pixelHandler: fakePixelHandler,
-                        executionConfig: executionConfig,
-                        contentBlocking: makeContentBlocking()
-                    ) { true }
-
-                    self.currentRunner = runner
-                    
-                    let extractedProfiles = try await runner.scan(showWebView: true) { true }
-                    for profile in extractedProfiles {
-                        let assignedProfile = debugEmailConfirmationStore.storeExtractedProfile(
-                            profile,
-                            brokerId: brokerId,
-                            profileQueryId: profileQueryId,
-                            stableId: DebugHelper.stableId(for: profile)
-                        )
-                        let result = DebugScanResult(
-                            dataBroker: broker,
-                            profileQuery: queryWithId,
-                            extractedProfile: assignedProfile
-                        )
-
-                        allResults.append(result)
+                    let extractedProfiles = try await runner.scan(query,
+                                                                  showWebView: true,
+                                                                  timeout: runner.brokerJobExecutionConfig.scanJobTimeout,
+                                                                  stageCalculator: FakeStageDurationCalculator(),
+                                                                  onWebRunnerStarted: trackWebRunner)
+                    allResults += extractedProfiles.map {
+                        DebugScanResult(dataBroker: query.dataBroker, profileQuery: query.profileQuery, extractedProfile: $0)
                     }
-                    
                 } catch let UserScriptError.failedToLoadJS(jsFile, error) {
-                    pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                    try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
-                    fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
+                    await fireUserScriptLoadFailureAndCrash(jsFile: jsFile, error: error)
                 } catch {
                     print("Error scanning \(broker.name): \(error)")
                 }
@@ -604,7 +462,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
             self.hideWebView()
             self.currentWebViewManager = nil
-            self.currentRunner = nil
+            self.currentWebRunner = nil
             self.updateWebViewAvailability()
             
             if allResults.isEmpty {
@@ -614,9 +472,21 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             }
         }
     }
+
+    private func trackWebRunner(_ webRunner: any SubJobWebRunning) {
+        Task { @MainActor in
+            self.currentWebRunner = webRunner
+        }
+    }
+
+    private func fireUserScriptLoadFailureAndCrash(jsFile: String, error: Error) async -> Never {
+        runner.pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+        try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+        fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
+    }
     
     func showWebView() {
-        if let webViewHandler = getActiveWebViewHandler() {
+        if let webViewHandler = currentWebRunner?.webViewHandler {
             if currentWebViewManager == nil {
                 currentWebViewManager = DBPDebugWebViewWindowManager(webViewHandler: webViewHandler)
             }
@@ -631,26 +501,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         }
     }
     
-    private func getActiveWebViewHandler() -> WebViewHandler? {
-        if let runner = currentRunner {
-            return runner.webViewHandler
-        }
-        if let optOutRunner = currentOptOutRunner {
-            return optOutRunner.webViewHandler
-        }
-        return nil
-    }
-    
     private func getWebViewTitle() -> String {
-        if let runner = currentRunner {
-            let brokerName = runner.context.dataBroker.name
-            return "PIR Debug Mode: \(brokerName) (Scan)"
+        guard let currentWebRunner else {
+            return "PIR Debug Mode"
         }
-        if let optOutRunner = currentOptOutRunner {
-            let brokerName = optOutRunner.context.dataBroker.name
-            return "PIR Debug Mode: \(brokerName) (Opt Out)"
-        }
-        return "PIR Debug Mode"
+        let brokerName = currentWebRunner.context.dataBroker.name
+        let kind = currentWebRunner is BrokerProfileScanSubJobWebRunner ? "Scan" : "Opt Out"
+        return "PIR Debug Mode: \(brokerName) (\(kind))"
     }
     
     private func updateWebViewAvailability() {
@@ -670,42 +527,18 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             defer {
                 optOutInProgress.remove(result.id)
                 updateWebViewAvailability()
-                self.currentOptOutRunner = nil
+                self.currentWebRunner = nil
                 self.hideWebView()
                 self.currentWebViewManager = nil
             }
             
             do {
-                let brokerProfileQueryData = BrokerProfileQueryData(
-                    dataBroker: result.dataBroker,
-                    profileQuery: result.profileQuery,
-                    scanJobData: ScanJobData(
-                        brokerId: DebugHelper.stableId(for: result.dataBroker),
-                        profileQueryId: DebugHelper.stableId(for: result.profileQuery),
-                        historyEvents: []
-                    )
-                )
-                
-                let runner = BrokerProfileOptOutSubJobWebRunner(
-                    privacyConfig: privacyConfigManager,
-                    prefs: contentScopeProperties,
-                    context: brokerProfileQueryData,
-                    emailConfirmationDataService: emailConfirmationDataService,
-                    captchaService: captchaService,
-                    featureFlagger: featureFlagger,
-                    stageCalculator: FakeStageDurationCalculator(),
-                    pixelHandler: fakePixelHandler,
-                    executionConfig: executionConfig,
-                    actionsHandlerMode: .optOut,
-                    contentBlocking: makeContentBlocking()
-                ) { true }
-                
-                self.currentOptOutRunner = runner
-                
-                try await runner.optOut(
-                    extractedProfile: result.extractedProfile,
-                    showWebView: true
-                ) { true }
+                _ = try await runner.optOut(result,
+                                            dataBroker: result.dataBroker,
+                                            showWebView: true,
+                                            timeout: runner.brokerJobExecutionConfig.optOutJobTimeout,
+                                            stageCalculator: FakeStageDurationCalculator(),
+                                            onWebRunnerStarted: trackWebRunner)
 
                 if isAwaitingEmailConfirmation(for: result) {
                     showAlert(title: "Awaiting Email Confirmation",
@@ -716,9 +549,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 }
                 
             } catch let UserScriptError.failedToLoadJS(jsFile, error) {
-                pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
-                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
+                await fireUserScriptLoadFailureAndCrash(jsFile: jsFile, error: error)
             } catch {
                 showAlert(title: "Error", message: "Opt-out failed: \(error.localizedDescription)")
             }
@@ -817,13 +648,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
 extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
     var emailConfirmationStore: EmailConfirmationSupporting {
-        debugEmailConfirmationStore
+        runner.emailConfirmationStore
     }
 
     func checkForEmailConfirmation() {
         Task { @MainActor in
             do {
-                try await emailConfirmationDataService.checkForEmailConfirmationData()
+                try await runner.checkForEmailConfirmation()
                 showAlert(title: "Email Confirmation Check Complete",
                           message: "If a link is ready, you can continue the opt-out.")
             } catch {
@@ -842,91 +673,26 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
             defer {
                 optOutInProgress.remove(scanResult.id)
                 updateWebViewAvailability()
-                self.currentOptOutRunner = nil
+                self.currentWebRunner = nil
                 self.hideWebView()
                 self.currentWebViewManager = nil
             }
 
             do {
-                let brokerProfileQueryData = BrokerProfileQueryData(
-                    dataBroker: scanResult.dataBroker,
-                    profileQuery: scanResult.profileQuery,
-                    scanJobData: ScanJobData(
-                        brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
-                        profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
-                        historyEvents: []
-                    )
-                )
-
-                let runner = BrokerProfileOptOutSubJobWebRunner(
-                    privacyConfig: privacyConfigManager,
-                    prefs: contentScopeProperties,
-                    context: brokerProfileQueryData,
-                    emailConfirmationDataService: emailConfirmationDataService,
-                    captchaService: captchaService,
-                    featureFlagger: featureFlagger,
-                    stageCalculator: FakeStageDurationCalculator(),
-                    pixelHandler: fakePixelHandler,
-                    executionConfig: executionConfig,
-                    actionsHandlerMode: .emailConfirmation(confirmationURL),
-                    contentBlocking: makeContentBlocking()
-                ) { true }
-
-                self.currentOptOutRunner = runner
-
-                try await runner.optOut(
-                    extractedProfile: scanResult.extractedProfile,
-                    showWebView: true
-                ) { true }
+                try await runner.continueOptOut(scanResult,
+                                                confirmationURL: confirmationURL,
+                                                showWebView: true,
+                                                timeout: runner.brokerJobExecutionConfig.optOutJobTimeout,
+                                                stageCalculator: FakeStageDurationCalculator(),
+                                                onWebRunnerStarted: trackWebRunner)
 
                 showAlert(title: "Success",
                           message: "Opt-out process completed for \(scanResult.extractedProfile.name ?? "profile").")
             } catch let UserScriptError.failedToLoadJS(jsFile, error) {
-                pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                try await Task.sleep(interval: 1.0)
-                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
+                await fireUserScriptLoadFailureAndCrash(jsFile: jsFile, error: error)
             } catch {
                 showAlert(title: "Error", message: "Opt-out failed: \(error.localizedDescription)")
             }
         }
     }
-}
-
-// MARK: - Models
-
-// MARK: - Fake Duration Calculator
-
-final class FakeStageDurationCalculator: StageDurationCalculator {
-    var attemptId: UUID = UUID()
-    var isImmediateOperation: Bool = false
-    var isFreeScan: Bool?
-    var tries = 1
-    
-    func durationSinceLastStage() -> Double { 0.0 }
-    func durationSinceStartTime() -> Double { 0.0 }
-    func awakeDurationSinceStartTime() -> Double { 0.0 }
-    func fireOptOutStart() {}
-    func setEmailPattern(_ emailPattern: String?) {}
-    func fireScanStarted() {}
-    func fireOptOutEmailGenerate() {}
-    func fireOptOutCaptchaParse() {}
-    func fireOptOutCaptchaSend() {}
-    func fireOptOutCaptchaSolve() {}
-    func fireOptOutSubmit() {}
-    func fireOptOutEmailReceive() {}
-    func fireOptOutEmailConfirm() {}
-    func fireOptOutEmailGetData() {}
-    func fireOptOutFillForm() {}
-    func fireOptOutValidate() {}
-    func fireOptOutSubmitSuccess(tries: Int) {}
-    func fireOptOutFailure(tries: Int, error: Error) {}
-    func fireScanSuccess(matchesFound: Int) {}
-    func fireScanNoResults() {}
-    func fireScanError(error: Error) {}
-    func setStage(_ stage: Stage) {}
-    func setLastAction(_ action: Action) {}
-    func fireOptOutConditionFound() {}
-    func fireOptOutConditionNotFound() {}
-    func resetTries() { tries = 1 }
-    func incrementTries() { tries += 1 }
 }

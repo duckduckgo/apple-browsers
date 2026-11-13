@@ -222,7 +222,12 @@ struct Launching: LaunchingHandling {
         reportingService.syncService = syncService
         autofillService.syncService = syncService
 
-        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+        let daxDialogs = DaxDialogs(
+            entityProviding: contentBlocking.contentBlockingManager,
+            timeLimit: ContextualOnboardingTimeLimit(featureFlagger: featureFlagger,
+                                                     privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager),
+            timeLimitReporter: reportingService.onboardingPixelReporter
+        )
 
         let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                                   featureFlagger: featureFlagger,
@@ -360,7 +365,7 @@ struct Launching: LaunchingHandling {
                                               contentBlockingService: contentBlockingService,
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
-                                              daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                              daxDialogs: daxDialogs,
                                               idleReturnEligibilityManager: idleReturnEligibilityManager,
                                               reportingService: reportingService,
                                               variantManager: configuration.atbAndVariantConfiguration.variantManager,
@@ -495,6 +500,9 @@ struct Launching: LaunchingHandling {
         launchTaskManager.register(task: BlockLaunchTask(name: "Initialize PIR Secure Vault") { taskContext in
             Task {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
+#if DEBUG
+                await dbpService.startDebugServerIfRequestedAtLaunch()
+#endif
                 taskContext.finish()
             }
         })
@@ -516,12 +524,14 @@ struct Launching: LaunchingHandling {
 #if DEBUG || ALPHA
         mainCoordinator.controller.automationServer = configuration.finalize(
             reportingService: reportingService,
+            daxDialogs: daxDialogs,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
 #else
         _ = configuration.finalize(
             reportingService: reportingService,
+            daxDialogs: daxDialogs,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )

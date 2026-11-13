@@ -30,6 +30,9 @@ final class DefaultBrowserAndDockPromptService {
     let userActivityManager: DefaultBrowserAndDockPromptUserActivityManager
     let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting
     let uiHosting: () -> DefaultBrowserAndDockPromptUIHosting?
+    let uiProvider: DefaultBrowserAndDockPromptUIProviding
+    let actionPerformer: DefaultBrowserAndDockActionPerforming
+    let dateProvider: () -> Date
 
     init(
         privacyConfigManager: PrivacyConfigurationManaging,
@@ -41,15 +44,11 @@ final class DefaultBrowserAndDockPromptService {
     ) {
 
         var defaultBrowserAndDockPromptDebugStore: DefaultBrowserAndDockPromptDebugStore?
-        var debugSimulatedDateStore: DebugSimulatedDateStore?
         let buildType = StandardApplicationBuildType()
         if buildType.isDebugBuild || buildType.isReviewBuild {
-            debugSimulatedDateStore = DebugSimulatedDateStore(keyValueStore: keyValueStore)
             defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
         }
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = {
-            debugSimulatedDateStore?.simulatedDate ?? Date()
-        }
+        let defaultBrowserAndDockPromptDateProvider = DebugSimulatedDateStore.makeDateProvider(keyValueStore: keyValueStore)
         let defaultBrowserAndDockInstallDateProvider: () -> Date? = {
             defaultBrowserAndDockPromptDebugStore?.simulatedInstallDate ?? LocalStatisticsStore().installDate
         }
@@ -84,6 +83,9 @@ final class DefaultBrowserAndDockPromptService {
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier(dockCustomizer: dockCustomization)
         let uiProvider = DefaultBrowserAndDockPromptUIProvider()
         self.uiHosting = uiHosting
+        self.uiProvider = uiProvider
+        actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization, defaultBrowserProvider: SystemDefaultBrowserProvider())
+        dateProvider = defaultBrowserAndDockPromptDateProvider
 
         presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)
     }

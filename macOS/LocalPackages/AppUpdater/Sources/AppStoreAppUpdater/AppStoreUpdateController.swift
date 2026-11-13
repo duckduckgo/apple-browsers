@@ -117,16 +117,10 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
             MoreProminentUpdatesSettings(privacyConfig: privacyConfigurationManager.privacyConfig,
                                          isInternalUser: internalUserDecider.isInternalUser)
         }
-        let reevaluationTriggers = UpdatePromptStageTracker.didBecomeActive
-            .merge(with: internalUserDecider.isInternalUserPublisher.map { _ in }, featureFlagger.updatesPublisher)
-            .eraseToAnyPublisher()
-        let tracker = UpdatePromptStageTracker(
-            store: keyValueStore.throwingKeyedStoring(),
-            settings: promptSettings,
-            installedVersion: AppVersion().versionAndBuildNumber,
-            forcedStage: { internalUserDecider.isInternalUser ? UpdatesDebugSettings().forcedUpdatePromptStage : nil },
-            reevaluationTriggers: reevaluationTriggers
-        )
+        let tracker = UpdatePromptStageTracker(store: keyValueStore.throwingKeyedStoring(),
+                                               internalUserDecider: internalUserDecider,
+                                               featureFlagger: featureFlagger,
+                                               privacyConfigurationManager: privacyConfigurationManager)
 
         self.init(appStoreOpener: DefaultAppStoreOpener(),
                   internalUserDecider: internalUserDecider,
@@ -150,6 +144,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     }
 
     /// Internal initializer for testing with minimal dependencies. Doesn't start automatic update checks.
+    @MainActor
     init(appStoreOpener: AppStoreOpener? = nil,
          internalUserDecider: InternalUserDecider? = nil,
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
@@ -175,6 +170,13 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
         self.appVersion = appVersion
         self.now = now
         super.init()
+
+        updatePromptStageTracker?.$stage
+            .removeDuplicates()
+            .sink { [weak self] stage in
+                self?.updateNotificationDot(for: stage)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Automatic Check for Updates Subscriptions
@@ -230,13 +232,9 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
         do {
             updateProgress = .updateCycleDidStart
             let releases = try await releaseChecker.getAppStoreReleases()
-            let isMoreProminentUpdatesOn = isMoreProminentUpdatesOn
             let currentVersion = getCurrentAppVersion()
             let currentBuild = getCurrentAppBuild()
-            let releaseMetadata = await releaseToOffer(from: releases,
-                                                       isMoreProminentUpdatesOn: isMoreProminentUpdatesOn,
-                                                       currentVersion: currentVersion,
-                                                       currentBuild: currentBuild)
+            let releaseMetadata = await releaseToOffer(from: releases, currentVersion: currentVersion, currentBuild: currentBuild)
 
             Logger.updates.log("Checking App Store update: current=\(currentVersion ?? "unknown"), remote=\(releaseMetadata.latestVersion)")
 
@@ -254,23 +252,22 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                     let update = Update(releaseMetadata: releaseMetadata, isInstalled: false)
                     self.latestUpdate = update
                     self.hasPendingUpdate = true
-                    self.needsNotificationDot = true
 
                     Logger.updates.log("App Store update available: \(releaseMetadata.latestVersion)")
                     updateProgress = .updateCycleDone(.finishedWithNoError)
                 } else {
                     self.hasPendingUpdate = false
-                    self.needsNotificationDot = false
 
                     Logger.updates.log("App Store: no update available")
                     updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
                 }
 
-                // With the flag off, this clears any clock left over from while it was on.
-                updatePromptStageTracker?.updateCheckDidFinish(isUpdateAvailable: isMoreProminentUpdatesOn && isUpdateAvailable,
-                                                               isCritical: releaseMetadata.isCritical)
+                updatePromptStageTracker?.updateCheckDidFinish(isUpdateAvailable: isUpdateAvailable, isCritical: releaseMetadata.isCritical)
+                updateNotificationDot(for: updatePromptStageTracker?.stage ?? .none)
 
-                showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+                if !isMoreProminentUpdatesOn {
+                    showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+                }
             }
 
             // Record check time for rate limiting
@@ -300,13 +297,15 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
     // MARK: - Private Methods
 
+    /// With more prominent updates on, the dot shows only at the first prompt. The toolbar button takes over at the second.
+    private func updateNotificationDot(for stage: UpdatePromptStage) {
+        needsNotificationDot = hasPendingUpdate && (!isMoreProminentUpdatesOn || stage == .firstPrompt)
+    }
+
     /// The rolling-out release once it's past the buffer, otherwise the latest release.
     /// The offer is critical if the user hasn't installed a critical latest release yet,
     /// so offering a newer release doesn't hide it.
-    private func releaseToOffer(from releases: AppStoreReleases,
-                                isMoreProminentUpdatesOn: Bool,
-                                currentVersion: String?,
-                                currentBuild: String?) async -> ReleaseMetadata {
+    private func releaseToOffer(from releases: AppStoreReleases, currentVersion: String?, currentBuild: String?) async -> ReleaseMetadata {
         let offered = isMoreProminentUpdatesOn
             ? releases.releaseToOffer(availableAfter: promptSettings().appStoreUpdateAvailableDelay, now: now())
             : releases.latest

@@ -17,9 +17,11 @@
 //
 
 import AppKit
+import EventHub
 import FeatureFlags_macOS
 @_spi(Testing) import Persistence
 import PrivacyConfig
+import SharedTestUtilities
 import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -33,75 +35,45 @@ final class WebExtensionsDebugMenuTests: XCTestCase {
                                                              privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                                                              autoconsentPreferences: Preferences(),
                                                              themeManager: ThemeManager(appearancePreferences: .mock),
-                                                             featureFlagger: flags)
+                                                             featureFlagger: flags,
+                                                             eventHub: RecordingEventHub())
         manager.chromeWebStore = store
         return WebExtensionsDebugMenu(webExtensionManager: manager,
                                       cpmMessagingHealthMonitor: CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring()))
     }
 
     private func checkItem(in menu: NSMenu) throws -> NSMenuItem {
-        try XCTUnwrap(menu.item(withTitle: "Check for Extension Updates Now"))
+        try XCTUnwrap(menu.item(withTitle: "Check for Updates…"))
     }
 
     private func invoke(_ item: NSMenuItem) throws {
         XCTAssertTrue(NSApp.sendAction(try XCTUnwrap(item.action), to: item.target, from: item))
     }
 
-    func testCheckNowTracksCapabilityChangesOnTheSameMenuAndStore() throws {
+    func testCheckForUpdatesOpensTheWindowWithoutStartingACheck() async throws {
         let store = Store()
         let menu = menu(store: store)
-        for enabled in [false, true, false] {
+        let existingWindow = MockWindow(isVisible: false)
+        existingWindow.identifier = WebExtensionUpdateVersionsWindowPresenter.identifier
+        defer { existingWindow.close() }
+        let registeredWindow = try XCTUnwrap(NSApp.windows.first { $0 === existingWindow })
+        XCTAssertTrue(registeredWindow === existingWindow)
+        let checked = expectation(description: "Opening the window does not start a check")
+        checked.isInverted = true
+        store.onCheck = { checked.fulfill() }
+        for enabled in [false, true] {
             store.canCheckForUpdates = enabled
             menu.update()
+            XCTAssertNil(menu.item(withTitle: "Check for Extension Updates Now"))
             let item = try checkItem(in: menu)
-            XCTAssertEqual(item.isEnabled, enabled)
-            XCTAssertEqual(menu.validateMenuItem(item), enabled)
+            XCTAssertTrue(item.isEnabled)
+            XCTAssertTrue(menu.validateMenuItem(item))
+            try invoke(item)
+            let window = try XCTUnwrap(NSApp.windows.first {
+                $0.identifier == WebExtensionUpdateVersionsWindowPresenter.identifier
+            })
+            XCTAssertTrue(window === existingWindow)
         }
-    }
-
-    func testCheckNowIsDisabledWithoutAStore() throws {
-        let menu = menu(store: nil)
-        menu.update()
-        let item = try checkItem(in: menu)
-        XCTAssertFalse(item.isEnabled)
-        XCTAssertFalse(menu.validateMenuItem(item))
-    }
-
-    func testCheckNowForwardsAnEnabledRequest() async throws {
-        let store = Store()
-        store.canCheckForUpdates = true
-        let menu = menu(store: store)
-        let checked = expectation(description: "Manual check forwarded")
-        store.onCheck = { checked.fulfill() }
-        try invoke(checkItem(in: menu))
-        await fulfillment(of: [checked], timeout: 2)
-        XCTAssertEqual(store.checkCount, 1)
-    }
-
-    func testCheckNowRechecksCapabilityWhenTheItemIsInvoked() async throws {
-        let store = Store()
-        store.canCheckForUpdates = true
-        let menu = menu(store: store)
-        let item = try checkItem(in: menu)
-        XCTAssertTrue(item.isEnabled)
-        let checked = expectation(description: "Unavailable check is not forwarded")
-        checked.isInverted = true
-        store.onCheck = { checked.fulfill() }
-        store.canCheckForUpdates = false
-        try invoke(item)
-        await fulfillment(of: [checked], timeout: 0.1)
-        XCTAssertEqual(store.checkCount, 0)
-    }
-
-    func testCheckNowRechecksCapabilityInsideTheQueuedTask() async throws {
-        let store = Store()
-        store.canCheckForUpdates = true
-        let menu = menu(store: store)
-        let checked = expectation(description: "Queued check is not forwarded after disabling")
-        checked.isInverted = true
-        store.onCheck = { checked.fulfill() }
-        try invoke(checkItem(in: menu))
-        store.canCheckForUpdates = false
         await fulfillment(of: [checked], timeout: 0.1)
         XCTAssertEqual(store.checkCount, 0)
     }

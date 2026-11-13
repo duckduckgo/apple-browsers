@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import WebKit
 
 protocol BrowserChromeDelegate: AnyObject {
     
@@ -55,6 +56,10 @@ protocol BrowserChromeDelegate: AnyObject {
     /// visibility, used to drive `WKWebView.obscuredContentInsets` on iOS 26.
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets
 
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets?
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat { get }
+
     /// Height obscured at the top of the new tab page by the focused unified toggle input card, for page
     /// content that must sit below it (the contextual onboarding dialogs).
     var floatingNewTabPageTopObscuredHeight: CGFloat { get }
@@ -64,6 +69,10 @@ protocol BrowserChromeDelegate: AnyObject {
 }
 
 extension BrowserChromeDelegate {
+
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? { nil }
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat { 0 }
 
     var isFloatingChromeEnabled: Bool { false }
 

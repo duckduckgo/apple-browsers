@@ -364,6 +364,7 @@ private struct AIChatTermsOfServiceSection: View {
     private var defaultFooter: String {
         "Resetting native acceptance brings the native input's disclaimer back. The web app keeps its own "
         + "acceptance in \(DuckAiNativeStorageConsent.termsOfServiceEntryKey): clear it to see the web card again. "
+        + "With duckAITermsOfServiceRecordRestore on, the app writes it back at load: reset native acceptance first. "
         + "While any chat exists, both come back on the next launch: delete all chats first. "
         + "Needs the duckAINativeTermsOfService flag on."
     }

@@ -30,7 +30,6 @@ enum DaxGreeting: String, CaseIterable {
     case morning
     case stillAwake
     case nightOwl
-    case youreBack
     case goodbyeAds
     case askMe
     case duckDuckHello
@@ -69,7 +68,6 @@ enum DaxGreeting: String, CaseIterable {
         case .morning: return UserText.daxGreetingMorning
         case .stillAwake: return UserText.daxGreetingStillAwake
         case .nightOwl: return UserText.daxGreetingNightOwl
-        case .youreBack: return UserText.daxGreetingYoureBack
         case .goodbyeAds: return UserText.daxGreetingGoodbyeAds
         case .askMe: return UserText.daxGreetingAskMe
         case .duckDuckHello: return UserText.daxGreetingDuckDuckHello

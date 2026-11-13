@@ -213,7 +213,11 @@ jobs:
           never) diagnostics_args=(-collect-test-diagnostics never) ;;
           *) echo "::error::Unsupported diagnostics mode '$DIAGNOSTICS_MODE'."; exit 1 ;;
         esac
-        set -o pipefail && env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
+        timeline_command=()
+        if [[ "$DIAGNOSTICS_MODE" == default && "$TEST_CLASS" == ApplicationLockUITests ]]; then
+          timeline_command=(python3 scripts/capture_app_lock_timeline.py "$SIMULATOR_UDID" app-lock-timeline)
+        fi
+        set -o pipefail && "${timeline_command[@]}" env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
           TEST_RUNNER_APP_LOCK_DISABLE_ANIMATIONS="$APP_LOCK_DISABLE_ANIMATIONS" \
           TEST_RUNNER_APP_LOCK_RELAUNCH_GAP="$APP_LOCK_RELAUNCH_GAP" \
           TEST_RUNNER_UI_TEST_EXECUTION_MODE="$UI_TEST_EXECUTION_MODE" \
@@ -301,5 +305,6 @@ jobs:
           iOS/results-summary.json
           iOS/experiment-options.json
           iOS/test-attachments
+          iOS/app-lock-timeline
         if-no-files-found: warn
         retention-days: 7

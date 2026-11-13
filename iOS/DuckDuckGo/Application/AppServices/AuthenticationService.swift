@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 
 protocol AuthenticationServiceProtocol {
 
@@ -74,9 +75,9 @@ extension AuthenticationService: AuthenticationServiceProtocol {
 
     @MainActor
     private func authenticate(with authenticationViewController: AuthenticationViewController) async {
-        AppLockUITestDiagnostics.record("service.authenticationRequested")
+        AppLockUITestDiagnostics.recordActivation("service.authenticationRequested", viewController: authenticationViewController)
         let didAuthenticate = await authenticator.authenticate(reason: UserText.appUnlock)
-        AppLockUITestDiagnostics.record("service.authenticationCompleted success=\(didAuthenticate)")
+        AppLockUITestDiagnostics.recordActivation("service.authenticationCompleted success=\(didAuthenticate)", viewController: authenticationViewController)
         if didAuthenticate {
             hasCompletedAuthentication = true
             isUnlocked = true
@@ -111,6 +112,21 @@ extension AuthenticationService: AuthenticationViewControllerDelegate {
 // Opt-in diagnostics for the native Application Lock test; never logs credentials or authentication reasons.
 // Temporary: remove when the activation/recovery cause is confirmed and representative no-retry CI coverage no longer needs this trace.
 enum AppLockUITestDiagnostics {
+    @MainActor
+    static func recordActivation(_ event: @autoclosure () -> String, viewController: UIViewController) {
+#if DEBUG
+        guard ProcessInfo.isRunningUITests,
+              ProcessInfo.processInfo.environment["UITEST_APP_LOCK_DIAGNOSTICS"] == "1" else { return }
+        let window = viewController.viewIfLoaded?.window
+        let scene = window?.windowScene
+        record("\(event()) wall=\(Date().timeIntervalSince1970) uptime=\(ProcessInfo.processInfo.systemUptime) "
+               + "pid=\(ProcessInfo.processInfo.processIdentifier) appState=\(UIApplication.shared.applicationState.rawValue) "
+               + "vc=\(ObjectIdentifier(viewController)) window=\(window.map { String(describing: ObjectIdentifier($0)) } ?? "nil") "
+               + "key=\(window?.isKeyWindow.description ?? "nil") hidden=\(window?.isHidden.description ?? "nil") "
+               + "scene=\(scene?.session.persistentIdentifier ?? "nil") sceneState=\(scene?.activationState.rawValue.description ?? "nil")")
+#endif
+    }
+
     static func record(_ event: @autoclosure () -> String) {
 #if DEBUG
         guard ProcessInfo.isRunningUITests,

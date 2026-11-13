@@ -40,3 +40,29 @@ with paths, timestamps, snapshots, and available process-launch events.
 
 This is an observation experiment, not a fix or an efficacy measurement. Keep the
 current comparison settings and test flow unchanged when collecting evidence.
+
+The wrapper also attempts one asynchronous, one-second `/usr/bin/sample` when
+RunningBoard reports a newly launched `com.apple.LocalAuthenticationUIService`
+PID running. A separate observer tails the existing stream every 50 milliseconds;
+it does not delay the test command. It excludes PIDs present in the initial
+selected-simulator snapshot and consumes only one new-host event, even if
+identity validation or attachment fails. It never selects a host by name across
+simulators.
+
+Before sampling, the selected simulator's `launchctl list` must identify that PID
+as the exact service, and host `ps` must identify its start time and executable
+path in a simulator runtime. The same checks run after sampling. Status records
+retain the source event timestamp, detection time, sample start/end times,
+before/after identities, exit codes and errors. `host-sample.txt` contains the
+sample, with tool output in `host-sample.stdout` and `host-sample.stderr`.
+Identity commands have one-second timeouts. Sampling has a three-second process
+limit, then terminates only its owned sample process, with a one-second grace
+before killing it. Capture completion or cancellation interrupts sampling and
+joins the observer before closing the shared status file.
+
+Sampling can perturb scheduling. Event delivery and identity checks can make the
+sample late, and PID reuse between a check and attachment remains possible.
+Use actual timestamps to assess overlap with the unresolved startup interval;
+a late sample, failed attachment, changed lifetime or missing matched sampled
+control is inconclusive. A host's first log does not establish when its
+initialization began. The sample is diagnostic evidence, not a cause or fix.

@@ -70,6 +70,14 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
         XCTAssertTrue(sut.isEligible)
     }
 
+    func testWhenMoreProminentUpdatesOnThenNotEligible() {
+        featureFlagger.featuresStub[FeatureFlag.moreProminentUpdates.rawValue] = true
+        updateController.hasPendingUpdate = true
+        updateController.mustShowUpdateIndicators = true
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
     func testWhenPendingUpdateButIndicatorsNotDueThenNotEligible() {
         updateController.hasPendingUpdate = true
         updateController.mustShowUpdateIndicators = false

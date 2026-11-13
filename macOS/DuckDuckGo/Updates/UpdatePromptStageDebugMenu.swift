@@ -58,6 +58,11 @@ final class UpdatePromptStageDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem(title: "1 Minute Before Second Prompt", action: #selector(movePromptClockToMinuteBeforeStage), representedObject: UpdatePromptStage.secondPrompt)
                 .targetting(self)
+            NSMenuItem.separator()
+            NSMenuItem(title: "Third Prompt", action: #selector(movePromptClockToStage), representedObject: UpdatePromptStage.thirdPrompt)
+                .targetting(self)
+            NSMenuItem(title: "1 Minute Before Third Prompt", action: #selector(movePromptClockToMinuteBeforeStage), representedObject: UpdatePromptStage.thirdPrompt)
+                .targetting(self)
         }
 
         forcePromptStageMenu.buildItems {

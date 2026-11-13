@@ -1110,9 +1110,6 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Reinstall Detection")
                 .submenu(ReinstallUserDetectionDebugMenu())
 
-            NSMenuItem(title: "AppStore Updates")
-                .submenu(AppStoreUpdatesDebugMenu())
-
             if #available(macOS 13.5, *) {
                 NSMenuItem(title: "Autofill") {
                     NSMenuItem(title: "View all Credentials", action: #selector(MainViewController.showAllCredentials)).withAccessibilityIdentifier("MainMenu.showAllCredentials")

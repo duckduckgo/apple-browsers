@@ -26,7 +26,7 @@ struct UpdateBannerView: View {
 
     enum Style {
         /// Single pill-shaped row.
-        case row
+        case row(title: String)
         /// Illustrated card.
         case card
     }
@@ -37,35 +37,37 @@ struct UpdateBannerView: View {
     let action: () -> Void
 
     var body: some View {
-        Group {
+        Button(action: action) {
             switch style {
-            case .row:
-                row
+            case .row(let title):
+                row(title: title)
             case .card:
                 card
             }
         }
+        .buttonStyle(UpdateBannerButtonStyle())
         // The design keeps the banner's light appearance in dark mode too.
         .environment(\.colorScheme, .light)
     }
 
-    private var row: some View {
+    private func row(title: String) -> some View {
         HStack(spacing: 0) {
             HStack(spacing: 8) {
                 UpdateBannerIcon()
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    UpdateBannerText(UserText.updateBannerRowTitle, style: .title)
+                    UpdateBannerText(title, style: .title)
                     UpdateBannerText("• \(version)", style: .detail)
                 }
             }
             Spacer(minLength: 8)
-            UpdateBannerButton(title: buttonTitle, action: action)
+            UpdateBannerButtonLabel(title: buttonTitle)
         }
         .padding(.leading, 12)
         .padding(.trailing, 8)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
         .background(Capsule().fill(Color(designSystemColor: .accentPrimary)))
+        .contentShape(Capsule())
     }
 
     private var card: some View {
@@ -74,7 +76,7 @@ struct UpdateBannerView: View {
                 UpdateBannerIcon()
                 UpdateBannerText(UserText.updateBannerCardTitle, style: .title)
             }
-            UpdateBannerButton(title: buttonTitle, action: action)
+            UpdateBannerButtonLabel(title: buttonTitle)
             UpdateBannerText(version, style: .detail)
                 .padding(.top, 2)
         }
@@ -86,6 +88,7 @@ struct UpdateBannerView: View {
         }
         .background(Color(designSystemColor: .accentPrimary))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .contentShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -141,21 +144,7 @@ private struct UpdateBannerIcon: View {
     }
 }
 
-private struct UpdateBannerButton: View {
-
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 11, weight: .medium))
-                .lineLimit(1)
-        }
-        .buttonStyle(UpdateBannerButtonStyle())
-    }
-}
-
+/// Makes the whole banner one button. The pill inside it highlights when the banner is hovered or pressed.
 private struct UpdateBannerButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
@@ -171,6 +160,21 @@ private struct UpdateBannerButtonBody: View {
 
     var body: some View {
         configuration.label
+            .environment(\.updateBannerHighlightOpacity, configuration.isPressed ? 0.2 : (isHovered ? 0.1 : 0))
+            .onHover { isHovered = $0 }
+    }
+}
+
+private struct UpdateBannerButtonLabel: View {
+
+    let title: String
+
+    @Environment(\.updateBannerHighlightOpacity) private var highlightOpacity
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 11, weight: .medium))
+            .lineLimit(1)
             .foregroundColor(Color(designSystemColor: .accentContentPrimary))
             .padding(.horizontal, 12)
             .frame(height: 28)
@@ -182,11 +186,19 @@ private struct UpdateBannerButtonBody: View {
             )
             .overlay(
                 Capsule()
-                    .fill(Color(designSystemColor: .accentContentPrimary)
-                        .opacity(configuration.isPressed ? 0.2 : (isHovered ? 0.1 : 0)))
+                    .fill(Color(designSystemColor: .accentContentPrimary).opacity(highlightOpacity))
             )
-            .contentShape(Capsule())
-            .onHover { isHovered = $0 }
+    }
+}
+
+private struct UpdateBannerHighlightOpacityKey: EnvironmentKey {
+    static let defaultValue: Double = 0
+}
+
+private extension EnvironmentValues {
+    var updateBannerHighlightOpacity: Double {
+        get { self[UpdateBannerHighlightOpacityKey.self] }
+        set { self[UpdateBannerHighlightOpacityKey.self] = newValue }
     }
 }
 
@@ -213,9 +225,14 @@ extension UpdateBannerView {
 
 extension UpdateController {
 
-    /// "Restart now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update now".
+    /// "Restart Now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update Now".
     var updatePromptButtonTitle: String {
         (self as? any SparkleUpdateControlling)?.isAtRestartCheckpoint == true ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
+    }
+
+    /// App Store builds can't tell whether the update has downloaded, so they say "Update available".
+    var updateBannerRowTitle: String {
+        self is any SparkleUpdateControlling ? UserText.updateBannerRowReadyTitle : UserText.updateBannerRowAvailableTitle
     }
 
     var updateBannerButtonTitle: String {
@@ -233,7 +250,7 @@ extension UpdateController {
 }
 
 #Preview("Row") {
-    UpdateBannerView(style: .row, version: "1.301.2", buttonTitle: UserText.updatePromptRestartButton) {}
+    UpdateBannerView(style: .row(title: UserText.updateBannerRowReadyTitle), version: "1.301.2", buttonTitle: UserText.updatePromptRestartButton) {}
         .frame(width: 334)
         .padding()
 }

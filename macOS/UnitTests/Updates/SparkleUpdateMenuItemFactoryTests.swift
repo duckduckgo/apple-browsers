@@ -69,6 +69,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
         XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptUpdateButton)
         XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptUpdateButton)
+        XCTAssertEqual(mockController.updateBannerRowTitle, UserText.updateBannerRowReadyTitle)
     }
 
     func testUpdatePromptButtonTitle_WhenAtRestartCheckpoint_ShowsRestartNow() {
@@ -77,6 +78,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
         XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptRestartButton)
         XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptRestartButton)
+        XCTAssertEqual(mockController.updateBannerRowTitle, UserText.updateBannerRowReadyTitle)
     }
 
     // MARK: - Update Prompt Action Tests

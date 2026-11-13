@@ -164,6 +164,9 @@ class TabViewController: UIViewController {
     var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
+    var webViewContainerBottomConstraint: NSLayoutConstraint?
+    /// Holds the native Duck.ai chat input on iPad while this tab shows a full-tab chat.
+    var fullTabChatInputContainer: FullTabChatInputContainerView?
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var webViewLayoutConstraints: [NSLayoutConstraint] = []

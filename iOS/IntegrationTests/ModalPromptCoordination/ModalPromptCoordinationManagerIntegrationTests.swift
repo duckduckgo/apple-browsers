@@ -40,7 +40,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     init() throws {
         let startDate = Date(timeIntervalSince1970: 1761091200) // 22 October 2025 12:00:00 AM GMT
         timeTraveller = TimeTraveller(date: startDate)
-        keyValueStore = try MockKeyValueFileStore()
+        keyValueStore = MockKeyValueFileStore()
         cooldownStore = PromptCooldownKeyValueFilesStore(
             keyValueStore: keyValueStore,
             eventMapper: .init(mapping: { _, _, _, _ in })

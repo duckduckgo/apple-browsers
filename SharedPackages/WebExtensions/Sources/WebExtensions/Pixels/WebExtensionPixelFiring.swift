@@ -91,6 +91,12 @@ public enum WebExtensionUpdateCheckOutcome: String, CaseIterable, Sendable {
 public enum WebExtensionPixelEvent {
     /// Discovery pixels report the catalog extension and, for failures, a bounded reason.
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+    case updateDownloadFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateDownloadFailure)
+    case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateVerificationFailure)
+    case updateVerified(extension: WebExtensionPixelExtension)
+    /// The replacement is committed, either loaded with existing approval or installed disabled without executing it.
+    case updateApplied(extension: WebExtensionPixelExtension)
+    case updateInstallFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateInstallFailure)
     /// A fresh install; updates aren't reported.
     case installed(extension: WebExtensionPixelExtension)
     case installError(extension: WebExtensionPixelExtension, error: Error)

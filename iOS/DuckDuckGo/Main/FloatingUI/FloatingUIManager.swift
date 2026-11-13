@@ -23,23 +23,27 @@ import Foundation
 
 protocol FloatingUIManaging {
     var isFloatingUIEnabled: Bool { get }
+    var isDuckAIAndInputLiquidGlassEnabled: Bool { get }
     var isFloatingTabSwitcherEnabled: Bool { get }
 }
 
 final class FloatingUIManager: FloatingUIManaging {
 
     private let isFloatingUIFeatureEnabled: Bool
+    private let isDuckAIAndInputLiquidGlassFeatureEnabled: Bool
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isPad: () -> Bool
     private let isSupportedOS: () -> Bool
     private let isTabSwitcherSupportedOS: () -> Bool
 
     init(isFloatingUIFeatureEnabled: Bool,
+         isDuckAIAndInputLiquidGlassFeatureEnabled: Bool = AppDependencyProvider.shared.isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch,
          isPadProvider: @escaping () -> Bool = { DevicePlatform.isIpad },
          isSupportedOSProvider: @escaping () -> Bool = { if #available(iOS 26, *) { true } else { false } },
          isTabSwitcherSupportedOSProvider: @escaping () -> Bool = { if #available(iOS 18, *) { true } else { false } },
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
         self.isFloatingUIFeatureEnabled = isFloatingUIFeatureEnabled
+        self.isDuckAIAndInputLiquidGlassFeatureEnabled = isDuckAIAndInputLiquidGlassFeatureEnabled
         self.isPad = isPadProvider
         self.isSupportedOS = isSupportedOSProvider
         self.isTabSwitcherSupportedOS = isTabSwitcherSupportedOSProvider
@@ -50,6 +54,10 @@ final class FloatingUIManager: FloatingUIManaging {
         // iPhone-only, iOS 26+ (for obscuredContentInsets), and requires Unified Toggle Input.
         guard isFloatingUIFeatureEnabled, !isPad(), isSupportedOS() else { return false }
         return unifiedToggleInputFeature.isAvailable
+    }
+
+    var isDuckAIAndInputLiquidGlassEnabled: Bool {
+        isFloatingUIEnabled && isDuckAIAndInputLiquidGlassFeatureEnabled
     }
 
     var isFloatingTabSwitcherEnabled: Bool {

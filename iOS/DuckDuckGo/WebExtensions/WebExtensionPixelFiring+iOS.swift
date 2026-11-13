@@ -165,8 +165,8 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .enabled, .disabled, .remotelyDisabled:
             // Store pixels are macOS-only, but iOS debug-menu toggles still reach here, so drop rather than assert.
             break
-        case .updateCheck:
-            // Chrome Web Store update discovery is only enabled on macOS.
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified, .updateApplied, .updateInstallFailed:
+            // Chrome Web Store updates are only enabled on macOS.
             return
         case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps, .retained14Days, .churned14Days, .installedCount:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so

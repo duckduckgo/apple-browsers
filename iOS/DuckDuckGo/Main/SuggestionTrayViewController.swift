@@ -560,7 +560,8 @@ class SuggestionTrayViewController: UIViewController {
             requestRunner.run(request, completion: completion)
         }
         let loader = SearchSuggestionsLoader(dataSource: dataSource,
-                                             useUnifiedURLPrediction: featureFlagger.isFeatureOn(.unifiedURLPredictor))
+                                             useUnifiedURLPrediction: featureFlagger.isFeatureOn(.unifiedURLPredictor),
+                                             featureFlagger: featureFlagger)
         let querySubject = CurrentValueSubject<String, Never>("")
         let source = SearchSuggestionsSource(loader: loader,
                                              query: { querySubject.value },

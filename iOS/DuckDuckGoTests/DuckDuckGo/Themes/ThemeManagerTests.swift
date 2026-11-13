@@ -28,7 +28,7 @@ class ThemeManagerTests: XCTestCase {
         var onDecorate: XCTestExpectation?
 
         private func decorate() {
-            let theme = ThemeManager.shared.currentTheme
+            _ = ThemeManager.shared.currentTheme
             onDecorate?.fulfill()
         }
     }

@@ -211,7 +211,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
 
     func testActivePollingAndFlagSubscriptionDoNotRetainOwner() async throws {
         var recovery: CPMNetworkProcessRecovery? = makeRecovery(interval: 0.01)
-        weak var released = recovery
+        weak let released = recovery
         let view = WKWebView()
         watch(view, in: try XCTUnwrap(recovery))
         let deadline = Date().addingTimeInterval(2)
@@ -369,7 +369,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
 
     func testPeriodicCheckRecoversWithoutNavigationAndDoesNotRetainOwner() async throws {
         var recovery: CPMNetworkProcessRecovery? = makeRecovery(interval: 0.01)
-        weak var released = recovery
+        weak let released = recovery
         let view = WKWebView()
         watch(view, in: try XCTUnwrap(recovery))
         process = 200

@@ -301,7 +301,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case customWebViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
-    case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
     case challengeSolver
@@ -367,9 +366,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
     case onboardingDuckAIQueryTrackersDemoExperiment
-
-    /// Enables the omnibar onboarding for AI Chat
-    case omnibarOnboarding
 
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
@@ -604,11 +600,19 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
 
+    /// Restores the web app's Terms of Service record from the app's own acceptance when it's missing at page load.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220469546567099
+    case termsOfServiceRecordRestore
+
     case dragPromptBar
 
     /// Enables the Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
     case chatLimitExtensionPromo
+
+    /// iOS only. Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
+    case swipeUpNewChat
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -743,6 +747,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case heuristicHitTest
     case cookiePopupOptInDialog
 }
 
@@ -755,6 +760,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow
+    case stripeProductsByPlanCountry
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
@@ -767,6 +773,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case monthlyFreeTrialExperiment2
     case subscriptionOnboardingFreeTrialsOct2026
     case subscriptionOnboardingPaidSubsOct2026
+    case subscriptionOnboardingFreeTrialsNov2026
+    case subscriptionOnboardingPaidSubsNov2026
     case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
@@ -779,6 +787,12 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Gates the cancellation flow shown from "Cancel Subscription" in Subscription Settings.
     case subscriptionCancellationFlow
+
+    /// Gates "Withdraw from Contract" in Subscription Settings, letting international Stripe subscribers withdraw for a full refund.
+    case stripeInternationalSubscriptionWithdrawal
+
+    /// iOS onboarding experiment that adds VPN as a download reason.
+    case onboardingVPNDownloadReasonExperiment
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -922,7 +936,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Controls permission prompts and persistence on macOS.
     case permissions
     /// Controls Chrome Web Store update discovery on macOS.
-    /// https://app.asana.com/1/137249556945/task/1220029145261023
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear

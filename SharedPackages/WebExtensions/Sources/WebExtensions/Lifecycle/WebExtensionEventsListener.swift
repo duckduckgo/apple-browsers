@@ -52,17 +52,18 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     weak var controller: WKWebExtensionController?
     public private(set) var droppedCallbacksCount = 0
     public var onBrowsingActivity: (() -> Void)?
+    var onUpdateActivity: ((Bool) -> Void)?
 
     private var isSuppressingTabLifecycleEvents = false
 
     public init() {}
 
     public func didOpenWindow(_ window: WKWebExtensionWindow) {
-        notifyController { $0.didOpenWindow(window) }
+        notifyController({ $0.didOpenWindow(window) }, forceUpdateActivity: true)
     }
 
     public func didCloseWindow(_ window: WKWebExtensionWindow) {
-        notifyController { $0.didCloseWindow(window) }
+        notifyController({ $0.didCloseWindow(window) }, forceUpdateActivity: true)
     }
 
     public func didFocusWindow(_ window: WKWebExtensionWindow) {
@@ -71,12 +72,12 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public func didOpenTab(_ tab: WKWebExtensionTab) {
         guard !isSuppressingTabLifecycleEvents else { return }
-        notifyController { $0.didOpenTab(tab) }
+        notifyController({ $0.didOpenTab(tab) }, forceUpdateActivity: true)
     }
 
     public func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {
         guard !isSuppressingTabLifecycleEvents else { return }
-        notifyController { $0.didCloseTab(tab, windowIsClosing: windowIsClosing) }
+        notifyController({ $0.didCloseTab(tab, windowIsClosing: windowIsClosing) }, forceUpdateActivity: true)
     }
 
     public func didActivateTab(_ tab: WKWebExtensionTab, previousActiveTab: WKWebExtensionTab?) {
@@ -97,11 +98,11 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
     public func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
-        notifyController { $0.didReplaceTab(oldTab, with: tab) }
+        notifyController({ $0.didReplaceTab(oldTab, with: tab) }, forceUpdateActivity: true)
     }
 
     public func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
-        notifyController { $0.didChangeTabProperties(properties, for: tab) }
+        notifyController({ $0.didChangeTabProperties(properties, for: tab) }, forceUpdateActivity: properties.contains(.URL) ? false : nil)
         if properties.contains(.URL) {
             onBrowsingActivity?()
         }
@@ -114,7 +115,7 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
         body()
     }
 
-    private func notifyController(_ callback: (WKWebExtensionController) -> Void, caller: String = #function) {
+    private func notifyController(_ callback: (WKWebExtensionController) -> Void, forceUpdateActivity: Bool? = nil, caller: String = #function) {
         guard let controller else {
             droppedCallbacksCount += 1
             Logger.webExtensions.warning("⚠️ Dropped web extension callback '\(caller, privacy: .public)' — controller is nil (total dropped: \(self.droppedCallbacksCount, privacy: .public))")
@@ -122,5 +123,6 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
         }
 
         callback(controller)
+        if let forceUpdateActivity { onUpdateActivity?(forceUpdateActivity) }
     }
 }

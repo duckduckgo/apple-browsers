@@ -48,6 +48,10 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to load a URL externally.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
 
+    /// Like `didRequestToLoad`, with the sheet still presented: the new tab closes it out of sight as it opens.
+    /// Returns false when the new tab can't, so the sheet closes as usual.
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoadClosingSheet url: URL) -> Bool
+
     /// Opens duck.ai in a new tab: the hand-off passes this chat's URL, Open Duck.ai a chat-ID-free one.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didRequestExpandWithURL url: URL,
@@ -108,6 +112,7 @@ final class AIChatContextualSheetCoordinator {
     private let usageContextProvider: UsageContextProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring
     private let isFireTab: Bool
     private let tabAttachmentSource: MultiTabAttachmentSource?
     static let contextualContextCollectionTimeout: TimeInterval = 5
@@ -277,6 +282,7 @@ final class AIChatContextualSheetCoordinator {
          usageContextProvider: UsageContextProviding,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
@@ -303,6 +309,7 @@ final class AIChatContextualSheetCoordinator {
         self.usageContextProvider = usageContextProvider
         self.debugSettings = debugSettings
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingExperimentMetricStore = onboardingExperimentMetricStore
         self.pixelHandler = pixelHandler
         self.selectionJourneyInstrumentation = selectionJourneyInstrumentation ?? DefaultDuckAISelectionJourneyInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -1070,6 +1077,7 @@ private extension AIChatContextualSheetCoordinator {
             persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader,
             floatingInputFeature: floatingInputFeature,
+            usesLiquidGlassHeader: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
             opensOntoSubmittedChat: opensOntoSubmittedChat
         )
         sheetVC.delegate = self
@@ -1350,6 +1358,7 @@ private extension AIChatContextualSheetCoordinator {
             },
             pixelHandler: pixelHandler,
             onboardingActivationRecorder: onboardingActivationRecorder,
+            onboardingExperimentMetricStore: onboardingExperimentMetricStore,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 guard self.isWebUTIEnabled else { return nil }
@@ -1494,8 +1503,19 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
 extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerDelegate {
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestToLoad url: URL) {
+        // The sheet recedes with the page under the new tab, instead of sliding away before it.
+        if isPresentedAsSheet(viewController), delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoadClosingSheet: url) == true {
+            return
+        }
         dismissSurface(of: viewController)
         delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+    }
+
+    /// On screen as a presented sheet, not as the iPad sidebar or parked off screen.
+    private func isPresentedAsSheet(_ viewController: AIChatContextualSheetViewController) -> Bool {
+        return viewController.parent == nil
+            && parkedSheetViewController !== viewController
+            && viewController.presentingViewController != nil
     }
 
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController) {

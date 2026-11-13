@@ -52,6 +52,12 @@ public final class WebExtensionMessageRouter: WebExtensionMessageRouting {
         Logger.webExtensions.debug("🗑️ Unregistered \(count) handler(s) for extension '\(extensionIdentifier)'")
     }
 
+    public func hasHandler(for extensionIdentifier: String, featureName: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return handlers[extensionIdentifier]?[featureName] != nil
+    }
+
     public func routeMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
         let handler: WebExtensionMessageHandler?
 

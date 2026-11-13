@@ -105,7 +105,15 @@ name: test_search_only_website_active_ai_shortcut_prompt
 # The untouched URL must NOT be submitted as a prompt.
 - assertNotVisible: ".*privacy-test-pages.*"
 - tapOn: "Tab Switcher"
+# Each round trip adds a Duck.ai tab. The switcher keeps the selected one at the bottom, which can
+# push the web tab's title row (the tappable "Open ..." element) under its top bar. Scroll to the top.
+- swipe:
+    direction: DOWN
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
+# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for it to close.
+- extendedWaitUntil:
+    notVisible: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
+    timeout: 5000
 - assertVisible: ".*Privacy Test Pages.*"
 
 # Focused UTI with a user-edited/replaced URL: opens full Duck.ai and submits it as the prompt.
@@ -128,7 +136,15 @@ name: test_search_only_website_active_ai_shortcut_prompt
     id: "AIChat.ContextualSheet"
 - assertVisible: ".*example.com.*"
 - tapOn: "Tab Switcher"
+# Each round trip adds a Duck.ai tab. The switcher keeps the selected one at the bottom, which can
+# push the web tab's title row (the tappable "Open ..." element) under its top bar. Scroll to the top.
+- swipe:
+    direction: DOWN
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
+# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for it to close.
+- extendedWaitUntil:
+    notVisible: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
+    timeout: 5000
 - assertVisible: ".*Privacy Test Pages.*"
 
 # If the focused UTI is cleared and left empty, the shortcut should open full Duck.ai without a prompt.
@@ -149,7 +165,15 @@ name: test_search_only_website_active_ai_shortcut_prompt
 - assertNotVisible:
     id: "AIChat.ContextualSheet"
 - tapOn: "Tab Switcher"
+# Each round trip adds a Duck.ai tab. The switcher keeps the selected one at the bottom, which can
+# push the web tab's title row (the tappable "Open ..." element) under its top bar. Scroll to the top.
+- swipe:
+    direction: DOWN
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
+# The switcher's own card label also matches ".*Privacy Test Pages.*", so wait for it to close.
+- extendedWaitUntil:
+    notVisible: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
+    timeout: 5000
 - assertVisible: ".*Privacy Test Pages.*"
 
 # Focused UTI with typed text: opens full Duck.ai and sends the typed text as the prompt.
@@ -171,8 +195,7 @@ name: test_search_only_website_active_ai_shortcut_prompt
         - tapOn: "Agree"
 
 - assertVisible: "Recent chats"
-- assertVisible:
-    id: "AIChat.Toolbar.Button.ModelChip"
+# No model chip check here: the input hides it once the prompt is submitted.
 - assertNotVisible:
     id: "AIChat.ContextualSheet"
 - assertVisible: "What is a duck?"

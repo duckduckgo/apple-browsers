@@ -31,8 +31,6 @@ protocol SubscriptionOnboardingActivationRecording {
     func recordPIRActivated()
     /// Call when the customer has a VPN configuration installed.
     func recordVPNActivated()
-    /// Whether the Duck.ai step was already recorded before this call.
-    var isDuckAIActivated: Bool { get }
     /// Whether the PIR step was already recorded before this call.
     var isPIRActivated: Bool { get }
     /// Whether the VPN step was already recorded before this call.
@@ -44,16 +42,6 @@ extension SubscriptionOnboardingActivationRecording {
     /// so a caller that also fires a one-time experiment metric can guard it without risking the read/write
     /// ordering itself.
     @discardableResult
-    func recordDuckAIActivatedIfNeeded() -> Bool {
-        let wasAlreadyActivated = isDuckAIActivated
-        if !wasAlreadyActivated {
-            recordDuckAIActivated()
-        }
-        return wasAlreadyActivated
-    }
-
-    /// See `recordDuckAIActivatedIfNeeded()`.
-    @discardableResult
     func recordPIRActivatedIfNeeded() -> Bool {
         let wasAlreadyActivated = isPIRActivated
         if !wasAlreadyActivated {
@@ -62,7 +50,7 @@ extension SubscriptionOnboardingActivationRecording {
         return wasAlreadyActivated
     }
 
-    /// See `recordDuckAIActivatedIfNeeded()`.
+    /// See `recordPIRActivatedIfNeeded()`.
     @discardableResult
     func recordVPNActivatedIfNeeded() -> Bool {
         let wasAlreadyActivated = isVPNActivated
@@ -93,10 +81,6 @@ struct SubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivatio
         markComplete(.vpn)
     }
 
-    var isDuckAIActivated: Bool {
-        SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).completedItems.contains(.duckAI)
-    }
-
     var isPIRActivated: Bool {
         SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).completedItems.contains(.pir)
     }
@@ -116,7 +100,6 @@ struct NullSubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActiv
     func recordDuckAIActivated() {}
     func recordPIRActivated() {}
     func recordVPNActivated() {}
-    var isDuckAIActivated: Bool { false }
     var isPIRActivated: Bool { false }
     var isVPNActivated: Bool { false }
 }

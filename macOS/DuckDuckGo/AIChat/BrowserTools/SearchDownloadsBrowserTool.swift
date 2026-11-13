@@ -33,10 +33,9 @@ final class SearchDownloadsBrowserTool: BrowserTool {
     let inputSchema: JSONValue = [
         "type": "object",
         "properties": [
-            "query": ["type": "string", "description": "Matched against file names and source URLs (case-insensitive)."],
+            "query": ["type": "string", "description": "Optional. Matched against file names and source URLs (case-insensitive). Omit or leave empty to return the most recent downloads."],
             "limit": ["type": "integer", "minimum": 1, "maximum": 50, "description": "Maximum number of results to return (default 10)."]
-        ],
-        "required": ["query"]
+        ]
     ]
 
     private let downloads: @MainActor () -> [DownloadListItem]
@@ -47,12 +46,15 @@ final class SearchDownloadsBrowserTool: BrowserTool {
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
-        guard let query = arguments?["query"]?.stringValue, !query.isEmpty,
-              BrowserToolOutputLimits.fits(query, within: BrowserToolOutputLimits.query) else {
-            return .failure(.invalidArguments)
+        var query: String?
+        if let value = arguments?["query"], value != .null {
+            guard let text = value.stringValue, BrowserToolOutputLimits.fits(text, within: BrowserToolOutputLimits.query) else {
+                return .failure(.invalidArguments)
+            }
+            query = text.isEmpty ? nil : text
         }
         var limit = Self.defaultLimit
-        if let limitValue = arguments?["limit"] {
+        if let limitValue = arguments?["limit"], limitValue != .null {
             guard let parsed = limitValue.intValue, (1...Self.maxLimit).contains(parsed) else { return .failure(.invalidArguments) }
             limit = parsed
         }
@@ -66,7 +68,10 @@ final class SearchDownloadsBrowserTool: BrowserTool {
                 return (BrowserToolOutputLimits.clip(item.fileName, to: Self.maxFileNameLength), url, item.modified)
             }
             // Matches only what Duck.ai sees, so a query string cannot be confirmed by guessing it.
-            .filter { $0.fileName.range(of: query, options: .caseInsensitive) != nil || $0.url.range(of: query, options: .caseInsensitive) != nil }
+            .filter { result in
+                guard let query else { return true }
+                return result.fileName.range(of: query, options: .caseInsensitive) != nil || result.url.range(of: query, options: .caseInsensitive) != nil
+            }
             .prefix(limit)
             .map { result -> JSONValue in
                 [

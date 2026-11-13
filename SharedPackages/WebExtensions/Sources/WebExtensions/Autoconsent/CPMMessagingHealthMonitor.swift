@@ -86,9 +86,14 @@ public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
 ///
 /// A committed page that can run the extension must hear from it: the extension sends a message from the
 /// tab while the page initializes. A page with no message for `silenceWindow` seconds of app time makes
-/// its tab silent, reported once; a tab that navigates or closes before the window ends is not reported. A message that arrives later still counts as an answer; there is no timer, the
-/// check runs when an event arrives. A second silent tab, with no message from the extension in between,
-/// reports the persistent pixel once.
+/// its tab silent, reported once. A tab that navigates or closes before the window ends is not reported.
+/// A message that arrives later still counts as an answer.
+///
+/// There is no timer: the check runs when an event arrives.
+///
+/// A second silent tab, with no message from the extension in between, reports the persistent pixel once.
+/// A tab whose page got a refresh saying the extension cannot answer it is reported, but never counts
+/// towards that second tab: the extension is running, so it is not hung.
 ///
 /// It also reports through `onHealthyResponse` when the current embedded extension answers.
 @available(macOS 15.4, iOS 18.4, *)
@@ -109,6 +114,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private var pendingCommits: [String: Date] = [:]
     /// Tabs reported silent since the extension last sent any message.
     private var silentTabs: Set<String> = []
+    /// Waiting tabs whose page got a refresh saying the extension cannot answer it (no configuration or settings).
+    /// The extension is running, so these tabs are reported but never count towards a series.
+    private var cannotBeAnsweredTabs: Set<String> = []
     private var didReportPersistentBreakage = false
     private var suspensionStart: Date?
 
@@ -158,14 +166,17 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             let eligible = isEligible(url: url, navigationKind: navigationKind)
             committedPages[tabIdentifier] = eligible ? url : nil
             pendingCommits[tabIdentifier] = nil
+            cannotBeAnsweredTabs.remove(tabIdentifier)
             if eligible && extensionIsLoaded { pendingCommits[tabIdentifier] = now() }
         case .tabClosed(let tabIdentifier):
             committedPages.removeValue(forKey: tabIdentifier)
             pendingCommits.removeValue(forKey: tabIdentifier)
+            cannotBeAnsweredTabs.remove(tabIdentifier)
         case .webContentProcessTerminated(let tabIdentifier):
             // A crashed page is not the extension's silence.
             committedPages.removeValue(forKey: tabIdentifier)
             pendingCommits.removeValue(forKey: tabIdentifier)
+            cannotBeAnsweredTabs.remove(tabIdentifier)
         case .dashboardResponse:
             break
         case .extensionLifecycle(let lifecycleEvent):
@@ -199,21 +210,26 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func receiveResponse(url: URL, extensionIdentifier: String?, isAnswer: Bool) {
         if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
         guard !isCPMMessagingBreakageSimulationEnabled else { return }
-        if isAnswer { answerPages(url: url) }
+        if isAnswer {
+            answerPages(url: url)
+        } else {
+            cannotBeAnsweredTabs.formUnion(waitingTabs(showing: url))
+        }
         onHealthyResponse?()
     }
 
     private func answerPages(url: URL) {
         // A message that cannot be tied to one tab answers every waiting tab it could belong to.
-        for tabIdentifier in answeredTabs(url: url) {
+        for tabIdentifier in waitingTabs(showing: url) {
             pendingCommits[tabIdentifier] = nil
+            cannotBeAnsweredTabs.remove(tabIdentifier)
         }
         silentTabs.removeAll()
         didReportPersistentBreakage = false
     }
 
     /// The tabs still waiting on the message's page. Two tabs on one page both get the message.
-    private func answeredTabs(url: URL) -> [String] {
+    private func waitingTabs(showing url: URL) -> [String] {
         committedPages.filter { pendingCommits[$0.key] != nil && $0.value.matchesCPMDashboardStatePage(url) }.map(\.key)
     }
 
@@ -224,10 +240,14 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         let silent = pendingCommits.filter { $0.value <= deadline }.sorted { $0.value < $1.value }
         guard !silent.isEmpty else { return }
         // Tabs found silent together are not a single-tab breakage.
-        silentTabs.formUnion(silent.map { $0.key })
+        silentTabs.formUnion(silent.map { $0.key }.filter { !cannotBeAnsweredTabs.contains($0) })
         for (tabIdentifier, _) in silent {
             pendingCommits[tabIdentifier] = nil
-            reportSilentTab(tabIdentifier)
+            if cannotBeAnsweredTabs.remove(tabIdentifier) != nil {
+                pixelFiring.fire(.cpmMessagingBreakage(CPMMessagingBreakageReport(tabs: .one)))
+            } else {
+                reportSilentTab(tabIdentifier)
+            }
         }
     }
 
@@ -243,6 +263,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Drops every wait and the silent series: the extension that would have answered is gone or being replaced.
     private func endWaits() {
         pendingCommits.removeAll()
+        cannotBeAnsweredTabs.removeAll()
         silentTabs.removeAll()
         didReportPersistentBreakage = false
     }

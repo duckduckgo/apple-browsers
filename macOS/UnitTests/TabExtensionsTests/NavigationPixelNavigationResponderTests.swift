@@ -115,6 +115,32 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
         XCTAssertEqual(makeNavigation(types: [.redirect(.client(delay: 0)), .redirect(.server)]).cpmMessagingNavigationKind, .other)
     }
 
+    @MainActor
+    func testCPMNavigationKindOfADocumentThatIsNotHTMLIsNonHTMLDocument() {
+        for mimeType in ["application/pdf", "image/png", "video/mp4", "text/plain", "application/json"] {
+            XCTAssertEqual(Navigation.cpmMessagingNavigationKind(isErrorPage: false, initialNavigationType: .other, responseMimeType: mimeType),
+                           .nonHTMLDocument,
+                           mimeType)
+        }
+    }
+
+    @MainActor
+    func testCPMNavigationKindOfAnHTMLOrUnknownResponseIsOther() {
+        for mimeType in ["text/html", "TEXT/HTML", "application/xhtml+xml", "", nil] {
+            XCTAssertEqual(Navigation.cpmMessagingNavigationKind(isErrorPage: false, initialNavigationType: .other, responseMimeType: mimeType),
+                           .other,
+                           mimeType ?? "nil")
+        }
+    }
+
+    @MainActor
+    func testCPMNavigationKindOfRestorationHistoryAndErrorPageIgnoresTheResponse() {
+        let pdf = "application/pdf"
+        XCTAssertEqual(Navigation.cpmMessagingNavigationKind(isErrorPage: false, initialNavigationType: .sessionRestoration, responseMimeType: pdf), .sessionRestoration)
+        XCTAssertEqual(Navigation.cpmMessagingNavigationKind(isErrorPage: false, initialNavigationType: .backForward(distance: -1), responseMimeType: pdf), .backForward)
+        XCTAssertEqual(Navigation.cpmMessagingNavigationKind(isErrorPage: true, initialNavigationType: .other, responseMimeType: pdf), .errorPage)
+    }
+
     /// A navigation whose actions have the given types, the last one being the current action.
     @MainActor
     private func makeNavigation(types: [NavigationType]) -> Navigation {

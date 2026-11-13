@@ -501,7 +501,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             frequency = .dailyAndCount
         case .bitwardenDailyActive, .apiCompatibilityGaps, .installedCount:
             frequency = .daily
-        case .enabled, .disabled, .remotelyDisabled:
+        case .enabled, .disabled, .remotelyDisabled, .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
             frequency = .dailyAndCount
         case .defaultPasswordManagerSet, .retained14Days, .churned14Days:
             frequency = .standard
@@ -514,8 +514,6 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
     private static func frequency(of event: WebExtensionPixelEvent) -> PixelKit.Frequency {
         let frequency: PixelKit.Frequency
         if case .reloadError = event {
-            frequency = .dailyAndCount
-        } else if CPMWebExtensionPixelMetadata(event: event) != nil {
             frequency = .dailyAndCount
         } else {
             frequency = .dailyAndStandard

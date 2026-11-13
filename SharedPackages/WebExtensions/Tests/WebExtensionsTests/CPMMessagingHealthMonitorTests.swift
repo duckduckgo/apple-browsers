@@ -421,6 +421,81 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
+    func testTabsTheExtensionCannotAnswerAreReportedButNeverPersistent() {
+        commit("a", path: "a")
+        commit("b", path: "b")
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
+        monitor.handle(.dashboardResponse(url: url("b"), isAnswer: false))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)],
+                       "the extension is running, so the tabs are not many")
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
+    func testTabNextToATabTheExtensionCannotAnswerIsOneAndNotPersistent() {
+        commit("a", path: "a")
+        commit("b", path: "b")
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
+    func testTabTheExtensionCannotAnswerStaysOutOfALaterSeries() {
+        commit("a", path: "a")
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+        commit("b", path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
+    func testTabTheExtensionCannotAnswerIsNotReportedWhenAnAnswerFollows() {
+        commit("a", path: "a")
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
+        monitor.handle(.dashboardResponse(url: url("a")))
+        advance(100)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertTrue(pixels.breakages.isEmpty)
+    }
+
+    func testCannotAnswerMarkEndsWithTheNextCommitOfTheTab() {
+        commit("a", path: "a")
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
+        commit("a", path: "a2")
+        commit("b", path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.many), report(.many)])
+        XCTAssertEqual(pixels.persistentCount, 1)
+    }
+
+    func testCannotAnswerMarkEndsWithTheTabAndTheExtensionReload() {
+        commit("a", path: "a")
+        commit("b", path: "b")
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
+        monitor.handle(.dashboardResponse(url: url("b"), isAnswer: false))
+        monitor.handle(.tabClosed(tabIdentifier: "a"))
+        monitor.handle(.extensionLifecycle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit)))
+        commit("c", path: "c")
+        commit("d", path: "d")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.many), report(.many)])
+        XCTAssertEqual(pixels.persistentCount, 1)
+    }
+
     // MARK: - More sequences
 
     func testSimulationSwitchedOffAnswersAgain() {

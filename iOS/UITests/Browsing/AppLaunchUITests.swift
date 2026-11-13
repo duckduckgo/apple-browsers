@@ -156,6 +156,7 @@ final class AppLaunchUITests: UITestCase {
     }
 
     func testReadinessInPortraitAndLandscape() {
+        app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
         app.launch()
         defer { XCUIDevice.shared.orientation = .portrait }
         for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {

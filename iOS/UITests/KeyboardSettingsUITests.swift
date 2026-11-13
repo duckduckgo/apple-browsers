@@ -28,6 +28,12 @@ final class KeyboardSettingsUITests: UITestCase {
         super.additionalLaunchArguments + ["-ff.alwaysShowKeyboardOnNewTabPage", "false"]
     }
 
+    override func setUpWithError() throws {
+        // A timed-out test can leave the simulator in landscape.
+        XCUIDevice.shared.orientation = .portrait
+        try super.setUpWithError()
+    }
+
     func testKeyboardPreferencesPersistAfterReopeningAndRelaunching() {
         openKeyboardSettings()
         assertSwitch("New Tab", isOn: true)

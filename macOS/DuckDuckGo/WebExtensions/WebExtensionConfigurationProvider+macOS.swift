@@ -29,10 +29,7 @@ struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
     }
 
     var isInspectable: Bool {
-#if DEBUG
+        // TEMPORARY: inspect extension background pages on the macOS 15.6 VM. Do not commit.
         return true
-#else
-        return false
-#endif
     }
 }

@@ -47,7 +47,7 @@ extension MainViewController {
     /// Reads the results page colour from the tab preview it already renders; once per appearance.
     func learnSearchPageColorIfNeeded(from tab: TabViewController, preview: UIImage) {
         let style = traitCollection.userInterfaceStyle
-        guard featureFlagger.isFeatureOn(.searchSubmitPageCover),
+        guard Self.coversSearchSubmit(isPad: isPad, featureFlagger: featureFlagger),
               tab === currentTab,
               tab.url?.isDuckDuckGoSearch == true,
               searchPageColorMemory.needsSample(for: style) else { return }
@@ -59,12 +59,17 @@ extension MainViewController {
         let style = traitCollection.userInterfaceStyle
         guard tab === currentTab,
               let url = tab.url,
-              Self.learnsSearchPageHeader(from: url, isFireTab: tab.tabModel.fireTab, featureFlagger: featureFlagger) else { return }
+              Self.learnsSearchPageHeader(from: url, isFireTab: tab.tabModel.fireTab, isPad: isPad, featureFlagger: featureFlagger) else { return }
         let generation = searchPageHeaderMemory.generation
         tab.captureSearchPageHeader { [weak self] header in
             guard let self, let header, self.traitCollection.userInterfaceStyle == style else { return }
             self.searchPageHeaderMemory.record(header, for: style, capturedIn: generation)
         }
+    }
+
+    /// iPhone only; iPad keeps the plain submit.
+    static func coversSearchSubmit(isPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        !isPad && featureFlagger.isFeatureOn(.searchSubmitPageCover)
     }
 
     /// Websites keep the plain cover; only the results page has a known shape.
@@ -73,9 +78,9 @@ extension MainViewController {
     }
 
     /// Fire tabs are meant to leave no trace, so their results never teach the header.
-    static func learnsSearchPageHeader(from url: URL, isFireTab: Bool, featureFlagger: FeatureFlagger) -> Bool {
+    static func learnsSearchPageHeader(from url: URL, isFireTab: Bool, isPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
         !isFireTab
-            && featureFlagger.isFeatureOn(.searchSubmitPageCover)
+            && coversSearchSubmit(isPad: isPad, featureFlagger: featureFlagger)
             && showsSearchResultsSkeleton(for: url)
             && isAllResultsPage(url)
     }
@@ -89,7 +94,7 @@ extension MainViewController {
 
     private func prepareFirstPaintCover(forSubmitting url: URL) {
         // Other schemes, such as mailto:, never load in the tab.
-        guard featureFlagger.isFeatureOn(.searchSubmitPageCover),
+        guard Self.coversSearchSubmit(isPad: isPad, featureFlagger: featureFlagger),
               let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
               let tab = currentTab, tab.link != nil, !tab.isAITab,
               !Self.isSameDocument(url, as: tab.url),

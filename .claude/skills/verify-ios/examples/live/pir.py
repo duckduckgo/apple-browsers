@@ -96,6 +96,14 @@ class Client:
         self.evidence, self.port, self.instance = Path(evidence), port, instance
         self.number = 0
         self.owned = False
+        self.reported = set()
+
+    def report_progress(self, run):
+        for event in run.get("events", []):
+            key = (event.get("timestamp"), event.get("summary"), event.get("profileQuery"))
+            if event.get("kind") == "History" and key not in self.reported:
+                self.reported.add(key)
+                print(f"PIR {event.get('timestamp')}: {event.get('summary')}", flush=True)
 
     def request(self, method, path, body=None, timeout=10):
         if method != "GET" and not self.owned:
@@ -142,6 +150,7 @@ class Client:
             run = self.request("GET", f"/api/debug/runs/{run_id}", timeout=min(10, max(.1, deadline - time.monotonic())))
             if run.get("id") != run_id:
                 raise Failed("PIR returned a different run")
+            self.report_progress(run)
             if not run.get("activity"):
                 assert_clean(run)
                 return run

@@ -181,7 +181,7 @@
         ]
     },
     "m_mac_update_application_success": {
-        "description": "Fired once after successful app update on first launch",
+        "description": "Fired on the first launch after a successful update. On Sparkle builds it fires for updates Sparkle installed. On App Store builds it fires whenever the version goes up, and the update details the App Store doesn't share are sent as unknown.",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -189,12 +189,12 @@
             {
                 "key": "sourceVersion",
                 "type": "string",
-                "description": "App version before update"
+                "description": "App version before update, or unknown on App Store builds"
             },
             {
                 "key": "sourceBuild",
                 "type": "string",
-                "description": "Build number before update"
+                "description": "Build number before update, or unknown on App Store builds"
             },
             {
                 "key": "targetVersion",
@@ -209,19 +209,25 @@
             {
                 "key": "initiationType",
                 "type": "string",
-                "description": "How update was initiated",
-                "enum": ["automatic", "manual"]
+                "description": "How update was initiated, or unknown on App Store builds",
+                "enum": ["automatic", "manual", "unknown"]
             },
             {
                 "key": "updateConfiguration",
                 "type": "string",
-                "description": "User's automatic update setting",
-                "enum": ["automatic", "manual"]
+                "description": "User's automatic update setting, or unknown on App Store builds",
+                "enum": ["automatic", "manual", "unknown"]
             },
             {
                 "key": "osVersion",
                 "type": "string",
                 "description": "macOS version"
+            },
+            {
+                "key": "promptSurface",
+                "type": "string",
+                "description": "The update entry point the user last clicked in the 7 days before the update, or none.",
+                "enum": ["menu-item", "menu-row", "menu-card", "toolbar-button", "none"]
             },
             "appVersion",
             "pixelSource",
@@ -333,6 +339,23 @@
             "appVersion",
             "pixelSource",
             "channel"
+        ]
+    },
+    "m_mac_browser_menu_update": {
+        "description": "Fired when the user clicks an update entry point: the update item in the main menu, the prominent update row or card in the main menu, or the update button in the toolbar. Sent once a day, so it reports the first entry point clicked that day.",
+        "owners": ["frosty"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "promptSurface",
+                "type": "string",
+                "description": "The entry point clicked.",
+                "enum": ["menu-item", "menu-row", "menu-card", "toolbar-button"]
+            }
         ]
     }
 }

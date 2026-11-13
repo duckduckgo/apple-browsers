@@ -76,6 +76,8 @@ final class UpdatesDebugMenu: NSMenu {
             if buildType.isAppStoreBuild {
                 forceUpdateAvailableMenuItem
                     .targetting(self)
+                NSMenuItem(title: "Simulate Update on Next Launch", action: #selector(simulateUpdateOnNextLaunch))
+                    .targetting(self)
                 NSMenuItem(title: "Reset Debug Settings", action: #selector(resetDebugSettings))
                     .targetting(self)
                 NSMenuItem.separator()
@@ -92,6 +94,21 @@ final class UpdatesDebugMenu: NSMenu {
 
     @objc private func toggleForceUpdateAvailable() {
         debugSettings.forceUpdateAvailable.toggle()
+    }
+
+    /// Makes the next launch look like an update from 1.0, so the update success pixel fires on App Store builds.
+    @objc private func simulateUpdateOnNextLaunch() {
+        try? settings.set("1.0", for: \.previousAppVersion)
+        try? settings.set("1", for: \.previousBuild)
+
+        let alert = NSAlert()
+        alert.messageText = "Update Simulated"
+        alert.informativeText = "The app will now quit. When you relaunch, it will behave as if it was just updated from 1.0, and the update success pixel will fire."
+        alert.addButton(withTitle: "Quit Now")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSApp.terminate(nil)
+        }
     }
 
     @objc private func resetDebugSettings() {

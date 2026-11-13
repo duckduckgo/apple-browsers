@@ -2056,6 +2056,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
+                applicationUpdateDetector: applicationUpdateDetector,
                 isOnboardingFinished: { [weak self, featureFlagger] in
                     if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                         return self?.isOnboardingReadyForPrompts == true

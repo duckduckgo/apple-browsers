@@ -39,6 +39,7 @@ public protocol AppStoreUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: any ApplicationUpdateDetecting,
                             isOnboardingFinished: @escaping () -> Bool) -> any UpdateController
 }
 

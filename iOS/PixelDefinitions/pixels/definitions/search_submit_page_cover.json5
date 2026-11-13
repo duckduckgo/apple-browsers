@@ -1,0 +1,16 @@
+{
+    "search_submit_page_cover_commit_timeout": {
+        "description": "Fired when the cover shown after a search or typed URL waited its full 15 second commit window, the new page never committed, and the cover lifted on the previous page instead. Expected to be rare; a rising count means the cover is holding users on a blank screen while loads stall.",
+        "owners": ["kemiljk"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "destination",
+                "description": "Whether the covered load was a DuckDuckGo search or a website",
+                "enum": ["search", "website"]
+            }
+        ]
+    }
+}

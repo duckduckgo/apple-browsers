@@ -272,6 +272,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.compatibilityReporter = compatibilityReporter
         self.apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler(reporter: compatibilityReporter)
         let controllerConfiguration = controllerConfiguration ?? WKWebExtensionController.Configuration.default()
+        if #unavailable(macOS 26, iOS 26) {
+            controllerConfiguration.webViewConfiguration = WebExtensionWebViewConfiguration()
+        }
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
         // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,

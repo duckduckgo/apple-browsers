@@ -215,14 +215,14 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
 
     func testActivePollingAndFlagSubscriptionDoNotRetainOwner() async throws {
         var recovery: CPMNetworkProcessRecovery? = makeRecovery(interval: 0.01)
-        let released = { [weak recovery] in recovery }
+        weak let released = recovery
         let view = WKWebView()
         watch(view, in: try XCTUnwrap(recovery))
         let deadline = Date().addingTimeInterval(2)
         while contextChecks == 0, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertGreaterThan(contextChecks, 0)
         recovery = nil
-        XCTAssertNil(released())
+        XCTAssertNil(released)
         flagUpdates.send(())
         try await Task.sleep(for: .milliseconds(50))
         XCTAssertTrue(restarted.isEmpty)
@@ -383,7 +383,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
 
     func testPeriodicCheckRecoversWithoutNavigationAndDoesNotRetainOwner() async throws {
         var recovery: CPMNetworkProcessRecovery? = makeRecovery(interval: 0.01)
-        let released = { [weak recovery] in recovery }
+        weak let released = recovery
         let view = WKWebView()
         watch(view, in: try XCTUnwrap(recovery))
         process = 200
@@ -391,7 +391,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         while restarted.isEmpty, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertEqual(restarted, [view])
         recovery = nil
-        XCTAssertNil(released())
+        XCTAssertNil(released)
     }
 }
 

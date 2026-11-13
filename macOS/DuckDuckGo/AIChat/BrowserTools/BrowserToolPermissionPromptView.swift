@@ -33,6 +33,11 @@ enum BrowserToolPermissionPromptText {
         case ("searchDownloads", _): UserText.browserToolPermissionTitleSearchDownloads
         case ("searchBookmarks", _): UserText.browserToolPermissionTitleSearchBookmarks
         case ("closeTabs", _): UserText.browserToolPermissionTitleCloseTabs
+        case ("pinTab", _): UserText.browserToolPermissionTitlePinTab
+        case ("openTab", _): UserText.browserToolPermissionTitleOpenTab
+        case ("bookmarkTab", _): UserText.browserToolPermissionTitleBookmarkTab
+        case ("switchToTab", _): UserText.browserToolPermissionTitleSwitchToTab
+        case ("highlightInPage", _): UserText.browserToolPermissionTitleHighlightInPage
         default: UserText.browserToolPermissionTitleOther
         }
     }
@@ -47,12 +52,18 @@ enum BrowserToolPermissionPromptText {
         case "searchBookmarks": DesignSystemImages.Glyphs.Size16.bookmarks
         case "closeTabs": DesignSystemImages.Glyphs.Size16.tabCloseAlt
         case "pinTab": DesignSystemImages.Glyphs.Size16.pin
-        case "openTab": DesignSystemImages.Glyphs.Size16.openIn
+        case "openTab": size16(DesignSystemImages.Glyphs.Size24.tabNew)
         case "bookmarkTab": DesignSystemImages.Glyphs.Size16.bookmarkAdd
         case "switchToTab": DesignSystemImages.Glyphs.Size16.arrowCircleRight
-        case "highlightInPage": DesignSystemImages.Glyphs.Size16.findInPage
+        case "highlightInPage": size16(DesignSystemImages.Glyphs.Size24.textSelect)
         default: DesignSystemImages.Glyphs.Size16.aiChat
         }
+    }
+
+    // DRK has these glyphs at 24 pt only.
+    private static func size16(_ image: NSImage) -> NSImage {
+        image.size = NSSize(width: 16, height: 16)
+        return image
     }
 
     static func detail(toolName: String, targetsOtherTab: Bool) -> String? {

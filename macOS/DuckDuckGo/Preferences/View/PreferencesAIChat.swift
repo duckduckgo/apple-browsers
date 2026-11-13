@@ -198,6 +198,9 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
+                PreferencesBrowserToolPermissionsView()
+                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
+
                 // Always shown: the button disables all AI while any is on, then greys out
                 // once everything is disabled, with the caption reinforcing the no-AI state.
                 Divider()

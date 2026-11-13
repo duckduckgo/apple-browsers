@@ -75,8 +75,8 @@ final class ClientToolTestConfiguration: BrowserToolsConfiguration {
 final class ClientToolTestPermissions: BrowserToolPermissionStoring {
     var storedDecisions: [String: BrowserToolPermissionState] = [:]
     var writes = 0
-    func state(forToolNamed name: String) -> BrowserToolPermissionState { storedDecisions[name] ?? .ask }
-    func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {
+    func state(forToolNamed name: String) -> BrowserToolPermissionState? { storedDecisions[name] }
+    func setState(_ state: BrowserToolPermissionState?, forToolNamed name: String) {
         writes += 1
         storedDecisions[name] = state
     }

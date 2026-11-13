@@ -298,12 +298,14 @@ final class BrowserToolsDebugViewController: NSViewController {
         permissionsStack.addArrangedSubview(header)
 
         let decisions = service.permissions.storedDecisions
-        let askTools = service.catalog.enabledTools.filter { $0.permissionMode == .ask }.map(\.name)
+        let tools = service.catalog.enabledTools
+        let toolNames = tools.map(\.name)
         // A decision outlives its tool's flag, so it stays listed and resettable on its own.
-        let orphanedTools = decisions.keys.filter { !askTools.contains($0) }.sorted()
-        for toolName in askTools + orphanedTools {
+        let orphanedTools = decisions.keys.filter { !toolNames.contains($0) }.sorted()
+        for toolName in toolNames + orphanedTools {
             let state = decisions[toolName]
-            let label = NSTextField(labelWithString: "\(toolName): \(state?.rawValue ?? "ask")")
+            let defaultState = tools.first { $0.name == toolName }?.permissionMode.defaultState
+            let label = NSTextField(labelWithString: "\(toolName): \(state?.rawValue ?? "default (\(defaultState?.rawValue ?? "ask"))")")
             label.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
             label.textColor = state == nil ? .secondaryLabelColor : .labelColor
             var views: [NSView] = [label]
@@ -325,7 +327,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     }
 
     @objc private func resetPermission(_ sender: PermissionButton) {
-        service.permissions.setState(.ask, forToolNamed: sender.toolName)
+        service.permissions.setState(nil, forToolNamed: sender.toolName)
         appendToLog(summary: "· reset permission for \(sender.toolName)", detail: nil)
         refreshPermissions()
     }

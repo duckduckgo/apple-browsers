@@ -58,3 +58,7 @@ public struct DisabledOptOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFla
 public protocol FreemiumPIRFeatureFlagging {
     var isFreemiumPIREnabled: Bool { get }
 }
+
+public protocol EmailOptOutFeatureFlagging {
+    var isEmailOptOutEnabled: Bool { get }
+}

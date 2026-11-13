@@ -2232,7 +2232,7 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
     }
 }
 
-public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
+public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging, EmailOptOutFeatureFlagging {
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isCustomWebViewUserAgentOn: Bool
@@ -2240,6 +2240,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isFreemiumPIREnabled: Bool
     public let isExtractedProfileRefreshOn: Bool
     public let isChallengeSolverOn: Bool
+    public var isEmailOptOutEnabled: Bool
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
@@ -2247,7 +2248,8 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false,
                 isExtractedProfileRefreshOn: Bool = true,
-                isChallengeSolverOn: Bool = false) {
+                isChallengeSolverOn: Bool = false,
+                isEmailOptOutEnabled: Bool = false) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isCustomWebViewUserAgentOn = isCustomWebViewUserAgentOn
@@ -2255,6 +2257,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
         self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
         self.isChallengeSolverOn = isChallengeSolverOn
+        self.isEmailOptOutEnabled = isEmailOptOutEnabled
     }
 }
 

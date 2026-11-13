@@ -46,6 +46,8 @@ public final class DBPUIViewModel {
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let freeScanEntryPoint: FreemiumDBPEntryPoint?
+    private let emailOptOutFeatureFlagger: EmailOptOutFeatureFlagging
+    private let emailComposer: DBPOptOutEmailComposing
 
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
@@ -57,6 +59,8 @@ public final class DBPUIViewModel {
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
+                emailOptOutFeatureFlagger: EmailOptOutFeatureFlagging,
+                emailComposer: DBPOptOutEmailComposing,
                 freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
@@ -67,6 +71,8 @@ public final class DBPUIViewModel {
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
         self.freeScanEntryPoint = freeScanEntryPoint
+        self.emailOptOutFeatureFlagger = emailOptOutFeatureFlagger
+        self.emailComposer = emailComposer
 
         self.editablePartialProfile = .init()
     }
@@ -258,5 +264,13 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
         guard let url = URL(string: UIApplication.openSettingsURLString),
               UIApplication.shared.canOpenURL(url) else { return }
         await UIApplication.shared.open(url)
+    }
+
+    public func isEmailOptOutEnabled() -> Bool {
+        emailOptOutFeatureFlagger.isEmailOptOutEnabled
+    }
+
+    public func canSendEmail() -> Bool {
+        emailComposer.canSendMail
     }
 }

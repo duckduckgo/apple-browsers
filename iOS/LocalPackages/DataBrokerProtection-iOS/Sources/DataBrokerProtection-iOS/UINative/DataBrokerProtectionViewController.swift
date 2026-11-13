@@ -38,6 +38,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private var userEventsDelegate: DBPIOSInterface.UserEventsDelegate
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
+    private let emailOptOutFeatureFlagger: EmailOptOutFeatureFlagging
 
     private var activityIndicatorView: UIActivityIndicatorView?
 
@@ -71,6 +72,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
                               pixelHandler: sharedPixelsHandler,
                               privacyConfigManager: privacyConfigManager,
                               contentScopeProperties: contentScopeProperties,
+                              emailOptOutFeatureFlagger: emailOptOutFeatureFlagger,
+                              emailComposer: DBPOptOutEmailComposer(),
                               freeScanEntryPoint: freeScanEntryPoint)
     }()
 
@@ -96,6 +99,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
                 userEventsDelegate: DBPIOSInterface.UserEventsDelegate,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
+                emailOptOutFeatureFlagger: EmailOptOutFeatureFlagging,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 openURLHandler: @escaping (URL) -> Void,
                 feedbackViewCreator: @escaping () -> (any View),
@@ -110,6 +114,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
         self.userEventsDelegate = userEventsDelegate
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
+        self.emailOptOutFeatureFlagger = emailOptOutFeatureFlagger
         self.isWebViewInspectable = isWebViewInspectable
         self.freeScanEntryPoint = freeScanEntryPoint
 

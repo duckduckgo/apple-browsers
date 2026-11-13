@@ -39,6 +39,7 @@ enum OnboardingSteps: String, CaseIterable {
     case duckPlayerSingle
     case customize
     case addressBarMode
+    case searchOrChat
 }
 
 /// Defines which onboarding steps should be excluded from the flow
@@ -198,11 +199,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     /// Steps the page may show; the page decides their order.
     private func buildSteps(excluding excludedSteps: [String]) -> [String] {
-        var steps = OnboardingSteps.allCases.map(\.rawValue).filter { !excludedSteps.contains($0) }
-        if featureFlagger.isFeatureOn(.onboardingSearchOrChat) {
-            steps.append("searchOrChat")
-        }
-        return steps
+        let isSearchOrChatOn = featureFlagger.isFeatureOn(.onboardingSearchOrChat)
+        return OnboardingSteps.allCases
+            .filter { !excludedSteps.contains($0.rawValue) && ($0 != .searchOrChat || isSearchOrChatOn) }
+            .map(\.rawValue)
     }
 
     private var didRequestDefaultBrowser: Bool = false
@@ -454,6 +454,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .addressBarMode:
             // No pixel for addressBarMode as it's the last step before final
             pixel = nil
+        case .searchOrChat:
+            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            pixel = nil
         }
         if let pixel {
             PixelKit.fire(pixel, frequency: .dailyAndCount)
@@ -491,6 +494,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .addressBarMode:
             let value: OnboardingSharedPixelEvent.SearchExperienceEvent.Value = aiChatPreferencesStorage.showSearchAndDuckAIToggle ? .searchPlusDuckAI : .searchOnly
             pixel = .searchExperience(.clicked(value))
+        case .searchOrChat:
+            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            pixel = nil
         }
         if let pixel {
             onboardingSharedPixelHandler.fire(pixel)
@@ -517,6 +523,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             pixel = .customization(.shown)
         case .addressBarMode:
             pixel = .searchExperience(.shown)
+        case .searchOrChat:
+            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            pixel = nil
         }
         if let pixel {
             onboardingSharedPixelHandler.fire(pixel)

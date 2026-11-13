@@ -546,6 +546,13 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
+    func testSearchOrChatStep_FiresNoSharedPixels() {
+        manager.stepShown(step: .searchOrChat)
+        manager.stepCompleted(step: .searchOrChat)
+
+        XCTAssertTrue(onboardingSharedPixelHandler.eventsReceived.isEmpty)
+    }
+
     func testExpectedShownPixelsFired_WhenRowShownTelemetryEventReported() {
         // When
         manager.reportTelemetryEvent(.rowShown(.dock))

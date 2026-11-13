@@ -19,6 +19,7 @@
 
 
 import SwiftUI
+import WidgetKit
 
 struct ResizableTintableImage: View {
 

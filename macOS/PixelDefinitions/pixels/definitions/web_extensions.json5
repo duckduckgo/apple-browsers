@@ -1,4 +1,80 @@
 {
+    "web_extension_update_success_macos": {
+        "description": "Fires when a verified extension update is committed at startup, including updates left disabled because additional permissions are required. Daily counts affected installations; count counts committed updates.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_update_failure_macos": {
+        "description": "Fires when applying or recovering an extension update fails, excluding cancellation, eligibility deferrals and cleanup-only failures. Daily counts affected installations; count counts failures. No package URL, hash, version or error text is sent.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension",
+            {
+                "key": "outcome",
+                "type": "string",
+                "description": "The bounded installation failure reason",
+                "enum": ["invalid_package", "storage_failure", "load_failure"]
+            },
+            "channel"
+        ]
+    },
+    "web_extension_update_download_failed_macos": {
+        "description": "Fires when downloading an extension update fails, excluding cancellation. Daily counts affected installations; count counts failures. No package URL, hash or version is sent.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension",
+            {
+                "key": "outcome",
+                "type": "string",
+                "description": "The bounded failure reason",
+                "enum": [
+                    "invalid_request",
+                    "invalid_response",
+                    "http_status",
+                    "network_failure",
+                    "size_mismatch",
+                    "package_too_large",
+                    "hash_mismatch"
+                ]
+            },
+            "channel"
+        ]
+    },
+    "web_extension_update_verification_failed_macos": {
+        "description": "Fires when an extension update fails verification or cannot be retained for installation, excluding cancellation. Daily counts affected installations; count counts failures. No package URL, hash or version is sent.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension",
+            {
+                "key": "outcome",
+                "type": "string",
+                "description": "The bounded failure reason",
+                "enum": ["invalid_package", "invalid_signature", "invalid_version", "version_mismatch", "not_newer", "storage_failure"]
+            },
+            "channel"
+        ]
+    },
+    "web_extension_update_verified_macos": {
+        "description": "Fires when a downloaded extension update passes verification and is retained for installation. Daily counts affected installations; count counts verified updates. No package URL, hash or version is sent.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
     "web_extension_update_found_macos": {
         "description": "Fires when a Chrome Web Store update check finds a newer version. Daily counts affected installations; count counts discoveries. No package URL, hash or version is sent.",
         "owners": ["diegoreymendez"],

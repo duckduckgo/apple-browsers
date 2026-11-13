@@ -37,20 +37,41 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
-    static func getTierProducts(baseURL: URL, region: String?, platform: String?) -> SubscriptionRequest? {
+    static func getWithdrawalEligibility(baseURL: URL, accessToken: String) -> SubscriptionRequest? {
+        let path = "/subscription/withdraw"
+        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
+                                         method: .get,
+                                         headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
+            return nil
+        }
+        return SubscriptionRequest(apiRequest: request)
+    }
+
+    static func withdrawSubscription(baseURL: URL, accessToken: String) -> SubscriptionRequest? {
+        let path = "/subscription/withdraw"
+        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
+                                         method: .post,
+                                         headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
+            return nil
+        }
+        return SubscriptionRequest(apiRequest: request)
+    }
+
+    static func getTierProducts(baseURL: URL, location: TierProductsLocation, platform: String?) -> SubscriptionRequest? {
         let path = "/v2/products"
         var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
 
         var queryItems: [URLQueryItem] = []
-        if let region = region {
-            queryItems.append(URLQueryItem(name: "region", value: region))
+        switch location {
+        case .country(let country):
+            queryItems.append(URLQueryItem(name: "country", value: country))
+        case .legacyUSRegion:
+            queryItems.append(URLQueryItem(name: "region", value: "us"))
         }
         if let platform = platform {
             queryItems.append(URLQueryItem(name: "platform", value: platform))
         }
-        if !queryItems.isEmpty {
-            urlComponents?.queryItems = queryItems
-        }
+        urlComponents?.queryItems = queryItems
         guard let url = urlComponents?.url,
               let request = APIRequestV2(url: url,
                                          method: .get) else {

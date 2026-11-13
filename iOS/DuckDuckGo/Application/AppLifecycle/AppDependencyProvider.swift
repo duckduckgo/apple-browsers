@@ -46,6 +46,7 @@ protocol DependencyProvider {
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
     var isSitePermissionsEnabled: Bool { get }
+    var isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool { get }
     var findInPageImplementation: FindInPageImplementation { get }
     var sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
@@ -89,6 +90,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
     let isSitePermissionsEnabled: Bool
+    let isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool
     let findInPageImplementation: FindInPageImplementation
     /// One instance for the app, so every tab and Duck Player share the segments cache.
     let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
@@ -221,6 +223,7 @@ final class AppDependencyProvider: DependencyProvider {
 
         // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
         isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
+        isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.duckAIAndInputLiquidGlass)
         findInPageImplementation = FindInPageImplementation(featureFlagger: featureFlagger)
 
         // Configure PixelKit Experiments
@@ -325,7 +328,10 @@ final class AppDependencyProvider: DependencyProvider {
                                                                },
                                                                wideEvent: wideEvent,
                                                                isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
-                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation,
+                                                               isStripeProductsByPlanCountryEnabled: {
+            featureFlagger.isFeatureOn(.stripeProductsByPlanCountry)
+                                                               })
         self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,

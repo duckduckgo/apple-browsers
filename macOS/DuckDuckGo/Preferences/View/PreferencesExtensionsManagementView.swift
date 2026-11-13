@@ -31,10 +31,15 @@ extension Preferences {
     struct ExtensionsManagementView: View {
 
         private enum Const {
-            static let footerSpacing: CGFloat = 4
+            static let footerSpacing: CGFloat = 2
+            static let disclaimerDividerSpacing: CGFloat = 18
+            static let disclaimerLineHeight: CGFloat = 16
+            // Before macOS 26: 10pt text draws a 13pt line, so 3pt more reaches the 16pt line height.
+            static let disclaimerFallbackLineSpacing: CGFloat = 3
+            static let descriptionTopPadding: CGFloat = 5
             static let dividerTopPadding: CGFloat = 32
-            static let dividerBottomPadding: CGFloat = 28
-            static let moreExtensionsBottomPadding: CGFloat = 42
+            static let dividerBottomPadding: CGFloat = 23
+            static let moreExtensionsBottomPadding: CGFloat = 12
         }
 
         @StateObject private var model: ExtensionsManagementPreferences
@@ -67,9 +72,16 @@ extension Preferences {
                     content
                     disclaimer
                 }
-                VStack(alignment: .leading, spacing: Const.footerSpacing) {
-                    ScrollView(.vertical) {
-                        content
+                VStack(alignment: .leading, spacing: 0) {
+                    GeometryReader { proxy in
+                        ScrollView(.vertical) {
+                            content
+                                .frame(width: proxy.size.width, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .containerRelativeFrame(.horizontal, alignment: .leading) { length, _ in
+                            length - Preferences.Const.panePaddingHorizontal
+                        }
                     }
                     disclaimer
                 }
@@ -84,6 +96,7 @@ extension Preferences {
 
                 PreferencePaneSection {
                     description
+                        .padding(.top, Const.descriptionTopPadding)
                 }
 
                 extensionsList
@@ -104,7 +117,7 @@ extension Preferences {
                     uninstalledExtensionsView
                 }
             }
-            .padding(.top, 20)
+            .padding(.top, 5)
             .padding(.bottom, 16)
         }
 
@@ -134,14 +147,13 @@ extension Preferences {
                 Divider()
                     .padding(.top, Const.dividerTopPadding)
                     .padding(.bottom, Const.dividerBottomPadding)
-                sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
+                sectionTitle(UserText.extensionsSettingsAvailableHeader)
                     .padding(.bottom, Const.moreExtensionsBottomPadding)
             }
         }
 
         private var uninstalledExtensionsView: some View {
             VStack(alignment: .leading, spacing: 12) {
-                TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
                 ForEach(model.uninstalledPasswordManagers) { item in
                     UninstalledExtensionRow(item: item,
                                             imageLoader: imageLoader,
@@ -171,13 +183,18 @@ extension Preferences {
         }
 
         private var disclaimer: some View {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Const.disclaimerDividerSpacing) {
                 Divider()
-                Text(UserText.extensionsSettingsDisclaimer)
-                    .font(PreferencesUI_macOS.Const.Fonts.preferencePaneDisclaimer)
-                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
-                    .fixMultilineScrollableText()
+                disclaimerText
             }
+        }
+
+        private var disclaimerText: some View {
+            Text(UserText.extensionsSettingsDisclaimer)
+                .font(PreferencesUI_macOS.Const.Fonts.preferencePaneDisclaimer)
+                .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                .lineHeight(Const.disclaimerLineHeight, fallbackLineSpacing: Const.disclaimerFallbackLineSpacing)
+                .fixMultilineScrollableText()
         }
     }
 
@@ -189,9 +206,6 @@ extension Preferences {
             static let height: CGFloat = 120
             static let cornerRadius: CGFloat = 16
             static let padding: CGFloat = 24
-            static let iconTileSize: CGFloat = 72
-            static let iconTileCornerRadius: CGFloat = 12
-            static let iconSize: CGFloat = 40
             static let buttonHorizontalPadding: CGFloat = 8
             /// Minimum label size, so the button measures at least 80 x 24pt once padded.
             static let buttonLabelMinWidth: CGFloat = 80 - 2 * buttonHorizontalPadding
@@ -210,9 +224,7 @@ extension Preferences {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
-                                 tileSize: Const.iconTileSize,
-                                 tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize,
+                                 mode: .available,
                                  onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
@@ -247,9 +259,6 @@ extension Preferences {
             static let cornerRadius: CGFloat = 16
             static let leadingPadding: CGFloat = 16
             static let trailingPadding: CGFloat = 24
-            static let iconTileSize: CGFloat = 48
-            static let iconTileCornerRadius: CGFloat = 8
-            static let iconSize: CGFloat = 24
             static let optionsToSwitchSpacing: CGFloat = 16
             static let footerHorizontalPadding: CGFloat = 24
             static let footerVerticalPadding: CGFloat = 12
@@ -284,9 +293,7 @@ extension Preferences {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
-                                 tileSize: Const.iconTileSize,
-                                 tileCornerRadius: Const.iconTileCornerRadius,
-                                 iconSize: Const.iconSize,
+                                 mode: .installed,
                                  onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
@@ -423,7 +430,7 @@ extension Preferences {
                 }
             }
             .padding(.horizontal, Const.rowHorizontalPadding)
-            .frame(width: Const.cardWidth)
+            .frame(maxWidth: Const.cardWidth)
             .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cardCornerRadius, style: .continuous))
         }
@@ -431,12 +438,12 @@ extension Preferences {
         private func detailRow(title: String, details: String) -> some View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: Const.titleFontSize))
+                    .font(.system(size: Const.titleFontSize, weight: .regular))
                     .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Text(details)
-                    .font(.system(size: Const.detailsFontSize))
+                    .font(.system(size: Const.detailsFontSize, weight: .regular))
                     .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -461,11 +468,42 @@ extension Preferences {
 
     private struct ExtensionSummary: View {
 
+        struct Mode {
+            let tileSize: CGFloat
+            let tileCornerRadius: CGFloat
+            let iconSize: CGFloat
+            let titleSpacing: CGFloat
+            let titleFontSize: CGFloat
+            let titleFontWeight: Font.Weight
+            let publisherFontSize: CGFloat
+            let textTopPadding: CGFloat
+
+            static let installed = Mode(
+                tileSize: 48,
+                tileCornerRadius: 8,
+                iconSize: 24,
+                titleSpacing: 6,
+                titleFontSize: 13,
+                titleFontWeight: .medium,
+                publisherFontSize: 11,
+                textTopPadding: 0
+            )
+
+            static let available = Mode(
+                tileSize: 72,
+                tileCornerRadius: 12,
+                iconSize: 40,
+                titleSpacing: 9,
+                titleFontSize: 15,
+                titleFontWeight: .semibold,
+                publisherFontSize: 13,
+                textTopPadding: 3
+            )
+        }
+
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
-        let tileSize: CGFloat
-        let tileCornerRadius: CGFloat
-        let iconSize: CGFloat
+        let mode: Mode
         let onPublisher: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
@@ -483,32 +521,47 @@ extension Preferences {
                         Image(nsImage: icon)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: iconSize, height: iconSize)
+                            .frame(width: mode.iconSize, height: mode.iconSize)
                     }
                 }
-                .frame(width: tileSize, height: tileSize)
+                .frame(width: mode.tileSize, height: mode.tileSize)
                 .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
-                .clipShape(RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: mode.tileCornerRadius, style: .continuous))
                 .task(id: item.iconURL) {
                     guard let iconURL = item.iconURL else { return }
                     remoteIcon = try? await imageLoader.loadImage(from: iconURL)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: mode.titleSpacing) {
                     Text(item.name)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: mode.titleFontSize, weight: mode.titleFontWeight))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                        .padding(.top, -2)
 
                     Button(action: onPublisher) {
                         Text(item.publisher)
-                            .font(.system(size: 11))
+                            .font(.system(size: mode.publisherFontSize, weight: .regular))
                             .foregroundColor(Color.rebrandableLink(palette: palette))
                     }
                     .buttonStyle(.plain)
                 }
+                .padding(.top, mode.textTopPadding)
                 .lineLimit(1)
                 .truncationMode(.tail)
             }
+        }
+    }
+}
+
+private extension View {
+
+    /// Exact line height on macOS 26+; earlier systems approximate it with `fallbackLineSpacing`.
+    @ViewBuilder
+    func lineHeight(_ lineHeight: CGFloat, fallbackLineSpacing: CGFloat) -> some View {
+        if #available(macOS 26, *) {
+            self.lineHeight(.exact(points: lineHeight))
+        } else {
+            lineSpacing(fallbackLineSpacing)
         }
     }
 }

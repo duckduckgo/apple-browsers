@@ -75,20 +75,17 @@ public actor DefaultSubscriptionCachingService: SubscriptionCachingService {
     }
 
     public func set(_ subscription: DuckDuckGoSubscription) {
+#if !DEBUG
         let expiryDate = subscription.expiresOrRenewsAt
-#if DEBUG
-        // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated
-        let isInTheFuture = false
-#else
-        let isInTheFuture = expiryDate.isInTheFuture()
-#endif
-        if isInTheFuture {
+        if expiryDate.isInTheFuture() {
             Logger.subscriptionCachingService.debug("Subscription cache set with expiration date: \(expiryDate, privacy: .public)")
             subscriptionCache.set(subscription, expires: expiryDate)
-        } else {
-            Logger.subscriptionCachingService.debug("Subscription cache set with default expiration date")
-            subscriptionCache.set(subscription)
+            return
         }
+#endif
+        // Debug subscriptions expire within minutes, so use the default cache lifetime.
+        Logger.subscriptionCachingService.debug("Subscription cache set with default expiration date")
+        subscriptionCache.set(subscription)
     }
 
     // nonisolated to preserve the synchronous-clearing contract for callers that cannot await.

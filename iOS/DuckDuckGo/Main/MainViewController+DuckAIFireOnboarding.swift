@@ -63,6 +63,15 @@ struct DuckAIFireOnboardingFlowContext {
             return false
         }
     }
+
+    mutating func cancelForTimeLimit() {
+        guard isRunning else { return }
+        state = .completed
+        triggerWorkItem?.cancel()
+        triggerWorkItem = nil
+        pendingCompletionDialogMessage = nil
+        shouldForcePostFireAddressBarPickerRestore = false
+    }
 }
 
 private enum DuckAIFireOnboardingMetrics {
@@ -72,6 +81,18 @@ private enum DuckAIFireOnboardingMetrics {
 // MARK: - Duck.ai fire onboarding — MainViewController methods
 
 extension MainViewController {
+
+    func endContextualOnboardingAfterTimeLimit() {
+        guard linearOnboardingContext?.activeInterlude != .duckAI else { return }
+        duckAIFireOnboardingFlow.cancelForTimeLimit()
+        setDuckAIFireControlsLocked(false)
+        ViewHighlighter.hideAll()
+        viewCoordinator.omniBar.dismissOnboardingPrivacyIconAnimation()
+        if let currentTab {
+            currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
+        }
+        newTabPageViewController?.showNextDaxDialog()
+    }
 
     // MARK: Session setup
 
@@ -269,8 +290,9 @@ extension MainViewController {
         duckAIFireOnboardingFlow.state = .awaitingFirstResponse
         setDuckAIFireControlsLocked(true)
         Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self, duckAIFireOnboardingFlow.state == .awaitingFirstResponse else { return }
             await clearDuckAIWebsiteDataForResumeIfNeeded()
+            guard duckAIFireOnboardingFlow.state == .awaitingFirstResponse else { return }
             recreateAIChatTabForResumeIfNeeded()
             if let currentTab {
                 scheduleDuckAIFireOnboardingAfterLoadIfNeeded(for: currentTab)
@@ -310,6 +332,7 @@ extension MainViewController {
             onConfirm: { [weak self] fireRequest in
                 self?.contextualOnboardingPixelReporter.measureFireButtonOnboardingDeleteConfirmed()
                 self?.forgetAllWithAnimation(request: fireRequest) {
+                    guard self?.duckAIFireOnboardingFlow.isRunning == true else { return }
                     self?.duckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         self?.refreshOmniBar()
@@ -325,6 +348,7 @@ extension MainViewController {
                 }
             },
             onCancel: { [weak self] in
+                guard self?.duckAIFireOnboardingFlow.isRunning == true else { return }
                 self?.setDuckAIFireControlsLocked(true)
                 self?.showFireButtonPulse()
             }
@@ -477,7 +501,9 @@ extension MainViewController {
     }
 
     func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {
+        let isLinearInterlude = linearOnboardingContext?.activeInterlude == .duckAI
         let shouldArmDuckAIFireOnboarding = autoSend && duckAIFireOnboardingFlow.state != .completed
+            && (isLinearInterlude || !daxDialogsManager.hasSeenOnboarding)
         duckAIFireOnboardingFlow.triggerWorkItem?.cancel()
         duckAIFireOnboardingFlow.triggerWorkItem = nil
 

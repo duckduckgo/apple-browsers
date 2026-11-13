@@ -2982,7 +2982,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             activeOffers: [],
             tier: tier,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(subscription)
     }

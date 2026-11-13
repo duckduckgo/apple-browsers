@@ -1275,6 +1275,18 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertFalse(MockExperimentPixelFiring.firedMetrics.contains("onboarding_completed"))
     }
 
+    func testTimeLimitReachedUsesOnboardingContextWithoutCompletionPixelsOrExperimentMetrics() {
+        sut.measureTimeLimitReached(.days)
+        sut.measureTimeLimitReached(.appOpens)
+
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.timeLimit(.days), .timeLimit(.appOpens)])
+        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
+        XCTAssertEqual(sharedPixelHandlerMock.receivedVariants?.searchExperience, .duckAISearch)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+        XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.isEmpty)
+    }
+
     func testWhenMeasureEndOfJourneyTryDuckAICTAActionThenEndOfJourneyTryDuckAIEngageFires() {
         // WHEN
         sut.measureEndOfJourneyTryDuckAICTAAction()
@@ -1483,6 +1495,20 @@ final class OnboardingPixelReporterTests: XCTestCase {
             // THEN
             XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains(expectedMetric), "Failed for reason \(reason)")
         }
+    }
+
+    func testWhenMeasureDownloadReasonSelectionWithVPNThenNothingFires() {
+        // GIVEN
+        sharedPixelsStorageMock.onboardingDownloadReasonVariant = nil
+        MockExperimentPixelFiring.reset()
+
+        // WHEN
+        sut.measureDownloadReasonSelection(.vpn)
+
+        // THEN
+        XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
+        XCTAssertNil(sharedPixelsStorageMock.onboardingDownloadReasonVariant)
+        XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.isEmpty)
     }
 
     func testWhenMeasureAIModelSelectionThenAIModelClickedFires() {

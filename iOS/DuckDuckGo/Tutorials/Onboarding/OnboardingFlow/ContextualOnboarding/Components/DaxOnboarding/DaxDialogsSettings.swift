@@ -17,8 +17,14 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Core
+import CoreFoundation
+import FeatureFlags_iOS
+import Foundation
+import Onboarding
 import Persistence
+import PrivacyConfig
 
 protocol DaxDialogsSettings: AnyObject {
 
@@ -61,6 +67,121 @@ protocol DaxDialogsSettings: AnyObject {
     /// The current phase of the Duck.ai chat-first onboarding path, derived from persisted state flags.
     var chatPathPhase: DaxDialogs.ChatPathPhase { get }
 
+}
+
+final class ContextualOnboardingTimeLimit {
+    private enum Key {
+        static let startDate = "com.duckduckgo.ios.contextualOnboardingStartDate"
+        static let appOpens = "com.duckduckgo.ios.contextualOnboardingAppOpens"
+        static let ended = "com.duckduckgo.ios.contextualOnboardingEndedByTimeLimit"
+        static let maxDaysOverride = "com.duckduckgo.ios.contextualOnboardingMaxDaysOverride"
+        static let maxAppOpensOverride = "com.duckduckgo.ios.contextualOnboardingMaxAppOpensOverride"
+    }
+
+    private let store: KeyValueStoring
+    private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let statisticsStore: StatisticsStore
+    private let launchOptionsHandler: LaunchOptionsHandler
+    private let dateProvider: () -> Date
+
+    init(store: KeyValueStoring = UserDefaults.app,
+         featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
+         launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
+         dateProvider: @escaping () -> Date = Date.init) {
+        self.store = store
+        self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.statisticsStore = statisticsStore
+        self.launchOptionsHandler = launchOptionsHandler
+        self.dateProvider = dateProvider
+    }
+
+    var startDate: Date {
+        get {
+            if let override = launchOptionsHandler.contextualOnboardingStartDate { return override }
+            if let stored = store.object(forKey: Key.startDate) as? Date { return stored }
+            let date = statisticsStore.installDate ?? dateProvider()
+            store.set(date, forKey: Key.startDate)
+            return date
+        }
+        set { store.set(newValue, forKey: Key.startDate) }
+    }
+
+    var appOpens: Int {
+        get { store.object(forKey: Key.appOpens) as? Int ?? 0 }
+        set { store.set(newValue, forKey: Key.appOpens) }
+    }
+
+    var endedByTimeLimit: Bool {
+        get { store.object(forKey: Key.ended) as? Bool ?? false }
+        set { store.set(newValue, forKey: Key.ended) }
+    }
+
+    var maxDaysOverride: Int? {
+        get { store.object(forKey: Key.maxDaysOverride) as? Int }
+        set { store.set(newValue, forKey: Key.maxDaysOverride) }
+    }
+
+    var maxAppOpensOverride: Int? {
+        get { store.object(forKey: Key.maxAppOpensOverride) as? Int }
+        set { store.set(newValue, forKey: Key.maxAppOpensOverride) }
+    }
+
+    var maxDaysSinceInstall: Int {
+        launchOptionsHandler.contextualOnboardingMaxDays
+            ?? maxDaysOverride
+            ?? remoteLimit(for: "maxDaysSinceInstall")
+            ?? 7
+    }
+
+    var maxAppOpens: Int {
+        launchOptionsHandler.contextualOnboardingMaxAppOpens
+            ?? maxAppOpensOverride
+            ?? remoteLimit(for: "maxAppOpens")
+            ?? 28
+    }
+
+    func recordAppOpen() {
+        _ = startDate
+        appOpens += 1
+    }
+
+    func reachedLimit() -> OnboardingSharedPixelEvent.TimeLimitReason? {
+        let start = startDate
+        guard !endedByTimeLimit,
+              featureFlagger.isFeatureOn(for: FeatureFlag.contextualOnboardingTimeLimit) else { return nil }
+        if dateProvider().timeIntervalSince(start) >= Double(maxDaysSinceInstall) * 24 * 60 * 60 {
+            return .days
+        }
+        if appOpens > maxAppOpens { return .appOpens }
+        return nil
+    }
+
+    func reset() {
+        startDate = dateProvider()
+        appOpens = 0
+        endedByTimeLimit = false
+    }
+
+    func clear() {
+        for key in [Key.startDate, Key.appOpens, Key.ended, Key.maxDaysOverride, Key.maxAppOpensOverride] {
+            store.removeObject(forKey: key)
+        }
+    }
+
+    private func remoteLimit(for key: String) -> Int? {
+        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.contextualOnboardingTimeLimit),
+              let data = json.data(using: .utf8),
+              let dictionary = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let number = dictionary[key] as? NSNumber,
+              CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
+        let value = number.doubleValue
+        guard value.isFinite, value > 0, value.rounded(.towardZero) == value, value < Double(Int.max) else { return nil }
+        return Int(value)
+    }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -117,13 +238,13 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     private let chatPathStore: KeyValueStoring = UserDefaults.standard
 
     var chatPathVisitSiteSeen: Bool {
-        get { (try? chatPathStore.object(forKey: ChatPathKey.visitSiteSeen) as? Bool) ?? false }
-        set { try? chatPathStore.set(newValue, forKey: ChatPathKey.visitSiteSeen) }
+        get { chatPathStore.object(forKey: ChatPathKey.visitSiteSeen) as? Bool ?? false }
+        set { chatPathStore.set(newValue, forKey: ChatPathKey.visitSiteSeen) }
     }
 
     var isChatFirstPath: Bool {
-        get { (try? chatPathStore.object(forKey: ChatPathKey.isChatFirstPath) as? Bool) ?? false }
-        set { try? chatPathStore.set(newValue, forKey: ChatPathKey.isChatFirstPath) }
+        get { chatPathStore.object(forKey: ChatPathKey.isChatFirstPath) as? Bool ?? false }
+        set { chatPathStore.set(newValue, forKey: ChatPathKey.isChatFirstPath) }
     }
 
     var chatPathPhase: DaxDialogs.ChatPathPhase {

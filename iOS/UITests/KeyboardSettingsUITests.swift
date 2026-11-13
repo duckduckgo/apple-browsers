@@ -20,29 +20,12 @@
 import XCTest
 import UITestingSupport
 
-final class KeyboardSettingsUITests: XCTestCase {
+final class KeyboardSettingsUITests: UITestCase {
 
-    private let app = XCUIApplication()
     private let timeout = UITestTimeouts.navigation
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        continueAfterFailure = false
-        app.launchArguments = [
-            "-clearAllDefaults",
-            "isRunningUITests",
-            "-isOnboardingCompleted", "true",
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
-        ]
-        app.launchEnvironment = ["UITEST_MODE": "1"]
-        app.launch()
-    }
-
-    override func tearDownWithError() throws {
-        app.terminate()
-        try super.tearDownWithError()
+    override var additionalLaunchArguments: [String] {
+        super.additionalLaunchArguments + ["-ff.alwaysShowKeyboardOnNewTabPage", "false"]
     }
 
     func testKeyboardPreferencesPersistAfterReopeningAndRelaunching() {

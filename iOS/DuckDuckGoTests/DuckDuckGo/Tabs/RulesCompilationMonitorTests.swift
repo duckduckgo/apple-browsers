@@ -67,31 +67,22 @@ final class RulesCompilationMonitorTests: XCTestCase {
         assertPixel(outcome: "success", total: "1", extensions: "0.5", rules: "0.5", appState: "regular")
     }
 
-    func testFractionsAreBucketedWithoutSendingExactShares() throws {
-        let cases: [(Double, String, String)] = [(0, "0", "1"), (2, "0.1", "0.9"), (5, "0.25", "0.75"),
-                                                (8, "0.5", "0.75"), (10, "0.5", "0.5"), (15, "0.75", "0.25"),
-                                                (18, "0.9", "0.1"), (20, "1", "0")]
-        for (extensionSeconds, extensionFraction, rulesFraction) in cases {
+    func testStageTimesAreBucketedWithoutSendingExactDurations() throws {
+        let cases: [(seconds: Double, bucket: String)] = [(0.05, "0.1"), (0.5, "0.5"), (1, "1"), (4.9, "5"),
+                                                          (9, "10"), (19, "20"), (39, "40"), (41, "more")]
+        for testCase in cases {
             let firing = PixelKitMock()
             time = 0
             let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false,
                                                    now: { [unowned self] in self.time }, notificationCenter: notifications, isInBackground: { false })
             let id = try XCTUnwrap(monitor.begin())
-            if extensionSeconds > 0 {
-                monitor.beginStage(.webExtensions, for: id)
-                time = extensionSeconds
-                monitor.endStage(for: id)
-            }
-            if extensionSeconds < 20 {
-                monitor.beginStage(.contentBlocking, for: id)
-                time = 20
-                monitor.endStage(for: id)
-            }
+            monitor.beginStage(.webExtensions, for: id)
+            time = testCase.seconds
+            monitor.endStage(for: id)
             monitor.finish(id, outcome: .success)
 
-            XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters,
-                           ["waitTime": "20.0", "web_extensions_wait_fraction": extensionFraction,
-                            "content_blocking_wait_fraction": rulesFraction])
+            assertSetupPixel(firing, outcome: "success", state: "regular",
+                             total: testCase.bucket, extensions: testCase.bucket, rules: "0")
         }
     }
 
@@ -133,7 +124,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
         monitor.finish(id, outcome: .success)
 
-        assertPixel(outcome: "success", total: "0.5", extensions: "1", rules: "0")
+        assertPixel(outcome: "success", total: "0.5", extensions: "0.5", rules: "0")
     }
 
     func testExtensionDeadlineIsCountedAsWaitWithoutClaimingSuccessfulPageLoad() throws {
@@ -144,7 +135,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
         monitor.endStage(for: id)
         monitor.finish(id, outcome: .success)
 
-        assertPixel(outcome: "success", total: "5", extensions: "1", rules: "0")
+        assertPixel(outcome: "success", total: "5", extensions: "5", rules: "0")
     }
 
     func testContentBlockingTimeoutReportsPartialWaitInsteadOfRelease() throws {
@@ -155,7 +146,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
         monitor.finish(id, outcome: .timeout)
         monitor.finish(id, outcome: .cancelled)
 
-        assertPixel(outcome: "timeout", total: "20", extensions: "0", rules: "1")
+        assertPixel(outcome: "timeout", total: "20", extensions: "0", rules: "20")
     }
 
     func testCancellationAndTabCloseEndPendingStageExactlyOnce() throws {
@@ -172,9 +163,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
             monitor.endStage(for: id)
             monitor.finish(id, outcome: .success)
 
-            XCTAssertEqual(firing.actualFireCalls.count, 1)
-            XCTAssertEqual(firing.actualFireCalls.first?.pixel.name, "m_compilation_result_\(outcome.rawValue)_time_0.5_state_regular")
-            XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters?["waitTime"], "0.2")
+            assertSetupPixel(firing, outcome: outcome.rawValue, state: "regular", total: "0.5", extensions: "0.5", rules: "0")
         }
     }
 
@@ -184,14 +173,14 @@ final class RulesCompilationMonitorTests: XCTestCase {
         monitor.beginStage(.contentBlocking, for: id)
         time = 0.4
         notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
-        assertPixel(outcome: "app_backgrounded", total: "0.5", extensions: "0", rules: "1")
+        assertPixel(outcome: "app_backgrounded", total: "0.5", extensions: "0", rules: "0.5")
         time = 100
         notifications.post(name: UIApplication.willEnterForegroundNotification, object: nil)
         monitor.endStage(for: id)
         monitor.finish(id, outcome: .success)
         XCTAssertNil(monitor.begin())
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters?["waitTime"], "0.4")
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.parameters?["wait_time"], "0.5")
     }
 
     func testBackgroundNavigationDoesNotConsumeFirstForegroundSample() throws {
@@ -217,22 +206,28 @@ final class RulesCompilationMonitorTests: XCTestCase {
         notifications.post(name: UIApplication.willTerminateNotification, object: nil)
         monitor.finish(id, outcome: .success)
 
-        assertPixel(outcome: "app_quit", total: "5", extensions: "1", rules: "0")
+        assertPixel(outcome: "app_quit", total: "5", extensions: "5", rules: "0")
     }
 
     private func assertPixel(outcome: String, total: String, extensions: String, rules: String, appState: String = "onboarding",
                              file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1, file: file, line: line)
-        let call = pixelFiring.actualFireCalls.first
-        XCTAssertEqual(call?.pixel.name, "m_compilation_result_\(outcome)_time_\(total)_state_\(appState)", file: file, line: line)
-        XCTAssertEqual(call?.frequency, .standard, file: file, line: line)
-        XCTAssertNil(call?.pixel.parameters, file: file, line: line)
-        XCTAssertEqual(call?.additionalParameters,
-                       ["waitTime": total == "0" ? "0.0" : String(time),
-                        "web_extensions_wait_fraction": extensions,
-                        "content_blocking_wait_fraction": rules], file: file, line: line)
-        XCTAssertEqual(call?.includeAppVersionParameter, true, file: file, line: line)
+        assertSetupPixel(pixelFiring, outcome: outcome, state: appState, total: total, extensions: extensions, rules: rules,
+                         file: file, line: line)
     }
+}
+
+/// Asserts the single setup-wait pixel was fired once with these bucketed values and no extra parameters.
+private func assertSetupPixel(_ firing: PixelKitMock, outcome: String, state: String, total: String, extensions: String, rules: String,
+                              file: StaticString = #filePath, line: UInt = #line) {
+    XCTAssertEqual(firing.actualFireCalls.count, 1, file: file, line: line)
+    let call = firing.actualFireCalls.first
+    XCTAssertEqual(call?.pixel.name, "navigation_setup_wait", file: file, line: line)
+    XCTAssertEqual(call?.frequency, .standard, file: file, line: line)
+    XCTAssertEqual(call?.pixel.parameters,
+                   ["outcome": outcome, "state": state, "wait_time": total,
+                    "web_extensions_wait_time": extensions, "content_blocking_wait_time": rules], file: file, line: line)
+    XCTAssertNil(call?.additionalParameters, file: file, line: line)
+    XCTAssertEqual(call?.includeAppVersionParameter, true, file: file, line: line)
 }
 
 @available(iOS 18.4, *)
@@ -290,11 +285,9 @@ final class RulesCompilationPolicyTests: XCTestCase {
             }
             await fulfillment(of: [decided], timeout: 5)
 
-            XCTAssertEqual(firing.actualFireCalls.count, 1)
-            XCTAssertEqual(firing.actualFireCalls.first?.pixel.name, "m_compilation_result_success_time_1_state_onboarding")
-            XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters,
-                           ["waitTime": "0.8", "web_extensions_wait_fraction": rulesPreparedDuringExtensions ? "1" : "0.5",
-                            "content_blocking_wait_fraction": rulesPreparedDuringExtensions ? "0" : "0.5"])
+            assertSetupPixel(firing, outcome: "success", state: "onboarding", total: "1",
+                             extensions: rulesPreparedDuringExtensions ? "1" : "0.5",
+                             rules: rulesPreparedDuringExtensions ? "0" : "0.5")
         }
     }
 
@@ -328,13 +321,10 @@ final class RulesCompilationPolicyTests: XCTestCase {
         try XCTUnwrap(releaseExtension).resume()
         await fulfillment(of: [decided], timeout: 2)
 
-        XCTAssertEqual(firing.actualFireCalls.count, 1)
-        XCTAssertEqual(firing.actualFireCalls.first?.pixel.name, "m_compilation_result_cancelled_time_0.5_state_regular")
-        XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters,
-                       ["waitTime": "0.2", "web_extensions_wait_fraction": "1", "content_blocking_wait_fraction": "0"])
+        assertSetupPixel(firing, outcome: "cancelled", state: "regular", total: "0.5", extensions: "0.5", rules: "0")
     }
 
-    func testSynchronousExtensionPreparationIsIncludedInItsWaitFraction() async throws {
+    func testSynchronousExtensionPreparationIsIncludedInItsWaitTime() async throws {
         let firing = PixelKitMock()
         var time: TimeInterval = 0
         let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false, now: { time }, isInBackground: { false })
@@ -347,10 +337,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
         tab.webView(tab.webView, decidePolicyFor: makeAction()) { _ in decided.fulfill() }
         await fulfillment(of: [decided], timeout: 2)
 
-        XCTAssertEqual(firing.actualFireCalls.count, 1)
-        XCTAssertEqual(firing.actualFireCalls.first?.pixel.name, "m_compilation_result_success_time_1_state_regular")
-        XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters,
-                       ["waitTime": "0.8", "web_extensions_wait_fraction": "1", "content_blocking_wait_fraction": "0"])
+        assertSetupPixel(firing, outcome: "success", state: "regular", total: "1", extensions: "1", rules: "0")
     }
 
     func testReadyRulesWithoutExtensionWaitReportZeroWithSitePermissionsOnAndOff() async throws {
@@ -363,10 +350,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
             tab.webView(tab.webView, decidePolicyFor: makeAction()) { _ in decided.fulfill() }
             await fulfillment(of: [decided], timeout: 2)
 
-            XCTAssertEqual(firing.actualFireCalls.count, 1)
-            XCTAssertEqual(firing.actualFireCalls.first?.pixel.name, "m_compilation_result_success_time_0_state_regular")
-            XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters,
-                           ["waitTime": "0.0", "web_extensions_wait_fraction": "0", "content_blocking_wait_fraction": "0"])
+            assertSetupPixel(firing, outcome: "success", state: "regular", total: "0", extensions: "0", rules: "0")
         }
     }
 
@@ -402,9 +386,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
         try XCTUnwrap(releaseExtension).resume()
         await fulfillment(of: [mainFrameDecided], timeout: 2)
 
-        XCTAssertEqual(firing.actualFireCalls.count, 1)
-        XCTAssertEqual(firing.actualFireCalls.first?.pixel.name, "m_compilation_result_success_time_1_state_regular")
-        XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters?["waitTime"], "0.8")
+        assertSetupPixel(firing, outcome: "success", state: "regular", total: "1", extensions: "1", rules: "0")
     }
 
     func testRulesDeadlineReportsTimeoutBeforeErrorPageCancellation() async throws {
@@ -425,10 +407,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
         time = 0.2
         await fulfillment(of: [decided], timeout: 2)
 
-        XCTAssertEqual(firing.actualFireCalls.count, 1)
-        XCTAssertEqual(firing.actualFireCalls.first?.pixel.name, "m_compilation_result_timeout_time_0.5_state_regular")
-        XCTAssertEqual(firing.actualFireCalls.first?.additionalParameters,
-                       ["waitTime": "0.2", "web_extensions_wait_fraction": "0", "content_blocking_wait_fraction": "1"])
+        assertSetupPixel(firing, outcome: "timeout", state: "regular", total: "0.5", extensions: "0", rules: "0.5")
     }
 
     private func makeReadyTab(monitor: RulesCompilationMonitor, sitePermissionsEnabled: Bool,

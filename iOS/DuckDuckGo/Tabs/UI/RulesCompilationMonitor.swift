@@ -22,9 +22,10 @@ import Core
 import PixelKit
 import UIKit
 
-/// Measures setup waiting under the existing compilation-result pixel, once per process.
-/// Extensions and rules prepare concurrently; the first main-frame HTTP(S) navigation waits at
-/// their gates in sequence. Fractions describe those waits, not the parallel preparation work.
+/// Measures how long the first foreground main-frame HTTP(S) navigation of a process waits for the page to be
+/// ready, and how much of that each setup stage adds, in one pixel. Extensions and rules prepare concurrently;
+/// the navigation waits at their gates in sequence, so each stage reports the time spent waiting at its gate,
+/// not the parallel preparation work.
 @MainActor
 final class RulesCompilationMonitor: NSObject {
 
@@ -33,9 +34,18 @@ final class RulesCompilationMonitor: NSObject {
         case contentBlocking
     }
 
-    typealias Outcome = Pixel.Event.CompileRulesResult
+    enum Outcome: String {
+        /// The setup gates released navigation, including a bounded extension-gate deadline.
+        case success
+        case cancelled
+        /// Content-blocking readiness timed out; this is not a network or page-load timeout.
+        case timeout
+        case tabClosed = "tab_closed"
+        case appQuit = "app_quit"
+        case appBackgrounded = "app_backgrounded"
+    }
 
-    static let shared = RulesCompilationMonitor(isOnboarding: !DefaultTutorialSettings().hasSeenOnboarding)
+    static let shared = RulesCompilationMonitor()
 
     private struct Measurement {
         let id = UUID()
@@ -47,7 +57,7 @@ final class RulesCompilationMonitor: NSObject {
         var didWait = false
     }
 
-    private let pixelFiring: PixelFiring?
+    private let pixelFiring: (any PixelKitFiring)?
     private let isOnboarding: Bool
     private let now: () -> TimeInterval
     private let notificationCenter: NotificationCenter
@@ -55,8 +65,8 @@ final class RulesCompilationMonitor: NSObject {
     private var measurement: Measurement?
     private var didReport = false
 
-    init(pixelFiring: PixelFiring? = PixelKit.shared,
-         isOnboarding: Bool,
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         isOnboarding: Bool = !DefaultTutorialSettings().hasSeenOnboarding,
          now: @escaping () -> TimeInterval = { CACurrentMediaTime() },
          notificationCenter: NotificationCenter = .default,
          isInBackground: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState == .background }) {
@@ -117,30 +127,14 @@ final class RulesCompilationMonitor: NSObject {
         guard let measurement else { return }
         self.measurement = nil
         didReport = true
-        // Without a gate wait, policy bookkeeping is still time_0.
+        // Without a gate wait, policy bookkeeping still reports 0.
         let totalWait = measurement.didWait ? max(0, now() - measurement.start) : 0
-        pixelFiring?.fire(Pixel.Event.compilationResult(result: outcome,
-                                                       waitTime: Pixel.Event.BucketAggregation(number: totalWait),
-                                                       appState: isOnboarding ? .onboarding : .regular),
-                          options: .parameters([
-                            "waitTime": String(totalWait),
-                            "web_extensions_wait_fraction": Self.fractionBucket(measurement.webExtensionsWait, of: totalWait),
-                            "content_blocking_wait_fraction": Self.fractionBucket(measurement.contentBlockingWait, of: totalWait)
-                          ]))
-    }
-
-    /// Each fraction rounds up independently: a 40%/60% split becomes 0.5/0.75.
-    /// Bucket labels need not sum to one.
-    private static func fractionBucket(_ duration: TimeInterval, of total: TimeInterval) -> String {
-        guard total > 0, duration > 0 else { return "0" }
-        switch min(1, duration / total) {
-        case ...0.1: return "0.1"
-        case ...0.25: return "0.25"
-        case ...0.5: return "0.5"
-        case ...0.75: return "0.75"
-        case ...0.9: return "0.9"
-        default: return "1"
-        }
+        let pixel = NavigationSetupWaitPixel.finished(outcome: outcome,
+                                                      waitTime: Pixel.Event.BucketAggregation(number: totalWait),
+                                                      webExtensionsWait: Pixel.Event.BucketAggregation(number: measurement.webExtensionsWait),
+                                                      contentBlockingWait: Pixel.Event.BucketAggregation(number: measurement.contentBlockingWait),
+                                                      isOnboarding: isOnboarding)
+        pixelFiring?.fire(pixel, frequency: .standard)
     }
 
     @objc private func didEnterBackground() {

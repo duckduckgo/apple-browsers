@@ -6,46 +6,43 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_compilation_result_success_time": {
-        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. Both setup gates released navigation. Includes a bounded extension-gate deadline; it does not prove extension readiness, CPM delivery or successful page load. No asynchronous gate wait reports time_0.",
+    "navigation_setup_wait": {
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The Web Extension gate and the content-blocking gate are waited at in sequence, so wait_time covers both; rules and extensions prepare in parallel, so preparation time is not summed. Each time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the wait_time bucket. A navigation with no asynchronous wait reports 0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent.",
         "owners": ["mallexxx"],
-        "triggers": ["feature_lifecycle"],
-        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
-        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
-    },
-    "m_compilation_result_cancelled_time": {
-        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The setup attempt was stopped, superseded, intercepted by policy or otherwise cancelled before release. Reports the partial wait once; a stale completion cannot report success.",
-        "owners": ["mallexxx"],
-        "triggers": ["user_interaction", "feature_lifecycle", "exception"],
-        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
-        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
-    },
-    "m_compilation_result_timeout_time": {
-        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The content-blocking/site-permissions readiness deadline expired before assets became ready. Reports the partial wait before error-page cancellation; extension deadline release remains success.",
-        "owners": ["mallexxx"],
-        "triggers": ["exception"],
-        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
-        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
-    },
-    "m_compilation_result_tab_closed_time": {
-        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The tab closed before setup released navigation. Reports the partial wait once.",
-        "owners": ["mallexxx"],
-        "triggers": ["user_interaction", "feature_lifecycle"],
-        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
-        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
-    },
-    "m_compilation_result_app_quit_time": {
-        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The app is terminating before setup released navigation. Reports the partial wait once.",
-        "owners": ["mallexxx"],
-        "triggers": ["feature_lifecycle"],
-        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
-        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
-    },
-    "m_compilation_result_app_backgrounded_time": {
-        "description": "Reports the first foreground main-frame HTTP(S) setup attempt once per process. Historically the compilation-result metric measured only rules waiting; it now includes the preceding extension gate in one elapsed interval. Compare app versions separately across this measurement change. Parallel preparation is not summed. Fractions describe sequential navigation waits, not preparation duration. Subframes and non-HTTP(S) navigations do not consume the sample. The app entered background before setup released navigation. Ends the sample immediately so suspended time and later completion are not included.",
-        "owners": ["mallexxx"],
-        "triggers": ["feature_lifecycle"],
-        "suffixes": ["time_bucket", "compilation_state", "platform", "form_factor"],
-        "parameters": ["appVersion", "compilation_wait_time", "web_extensions_wait_fraction", "content_blocking_wait_fraction"]
+        "triggers": ["feature_lifecycle", "user_interaction", "exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": ["success", "cancelled", "timeout", "tab_closed", "app_quit", "app_backgrounded"],
+                "description": "success: the setup gates released navigation, including a bounded extension-gate deadline, which does not prove extension readiness, CPM delivery or page load. cancelled: the navigation was stopped, replaced or intercepted by policy before release. timeout: the content-blocking readiness deadline expired before assets were ready; reported before the error page cancels navigation. tab_closed, app_quit: the tab or app closed first. app_backgrounded: the app entered the background first; the wait ends there so suspended time is never counted."
+            },
+            {
+                "key": "state",
+                "type": "string",
+                "enum": ["onboarding", "regular"],
+                "description": "Whether onboarding had not been seen when the process-wide monitor was created."
+            },
+            {
+                "key": "wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds from the start of the navigation's setup wait to release, interruption or cancellation, including both gates. Bucketed."
+            },
+            {
+                "key": "web_extensions_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting at the Web Extension startup gate, including its bounded deadline. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "content_blocking_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. 0 when the navigation did not wait there. Bucketed."
+            }
+        ]
     }
 }

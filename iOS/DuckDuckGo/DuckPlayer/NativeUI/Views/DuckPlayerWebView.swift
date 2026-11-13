@@ -71,7 +71,6 @@ struct DuckPlayerWebView: UIViewRepresentable {
         sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
         duckPlayerUserScript: DuckPlayerUserScriptPlayer? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator? = nil,
         contentScopeUserScripts: ContentScopeUserScript? = nil) {
        
        self.viewModel = viewModel
@@ -84,22 +83,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
                                                             preferences: sponsorBlockPreferences,
                                                             isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
 
-       let jsonGenerator = privacyConfigurationJSONGenerator ??
-            ContentScopePrivacyConfigurationJSONGenerator(privacyConfigurationManager: scriptSourceProvider.privacyConfigurationManager)
-
-       do {
-           self.contentScopeUserScripts = try contentScopeUserScripts ??
-           ContentScopeUserScript(scriptSourceProvider.privacyConfigurationManager,
-                                  properties: scriptSourceProvider.contentScopeProperties,
-                                  scriptContext: .contentScopeIsolated,
-                                  privacyConfigurationJSONGenerator: jsonGenerator
-           )
-       } catch {
-           if let error = error as? UserScriptError {
-               error.fireLoadJSFailedPixelIfNeeded()
-           }
-           fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
-       }
+       self.contentScopeUserScripts = contentScopeUserScripts ?? ContentScopeUserScript(source: scriptSourceProvider.contentScopeIsolatedSource)
 
        self.coordinator = Coordinator(viewModel: viewModel)
    }

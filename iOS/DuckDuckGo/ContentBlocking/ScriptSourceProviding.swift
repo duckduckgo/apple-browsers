@@ -35,6 +35,10 @@ public protocol ScriptSourceProviding {
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var autofillSourceProvider: AutofillUserScriptSourceProvider { get }
     var contentScopeProperties: ContentScopeProperties { get }
+    /// The page-world Content Scope Scripts source every tab of this update shares.
+    var contentScopeSource: ContentScopeScriptSource { get }
+    /// The isolated Content Scope Scripts source every tab of this update shares.
+    var contentScopeIsolatedSource: ContentScopeScriptSource { get }
     var sessionKey: String { get }
     var messageSecret: String { get }
     var currentCohorts: [ContentScopeExperimentData] { get }
@@ -79,6 +83,10 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let aiChatBonusOffer: AIChatBonusOfferDependencies
+    private let contentScopeSources: ContentScopeSources
+
+    var contentScopeSource: ContentScopeScriptSource { contentScopeSources.contentScope }
+    var contentScopeIsolatedSource: ContentScopeScriptSource { contentScopeSources.contentScopeIsolated }
 
     init(dependencies: Dependencies) {
 
@@ -109,6 +117,14 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         currentCohorts: currentCohorts)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
+        contentScopeSources = ContentScopeSources(privacyConfigurationManager: privacyConfigurationManager,
+                                                  properties: contentScopeProperties,
+                                                  surrogateTrackerData: trackerProtectionDataSource?.surrogateFilteredTrackerData)
+    }
+
+    /// Builds the Content Scope Scripts sources now, on the calling thread, rather than when the first tab asks for them.
+    func buildContentScopeSources() {
+        contentScopeSources.build()
     }
 
     private static func generateSessionKey() -> String { UUID().uuidString }
@@ -136,4 +152,63 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         }
     }
 
+}
+
+/// The Content Scope Scripts sources for one `DefaultScriptSourceProvider`, each built once, on first use, from any thread.
+private final class ContentScopeSources: @unchecked Sendable {
+
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let properties: ContentScopeProperties
+    private let surrogateTrackerData: TrackerData?
+
+    private let lock = NSLock()
+    private var builtContentScope: ContentScopeScriptSource?
+    private var builtContentScopeIsolated: ContentScopeScriptSource?
+
+    init(privacyConfigurationManager: PrivacyConfigurationManaging, properties: ContentScopeProperties, surrogateTrackerData: TrackerData?) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.properties = properties
+        self.surrogateTrackerData = surrogateTrackerData
+    }
+
+    var contentScope: ContentScopeScriptSource {
+        lock.withLock {
+            if let builtContentScope { return builtContentScope }
+            let source = makeSource(scriptContext: .contentScope(surrogateTrackerData: surrogateTrackerData),
+                                    generator: ContentScopePrivacyConfigurationJSONGenerator(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                             excludedFeatures: [PrivacyFeature.autoconsent.rawValue,
+                                                                                                                PrivacyFeature.eventHub.rawValue]))
+            builtContentScope = source
+            return source
+        }
+    }
+
+    var contentScopeIsolated: ContentScopeScriptSource {
+        lock.withLock {
+            if let builtContentScopeIsolated { return builtContentScopeIsolated }
+            let source = makeSource(scriptContext: .contentScopeIsolated,
+                                    generator: ContentScopePrivacyConfigurationJSONGenerator(privacyConfigurationManager: privacyConfigurationManager))
+            builtContentScopeIsolated = source
+            return source
+        }
+    }
+
+    func build() {
+        contentScope.prepareForInjection()
+        contentScopeIsolated.prepareForInjection()
+    }
+
+    private func makeSource(scriptContext: ContentScopeScriptContext, generator: ContentScopePrivacyConfigurationJSONGenerator) -> ContentScopeScriptSource {
+        do {
+            return try ContentScopeScriptSource(privacyConfigurationManager: privacyConfigurationManager,
+                                                properties: properties,
+                                                scriptContext: scriptContext,
+                                                privacyConfigurationJSONGenerator: generator)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build the Content Scope Scripts source: \(error)")
+        }
+    }
 }

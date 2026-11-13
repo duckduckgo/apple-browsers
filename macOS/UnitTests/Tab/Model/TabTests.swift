@@ -1017,6 +1017,8 @@ private final class StubWebExtensionManager: WebExtensionManaging {
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionPermissions(for identifier: String) -> [String] { [] }
     func extensionMatchPatterns(for identifier: String) -> [String] { [] }
+    func hasAccessToPrivateData(for identifier: String) -> Bool? { nil }
+    func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { context }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     func clearCachedScriptlets() {}

@@ -238,20 +238,147 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         XCTAssertNil(try service.auditLogReviewState(for: SyncAccount.mock.userId))
     }
 
-    func testUnauthorizedPollingUsesExistingLogoutHandling() async throws {
+    func testUnauthorizedPollingPreservesAccountAndCursor() async throws {
         accountManager.fetchAuditLogError = SyncError.unexpectedStatusCode(401)
         try store.set("old", forKey: cursorKey)
-        let removed = expectation(description: "Audit state cleared after account removal")
-        store.onRemove = { [cursorKey] key in
-            if key == cursorKey { removed.fulfill() }
-        }
         let service = makeService()
-        service.scheduler.requestSyncImmediately()
-        await fulfillment(of: [removed], timeout: 2)
+        do {
+            _ = try await service.pollAuditLog()
+            XCTFail("Expected the request error")
+        } catch {
+            guard case SyncError.unexpectedStatusCode(401) = error else { return XCTFail("Unexpected error: \(error)") }
+        }
+        XCTAssertNotNil(service.account)
+        XCTAssertEqual(service.authState, .active)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+    }
 
-        XCTAssertNil(service.account)
-        XCTAssertEqual(service.authState, .inactive)
-        XCTAssertNil(try store.object(forKey: cursorKey))
+    func testPollingDoesNotRequireEngineInitialization() async throws {
+        let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+        XCTAssertTrue(try service.isAuditLogPollingAvailable())
+        let completed = try await service.pollAuditLog()
+        XCTAssertTrue(completed)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "cursor")
+        XCTAssertEqual(service.authState, .initializing)
+        XCTAssertEqual(source.makeDataProvidersCallCount, 0)
+    }
+
+    func testPollingWorksWhileNormalSyncRemainsSuspended() async throws {
+        let service = makeService()
+        service.scheduler.cancelSyncAndSuspendSyncQueue()
+        let completed = try await service.pollAuditLog()
+        XCTAssertTrue(completed)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "cursor")
+        service.scheduler.requestSyncImmediately()
+        XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
+    }
+
+    func testUnavailableEnabledMarkerPreservesStateAndRetriesLater() async throws {
+        let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+        try store.set("old", forKey: cursorKey)
+        let expectedError = NSError(domain: "storage", code: 1)
+        store.onRead = { key in
+            if key == DDGSync.Constants.syncEnabledKey { throw expectedError }
+        }
+        do {
+            _ = try await service.pollAuditLog()
+            XCTFail("Expected the storage error")
+        } catch {
+            XCTAssertEqual(error as NSError, expectedError)
+        }
+        XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
+        XCTAssertNotNil((dependencies.secureStore as! SecureStorageStub).theAccount)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        store.onRead = nil
+        let completed = try await service.pollAuditLog()
+        XCTAssertTrue(completed)
+    }
+
+    func testUnavailableAccountPreservesCredentialsAndRetriesLater() async throws {
+        let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+        let secureStore = dependencies.secureStore as! SecureStorageStub
+        try store.set("old", forKey: cursorKey)
+        secureStore.mockReadError = .failedToReadSecureStore(status: -25308)
+        do {
+            _ = try await service.pollAuditLog()
+            XCTFail("Expected the keychain error")
+        } catch {
+            guard case SyncError.failedToReadSecureStore = error else { return XCTFail("Unexpected error: \(error)") }
+        }
+        XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
+        XCTAssertNotNil(secureStore.theAccount)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        secureStore.mockReadError = nil
+        let completed = try await service.pollAuditLog()
+        XCTAssertTrue(completed)
+    }
+
+    func testUnavailableCheckpointDoesNotFetchOrReplaceState() async throws {
+        let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+        try store.set("old", forKey: cursorKey)
+        let expectedError = NSError(domain: "storage", code: 1)
+        store.onRead = { [cursorKey] key in
+            if key == cursorKey { throw expectedError }
+        }
+        do {
+            _ = try await service.pollAuditLog()
+            XCTFail("Expected the checkpoint read error")
+        } catch {
+            XCTAssertEqual(error as NSError, expectedError)
+        }
+        XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
+        store.onRead = nil
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        let completed = try await service.pollAuditLog()
+        XCTAssertTrue(completed)
+    }
+
+    func testSuspendingForegroundSyncDoesNotCancelIndependentPoll() async throws {
+        let service = makeService()
+        let started = expectation(description: "Independent poll started")
+        let (gate, continuation) = AsyncStream<Void>.makeStream()
+        accountManager.fetchAuditLogHandler = { _, _, _ in
+            started.fulfill()
+            for await _ in gate { break }
+            return AuditLogPage(entries: [], after: "independent", before: nil)
+        }
+        let poll = Task { try await service.pollAuditLog() }
+        await fulfillment(of: [started], timeout: 1)
+        service.scheduler.cancelSyncAndSuspendSyncQueue()
+        continuation.yield(())
+        continuation.finish()
+        let completed = try await poll.value
+        XCTAssertTrue(completed)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "independent")
+    }
+
+    func testMissingEnabledMarkerSkipsPollingWithoutRemovingAccount() async throws {
+        let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+        try store.removeObject(forKey: DDGSync.Constants.syncEnabledKey)
+        XCTAssertFalse(try service.isAuditLogPollingAvailable())
+        let completed = try await service.pollAuditLog()
+        XCTAssertFalse(completed)
+        XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
+        XCTAssertNotNil((dependencies.secureStore as! SecureStorageStub).theAccount)
+    }
+
+    func testChangedCredentialsDiscardLateResponse() async throws {
+        let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+        try store.set("old", forKey: cursorKey)
+        let secureStore = dependencies.secureStore as! SecureStorageStub
+        accountManager.fetchAuditLogHandler = { account, _, _ in
+            secureStore.theAccount = SyncAccount(deviceId: account.deviceId, deviceName: account.deviceName, deviceType: account.deviceType,
+                                                userId: account.userId, primaryKey: account.primaryKey, secretKey: account.secretKey,
+                                                token: "replacement", state: .active)
+            return AuditLogPage(entries: [], after: "stale", before: nil)
+        }
+        do {
+            _ = try await service.pollAuditLog()
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+        }
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
+        XCTAssertEqual(secureStore.theAccount?.token, "replacement")
     }
 
     func testInitializingWithSyncDisabledClearsCursorWhenCredentialsAreRemoved() throws {
@@ -283,10 +410,12 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
 private final class PollingStore: ThrowingKeyValueStoring {
     private let lock = NSLock()
     private var values: [String: Any] = [:]
+    var onRead: ((String) throws -> Void)?
     var onSet: ((String, Any?) throws -> Void)?
     var onRemove: ((String) -> Void)?
 
     func object(forKey key: String) throws -> Any? {
+        try onRead?(key)
         lock.lock()
         defer { lock.unlock() }
         return values[key]

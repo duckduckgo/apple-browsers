@@ -58,7 +58,7 @@ final class AuditLogPollerTests: XCTestCase {
         accountManager.fetchAuditLogStub = AuditLogPage(entries: [.unreadable(id: "old", reason: .keyUnavailable)], after: "head", before: "older")
         let poller = makePoller()
 
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertEqual(try cursor(), "head")
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
@@ -70,7 +70,7 @@ final class AuditLogPollerTests: XCTestCase {
 
     func testEmptyInitialPageStillStoresHeadAndInitializesReviewState() async throws {
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertEqual(try cursor(), "cursor")
         XCTAssertEqual(initializedPages.count, 1)
@@ -79,7 +79,7 @@ final class AuditLogPollerTests: XCTestCase {
     func testPollResumesFromPersistedCursorAndStoresEmptyPageCursor() async throws {
         try setCursor()
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         guard case .after("saved") = accountManager.fetchAuditLogCalls[0].1 else { return XCTFail("Expected saved forward cursor") }
         XCTAssertEqual(try cursor(), "cursor")
@@ -95,7 +95,7 @@ final class AuditLogPollerTests: XCTestCase {
         ]
         accountManager.fetchAuditLogHandler = { _, _, _ in pages.removeFirst() }
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         let cursors = accountManager.fetchAuditLogCalls.compactMap { call -> String? in
             guard case .after(let cursor) = call.1 else { return nil }
@@ -112,10 +112,10 @@ final class AuditLogPollerTests: XCTestCase {
             try setCursor()
             accountManager.fetchAuditLogError = error
             let poller = makePoller()
-            await poller.startPolling(for: .mock)?.value
+            try? await poller.startPolling(for: .mock)?.value
             XCTAssertEqual(try cursor(), "saved")
             accountManager.fetchAuditLogError = nil
-            await poller.startPolling(for: .mock)?.value
+            try? await poller.startPolling(for: .mock)?.value
             XCTAssertEqual(try cursor(), "cursor")
         }
         XCTAssertEqual(errors.count, 4)
@@ -125,7 +125,7 @@ final class AuditLogPollerTests: XCTestCase {
         try setCursor()
         accountManager.fetchAuditLogError = URLError(.notConnectedToInternet)
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertEqual(try cursor(), "saved")
         XCTAssertEqual(errors.count, 1)
@@ -140,20 +140,20 @@ final class AuditLogPollerTests: XCTestCase {
             throw SyncError.unexpectedStatusCode(418)
         }
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertEqual(try cursor(), "saved")
         XCTAssertEqual(errors.count, 1)
     }
 
-    func testInvalidCursorClearsStateAndReinitializesOnce() async throws {
+    func testInvalidCursorReinitializesOnce() async throws {
         try setCursor()
         accountManager.fetchAuditLogHandler = { _, cursor, _ in
             if cursor != nil { throw AuditLogError.invalidCursor }
             return AuditLogPage(entries: [], after: "fresh", before: nil)
         }
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 2)
         XCTAssertNil(accountManager.fetchAuditLogCalls[1].1)
@@ -162,16 +162,16 @@ final class AuditLogPollerTests: XCTestCase {
         XCTAssertTrue(errors.isEmpty)
     }
 
-    func testFailedReinitializationLeavesCursorAbsentForNextSync() async throws {
+    func testFailedReinitializationPreservesCursorForNextAttempt() async throws {
         try setCursor()
         accountManager.fetchAuditLogHandler = { _, cursor, _ in
             if cursor != nil { throw AuditLogError.invalidCursor }
             throw SyncError.unexpectedStatusCode(500)
         }
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
-        XCTAssertNil(try cursor())
+        XCTAssertEqual(try cursor(), "saved")
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 2)
         XCTAssertEqual(errors.count, 1)
     }
@@ -180,7 +180,7 @@ final class AuditLogPollerTests: XCTestCase {
         try setCursor()
         accountManager.fetchAuditLogStub = AuditLogPage(entries: [], after: nil, before: nil)
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertEqual(try cursor(), "saved")
         XCTAssertTrue(errors.first is AuditLogError)
@@ -195,23 +195,36 @@ final class AuditLogPollerTests: XCTestCase {
         XCTAssertEqual(try cursor(), "saved")
 
         isEnabled = true
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
         XCTAssertEqual(try cursor(), "cursor")
     }
 
-    func testEligibilityCheckCanSuspendPollingBeforeItStarts() {
-        weak var currentPoller: AuditLogPoller?
+    func testEligibilityReadFailureDoesNotStartPolling() {
+        let expectedError = NSError(domain: "test", code: 1)
         let poller = AuditLogPoller(accountManager: accountManager,
                                    keyValueStore: store,
-                                   canPoll: { _ in
-                                       currentPoller?.setSuspended(true)
-                                       return true
-                                   },
+                                   canPoll: { _ in throw expectedError },
                                    initializeReviewState: { _, _ in XCTFail("Polling should not start") },
-                                   onError: { _ in XCTFail("Polling should not start") })
-        currentPoller = poller
+                                   onError: { [unowned self] in self.errors.append($0) })
 
         XCTAssertNil(poller.startPolling(for: .mock))
+        XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
+        XCTAssertEqual(errors.first as NSError?, expectedError)
+    }
+
+    func testAwaitableEligibilityFailureOnlyThrows() async throws {
+        let expectedError = NSError(domain: "test", code: 1)
+        let poller = AuditLogPoller(accountManager: accountManager,
+                                   keyValueStore: store,
+                                   canPoll: { _ in throw expectedError },
+                                   initializeReviewState: { _, _ in XCTFail("Polling should not start") },
+                                   onError: { _ in XCTFail("The awaiting caller reports the error") })
+        do {
+            _ = try await poller.pollIfNeeded(for: .mock)
+            XCTFail("Expected the eligibility error")
+        } catch {
+            XCTAssertEqual(error as NSError, expectedError)
+        }
         XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
     }
 
@@ -229,7 +242,7 @@ final class AuditLogPollerTests: XCTestCase {
                                    onError: { _ in XCTFail("Cancellation should not report an error") })
         currentPoller = poller
 
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertNil(try cursor())
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
@@ -244,7 +257,7 @@ final class AuditLogPollerTests: XCTestCase {
                                    onError: { _ in XCTFail("Cancellation should not report an error") })
         currentPoller = poller
 
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertNil(try cursor())
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
@@ -254,12 +267,15 @@ final class AuditLogPollerTests: XCTestCase {
         weak var currentPoller: AuditLogPoller?
         let poller = AuditLogPoller(accountManager: accountManager,
                                    keyValueStore: store,
-                                   canPoll: { _ in true },
-                                   initializeReviewState: { _, account in try currentPoller?.clearState(for: account.userId) },
+                                   canPoll: { [unowned self] _ in self.isEnabled },
+                                   initializeReviewState: { [unowned self] _, account in
+                                       self.isEnabled = false
+                                       try currentPoller?.clearState(for: account.userId)
+                                   },
                                    onError: { _ in XCTFail("Cancellation should not report an error") })
         currentPoller = poller
 
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertNil(try cursor())
         XCTAssertNil(poller.startPolling(for: .mock))
@@ -272,7 +288,7 @@ final class AuditLogPollerTests: XCTestCase {
             return AuditLogPage(entries: [], after: "discarded", before: nil)
         }
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
 
         XCTAssertEqual(try cursor(), "saved")
         XCTAssertTrue(errors.isEmpty)
@@ -298,9 +314,10 @@ final class AuditLogPollerTests: XCTestCase {
         await fulfillment(of: [started], timeout: 1)
         XCTAssertNil(poller.startPolling(for: .mock))
         try poller.clearState(for: SyncAccount.mock.userId)
+        XCTAssertNil(poller.startPolling(for: .mock))
         continuation.yield(())
         continuation.finish()
-        await task.value
+        try? await task.value
 
         XCTAssertNil(try cursor())
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
@@ -318,12 +335,12 @@ final class AuditLogPollerTests: XCTestCase {
         let task = try XCTUnwrap(poller.startPolling(for: .mock))
         await fulfillment(of: [sleeping], timeout: 1)
         poller.cancel()
-        await task.value
+        try? await task.value
         XCTAssertEqual(try cursor(), "saved")
         XCTAssertTrue(errors.isEmpty)
 
         accountManager.fetchAuditLogStub = AuditLogPage(entries: [], after: "resumed", before: nil)
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
         guard case .after("saved") = accountManager.fetchAuditLogCalls.last?.1 else { return XCTFail("Expected cursor from before the cancelled poll") }
         XCTAssertEqual(try cursor(), "resumed")
     }
@@ -334,37 +351,67 @@ final class AuditLogPollerTests: XCTestCase {
         let other = SyncAccount(deviceId: account.deviceId, deviceName: account.deviceName, deviceType: account.deviceType,
                                 userId: "other", primaryKey: account.primaryKey, secretKey: account.secretKey, token: account.token, state: .active)
         let poller = makePoller()
-        await poller.startPolling(for: other)?.value
+        try? await poller.startPolling(for: other)?.value
         XCTAssertNil(accountManager.fetchAuditLogCalls[0].1)
         XCTAssertEqual(try cursor(), "first-account")
         XCTAssertEqual(try cursor(for: other), "cursor")
 
         let relaunchedPoller = makePoller()
-        await relaunchedPoller.startPolling(for: .mock)?.value
+        try? await relaunchedPoller.startPolling(for: .mock)?.value
         guard case .after("first-account") = accountManager.fetchAuditLogCalls.last?.1 else { return XCTFail("Expected persisted cursor") }
     }
 
-    func testSuspendedPollerDoesNotStartUntilResumed() async throws {
+    func testAwaitablePollPropagatesFailureAndCanRetry() async throws {
+        try setCursor()
+        accountManager.fetchAuditLogError = SyncError.unexpectedStatusCode(401)
         let poller = makePoller()
-        poller.setSuspended(true)
-        XCTAssertNil(poller.startPolling(for: .mock))
-        XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
+        do {
+            _ = try await poller.pollIfNeeded(for: .mock)
+            XCTFail("Expected the request error")
+        } catch {
+            guard case SyncError.unexpectedStatusCode(401) = error else { return XCTFail("Unexpected error: \(error)") }
+        }
+        XCTAssertEqual(try cursor(), "saved")
+        XCTAssertTrue(errors.isEmpty)
 
-        poller.setSuspended(false)
-        await poller.startPolling(for: .mock)?.value
+        accountManager.fetchAuditLogError = nil
+        let completed = try await poller.pollIfNeeded(for: .mock)
+        XCTAssertTrue(completed)
         XCTAssertEqual(try cursor(), "cursor")
+    }
+
+    func testCancellingAwaitingCallerCancelsPollWithoutAdvancingCursor() async throws {
+        try setCursor()
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [.unreadable(id: "event", reason: .keyUnavailable)], after: "new", before: nil)
+        let sleeping = expectation(description: "Continuation pacing started")
+        let poller = makePoller(sleep: { _ in
+            sleeping.fulfill()
+            try await Task.sleep(nanoseconds: 60_000_000_000)
+        })
+        let caller = Task { try await poller.pollIfNeeded(for: .mock) }
+        await fulfillment(of: [sleeping], timeout: 1)
+        let overlapping = try await poller.pollIfNeeded(for: .mock)
+        XCTAssertFalse(overlapping)
+        caller.cancel()
+        do {
+            _ = try await caller.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+        }
+        XCTAssertEqual(try cursor(), "saved")
+        XCTAssertTrue(errors.isEmpty)
     }
 
     func testPersistenceFailureLeavesPreviousCheckpointAndRetriesLater() async throws {
         try setCursor()
         store.throwOnSet = NSError(domain: "test", code: 1)
         let poller = makePoller()
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
         XCTAssertEqual(try cursor(), "saved")
         XCTAssertEqual(errors.count, 1)
 
         store.throwOnSet = nil
-        await poller.startPolling(for: .mock)?.value
+        try? await poller.startPolling(for: .mock)?.value
         XCTAssertEqual(try cursor(), "cursor")
     }
 

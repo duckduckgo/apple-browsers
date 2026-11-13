@@ -904,8 +904,11 @@ final class MockAIChatsHandling: AIChatsHandling {
 final class MockDataProvidersSource: DataProvidersSource {
     var dataProviders: [DataProviding] = []
 
+    private(set) var makeDataProvidersCallCount = 0
+
     func makeDataProviders() -> [DataProviding] {
-        dataProviders
+        makeDataProvidersCallCount += 1
+        return dataProviders
     }
 }
 

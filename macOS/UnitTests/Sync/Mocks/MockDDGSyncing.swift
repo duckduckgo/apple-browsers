@@ -180,6 +180,9 @@ class MockDDGSyncing: DDGSyncing {
 
     func auditLogAccountIdentifier() throws -> String? { account?.userId }
 
+    func pollAuditLog() async throws -> Bool { false }
+    func isAuditLogPollingAvailable() throws -> Bool { false }
+
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading { MockAuditLogReader() }
 

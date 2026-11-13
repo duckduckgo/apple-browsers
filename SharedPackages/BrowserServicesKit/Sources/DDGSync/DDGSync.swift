@@ -697,25 +697,52 @@ public class DDGSync: DDGSyncing {
             accountManager: dependencies.account,
             keyValueStore: dependencies.keyValueStore,
             canPoll: { [weak self] account in
-                self?.canPollAuditLog(for: account) ?? false
+                try self?.canPollAuditLog(for: account) ?? false
             },
             initializeReviewState: { [weak self] page, account in
                 try self?.initializeAuditLogReviewState(from: page, for: account)
             },
-            onError: { [weak self] error in
-                _ = self?.handleUnauthenticatedAndMap(error)
+            onError: { error in
                 Logger.sync.error("Failed to poll the audit log: \(String(reflecting: error), privacy: .private)")
             }
         )
     }
 
-    private func canPollAuditLog(for polledAccount: SyncAccount) -> Bool {
-        // Read the current configuration because the published featureFlags update is delivered later on the main queue.
-        guard isSyncEngineReady,
-              SyncFeatureFlags(privacyConfig: dependencies.privacyConfigurationManager.privacyConfig).contains(.dataSyncing),
+    public func pollAuditLog() async throws -> Bool {
+        guard let account = try accountForAuditLogPolling() else { return false }
+        return try await auditLogPoller?.pollIfNeeded(for: account) ?? false
+    }
+
+    public func isAuditLogPollingAvailable() throws -> Bool {
+        try accountForAuditLogPolling() != nil
+    }
+
+    private func accountForAuditLogPolling() throws -> SyncAccount? {
+        // Read current flags rather than waiting for their published main-queue update.
+        guard SyncFeatureFlags(privacyConfig: dependencies.privacyConfigurationManager.privacyConfig).contains(.dataSyncing),
               dependencies.syncFeatureFlags.isLoginAuditLogEnabled(),
-              let currentAccount = account else { return false }
-        return currentAccount.userId == polledAccount.userId && currentAccount.deviceId == polledAccount.deviceId
+              try dependencies.keyValueStore.object(forKey: Constants.syncEnabledKey) != nil,
+              let account = try dependencies.secureStore.account(),
+              account.state == .active || account.state == .addingNewDevice,
+              let token = account.token, !token.isEmpty else { return nil }
+        return account
+    }
+
+    private func canPollAuditLog(for polledAccount: SyncAccount) throws -> Bool {
+        guard let account = try accountForAuditLogPolling() else { return false }
+        return account.userId == polledAccount.userId && account.deviceId == polledAccount.deviceId
+            && account.token == polledAccount.token && account.primaryKey == polledAccount.primaryKey
+            && account.secretKey == polledAccount.secretKey
+    }
+
+    private func startForegroundAuditLogPolling() {
+        do {
+            guard let account = try accountForAuditLogPolling(),
+                  let task = auditLogPoller?.startPolling(for: account) else { return }
+            foregroundAuditLogTask = task
+        } catch {
+            Logger.sync.error("Failed to start audit-log polling: \(String(reflecting: error), privacy: .private)")
+        }
     }
 
     private func initializeAuditLogReviewState(from page: AuditLogPage, for account: SyncAccount) throws {
@@ -790,9 +817,7 @@ public class DDGSync: DDGSyncing {
         startSyncCancellable = dependencies.scheduler.startSyncPublisher
             .sink { [weak self] in
                 self?.syncQueue?.startSync()
-                if let self, let account = self.account {
-                    self.auditLogPoller?.startPolling(for: account)
-                }
+                self?.startForegroundAuditLogPolling()
             }
 
         syncQueueRequestErrorCancellable = syncQueue.syncHTTPRequestErrorPublisher
@@ -805,19 +830,17 @@ public class DDGSync: DDGSyncing {
         cancelSyncCancellable = dependencies.scheduler.cancelSyncPublisher
             .sink { [weak self] in
                 self?.syncQueue?.cancelOngoingSyncAndSuspendQueue()
-                self?.auditLogPoller?.setSuspended(true)
+                self?.foregroundAuditLogTask?.cancel()
             }
 
         resumeSyncCancellable = dependencies.scheduler.resumeSyncPublisher
             .sink { [weak self] in
                 self?.syncQueue?.resumeQueue()
-                self?.auditLogPoller?.setSuspended(false)
             }
 
         isDataSyncingFeatureFlagEnabledCancellable = featureFlagsPublisher.prepend(featureFlags).map { $0.contains(.dataSyncing) }
             .assign(to: \.isDataSyncingFeatureFlagEnabled, onWeaklyHeld: syncQueue)
 
-        auditLogPoller?.setSuspended(false)
         dependencies.scheduler.isEnabled = true
         self.syncQueue = syncQueue
         setCustomOperations(customOperations)
@@ -965,7 +988,7 @@ public class DDGSync: DDGSyncing {
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
         let account = try? dependencies.secureStore.account()
         deviceInfoUpdateState.cancelAll()
-        auditLogPoller?.setSuspended(true)
+        auditLogPoller?.cancel()
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
@@ -1036,6 +1059,7 @@ public class DDGSync: DDGSyncing {
         }
     }
 
+    private var foregroundAuditLogTask: Task<Void, Error>?
     private var startSyncCancellable: AnyCancellable?
     private var cancelSyncCancellable: AnyCancellable?
     private var resumeSyncCancellable: AnyCancellable?

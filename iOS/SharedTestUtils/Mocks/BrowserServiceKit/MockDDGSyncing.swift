@@ -187,6 +187,9 @@ final class MockDDGSyncing: DDGSyncing {
         return account?.userId
     }
 
+    func pollAuditLog() async throws -> Bool { false }
+    func isAuditLogPollingAvailable() throws -> Bool { false }
+
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading {
         auditLogReaderAccounts.append(account?.userId)

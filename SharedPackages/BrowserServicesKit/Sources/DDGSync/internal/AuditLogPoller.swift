@@ -29,19 +29,18 @@ final class AuditLogPoller {
 
     private let accountManager: AccountManaging
     private let keyValueStore: ThrowingKeyValueStoring
-    private let canPoll: (SyncAccount) -> Bool
+    private let canPoll: (SyncAccount) throws -> Bool
     private let initializeReviewState: (AuditLogPage, SyncAccount) throws -> Void
     private let onError: (Error) -> Void
     private let sleep: (UInt64) async throws -> Void
     private let lock = NSLock()
     // Keep checkpoint writes ordered with logout cleanup; callbacks may re-enter cancellation or cleanup.
     private let checkpointLock = NSRecursiveLock()
-    private var task: (id: UUID, handle: Task<Void, Never>)?
-    private var isSuspended = false
+    private var task: (id: UUID, handle: Task<Void, Error>)?
 
     init(accountManager: AccountManaging,
          keyValueStore: ThrowingKeyValueStoring,
-         canPoll: @escaping (SyncAccount) -> Bool,
+         canPoll: @escaping (SyncAccount) throws -> Bool,
          initializeReviewState: @escaping (AuditLogPage, SyncAccount) throws -> Void,
          onError: @escaping (Error) -> Void,
          sleep: @escaping (UInt64) async throws -> Void = { try await Task.sleep(nanoseconds: $0) }) {
@@ -57,14 +56,34 @@ final class AuditLogPoller {
         "com.duckduckgo.sync.audit-log.cursor.\(accountID)"
     }
 
+    /// Returns false when polling is disabled or another caller already owns a poll.
+    func pollIfNeeded(for account: SyncAccount) async throws -> Bool {
+        guard let handle = try beginPolling(for: account) else { return false }
+        try await waitForPoll(handle)
+        return true
+    }
+
+    /// Starts foreground polling and reports failures through onError.
     @discardableResult
-    func startPolling(for account: SyncAccount) -> Task<Void, Never>? {
-        guard canPoll(account) else { return nil }
+    func startPolling(for account: SyncAccount) -> Task<Void, Error>? {
+        do {
+            return try beginPolling(for: account, onError: onError)
+        } catch is CancellationError {
+            return nil
+        } catch {
+            onError(error)
+            return nil
+        }
+    }
+
+    private func beginPolling(for account: SyncAccount, onError: ((Error) -> Void)? = nil) throws -> Task<Void, Error>? {
+        try Task.checkCancellation()
+        guard try canPoll(account) else { return nil }
+        try Task.checkCancellation()
         return lock.withLock {
-            guard task == nil, !isSuspended else { return nil }
+            guard task == nil else { return nil }
             let id = UUID()
-            let handle = Task { [weak self] in
-                guard let self else { return }
+            let handle = Task {
                 defer {
                     self.lock.withLock {
                         if self.task?.id == id { self.task = nil }
@@ -72,10 +91,9 @@ final class AuditLogPoller {
                 }
                 do {
                     try await self.poll(for: account)
-                } catch is CancellationError {
-                    // Suspension and account changes resume from the last completed poll on a later sync.
                 } catch {
-                    if self.canPoll(account), !Task.isCancelled { self.onError(error) }
+                    if !Task.isCancelled, !(error is CancellationError) { onError?(error) }
+                    throw error
                 }
             }
             task = (id, handle)
@@ -83,28 +101,22 @@ final class AuditLogPoller {
         }
     }
 
-    func cancel() {
-        let handle = lock.withLock {
-            let handle = task?.handle
-            task = nil
-            return handle
-        }
-        handle?.cancel()
+    private func waitForPoll(_ handle: Task<Void, Error>) async throws {
+        try await withTaskCancellationHandler(operation: {
+            try Task.checkCancellation()
+            try await handle.value
+        }, onCancel: {
+            handle.cancel()
+        })
     }
 
-    func setSuspended(_ suspended: Bool) {
-        let handle: Task<Void, Never>? = lock.withLock {
-            isSuspended = suspended
-            guard suspended else { return nil }
-            let handle = task?.handle
-            task = nil
-            return handle
-        }
-        handle?.cancel()
+    func cancel() {
+        // Keep the slot occupied until a cancelled request has actually unwound.
+        lock.withLock { task?.handle.cancel() }
     }
 
     func clearState(for accountID: String) throws {
-        setSuspended(true)
+        cancel()
         try checkpointLock.withLock {
             try keyValueStore.removeObject(forKey: Self.cursorKey(for: accountID))
         }
@@ -131,10 +143,6 @@ final class AuditLogPoller {
             }
         } catch AuditLogError.invalidCursor {
             try checkCanPoll(account)
-            try checkpointLock.withLock {
-                try Task.checkCancellation()
-                try keyValueStore.removeObject(forKey: Self.cursorKey(for: account.userId))
-            }
             // Reinitialize once; the returned history is not new activity.
             try await initialize(for: account)
         }
@@ -165,6 +173,6 @@ final class AuditLogPoller {
 
     private func checkCanPoll(_ account: SyncAccount) throws {
         try Task.checkCancellation()
-        guard canPoll(account) else { throw CancellationError() }
+        guard try canPoll(account) else { throw CancellationError() }
     }
 }

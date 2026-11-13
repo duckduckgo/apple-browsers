@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/moon0326/o-j/support-paste",
-        "revision" : "bee65f2af89efa06375a03efe76dcd033c98f5e2"
+        "revision" : "ce8414767a85427e2f1f0f82e737e1ce4522d6e9",
+        "version" : "20.1.0"
       }
     },
     {

@@ -406,10 +406,36 @@ class FakePixels:
         return []
 
 
+class FakeVideo:
+    """Stands in for Video: writes the file on stop, or fails to start or stop when told to."""
+    FILE = harness.Video.FILE
+    fail_start, stop_problem, made = False, None, []
+
+    def __init__(self, udid, path):
+        self.path, self.ok, self.stopped = path, False, False
+        FakeVideo.made.append(self)
+
+    def start(self):
+        if FakeVideo.fail_start:
+            raise RuntimeError("recordVideo exited 1: no display")
+        return self
+
+    def stop(self):
+        self.stopped = True
+        if FakeVideo.stop_problem:
+            return [FakeVideo.stop_problem]
+        open(self.path, "w").close()
+        self.ok = True
+        return []
+
+
 class HarnessTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeDevice()
-        self.saved = (harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release)
+        self.saved = (harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release,
+                      harness.Video)
+        FakeVideo.fail_start, FakeVideo.stop_problem, FakeVideo.made = False, None, []
+        harness.Video = FakeVideo
         harness.Device = lambda device: self.fake
         harness.Device.check_build_current = staticmethod(lambda: {})
         harness.fixture = lambda stop=False, user=None: dict(url="http://127.0.0.1:1/index.html?token=")
@@ -418,13 +444,70 @@ class HarnessTests(unittest.TestCase):
         harness.WideEvents = lambda container: telemetry.WideEvents(container)
 
     def tearDown(self):
-        harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release = self.saved
+        harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release, \
+            harness.Video = self.saved
 
-    def run_proof(self, run, keep=False, **fake):
+    def run_proof(self, run, keep=False, video=True, **fake):
         self.fake.__dict__.update(fake)
         mod = type("Proof", (), {"run": staticmethod(run)})
         ev = tempfile.mkdtemp(dir=TMP)
-        return harness._run_device(mod, "iphone", ev, keep=keep, flags={}, device_obj=self.fake)
+        return harness._run_device(mod, "iphone", ev, keep=keep, flags={}, device_obj=self.fake, video=video)
+
+    def test_video_is_stopped_and_kept_on_pass_fail_and_cancel(self):
+        def cancel(ios):
+            raise harness._Stop("SIGINT")
+        for status, run in (("pass", lambda ios: ios.check("ok", True)), ("fail", lambda ios: ios.check("broken", False)),
+                            ("cancelled", cancel)):
+            FakeVideo.made = []
+            r = self.run_proof(run)
+            self.assertEqual(r["status"], status, r)
+            self.assertTrue(FakeVideo.made[0].stopped, f"the recording was left running after {status}")
+            self.assertEqual(r["video"], "recording.mp4")
+            self.assertTrue(os.path.isfile(os.path.join(r["evidence"], "recording.mp4")))
+
+    def test_recording_failure_is_an_evidence_problem_not_a_failed_proof(self):
+        FakeVideo.fail_start = True
+        r = self.run_proof(lambda ios: ios.check("ok", True))
+        self.assertEqual(r["status"], "pass", r)
+        self.assertIsNone(r["video"])
+        self.assertTrue(any("screen recording" in p for p in r["problems"]), r["problems"])
+        self.assertEqual(harness.exit_code([r["status"]], bool(r["problems"])), 2)
+        FakeVideo.fail_start, FakeVideo.stop_problem = False, "screen recording wrote no recording.mp4"
+        r = self.run_proof(lambda ios: ios.check("ok", True))
+        self.assertEqual((r["status"], r["video"]), ("pass", None), r)
+        self.assertIn("screen recording wrote no recording.mp4", r["problems"])
+
+    def test_no_video_records_nothing(self):
+        r = self.run_proof(lambda ios: ios.check("ok", True), video=False)
+        self.assertEqual((r["status"], r["video"], r["problems"]), ("pass", None, []), r)
+        self.assertEqual(FakeVideo.made, [])
+
+    def test_report_is_one_scenario_with_relative_evidence_links(self):
+        proof = os.path.join(tempfile.mkdtemp(dir=TMP), "scenario.py")
+        with open(proof, "w") as f:
+            f.write('"""The thing works.\n\nMore about what it covers."""\nDEVICES = ["iphone"]\n\n'
+                    'def run(ios):\n    ios.shot("after-tap")\n    ios.check("the thing", True)\n'
+                    '    ios.unverified("the other thing", "needs a live service")\n')
+        out_dir = tempfile.mkdtemp(dir=TMP)
+        code, out = harness.prove(proof, evidence_dir=out_dir)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(os.path.dirname(out["evidence"]), os.path.realpath(out_dir))
+        with open(out["report"]) as f:
+            report = f.read()
+        sections = [line for line in report.splitlines() if line.startswith("## ")]
+        self.assertEqual(sections, ["## Verified", "## Evidence", "## Outcome", "## Details", "## Unverified"])
+        for link in ("[recording.mp4](iphone/recording.mp4)", "[final.png](iphone/final.png)",
+                     "[after-tap.png](iphone/after-tap.png)", "[transcript.jsonl](iphone/transcript.jsonl)"):
+            self.assertIn(link, report)
+        self.assertIn("More about what it covers.", report)
+        self.assertIn("- iphone: the other thing: needs a live service", report)
+        with open(os.path.join(out["evidence"], "manifest.json")) as f:
+            manifest = json.load(f)
+        self.assertEqual(manifest["video"], {"iphone": "iphone/recording.mp4"})
+        self.assertEqual(manifest["evidenceDir"], os.path.realpath(out_dir))
+        self.assertTrue(manifest["rerun"].endswith(f"--evidence-dir {os.path.realpath(out_dir)}"), manifest["rerun"])
+        code, again = harness.prove(proof, evidence_dir=out_dir)
+        self.assertNotEqual(again["evidence"], out["evidence"], "each run gets a fresh attempt folder")
 
     def test_passes_with_a_passing_check(self):
         r = self.run_proof(lambda ios: ios.check("something", True))
@@ -623,6 +706,24 @@ class DecisionLogTests(unittest.TestCase):
         finally:
             os.remove(log)
             os.rmdir(inside)
+
+
+class EvidenceDirTests(unittest.TestCase):
+    def test_attempts_go_in_the_given_directory_created_if_missing(self):
+        out = os.path.join(tempfile.mkdtemp(dir=TMP), "not", "yet")
+        path = harness.new_proof("given", harness.evidence_root(evidence_dir=out))
+        self.assertEqual(os.path.dirname(os.path.dirname(path)), os.path.realpath(out))
+
+    def test_directory_inside_the_checkout_is_refused(self):
+        for inside in (env.ROOT, os.path.join(env.ROOT, ".claude", "evidence")):
+            with self.assertRaises(env.Failed):
+                harness.evidence_root(evidence_dir=inside)
+
+    def test_decision_log_and_evidence_dir_together_are_refused(self):
+        log = os.path.join(tempfile.mkdtemp(dir=TMP), "decisions.tsv")
+        open(log, "w").close()
+        with self.assertRaises(env.Failed):
+            harness.evidence_root(log, TMP)
 
 
 class BuildCurrentTests(unittest.TestCase):

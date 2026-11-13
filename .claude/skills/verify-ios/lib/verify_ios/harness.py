@@ -13,6 +13,7 @@ from . import env
 from .device import Device, fixture, fixture_release
 from .env import APP, EVIDENCE, ROOT, SKILL, Busy, DeviceLock, Failed, SetupFailed, Unsupported, run
 from .telemetry import Pixels, WideEvents
+from .video import Video
 
 TEMPLATE = '''"""What this proves, in one sentence (the user-visible behavior, not the code path)."""
 from verify_ios import steps
@@ -439,19 +440,31 @@ def check_devices(devices):
 
 
 # ---------------------------------------------------------------- evidence folders
-def evidence_root(decision_log=None):
-    """Where attempt folders go: the default evidence folder, or `proofs/` next to an AStack show-me-your-work
-    decision log (decisions.tsv), so the log can link its proofs."""
-    if not decision_log:
+def evidence_root(decision_log=None, evidence_dir=None):
+    """Where attempt folders go: the default evidence folder; `proofs/` next to a decision log (a `decisions.tsv`
+    outside the checkout), so the log can link its proofs; or any caller-supplied directory outside the checkout."""
+    if decision_log and evidence_dir:
+        raise Failed("pass --decision-log or --evidence-dir, not both")
+    if evidence_dir:
+        root, what = os.path.realpath(evidence_dir), "--evidence-dir"
+    elif decision_log:
+        log = os.path.realpath(decision_log)
+        if not os.path.isfile(log) or not log.endswith(".tsv"):
+            raise Failed(f"--decision-log must be an existing decisions .tsv file: {decision_log}")
+        root, what = os.path.join(os.path.dirname(log), "proofs"), "the decision log"
+    else:
         return EVIDENCE
-    log = os.path.realpath(decision_log)
-    if not os.path.isfile(log) or not log.endswith(".tsv"):
-        raise Failed(f"--decision-log must be an existing decisions .tsv file: {decision_log}")
-    root = os.path.join(os.path.dirname(log), "proofs")
-    if os.path.realpath(root).startswith(os.path.realpath(ROOT) + os.sep):
+    if (root + os.sep).startswith(os.path.realpath(ROOT) + os.sep):
         # evidence there would be untracked files that could be committed, and would change the source fingerprint
-        raise Failed("keep the decision log outside this checkout: evidence written next to it would land in the repo")
+        raise Failed(f"keep {what} outside this checkout: evidence written there would land in the repo")
     return root
+
+
+def evidence_args(decision_log=None, evidence_dir=None):
+    """The rerun command's evidence option, so a rerun writes next to the first run."""
+    if decision_log:
+        return f" --decision-log {os.path.realpath(decision_log)}"
+    return f" --evidence-dir {os.path.realpath(evidence_dir)}" if evidence_dir else ""
 
 
 def _new_attempt(stem, root=EVIDENCE):
@@ -499,13 +512,13 @@ def _restore(handlers):
         signal.signal(s, h)
 
 
-def prove(path, devices=None, keep=False, decision_log=None):
+def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, video=True):
     """Run one proof file on each device, always writing evidence and cleaning up. Returns (exit code, summary)."""
     mod, problems = load(path)
     if problems:
         return 2, dict(proof=path, ok=False, preflight=problems)
     devices = check_devices(devices or getattr(mod, "DEVICES", list(env.PORT_OFFSET)))
-    attempt, proof_path = attempt_dir(path, evidence_root(decision_log))
+    attempt, proof_path = attempt_dir(path, evidence_root(decision_log, evidence_dir))
     live, flags = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {})
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     results, build = [], None
@@ -517,7 +530,7 @@ def prove(path, devices=None, keep=False, decision_log=None):
             results = [dict(device=d, status="error", reason=f"setup: {e}", checks=[], problems=[], evidence=None) for d in devices]
         else:
             for dev in devices:
-                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags))
+                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags, video=video))
                 if results[-1]["status"] == "cancelled":
                     break
     except _Stop as e:   # between devices, or before the first one started
@@ -525,7 +538,8 @@ def prove(path, devices=None, keep=False, decision_log=None):
     finally:
         _ignore_signals()   # writing the manifest and report must not be interrupted
     try:
-        manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log)
+        manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log,
+                             evidence_dir, video)
         with open(f"{attempt}/manifest.json", "w") as f:
             json.dump(manifest, f, indent=1)
         with open(f"{attempt}/report.md", "w") as f:
@@ -537,7 +551,7 @@ def prove(path, devices=None, keep=False, decision_log=None):
                       results=[{k: r[k] for k in ("device", "status", "reason", "problems") if r.get(k)} for r in results])
 
 
-def _run_device(mod, device, evidence, keep, flags, device_obj=None):
+def _run_device(mod, device, evidence, keep, flags, device_obj=None, video=True):
     lock = DeviceLock(device)
     try:
         lock.acquire(f"prove {os.path.basename(os.path.dirname(evidence))}")
@@ -545,11 +559,16 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
         return dict(device=device, status="busy", reason=str(e), checks=[], problems=[], evidence=None)
     os.makedirs(evidence, exist_ok=True)
     t0 = time.time()
-    status, reason, ios, phase = "error", None, None, "setup"
+    status, reason, ios, phase, recording, problems = "error", None, None, "setup", None, []
     try:
         try:
             ios = Ios(device, evidence, flags, device_obj)
             ios.launch()
+            if video:   # a recording that fails is an evidence problem, never a proof failure
+                try:
+                    recording = Video(ios.d.udid, f"{evidence}/{Video.FILE}").start()
+                except Exception as e:
+                    problems.append(f"could not start the screen recording: {type(e).__name__}: {e}")
             ios.capture = ios.d.capture_conditions()   # the defaults this run starts from; setters update it
             fixture(user=device)
             ios.pixels = Pixels(ios.d.udid, f"{evidence}/pixels.ndjson")
@@ -574,10 +593,12 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
                 f.write(traceback.format_exc())
     finally:
         handlers = _ignore_signals()   # a second Ctrl-C must not interrupt evidence collection or cleanup
-        problems = []
         try:
             if ios:
                 problems += _collect(ios)          # the final state first, before anything is undone
+            if recording:
+                problems += recording.stop()       # after the final capture, so the video ends on the final state
+            if ios:
                 problems += ios._run_cleanups()
         finally:
             try:
@@ -592,7 +613,8 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
                       checks=ios.checks if ios else [], unverified=ios.unverified_items if ios else [],
                       notes=ios.notes if ios else [], warnings=ios.warnings if ios else [], problems=problems,
                       liveHostsSeen=sorted(ios.hosts) if ios else [], launched=ios.launched if ios else None,
-                      capture=ios.capture if ios else {}, evidence=evidence)
+                      capture=ios.capture if ios else {}, evidence=evidence,
+                      video=Video.FILE if recording and recording.ok else None)
         with open(f"{evidence}/result.json", "w") as f:
             json.dump(result, f, indent=1, default=str)
     return result
@@ -677,7 +699,8 @@ def _skill_hash():
     return h.hexdigest()
 
 
-def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None):
+def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None, evidence_dir=None,
+              video=True):
     xcode = run(["xcodebuild", "-version"]).stdout.split()
     hosts = sorted({h for r in results for h in r.get("liveHostsSeen", [])})
     return dict(
@@ -693,43 +716,67 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
                     for r in results if r.get("device") in env.DEVICE_TYPES},
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",
-        rerun=f"{SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}" + (f" --decision-log {os.path.realpath(decision_log)}" if decision_log else ""),
+        rerun=f"{SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}"
+              + evidence_args(decision_log, evidence_dir) + ("" if video else " --no-video"),
         decisionLog=os.path.realpath(decision_log) if decision_log else None,
+        evidenceDir=os.path.realpath(evidence_dir) if evidence_dir else None,
+        video={r["device"]: f"{r['device']}/{r['video']}" if r.get("video") else None
+               for r in results if r.get("device") != "-"} if video else "off (--no-video)",
         started=started, finished=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         results=[{k: r.get(k) for k in ("device", "status", "reason", "secs", "problems")} for r in results])
 
 
 def _report(mod, m, results):
+    """One scenario per proof: what it verifies, evidence, outcome, details, then what it left unverified."""
+    doc = (mod.__doc__ or "").strip()
     undeclared = [h for h in m["liveHostsSeen"] if not any(s in h for s in m["live"])]
     built = m.get("appBuild") or {}
-    lines = [f"# Proof: {(mod.__doc__ or '').strip().splitlines()[0]}", "",
-             f"- Revision: `{m['revision'][:12]}` on `{m['branch']}`{' (uncommitted changes)' if m['dirty'] else ''}",
-             f"- App build: `{(built.get('sha256') or '?')[:16]}…`, built from this source (checked before running); "
-             f"running binary per device: " + ", ".join(f"{d} `{(s or '?')[:16]}…`" for d, s in m["launched"].items()),
-             f"- Evidence: {m['evidenceKind']}" + (f". **Undeclared live hosts seen: {', '.join(undeclared)}**" if undeclared else ""),
-             f"- Pinned flags: {', '.join(f'{k}={v}' for k, v in m['flags'].items()) or '(none)'}",
-             f"- Rerun: `{m['rerun']}`", ""]
+    runs = [r for r in results if r["device"] != "-"]
+    lines = [f"# Proof: {doc.splitlines()[0]}", "", "## Verified", "", doc, "", "## Evidence", "",
+             "Paths are relative to this report.", "",
+             "| Device | Video | Final screen | Screenshots (key frames) | Telemetry | Transcript |", "|---|---|---|---|---|---|"]
+    for r in runs:
+        lines.append(f"| {r['device']} | " + " | ".join(_evidence_links(r)) + " |")
+    lines += ["", "## Outcome", ""]
     for r in results:
         label = "INCONCLUSIVE" if r["status"] == "error" and (r.get("reason") or "").startswith("setup") else r["status"].upper()
-        lines.append(f"## {r['device']}: {label}" + (f" ({r['reason']})" if r.get("reason") else ""))
-        if r.get("capture"):
-            c = r["capture"]
-            lines += ["", "Capture conditions: " + ", ".join(f"{k} {v}" for k, v in c.items() if k != "window")]
+        lines.append(f"### {r['device']}: {label}" + (f" ({r['reason']})" if r.get("reason") else ""))
         passed = [c["check"] for c in r.get("checks", []) if c["ok"]]
         failed = [c["check"] for c in r.get("checks", []) if not c["ok"]]
         lines += ["", "Passed:"] + [f"- {c}" for c in passed or ["(none)"]]
         lines += ["", "Failed:"] + [f"- {c}" for c in failed or (["(the run stopped: see reason)"] if r["status"] != "pass" else ["(none)"])]
-        lines += ["", "Unverified:"] + ([f"- {u['what']}: {u['why']}" for u in r.get("unverified", [])] or ["- (none)"])
         if r.get("problems"):
             lines += ["", "**Problems (cleanup or evidence):**"] + [f"- {p}" for p in r["problems"]]
         if r.get("warnings"):
             lines += ["", "Warnings (actions that changed nothing; check the proof confirmed their effect):"] + [f"- {w}" for w in r["warnings"]]
         if r.get("notes"):
             lines += ["", "Notes:"] + [f"- {n}" for n in r["notes"]]
-        if r.get("evidence"):
-            lines += ["", f"Evidence: `{r['evidence']}` (transcript.jsonl, screenshots, final-snapshot.txt, pixels.json, wide-events.json)"]
         lines.append("")
-    return "\n".join(lines)
+    lines += ["## Details", "",
+              f"- Revision: `{m['revision'][:12]}` on `{m['branch']}`{' (uncommitted changes)' if m['dirty'] else ' (clean)'}",
+              f"- App build: `{(built.get('sha256') or '?')[:16]}…`, built from this source (checked before running); "
+              f"running binary per device: " + ", ".join(f"{d} `{(s or '?')[:16]}…`" for d, s in m["launched"].items()),
+              "- Devices: " + ", ".join(f"{d} ({s['type']}, {s['runtime'].rsplit('.', 1)[-1]})" for d, s in m["simulators"].items()),
+              f"- Evidence: {m['evidenceKind']}" + (f". **Undeclared live hosts seen: {', '.join(undeclared)}**" if undeclared else ""),
+              f"- Pinned flags: {', '.join(f'{k}={v}' for k, v in m['flags'].items()) or '(none)'}"]
+    lines += [f"- Capture conditions, {r['device']}: " + ", ".join(f"{k} {v}" for k, v in r["capture"].items() if k != "window")
+              for r in runs if r.get("capture")]
+    lines += [f"- Rerun: `{m['rerun']}`", "", "## Unverified", ""]
+    lines += [f"- {r['device']}: {u['what']}: {u['why']}" for r in runs for u in r.get("unverified", [])] or ["- (none)"]
+    return "\n".join(lines) + "\n"
+
+
+def _evidence_links(r):
+    """Markdown links, relative to the attempt folder, to one device's evidence; "-" where there is none."""
+    ev, dev = r.get("evidence"), r["device"]
+    if not ev or not os.path.isdir(ev):
+        return ["-"] * 5
+    def link(name, label=None):
+        return f"[{label or name}]({dev}/{name})" if os.path.isfile(f"{ev}/{name}") else "-"
+    shots = sorted(f for f in os.listdir(ev) if f.endswith(".png") and f != "final.png")
+    telemetry = [x for x in (link("pixels.json"), link("wide-events.json")) if x != "-"]
+    return [link(Video.FILE, "recording.mp4") if r.get("video") else "-", link("final.png"),
+            ", ".join(link(f) for f in shots) or "-", ", ".join(telemetry) or "-", link("transcript.jsonl")]
 
 
 def check_only(paths):
@@ -741,9 +788,9 @@ def check_only(paths):
     return out
 
 
-def run_proofs(paths, devices=None, keep=False, decision_log=None):
+def run_proofs(paths, devices=None, keep=False, decision_log=None, evidence_dir=None, video=True):
     """Preflight every file first: a broken proof fails before any device is touched."""
-    evidence_root(decision_log)   # a bad --decision-log fails before anything runs
+    evidence_root(decision_log, evidence_dir)   # a bad --decision-log or --evidence-dir fails before anything runs
     if devices:
         check_devices(devices)
     checked = check_only(paths)
@@ -751,7 +798,7 @@ def run_proofs(paths, devices=None, keep=False, decision_log=None):
         return 2, dict(ok=False, preflight=checked)
     codes, summaries = [], []
     for p in paths:
-        code, s = prove(p, devices, keep, decision_log)
+        code, s = prove(p, devices, keep, decision_log, evidence_dir, video)
         codes.append(code)
         summaries.append(s)
         if code == 130:

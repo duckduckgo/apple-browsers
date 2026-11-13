@@ -40,6 +40,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
         static let trailingSpace: CGFloat = 8
         static let iconImageViewLeadingSpace: CGFloat = 13
+        static let minWidthForTrailingBox: CGFloat = 272
     }
 
     var iconImageView: NSImageView!
@@ -69,6 +70,8 @@ final class SuggestionTableCellView: NSTableCellView {
     var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
     private(set) var cellStyle: CellStyle = .default
+    /// Applied in `layout()`: a freshly created cell has a zero frame until the table sizes it.
+    private var wantsTrailingBox = false
 
     static let switchToTabAttributedString: NSAttributedString = {
         let text = UserText.switchToTab
@@ -328,15 +331,15 @@ final class SuggestionTableCellView: NSTableCellView {
             suffixTextField.stringValue = ""
         }
         setRemoveButtonHidden(true)
-        if case .openTab = suggestionViewModel.suggestion,
-           frame.size.width > 272 {
-            switchToTabBox.isHidden = false
+        if case .openTab = suggestionViewModel.suggestion {
+            wantsTrailingBox = true
             switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
             switchToTabArrowView.isHidden = false
         } else {
-            switchToTabBox.isHidden = true
+            wantsTrailingBox = false
         }
 
+        needsLayout = true
         updateTextField()
     }
 
@@ -361,23 +364,24 @@ final class SuggestionTableCellView: NSTableCellView {
         switch style {
         case .search:
             suffixTextField.stringValue = " – DuckDuckGo"
-            switchToTabBox.isHidden = frame.size.width <= 272
+            wantsTrailingBox = true
             switchToTabLabel.attributedStringValue = Self.searchTheWebAttributedString
             switchToTabArrowView.isHidden = false
         case .aiChat:
             suffixTextField.stringValue = " – Duck.ai"
-            switchToTabBox.isHidden = frame.size.width <= 272
+            wantsTrailingBox = true
             switchToTabLabel.attributedStringValue = Self.chatWithAIAttributedString
             switchToTabArrowView.isHidden = false
             setupKeyboardShortcutView()
         case .visit(let host):
             suffixTextField.stringValue = " – \(UserText.addressBarVisitSuffix) \(host)"
-            switchToTabBox.isHidden = true
+            wantsTrailingBox = false
         case .default:
             suffixTextField.stringValue = ""
-            switchToTabBox.isHidden = true
+            wantsTrailingBox = false
         }
 
+        needsLayout = true
         setRemoveButtonHidden(true)
         updateKeyboardShortcutVisibility()
         updateTextField()
@@ -455,6 +459,7 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     override func layout() {
+        switchToTabBox.isHidden = !wantsTrailingBox || bounds.width <= Constants.minWidthForTrailingBox
         if switchToTabBox.isHidden {
             switchToTabBoxLeadingConstraint.isActive = false
             switchToTabBoxTrailingConstraint.isActive = false

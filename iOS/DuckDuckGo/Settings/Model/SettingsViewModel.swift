@@ -204,7 +204,7 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var localModelAccessSettingsViewModel: LocalModelAccessSettingsViewModel? = {
         guard let service = userScriptsDependencies.aiChatLocalModel?.service else { return nil }
-        return LocalModelAccessSettingsViewModel(service: service, openURL: { [urlOpener] in urlOpener.open($0) })
+        return LocalModelAccessSettingsViewModel(service: service)
     }()
 
     // View State

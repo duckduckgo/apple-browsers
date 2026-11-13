@@ -27,14 +27,9 @@ import UIKit
 @MainActor
 final class LocalModelAccessPrompt: LocalModelAccessAsking {
 
-    private let isPad: () -> Bool
     private weak var controller: UIViewController?
     private var answer: AIChatLocalModelAccessReply.Result?
     private var waiting: [CheckedContinuation<AIChatLocalModelAccessReply.Result, Never>] = []
-
-    init(isPad: @escaping () -> Bool = { UIDevice.current.userInterfaceIdiom == .pad }) {
-        self.isPad = isPad
-    }
 
     func ask(in window: UIWindow?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
         await withCheckedContinuation { continuation in
@@ -55,7 +50,6 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
         }
 
         let card = LocalModelAccessPromptView(modelName: modelName,
-                                              message: isPad() ? UserText.localModelAccessPromptMessageIPad : UserText.localModelAccessPromptMessageIPhone,
                                               onAnswer: { [weak self] answer in self?.close(with: answer) })
         let controller = LocalModelAccessPromptHostingController(rootView: card) { [weak self] in
             guard let self else { return }
@@ -116,7 +110,6 @@ final class LocalModelAccessPromptHostingController: UIHostingController<LocalMo
 struct LocalModelAccessPromptView: View {
 
     let modelName: String
-    let message: String
     let onAnswer: (AIChatLocalModelAccessReply.Result) -> Void
 
     var body: some View {
@@ -147,25 +140,31 @@ struct LocalModelAccessPromptView: View {
     }
 
     private var card: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            title
-
-            Text(message)
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+        VStack(alignment: .leading, spacing: 20) {
+            AppleIntelligenceGlyph(size: 28)
+                .frame(width: 48, height: 48)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color(designSystemColor: .controlsFillPrimary)))
+                .accessibilityHidden(true)
 
-            HStack(spacing: 12) {
-                Button(UserText.localModelAccessNoThanks) { onAnswer(.declined) }
-                    .buttonStyle(SecondaryFillButtonStyle())
-                    .accessibilityIdentifier("LocalModelAccessPrompt.noThanks")
+            VStack(alignment: .leading, spacing: 8) {
+                Text(UserText.localModelAccessPromptTitle)
+                    .daxHeadline()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                Text(String(format: UserText.localModelAccessPromptMessage, modelName))
+                    .daxBodyRegular()
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+
+            VStack(spacing: 12) {
                 Button(UserText.localModelAccessTurnOn) { onAnswer(.allowed) }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("LocalModelAccessPrompt.turnOn")
+                Button(UserText.localModelAccessNoThanks) { onAnswer(.declined) }
+                    .buttonStyle(SecondaryFillButtonStyle())
+                    .accessibilityIdentifier("LocalModelAccessPrompt.noThanks")
             }
         }
         .padding(24)
@@ -173,33 +172,5 @@ struct LocalModelAccessPromptView: View {
             .fill(Color(designSystemColor: .backgroundSheets)))
         // Taps inside the card must not count as a tap outside.
         .onTapGesture { }
-    }
-
-    /// One sentence for translators, laid out as in the design: the model's chip sits inside the sentence.
-    private var title: some View {
-        let parts = UserText.localModelAccessPromptTitle.components(separatedBy: "%@")
-        let beforeModel = parts.first?.trimmingCharacters(in: .whitespaces) ?? ""
-        let afterModel = parts.dropFirst().joined().trimmingCharacters(in: .whitespaces)
-        return VStack(alignment: .leading, spacing: 6) {
-            if !beforeModel.isEmpty {
-                Text(beforeModel)
-            }
-            HStack(alignment: .center, spacing: 8) {
-                HStack(spacing: 6) {
-                    AppleIntelligenceGlyph(size: 20)
-                    Text(modelName)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .overlay(Capsule(style: .continuous).stroke(Color(designSystemColor: .lines), lineWidth: 1))
-                if !afterModel.isEmpty {
-                    Text(afterModel)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .daxHeadline()
-        .foregroundColor(Color(designSystemColor: .textPrimary))
-        .accessibilityElement(children: .combine)
     }
 }

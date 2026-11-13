@@ -32,7 +32,6 @@ final class LocalModelAccessSettingsViewModelTests {
     private let flagUpdates = PassthroughSubject<Void, Never>()
     private let notificationCenter = NotificationCenter()
     private var isFlagOn = true
-    private var openedURLs: [URL] = []
 
     private lazy var service = AIChatLocalModelService(isFeatureFlagOn: { [unowned self] in self.isFlagOn },
                                                        featureFlagUpdates: flagUpdates.eraseToAnyPublisher(),
@@ -41,7 +40,7 @@ final class LocalModelAccessSettingsViewModelTests {
                                                        notificationCenter: notificationCenter)
 
     private func makeViewModel() -> LocalModelAccessSettingsViewModel {
-        LocalModelAccessSettingsViewModel(service: service, openURL: { [unowned self] in self.openedURLs.append($0) })
+        LocalModelAccessSettingsViewModel(service: service)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -129,14 +128,6 @@ final class LocalModelAccessSettingsViewModelTests {
 
         #expect(storage.pageSummariesModel == .duckAI)
         #expect(!viewModel.isConfirmingTurnOn)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Learn More opens the Duck.ai help pages", .timeLimit(.minutes(1)))
-    func learnMoreOpensHelpPages() {
-        makeViewModel().openLearnMore()
-
-        #expect(openedURLs == [URL.aiChatHelpPages])
     }
 
     @available(iOS 16, macOS 13, *)

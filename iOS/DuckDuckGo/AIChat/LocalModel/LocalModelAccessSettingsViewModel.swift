@@ -19,10 +19,9 @@
 
 import AIChat
 import Combine
-import Core
 import SwiftUI
 
-/// Settings → AI Features → Local Model Access.
+/// Settings → AI Features → On-Device Model.
 @MainActor
 final class LocalModelAccessSettingsViewModel: ObservableObject {
 
@@ -34,12 +33,10 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
     let modelName: String
 
     private let service: AIChatLocalModelService
-    private let openURL: (URL) -> Void
     private var cancellable: AnyCancellable?
 
-    init(service: AIChatLocalModelService, openURL: @escaping (URL) -> Void) {
+    init(service: AIChatLocalModelService) {
         self.service = service
-        self.openURL = openURL
         self.modelName = service.model.name
         update()
         cancellable = service.changesPublisher
@@ -78,10 +75,6 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
 
     func cancelTurnOn() {
         isConfirmingTurnOn = false
-    }
-
-    func openLearnMore() {
-        openURL(URL.aiChatHelpPages)
     }
 
     private func update() {

@@ -21,7 +21,7 @@ import AIChat
 import DesignResourcesKit
 import SwiftUI
 
-/// Settings → AI Features → Local Model Access: shown only while the model can be used on this device.
+/// Settings → AI Features → On-Device Model: shown only while the model can be used on this device.
 struct LocalModelAccessSettingsSection: View {
 
     @ObservedObject var model: LocalModelAccessSettingsViewModel
@@ -34,47 +34,30 @@ struct LocalModelAccessSettingsSection: View {
             } header: {
                 Text(UserText.localModelAccessSettingsTitle)
             } footer: {
-                Text(footer)
-                    .environment(\.openURL, OpenURLAction { _ in
-                        model.openLearnMore()
-                        return .handled
-                    })
+                Text(isPad ? UserText.localModelAccessSettingsFooterIPad : UserText.localModelAccessSettingsFooterIPhone)
             }
             .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 
     private var row: some View {
-        HStack(spacing: 12) {
-            AppleIntelligenceGlyph(size: 24)
+        Toggle(isOn: model.isOnBinding) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(model.modelName)
+                Text(UserText.localModelAccessSystemModelTitle)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(UserText.localModelAccessAppleIntelligenceCaption)
+                Text(String(format: UserText.localModelAccessSystemModelCaption, model.modelName))
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
-            Spacer()
-            Toggle(model.modelName, isOn: model.isOnBinding)
-                .labelsHidden()
-                .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
-                .accessibilityIdentifier("Settings.AIFeatures.LocalModelAccess.AppleIntelligenceToggle")
         }
+        .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
+        .accessibilityIdentifier("Settings.AIFeatures.LocalModelAccess.AppleIntelligenceToggle")
         .alert(UserText.localModelAccessTurnOnConfirmationTitle, isPresented: $model.isConfirmingTurnOn) {
             Button(UserText.actionCancel, role: .cancel) { model.cancelTurnOn() }
             Button(UserText.localModelAccessTurnOn) { model.confirmTurnOn() }
         } message: {
             Text(isPad ? UserText.localModelAccessTurnOnConfirmationMessageIPad : UserText.localModelAccessTurnOnConfirmationMessageIPhone)
         }
-    }
-
-    private var footer: AttributedString {
-        var footer = AttributedString(UserText.localModelAccessSettingsFooter + " ")
-        var link = AttributedString(UserText.aiFeaturesLearnMore)
-        link.foregroundColor = Color(designSystemColor: .accentPrimary)
-        link.link = URL.aiChatHelpPages
-        footer.append(link)
-        return footer
     }
 }

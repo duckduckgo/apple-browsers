@@ -2005,14 +2005,11 @@
 /* Button that declines using the on-device model. Duck.ai uses its cloud model instead. */
 "duckai.local-model-access.no-thanks" = "No Thanks";
 
-/* Body of the pop-up asking whether Duck.ai may use Apple Intelligence, on iPad. */
-"duckai.local-model-access.prompt.message.ipad" = "Apple Intelligence will read this page's title, address, and text on your iPad. Nothing is sent to a cloud model, and it uses less of your plan.";
+/* Body of the pop-up asking whether Duck.ai may use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.local-model-access.prompt.message" = "Uses %@ for certain tasks like page content summaries. Chat never leaves your device and saves on your Duck.ai plan usage.";
 
-/* Body of the pop-up asking whether Duck.ai may use Apple Intelligence, on iPhone. */
-"duckai.local-model-access.prompt.message.iphone" = "Apple Intelligence will read this page's title, address, and text on your iPhone. Nothing is sent to a cloud model, and it uses less of your plan.";
-
-/* Title of the pop-up asking whether Duck.ai may use an on-device model. %@ is the model's name, for example Apple Intelligence, shown as a chip. */
-"duckai.local-model-access.prompt.title" = "Duck.ai wants to use %@ to summarize this page";
+/* Title of the pop-up asking whether Duck.ai may use the on-device model. */
+"duckai.local-model-access.prompt.title" = "Duck.ai wants to use On-Device Model for added privacy";
 
 /* Button that lets Duck.ai use the on-device model. */
 "duckai.local-model-access.turn-on" = "Turn On";
@@ -2083,14 +2080,20 @@
 /* Used in the link to learn more about the AI features. */
 "duckai.settings.learn.more" = "Learn More";
 
-/* Caption under Apple Intelligence in the Local Model Access settings. */
-"duckai.settings.local-model-access.apple-intelligence.caption" = "Used for page summaries";
+/* Footer of the On-Device Model section in AI Features settings, on iPad. */
+"duckai.settings.local-model-access.footer.ipad" = "Run Duck.ai tasks on your iPad so page content never leaves your device and save on your plan usage.";
 
-/* Footer of the Local Model Access section in AI Features settings, followed by a Learn More link. */
-"duckai.settings.local-model-access.caption" = "Local models add additional privacy and reduce Duck.ai plan usage.";
+/* Footer of the On-Device Model section in AI Features settings, on iPhone. */
+"duckai.settings.local-model-access.footer.iphone" = "Run Duck.ai tasks on your iPhone so page content never leaves your device and save on your plan usage.";
+
+/* Caption under System Model in AI Features settings. %@ is the model's name, for example Apple Intelligence. */
+"duckai.settings.local-model-access.system-model.caption" = "Uses %@ for tasks like summarize page.";
+
+/* Name of the setting that lets Duck.ai use the model built into the device, such as Apple Intelligence. */
+"duckai.settings.local-model-access.system-model.title" = "System Model";
 
 /* Section title in AI Features settings for on-device models Duck.ai may use. */
-"duckai.settings.local-model-access.title" = "Local Model Access";
+"duckai.settings.local-model-access.title" = "On-Device Model";
 
 /* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPad. */
 "duckai.settings.local-model-access.turn-on-confirmation.message.ipad" = "Duck.ai will use Apple Intelligence on this iPad for page summaries. Pages are processed on your iPad, nothing is sent to a cloud model, and it uses less of your Duck.ai plan.";

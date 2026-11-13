@@ -2643,6 +2643,8 @@ class MainViewController: UIViewController {
     func releaseHeldNewTabPage() {
         guard isAfterIdlePresentationPending, let page = newTabPageViewController else { return }
         isAfterIdlePresentationPending = false
+        tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
+        clearEscapeHatch()
         newTabPagePresentation.schedule(for: page, shown: { [weak self] in
             guard let self else { return }
             fireNewTabPixels()
@@ -4573,6 +4575,15 @@ class MainViewController: UIViewController {
             }
             completion()
         }
+    }
+
+    /// Opens the after-idle New Tab Page. With the keyboard on New Tab Page, the launch handling raises it.
+    func openNewTabPageAfterIdleReturn() {
+        currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
+        newTab(reuseExisting: true,
+               allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+               openedAfterIdle: true,
+               entrance: .fromOutsideTheApp)
     }
 
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.

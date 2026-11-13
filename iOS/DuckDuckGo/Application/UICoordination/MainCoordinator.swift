@@ -106,7 +106,6 @@ final class MainCoordinator {
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
-    private let idleReturnHiddenScreens = IdleReturnHiddenScreens()
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
@@ -375,33 +374,22 @@ final class MainCoordinator {
         controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
-    /// Before a warm return's first frame: puts up the after-idle New Tab Page, hiding rather than closing what's over it.
+    /// Whether a warm return puts up the after-idle New Tab Page before its first frame, given the UI it's returning to.
+    func drawsNewTabPageForIdleReturnOnForeground(outcome: IdleReturnOutcome,
+                                                  isFeatureOn: Bool,
+                                                  hasLaunchAction: Bool,
+                                                  isTabClearingEnabled: Bool) -> Bool {
+        outcome.drawsNewTabPageOnForeground(isFeatureOn: isFeatureOn,
+                                            hasLaunchAction: hasLaunchAction,
+                                            isClearingTabs: isTabClearingEnabled || controller.autoClearInProgress,
+                                            isVoiceSessionActive: voiceSessionStateManager.isVoiceSessionActive,
+                                            hasPageToReplace: tabManager.currentTabsModel.currentTab?.link != nil,
+                                            isScreenPresented: controller.presentedViewController != nil)
+    }
+
+    /// Before a warm return's first frame, so the previous page isn't drawn again first.
     func drawNewTabPageForIdleReturnOnForeground() {
-        hideScreensForIdleReturn()
-        controller.currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
-        controller.newTab(reuseExisting: true,
-                          allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-                          openedAfterIdle: true,
-                          entrance: .fromOutsideTheApp)
-    }
-
-    func hideScreensForIdleReturn() {
-        idleReturnHiddenScreens.hide(controller.presentedViewController)
-    }
-
-    func restoreScreensHiddenForIdleReturn() {
-        idleReturnHiddenScreens.restore()
-    }
-
-    /// The return is certain: closes what the draw hid.
-    func closeScreensHiddenForIdleReturn() {
-        controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: idleReturnHiddenScreens.takeForClosing()) { [weak self] in
-            self?.idleReturnHiddenScreens.didClose()
-        }
-    }
-
-    var isVoiceSessionActive: Bool {
-        voiceSessionStateManager.isVoiceSessionActive
+        controller.openNewTabPageAfterIdleReturn()
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -1017,10 +1005,9 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
-        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true, entrance: .fromOutsideTheApp)
+            self.controller.openNewTabPageAfterIdleReturn()
             completion(.openedNewTab)
         }
     }
@@ -1029,10 +1016,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
         controller.recordPendingNewTabPagePresentationIfVisible()
-        // The keyboard needs nothing presented, so it waits for screens a warm-return draw is still closing.
-        idleReturnHiddenScreens.runWhenClosed {
-            completion(.openedNewTab)
-        }
+        completion(.openedNewTab)
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {

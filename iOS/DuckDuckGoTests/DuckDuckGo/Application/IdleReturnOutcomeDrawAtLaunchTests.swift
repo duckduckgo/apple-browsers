@@ -41,16 +41,14 @@ struct IdleReturnOutcomeDrawAtLaunchTests {
                                    hasLaunchAction: Bool = false,
                                    isClearingTabs: Bool = false,
                                    isVoiceSessionActive: Bool = false,
-                                   isAlertPresented: Bool = false,
-                                   isTabSwitcherPresented: Bool = false,
+                                   isScreenPresented: Bool = false,
                                    hasPageToReplace: Bool = true) -> Bool {
         (outcome ?? ntp).drawsNewTabPageOnForeground(isFeatureOn: isFeatureOn,
                                                      hasLaunchAction: hasLaunchAction,
                                                      isClearingTabs: isClearingTabs,
                                                      isVoiceSessionActive: isVoiceSessionActive,
                                                      hasPageToReplace: hasPageToReplace,
-                                                     isAlertPresented: isAlertPresented,
-                                                     isTabSwitcherPresented: isTabSwitcherPresented)
+                                                     isScreenPresented: isScreenPresented)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -123,15 +121,9 @@ struct IdleReturnOutcomeDrawAtLaunchTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("With an alert open the New Tab Page is not drawn on foreground", .timeLimit(.minutes(1)))
-    func alertIsNotDrawnOnForeground() {
-        #expect(!drawsOnForeground(isAlertPresented: true))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("With the tab switcher open the New Tab Page is not drawn on foreground", .timeLimit(.minutes(1)))
-    func tabSwitcherIsNotDrawnOnForeground() {
-        #expect(!drawsOnForeground(isTabSwitcherPresented: true))
+    @Test("With a screen presented the New Tab Page is not drawn on foreground", .timeLimit(.minutes(1)))
+    func presentedScreenIsNotDrawnOnForeground() {
+        #expect(!drawsOnForeground(isScreenPresented: true))
     }
 
     @available(iOS 16, macOS 13, *)

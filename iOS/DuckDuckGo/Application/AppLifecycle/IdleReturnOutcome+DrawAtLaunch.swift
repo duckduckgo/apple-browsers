@@ -36,15 +36,13 @@ extension IdleReturnOutcome {
     /// - No launch action is waiting. A link arrives before the draw, so it opens as it would without it.
     /// - No tab clearing is configured or running. It replaces the tabs, so there's nothing to land on yet.
     /// - No Duck.ai voice session is active. The return must not leave it.
-    /// - No alert is open, such as a site’s sign-in prompt. Closing it would leave the site's request unanswered.
-    /// - The tab switcher isn't open. Closing it selects the tab it had selected, replacing the drawn page.
+    /// - Nothing is presented. A screen can't be closed before the app is active, and hiding it doesn't undo
+    ///   what its presentation did to the page behind it, so those returns keep closing it first.
     /// - There's a page to replace. If the current tab is already a New Tab Page, it's kept.
     func drawsNewTabPageOnForeground(isFeatureOn: Bool, hasLaunchAction: Bool, isClearingTabs: Bool,
-                                     isVoiceSessionActive: Bool, hasPageToReplace: Bool, isAlertPresented: Bool,
-                                     isTabSwitcherPresented: Bool) -> Bool {
+                                     isVoiceSessionActive: Bool, hasPageToReplace: Bool, isScreenPresented: Bool) -> Bool {
         guard isFeatureOn, case .afterIdle(.ntp, _) = self else { return false }
-        return !hasLaunchAction && !isClearingTabs && !isVoiceSessionActive && !isAlertPresented
-            && !isTabSwitcherPresented && hasPageToReplace
+        return !hasLaunchAction && !isClearingTabs && !isVoiceSessionActive && !isScreenPresented && hasPageToReplace
     }
 
 }

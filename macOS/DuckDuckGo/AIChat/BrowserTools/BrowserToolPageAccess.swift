@@ -63,6 +63,42 @@ enum BrowserToolTargetTab {
         return .resolved(tabID: tabID, collection: collection)
     }
 
+    static func isListed(_ tab: AnyTab) -> Bool {
+        // Web pages only: a file URL names a local path that can include the user's name.
+        guard case .url(let url, _, _) = tab.content, url.isHttpOrHttps else { return false }
+        return !url.isDuckAIURL
+    }
+
+    static func actionableTab(withID tabID: TabIdentifier, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
+        let tab: AnyTab? = switch collection.indexInAllTabs(where: { $0.uuid == tabID }) {
+        case .pinned(let index): collection.pinnedTabsCollection?.tabs[safe: index]
+        case .unpinned(let index): collection.tabCollection.tabs[safe: index]
+        case .none: nil
+        }
+        guard let tab, tab.uuid == ownerTabID || isListed(tab) else { return nil }
+        return tab
+    }
+
+    static func actionableTabs(withIDs tabIDs: [TabIdentifier]?, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> [AnyTab]? {
+        var unique: [TabIdentifier] = []
+        for tabID in tabIDs ?? [ownerTabID] where !unique.contains(tabID) { unique.append(tabID) }
+        let tabs = unique.compactMap { actionableTab(withID: $0, ownerTabID: ownerTabID, in: collection) }
+        return tabs.count == unique.count ? tabs : nil
+    }
+
+    static func tabIDs(from arguments: JSONValue?, maxCount: Int = 50) -> TabIDsArgument {
+        guard let value = arguments?["tabIds"], value != .null else { return .absent }
+        guard let values = value.arrayValue, (1...maxCount).contains(values.count) else { return .invalid }
+        let tabIDs = values.compactMap { $0.stringValue?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return tabIDs.count == values.count ? .ids(tabIDs) : .invalid
+    }
+
+    enum TabIDsArgument: Equatable {
+        case absent
+        case ids([TabIdentifier])
+        case invalid
+    }
+
     /// The loaded tab, or nil when it is not a page the tab picker would offer.
     static func attachableTab(withID tabID: TabIdentifier, in collection: TabCollectionViewModel) -> Tab? {
         guard let index = collection.indexInAllTabs(where: { $0.uuid == tabID }),
@@ -97,6 +133,23 @@ enum BrowserToolOutputLimits {
 
     static func fits(_ value: String, within limit: Int) -> Bool {
         value.unicodeScalars.count <= limit
+    }
+
+    // Userinfo, query and fragment can hold credentials or tokens.
+    static func redactedURL(_ url: String) -> String {
+        var redacted = String(url[..<(url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex)])
+        if let scheme = redacted.range(of: "://") {
+            let authorityEnd = redacted[scheme.upperBound...].firstIndex(of: "/") ?? redacted.endIndex
+            if let at = redacted[scheme.upperBound..<authorityEnd].lastIndex(of: "@") {
+                redacted.removeSubrange(scheme.upperBound...at)
+            }
+        }
+        return clip(redacted, to: self.url)
+    }
+
+    static func redactedURL(_ value: JSONValue?) -> JSONValue? {
+        guard case .string(let text)? = value else { return value }
+        return .string(redactedURL(text))
     }
 }
 

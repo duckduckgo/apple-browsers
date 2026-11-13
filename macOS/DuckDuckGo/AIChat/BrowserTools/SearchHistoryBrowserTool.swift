@@ -125,8 +125,9 @@ final class SearchHistoryBrowserTool: BrowserTool {
             }
             .filter { _, entry in
                 guard let term, !term.isEmpty else { return true }
-                return (entry.title ?? "").range(of: term, options: .caseInsensitive) != nil
-                    || entry.url.absoluteString.range(of: term, options: .caseInsensitive) != nil
+                return BrowserToolOutputLimits.clip(displayTitle(title: entry.title, url: entry.url), to: BrowserToolOutputLimits.title)
+                    .range(of: term, options: .caseInsensitive) != nil
+                    || BrowserToolOutputLimits.redactedURL(entry.url.absoluteString).range(of: term, options: .caseInsensitive) != nil
             }
             .sorted { $0.0.date > $1.0.date }
             .prefix(limit)
@@ -191,7 +192,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
         return .success(["results": .array(results.map { result in
             var fields = result.objectValue ?? [:]
             fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
-            fields["url"] = BrowserToolOutputLimits.clip(fields["url"], to: BrowserToolOutputLimits.url)
+            fields["url"] = BrowserToolOutputLimits.redactedURL(fields["url"])
             return .object(fields)
         })])
     }

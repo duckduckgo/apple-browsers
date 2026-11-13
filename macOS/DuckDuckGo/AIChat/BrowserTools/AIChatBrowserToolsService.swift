@@ -47,11 +47,13 @@ final class AIChatBrowserToolsService {
     init(featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
          historyCoordinator: HistoryCoordinating,
+         bookmarkManager: BookmarkManager,
          permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
          tools: [any BrowserTool]? = nil) {
         let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
         let catalog = BrowserToolCatalog(tools: tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
-                                                                           historyCoordinator: historyCoordinator),
+                                                                           historyCoordinator: historyCoordinator,
+                                                                           bookmarkManager: bookmarkManager),
                                          configuration: configuration)
         let permissions = BrowserToolPermissionStore(storage: permissionStorage)
         let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
@@ -72,7 +74,8 @@ final class AIChatBrowserToolsService {
 
     /// Registration order determines the order of the advertised capabilities.
     private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol,
-                                     historyCoordinator: HistoryCoordinating) -> [any BrowserTool] {
+                                     historyCoordinator: HistoryCoordinating,
+                                     bookmarkManager: BookmarkManager) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
         return [
             ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
@@ -80,7 +83,13 @@ final class AIChatBrowserToolsService {
             SearchHistoryBrowserTool(historyCoordinator: historyCoordinator),
             ReadTabContentBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
-            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter())
+            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
+            PinTabBrowserTool(windowControllersManager: windowControllersManager),
+            OpenTabBrowserTool(windowControllersManager: windowControllersManager),
+            CloseTabsBrowserTool(windowControllersManager: windowControllersManager),
+            BookmarkTabBrowserTool(windowControllersManager: windowControllersManager, bookmarkManager: bookmarkManager),
+            SearchDownloadsBrowserTool(),
+            SearchBookmarksBrowserTool(bookmarkManager: bookmarkManager)
         ]
     }
 
@@ -186,6 +195,12 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .readTabContent: .aiChatBrowserToolReadTabContent
         case .findInPage: .aiChatBrowserToolFindInPage
         case .highlightInPage: .aiChatBrowserToolHighlightInPage
+        case .pinTab: .aiChatBrowserToolPinTab
+        case .openTab: .aiChatBrowserToolOpenTab
+        case .closeTabs: .aiChatBrowserToolCloseTabs
+        case .bookmarkTab: .aiChatBrowserToolBookmarkTab
+        case .searchDownloads: .aiChatBrowserToolSearchDownloads
+        case .searchBookmarks: .aiChatBrowserToolSearchBookmarks
         }
     }
 }

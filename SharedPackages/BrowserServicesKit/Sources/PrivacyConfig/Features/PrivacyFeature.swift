@@ -642,6 +642,30 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Paints previously-found matches on a page.
     case highlightInPage
+
+    /// Pins open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case pinTab
+
+    /// Opens a URL in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case openTab
+
+    /// Closes open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case closeTabs
+
+    /// Bookmarks an open tab, optionally into a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case bookmarkTab
+
+    /// Searches completed downloads by file name and source URL.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchDownloads
+
+    /// Searches bookmarks by title, URL and folder, optionally within a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchBookmarks
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

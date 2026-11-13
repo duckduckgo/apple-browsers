@@ -709,6 +709,30 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolHighlightInPage
 
+    /// Gates the `pinTab` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case aiChatBrowserToolPinTab
+
+    /// Gates the `openTab` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case aiChatBrowserToolOpenTab
+
+    /// Gates the `closeTabs` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case aiChatBrowserToolCloseTabs
+
+    /// Gates the `bookmarkTab` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case aiChatBrowserToolBookmarkTab
+
+    /// Gates the `searchDownloads` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case aiChatBrowserToolSearchDownloads
+
+    /// Gates the `searchBookmarks` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case aiChatBrowserToolSearchBookmarks
+
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
@@ -1165,6 +1189,18 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.findInPage), category: .duckAI)
         case .aiChatBrowserToolHighlightInPage:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.highlightInPage), category: .duckAI)
+        case .aiChatBrowserToolPinTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.pinTab), category: .duckAI)
+        case .aiChatBrowserToolOpenTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.openTab), category: .duckAI)
+        case .aiChatBrowserToolCloseTabs:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.closeTabs), category: .duckAI)
+        case .aiChatBrowserToolBookmarkTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.bookmarkTab), category: .duckAI)
+        case .aiChatBrowserToolSearchDownloads:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchDownloads), category: .duckAI)
+        case .aiChatBrowserToolSearchBookmarks:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchBookmarks), category: .duckAI)
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))

@@ -56,6 +56,21 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
         XCTAssertEqual(results.map(\.url), ["https://example.com/", "https://apple.com/mac"])
     }
 
+    func testWhenTheTermIsOnlyInAQueryOrFragmentThenNothingMatches() {
+        let visits = [visit("https://share.example/doc?token=abc123#key=xyz", title: "Doc", at: 1)]
+
+        XCTAssertTrue(SearchHistoryBrowserTool.search(visits: visits, query: "abc123", start: nil, end: nil, limit: 10).isEmpty)
+        XCTAssertTrue(SearchHistoryBrowserTool.search(visits: visits, query: "key=xyz", start: nil, end: nil, limit: 10).isEmpty)
+        XCTAssertEqual(SearchHistoryBrowserTool.search(visits: visits, query: "share.example/doc", start: nil, end: nil, limit: 10).count, 1)
+    }
+
+    func testWhenTheTermIsOnlyInTheClippedPartOfTheTitleThenNothingMatches() {
+        let title = String(repeating: "a", count: BrowserToolOutputLimits.title) + "secret"
+        let visits = [visit("https://example.com/", title: title, at: 1)]
+
+        XCTAssertTrue(SearchHistoryBrowserTool.search(visits: visits, query: "secret", start: nil, end: nil, limit: 10).isEmpty)
+    }
+
     func testWhenQueryIsOmittedThenTheMostRecentVisitsAreReturnedUpToTheLimit() {
         let visits = (1...5).map { visit("https://s\($0).example/", title: "s\($0)", at: TimeInterval($0)) }
 

@@ -1360,7 +1360,8 @@ extension AIChatUserScriptHandler {
         let context = BrowserToolCallContext(
             ownerTabID: ownerTabID,
             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
-            isBurner: ownerCollection.isBurner
+            isBurner: ownerCollection.isBurner,
+            isDetached: message.messageWebView?.window is AIChatFloatingWindow
         )
         let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
         return response.limitedToResultBytes()

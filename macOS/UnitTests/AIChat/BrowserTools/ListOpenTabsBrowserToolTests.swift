@@ -69,6 +69,21 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         XCTAssertEqual(tabs.map { $0["url"] }, ["https://example.com"])
     }
 
+    func testWhenATabIsAFileThenItIsNotListedAndReturnedURLsLoseTheirQuery() async throws {
+        let collection = collection([
+            .loaded(Tab(content: .url(URL(fileURLWithPath: "/Users/someone/notes.txt"), credential: nil, source: .ui))),
+            .loaded(Tab(content: .url(URL(string: "https://example.com/doc?key=secret#part")!, credential: nil, source: .ui)))
+        ])
+        let (tool, context) = make(collection: collection, ownerTabID: "owner")
+
+        let result = await tool.execute(arguments: nil, context: context)
+        guard case .success(let value) = result else { return XCTFail("\(result)") }
+        let shaped = tool.clientToolResult(from: value)
+
+        guard case .success(let shapedValue) = shaped else { return XCTFail("\(shaped)") }
+        XCTAssertEqual(shapedValue["tabs"]?.arrayValue?.map { $0["url"] }, ["https://example.com/doc"])
+    }
+
     /// Listed, because it is a page the user has open — but not attachable, matching the tab picker.
     func testWhenATabIsTheDuckDuckGoHomepageThenItIsListedAsNotAttachable() async throws {
         let collection = regularCollection(urls: ["https://duckduckgo.com/"])

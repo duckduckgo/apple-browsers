@@ -333,7 +333,13 @@ final class AIChatUserScriptTests: XCTestCase {
             FeatureFlag.aiChatBrowserToolSwitchToTab.rawValue: false,
             FeatureFlag.aiChatBrowserToolReadTabContent.rawValue: false,
             FeatureFlag.aiChatBrowserToolFindInPage.rawValue: false,
-            FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false
+            FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false,
+            FeatureFlag.aiChatBrowserToolPinTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolOpenTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolCloseTabs.rawValue: false,
+            FeatureFlag.aiChatBrowserToolBookmarkTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolSearchDownloads.rawValue: false,
+            FeatureFlag.aiChatBrowserToolSearchBookmarks.rawValue: false
         ])
     }
 
@@ -341,6 +347,7 @@ final class AIChatUserScriptTests: XCTestCase {
         AIChatBrowserToolsService(featureFlagger: featureFlagger ?? browserToolsFlags(),
                                  windowControllersManager: WindowControllersManagerMock(),
                                  historyCoordinator: HistoryCoordinatingMock(),
+                                 bookmarkManager: MockBookmarkManager(),
                                  permissionStorage: MockKeyValueStore().keyedStoring())
     }
 

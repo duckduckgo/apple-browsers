@@ -69,12 +69,16 @@ public struct BrowserToolCallContext: Equatable, Sendable {
     /// token, so the front end cannot infer that the user is browsing privately.
     public let isBurner: Bool
 
+    public let isDetached: Bool
+
     public init(ownerTabID: String,
                 ownerWindowToken: String? = nil,
-                isBurner: Bool) {
+                isBurner: Bool,
+                isDetached: Bool = false) {
         self.ownerTabID = ownerTabID
         self.ownerWindowToken = ownerWindowToken
         self.isBurner = isBurner
+        self.isDetached = isDetached
     }
 }
 

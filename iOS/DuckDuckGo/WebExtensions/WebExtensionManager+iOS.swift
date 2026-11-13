@@ -19,6 +19,7 @@
 
 import Combine
 import Core
+import EventHub
 import FeatureFlags_iOS
 import PrivacyConfig
 import UIKit
@@ -36,10 +37,6 @@ private final class IOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsPro
 
     var isBackgroundDelegateProxyEnabled: Bool {
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
-    }
-
-    var isBackgroundGraveyardTreatmentEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
     }
 
     var updatesPublisher: AnyPublisher<Void, Never> {
@@ -82,7 +79,8 @@ public enum WebExtensionManagerFactory {
         autoconsentPreferences: AutoconsentPreferences,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         searchTokenProvider: SearchTokenProviding? = nil,
-        scriptletConfiguration: ScriptletConfiguration? = nil
+        scriptletConfiguration: ScriptletConfiguration? = nil,
+        eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
@@ -122,23 +120,14 @@ public enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
-            isCPMMessagingHangRecoveryEnabled: {
-                featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
-            },
             isCPMNetworkProcessRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
             cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
-            isCPMBackgroundLoadRecoveryEnabled: {
-                featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
-            },
             isCPMBackgroundLoadRestartEnabled: {
                 featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
             },
             isApplicationInBackground: { UIApplication.shared.applicationState == .background },
-            isCPMLateBackgroundDocumentRecoveryEnabled: {
-                featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
-            },
             isCPMStableBaseURLEnabled: {
                 featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
@@ -148,7 +137,8 @@ public enum WebExtensionManagerFactory {
                 autoconsentPreferences: preferencesAdapter,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
-                searchTokenProvider: searchTokenProvider
+                searchTokenProvider: searchTokenProvider,
+                eventHub: eventHub
             ),
             scriptletConfiguration: scriptletConfiguration
         )

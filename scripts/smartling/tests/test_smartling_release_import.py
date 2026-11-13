@@ -286,7 +286,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertEqual(self.tool_calls(), [])
         self.assertEqual((self.repo / STRINGS_PATH).read_text(encoding='utf-8'), '"local" = "Local";\n')
 
-    def testWhenNotReadyThenTheJobsAwaitingAuthorizationAreReported(self):
+    def testWhenNotReadyThenTheJobsAwaitingAuthorizationAndInProgressAreReported(self):
         outputs = self.run_import(release_status={
             **READY, 'outcome': 'not_ready', 'strings_left': 120, 'incomplete_locales': ['de-DE'],
             'strings_awaiting_authorization': 96,
@@ -294,6 +294,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
                 {'name': 'keyChange', 'created': '2025-04-04', 'url': 'https://j/1'},
                 {'name': 'pau/feature', 'created': '', 'url': 'https://j/2'},
             ],
+            'jobs_in_progress': [{'name': 'Merge iOS - 2026-11-06', 'created': '2026-11-06', 'url': 'https://j/3'}],
         })
 
         self.assertEqual(outputs['outcome'], 'not_ready')
@@ -302,6 +303,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
             outputs['jobs_awaiting_authorization'],
             '- [keyChange](https://j/1) (created 2025-04-04)\n- [pau/feature](https://j/2)'
         )
+        self.assertEqual(outputs['jobs_in_progress'], '- [Merge iOS - 2026-11-06](https://j/3) (created 2026-11-06)')
 
     def testWhenTheDownloadFailsThenTheOutcomeIsAnError(self):
         (self.stub_dir / 'download_fails').touch()

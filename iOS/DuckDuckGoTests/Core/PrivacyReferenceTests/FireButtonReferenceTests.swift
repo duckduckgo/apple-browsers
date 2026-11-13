@@ -87,7 +87,7 @@ final class FireButtonReferenceTests: XCTestCase {
                                                     MockWebsiteDataRecord(displayName: test.cookieDomain)
                                                 ])
 
-            await WebCacheManager(cookieStorage: MigratableCookieStorage(),
+            _ = await WebCacheManager(cookieStorage: MigratableCookieStorage(),
                                   fireproofing: fireproofing,
                                   dataStoreIDManager: DataStoreIDManager(store: MockKeyValueStore()),
                                   featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),

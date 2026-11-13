@@ -145,7 +145,7 @@ final class ChatPinnerTests: XCTestCase {
         try pinner.setPinned(chatId: "c1", pinned: true)
 
         // The record is fired off in a Task — give it a chance to run before asserting.
-        try await waitForCondition(timeout: 1.0) { await cleaner.recordChatUpdateCalls == ["c1"] }
+        try await waitForCondition(timeout: 1.0) { cleaner.recordChatUpdateCalls == ["c1"] }
     }
 
     func testSetPinned_onFailure_doesNotCallRecordChatUpdate() async throws {

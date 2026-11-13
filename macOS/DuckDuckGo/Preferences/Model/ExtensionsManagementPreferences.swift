@@ -18,6 +18,8 @@
 
 import Combine
 import Foundation
+import os.log
+import PixelKit
 import PrivacyConfig
 import WebExtensions
 
@@ -42,13 +44,15 @@ final class ExtensionsManagementPreferences: ObservableObject {
     private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: (any PixelKitFiring)?
     private var cancellables = Set<AnyCancellable>()
     private var enabledStateTasks: [String: Task<Void, Never>] = [:]
 
-    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
+    init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.configurationManager = configurationManager
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
 
         reloadExtensions()
         startObservingChanges(configurationManager: configurationManager)
@@ -56,10 +60,21 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
+        fire(.getClicked(extension: .catalog(item.entry)))
+    }
+
+    func openPublisherPage(for item: ChromeWebStoreListing) {
+        guard let url = item.publisherURL else {
+            return
+        }
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+        fire(.publisherLinkClicked(extension: .catalog(item.entry)))
     }
 
     func showDetails(for entry: InstalledExtensionEntry) {
         detailsListingID = entry.listing.id
+        fire(.detailsOpened(extension: .catalog(entry.listing.entry)))
     }
 
     func hideDetails() {
@@ -69,6 +84,14 @@ final class ExtensionsManagementPreferences: ObservableObject {
     func setEnabled(_ isEnabled: Bool, for entry: InstalledExtensionEntry) {
         applyOptimisticEnabledState(isEnabled, for: entry)
         scheduleEnabledState(isEnabled, identifier: entry.id)
+    }
+
+    func setHasAccessToPrivateData(_ allowed: Bool, for entry: InstalledExtensionEntry) {
+        do {
+            try webExtensionManager?.setHasAccessToPrivateData(allowed, for: entry.id)
+        } catch {
+            Logger.webExtensions.error("Could not save Fire Window access: \(error.localizedDescription)")
+        }
     }
 
     func remove(_ entry: InstalledExtensionEntry) {
@@ -109,62 +132,21 @@ extension ExtensionsManagementPreferences {
         let isRemotelyDisabled: Bool
         /// Saved at installation, so they're known while the extension is disabled.
         let permissions: [String]
+        let matchPatterns: [String]
+        let hasAccessToPrivateData: Bool?
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
 
+        /// The installation alert's lines, one per row.
         var permissionsSummary: String? {
-            let names = permissions
-                .compactMap(WebExtensionManifestPermission.init(rawValue:))
-                .map(\.displayName)
+            let messages = WebExtensionPermissionFormatter.messages(forPermissionNames: permissions, matchPatterns: matchPatterns)
 
-            if names.isEmpty {
+            if messages.isEmpty {
                 return nil
             }
 
-            let summary = ListFormatter.localizedString(byJoining: names)
-            return summary.prefix(1).uppercased() + summary.dropFirst()
-        }
-    }
-}
-
-extension WebExtensionManifestPermission {
-
-    var displayName: String {
-        switch self {
-        case .accessibilityFeaturesModify: UserText.extensionsSettingsPermissionAccessibilityFeaturesModify
-        case .accessibilityFeaturesRead: UserText.extensionsSettingsPermissionAccessibilityFeaturesRead
-        case .bookmarks: UserText.extensionsSettingsPermissionBookmarks
-        case .clipboardRead: UserText.extensionsSettingsPermissionClipboardRead
-        case .clipboardWrite: UserText.extensionsSettingsPermissionClipboardWrite
-        case .contentSettings: UserText.extensionsSettingsPermissionContentSettings
-        case .debugger: UserText.extensionsSettingsPermissionDebugger
-        case .declarativeNetRequest: UserText.extensionsSettingsPermissionDeclarativeNetRequest
-        case .declarativeNetRequestFeedback: UserText.extensionsSettingsPermissionDeclarativeNetRequestFeedback
-        case .desktopCapture: UserText.extensionsSettingsPermissionDesktopCapture
-        case .downloads: UserText.extensionsSettingsPermissionDownloads
-        case .downloadsOpen: UserText.extensionsSettingsPermissionDownloadsOpen
-        case .downloadsUI: UserText.extensionsSettingsPermissionDownloadsUI
-        case .favicon: UserText.extensionsSettingsPermissionFavicon
-        case .geolocation: UserText.extensionsSettingsPermissionGeolocation
-        case .history: UserText.extensionsSettingsPermissionHistory
-        case .identityEmail: UserText.extensionsSettingsPermissionIdentityEmail
-        case .management: UserText.extensionsSettingsPermissionManagement
-        case .nativeMessaging: UserText.extensionsSettingsPermissionNativeMessaging
-        case .notifications: UserText.extensionsSettingsPermissionNotifications
-        case .pageCapture: UserText.extensionsSettingsPermissionPageCapture
-        case .privacy: UserText.extensionsSettingsPermissionPrivacy
-        case .proxy: UserText.extensionsSettingsPermissionProxy
-        case .readingList: UserText.extensionsSettingsPermissionReadingList
-        case .sessions: UserText.extensionsSettingsPermissionSessions
-        case .systemStorage: UserText.extensionsSettingsPermissionSystemStorage
-        case .tabCapture: UserText.extensionsSettingsPermissionTabCapture
-        case .tabGroups: UserText.extensionsSettingsPermissionTabGroups
-        case .tabs: UserText.extensionsSettingsPermissionTabs
-        case .topSites: UserText.extensionsSettingsPermissionTopSites
-        case .ttsEngine: UserText.extensionsSettingsPermissionTtsEngine
-        case .webAuthenticationProxy: UserText.extensionsSettingsPermissionWebAuthenticationProxy
-        case .webNavigation: UserText.extensionsSettingsPermissionWebNavigation
+            return messages.map { "• \($0)" }.joined(separator: "\n")
         }
     }
 }
@@ -176,6 +158,7 @@ private extension ExtensionsManagementPreferences {
         let extensionsPublisher = NotificationCenter.default
             .publisher(for: .chromeWebStoreExtensionChanged)
             .merge(with: NotificationCenter.default.publisher(for: .webExtensionsDidChangeLoadedExtensions))
+            .merge(with: NotificationCenter.default.publisher(for: .webExtensionPrivateAccessDidChange))
             .asVoid()
 
         configurationManager.updatesPublisher
@@ -202,6 +185,10 @@ private extension ExtensionsManagementPreferences {
         }
     }
 
+    func fire(_ pixel: WebExtensionPixel) {
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
+    }
+
     func resetExtensions() {
         installedExtensions = []
         uninstalledPasswordManagers = []
@@ -226,7 +213,9 @@ private extension ExtensionsManagementPreferences {
             let entry = InstalledExtensionEntry(record: record,
                                                 listing: listing,
                                                 isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
-                                                permissions: manager.extensionPermissions(for: identifier))
+                                                permissions: manager.extensionPermissions(for: identifier),
+                                                matchPatterns: manager.extensionMatchPatterns(for: identifier),
+                                                hasAccessToPrivateData: manager.hasAccessToPrivateData(for: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

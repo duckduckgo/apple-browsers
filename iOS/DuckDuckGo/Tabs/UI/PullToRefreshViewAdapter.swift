@@ -46,20 +46,17 @@ final class PullToRefreshViewAdapter: NSObject {
         static let refreshTriggerRatio: CGFloat = 0.3 // % of container height as float
 
         static let minimumTriggerThreshold: CGFloat = 80
-        static let maximumFloatingUITriggerThreshold: CGFloat = 120
         static let refreshingPullDistance: CGFloat = 80
     }
 
     private var refreshTriggerThreshold: CGFloat {
         let containerHeight = pullableView?.bounds.height ?? UIScreen.main.bounds.height
-        return Self.refreshTriggerThreshold(containerHeight: containerHeight,
-                                            isFloatingUIEnabled: isFloatingUIEnabled)
+        return Self.refreshTriggerThreshold(containerHeight: containerHeight)
     }
 
-    static func refreshTriggerThreshold(containerHeight: CGFloat, isFloatingUIEnabled: Bool) -> CGFloat {
+    static func refreshTriggerThreshold(containerHeight: CGFloat) -> CGFloat {
         let calculatedThreshold = containerHeight * Constant.refreshTriggerRatio
-        let threshold = max(calculatedThreshold, Constant.minimumTriggerThreshold)
-        return isFloatingUIEnabled ? min(threshold, Constant.maximumFloatingUITriggerThreshold) : threshold
+        return max(calculatedThreshold, Constant.minimumTriggerThreshold)
     }
 
     private let backdropView = UIView()
@@ -95,13 +92,20 @@ final class PullToRefreshViewAdapter: NSObject {
         }
     }
 
+    var backgroundColorOverride: UIColor? {
+        didSet {
+            guard backgroundColorOverride != oldValue else { return }
+            webViewBackgroundDidChange()
+        }
+    }
+
     private var isFloatingRefreshBackgroundActive: Bool {
         isFloatingUIEnabled && pullableViewClipsToBoundsBeforePull != nil
     }
 
     private var pageBackgroundColor: UIColor? {
         if isFloatingUIEnabled {
-            return isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor
+            return backgroundColorOverride ?? (isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor)
         }
         return backgroundColor
     }

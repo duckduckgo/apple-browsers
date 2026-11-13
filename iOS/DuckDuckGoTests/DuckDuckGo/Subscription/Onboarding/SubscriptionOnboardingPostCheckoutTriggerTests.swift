@@ -22,8 +22,10 @@ import PrivacyConfig
 import PixelKit
 import PixelExperimentKit
 import FeatureFlags_iOS
-@testable import Subscription
+import Persistence
+import Subscription
 import SubscriptionTestingUtilities
+@_spi(Testing) import WideEvent
 @testable import DuckDuckGo
 
 /// The rule deciding whether a purchase flow offers post-checkout onboarding.
@@ -98,7 +100,7 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
     override func setUp() {
         super.setUp()
         firedEvents = []
-        // isOnboardingFeatureEnabled can report the ai_features_disabled metric on fresh enrollment, which
+        // enrollInOnboardingExperimentIfNeeded can report the ai_features_disabled metric on fresh enrollment, which
         // asserts if PixelKit's experiment kit was never configured — an empty MockFeatureFlagger keeps every
         // metric call a no-op unless a test below configures one with a matching active experiment.
         configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger())
@@ -112,73 +114,237 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
         )
     }
 
-    func test_isOnboardingFeatureEnabled_onFreeTrialAndEnrolledAsTreatment_returnsTrue() async {
-        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true,
-                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsOct2026Cohort.treatment)
+    func test_isOnboardingFeatureEnabled_assignedFreeTrialsTreatment_returnsTrue() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
+                                                              isAlreadyAssigned: true)
 
-        XCTAssertTrue(isEnabled)
+        XCTAssertTrue(SubscriptionFlowViewModel.isOnboardingFeatureEnabled(featureFlagger: featureFlagger))
     }
 
-    /// A paid (non-trial) subscriber is eligible too, via the separate paid-subs experiment.
-    func test_isOnboardingFeatureEnabled_notOnFreeTrialAndEnrolledAsTreatment_returnsTrue() async {
-        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: false,
-                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsOct2026Cohort.treatment)
+    func test_isOnboardingFeatureEnabled_assignedPaidSubsTreatment_returnsTrue() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsNov2026Cohort.treatment,
+                                                              isAlreadyAssigned: true)
 
-        XCTAssertTrue(isEnabled)
+        XCTAssertTrue(SubscriptionFlowViewModel.isOnboardingFeatureEnabled(featureFlagger: featureFlagger))
     }
 
-    func test_isOnboardingFeatureEnabled_onFreeTrialButNotEnrolled_returnsFalse() async {
-        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true, resolveCohortStub: nil)
+    func test_isOnboardingFeatureEnabled_assignedControl_returnsFalse() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.control,
+                                                              isAlreadyAssigned: true)
 
-        XCTAssertFalse(isEnabled)
+        XCTAssertFalse(SubscriptionFlowViewModel.isOnboardingFeatureEnabled(featureFlagger: featureFlagger))
+    }
+
+    func test_isOnboardingFeatureEnabled_notYetAssigned_returnsFalseWithoutEnrolling() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
+                                                              isAlreadyAssigned: false)
+
+        XCTAssertFalse(SubscriptionFlowViewModel.isOnboardingFeatureEnabled(featureFlagger: featureFlagger))
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    /// Proves the "already enrolled" branch (`resolveCohort`'s early return) threads through end-to-end.
-    /// The metric-reporting guard itself — that a non-fresh enrollment must not fire `ai_features_disabled`
-    /// — is covered deterministically in `SubscriptionOnboardingExperimentTests`, which can inject
-    /// `isAIChatEnabled`; it can't be proven from here, since `AIChatSettings`'s real default is "enabled",
-    /// which would mask a broken guard by never firing anyway.
-    func test_isOnboardingFeatureEnabled_alreadyEnrolledAsTreatment_returnsTrue() async {
-        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true,
-                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsOct2026Cohort.treatment,
-                                               isAlreadyAssigned: true)
+    // MARK: - Enrollment before purchase confirmation
 
-        XCTAssertTrue(isEnabled)
+    func test_enrollInOnboardingExperimentIfNeeded_firstPurchaseWithOnboardingStore_enrolls() {
+        let featureFlagger = notYetEnrolledFeatureFlagger()
+
+        enroll(featureFlagger: featureFlagger)
+
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
-    /// Stubbed to enroll-as-treatment if reached, proving the fetch failure skips enrollment entirely.
-    func test_isOnboardingFeatureEnabled_subscriptionFetchFails_returnsFalseAndQueriesNeitherExperiment() async {
-        let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.resultSubscription = .failure(TestError.fetchFailed)
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsOct2026Cohort.treatment)
+    func test_enrollInOnboardingExperimentIfNeeded_paidPurchase_enrolls() {
+        let featureFlagger = notYetEnrolledFeatureFlagger()
 
-        let isEnabled = await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
-                                                                                   featureFlagger: featureFlagger,
-                                                                                   locale: Self.enUS)
+        enroll(isFreeTrial: false, featureFlagger: featureFlagger)
 
-        XCTAssertFalse(isEnabled)
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    func test_enrollInOnboardingExperimentIfNeeded_planUpdate_doesNotEnroll() {
+        let featureFlagger = notYetEnrolledFeatureFlagger()
+
+        enroll(flowType: .planUpdate, featureFlagger: featureFlagger)
+
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
         XCTAssertFalse(featureFlagger.didCallAssignedCohort)
     }
 
-    // MARK: - Helper
+    func test_enrollInOnboardingExperimentIfNeeded_noOnboardingStore_doesNotEnroll() {
+        let featureFlagger = notYetEnrolledFeatureFlagger()
 
-    private enum TestError: Error {
-        case fetchFailed
+        enroll(hasOnboardingStore: false, featureFlagger: featureFlagger)
+
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+        XCTAssertFalse(featureFlagger.didCallAssignedCohort)
     }
 
-    private func isFeatureEnabled(hasActiveTrialOffer: Bool,
-                                  resolveCohortStub: (any FeatureFlagCohortDescribing)?,
-                                  isAlreadyAssigned: Bool = false) async -> Bool {
+    func test_enrollInOnboardingExperimentIfNeeded_freshlyEnrolledInControl_resetsDuckAIPaidUsedSent() {
+        let metricStore = MockSubscriptionOnboardingExperimentMetricStore(hasSentDuckAIPaidUsed: true)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.control,
+                                                              isAlreadyAssigned: false)
+
+        enroll(experimentMetricStore: metricStore, featureFlagger: featureFlagger)
+
+        XCTAssertFalse(metricStore.hasSentDuckAIPaidUsed)
+    }
+
+    func test_enrollInOnboardingExperimentIfNeeded_freshlyEnrolledInTreatment_resetsDuckAIPaidUsedSent() {
+        let metricStore = MockSubscriptionOnboardingExperimentMetricStore(hasSentDuckAIPaidUsed: true)
+
+        enroll(experimentMetricStore: metricStore, featureFlagger: notYetEnrolledFeatureFlagger())
+
+        XCTAssertFalse(metricStore.hasSentDuckAIPaidUsed)
+    }
+
+    func test_enrollInOnboardingExperimentIfNeeded_alreadyEnrolled_doesNotResetDuckAIPaidUsedSent() {
+        let metricStore = MockSubscriptionOnboardingExperimentMetricStore(hasSentDuckAIPaidUsed: true)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
+                                                              isAlreadyAssigned: true)
+
+        enroll(experimentMetricStore: metricStore, featureFlagger: featureFlagger)
+
+        XCTAssertTrue(metricStore.hasSentDuckAIPaidUsed)
+    }
+
+    func test_enrollInOnboardingExperimentIfNeeded_notEnrolledOutsideEnUS_doesNotResetDuckAIPaidUsedSent() {
+        let metricStore = MockSubscriptionOnboardingExperimentMetricStore(hasSentDuckAIPaidUsed: true)
+
+        SubscriptionFlowViewModel.enrollInOnboardingExperimentIfNeeded(flowType: .firstPurchase,
+                                                                        hasOnboardingStore: true,
+                                                                        experimentMetricStore: metricStore,
+                                                                        isFreeTrial: true,
+                                                                        featureFlagger: notYetEnrolledFeatureFlagger(),
+                                                                        locale: Locale(identifier: "fr_FR"))
+
+        XCTAssertTrue(metricStore.hasSentDuckAIPaidUsed)
+    }
+
+    func test_enrollInOnboardingExperimentIfNeeded_planUpdate_doesNotResetDuckAIPaidUsedSent() {
+        let metricStore = MockSubscriptionOnboardingExperimentMetricStore(hasSentDuckAIPaidUsed: true)
+
+        enroll(flowType: .planUpdate, experimentMetricStore: metricStore, featureFlagger: notYetEnrolledFeatureFlagger())
+
+        XCTAssertTrue(metricStore.hasSentDuckAIPaidUsed)
+    }
+
+    func test_paidPromptBeforeEnrollment_thenFreshEnrollment_reportsDuckAIPaidUsedOnNextPrompt() {
+        let metricStore = MockSubscriptionOnboardingExperimentMetricStore()
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, metricStore: metricStore)
+        XCTAssertTrue(firedEvents.isEmpty)
+
+        let featureFlagger = notYetEnrolledFeatureFlagger()
+        enroll(experimentMetricStore: metricStore, featureFlagger: featureFlagger)
+        let subfeature = PrivacyProSubfeature.subscriptionOnboardingFreeTrialsNov2026
+        featureFlagger.allActiveExperiments = [subfeature.rawValue: ExperimentData(parentID: subfeature.parent.rawValue,
+                                                                                   cohortID: "treatment",
+                                                                                   enrollmentDate: Date())]
+        configureExperimentKit(featureFlagger: featureFlagger)
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, metricStore: metricStore)
+
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsNov2026_treatment")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "duckAiPaidUsed_d1")
+    }
+
+    // MARK: - Helper
+
+    private func notYetEnrolledFeatureFlagger() -> PrivacyConfig.MockFeatureFlagger {
+        PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
+                                         isAlreadyAssigned: false)
+    }
+
+    private func enroll(flowType: SubscriptionFlowType = .firstPurchase,
+                        hasOnboardingStore: Bool = true,
+                        experimentMetricStore: SubscriptionOnboardingExperimentMetricStoring? = MockSubscriptionOnboardingExperimentMetricStore(),
+                        isFreeTrial: Bool = true,
+                        featureFlagger: FeatureFlagger) {
+        SubscriptionFlowViewModel.enrollInOnboardingExperimentIfNeeded(flowType: flowType,
+                                                                        hasOnboardingStore: hasOnboardingStore,
+                                                                        experimentMetricStore: experimentMetricStore,
+                                                                        isFreeTrial: isFreeTrial,
+                                                                        featureFlagger: featureFlagger,
+                                                                        locale: Self.enUS)
+    }
+}
+
+final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                        eventTracker: ExperimentEventTracker(),
+                                        fire: { _, _, _ in })
+    }
+
+    @MainActor
+    func test_setupTransactionObserver_appStoreTransactionCompleted_runsOnboardingEnrollment() async {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
+                                                              isAlreadyAssigned: false)
+        let subFeature = makeSubscriptionFeature()
+        let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger)
+
+        await sut.setupTransactionObserver()
+        subFeature.onAppStoreTransactionCompleted?(true)
+
+        XCTAssertTrue(featureFlagger.didCallAssignedCohort)
+    }
+
+    // MARK: - Helper
+
+    @MainActor
+    private func makeSubscriptionFeature() -> DefaultSubscriptionPagesUseSubscriptionFeature {
         let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
-            status: .autoRenewable,
-            activeOffers: hasActiveTrialOffer ? [DuckDuckGoSubscription.Offer(type: .trial)] : []
-        ))
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: resolveCohortStub, isAlreadyAssigned: isAlreadyAssigned)
-        return await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
-                                                                          featureFlagger: featureFlagger,
-                                                                          locale: Self.enUS)
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        let wideEvent = WideEventMock()
+        return DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: subscriptionManager,
+            subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true),
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: PrivacyConfig.MockInternalUserDecider(isInternalUser: false),
+            wideEvent: wideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                                         appStorePurchaseFlow: purchaseFlow,
+                                                                         wideEvent: wideEvent,
+                                                                         pendingTransactionHandler: MockPendingTransactionHandler()),
+            requestValidator: ScriptRequestValidatorMock(),
+            subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: PrivacyConfig.MockFeatureFlagger()))
+    }
+
+    @MainActor
+    private func makeViewModel(subFeature: DefaultSubscriptionPagesUseSubscriptionFeature,
+                               featureFlagger: FeatureFlagger) -> SubscriptionFlowViewModel {
+        SubscriptionFlowViewModel(initialURL: URL(string: "https://duckduckgo.com/subscriptions")!,
+                                  flowType: .firstPurchase,
+                                  userScript: SubscriptionPagesUserScript(),
+                                  userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+                                  subFeature: subFeature,
+                                  subscriptionManager: SubscriptionManagerMock(),
+                                  featureFlagger: featureFlagger,
+                                  wideEvent: WideEventMock(),
+                                  dataBrokerProtectionViewControllerProvider: nil,
+                                  onboardingKeyValueStore: InMemoryOnboardingStore(),
+                                  meetsPIRLocaleRequirement: { false })
+    }
+}
+
+private final class InMemoryOnboardingStore: ThrowingKeyValueStoring {
+    private var values: [String: Any] = [:]
+
+    func object(forKey key: String) throws -> Any? {
+        values[key]
+    }
+
+    func set(_ value: Any?, forKey key: String) throws {
+        values[key] = value
+    }
+
+    func removeObject(forKey key: String) throws {
+        values.removeValue(forKey: key)
     }
 }

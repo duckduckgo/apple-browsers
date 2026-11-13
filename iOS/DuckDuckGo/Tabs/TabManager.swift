@@ -131,6 +131,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     
     private var tabControllerCache = [TabViewController]()
     private var tabAttachmentReservations: [ObjectIdentifier: Set<UUID>] = [:]
+    /// Page-opened tabs added in the background: their web view already belongs to the page, so they can't be rebuilt.
+    private var tabsAwaitingFirstSelection: Set<ObjectIdentifier> = []
     private let tabAttachmentControllerChanges = PassthroughSubject<Void, Never>()
 
     weak var cacheDelegate: (any TabControllerCacheDelegate)?
@@ -560,6 +562,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func addURLRequest(_ request: URLRequest?,
                        with configuration: WKWebViewConfiguration,
                        inheritedAttribution: AdClickAttributionLogic.State?,
+                       inBackground: Bool = false,
                        in tabsModel: TabsModelManaging? = nil) -> TabViewController {
 
         let model = tabsModel ?? currentTabsModel
@@ -578,7 +581,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         } else {
             tab = Tab(fireTab: shouldCreateFireTab)
         }
-        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: true)
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: !inBackground)
+        if inBackground {
+            tabsAwaitingFirstSelection.insert(ObjectIdentifier(tab))
+        }
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
             maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
@@ -642,7 +648,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.applyInheritedAttribution(inheritedAttribution)
         addToCache(controller)
 
-        _ = save()
+        save()
         return controller
     }
 
@@ -651,7 +657,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: placement, selectNewTab: true)
-        _ = save()
+        save()
     }
 
     @MainActor
@@ -664,7 +670,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
         tab.viewed = true
         addToCache(controller)
-        _ = save()
+        save()
         return controller
     }
 
@@ -706,7 +712,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             current()?.dismiss()
         }
         model.select(tab: tab)
-        _ = save()
+        tabsAwaitingFirstSelection.remove(ObjectIdentifier(tab))
+        save()
         let controller = current(createIfNeeded: true)
         markAsMostRecentlyViewed(controller)
         return controller
@@ -736,7 +743,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         prepareBeforeCaching?(controller)
         addToCache(controller)
 
-        _ = save()
+        save()
         return controller
     }
 
@@ -748,7 +755,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
-        _ = save()
+        save()
         notifyIfLastFireTabClosed(removedTabs: tabs)
     }
 
@@ -758,7 +765,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? self.tabsModel(for: tab.mode)
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
-        _ = save()
+        save()
         notifyIfLastFireTabClosed(removedTabs: [tab])
     }
 
@@ -783,7 +790,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
             clean(tabs: [tab], clearTabHistory: clearTabHistory)
         }
-        _ = save()
+        save()
     }
 
     @MainActor
@@ -801,6 +808,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
             tabAttachmentReservations[ObjectIdentifier(controller.tabModel)] = nil
+            tabsAwaitingFirstSelection.remove(ObjectIdentifier(controller.tabModel))
             tabAttachmentControllerChanges.send()
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
@@ -836,13 +844,19 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let currentControllerIsNewTabPage = currentController.map { $0.tabModel.link == nil } ?? false
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
-            let evictionCandidates = tabControllerCache.filter {
-                $0 !== currentController && !$0.isProtectedFromCacheEviction
-                    && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
-            }
+            let evictionCandidates = tabControllerCache.filter { $0 !== currentController && canEvict($0) }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)
         }
+    }
+
+    /// Tabs holding state that a rebuild would lose stay cached.
+    @MainActor
+    private func canEvict(_ controller: TabViewController) -> Bool {
+        let identity = ObjectIdentifier(controller.tabModel)
+        return !controller.isProtectedFromCacheEviction
+            && tabAttachmentReservations[identity] == nil
+            && !tabsAwaitingFirstSelection.contains(identity)
     }
 
     @MainActor
@@ -1201,10 +1215,7 @@ extension TabManager {
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
             let currentController = current()
             tabControllerCache
-                .filter {
-                    $0 !== currentController && !$0.isProtectedFromCacheEviction
-                        && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
-                }
+                .filter { $0 !== currentController && canEvict($0) }
                 .forEach { evictFromCache($0, reason: .memoryWarning) }
         }
         flushPendingSave()

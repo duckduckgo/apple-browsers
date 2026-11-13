@@ -19,6 +19,7 @@
 import AppKit
 import AppKitExtensions
 import Combine
+import EventHub
 import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
@@ -35,10 +36,6 @@ private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsP
 
     var isBackgroundDelegateProxyEnabled: Bool {
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
-    }
-
-    var isBackgroundGraveyardTreatmentEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
     }
 
     var updatesPublisher: AnyPublisher<Void, Never> {
@@ -66,7 +63,8 @@ extension WebExtensionManager {
             disabledExtensionIDs: { [featureFlagger] in
                 Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
-            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
+            pixelFiring: MacOSWebExtensionPixelFiring()
         )
     }
 
@@ -106,10 +104,41 @@ enum WebExtensionManagerFactory {
         autoconsentPreferences: AutoconsentPreferencesProviding,
         themeManager: ThemeManager,
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        scriptletConfiguration: ScriptletConfiguration? = nil
+        scriptletConfiguration: ScriptletConfiguration? = nil,
+        eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
+        let windowTabProvider = WebExtensionWindowTabProvider()
+        func updateApplicationPolicy(for manager: WebExtensionManager) -> (@MainActor (String) -> Bool) {
+            { [weak manager, weak windowTabProvider] identifier in
+                guard !NSApp.isActive, let manager, let windowTabProvider else { return false }
+                guard let context = manager.context(for: identifier) else { return true }
+                return !windowTabProvider.hasOpenUpdateUI(for: context)
+            }
+        }
+        let updateActivity = Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+            windowTabProvider.updateActivityPublisher
+        ).eraseToAnyPublisher()
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
+        if buildType.isDebugBuild, buildType.isSparkleBuild, ChromeWebStoreManualUpdateTesting.isEnabled {
+            let manager = ChromeWebStoreManualUpdateTesting().makeManager(
+                configuration: WebExtensionConfigurationProvider(), windowTabProvider: windowTabProvider,
+                permissionPrompter: WebExtensionPermissionPrompt(
+                    windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
+                enforcesPermissions: featureFlagger.isFeatureOn(.webExtensionsPermissions),
+                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
+                internalSiteHandler: internalSiteHandler,
+                isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+                updateApplicationPolicy: updateApplicationPolicy,
+                updateApplicationActivityUpdates: updateActivity)
+            internalSiteHandler.dataSource = manager
+            return manager
+        }
+#endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
@@ -138,7 +167,7 @@ enum WebExtensionManagerFactory {
             : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
-            windowTabProvider: WebExtensionWindowTabProvider(),
+            windowTabProvider: windowTabProvider,
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             installationStore: installationStore,
             permissionController: permissionController,
@@ -146,21 +175,12 @@ enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
-            isCPMMessagingHangRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
-            },
             isCPMNetworkProcessRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
             cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
-            isCPMBackgroundLoadRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
-            },
             isCPMBackgroundLoadRestartEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
-            },
-            isCPMLateBackgroundDocumentRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
             isCPMStableBaseURLEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
@@ -170,10 +190,12 @@ enum WebExtensionManagerFactory {
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
+                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
+                eventHub: eventHub
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
+            retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration
         )
 
@@ -181,7 +203,14 @@ enum WebExtensionManagerFactory {
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
             catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
-            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager)
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
+            supportsUpdateDiscovery: buildType.isSparkleBuild,
+            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),
+            updateApplicationActivityUpdates: updateActivity,
+            keyValueStore: keyValueStore,
+            pixelFiring: pixelFiring
         )
 
         return manager

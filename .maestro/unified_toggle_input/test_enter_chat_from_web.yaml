@@ -17,6 +17,7 @@ name: test_enter_chat_from_web
         isRunningUITests: true
         "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.aiChatTabHandoffImprovements: "true"
 
 # Dismiss any launch-time modals
 - runFlow:
@@ -40,7 +41,8 @@ name: test_enter_chat_from_web
     file: ../shared/dismiss_chat_open_modals.yaml
 
 # Verify Duck.ai chat tab is now open
-- assertVisible: "Close tab"
+- assertNotVisible: "Close tab"
+- assertVisible: "Recent chats"
 - assertVisible: "Free Plan"
 - assertVisible:
     id: "AIChat.Toolbar.Button.ModelChip"

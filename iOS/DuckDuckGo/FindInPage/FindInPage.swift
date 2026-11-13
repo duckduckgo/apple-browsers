@@ -26,8 +26,18 @@ import PrivacyConfig
 enum FindInPageImplementation {
     case system
     case legacy
+    case delegateSessionExperiment
+
+    var isDelegateSessionExperiment: Bool {
+        self == .delegateSessionExperiment
+    }
 
     init(featureFlagger: FeatureFlagger) {
+        if #available(iOS 27.0, *), featureFlagger.isFeatureOn(.legacyFindInPage),
+           featureFlagger.isFeatureOn(.legacyFindInPageUIWithSystemFindEngine) {
+            self = .delegateSessionExperiment
+            return
+        }
         if #available(iOS 16.0, *), !featureFlagger.isFeatureOn(.legacyFindInPage) {
             self = .system
         } else {
@@ -38,11 +48,31 @@ enum FindInPageImplementation {
 
 protocol FindInPageDelegate: NSObjectProtocol {
     
-    func updated(findInPage: FindInPage)
+    func updated(findInPage: any FindInPageSearching)
 
 }
 
-class FindInPage: NSObject {
+protocol FindInPageSearching: AnyObject {
+    var delegate: FindInPageDelegate? { get set }
+    var searchTerm: String { get }
+    var current: Int { get }
+    var total: Int { get }
+    var isDelegateSessionExperiment: Bool { get }
+    var diagnosticStatus: String? { get }
+    func search(forText text: String) -> Bool
+    func next()
+    func previous()
+    func done()
+    func keepCurrentResultVisible(visibleBottomFraction: CGFloat)
+}
+
+extension FindInPageSearching {
+    var isDelegateSessionExperiment: Bool { false }
+    var diagnosticStatus: String? { nil }
+    func keepCurrentResultVisible(visibleBottomFraction: CGFloat) {}
+}
+
+class FindInPage: NSObject, FindInPageSearching {
 
     weak var delegate: FindInPageDelegate?
     weak var webView: WKWebView?
@@ -90,6 +120,19 @@ class FindInPage: NSObject {
         current = currentResult ?? current
         total = totalResults ?? total
         delegate?.updated(findInPage: self)
+    }
+
+    func keepCurrentResultVisible(visibleBottomFraction: CGFloat) {
+        let fraction = min(1, max(0, visibleBottomFraction))
+        evaluate(js: """
+            (() => {
+                const match = document.querySelector('.__firefox__find-highlight-active');
+                if (!match) return;
+                const visibleBottom = window.innerHeight * \(fraction) - 16;
+                const overflow = match.getBoundingClientRect().bottom - visibleBottom;
+                if (overflow > 0) window.scrollBy(0, overflow);
+            })();
+            """)
     }
 
 }

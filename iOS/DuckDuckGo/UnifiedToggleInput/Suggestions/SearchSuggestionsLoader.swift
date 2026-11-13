@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import PrivacyConfig
 import Suggestions
 
 /// Drives `SuggestionLoader` for the Search surface and publishes the latest result.
@@ -31,15 +32,17 @@ final class SearchSuggestionsLoader {
     @Published private(set) var result: SuggestionResult = .appEmpty
     private(set) var lastCompletedFetchQuery: String?
 
+    private let featureFlagger: FeatureFlagger
     private let dataSource: SuggestionLoadingDataSource
     private let useUnifiedURLPrediction: Bool
     private var loader: SuggestionLoader?
-    private var latestDispatchedQuery: String?
+    private var latestQuery: String?
+    private var fetchID = UUID()
+    private var cachedRemoteResult: SuggestionResult = .appEmpty
     private var cancellables = Set<AnyCancellable>()
 
-    private static let debounceMilliseconds = 100
-
-    init(dataSource: SuggestionLoadingDataSource, useUnifiedURLPrediction: Bool) {
+    init(dataSource: SuggestionLoadingDataSource, useUnifiedURLPrediction: Bool, featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         self.dataSource = dataSource
         self.useUnifiedURLPrediction = useUnifiedURLPrediction
     }
@@ -57,29 +60,54 @@ final class SearchSuggestionsLoader {
         return true
     }
 
-    func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
+    func subscribeToTextChanges<P: Publisher, S: Scheduler>(_ textPublisher: P, scheduler: S = DispatchQueue.main)
         where P.Output == String, P.Failure == Never {
         textPublisher
-            .debounce(for: .milliseconds(Self.debounceMilliseconds), scheduler: DispatchQueue.main)
-            .removeDuplicates()
-            .sink { [weak self] text in self?.fetch(query: text) }
+            .removeDuplicates(by: { [featureFlagger] previous, current in
+                featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+            })
+            .handleEvents(receiveOutput: { [weak self] text in
+                guard let self, self.featureFlagger.isFeatureOn(.suggestionDebounce200ms) else { return }
+                self.latestQuery = text
+            })
+            .debounceSuggestions(using: featureFlagger, scheduler: scheduler)
+            .removeDuplicates(by: { [featureFlagger] previous, current in
+                !featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+            })
+            .sink { [weak self] request in
+                self?.fetch(query: request.query, includeRemoteSuggestions: request.includeRemoteSuggestions)
+            }
             .store(in: &cancellables)
     }
 
-    func fetch(query: String) {
-        latestDispatchedQuery = query
+    func fetch(query: String, includeRemoteSuggestions: Bool = true) {
+        let usesSeparateDebounce = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
+        latestQuery = query
+        let fetchID = UUID()
+        self.fetchID = fetchID
         guard !query.isEmpty else {
+            cachedRemoteResult = .appEmpty
             if result != .appEmpty { result = .appEmpty }
             lastCompletedFetchQuery = query
             return
         }
         loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { [weak self] phrase in
-            self?.shouldLoadSuggestions(for: phrase) ?? true
+            includeRemoteSuggestions && (self?.shouldLoadSuggestions(for: phrase) ?? true)
         }, isUrlIgnored: { _ in false })
-        loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
-            guard let self, self.latestDispatchedQuery == query else { return }
-            self.lastCompletedFetchQuery = query
-            self.result = result ?? .appEmpty
+        loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
+            guard let self else { return }
+            guard !usesSeparateDebounce || self.fetchID == fetchID,
+                  self.latestQuery == query || (usesSeparateDebounce && self.result.all.isEmpty && self.latestQuery?.hasPrefix(query) == true) else { return }
+            if includeRemoteSuggestions { self.lastCompletedFetchQuery = query }
+            let result = result ?? .appEmpty
+            let displayedResult: SuggestionResult
+            if includeRemoteSuggestions, error == nil {
+                self.cachedRemoteResult = result
+                displayedResult = result
+            } else {
+                displayedResult = result.retainingRemoteSuggestions(from: self.cachedRemoteResult)
+            }
+            self.result = displayedResult
         }
     }
 
@@ -87,7 +115,9 @@ final class SearchSuggestionsLoader {
     /// session's suggestions for the new query.
     func reset() {
         loader = nil
-        latestDispatchedQuery = nil
+        fetchID = UUID()
+        cachedRemoteResult = .appEmpty
+        latestQuery = nil
         lastCompletedFetchQuery = nil
         // Unconditional (no `!= .appEmpty` guard) to force `sectionsPublisher` to recompute
         result = .appEmpty
@@ -97,6 +127,22 @@ final class SearchSuggestionsLoader {
 }
 
 extension SuggestionResult {
+    func retainingRemoteSuggestions(from previous: SuggestionResult) -> SuggestionResult {
+        let remoteTopHits = previous.topHits.filter {
+            if case .website = $0 { return true }
+            return false
+        }
+        let localURLs = Set((topHits + localSuggestions).compactMap(\.url))
+        let retainedTopHits = remoteTopHits.filter { !($0.url.map { localURLs.contains($0) } ?? false) }
+        let combinedTopHits = topHits + retainedTopHits
+        let remoteSuggestions = (Array(combinedTopHits.dropFirst(2)) + previous.duckduckgoSuggestions).filter {
+            !combinedTopHits.prefix(2).contains($0) && !($0.url.map { localURLs.contains($0) } ?? false)
+        }
+        return SuggestionResult(topHits: Array(combinedTopHits.prefix(2)),
+                                duckduckgoSuggestions: Array(remoteSuggestions.prefix(5)),
+                                localSuggestions: localSuggestions)
+    }
+
     /// App-side convenience; the package's `.empty` is `internal` to `Suggestions`.
     static let appEmpty = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
 }

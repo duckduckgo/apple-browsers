@@ -42,6 +42,10 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
+        if isIPadFullTabChatInput {
+            handleIPadFullTabChatInputIntent(intent)
+            return
+        }
         defer { updateAddressBarSuppressionForNewTabPage() }
 
         switch intent {
@@ -156,53 +160,10 @@ private extension MainViewController {
     }
 
     func handleShowExpandedIntent(animationStyle: UTIAnimationStyle) {
-        // WKWebView snaps to the new size in one frame while the outer layer animates; mask the
-        // gap with a snapshot of the chat at its old visual state.
-        let snapshotMask = installContentContainerSnapshotMaskForAITabExpandIfNeeded()
-        animationStyle.perform({ [self] in
+        animationStyle.perform { [self] in
             applyAITabExpandedPose()
-        }, completion: { _ in
-            snapshotMask?.removeFromSuperview()
-        })
+        }
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
-    }
-
-    /// Captures a snapshot of `contentContainer` at its current (pre-expand) size and pins a
-    /// clipping wrapper that follows the container's frame. Caller removes the wrapper on
-    /// animation completion.
-    private func installContentContainerSnapshotMaskForAITabExpandIfNeeded() -> UIView? {
-        guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isAITabState,
-              let target = viewCoordinator.contentContainer,
-              let parent = target.superview,
-              let snapshot = target.snapshotView(afterScreenUpdates: false) else { return nil }
-
-        let oldSize = target.bounds.size
-
-        let wrapper = UIView()
-        wrapper.translatesAutoresizingMaskIntoConstraints = false
-        wrapper.clipsToBounds = true
-        wrapper.isUserInteractionEnabled = false
-
-        snapshot.translatesAutoresizingMaskIntoConstraints = false
-        wrapper.addSubview(snapshot)
-        // Sit just above `target` — masks the WKWebView's model-layer snap, but stays below the
-        // AI-tab header so the pill drop shadows that bleed into the content area aren't clipped.
-        parent.insertSubview(wrapper, aboveSubview: target)
-
-        NSLayoutConstraint.activate([
-            wrapper.topAnchor.constraint(equalTo: target.topAnchor),
-            wrapper.leadingAnchor.constraint(equalTo: target.leadingAnchor),
-            wrapper.trailingAnchor.constraint(equalTo: target.trailingAnchor),
-            wrapper.bottomAnchor.constraint(equalTo: target.bottomAnchor),
-
-            snapshot.topAnchor.constraint(equalTo: wrapper.topAnchor),
-            snapshot.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
-            snapshot.widthAnchor.constraint(equalToConstant: oldSize.width),
-            snapshot.heightAnchor.constraint(equalToConstant: oldSize.height)
-        ])
-        parent.layoutIfNeeded()
-        return wrapper
     }
 
     /// Visual end-state for `.aiTab(.expanded)`: container shown, chrome and content anchor
@@ -248,7 +209,8 @@ private extension MainViewController {
                 }
                 self.viewCoordinator.focusedStateBackground.alpha = 1
                 self.viewCoordinator.superview.layoutIfNeeded()
-                coordinator.pushContentInsets()
+                // The focus keeps the main thread busy, so the content slides with the bar on the render server.
+                coordinator.contentViewController.slideContentWithCoreAnimation { coordinator.pushContentInsets() }
                 if !isSeamlessHandoff {
                     contentContainer.alpha = 1
                     contentContainer.transform = .identity
@@ -295,7 +257,7 @@ private extension MainViewController {
         // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
 
         viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
@@ -308,7 +270,7 @@ private extension MainViewController {
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-        if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
+        if isFloatingUIEnabled {
             coordinator.viewController.prepareForOmnibarMaterialTransition(duration: duration)
         }
 
@@ -333,6 +295,7 @@ private extension MainViewController {
             // focused SwiftUI logo; revealed again on dismiss. (Alpha is already 1 via the seamless
             // handoff above — the focused logo rests at the NTP anchor by construction, no manual swap.)
             newTabPageViewController?.setLogoHidden(true)
+            coordinator.contentViewController.showLogoForHandoff()
         }
 
         animateOmnibarEditingShow(coordinator: coordinator,
@@ -357,20 +320,24 @@ private extension MainViewController {
             return
         }
         let coordinator = unifiedToggleInputCoordinator
+        let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
+        resetLegacyScrollForDismiss(coordinator: coordinator, duration: animated ? duration : 0)
         let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
+        let defersContentCleanup = fadesForFloatingBottom || (animated && coordinator?.contentViewController.usesScrollableEscapeHatch == true
+            && coordinator?.contentViewController.usesRedesignedNewTabPageLayout == false)
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let isLogoToLogo = coordinator?.contentViewController.isShowingLogoContent == true
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator?.contentViewController.isShowingFavoritesContent == true
             && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
             self?.applyUnifiedInputChromeBackground(.standardChrome)
             self?.applyFloatingUIIfNeeded()
-            if fadesForFloatingBottom {
+            if defersContentCleanup {
                 // Lay out favorites while still covered by UTI, so a tall grid's last row doesn't pop in late.
                 self?.newTabPageViewController?.setLogoHidden(false)
                 self?.newTabPageViewController?.setFavoritesHidden(false)
@@ -382,7 +349,8 @@ private extension MainViewController {
             self?.refreshFloatingToolbarBackdrop()
         }
         let restoreNTPChromeIfNeeded: () -> Void = { [weak self] in
-            guard fadesForFloatingBottom else { return }
+            coordinator?.contentViewController.cancelContentInsetDismissal()
+            guard defersContentCleanup else { return }
             self?.newTabPageViewController?.setLogoHidden(false)
             self?.newTabPageViewController?.setFavoritesHidden(false)
             self?.refreshFloatingToolbarBackdrop()
@@ -393,14 +361,14 @@ private extension MainViewController {
             let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
-            let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
             if isLogoToLogo {
                 coordinator?.contentViewController.morphLogoHomeForDismiss(matching: duration)
-            } else if !isFavoritesToFavorites {
+            } else if !isSeamlessHandoff {
                 coordinator?.contentViewController.beginDismissFade()
             }
-            let additionalAnimations: () -> Void = {
+            let additionalAnimations: () -> Void = { [weak self] in
                 coordinator?.viewController.applyOmnibarEditingDismissPose()
+                self?.updateLegacyContentInsetForDismiss(coordinator: coordinator)
                 if let coordinator, let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -427,12 +395,13 @@ private extension MainViewController {
         } else {
             // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
             viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
+            updateLegacyContentInsetForDismiss(coordinator: coordinator)
             coordinator?.viewController.deactivateInput()
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: reattachingOmnibar)
             onDismissed()
         }
-        // Floating-bottom keeps NTP chrome hidden until dismiss completion / interrupt cleanup.
-        resetUnifiedInputContentAfterHide(hidingContent: !fadesForFloatingBottom, restoringNTPChrome: !fadesForFloatingBottom)
+        // Keep the legacy scroll reset covered until the collapse finishes.
+        resetUnifiedInputContentAfterHide(hidingContent: !defersContentCleanup, restoringNTPChrome: !defersContentCleanup)
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
     }
 

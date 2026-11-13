@@ -66,3 +66,35 @@ enum UserChurnPixel: PixelKit.Event {
         }
     }
 }
+
+enum UserChurnDebugPixel: PixelKit.Event {
+
+    case readFailed(key: UserChurnService.Key, error: Error)
+    case writeFailed(key: UserChurnService.Key, error: Error)
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .readFailed(let key, _):
+            return "user-churn_\(key.rawValue)_read-failed_macos"
+        case .writeFailed(let key, _):
+            return "user-churn_\(key.rawValue)_write-failed_macos"
+        }
+    }
+
+    var parameters: [String: String]? {
+        nil
+    }
+
+    var error: NSError? {
+        switch self {
+        case .readFailed(_, let error), .writeFailed(_, let error):
+            return error as NSError
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}

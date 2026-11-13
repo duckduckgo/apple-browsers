@@ -23,14 +23,13 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionsDebugMenu: NSMenu {
+final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
 
     private let webExtensionManager: WebExtensionManaging
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
-    /// Whether Bitwarden may be installed, read each time the menu opens.
-    private let isBitwardenEnabled: () -> Bool
-    private let installBitwardenSeparator = NSMenuItem.separator()
-    private let installBitwardenMenuItem = NSMenuItem(title: "Install Bitwarden", action: #selector(WebExtensionsDebugMenu.installBitwarden))
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
+    private let updateTestServer = ChromeWebStoreManualUpdateServer()
+#endif
 
     private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
@@ -40,13 +39,12 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
     private let extensionsPageMenuItem = NSMenuItem(title: "Extensions Page", action: #selector(WebExtensionsDebugMenu.showExtensionsPage))
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
+    private let backdateInstallDatesMenuItem = NSMenuItem(title: "Backdate Install Dates by a Month", action: #selector(WebExtensionsDebugMenu.backdateInstallDates))
 
     init(webExtensionManager: WebExtensionManaging,
-         cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
-         isBitwardenEnabled: @escaping () -> Bool = { true }) {
+         cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
         self.webExtensionManager = webExtensionManager
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
-        self.isBitwardenEnabled = isBitwardenEnabled
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
@@ -65,6 +63,8 @@ final class WebExtensionsDebugMenu: NSMenu {
         apiCompatibilityLogMenuItem.target = self
         extensionsPageMenuItem.target = self
         apiCompatibilityLogMenuItem.isEnabled = true
+        backdateInstallDatesMenuItem.target = self
+        backdateInstallDatesMenuItem.isEnabled = true
 
         addItems()
     }
@@ -87,6 +87,25 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(openExtensionsFolderMenuItem)
         addItem(extensionsPageMenuItem)
         addItem(apiCompatibilityLogMenuItem)
+        addItem(backdateInstallDatesMenuItem)
+        addItem(NSMenuItem(title: "Check for Updates…", action: #selector(showUpdateVersions), target: self))
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
+        addItem(.separator())
+        let testingMenu = NSMenu()
+        let serverTitle = updateTestServer.isRunning ? "Open Local Server…" : "Start Local Server…"
+        testingMenu.addItem(NSMenuItem(title: serverTitle, action: #selector(startUpdateTestServer), target: self))
+        let stopServer = NSMenuItem(title: "Stop Local Server", action: #selector(stopUpdateTestServer), target: self)
+        stopServer.isEnabled = updateTestServer.isRunning
+        testingMenu.addItem(stopServer)
+        testingMenu.addItem(.separator())
+        let testingProfile = NSMenuItem(title: "Use Test Profile", action: #selector(toggleUpdateTestingProfile), target: self)
+        testingProfile.state = ChromeWebStoreManualUpdateTesting.isEnabled ? .on : .off
+        testingMenu.addItem(testingProfile)
+        let installFixture = NSMenuItem(title: "Install Test Extension v1", action: #selector(installUpdateTestFixture), target: self)
+        installFixture.isEnabled = updateTestServer.isRunning && (webExtensionManager as? WebExtensionManager).map { ChromeWebStoreManualUpdateTesting().owns($0) } == true
+        testingMenu.addItem(installFixture)
+        addItem(NSMenuItem(title: "Local Update Testing", action: nil).submenu(testingMenu))
+#endif
 
         let addedPopoverMenuItems = makeShowAddedPopoverMenuItems()
         if !addedPopoverMenuItems.isEmpty {
@@ -132,12 +151,6 @@ final class WebExtensionsDebugMenu: NSMenu {
         browseItem.target = self
         submenu.addItem(browseItem)
 
-        submenu.addItem(installBitwardenSeparator)
-
-        installBitwardenMenuItem.target = self
-        submenu.addItem(installBitwardenMenuItem)
-        updateInstallBitwardenMenuItem()
-
         return submenu
     }
 
@@ -152,14 +165,16 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.isEnabled = true
-        updateInstallBitwardenMenuItem()
     }
 
-    /// The shortcut only opens Bitwarden's Web Store page, which offers no install while Bitwarden is off.
-    private func updateInstallBitwardenMenuItem() {
-        let isHidden = !isBitwardenEnabled()
-        installBitwardenSeparator.isHidden = isHidden
-        installBitwardenMenuItem.isHidden = isHidden
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
+        if menuItem.action == #selector(installUpdateTestFixture) {
+            return updateTestServer.isRunning && (webExtensionManager as? WebExtensionManager).map { ChromeWebStoreManualUpdateTesting().owns($0) } == true
+        }
+        if menuItem.action == #selector(stopUpdateTestServer) { return updateTestServer.isRunning }
+#endif
+        return true
     }
 
     @objc func selectAndLoadWebExtension() {
@@ -174,17 +189,45 @@ final class WebExtensionsDebugMenu: NSMenu {
         }
     }
 
+    @objc private func showUpdateVersions() {
+        WebExtensionUpdateVersionsWindowPresenter.show(manager: webExtensionManager)
+    }
+
+#if DEBUG && WEB_EXTENSION_UPDATE_TESTING
+    @objc private func startUpdateTestServer() {
+        Task { @MainActor in
+            do {
+                let url = try await updateTestServer.start()
+                NSWorkspace.shared.open(url)
+            } catch { await NSAlert(error: error).runModal() }
+        }
+    }
+
+    @objc private func stopUpdateTestServer() { updateTestServer.stop() }
+
+    @objc private func toggleUpdateTestingProfile() {
+        ChromeWebStoreManualUpdateTesting.isEnabled.toggle()
+        let alert = NSAlert()
+        alert.messageText = "Restart the app to switch extension profiles"
+        alert.informativeText = ChromeWebStoreManualUpdateTesting.isEnabled
+            ? "The next launch will use an isolated profile. Start the local server from this menu after restarting. Your normal extensions remain unchanged."
+            : "The next launch will use your normal extensions and the Chrome Web Store again."
+        alert.runModal()
+    }
+
+    @objc private func installUpdateTestFixture() {
+        guard let manager = webExtensionManager as? WebExtensionManager else { return }
+        Task { @MainActor in
+            do { try await ChromeWebStoreManualUpdateTesting().installVersionOne(in: manager) } catch { await NSAlert(error: error).runModal() }
+        }
+    }
+#endif
+
     /// Replays the notification a Chrome Web Store install posts, for the key window.
     @objc func showExtensionAddedPopover(_ sender: NSMenuItem) {
         guard let storeID = sender.representedObject as? String,
               let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else { return }
         NotificationCenter.default.post(name: .chromeWebStoreExtensionInstalled, object: window, userInfo: [ChromeWebStoreUserScript.UserInfoKeys.extensionID: storeID])
-    }
-
-    /// Opens Bitwarden's Chrome Web Store page, where it can be installed.
-    @objc func installBitwarden() {
-        let url = URL(string: "https://chromewebstore.google.com/detail/bitwarden-password-manage/nngceckbapebfimnlniiiahkandclblb")!
-        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @objc func uninstallAllExtensions() {
@@ -236,6 +279,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         Application.appDelegate.windowControllersManager.show(url: .webExtensions, source: .ui, newTab: true)
     }
 
+    /// Lets the next page load report 14-day retention for every pending store install.
+    @objc func backdateInstallDates() {
+        (webExtensionManager as? WebExtensionManager)?.backdateStoreInstalls(by: 30 * 24 * 60 * 60)
+    }
+
     @objc func showAPICompatibilityLog() {
         WebExtensionAPICompatibilityLogWindowPresenter.show()
     }
@@ -247,6 +295,7 @@ final class WebExtensionsDebugMenu: NSMenu {
 }
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionMenuItem: NSMenuItem {
 
     required init(coder: NSCoder) {
@@ -273,6 +322,7 @@ final class WebExtensionMenuItem: NSMenuItem {
 }
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionSubMenu: NSMenu {
 
     private let extensionIdentifier: String

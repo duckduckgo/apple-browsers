@@ -1,0 +1,10 @@
+{
+  "covers": ["PR template"],
+  "prompt": "Write the pull request description for commit 56a9d28e24 and save it to pr-description.md in the repo root. Don't push or open a PR.",
+  "max_turns": 15,
+  "graders": [
+    {"type": "file_changed", "path": "pr-description.md"},
+    {"type": "diff_contains", "path": "pr-description.md", "pattern": "Task/Issue URL:"},
+    {"type": "diff_contains", "path": "pr-description.md", "pattern": "### Testing Steps"}
+  ]
+}

@@ -725,6 +725,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
     var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
     var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { NoOpCPMMessagingHealthMonitor() }
+    let badgeColors = WebExtensionBadgeColorStore()
     func installExtension(from sourceURL: URL) async throws {}
     func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
@@ -740,6 +741,9 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionPermissions(for identifier: String) -> [String] { [] }
+    func extensionMatchPatterns(for identifier: String) -> [String] { [] }
+    @MainActor func hasAccessToPrivateData(for identifier: String) -> Bool? { nil }
+    @MainActor func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}

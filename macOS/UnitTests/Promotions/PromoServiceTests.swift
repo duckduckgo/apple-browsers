@@ -2302,6 +2302,174 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertNotNil(record.lastShown)
     }
 
+    // MARK: - Showing over visible promos
+
+    func testWhenShowsOverVisiblePromos_ThenShowsOverVisibleGlobalPromo() async {
+        // Given: a global banner promo, and a global promo that shows over visible promos
+        let bannerDelegate = MockPromoDelegate(isEligible: true)
+        let overlayDelegate = MockPromoDelegate(isEligible: true)
+        let bannerPromo = PromoTestHelpers.makePromo(id: "banner", context: .global, delegate: bannerDelegate)
+        let overlayPromo = PromoTestHelpers.makePromo(id: "overlay", triggers: [.newTabPageAppeared], showsOverVisiblePromos: true, delegate: overlayDelegate)
+        let promoService = makeService(promos: [bannerPromo, overlayPromo])
+        let bannerVisible = expectVisible(promoService, ["banner"])
+        let bothVisible = expectVisible(promoService, ["banner", "overlay"])
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [bannerVisible], timeout: timeout)
+        triggerSubject.send(.newTabPageAppeared)
+
+        // Then
+        await fulfillment(of: [bothVisible], timeout: timeout)
+    }
+
+    func testWhenShowsOverVisiblePromosPromoVisible_ThenLaterPromoStillBlocked() async {
+        // Given
+        let overlayDelegate = MockPromoDelegate(isEligible: true)
+        let laterDelegate = MockPromoDelegate(isEligible: true)
+        let overlayPromo = PromoTestHelpers.makePromo(id: "overlay", showsOverVisiblePromos: true, delegate: overlayDelegate)
+        let laterPromo = PromoTestHelpers.makePromo(id: "later", triggers: [.newTabPageAppeared], context: .global, delegate: laterDelegate)
+        let promoService = makeService(promos: [overlayPromo, laterPromo])
+        let overlayVisible = expectVisible(promoService, ["overlay"])
+        let laterNotVisible = expectNeverVisible(promoService, "later")
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [overlayVisible], timeout: timeout)
+        triggerSubject.send(.newTabPageAppeared)
+        testQueue.sync {}
+
+        // Then
+        await fulfillment(of: [laterNotVisible], timeout: 0.5)
+        XCTAssertNil(historyStore.record(for: "later").lastShown)
+    }
+
+    func testWhenNonConflictingExternalPromoAppears_ThenPromoUnderneathStays() async {
+        // Given: a webPage promo visible with a overlay promo over it
+        let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
+        let webPageDelegate = MockPromoDelegate(isEligible: true)
+        let overlayDelegate = MockPromoDelegate(isEligible: true)
+        let externalPromo = PromoTestHelpers.makePromo(id: "external", context: .newTabPage, delegate: externalDelegate)
+        let webPagePromo = PromoTestHelpers.makePromo(id: "web-page", context: .webPage, delegate: webPageDelegate)
+        let overlayPromo = PromoTestHelpers.makePromo(id: "overlay", triggers: [.newTabPageAppeared], showsOverVisiblePromos: true, delegate: overlayDelegate)
+        let promoService = makeService(promos: [externalPromo, webPagePromo, overlayPromo])
+        await showWebPagePromoThenOverlay(promoService)
+        let webPageLastShown = historyStore.record(for: "web-page").lastShown
+        let allVisible = expectVisible(promoService, ["external", "web-page", "overlay"])
+        let webPageStays = expectStaysVisible(promoService, "web-page")
+        let overlayStays = expectStaysVisible(promoService, "overlay")
+
+        // When
+        externalDelegate.setVisible(true)
+
+        // Then
+        await fulfillment(of: [allVisible], timeout: timeout)
+        await fulfillment(of: [webPageStays, overlayStays], timeout: 0.5)
+        XCTAssertEqual(webPageDelegate.hideCallCount, 0)
+        XCTAssertNotNil(webPageLastShown)
+        XCTAssertEqual(historyStore.record(for: "web-page").lastShown, webPageLastShown)
+    }
+
+    func testWhenShowsOverVisiblePromosPromoDismissed_ThenItsCooldownDoesNotRetractPromoUnderneath() async {
+        // Given: an app-initiated webPage promo visible, and an app-initiated overlay promo shown over it then dismissed
+        let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
+        let webPageDelegate = MockPromoDelegate(isEligible: true)
+        let overlayDelegate = MockPromoDelegate(isEligible: true)
+        let externalPromo = PromoTestHelpers.makePromo(id: "external", context: .newTabPage, delegate: externalDelegate)
+        let webPagePromo = PromoTestHelpers.makePromo(id: "web-page", initiated: .app, context: .webPage, delegate: webPageDelegate)
+        let overlayPromo = PromoTestHelpers.makePromo(id: "overlay", triggers: [.newTabPageAppeared], showsOverVisiblePromos: true, delegate: overlayDelegate)
+        let promoService = makeService(promos: [externalPromo, webPagePromo, overlayPromo])
+        await showWebPagePromoThenOverlay(promoService)
+        await dismissOverlay(promoService)
+        let bothVisible = expectVisible(promoService, ["external", "web-page"])
+        let webPageStays = expectStaysVisible(promoService, "web-page")
+
+        // When
+        externalDelegate.setVisible(true)
+
+        // Then
+        await fulfillment(of: [bothVisible], timeout: timeout)
+        await fulfillment(of: [webPageStays], timeout: 0.5)
+        XCTAssertEqual(webPageDelegate.hideCallCount, 0)
+    }
+
+    func testWhenShowsOverVisiblePromosPromoDismissed_ThenNewPromoStillRespectsItsCooldown() async {
+        // Given: an app-initiated overlay promo shown over a webPage promo, then dismissed
+        let webPageDelegate = MockPromoDelegate(isEligible: true)
+        let overlayDelegate = MockPromoDelegate(isEligible: true)
+        let laterDelegate = MockPromoDelegate(isEligible: true)
+        let webPagePromo = PromoTestHelpers.makePromo(id: "web-page", initiated: .app, context: .webPage, delegate: webPageDelegate)
+        let overlayPromo = PromoTestHelpers.makePromo(id: "overlay", triggers: [.newTabPageAppeared], showsOverVisiblePromos: true, delegate: overlayDelegate)
+        let laterPromo = PromoTestHelpers.makePromo(id: "later", triggers: [.windowBecameKey], initiated: .app, context: .newTabPage, delegate: laterDelegate)
+        let promoService = makeService(promos: [webPagePromo, overlayPromo, laterPromo])
+        await showWebPagePromoThenOverlay(promoService)
+        await dismissOverlay(promoService)
+        let laterNotVisible = expectNeverVisible(promoService, "later")
+
+        // When
+        triggerSubject.send(.windowBecameKey)
+        testQueue.sync {}
+
+        // Then
+        await fulfillment(of: [laterNotVisible], timeout: 0.5)
+        XCTAssertNil(historyStore.record(for: "later").lastShown)
+    }
+
+    /// Shows the "web-page" promo (on `.appLaunched`) and then the overlay promo over it (on `.newTabPageAppeared`).
+    private func showWebPagePromoThenOverlay(_ promoService: PromoService) async {
+        let webPageVisible = expectVisible(promoService, ["web-page"])
+        let bothVisible = expectVisible(promoService, ["web-page", "overlay"])
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [webPageVisible], timeout: timeout)
+        triggerSubject.send(.newTabPageAppeared)
+        await fulfillment(of: [bothVisible], timeout: timeout)
+    }
+
+    private func dismissOverlay(_ promoService: PromoService) async {
+        let overlayHidden = expectVisible(promoService, ["web-page"], excluding: "overlay")
+        promoService.dismiss(promoId: "overlay", result: .ignored())
+        await fulfillment(of: [overlayHidden], timeout: timeout)
+        XCTAssertNotNil(historyStore.record(for: "overlay").lastDismissed)
+    }
+
+    /// Fulfilled when the visible promos include all of `ids` and don't include `excludedId`.
+    private func expectVisible(_ promoService: PromoService, _ ids: Set<String>, excluding excludedId: String? = nil) -> XCTestExpectation {
+        let expectation = XCTestExpectation(description: "\(ids.sorted()) visible")
+        promoService.visiblePromosPublisher
+            .map { Set($0.map(\.id)) }
+            .first { visibleIds in
+                visibleIds.isSuperset(of: ids) && !visibleIds.contains(excludedId ?? "")
+            }
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+        return expectation
+    }
+
+    /// Inverted: fails if the promo ever becomes visible.
+    private func expectNeverVisible(_ promoService: PromoService, _ id: String) -> XCTestExpectation {
+        let expectation = XCTestExpectation(description: "\(id) never visible")
+        expectation.isInverted = true
+        promoService.visiblePromosPublisher
+            .first { promos in promos.contains { $0.id == id } }
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+        return expectation
+    }
+
+    /// Inverted: fails if the promo, visible now, stops being visible.
+    private func expectStaysVisible(_ promoService: PromoService, _ id: String) -> XCTestExpectation {
+        let expectation = XCTestExpectation(description: "\(id) stays visible")
+        expectation.isInverted = true
+        promoService.visiblePromosPublisher
+            .first { promos in !promos.contains { $0.id == id } }
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+        return expectation
+    }
+
     // MARK: - PromoHistoryProviding
 
     func testWhenHistoryStoreHasPreExistingRecord_ThenHistoryPublisherEmitsItOnStart() async {

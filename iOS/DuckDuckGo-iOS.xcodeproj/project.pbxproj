@@ -203,6 +203,7 @@
 		F143C2EC1E4A4CD400CFDE3A /* Core.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F19B98662EAFA799000FF209 /* AttributedMetric */; };
 		F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */; };
+		1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 028550FF94FC586352ECCAB2 /* UITestingSupport */; };
 		F486D31D2506980E002D07D7 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F486D31C2506980E002D07D7 /* Swifter */; };
 		F486D33425069BBB002D07D7 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F486D33325069BBB002D07D7 /* Kingfisher */; };
 		F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3352506A037002D07D7 /* OHHTTPStubs */; };
@@ -542,7 +543,9 @@
 		96EB17F9308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AGENTS.md,
 				Autoconsent/userscript.js,
+				CLAUDE.md,
 				DuckPlayer/NativeUI/README.md,
 				"Info-Experimental.plist",
 				Info.plist,
@@ -650,6 +653,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"UI Tests.xctestplan",
+				"iPad UI Tests.xctestplan",
 			);
 			target = 23215268B3D7426DA0FAC923 /* UI Tests */;
 		};
@@ -840,6 +844,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F486D31D2506980E002D07D7 /* Swifter in Frameworks */,
+				1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1401,6 +1406,7 @@
 			name = AtbUITests;
 			packageProductDependencies = (
 				F486D31C2506980E002D07D7 /* Swifter */,
+				028550FF94FC586352ECCAB2 /* UITestingSupport */,
 			);
 			productName = AtbIntegrationTests;
 			productReference = 85F21DAD210F5E32002631A6 /* AtbUITests.xctest */;
@@ -5712,6 +5718,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */;
 			productName = BareBonesBrowserKit;
+		};
+		028550FF94FC586352ECCAB2 /* UITestingSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */;
+			productName = UITestingSupport;
 		};
 		F486D31C2506980E002D07D7 /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;

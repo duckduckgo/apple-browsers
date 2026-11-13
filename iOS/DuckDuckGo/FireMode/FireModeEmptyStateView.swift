@@ -46,7 +46,7 @@ struct FireModeEmptyStateView: View {
             switch self {
             case .tab:
                 return false
-            case .tabSwitcher(let onNewFireTab):
+            case .tabSwitcher:
                 return true
             }
         }
@@ -55,6 +55,7 @@ struct FireModeEmptyStateView: View {
     // MARK: - Variables
 
     private let type: ViewType
+    private let contentTopInset: CGFloat
 
     private var onNewFireTab: NewFireTabBlock? {
         if case .tabSwitcher(let onNewFireTab) = type {
@@ -65,8 +66,9 @@ struct FireModeEmptyStateView: View {
 
     // MARK: - Initializer
 
-    init(type: ViewType) {
+    init(type: ViewType, contentTopInset: CGFloat = 0) {
         self.type = type
+        self.contentTopInset = contentTopInset
     }
 
     // MARK: - Body
@@ -77,7 +79,8 @@ struct FireModeEmptyStateView: View {
                 headerSection
                 contentCard
             }
-            .padding(.top, Constants.mainTopPadding)
+            // Animatable, so the content moves with the focused input instead of jumping inside the scroll view.
+            .modifier(FocusedContentTopInset(topInset: contentTopInset, fixedTopInset: Constants.mainTopPadding))
             .padding(.horizontal, Constants.mainHorizontalPadding)
             .frame(maxWidth: Constants.maxViewWidth)
         }

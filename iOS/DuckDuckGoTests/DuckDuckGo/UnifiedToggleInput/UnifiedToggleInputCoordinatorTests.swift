@@ -1141,6 +1141,35 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func testWhenInactiveSearchSwitchesToDuckAIThenOnlyTheDestinationInputGainsFocus() throws {
+        func findToggle(in view: UIView) -> UnifiedToggleInputToggleView? {
+            if let toggle = view as? UnifiedToggleInputToggleView { return toggle }
+            return view.subviews.lazy.compactMap { findToggle(in: $0) }.first
+        }
+
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+        try XCTUnwrap(scheduledFocus.first)()
+        sut.viewController.deactivateInput()
+        sut.updateOmnibarInputVisibility(false)
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        let handler = sut.viewController.handler
+        var focusedModes: [TextEntryMode] = []
+        handler.textInputFocusChangedPublisher.sink { isFocused in
+            if isFocused { focusedModes.append(handler.currentToggleState) }
+        }.store(in: &cancellables)
+        let toggle = try XCTUnwrap(findToggle(in: sut.viewController.view))
+
+        toggle.onModeChanged?(.aiChat)
+
+        XCTAssertEqual(focusedModes, [.aiChat])
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
     // MARK: - VC Delegate: Submit — Search Mode
 
     func test_submitSearch_callsDelegateQueryMethod() {
@@ -1562,7 +1591,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             toggleModeStorage: mockToggleModeStorage,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFloatingUIEnabled ? [.floatingUIiOS26, .floatingUIiOS27] : []),
-            scheduleOmnibarFocus: schedule)
+            scheduleInputFocus: schedule)
         coordinator.modelStore.models = [model]
         coordinator.intentPublisher.sink { [weak coordinator] intent in
             if case .showOmnibarEditing = intent {
@@ -1686,7 +1715,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             switchBarSubmissionMetrics: mockSubmissionMetrics,
             featureDiscovery: mockFeatureDiscovery,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
-            scheduleOmnibarFocus: { $0() }
+            scheduleInputFocus: { $0() }
         )
         coordinator.delegate = mockDelegate
         return coordinator

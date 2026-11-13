@@ -207,6 +207,8 @@ extension PromoServiceFactoryTests {
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            userChurnService: MockUserChurnStateProvider(),
+            defaultBrowserWinBackConfirmationMonitor: MockDefaultBrowserConfirmationMonitor(),
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),

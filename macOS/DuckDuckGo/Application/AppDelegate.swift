@@ -162,6 +162,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let contentScopePreferences: ContentScopePreferences
+    private(set) lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    /// One instance for the app, so every tab shares the segments cache.
+    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -312,6 +315,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
+    private(set) lazy var localModelAccessPrompt = LocalModelAccessPrompt(themeManager: themeManager)
+
+    @MainActor
     private(set) lazy var aiChatScreenshotCaptureService = AIChatScreenshotCaptureService()
 
     @MainActor
@@ -363,6 +369,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatSessionStore: AIChatSessionStoring
 
     let aiChatBrowserToolsService: AIChatBrowserToolsService
+    let localModelService: AIChatLocalModelService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -419,7 +426,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
     private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+    let userChurnService: UserChurnService
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
+    let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
@@ -617,6 +626,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var webExtensionManager: WebExtensionManaging?
     /// Whether a password manager extension has taken autofill over from DuckDuckGo.
     let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
+    private var nativeBitwardenRetirement: AnyObject?
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -1013,7 +1023,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     isInternalUserEnabled: isInternalUserEnabled,
                                                                     wideEvent: wideEvent,
                                                                     isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
-                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation,
+                                                                    isStripeProductsByPlanCountryEnabled: {
+            featureFlagger.isFeatureOn(.stripeProductsByPlanCountry)
+                                                                    })
 
         // Expired refresh token recovery
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
@@ -1062,6 +1075,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
                                                               windowControllersManager: windowControllersManager,
                                                               historyCoordinator: historyCoordinator)
+        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -1073,7 +1087,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             aiChatMenuConfiguration: aiChatMenuConfiguration,
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
-            promptBarPreferences: promptBarPreferences
+            promptBarPreferences: promptBarPreferences,
+            localModelService: localModelService
         )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
@@ -1302,6 +1317,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         eventHubIntegration = MacOSEventHubIntegration(
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: try? KeyValueFileStore(location: Self.keyValueStoresLocation, name: "EventHubKeyValueStore"))
+        autoconsentManagement.eventHub = eventHubIntegration.eventHub
+        autoconsentManagement.pixelFiring = PixelKit.shared
 
         if AppVersion.runType.requiresEnvironment {
             let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)
@@ -1453,12 +1470,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        userChurnScheduler = UserChurnBackgroundActivityScheduler(
+        userChurnService = UserChurnService(
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             keyValueStore: keyValueStore,
             pixelFiring: PixelKit.shared,
             atbProvider: { LocalStatisticsStore().atb }
         )
+        userChurnScheduler = UserChurnBackgroundActivityScheduler(userChurnService: userChurnService)
+
+        defaultBrowserWinBackConfirmationMonitor = DefaultBrowserConfirmationMonitor(
+            source: .winBack,
+            store: DefaultBrowserConfirmationStore(source: .winBack, keyValueStore: keyValueStore),
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dateProvider: DebugSimulatedDateStore.makeDateProvider(keyValueStore: keyValueStore)
+        )
+        defaultBrowserWinBackConfirmationMonitor.resume()
 
         bitwardenManager = BWManagerProvider.makeManager()
         passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: bitwardenManager)
@@ -1707,6 +1733,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            userChurnService: userChurnService,
+            defaultBrowserWinBackConfirmationMonitor: defaultBrowserWinBackConfirmationMonitor,
             sessionRestoreCoordinator: sessionRestorePromptCoordinator,
             subscriptionPromoDelegate: subscriptionPromoDelegate,
             featureFlagger: featureFlagger,
@@ -2064,6 +2092,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let sparkleUpdateController = sparkleFactory.instantiate(
                 internalUserDecider: internalUserDecider,
                 featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
@@ -2375,7 +2404,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentPreferences: cookiePopupProtectionPreferences,
             themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
-            scriptletConfiguration: makeScriptletConfiguration()
+            scriptletConfiguration: makeScriptletConfiguration(),
+            eventHub: eventHubIntegration.eventHub
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager
@@ -2383,6 +2413,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             featureFlagger: featureFlagger
         )
+        let nativeBitwardenRetirement = NativeBitwardenRetirement(
+            isBitwardenExtensionInstalled: { [weak webExtensionManager] in
+                webExtensionManager?.isBitwardenExtensionInstalled ?? false
+            },
+            disableNativeIntegration: { [passwordManagerCoordinator] in
+                passwordManagerCoordinator.setEnabled(false)
+            }
+        )
+        self.nativeBitwardenRetirement = nativeBitwardenRetirement
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2397,9 +2436,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Load extensions asynchronously - the controller is already attached to tabs
         let initialLoad = coordinator.loadAndSync()
-        Task { @MainActor [weak self] in
+        Task { @MainActor [weak self, weak nativeBitwardenRetirement] in
             await initialLoad.value
             self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            nativeBitwardenRetirement?.retireIfNeeded()
         }
     }
 

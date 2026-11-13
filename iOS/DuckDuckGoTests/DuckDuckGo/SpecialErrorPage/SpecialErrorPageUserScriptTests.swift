@@ -45,7 +45,6 @@ struct SpecialErrorPageUserScriptTests {
         let result = try #require(SpecialErrorPageUserScript.localeStrings(for: languageCode))
 
         // Then
-        #expect(result != nil, "The result should not be nil for the Polish language code.")
         let expectedSubstring = "Ostrzeżenie: ta witryna może być niebezpieczna"
         #expect(result.contains(expectedSubstring), "The result should contain the expected Polish string.")
     }

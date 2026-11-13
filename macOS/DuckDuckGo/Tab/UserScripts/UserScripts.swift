@@ -117,7 +117,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             syncServiceProvider: sourceProvider.syncServiceProvider,
             syncErrorHandler: sourceProvider.syncErrorHandler,
             featureFlagger: sourceProvider.featureFlagger,
-            homepageAiChatsProvider: homepageAiChatsProvider
+            homepageAiChatsProvider: homepageAiChatsProvider,
+            bonusHandler: sourceProvider.aiChatBonusOffer.handler
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)

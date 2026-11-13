@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import ConcurrencyExtensions
 import FoundationExtensions
 import Foundation
 import Persistence
@@ -116,6 +117,15 @@ final class AIChatUserScript: NSObject, Subfeature {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 self?.submitSyncStatusChanged(status)
+            }
+            .store(in: &cancellables)
+
+        handler.bonusRecordPayloadPublisher
+            .sink { [weak self] payload in
+                // The bonus service already delivers on the main queue, so push right away and keep the order of the changes.
+                MainActor.assumeMainThread {
+                    self?.submitBonusRecord(payload)
+                }
             }
             .store(in: &cancellables)
     }
@@ -254,6 +264,16 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.sendToSyncSettings
         case .setAIChatHistoryEnabled:
             return handler.setAIChatHistoryEnabled
+        case .getAIChatBonusRecord:
+            return handler.getAIChatBonusRecord
+        case .getAIChatNewBonusRecord:
+            return handler.getAIChatNewBonusRecord
+        case .aiChatBonusRedeemOutcome:
+            return handler.aiChatBonusRedeemOutcome
+        case .aiChatBonusDismiss:
+            return handler.aiChatBonusDismiss
+        case .aiChatBonusEnd:
+            return handler.aiChatBonusEnd
         case .voiceSessionStarted:
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
@@ -347,6 +367,15 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
     @MainActor
     func pushTabChanged(_ data: AIChatTabChangedData) {
         pushToDuckAI(.aiChatTabChanged, params: data)
+    }
+
+    /// Pushes the bonus record to this tab after it changes, so Duck.ai re-derives the offer state.
+    private func submitBonusRecord(_ payload: AIChatBonusRecordPayload) {
+        // Every tab has this script, so only a Duck.ai page gets it.
+        guard let webView, let broker,
+              let host = webView.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+        broker.push(method: AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue, params: payload, for: self, into: webView)
     }
 
     /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Combine
 import Common
@@ -109,6 +110,7 @@ final class UserContentUpdating {
          autoconsentManagement: AutoconsentManagement,
          contentScopePreferences: ContentScopePreferences,
          syncErrorHandler: SyncErrorHandling,
+         aiChatBonusOffer: AIChatBonusOfferDependencies,
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
          dockCustomization: DockCustomization,
          reinstallUserDetection: ReinstallingUserDetecting,
@@ -157,6 +159,7 @@ final class UserContentUpdating {
                                                           autoconsentManagement: autoconsentManagement,
                                                           syncServiceProvider: syncServiceProvider,
                                                           syncErrorHandler: syncErrorHandler,
+                                                          aiChatBonusOffer: aiChatBonusOffer,
                                                           webExtensionAvailability: webExtensionAvailability,
                                                           dockCustomization: dockCustomization,
                                                           reinstallUserDetection: reinstallUserDetection,

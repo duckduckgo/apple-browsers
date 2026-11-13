@@ -42,8 +42,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
     case onboardingNonBlocking
 
-    /// Adds the "Try a search or AI chat" step to onboarding
-    /// TODO: Apple Feature Flags Registry task URL
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
     /// Subscription upsell screen at the end of contextual onboarding

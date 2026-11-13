@@ -233,8 +233,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
     case onboardingNonBlockingV2
 
-    /// Adds the "Try a search or AI chat" step to onboarding
-    /// TODO: Apple Feature Flags Registry task URL
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the

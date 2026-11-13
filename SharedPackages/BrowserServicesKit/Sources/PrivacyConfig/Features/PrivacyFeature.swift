@@ -752,6 +752,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case heuristicHitTest
+    case popupMutationObserver
     case cookiePopupOptInDialog
 }
 

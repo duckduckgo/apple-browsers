@@ -113,6 +113,7 @@ class Ios:
                 if os.path.exists(ack):
                     record["status"] = "acknowledged"
                     record["acknowledgedAt"] = time.time()
+                    print(f"Acknowledged checkpoint {checkpoint_id}; continuing", flush=True)
                     return checkpoint_id
                 if time.monotonic() >= deadline:
                     record["status"] = "timedOut"

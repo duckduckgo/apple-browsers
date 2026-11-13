@@ -63,6 +63,9 @@ struct WebExtensionBackgroundPagePatcher {
         static let page = "page"
         static let type = "type"
         static let moduleType = "module"
+        static let manifestVersion = "manifest_version"
+        static let contentSecurityPolicy = "content_security_policy"
+        static let extensionPages = "extension_pages"
     }
 
     private let fileManager: FileManager
@@ -88,7 +91,7 @@ struct WebExtensionBackgroundPagePatcher {
         do {
             guard let manifest = try isArchive ? Self.manifest(inArchiveAt: installedExtensionURL) : manifest(inDirectory: installedExtensionURL),
                   !declaresDuckDuckGoSettings(inManifest: manifest),
-                  Self.hasServiceWorkerOnlyBackground(manifest) else {
+                  Self.hasServiceWorkerOnlyBackground(manifest) || Self.patchedWasmPolicy(in: manifest) != nil else {
                 if fileManager.fileExists(atPath: loadableURL.path) {
                     try fileManager.removeItem(at: loadableURL)
                 }
@@ -174,8 +177,27 @@ struct WebExtensionBackgroundPagePatcher {
         return !serviceWorkerPath.isEmpty && background[ManifestKey.scripts] == nil && background[ManifestKey.page] == nil
     }
 
+    /// The `extension_pages` policy rewritten for WebAssembly, when this WebKit needs it (see `WebExtensionWasmPolicyPatch`).
+    private static func patchedWasmPolicy(in manifest: [String: Any]) -> String? {
+        guard #unavailable(macOS 26, iOS 26),
+              manifest[ManifestKey.manifestVersion] as? Int == 3,
+              let policies = manifest[ManifestKey.contentSecurityPolicy] as? [String: Any],
+              let policy = policies[ManifestKey.extensionPages] as? String else { return nil }
+        return WebExtensionWasmPolicyPatch.patchedPolicy(policy)
+    }
+
+    /// - Returns: `true` when `manifest` was changed.
+    private static func patchWasmPolicy(in manifest: inout [String: Any]) -> Bool {
+        guard let patched = patchedWasmPolicy(in: manifest),
+              var policies = manifest[ManifestKey.contentSecurityPolicy] as? [String: Any] else { return false }
+        policies[ManifestKey.extensionPages] = patched
+        manifest[ManifestKey.contentSecurityPolicy] = policies
+        return true
+    }
+
     /// Patches the manifest of the extension installed at `installedExtensionURL`: rewrites a
-    /// service-worker-only background into a background page.
+    /// service-worker-only background into a background page, and lets its pages use WebAssembly
+    /// before macOS 26 (see `WebExtensionWasmPolicyPatch`).
     /// - Parameter installedExtensionURL: The installed extension directory, as
     ///   `WebExtensionStorageProviding.resolveInstalledExtension` resolved it — so the manifest sits
     ///   directly in it, and any top-level wrapper folder an archive carried is already unwrapped.
@@ -202,7 +224,9 @@ struct WebExtensionBackgroundPagePatcher {
                 return false
             }
 
-            guard try patchBackground(in: &manifest, manifestDirectory: manifestDirectory) else {
+            let patchedBackground = try patchBackground(in: &manifest, manifestDirectory: manifestDirectory)
+            let patchedPolicy = Self.patchWasmPolicy(in: &manifest)
+            guard patchedBackground || patchedPolicy else {
                 return false
             }
 

@@ -178,6 +178,9 @@ class MockDDGSyncing: DDGSyncing {
         return registeredDevices
     }
 
+    func pollAuditLog() async throws -> Bool { false }
+    func isAuditLogPollingAvailable() throws -> Bool { false }
+
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading { MockAuditLogReader() }
 

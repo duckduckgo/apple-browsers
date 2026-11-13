@@ -180,6 +180,9 @@ final class MockDDGSyncing: DDGSyncing {
     private(set) var auditLogReaderAccounts: [String?] = []
     private(set) var auditLogPageReadCount = 0
 
+    func pollAuditLog() async throws -> Bool { false }
+    func isAuditLogPollingAvailable() throws -> Bool { false }
+
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading {
         auditLogReaderAccounts.append(account?.userId)

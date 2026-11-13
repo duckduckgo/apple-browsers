@@ -63,8 +63,11 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     @Published public private(set) var hasPendingUpdate = false
     public var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
-    public var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    public var mustShowUpdateIndicators: Bool {
+        hasPendingUpdate && (!isMoreProminentUpdatesOn || promptStage.showsMenuUpdate)
+    }
     public var clearsNotificationDotOnMenuOpen: Bool { !isMoreProminentUpdatesOn }
+    private var promptStage: UpdatePromptStage = .none
 
     @Published public var needsNotificationDot: Bool = false
     private let notificationDotSubject = CurrentValueSubject<Bool, Never>(false)
@@ -298,6 +301,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     // MARK: - Private Methods
 
     private func updateNotificationDot(for stage: UpdatePromptStage) {
+        promptStage = stage
         needsNotificationDot = hasPendingUpdate && (!isMoreProminentUpdatesOn || stage.showsNotificationDot)
     }
 

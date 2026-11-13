@@ -30,7 +30,7 @@ final class SubscriptionCancellationWideEventData: WideEventData {
         mobileMetaType: "ios-subscription-cancellation",
         // The macOS version of this wide event will be added later.
         desktopMetaType: "macos-subscription-cancellation",
-        version: "1.1.0"
+        version: "1.0.0"
     )
 
     static let cancellationTimeout: TimeInterval = .hours(24)
@@ -48,17 +48,18 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     let daysUntilRenewal: SubscriptionDaysSincePurchaseBucket
     let startDate: Date
     var statusReason: StatusReason?
+    var manageSubscriptionSheetShown = false
 
     init(entryPoint: EntryPoint,
-                purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform,
-                isTrial: Bool,
-                subscriptionIdentifier: String,
-                daysSincePurchase: SubscriptionDaysSincePurchaseBucket,
-                daysUntilRenewal: SubscriptionDaysSincePurchaseBucket,
-                startDate: Date,
-                contextData: WideEventContextData = WideEventContextData(),
-                appData: WideEventAppData = WideEventAppData(),
-                globalData: WideEventGlobalData = WideEventGlobalData()) {
+         purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform,
+         isTrial: Bool,
+         subscriptionIdentifier: String,
+         daysSincePurchase: SubscriptionDaysSincePurchaseBucket,
+         daysUntilRenewal: SubscriptionDaysSincePurchaseBucket,
+         startDate: Date,
+         contextData: WideEventContextData = WideEventContextData(),
+         appData: WideEventAppData = WideEventAppData(),
+         globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.entryPoint = entryPoint
         self.purchasePlatform = purchasePlatform
         self.isTrial = isTrial
@@ -97,7 +98,6 @@ extension SubscriptionCancellationWideEventData {
         case planChanged = "plan_changed"
         case noSubscription = "no_subscription"
         case expired
-        case gracePeriod = "grace_period"
         case partialData = "partial_data"
     }
 
@@ -109,6 +109,7 @@ extension SubscriptionCancellationWideEventData {
             (WideEventParameter.SubscriptionCancellationFeature.subscriptionIdentifier, subscriptionIdentifier),
             (WideEventParameter.SubscriptionCancellationFeature.daysSincePurchase, daysSincePurchase.rawValue),
             (WideEventParameter.SubscriptionCancellationFeature.daysUntilRenewal, daysUntilRenewal.rawValue),
+            (WideEventParameter.SubscriptionCancellationFeature.manageSubscriptionSheetShown, manageSubscriptionSheetShown),
             (WideEventParameter.Feature.statusReason, statusReason?.rawValue),
         ])
     }
@@ -134,5 +135,6 @@ extension WideEventParameter {
         static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
         static let daysSincePurchase = "feature.data.ext.days_since_purchase_bucketed"
         static let daysUntilRenewal = "feature.data.ext.days_until_renewal_bucketed"
+        static let manageSubscriptionSheetShown = "feature.data.ext.manage_subscription_sheet_shown"
     }
 }

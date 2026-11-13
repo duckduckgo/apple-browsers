@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-subscription-cancellation",
-            "version": "1.0"
+            "version": "0.0"
         },
         "feature": {
             "name": "subscription-cancellation",
@@ -13,16 +13,8 @@
                 "ext": {
                     "status_reason": {
                         "type": "string",
-                        "description": "Why the journey ended: `not_auto_renewable` on SUCCESS; `plan_changed` on CANCELLED; `timeout`, `no_subscription`, `expired`, `grace_period` or `partial_data` on UNKNOWN. Not sent on FAILURE.",
-                        "enum": [
-                            "not_auto_renewable",
-                            "timeout",
-                            "plan_changed",
-                            "no_subscription",
-                            "expired",
-                            "grace_period",
-                            "partial_data"
-                        ]
+                        "description": "Why the journey ended: `not_auto_renewable` or `expired` on SUCCESS; `plan_changed` on CANCELLED; `timeout`, `no_subscription` or `partial_data` on UNKNOWN. Not sent on FAILURE.",
+                        "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "partial_data"]
                     },
                     "entry_point": {
                         "type": "string",
@@ -37,6 +29,10 @@
                     "is_trial": {
                         "type": "boolean",
                         "description": "Whether the subscription had an active free trial offer at the entry tap."
+                    },
+                    "manage_subscription_sheet_shown": {
+                        "type": "boolean",
+                        "description": "Whether the App Store manage subscription sheet or the Stripe portal was shown in the app during the journey."
                     },
                     "subscription_identifier": {
                         "type": "string",

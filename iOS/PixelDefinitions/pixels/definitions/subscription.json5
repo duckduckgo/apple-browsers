@@ -823,8 +823,8 @@
             {
                 "key": "feature.data.ext.status_reason",
                 "type": "string",
-                "description": "Reason for the outcome: not_auto_renewable on SUCCESS; plan_changed on CANCELLED; timeout, no_subscription, expired, grace_period or partial_data on UNKNOWN; none on FAILURE (see the error parameters)",
-                "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "grace_period", "partial_data"]
+                "description": "Reason for the outcome: not_auto_renewable or expired on SUCCESS; plan_changed on CANCELLED; timeout, no_subscription or partial_data on UNKNOWN; none on FAILURE (see the error parameters)",
+                "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "partial_data"]
             },
             {
                 "key": "feature.data.ext.entry_point",
@@ -842,6 +842,11 @@
                 "key": "feature.data.ext.is_trial",
                 "type": "boolean",
                 "description": "Whether the subscription had an active free trial offer at the entry tap"
+            },
+            {
+                "key": "feature.data.ext.manage_subscription_sheet_shown",
+                "type": "boolean",
+                "description": "Whether the App Store manage subscription sheet or the Stripe portal was shown in the app during the journey"
             },
             {
                 "key": "feature.data.ext.subscription_identifier",

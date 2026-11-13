@@ -34,8 +34,8 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
     private var subscriptionObserver: NSObjectProtocol?
 
     init(wideEvent: WideEventManaging,
-                notificationCenter: NotificationCenter = .default,
-                subscriptionFetcher: @escaping () async throws -> DuckDuckGoSubscription?) {
+         notificationCenter: NotificationCenter = .default,
+         subscriptionFetcher: @escaping () async throws -> DuckDuckGoSubscription?) {
         self.wideEvent = wideEvent
         self.notificationCenter = notificationCenter
         self.subscriptionFetcher = subscriptionFetcher
@@ -86,10 +86,8 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
         switch subscription.status {
         case .notAutoRenewable:
             return .notAutoRenewable
-        case .autoRenewable:
+        case .autoRenewable, .gracePeriod:
             return subscription.productId == subscriptionIdentifier ? nil : .planChanged
-        case .gracePeriod:
-            return .gracePeriod
         case .expired:
             return .expired
         case .inactive, .unknown:
@@ -99,11 +97,11 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
 
     private static func status(for reason: SubscriptionCancellationWideEventData.StatusReason) -> WideEventStatus {
         switch reason {
-        case .notAutoRenewable:
+        case .notAutoRenewable, .expired:
             return .success(reason: reason.rawValue)
         case .planChanged:
             return .cancelled
-        case .timeout, .noSubscription, .expired, .gracePeriod, .partialData:
+        case .timeout, .noSubscription, .partialData:
             return .unknown(reason: reason.rawValue)
         }
     }

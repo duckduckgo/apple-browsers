@@ -641,6 +641,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 do {
                     try await AppStore.showManageSubscriptions(in: windowScene)
+                    cancellationInstrumentation.manageSubscriptionSheetShown()
                     await refetchAndDetectCancellation(since: subscriptionBefore, entry: entry)
                 } catch {
                     cancellationInstrumentation.cancelSubscriptionFailed(error)
@@ -668,6 +669,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         do {
             // Get Stripe Customer Portal URL and update the model
             let url = try await subscriptionManager.getCustomerPortalURL()
+            cancellationInstrumentation.manageSubscriptionSheetShown()
             if let existingModel = state.stripeViewModel {
                 existingModel.url = url
             } else {

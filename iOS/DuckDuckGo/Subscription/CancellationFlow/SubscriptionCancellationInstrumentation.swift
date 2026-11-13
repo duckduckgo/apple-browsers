@@ -40,6 +40,7 @@ protocol SubscriptionCancellationInstrumenting {
     func cancelSubscriptionTapped(subscription: DuckDuckGoSubscription?)
     func manageSubscriptionTapped(entryPoint: SubscriptionCancellationWideEventData.EntryPoint, subscription: DuckDuckGoSubscription?)
     func cancelSubscriptionFailed(_ error: Error)
+    func manageSubscriptionSheetShown()
     func appStoreSubscriptionCancelled(entry: SubscriptionCancellationEntry, subscription: DuckDuckGoSubscription)
     func flowLoadFailed(_ error: Error)
     func featureInfoFailed(entitlement: SubscriptionEntitlement)
@@ -89,6 +90,14 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
 
     func cancelSubscriptionFailed(_ error: Error) {
         failPendingCancellation(error)
+    }
+
+    func manageSubscriptionSheetShown() {
+        guard let wideEvent else { return }
+        for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) where !data.manageSubscriptionSheetShown {
+            data.manageSubscriptionSheetShown = true
+            wideEvent.updateFlow(data)
+        }
     }
 
     private func failPendingCancellation(_ error: Error) {

@@ -926,6 +926,22 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         await assertManageSubscriptionStartsCancellationJourney(platform: .stripe, expected: .changePlan)
     }
 
+    func testManageSubscription_WhenStripePortalLoads_ReportsManageSubscriptionSheetShown() async {
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        let instrumentation = SubscriptionCancellationInstrumentationSpy()
+        sut = makeSUT(cancellationInstrumentation: instrumentation)
+        await loadSubscriptionWithoutRefresh()
+        let shown = expectation(description: "Manage subscription sheet shown reported")
+        instrumentation.onManageSubscriptionSheetShown = { shown.fulfill() }
+
+        sut.manageSubscription()
+
+        await fulfillment(of: [shown], timeout: 5.0)
+        XCTAssertEqual(instrumentation.manageSubscriptionSheetShownCount, 1)
+        XCTAssertTrue(instrumentation.cancelSubscriptionFailures.isEmpty)
+    }
+
     func testManageSubscription_WhenStripePortalURLFails_ReportsCancelSubscriptionFailed() async {
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()

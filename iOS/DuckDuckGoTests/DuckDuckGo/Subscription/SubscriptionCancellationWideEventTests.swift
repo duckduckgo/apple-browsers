@@ -79,7 +79,8 @@ struct SubscriptionCancellationWideEventTests {
         #expect(parameters["feature.data.ext.subscription_identifier"] as? String == productId)
         #expect(parameters["feature.data.ext.days_since_purchase_bucketed"] as? String == "d8_30")
         #expect(parameters["feature.data.ext.days_until_renewal_bucketed"] as? String == "d8_30")
-        #expect(parameters.count == 6)
+        #expect(parameters["feature.data.ext.manage_subscription_sheet_shown"] as? Bool == false)
+        #expect(parameters.count == 7)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -144,6 +145,21 @@ struct SubscriptionCancellationWideEventTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Showing the manage subscription sheet marks the pending flow once", .timeLimit(.minutes(1)))
+    func manageSubscriptionSheetShownMarksPendingFlow() throws {
+        let wideEvent = WideEventMock()
+        let instrumentation = SubscriptionCancellationInstrumentation(pixelFiring: nil, wideEvent: wideEvent)
+        instrumentation.cancelSubscriptionTapped(subscription: subscription(status: .autoRenewable))
+
+        instrumentation.manageSubscriptionSheetShown()
+        instrumentation.manageSubscriptionSheetShown()
+
+        let data = try #require(wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self).first)
+        #expect(data.jsonParameters()["feature.data.ext.manage_subscription_sheet_shown"] as? Bool == true)
+        #expect(wideEvent.updates.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Tapping an entry again after a failure starts a new flow", .timeLimit(.minutes(1)))
     func entryTapAfterFailureStartsNewFlow() {
         let wideEvent = WideEventMock()
@@ -203,12 +219,12 @@ struct SubscriptionCancellationWideEventTests {
     @Test("A subscription change payload decides the pending flow and sends the status reason", .timeLimit(.minutes(1)), arguments: [
         (DuckDuckGoSubscription.Status.notAutoRenewable, false, [WideEventStatus.success(reason: "not_auto_renewable")], String?.some("not_auto_renewable")),
         (.autoRenewable, true, [.cancelled], "plan_changed"),
-        (.gracePeriod, true, [.unknown(reason: "grace_period")], "grace_period"),
-        (.expired, false, [.unknown(reason: "expired")], "expired"),
+        (.gracePeriod, true, [.cancelled], "plan_changed"),
+        (.expired, false, [.success(reason: "expired")], "expired"),
         (.inactive, false, [.unknown(reason: "partial_data")], "partial_data"),
         (.unknown, false, [.unknown(reason: "partial_data")], "partial_data"),
         (.autoRenewable, false, [], nil),
-        (.gracePeriod, false, [.unknown(reason: "grace_period")], "grace_period")
+        (.gracePeriod, false, [], nil)
     ])
     func subscriptionChangePayloadDecidesPendingFlow(status: DuckDuckGoSubscription.Status,
                                                      planChanged: Bool,

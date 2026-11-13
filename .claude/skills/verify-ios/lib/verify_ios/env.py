@@ -3,7 +3,7 @@
 Everything is keyed to the git worktree the caller runs from, so two worktrees never share simulators, ports,
 build products, recorded pids or evidence. Build products live inside the worktree; the rest lives under HOME.
 """
-import contextlib, fcntl, hashlib, json, os, secrets, socket, subprocess
+import contextlib, fcntl, hashlib, json, os, re, secrets, socket, subprocess
 
 SKILL = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 BUNDLE = "com.duckduckgo.mobile.ios"
@@ -237,3 +237,21 @@ def sha256(path):
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def validate_launch(launch):
+    """Allow explicit app configuration without overriding automation or feature flag pins."""
+    if not isinstance(launch, dict) or set(launch) - {"environment", "arguments"}:
+        raise Failed("LAUNCH must contain only environment and arguments")
+    environment, arguments = launch.get("environment", {}), launch.get("arguments", [])
+    if not isinstance(environment, dict) or not all(isinstance(k, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k)
+                                                   and isinstance(v, str) and "\0" not in v for k, v in environment.items()):
+        raise Failed("LAUNCH environment must map environment variable names to strings without NUL")
+    if not isinstance(arguments, list) or not all(isinstance(a, str) and "\0" not in a for a in arguments):
+        raise Failed("LAUNCH arguments must be a list of strings without NUL")
+    if any(k in {"AUTOMATION_TOKEN", "isRunningUITests"} or k.startswith(("SIMCTL_CHILD_", "FF_")) for k in environment):
+        raise Failed("LAUNCH environment overrides reserved automation configuration")
+    if any(a.lstrip("-").split("=", 1)[0] in {"isRunningUITests", "AUTOMATION_TOKEN"}
+           or a.lstrip("-").startswith("ff.") for a in arguments):
+        raise Failed("LAUNCH arguments override reserved automation or pinned feature flags")
+    return dict(environment=dict(environment), arguments=list(arguments))

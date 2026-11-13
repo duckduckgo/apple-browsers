@@ -58,6 +58,7 @@ Keep implementation details out; name user paths, stable handles, required state
 - [Tabs](./tabs.md): new tab, switch, close, tab count, both tab-switcher layouts (t4).
 - [Link context menu](./link-context-menu.md): long-press a link, open in a new tab (t5).
 - [Fire button](./fire-button.md): close tabs and clear data, with its pixels and wide event (t7).
+- [Personal Information Removal](./pir.md): run a live broker scan and complete the opt-out for the selected record, with a pause for manual subscription setup.
 - [Duck.ai](./duck-ai.md): open Duck.ai, send a prompt, read the answer; native input on iPhone, web input on iPad (t8).
 - [Site permissions: location](./site-permissions-location.md): DuckDuckGo's permission sheet, then the iOS alert (t6).
 

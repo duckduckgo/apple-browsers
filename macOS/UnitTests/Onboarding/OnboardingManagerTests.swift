@@ -112,7 +112,7 @@ class OnboardingManagerTests: XCTestCase {
         chromeExtensionInstaller = nil
     }
 
-    func testReturnsExpectedOnboardingConfig_DoesNotExcludeAddressBarMode() {
+    func testReturnsExpectedOnboardingConfig_WhenSearchOrChatFlagOff() {
         // Given
         let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(
@@ -131,16 +131,6 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(manager.configuration, expectedConfig)
-    }
-
-    @MainActor
-    func testConfigurationSteps_WhenSearchOrChatFlagOff_ListsV4StepsMinusExcluded() {
-        let manager = makeManager(enabledFlags: [], aiChatPreferencesStorage: MockAIChatPreferencesStorage(),
-                                  homepageSearchModeSeedPersistor: HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
-
-        XCTAssertEqual(manager.configuration.steps, ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"])
-        XCTAssertEqual(manager.configuration.exclude, ["duckPlayerSingle"])
-        XCTAssertEqual(manager.configuration.order, "v4")
     }
 
     @MainActor

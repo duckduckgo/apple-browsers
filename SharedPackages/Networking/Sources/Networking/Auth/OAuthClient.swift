@@ -790,7 +790,9 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    /// Removes the current token container. A backup token container, if any, is kept.
+    /// Removes the current token container without recording a sign-out cut-off or contacting the server.
+    /// - Parameter includingBackup: Whether the backup token container, if any, is deleted too. When `false`, it is kept.
+    /// - Throws: The storage error when the current token container can't be removed. The backup is deleted first, even then.
     public func removeLocalAccount(includingBackup: Bool) throws {
         Logger.OAuthClient.log("Removing the current token, including the backup: \(includingBackup, privacy: .public)")
         if includingBackup {

@@ -1086,7 +1086,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .promoQueueAutofillEmptyStatePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .defaultBrowserWinBackPromo:
-            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

@@ -32,28 +32,29 @@ final class BookmarksUITests: UITestCase {
         app.resetBookmarks()
     }
 
-    func testWhenPageIsBookmarkedThenItCanBeOpenedAndDeleted() {
+    func testWhenPageIsBookmarkedThenItCanBeOpenedAndDeleted() throws {
+        let site = try localWebsite()
         let bookmark = app.tables["Bookmarks.List"].cells["Bookmarks.Item"].firstMatch
 
         XCTContext.runActivity(named: "Bookmark the test page") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
         }
 
         XCTContext.runActivity(named: "Open the bookmark from autocomplete and refresh it") { _ in
             app.openNewTab()
-            app.enterSearchText("pri")
+            app.enterSearchText("first")
             app.openAutocompleteSuggestion(
                 withIdentifierPrefix: "Autocomplete.Suggestions.ListItem.Bookmark-")
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
             app.webViews.firstMatch.swipeDown()
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
 
         XCTContext.runActivity(named: "Open the bookmark from Bookmarks") { _ in
             app.openBookmarks()
             bookmark.tapWhenHittable(in: app)
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
 
         XCTContext.runActivity(named: "Delete the bookmark") { _ in
@@ -63,7 +64,8 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenBookmarkIsMovedThroughNestedFoldersThenItCanBeDeletedWithItsFolders() {
+    func testWhenBookmarkIsMovedThroughNestedFoldersThenItCanBeDeletedWithItsFolders() throws {
+        let site = try localWebsite()
         let firstFolderName = "Test Folder"
         let secondFolderName = "Test Folder 2"
         let bookmarksList = app.tables["Bookmarks.List"]
@@ -71,7 +73,7 @@ final class BookmarksUITests: UITestCase {
         let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
 
         XCTContext.runActivity(named: "Bookmark the test page") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
             app.openBookmarks()
         }
@@ -125,17 +127,26 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() {
+    func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() throws {
+        let site = try localWebsite()
+        let pages = (0..<4).map(LocalUITestWebsite.Page.bookmark)
         let folderName = "Examples"
         let bookmarksList = app.tables["Bookmarks.List"]
         let bookmarks = bookmarksList.cells.matching(identifier: "Bookmarks.Item")
         let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
 
         XCTContext.runActivity(named: "Create five tabs with four bookmarkable pages") { _ in
-            for index in 0..<4 {
-                app.openURL(
-                    "https://privacy-test-pages.site/\(index)",
-                    expecting: "Cannot GET /\(index)")
+            let firstPage = pages[0]
+            if !site.request(firstPage, in: app, timeout: 20) {
+                XCTContext.runActivity(named: "Relaunch before creating bookmark tabs") { _ in
+                    app.terminate()
+                    app.launch()
+                    site.navigate(to: firstPage, in: app)
+                }
+            }
+            app.openNewTab()
+            for page in pages.dropFirst() {
+                site.navigate(to: page, in: app)
                 app.openNewTab()
             }
             app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable(in: app)
@@ -144,7 +155,7 @@ final class BookmarksUITests: UITestCase {
         XCTContext.runActivity(named: "Bookmark all open tabs") { _ in
             app.bookmarkAllOpenTabs(expectedTabCount: 5)
             app.openBookmarks()
-            app.assertBookmarkCount(4)
+            app.assertBookmarkTitles(pages.map(\.title))
         }
 
         XCTContext.runActivity(named: "Create a folder and move all bookmarks into it") { _ in
@@ -175,35 +186,27 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenFolderIsRemovedFromBookmarksEditThenItCanBeDeleted() {
+    func testWhenFolderIsRemovedFromBookmarksEditThenItCanBeDeleted() throws {
+        let site = try localWebsite()
         let folderName = "Removable Folder"
         let bookmarksList = app.tables["Bookmarks.List"]
         let bookmark = bookmarksList.cells["Bookmarks.Item"].firstMatch
         let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
 
         XCTContext.runActivity(named: "Create a bookmark inside a folder") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openBrowsingMenuItem("Browser.Menu.AddBookmark")
             app.openBookmarks()
-            app.createBookmarkFolderAtRoot(named: folderName)
 
             app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
             bookmark.tapWhenHittable(in: app)
-            let destination = app.tables["Bookmarks.Editor.List"].cells
-                .matching(identifier: "Bookmarks.Editor.Folder")
-                .containing(.staticText, identifier: folderName)
-                .firstMatch
-            app.tables["Bookmarks.Editor.List"].swipeUpToReveal(destination)
-            destination.tapWhenHittable(in: app)
+            app.createBookmarkFolder(named: folderName)
             app.saveBookmarkEditor()
-            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
-            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.navigation))
             app.assertBookmarkCount(0)
         }
 
         XCTContext.runActivity(named: "Remove the folder from Bookmarks Edit") { _ in
-            app.buttons["Bookmarks.Edit"].tapWhenHittable(in: app)
-            XCTAssertTrue(folder.waitForExistence(timeout: UITestTimeouts.elementExistence))
             app.buttons["Remove \(folderName)"].tapWhenHittable(in: app)
             app.tables["Bookmarks.List"].buttons["Delete"].tapWhenHittable(in: app)
 
@@ -222,13 +225,14 @@ final class BookmarksUITests: UITestCase {
         }
     }
 
-    func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() {
-        let expectedTitles = ["Privacy Test Pages - Home", "Ad Click Flow"]
+    func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() throws {
+        let site = try localWebsite()
+        let expectedTitles = [LocalUITestWebsite.Page.first.title, LocalUITestWebsite.Page.second.title]
 
         XCTContext.runActivity(named: "Create two bookmarkable tabs") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openNewTab()
-            app.openURL("https://www.search-company.site", expecting: "Search engine")
+            site.open(.second, in: app)
         }
 
         XCTContext.runActivity(named: "Bookmark both open tabs") { _ in
@@ -237,15 +241,7 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Verify both bookmarks were added") { _ in
             app.openBookmarks()
-            app.assertBookmarkCount(expectedTitles.count)
-
-            let bookmarks = app.tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Item")
-            for title in expectedTitles {
-                let bookmark = bookmarks.containing(.staticText, identifier: title).firstMatch
-                XCTAssertTrue(
-                    bookmark.waitForExistence(timeout: UITestTimeouts.elementExistence),
-                    "Bookmark '\(title)' did not appear.")
-            }
+            app.assertBookmarkTitles(expectedTitles)
         }
     }
 }

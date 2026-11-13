@@ -22,12 +22,18 @@ import UITestingSupport
 
 final class BrowsingUITests: UITestCase {
 
-    func testWhenURLIsEnteredThenPageLoads() {
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+    override var additionalLaunchEnvironment: [String: String] {
+        ["UITEST_DISABLE_ANIMATIONS": "1"]
     }
 
-    func testWhenPageLoadsThenRefreshBecomesAvailable() {
+    func testWhenURLIsEnteredThenPageLoads() throws {
+        let site = try localWebsite()
+        site.open(.browsing, in: app)
+    }
+
+    func testWhenPageLoadsThenRefreshBecomesAvailable() throws {
         let refreshButton = app.buttons["Browser.OmniBar.Button.Refresh"]
+        let site = try localWebsite()
 
         XCTContext.runActivity(named: "Verify refresh is unavailable on the new-tab page") { _ in
             XCTAssertTrue(
@@ -37,9 +43,10 @@ final class BrowsingUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Load and refresh the test page") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.browsing, in: app)
+            site.updateBrowsingPage()
             refreshButton.tapWhenHittable(in: app)
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.refreshedHeading)
         }
     }
 }

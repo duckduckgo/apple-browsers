@@ -122,6 +122,8 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
     var onPurchaseCompleted: (() -> Void)? { get set }
+    /// Called after the App Store transaction succeeds and before the confirm request's experiment attribution is built.
+    var onAppStoreTransactionCompleted: ((_ isFreeTrial: Bool) -> Void)? { get set }
     var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)? { get set }
     var onRequestCancellation: (() -> Void)? { get set }
 
@@ -237,6 +239,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
     var onPurchaseCompleted: (() -> Void)?
+    var onAppStoreTransactionCompleted: ((_ isFreeTrial: Bool) -> Void)?
     var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)?
     var onRequestCancellation: (() -> Void)?
 
@@ -588,6 +591,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             return nil
         }
 
+        onAppStoreTransactionCompleted?(purchaseIsFreeTrial)
+
         let experimentAttribution = subscriptionExperimentAttributionProvider.attribution(from: subscriptionSelection)
 
         if let purchaseWideEventData {
@@ -925,6 +930,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onActivateSubscription = nil
         onBackToSettings = nil
         onPurchaseCompleted = nil
+        onAppStoreTransactionCompleted = nil
         onShowFeatureInfo = nil
         onRequestCancellation = nil
     }

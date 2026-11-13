@@ -78,6 +78,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534806
     case heuristicAction
 
+    /// Autoconsent heuristic hit-testing: probe the viewport with elementFromPoint before the DOM walk
+    /// to find cookie popups that aren't fixed, sticky or dialog-like.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220464829991571
+    case heuristicHitTest
+
     /// Cookie Pop-up Protection opt-in dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654865?focus=true
     case cookiePopupOptInDialog
@@ -171,8 +176,17 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637484
     case subscriptionOnboardingPaidSubsOct2026
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220431399917248
+    case subscriptionOnboardingFreeTrialsNov2026
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220431399917256
+    case subscriptionOnboardingPaidSubsNov2026
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219907744895168
     case subscriptionCancellationFlow
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220034712448602
+    case stripeInternationalSubscriptionWithdrawal
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
@@ -243,6 +257,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613993355
     case unifiedURLPredictor
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220345796572420
+    case suggestionDebounce200ms
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
@@ -262,6 +279,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214336846806516?focus=true
     case onboardingDuckAIFlow
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220296514602367
+    case contextualOnboardingTimeLimit
 
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1214846580751519
     case onboardingDuckAIQueryTrackersDemoExperiment
@@ -579,8 +599,15 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220300732211487
+    case duckAIAndInputLiquidGlass
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
+
+    /// Container transform when a new tab opens: the new page grows from a card over the receding old one.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220324835587117
+    case newTabTransition
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
@@ -622,15 +649,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
 
-    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
-    ///
-    /// Concluded and disabled so no new users are enrolled. The download-reason flow  is kept for the follow-up experiment:
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1219341928461688
-    /// To reuse it, rename this case, its subfeature and cohort enum, rename the experiment in
-    /// `native_experiments.json5`, and switch the source back to `.remoteReleasable`. Use a new subfeature name
-    /// so devices enrolled in this run are not carried over.
-    case onboardingFlowByDownloadReasonExperiment
+    /// NA Experiment: add VPN as a download reason, with its own onboarding branch that offers the subscription.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220388646436579
+    case onboardingVPNDownloadReasonExperiment
 
     /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
     /// https://app.asana.com/1/137249556945/task/1217334233390728
@@ -674,6 +695,10 @@ public enum FeatureFlag: String {
     /// while it holds a lock on a shared App Group database (0xdead10cc).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
     case launchBackgroundTask
+
+    /// On-device web page translation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
+    case webPageTranslation
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -689,8 +714,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    /// Cohorts for the onboarding-flow-by-download-reason experiment.
-    public enum OnboardingFlowByDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
+    /// Cohorts for the `onboardingVPNDownloadReasonExperiment` ABN test.
+    public enum OnboardingVPNDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -713,6 +738,18 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the `subscriptionOnboardingPaidSubsOct2026` ABN test.
     public enum SubscriptionOnboardingPaidSubsOct2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the `subscriptionOnboardingFreeTrialsNov2026` ABN test.
+    public enum SubscriptionOnboardingFreeTrialsNov2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the `subscriptionOnboardingPaidSubsNov2026` ABN test.
+    public enum SubscriptionOnboardingPaidSubsNov2026Cohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -741,7 +778,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     private var config: Config {
         switch self {
         case .ipadMenuBar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
         case .sync:
             Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
         case .autofillCredentialInjecting:
@@ -778,6 +815,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.onByDefault), supportsLocalOverriding: false)
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
+        case .heuristicHitTest:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AutoconsentSubfeature.heuristicHitTest))
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog))
         case .duckPlayer:
@@ -836,8 +875,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsOct2026), cohortType: SubscriptionOnboardingFreeTrialsOct2026Cohort.self)
         case .subscriptionOnboardingPaidSubsOct2026:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsOct2026), cohortType: SubscriptionOnboardingPaidSubsOct2026Cohort.self)
+        case .subscriptionOnboardingFreeTrialsNov2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsNov2026), cohortType: SubscriptionOnboardingFreeTrialsNov2026Cohort.self)
+        case .subscriptionOnboardingPaidSubsNov2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsNov2026), cohortType: SubscriptionOnboardingPaidSubsNov2026Cohort.self)
         case .subscriptionCancellationFlow:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionCancellationFlow))
+        case .stripeInternationalSubscriptionWithdrawal:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.stripeInternationalSubscriptionWithdrawal))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -880,6 +925,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign))
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
+        case .suggestionDebounce200ms:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.suggestionDebounce200ms))
         case .unifiedURLPredictor:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .vpnMenuItem:
@@ -898,6 +945,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
+        case .contextualOnboardingTimeLimit:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.contextualOnboardingTimeLimit))
         case .onboardingDuckAIQueryTrackersDemoExperiment:
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment))
         case .standaloneMigration:
@@ -982,8 +1031,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
         case .searchTokenExperimentV4:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV4), cohortType: SearchTokenExperimentCohort.self)
-        case .onboardingFlowByDownloadReasonExperiment:
-            Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+        case .onboardingVPNDownloadReasonExperiment:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment), cohortType: OnboardingVPNDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:
             Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
@@ -1092,8 +1141,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
         case .floatingUIiOS27:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
+        case .duckAIAndInputLiquidGlass:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIAndInputLiquidGlass))
         case .legacyFindInPage:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
+        case .newTabTransition:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabTransition))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .aiChatTabHandoffImprovements:
@@ -1140,6 +1193,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageOnForeground))
         case .launchBackgroundTask:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
+        case .webPageTranslation:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
         }
     }
 

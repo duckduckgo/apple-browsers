@@ -131,6 +131,32 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertConfiguredBarPosition()
     }
 
+    func verifyCustomAIChatPageScrolling() {
+        for usesLiquidGlass in [false, true] {
+            app.terminate()
+            launchApp(additionalArguments: [
+                "-ff.duckAIAndInputLiquidGlass", String(usesLiquidGlass),
+                "-aichat.debug.customURL", "\(serverBaseURL)/long-page",
+            ])
+            openPage(path: "/long-page", heading: Page.longHeading)
+            XCTAssertTrue(app.buttons["Recent chats"].waitForHittable(timeout: timeout))
+            let heading = app.staticTexts[Page.longHeading]
+            XCTAssertTrue(heading.waitForHittable(timeout: timeout))
+            heading.tap()
+            XCTAssertTrue(app.keyboards.firstMatch.waitForNotHittable(timeout: timeout))
+
+            webView.swipeUp()
+
+            let attachment = XCTAttachment(screenshot: app.screenshot())
+            attachment.name = "Custom chat after scrolling — Liquid Glass \(usesLiquidGlass)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            XCTAssertTrue(heading.waitForNotHittable(timeout: timeout), "Custom chat page did not scroll.")
+            webView.swipeDown()
+            XCTAssertTrue(heading.waitForHittable(timeout: timeout), "Custom chat page could not return to the top.")
+        }
+    }
+
     func verifyExistingSearchReplacement(toggleEnabled: Bool) {
         app.terminate()
         launchApp(toggleEnabled: toggleEnabled)
@@ -241,6 +267,37 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         XCTAssertTrue(waitUntil(timeout: timeout) { self.app.frame.height > self.app.frame.width })
         assertConfiguredBarPosition()
+    }
+
+    func verifyAddressBarButtonSpacingAfterRotation() {
+        launchApp(additionalArguments: ["-ff.duckAIAndInputLiquidGlass", "true"])
+        openPage(path: "/page-one", heading: Page.oneHeading)
+        openNewTab()
+        openPage(path: "/page-two", heading: Page.twoHeading)
+
+        for (index, orientation) in [UIDeviceOrientation.landscapeLeft, .portrait, .landscapeRight, .portrait].enumerated() {
+            XCUIDevice.shared.orientation = orientation
+            XCTAssertTrue(waitUntil(timeout: timeout) {
+                (self.app.frame.width > self.app.frame.height) == orientation.isLandscape
+            })
+            tabSwitcherButton.tap()
+            let title = index.isMultiple(of: 2) ? "Page One" : "Page Two"
+            let tab = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Open \"\(title)\"")).firstMatch
+            XCTAssertTrue(tab.waitForHittable(timeout: timeout))
+            tab.tap()
+            let share = element(withIdentifier: AccessibilityID.customizable)
+            XCTAssertTrue(share.waitForHittable(timeout: timeout))
+            let refresh = ["Browser.OmniBar.Button.Refresh", "Browser.OmniBar.Button.RefreshExternal"]
+                .map { element(withIdentifier: $0) }.first { $0.isHittable }
+            guard let refresh else { return XCTFail("Refresh button missing after rotation") }
+            XCTAssertGreaterThanOrEqual(refresh.frame.width, 40)
+            XCTAssertGreaterThanOrEqual(share.frame.width, 40)
+            XCTAssertFalse(refresh.frame.intersects(share.frame))
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "\(barPosition.rawValue) address bar, rotation \(index + 1)"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
     }
 
     func verifyDomainCapsuleAppears() {
@@ -1127,6 +1184,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
     func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
+    func testAddressBarButtonSpacingAfterRotation() { verifyAddressBarButtonSpacingAfterRotation() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
@@ -1160,10 +1218,12 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }
 
     func testUnifiedToggleInputTransitions() { verifyUnifiedToggleInputTransitions() }
+    func testCustomAIChatPageScrolling() { verifyCustomAIChatPageScrolling() }
     func testTabSwitcherTransitions() { verifyTabSwitcherTransitions() }
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
     func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
+    func testAddressBarButtonSpacingAfterRotation() { verifyAddressBarButtonSpacingAfterRotation() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }

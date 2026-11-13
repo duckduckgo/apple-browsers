@@ -153,7 +153,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             contentProvider: OnboardingIntroContentProvider(
                 flowType: onboardingManager.currentOnboardingFlow,
                 featureFlagger: featureFlagger,
-                downloadReasonProvider: { onboardingManager.currentDownloadReason }
+                downloadReasonProvider: { onboardingManager.currentDownloadReason },
+                isVPNDownloadReasonAvailable: { onboardingManager.isVPNDownloadReasonAvailable }
             ),
             personalizationManager: personalizationManager,
             aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),
@@ -210,6 +211,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             pixelReporter.measureResumeOnboardingCTAAction()
         } else {
             pixelReporter.measureStartOnboardingCTAAction()
+            enrollInDownloadReasonVPNExperimentIfNeeded()
         }
         makeNextViewState()
     }
@@ -301,14 +303,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     // NA Experiment: per-step actions for the reason-tailored screens.
-    func searchPrivacySettingsContinueAction() {
-        pixelReporter.measureSearchPrivacySettingsSelection(
-            recentlyVisitedSitesEnabled: personalizationManager.isRecentlyVisitedSitesEnabled,
-            safeSearchEnabled: personalizationManager.isSafeSearchEnabled
-        )
-        makeNextViewState()
-    }
-
     func aiSearchSettingsContinueAction() {
         pixelReporter.measureAISearchSettingsSelection(
             searchAssistEnabled: personalizationManager.isSearchAssistEnabled,
@@ -337,6 +331,14 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: shouldKeep)
         pixelReporter.measureKeepDuckAISelection(shouldKeep: shouldKeep)
 
+        makeNextViewState()
+    }
+
+    func tryVPNAction() {
+        // TODO: Present the subscription paywall modal.
+    }
+
+    func skipTryVPNAction() {
         makeNextViewState()
     }
 
@@ -452,12 +454,6 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
-            case .searchPrivacySettingsSelection:
-                return .onboarding(
-                    .init(
-                        type: .searchPrivacySettingsDialog(content: contentProvider.serpPersonalizationContent),
-                        step: stepInfo())
-                )
             case .aiSearchSettingsSelection:
                 return .onboarding(
                     .init(
@@ -497,6 +493,13 @@ private extension OnboardingIntroViewModel {
                 return .onboarding(
                     .init(
                         type: .adBlockingDialog(content: contentProvider.adBlockingPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
+            case .tryVPN:
+                return .onboarding(
+                    .init(
+                        type: .tryVPNDialog(content: contentProvider.tryVPNContent),
                         step: stepInfo()
                     )
                 )
@@ -564,6 +567,12 @@ private extension OnboardingIntroViewModel {
         }
     }
 
+    /// Enrolls the user in the VPN download-reason experiment when they start onboarding from the intro.
+    func enrollInDownloadReasonVPNExperimentIfNeeded() {
+        guard currentIntroStep == introSteps.first else { return }
+        onboardingManager.enrollInDownloadReasonVPNExperimentIfNeeded()
+    }
+
     func makeNextViewState() {
         guard let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) else {
             assertionFailure("Onboarding Step index not found.")
@@ -627,8 +636,6 @@ private extension OnboardingIntroViewModel {
         case .searchExperienceSelection where introSteps.contains(.searchExperienceSelection):
             currentIntroStep = .searchExperienceSelection
         // NA Experiment: reason-tailored steps.
-        case .searchPrivacySettingsSelection where introSteps.contains(.searchPrivacySettingsSelection):
-            currentIntroStep = .searchPrivacySettingsSelection
         case .aiSearchSettingsSelection where introSteps.contains(.aiSearchSettingsSelection):
             currentIntroStep = .aiSearchSettingsSelection
         case .aiModelSelection where introSteps.contains(.aiModelSelection):
@@ -639,6 +646,8 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .keepDuckAISelection
         case .adBlockingPersonalization where introSteps.contains(.adBlockingPersonalization):
             currentIntroStep = .adBlockingPersonalization
+        case .tryVPN where introSteps.contains(.tryVPN):
+            currentIntroStep = .tryVPN
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -679,8 +688,6 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureDuckAIQuerySelectionImpression()
         case .downloadReasonDialog:
             pixelReporter.measureDownloadReasonImpression()
-        case .searchPrivacySettingsDialog:
-            pixelReporter.measureSearchPrivacySettingsImpression()
         case .aiSearchSettingsDialog:
             pixelReporter.measureAISearchSettingsImpression()
         case .aiModelDialog:
@@ -691,6 +698,8 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureKeepDuckAIImpression()
         case .adBlockingDialog:
             pixelReporter.measureAdBlockingImpression()
+        case .tryVPNDialog:
+            break
         }
     }
 

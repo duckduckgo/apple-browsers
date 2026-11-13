@@ -26,6 +26,23 @@ import XCTest
 
 final class FloatingUIFeatureFlagTests: XCTestCase {
 
+    func testLiquidGlassKeepsItsLaunchStateAndRequiresFloatingUI() {
+        for floatingUIEnabled in [false, true] {
+            for liquidGlassEnabled in [false, true] {
+                let flagger = MockFeatureFlagger(enabledFeatureFlags: liquidGlassEnabled ? [.duckAIAndInputLiquidGlass] : [])
+                let manager = FloatingUIManager(
+                    isFloatingUIFeatureEnabled: floatingUIEnabled,
+                    isDuckAIAndInputLiquidGlassFeatureEnabled: flagger.isFeatureOn(.duckAIAndInputLiquidGlass),
+                    isPadProvider: { false }, isSupportedOSProvider: { true },
+                    unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+                )
+                XCTAssertEqual(manager.isDuckAIAndInputLiquidGlassEnabled, floatingUIEnabled && liquidGlassEnabled)
+                flagger.enabledFeatureFlags = liquidGlassEnabled ? [] : [.duckAIAndInputLiquidGlass]
+                XCTAssertEqual(manager.isDuckAIAndInputLiquidGlassEnabled, floatingUIEnabled && liquidGlassEnabled)
+            }
+        }
+    }
+
     func testWhenCheckingCurrentOSThenOnlyTheMatchingFlagIsUsed() {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
         let isIOS26Enabled = featureFlagger.isFloatingUIFeatureEnabled()
@@ -276,6 +293,38 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         let expectedComponents = UIColor.red.resolvedColor(with: traits).cgColor.components
         XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
         XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testFloatingRefreshBackgroundOverrideSurvivesPageUpdatesAndRestoresPageColor() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+
+        adapter.backgroundColorOverride = .blue
+        webView.underPageBackgroundColor = .green
+        adapter.webViewUnderPageBackgroundDidChange()
+
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.blue.resolvedColor(with: traits).cgColor.components)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.blue.resolvedColor(with: traits).cgColor.components)
+
+        adapter.backgroundColorOverride = nil
+
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.green.resolvedColor(with: traits).cgColor.components)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components,
+                       UIColor.green.resolvedColor(with: traits).cgColor.components)
     }
 
     func testWhenUnderPageBackgroundChangesAtRestThenScrollViewBackgroundMatchesIt() throws {
@@ -1256,6 +1305,70 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
 
         XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
         XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+}
+
+@available(iOS 16.0, *)
+final class BrowserChromeButtonMenuPreviewTests: XCTestCase {
+
+    func testWhenContainerProviderIsAbsentThenBothPreviewsUseSystemDefault() {
+        assertSystemPreviews(for: BrowserChromeButton(.toolbar))
+    }
+
+    func testWhenContainerProviderReturnsNilThenBothPreviewsUseSystemDefault() {
+        let button = BrowserChromeButton(.toolbar)
+        button.menuPreviewContainer = { nil }
+
+        assertSystemPreviews(for: button)
+    }
+
+    func testWhenContainerIsAttachedThenPreviewsShareAnchorAndCleanupKeepsButtonInPlace() throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        let container = UIView(frame: CGRect(x: 20, y: 100, width: 300, height: 80))
+        let button = BrowserChromeButton(.toolbar)
+        button.frame = CGRect(x: 16, y: 12, width: 44, height: 44)
+        window.addSubview(container)
+        container.addSubview(button)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        button.menuPreviewContainer = { [weak container] in container }
+        let interaction = UIContextMenuInteraction(delegate: button)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+        let identifier = "preview" as NSString
+
+        let highlight = try XCTUnwrap(button.contextMenuInteraction(
+            interaction, configuration: configuration, highlightPreviewForItemWithIdentifier: identifier))
+        let dismissal = try XCTUnwrap(button.contextMenuInteraction(
+            interaction, configuration: configuration, dismissalPreviewForItemWithIdentifier: identifier))
+
+        XCTAssertFalse(highlight.view === button)
+        XCTAssertTrue(highlight.view === dismissal.view)
+        XCTAssertTrue(highlight.view.superview === container)
+        XCTAssertEqual(highlight.view.frame, container.convert(button.bounds, from: button))
+        XCTAssertTrue(button.superview === container)
+        XCTAssertFalse(button.isHidden)
+
+        button.menuPreviewContainer = nil
+        XCTAssertNil(highlight.view.superview)
+        XCTAssertEqual(container.subviews, [button])
+
+        button.menuPreviewContainer = { [weak container] in container }
+        let nextPreview = try XCTUnwrap(button.contextMenuInteraction(
+            interaction, configuration: configuration, highlightPreviewForItemWithIdentifier: identifier))
+        button.removeFromSuperview()
+        XCTAssertNil(nextPreview.view.superview)
+        XCTAssertTrue(container.subviews.isEmpty)
+    }
+
+    private func assertSystemPreviews(for button: BrowserChromeButton, file: StaticString = #filePath, line: UInt = #line) {
+        let interaction = UIContextMenuInteraction(delegate: button)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+        let identifier = "preview" as NSString
+
+        XCTAssertNil(button.contextMenuInteraction(
+            interaction, configuration: configuration, highlightPreviewForItemWithIdentifier: identifier), file: file, line: line)
+        XCTAssertNil(button.contextMenuInteraction(
+            interaction, configuration: configuration, dismissalPreviewForItemWithIdentifier: identifier), file: file, line: line)
     }
 }
 
@@ -2401,6 +2514,87 @@ final class BrowserKeyboardLayoutTests: XCTestCase {
 }
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
+
+    func testFloatingAIBackgroundLeavesUntreatedTabsAlone() {
+        for url in ["https://spreadprivacy.com", "https://duck.ai/chat"] {
+            let tab = TabViewController.fake(link: Link(title: "Test", url: URL(string: url)!))
+            tab.loadViewIfNeeded()
+            tab.view.backgroundColor = .red
+            tab.outerContainer.backgroundColor = .green
+            tab.webViewContainer.backgroundColor = .blue
+            tab.webView.isOpaque = false
+
+            tab.applyFloatingAIChromeBackground(nil)
+            if !tab.isAITab { tab.applyFloatingAIChromeBackground(.white) }
+
+            XCTAssertEqual(tab.view.backgroundColor, .red)
+            XCTAssertEqual(tab.outerContainer.backgroundColor, .green)
+            XCTAssertEqual(tab.webViewContainer.backgroundColor, .blue)
+            XCTAssertFalse(tab.webView.isOpaque)
+        }
+    }
+
+    func testFloatingAIBackgroundRestoresOnlyItsOwnChanges() {
+        let tab = TabViewController.fake(link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
+        tab.loadViewIfNeeded()
+        tab.view.backgroundColor = .red
+        tab.outerContainer.backgroundColor = .green
+        tab.webViewContainer.backgroundColor = .blue
+        tab.webView.isOpaque = true
+
+        tab.applyFloatingAIChromeBackground(.black)
+        XCTAssertEqual(tab.view.backgroundColor, .black)
+        XCTAssertEqual(tab.outerContainer.backgroundColor, .black)
+        XCTAssertEqual(tab.webViewContainer.backgroundColor, .black)
+        XCTAssertFalse(tab.webView.isOpaque)
+        tab.applyFloatingAIChromeBackground(.white)
+        tab.applyFloatingAIChromeBackground(nil)
+
+        XCTAssertEqual(tab.view.backgroundColor, .red)
+        XCTAssertEqual(tab.outerContainer.backgroundColor, .green)
+        XCTAssertEqual(tab.webViewContainer.backgroundColor, .blue)
+        XCTAssertTrue(tab.webView.isOpaque)
+    }
+
+    @available(iOS 26, *)
+    func testFloatingAIChatKeepsBothScrollEndsClearOfNativeControls() {
+        let featureFlagger = MockFeatureFlagger()
+        let tab = TabViewController.fake(featureFlagger: featureFlagger,
+                                         link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai/chat")!))
+        tab.loadViewIfNeeded()
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        chrome.floatingAIChatHeaderObscuredHeight = 112
+        chrome.floatingBottomObscuredHeight = 148
+        tab.chromeDelegate = chrome
+
+        for isLiquidGlassEnabled in [false, true, false] {
+            tab.floatingUIManager = FloatingUIManager(
+                isFloatingUIFeatureEnabled: true,
+                isDuckAIAndInputLiquidGlassFeatureEnabled: isLiquidGlassEnabled,
+                isPadProvider: { false },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            )
+            featureFlagger.enabledFeatureFlags = isLiquidGlassEnabled ? [] : [.duckAIAndInputLiquidGlass]
+            tab.updateWebViewBottomAnchor(for: 1)
+
+            let expected = isLiquidGlassEnabled
+                ? UIEdgeInsets(top: 112, left: 0, bottom: chrome.floatingBottomObscuredHeight, right: 0)
+                : .zero
+            XCTAssertEqual(tab.webView.scrollView.contentInset, expected)
+            XCTAssertEqual(tab.webView.obscuredContentInsets, expected)
+            XCTAssertEqual(tab.webView.scrollView.isScrollEnabled, !isLiquidGlassEnabled)
+
+            if isLiquidGlassEnabled {
+                for bottom in [480.0, 520.0, 148.0, 480.0, 148.0] {
+                    tab.webView.scrollView.contentOffset.y = 500
+                    chrome.floatingBottomObscuredHeight = bottom
+                    tab.updateWebViewLayoutForKeyboard()
+                    XCTAssertEqual(tab.webView.scrollView.contentOffset.y, -112)
+                    XCTAssertEqual(tab.webView.obscuredContentInsets.bottom, bottom)
+                }
+            }
+        }
+    }
 
     @available(iOS 26, *)
     func testKeyboardLayoutUpdatesInsetsDuringChromeTransitionOnlyWithFloatingUIEnabled() {

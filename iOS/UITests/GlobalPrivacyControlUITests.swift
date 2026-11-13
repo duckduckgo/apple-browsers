@@ -20,30 +20,10 @@
 import XCTest
 import UITestingSupport
 
-final class GlobalPrivacyControlUITests: XCTestCase {
+final class GlobalPrivacyControlUITests: UITestCase {
 
-    private let app = XCUIApplication()
     private let timeout = UITestTimeouts.navigation
     private let gpcLabel = "Global Privacy Control (GPC)"
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        continueAfterFailure = false
-        app.launchArguments = [
-            "-clearAllDefaults",
-            "isRunningUITests",
-            "-isOnboardingCompleted", "true",
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
-        ]
-        app.launchEnvironment = ["UITEST_MODE": "1"]
-        app.launch()
-    }
-
-    override func tearDownWithError() throws {
-        app.terminate()
-        try super.tearDownWithError()
-    }
 
     func testGPCPreferencePersistsAfterReopeningAndRelaunching() {
         openWebTrackingProtection()

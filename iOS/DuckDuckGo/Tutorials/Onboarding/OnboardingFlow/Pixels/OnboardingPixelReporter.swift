@@ -34,6 +34,10 @@ protocol OnboardingIntroImpressionReporting {
     func measureOnboardingIntroImpression()
 }
 
+protocol OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason)
+}
+
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureStartOnboardingCTAAction()
     func measureSkipOnboardingCTAAction()
@@ -111,8 +115,6 @@ protocol OnboardingAddToDockReporting {
 protocol OnboardingDownloadReasonPixelReporting {
     func measureDownloadReasonImpression()
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason)
-    func measureSearchPrivacySettingsImpression()
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
     func measureAIModelImpression()
     func measureAIModelSelection(model: String)
     func measureToggleInputModeImpression()
@@ -126,7 +128,7 @@ protocol OnboardingDownloadReasonPixelReporting {
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingDownloadReasonPixelReporting
-typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
+typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting & OnboardingTimeLimitReporting
 
 // MARK: - Implementation
 
@@ -172,19 +174,26 @@ final class OnboardingPixelReporter {
         pixelFiring?.fire(event, frequency: unique ? .legacyInitial : .standard, options: .parameters(additionalParameters))
     }
 
-    // Fires a shared onboarding pixel with the current stored context (source, flow and variant).
+    // Fires a shared onboarding pixel with the current stored context (source, flow and the variant of each fork).
     private func fireSharedPixel(_ event: OnboardingSharedPixelEvent) {
         sharedPixelHandler.fire(event,
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow,
-                                variant: sharedPixelsStorage.onboardingVariant)
+                                variants: OnboardingPixelParameter.Variants(
+                                    searchExperience: sharedPixelsStorage.onboardingSearchExperienceVariant,
+                                    downloadReason: sharedPixelsStorage.onboardingDownloadReasonVariant
+                                ))
     }
 
-    // Records the onboarding variant only if one hasn't been set yet, so the first branching
-    // choice wins and a later step can't overwrite it.
-    private func setVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.Variant) {
-        guard sharedPixelsStorage.onboardingVariant == nil else { return }
-        sharedPixelsStorage.onboardingVariant = variant
+    // Each fork keeps its first choice, so a repeated step can't overwrite it.
+    private func setSearchExperienceVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.SearchExperienceVariant) {
+        guard sharedPixelsStorage.onboardingSearchExperienceVariant == nil else { return }
+        sharedPixelsStorage.onboardingSearchExperienceVariant = variant
+    }
+
+    private func setDownloadReasonVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.DownloadReasonVariant) {
+        guard sharedPixelsStorage.onboardingDownloadReasonVariant == nil else { return }
+        sharedPixelsStorage.onboardingDownloadReasonVariant = variant
     }
 
 }
@@ -338,7 +347,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         case (_, .search):
             fireSharedPixel(.searchChatToggle(.clicked(.suggestedSearch)))
         }
-        setVariantIfNotAlreadySet(OnboardingPixelParameter.Variant(selection))
+        setSearchExperienceVariantIfNotAlreadySet(OnboardingPixelParameter.SearchExperienceVariant(selection))
     }
 
     func measureSkipOnboardingScreenImpression() {
@@ -385,6 +394,12 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
 }
 
 // MARK: - OnboardingPixelReporter + Screen Impression
+
+extension OnboardingPixelReporter: OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason) {
+        fireSharedPixel(.timeLimit(reason))
+    }
+}
 
 extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
@@ -533,7 +548,7 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
 
 }
 
-extension OnboardingPixelParameter.Variant {
+extension OnboardingPixelParameter.SearchExperienceVariant {
 
     init(_ mode: DuckAIQueryMode) {
         switch mode {
@@ -555,18 +570,14 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
     }
 
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
-        fireSharedPixel(.downloadChoice(.clicked(.init(reason))))
+        // The VPN reason isn't measured yet.
+        guard let value = OnboardingSharedPixelEvent.DownloadChoiceEvent.Value(reason),
+              let variant = OnboardingPixelParameter.DownloadReasonVariant(reason) else { return }
+
+        fireSharedPixel(.downloadChoice(.clicked(value)))
         // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
-        setVariantIfNotAlreadySet(OnboardingPixelParameter.Variant(reason))
+        setDownloadReasonVariantIfNotAlreadySet(variant)
         downloadReasonExperimentMetric.measureDownloadReasonSelected(reason)
-    }
-
-    func measureSearchPrivacySettingsImpression() {
-        fireSharedPixel(.preferencesSerp(.shown))
-    }
-
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
-        fireSharedPixel(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: recentlyVisitedSitesEnabled, safeSearchEnabled: safeSearchEnabled)))
     }
 
     func measureAIModelImpression() {
@@ -613,12 +624,13 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
 
 private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
 
-    init(_ reason: OnboardingDownloadReason) {
+    init?(_ reason: OnboardingDownloadReason) {
         switch reason {
         case .browserPrivately: self = .search
         case .privateAIChat: self = .aiChat
         case .noAI: self = .noAI
         case .blockAds: self = .adBlocking
+        case .vpn: return nil
         }
     }
 
@@ -666,18 +678,20 @@ struct OnboardingDownloadReasonExperimentMetric {
     /// Fires the per-reason "selected" metric (one metric per option, empty value, d0) when the user
     /// picks a download reason.
     func measureDownloadReasonSelected(_ reason: OnboardingDownloadReason) {
-        let metric: Name = switch reason {
+        let metric: Name? = switch reason {
         case .browserPrivately: .downloadReasonSelectedSearch
         case .privateAIChat: .downloadReasonSelectedAIChat
         case .noAI: .downloadReasonSelectedNoAI
         case .blockAds: .downloadReasonSelectedAdBlocking
+        case .vpn: nil
         }
+        guard let metric else { return }
         fire(metric: metric)
     }
 
     private func fire(metric: Name) {
         experimentPixelFiring.fireExperimentPixel(
-            for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+            for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
             metric: metric.rawValue,
             conversionWindowDays: Self.conversionWindowD0,
             value: ""

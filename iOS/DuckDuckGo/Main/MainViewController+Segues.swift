@@ -298,6 +298,8 @@ extension MainViewController {
 
         tabSwitcherController = controller
 
+        // Released as the tab manager starts covering the page, so the keyboard leaves with it and stays down on Done.
+        duckAIInputFocus.release()
         present(controller, animated: true)
     }
 
@@ -345,12 +347,12 @@ extension MainViewController {
         }, deepLinkTarget: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
     }
 
-    func segueToDataBrokerProtection() {
+    func segueToDataBrokerProtection(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .dbp())
-        }, deepLinkTarget: .dbp())
+            $0.triggerDeepLinkNavigation(to: .dbp(freeScanEntryPoint: freeScanEntryPoint))
+        }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint))
     }
 
     func segueToPIRWithSubscriptionCheck() {
@@ -666,7 +668,8 @@ extension MainViewController {
             promoCoordinationCooldownResetter: self.promoCoordinationService,
             daxGreetingDebugging: self.daxGreetingService))
 
-        debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
+        let closeButton = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
+        debug.navigationItem.rightBarButtonItem = closeButton
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

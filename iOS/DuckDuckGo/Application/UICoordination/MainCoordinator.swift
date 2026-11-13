@@ -79,6 +79,7 @@ final class MainCoordinator {
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let daxGreetingActivity: DaxGreetingActivityStore
+    private let daxDialogs: DaxDialogs
     private let wideEvent: WideEventManaging
     private let eventHub: EventHubManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
@@ -101,6 +102,7 @@ final class MainCoordinator {
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
+    private var onboardingTimeLimitCancellable: AnyCancellable?
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
@@ -154,6 +156,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.daxDialogs = daxDialogs
         self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
@@ -350,6 +353,14 @@ final class MainCoordinator {
                                         usageContextProvider: usageContextProvider,
                                         promptExposureReporter: promptExposureReporter)
 
+        onboardingTimeLimitCancellable = daxDialogs.isDismissedPublisher
+            .filter { [weak daxDialogs] isDismissed in
+                isDismissed && daxDialogs?.timeLimit.endedByTimeLimit == true
+            }
+            .sink { [weak controller] _ in
+                controller?.endContextualOnboardingAfterTimeLimit()
+            }
+
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
         // Apply tracker animation suppression early for cold starts
@@ -370,7 +381,8 @@ final class MainCoordinator {
         controller.currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
         controller.newTab(reuseExisting: true,
                           allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-                          openedAfterIdle: true)
+                          openedAfterIdle: true,
+                          entrance: .fromOutsideTheApp)
     }
 
     func hideScreensForIdleReturn() {
@@ -697,8 +709,8 @@ final class MainCoordinator {
         controller.presentNetworkProtectionStatusSettingsModal(entryPoint: entryPoint, scrollToStrictRouting: scrollToStrictRouting)
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        controller.presentDataBrokerProtectionDashboard()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        controller.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     func presentModalPromptIfNeeded() {
@@ -722,6 +734,7 @@ final class MainCoordinator {
 
     func onForeground(isFirstForeground: Bool) {
         daxGreetingActivity.recordForegroundOpen()
+        daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source
@@ -800,22 +813,24 @@ extension MainCoordinator: URLHandling {
         fireMediumWidgetPixelIfNeeded(url: url)
 
         let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+        let deepLink = AppDeepLinkSchemes.fromURL(url)
 
+        // New Search clears the navigation stack itself, only when it has to.
         if syncPairingInfo == nil
+            && deepLink != .newSearch
             && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
         }
-        switch AppDeepLinkSchemes.fromURL(url) {
+        switch deepLink {
         case .newSearch:
-            controller.newTab(reuseExisting: true)
-            controller.enterSearch()
+            handleNewSearchDeepLink()
         case .favorites:
-            controller.newTab(reuseExisting: true, allowingKeyboard: false)
+            controller.newTab(reuseExisting: true, allowingKeyboard: false, entrance: .fromOutsideTheApp)
         case .quickLink:
             let query = AppDeepLinkSchemes.query(fromQuickLink: url)
-            controller.loadQueryInNewTab(query, reuseExisting: .any)
+            controller.loadQueryInNewTab(query, reuseExisting: .any, entrance: .fromOutsideTheApp)
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
@@ -845,6 +860,23 @@ extension MainCoordinator: URLHandling {
             return false
         }
         return true
+    }
+
+    private func handleNewSearchDeepLink() {
+        // Already on a New Tab Page: focus it in place. Clearing and rebuilding it would drop
+        // the keyboard the app opened with, or is about to raise, and raise it again.
+        // An input left in another mode, such as Duck.ai, is still rebuilt so it opens in the
+        // mode a new search starts in.
+        if controller.isNewTabPageVisible, controller.presentedViewController == nil,
+           controller.isInputInInitialToggleMode {
+            if !controller.isInputFocused {
+                controller.enterSearch()
+            }
+            return
+        }
+        controller.clearNavigationStack()
+        controller.newTab(reuseExisting: true, entrance: .fromOutsideTheApp)
+        controller.enterSearch()
     }
 
     private func handleOpenPasswords(url: URL) {
@@ -904,7 +936,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query, reuseExisting: .any, fromExternalLink: true)
+        controller.loadQueryInNewTab(query, reuseExisting: .any, fromExternalLink: true, entrance: .fromOutsideTheApp)
     }
 
     private func handleSearchPassword() {
@@ -988,7 +1020,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true, entrance: .fromOutsideTheApp)
             completion(.openedNewTab)
         }
     }

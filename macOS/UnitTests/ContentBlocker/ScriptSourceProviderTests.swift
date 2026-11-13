@@ -100,6 +100,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             fireCoordinator: fireCoordinator,
             autoconsentManagement: AutoconsentManagement(),
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil,

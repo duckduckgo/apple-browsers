@@ -144,6 +144,7 @@ final class ContentScopeScriptSourceTests: XCTestCase {
 
         XCTAssertTrue(firstWKUserScript === secondWKUserScript)
         XCTAssertTrue(second.makeWKUserScriptSync() === firstWKUserScript)
+        XCTAssertTrue((second as UserScript).makeWKUserScriptSync() === firstWKUserScript)
         XCTAssertTrue(first.broker !== second.broker, "Each tab keeps its own broker")
     }
 

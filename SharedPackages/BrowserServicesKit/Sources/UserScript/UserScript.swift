@@ -76,6 +76,11 @@ public protocol UserScript: WKScriptMessageHandler {
 
     func makeWKUserScript() async -> WKUserScriptBox
 
+    /// A requirement, not only an extension method, so a script that shares its `WKUserScript` is asked for it
+    /// even when the caller holds a `UserScript` existential.
+    @MainActor
+    func makeWKUserScriptSync() -> WKUserScript
+
 }
 
 extension UserScript {

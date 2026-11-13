@@ -31,6 +31,8 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     public let port: UInt16
 
+    private let prerequisites: DebugPrerequisiteSnapshot
+    private let instanceID: String?
     private let server: DebugHTTPServer
     private let readService: DataBrokerProtectionDebugReadService
     private let logReader: DebugLogReading?
@@ -54,8 +56,12 @@ public final class DataBrokerProtectionDebugHTTPServer {
     public init(provider: DataBrokerProtectionDebugReadProviding,
                 logReader: DebugLogReading? = nil,
                 runManager: DataBrokerProtectionDebugModeRunning? = nil,
-                port: UInt16 = defaultPort) {
+                port: UInt16 = defaultPort,
+                instanceID: String? = nil,
+                prerequisiteReader: (@MainActor @Sendable () async throws -> DebugPrerequisiteResult)? = nil) {
         self.port = port
+        self.instanceID = instanceID
+        self.prerequisites = DebugPrerequisiteSnapshot(instanceID: instanceID, debugRunnerReady: runManager != nil, reader: prerequisiteReader)
         self.logReader = logReader
         self.runManager = runManager
         self.server = DebugHTTPServer(port: port, loopbackOnly: true)
@@ -69,6 +75,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
     }
 
     public func stop() {
+        prerequisites.stop()
         server.stop()
         logger.info("PIR debug server stopped")
     }
@@ -78,10 +85,19 @@ public final class DataBrokerProtectionDebugHTTPServer {
         let logReader = logReader.map(UncheckedSendable.init)
         let hasLogReader = logReader != nil
         let hasRunManager = runManager != nil
+        let prerequisites = prerequisites
+        server.addRoute("/api/debug/prerequisites", method: .GET) { request in
+            guard let checkID = request.queryParameters["checkID"], UUID(uuidString: checkID) != nil else {
+                return .text("checkID must be a UUID", status: .badRequest)
+            }
+            return try Self.json(prerequisites.snapshot(checkID: checkID))
+        }
 
         server.addRoute("/api", method: .GET) { _ in
             let service = service.value
             var endpoints = service.defaultEndpoints()
+            endpoints.append(.init(path: "/api/debug/prerequisites?checkID={uuid}",
+                                   description: "Fresh correlated normal subscription check. Poll the same ID until no longer pending."))
             if hasLogReader {
                 endpoints.append(Self.logsEndpointDescription)
             }
@@ -130,7 +146,11 @@ public final class DataBrokerProtectionDebugHTTPServer {
     }
 
     private func registerDebugModeRoutes(runManager: UncheckedSendable<DataBrokerProtectionDebugModeRunning>) {
+        let instanceID = instanceID
         server.addRoute("/api/debug/scans", method: .POST) { request in
+            if !Self.isOwned(request, instanceID: instanceID) {
+                return .text("PIR debug instance mismatch", status: .forbidden)
+            }
             if Self.isFromWebPage(request) {
                 return Self.webPageRejection
             }
@@ -149,6 +169,9 @@ public final class DataBrokerProtectionDebugHTTPServer {
         }
 
         server.addPrefixRoute("/api/debug/runs/", method: .POST) { request in
+            if !Self.isOwned(request, instanceID: instanceID) {
+                return .text("PIR debug instance mismatch", status: .forbidden)
+            }
             if Self.isFromWebPage(request) {
                 return Self.webPageRejection
             }
@@ -166,6 +189,11 @@ public final class DataBrokerProtectionDebugHTTPServer {
                 }
             }
         }
+    }
+
+    static func isOwned(_ request: HTTPRequest, instanceID: String?) -> Bool {
+        guard let instanceID else { return true }
+        return request.headers.first { $0.key.caseInsensitiveCompare("X-PIR-Debug-Instance") == .orderedSame }?.value == instanceID
     }
 
     /// Browsers send `Origin` on every POST and pages can't remove it, so this keeps web pages from starting scans or opt-outs.

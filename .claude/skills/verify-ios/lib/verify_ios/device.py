@@ -49,7 +49,8 @@ class Device:
         """Every simulator with this worktree's name, including unavailable ones (their runtime was removed).
         Looked up by name, never remembered across commands: each proof deletes its simulator when it ends."""
         devs = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"]).stdout)["devices"]
-        return [d for ds in devs.values() for d in ds if d["name"] == self.name]
+        return [dict(d, runtime=runtime) for runtime, ds in devs.items() for d in ds
+                if d["name"] == self.name]
 
     def _find(self):
         """This worktree's usable simulator for the device, or None."""
@@ -189,12 +190,13 @@ class Device:
         except (IndexError, ValueError):
             return dict(ok=False, reason=(p.stdout[-200:] + p.stderr[-200:]).strip())
 
-    def launch(self, fresh=False, flags=None):
+    def launch(self, fresh=False, flags=None, launch=None):
         """Install this worktree's build if it changed, start the runner, launch, and wait for a real ready signal.
 
         `flags` pins remote feature flags for this launch ({"newTabPageRedesign": True}) on top of env.PINNED_FLAGS, so
         a proof never depends on what the live privacy configuration currently says.
         """
+        launch = env.validate_launch(launch or {})
         t0 = time.time()
         flags = {**env.PINNED_FLAGS, **(flags or {})}
         if not self.booted():
@@ -212,14 +214,15 @@ class Device:
         # The app applies -ff. overrides only for internal users or in UI-test mode (AppDependencyProvider's
         # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features.
         args = ["isRunningUITests"] + [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
-        self.driver.launch({"AUTOMATION_TOKEN": self.token}, args)
+        self.driver.launch({**launch["environment"], "AUTOMATION_TOKEN": self.token}, args + launch["arguments"])
         if self.web.wait_ready(60) is None:
             raise Failed(f"AutomationServer on [::1]:{self.web_port} never reported /contentBlockerReady true")
         self.driver.wait({"id": "searchEntry"}, "exists", 20)
         ident = self.identity()
         if not ident.get("ok"):
             raise Failed("running app is not this worktree's build", build=ident)
-        return dict(device=self.device, udid=self.udid, bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
+        return dict(device=self.device, udid=self.udid, simulator=self._find(),
+                    bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
                     ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
                     runnerStarted=bool(started))
 
@@ -253,9 +256,9 @@ class Device:
         from .driver import APP_FOREGROUND
         return self.driver.state() == APP_FOREGROUND
 
-    def reset(self, flags=None):
+    def reset(self, flags=None, launch=None):
         """Known state: reinstall (clears app data, per-site permissions and pixel frequency state), launch, one blank tab."""
-        return self.launch(fresh=True, flags=flags)
+        return self.launch(fresh=True, flags=flags, launch=launch)
 
     def terminate(self):
         self.driver.terminate()

@@ -40,12 +40,13 @@ ABSENT = {"NOT_FOUND", "TIMEOUT"}
 class Ios:
     """The handle a proof receives: user actions, reads, waiting assertions, telemetry and evidence for one device."""
 
-    def __init__(self, device, evidence, flags=None, device_obj=None):
+    def __init__(self, device, evidence, flags=None, device_obj=None, launch=None):
         self.device = device                     # "iphone" | "ipad"
         self.form_factor = "phone" if device == "iphone" else "tablet"   # pixel names end in _ios_<form_factor>
         self.d = device_obj or Device(device)
         self.evidence = evidence
         self.flags = dict(flags or {})
+        self.launch_config = env.validate_launch(launch or {})
         self.checks, self.unverified_items, self.notes, self.warnings = [], [], [], []
         self.hosts = set()                       # non-local hosts the proof saw, to check LIVE
         self.cleanups = []                       # (what, fn) undo steps, run in reverse after the proof
@@ -76,10 +77,10 @@ class Ios:
     # session ---------------------------------------------------------------------
     def reset(self):
         """Reinstall and launch: no app data, one blank tab, per-site permissions and daily pixel state cleared."""
-        return self._session("reset", lambda: self.d.reset(flags=self.flags))
+        return self._session("reset", lambda: self.d.reset(flags=self.flags, **({"launch": self.launch_config} if any(self.launch_config.values()) else {})))
 
     def launch(self):
-        return self._session("launch", lambda: self.d.launch(flags=self.flags))
+        return self._session("launch", lambda: self.d.launch(flags=self.flags, **({"launch": self.launch_config} if any(self.launch_config.values()) else {})))
 
     def _session(self, action, fn):
         """A launch that fails is setup trouble (build identity, readiness, runner), not the behavior under proof."""
@@ -88,6 +89,41 @@ class Ios:
         except Failed as e:
             raise SetupFailed(f"{action}: {e}", **e.extra) from e
         return self.launched
+
+    def checkpoint(self, instruction, timeout=900):
+        """Pause in this attempt; acknowledge or cancel with the paths written to checkpoint.json."""
+        if not isinstance(timeout, (int, float)) or not 0 < timeout <= 3600:
+            raise SetupFailed("checkpoint timeout must be between 0 and 3600 seconds")
+        checkpoint_id = uuid.uuid4().hex
+        ack = os.path.join(self.evidence, f"ack-{checkpoint_id}")
+        cancel = os.path.join(self.evidence, f"cancel-{checkpoint_id}")
+        record = dict(id=checkpoint_id, instruction=instruction, acknowledge=ack, cancel=cancel, timeout=timeout,
+                      startedAt=time.time(), deadlineAt=time.time() + timeout, status="pending")
+        path = os.path.join(self.evidence, "checkpoint.json")
+        def save():
+            _write(path, json.dumps(record, indent=2))
+        save()
+        print(f"{instruction}\nAcknowledge: touch {ack}\nCancel: touch {cancel}", flush=True)
+        deadline = time.monotonic() + timeout
+        try:
+            while True:
+                if os.path.exists(cancel):
+                    record["status"] = "cancelled"
+                    raise _Stop("manual checkpoint")
+                if os.path.exists(ack):
+                    record["status"] = "acknowledged"
+                    record["acknowledgedAt"] = time.time()
+                    return checkpoint_id
+                if time.monotonic() >= deadline:
+                    record["status"] = "timedOut"
+                    raise SetupFailed("manual checkpoint timed out")
+                time.sleep(0.2)
+        finally:
+            if record["status"] == "pending":
+                record["status"] = "interrupted"
+            record["finishedAt"] = time.time()
+            save()
+            self._log("checkpoint", [checkpoint_id], lambda: record)
 
     def doctor(self):
         return self._log("doctor", [], self.d.doctor)
@@ -427,6 +463,13 @@ def load(path):
         problems.append("FLAGS must map feature flag names to True/False")
     elif env.flag_problem(flags):
         problems.append(f"FLAGS: {env.flag_problem(flags)}")
+    try:
+        env.validate_launch(getattr(mod, "LAUNCH", {}))
+        validator = getattr(mod, "validate", None)
+        if validator:
+            validator()
+    except Exception as error:
+        problems.append(f"proof configuration: {error}")
     if not (mod.__doc__ or "").strip():
         problems.append("needs a docstring saying what it proves")
     return mod, problems
@@ -548,7 +591,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
     status, reason, ios, phase = "error", None, None, "setup"
     try:
         try:
-            ios = Ios(device, evidence, flags, device_obj)
+            ios = Ios(device, evidence, flags, device_obj, getattr(mod, "LAUNCH", {}))
             ios.launch()
             ios.capture = ios.d.capture_conditions()   # the defaults this run starts from; setters update it
             fixture(user=device)
@@ -689,7 +732,8 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         flags={**env.PINNED_FLAGS, **flags},
         capture={r["device"]: r.get("capture") for r in results if r.get("device") != "-"},
         skillSha256=_skill_hash(), xcode=" ".join(xcode[:4]),
-        simulators={r["device"]: dict(udid=(r.get("launched") or {}).get("udid"), type=env.DEVICE_TYPES[r["device"]], runtime=env.RUNTIME)
+        simulators={r["device"]: dict(udid=(r.get("launched") or {}).get("udid"), type=env.DEVICE_TYPES[r["device"]], runtime=env.RUNTIME,
+                                    observed=(r.get("launched") or {}).get("simulator"))
                     for r in results if r.get("device") in env.DEVICE_TYPES},
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",

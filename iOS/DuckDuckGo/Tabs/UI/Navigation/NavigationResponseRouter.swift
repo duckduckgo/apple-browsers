@@ -18,6 +18,7 @@
 //
 
 import BrowserServicesKit
+import Common
 import Core
 import Foundation
 import PixelKit

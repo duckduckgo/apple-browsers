@@ -71,7 +71,7 @@ final class MaliciousSiteProtectionNavigationHandlerTests {
         let firstNavigationURL = try #require(URL(string: "https://www.example.com"))
         let secondNavigationURL = try #require(URL(string: "https://www.example.com/page123"))
         let thirdNavigationURL = try #require(URL(string: "https://www.test.com"))
-        let fourthNavigationURL = try #require(URL.ddg)
+        let fourthNavigationURL = URL.ddg
         let firstNavigationAction = MockNavigationAction(request: URLRequest(url: firstNavigationURL), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         let secondNavigationAction = MockNavigationAction(request: URLRequest(url: secondNavigationURL), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))
         let thirdNavigationAction = MockNavigationAction(request: URLRequest(url: thirdNavigationURL), targetFrame: WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com"))

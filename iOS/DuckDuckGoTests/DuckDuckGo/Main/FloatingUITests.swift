@@ -2526,7 +2526,7 @@ final class WebViewPreviewSnapshotCapturerTests: XCTestCase {
 
     func testWhenFirstSnapshotNeverAnswersThenItsPendingCallbackDoesNotKeepTheWebViewAlive() {
         var webView: FakeSnapshottingWebView? = FakeSnapshottingWebView()
-        weak var releasedWebView = webView
+        weak let releasedWebView = webView
         WebViewPreviewSnapshotCapturer().capture(webView: webView!,
                                                  rect: CGRect(x: 0, y: 0, width: 100, height: 100),
                                                  timeout: 60,

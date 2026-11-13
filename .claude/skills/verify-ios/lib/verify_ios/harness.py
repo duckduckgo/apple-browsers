@@ -7,7 +7,7 @@ and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services 
 A run passes only when the proof returned, recorded at least one passing check and no failing one, and the app was
 still in the foreground at the end. Anything that goes wrong before the proof's own steps is an error, not a failure.
 """
-import importlib.util, inspect, json, os, shutil, signal, sys, time, traceback, urllib.parse, uuid
+import importlib.util, inspect, json, os, shlex, shutil, signal, sys, time, traceback, urllib.parse, uuid
 
 from . import env
 from .device import Device, fixture, fixture_release
@@ -459,6 +459,11 @@ def load(path):
     live = getattr(mod, "LIVE", [])
     if not isinstance(live, list) or not all(isinstance(s, str) for s in live):
         problems.append("LIVE must be a list of service names")
+    input_env = getattr(mod, "INPUT_ENV", [])
+    if not isinstance(input_env, list) or not all(isinstance(s, str) and s.isidentifier() for s in input_env):
+        problems.append("INPUT_ENV must be a list of environment variable names")
+    else:
+        problems += [f"set {name}: the proof reads its input from it" for name in input_env if not os.environ.get(name)]
     flags = getattr(mod, "FLAGS", {})
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map feature flag names to True/False")
@@ -569,7 +574,8 @@ def prove(path, devices=None, keep=False, decision_log=None):
     finally:
         _ignore_signals()   # writing the manifest and report must not be interrupted
     try:
-        manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log)
+        manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log,
+                             getattr(mod, "INPUT_ENV", []))
         with open(f"{attempt}/manifest.json", "w") as f:
             json.dump(manifest, f, indent=1)
         with open(f"{attempt}/report.md", "w") as f:
@@ -721,8 +727,10 @@ def _skill_hash():
     return h.hexdigest()
 
 
-def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None):
+def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None, input_env=()):
     xcode = run(["xcodebuild", "-version"]).stdout.split()
+    inputs = {name: os.environ.get(name, "") for name in input_env}
+    prefix = "".join(f"{name}={shlex.quote(value)} " for name, value in inputs.items())
     hosts = sorted({h for r in results for h in r.get("liveHostsSeen", [])})
     return dict(
         proof=os.path.relpath(proof_path, attempt),
@@ -738,7 +746,8 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
                     for r in results if r.get("device") in env.DEVICE_TYPES},
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",
-        rerun=f"{SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}" + (f" --decision-log {os.path.realpath(decision_log)}" if decision_log else ""),
+        inputEnv=inputs,
+        rerun=f"{prefix}{SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}" + (f" --decision-log {os.path.realpath(decision_log)}" if decision_log else ""),
         decisionLog=os.path.realpath(decision_log) if decision_log else None,
         started=started, finished=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         results=[{k: r.get(k) for k in ("device", "status", "reason", "secs", "problems")} for r in results])

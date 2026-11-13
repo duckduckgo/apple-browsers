@@ -81,6 +81,7 @@ from verify_ios import steps
 DEVICES = ["iphone", "ipad"]   # default: both
 LIVE = []                      # live services it depends on, e.g. ["duck.ai"]; empty = local fixture / app only
 FLAGS = {}                     # remote feature flags to pin for this proof (env.PINNED_FLAGS are always pinned)
+INPUT_ENV = []                 # environment variables the proof reads; must be set, recorded in the rerun command
 
 def run(ios):
     steps.fresh_start(ios)                         # reinstall + launch: one blank tab, address bar not focused

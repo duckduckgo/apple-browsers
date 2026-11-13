@@ -18,6 +18,7 @@ from verify_ios import env, steps
 from verify_ios.env import Failed, SetupFailed
 
 DEVICES = ["iphone"]
+INPUT_ENV = ["PIR_PROOF_INPUT"]
 INSTANCE = str(uuid.uuid4())
 PORT = env.BASE_PORT + 5
 LAUNCH = {"environment": {"PIR_DEBUG_SERVER": "true", "PIR_DEBUG_PORT": str(PORT),

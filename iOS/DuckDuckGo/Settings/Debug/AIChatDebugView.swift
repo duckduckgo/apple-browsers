@@ -31,13 +31,16 @@ struct AIChatDebugView: View {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let aiChatBonusMessageLog: AIChatBonusMessageLog?
     private let featureFlagger: FeatureFlagger?
+    private let aiChatLocalModel: AIChatLocalModelDependencies?
 
     init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
-         featureFlagger: FeatureFlagger? = nil) {
+         featureFlagger: FeatureFlagger? = nil,
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.aiChatBonusMessageLog = aiChatBonusMessageLog
         self.featureFlagger = featureFlagger
+        self.aiChatLocalModel = aiChatLocalModel
     }
 
     var body: some View {
@@ -60,6 +63,22 @@ struct AIChatDebugView: View {
                 }
             }
 #endif
+
+            if let aiChatLocalModel {
+                // Shows the prompt without needing a Duck.ai page that asks for access.
+                Section(header: Text(verbatim: "Local Model")) {
+                    Button {
+                        aiChatLocalModel.service.optOut()
+                    } label: {
+                        Text(verbatim: "Reset Local Summaries Opt-In")
+                    }
+                    Button {
+                        showLocalModelAccessPrompt(aiChatLocalModel)
+                    } label: {
+                        Text(verbatim: "Show Local Model Access Pop-Up")
+                    }
+                }
+            }
 
             Section(header: Text(verbatim: "Message Policy Hostname"),
                     footer: Text(verbatim: "Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -115,6 +134,16 @@ struct AIChatDebugView: View {
             }
         }
         .navigationTitle("AI Chat")
+    }
+
+    private func showLocalModelAccessPrompt(_ localModel: AIChatLocalModelDependencies) {
+        Task { @MainActor in
+            let window = UIApplication.shared.firstKeyWindow
+            let modelName = localModel.service.model.name
+            _ = try? await localModel.service.requestAccess {
+                await localModel.accessPrompt.ask(in: window, modelName: modelName)
+            }
+        }
     }
 }
 

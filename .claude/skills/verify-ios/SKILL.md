@@ -203,7 +203,7 @@ git worktree add "$base" "$(git merge-base HEAD origin/main)" && git -C "$base" 
 (cd "$base" && $V --device iphone setup && $V build &&
  $V prove "$proof" --devices iphone --evidence-dir "$dir/before")   # expected to fail: the bug
 $V prove "$proof" --devices iphone --evidence-dir "$dir/after"      # expected to pass: the fix
-(cd "$base" && $V cleanup --all --delete-sims) && git worktree remove "$base"
+(cd "$base" && $V cleanup --all --delete-sims) && git worktree remove --force "$base"   # --force: it has submodules
 ```
 
 Exit codes: `0` pass · `1` a check failed (the product, or the proof) · `2` error: setup, stale build, driver, a proof

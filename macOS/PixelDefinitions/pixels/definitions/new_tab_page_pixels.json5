@@ -99,7 +99,16 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "has_pasted_text",
+                "type": "boolean",
+                "description": "Whether the prompt included pasted text (pasted-text chips) when submitted"
+            }
+        ]
     },
     "m_mac_new-tab-page_omnibar_mode_changed": {
         "description": "Fires when a user switches between search and DuckAI mode in the omnibar. Used to understand mode preference.",

@@ -225,4 +225,13 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var suggestedPromptsPublisher: AnyPublisher<Void, Never> {
         suggestedPromptsSubject.eraseToAnyPublisher()
     }
+
+    @Published var isPastedTextEnabled: Bool = false
+    @Published var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits?
+
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
+        $isPastedTextEnabled.dropFirst().map { _ in () }
+            .merge(with: $pastedTextLimits.dropFirst().map { _ in () })
+            .eraseToAnyPublisher()
+    }
 }

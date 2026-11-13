@@ -124,7 +124,7 @@ public final class SuggestionsReader: SuggestionsReading {
             defer { isSettingUp = false }
 
             do {
-                try setupWebView()
+                try await setupWebView()
                 isWebViewReady = true
             } catch {
                 Logger.aiChat.error("SuggestionsReader: Setup failed: \(error.localizedDescription)")
@@ -221,7 +221,7 @@ public final class SuggestionsReader: SuggestionsReading {
     // MARK: - WebView Setup
 
     @MainActor
-    private func setupWebView() throws {
+    private func setupWebView() async throws {
         let suggestionsScript = AIChatSuggestionsUserScript()
 
         let features = ContentScopeFeatureToggles(
@@ -249,13 +249,15 @@ public final class SuggestionsReader: SuggestionsReading {
             featureToggles: features
         )
 
-        let contentScope = try ContentScopeUserScript(
-            privacyConfig,
+        // The script embeds the whole privacy configuration, so generate it off the main thread
+        let contentScopeSource = try await ContentScopeScriptSource.make(
+            privacyConfigurationManager: privacyConfig,
             properties: contentScopeProperties,
             scriptContext: .aiChatHistory,
-            allowedNonisolatedFeatures: [suggestionsScript.featureName],
             privacyConfigurationJSONGenerator: nil
         )
+        let contentScope = ContentScopeUserScript(source: contentScopeSource,
+                                                  allowedNonisolatedFeatures: [suggestionsScript.featureName])
         contentScope.registerSubfeature(delegate: suggestionsScript)
 
         let userContentController = WKUserContentController()

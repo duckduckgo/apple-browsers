@@ -1,0 +1,71 @@
+name: Agent worker
+
+# Smoke test for Anthropic workload identity federation, to be replaced by the real worker. The
+# federation rule only accepts this file on the agent-worker branch in the agent-worker environment
+
+on:
+  push:
+    branches: [agent-worker]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  federation-check:
+    name: Claude via federation (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: bitrise-macos
+            runs-on: [image:osx-27-edge, general-purpose]
+          - name: github-ubuntu
+            runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs-on }}
+    environment: agent-worker
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+    steps:
+      - name: Install Claude Code
+        run: |
+          set -euo pipefail
+          curl -fsSL https://claude.ai/install.sh | bash -s stable
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Anthropic credentials (workload identity federation)
+        env:
+          RULE: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          ORG: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          SERVICE_ACCOUNT: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          WORKSPACE: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/anthropic-identity"
+          mkdir -p "$dir" && chmod 0700 "$dir"
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" |
+            python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])' > "$dir/token"
+          # Print the claims the rule matches on, never the token itself
+          python3 - "$dir/token" <<'PY'
+          import base64, json, sys
+          p = open(sys.argv[1]).read().split(".")[1]
+          c = json.loads(base64.urlsafe_b64decode(p + "=" * (-len(p) % 4)))
+          for k in ("sub", "aud", "repository_owner_id", "workflow_ref", "environment", "runner_environment"):
+              print(f"{k}: {c.get(k)}")
+          PY
+          {
+            echo "ANTHROPIC_FEDERATION_RULE_ID=${RULE:?}"
+            echo "ANTHROPIC_ORGANIZATION_ID=${ORG:?}"
+            echo "ANTHROPIC_SERVICE_ACCOUNT_ID=${SERVICE_ACCOUNT:?}"
+            if [ -n "$WORKSPACE" ]; then echo "ANTHROPIC_WORKSPACE_ID=$WORKSPACE"; fi
+            echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$dir/token"
+          } >> "$GITHUB_ENV"
+
+      - name: Call Claude
+        run: |
+          set -euo pipefail
+          claude --version
+          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+            -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN \
+            claude -p "Reply with the single word OK" --max-turns 1 --output-format text

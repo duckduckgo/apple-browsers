@@ -22,7 +22,7 @@ import Foundation
 struct OnboardingConfiguration: Codable, Equatable {
     var stepDefinitions: StepDefinitions
     var exclude: [String]
-    var steps: [String]?
+    var steps: [String]
     var order: String
     var env: String
     var locale: String

@@ -121,7 +121,7 @@ class OnboardingManagerTests: XCTestCase {
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
+            exclude: ["duckPlayerSingle"],
             steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
             order: "v4",
             env: "development",
@@ -200,7 +200,7 @@ class OnboardingManagerTests: XCTestCase {
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
+            exclude: ["duckPlayerSingle"],
             steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
             order: "v4",
             env: "development",

@@ -42,12 +42,6 @@ enum OnboardingSteps: String, CaseIterable {
     case searchOrChat
 }
 
-/// Defines which onboarding steps should be excluded from the flow
-enum OnboardingExcludedStep: String {
-    case addressBarMode
-    case duckPlayerSingle
-}
-
 enum OnboardingRow: String, Decodable {
     case dock
     case dockInstructions = "dock-instructions"
@@ -182,27 +176,29 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             env = "production"
         }
 
-        let excludedSteps = buildExcludedSteps()
+        let activeSteps = OnboardingSteps.allCases.filter(isStepActive)
+        // `exclude` only lists steps the v4 page knows.
+        let excludedSteps = OnboardingSteps.allCases.filter { $0 != .searchOrChat && !isStepActive($0) }
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
-                                       exclude: excludedSteps,
-                                       steps: buildSteps(excluding: excludedSteps),
+                                       exclude: excludedSteps.map(\.rawValue),
+                                       steps: activeSteps.map(\.rawValue),
                                        order: "v4",
                                        env: env,
                                        locale: preferredLocale,
                                        platform: platform)
     }
 
-    private func buildExcludedSteps() -> [String] {
-        [OnboardingExcludedStep.duckPlayerSingle.rawValue]
-    }
-
-    /// Steps the page may show; the page decides their order.
-    private func buildSteps(excluding excludedSteps: [String]) -> [String] {
-        let isSearchOrChatOn = featureFlagger.isFeatureOn(.onboardingSearchOrChat)
-        return OnboardingSteps.allCases
-            .filter { !excludedSteps.contains($0.rawValue) && ($0 != .searchOrChat || isSearchOrChatOn) }
-            .map(\.rawValue)
+    /// Whether the page may show `step`; the page decides the order.
+    private func isStepActive(_ step: OnboardingSteps) -> Bool {
+        switch step {
+        case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
+            true
+        case .duckPlayerSingle:
+            false
+        case .searchOrChat:
+            featureFlagger.isFeatureOn(.onboardingSearchOrChat)
+        }
     }
 
     private var didRequestDefaultBrowser: Bool = false

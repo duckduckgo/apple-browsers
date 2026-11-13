@@ -92,6 +92,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public var chromeWebStore: ChromeWebStoreManaging?
     /// Disables extensions that remote configuration lists. `nil` until the host starts enforcement.
     public var remoteDisableEnforcer: WebExtensionRemoteDisableEnforcer?
+    /// Tells the embedded extension when the user's allowlist changes. See `installUserAllowlistNotifier`.
+    var userAllowlistNotifier: UserAllowlistChangeNotifier?
     let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening { listener }
     private let listener = WebExtensionEventsListener()

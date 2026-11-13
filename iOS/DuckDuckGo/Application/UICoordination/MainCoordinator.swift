@@ -454,6 +454,12 @@ final class MainCoordinator {
             eventHub: eventHub
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionManager.installUserAllowlistNotifier(
+            changes: ContentBlocking.shared.contentBlockingManager.updatesPublisher.map { _ in () }.eraseToAnyPublisher(),
+            allowlist: { [privacyConfigurationManager] in
+                privacyConfigurationManager.privacyConfig.userUnprotectedDomains
+            }
+        )
 
         let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,

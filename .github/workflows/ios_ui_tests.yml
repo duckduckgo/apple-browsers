@@ -163,7 +163,7 @@ jobs:
               {device: "ipad", "device-name": $ipad_name, tests: $ipad} |
               select($devices == "both" or $devices == .device) |
               select(.tests | index($test)) |
-              {test: $test, only: [$test], skip: [], device, "device-name"}
+              {test: $test, device, "device-name"}
             ]}')
 
           jq -e --argjson requested "$requested" '
@@ -171,30 +171,6 @@ jobs:
             elif ($requested - [.include[].test] | length) > 0 then
               error("Requested class is unknown or not eligible for selected devices")
             else true end' <<< "$matrix" > /dev/null
-          # Balance full runs using recent case timings. Explicit class requests keep their normal selectors.
-          if [[ "$requested" == '[]' ]]; then
-            matrix=$(jq -c --slurpfile groups .github/ios-ui-test-groups.json '
-              {include: [
-                (.include | group_by(.device)[]) as $device |
-                ($device | map(.test)) as $eligible |
-                ($groups[0][$device[0].device] // []) as $layout |
-                ($layout | map(.only[])) as $selectors |
-                ($selectors | map(select(contains("/") | not))) as $classes |
-                ($selectors | map(select(contains("/")))) as $methods |
-                if ($selectors | length) != ($selectors | unique | length)
-                  or ($layout | map(.name) | length) != ($layout | map(.name) | unique | length)
-                  or (($methods | map(split("/")[0]) | unique) - $classes | length) > 0 then
-                  error("UI test groups must have unique selectors and a catch-all for each split class")
-                elif ($classes - $eligible | length) == 0 then
-                  ($layout[] as $group |
-                    $device[0] + {test: $group.name, only: $group.only, skip: [
-                      $methods[] as $method | ($method | split("/")[0]) as $class |
-                      select($group.only | index($class)) | $method
-                    ]}),
-                  ($device[] | select(.test as $test | $classes | index($test) == null))
-                else $device[] end
-              ]}' <<< "$matrix")
-          fi
           echo "include=$(jq -c '.include' <<< "$matrix")" >> "$GITHUB_OUTPUT"
           echo "Resolved matrix: $matrix"
 
@@ -290,12 +266,7 @@ jobs:
         RUN_ATTEMPT: ${{ github.run_attempt }}
       run: |
         artifact_name="ios-ui-tests-build-${RUN_ID}-${RUN_ATTEMPT}"
-        cd DerivedData
-        # Keep runnable bundles intact and omit standalone symbols and linker inputs.
-        find Build/Products \
-          \( -type d \( -name '*.app' -o -name '*.appex' -o -name '*.bundle' -o -name '*.framework' -o -name '*.xctest' \) \) -prune -o \
-          \( -name '*.dSYM' -o -name '*.a' -o -name '*.o' \) -prune -print > build-products-exclusions.txt
-        tar -czf ../build-products.tar.gz -X build-products-exclusions.txt Build/Products
+        tar -czf build-products.tar.gz -C DerivedData Build/Products
         echo "artifact-name=$artifact_name" >> "$GITHUB_OUTPUT"
 
     - name: Upload immutable build products
@@ -304,15 +275,6 @@ jobs:
         name: ${{ steps.package.outputs.artifact-name }}
         path: iOS/build-products.tar.gz
         if-no-files-found: error
-        retention-days: 1
-
-    - name: Upload debug symbols
-      uses: ./.github/actions/upload-artifact-with-retry
-      continue-on-error: true
-      with:
-        name: "ios-ui-tests-symbols-${{ github.run_id }}-${{ github.run_attempt }}"
-        path: "iOS/DerivedData/Build/Products/**/*.dSYM"
-        if-no-files-found: ignore
         retention-days: 1
 
     - name: Upload build logs when the build fails
@@ -342,8 +304,6 @@ jobs:
     uses: ./.github/workflows/ios_run_ui_test.yml
     with:
       test: ${{ matrix.test }}
-      only-tests: ${{ toJSON(matrix.only) }}
-      skip-tests: ${{ toJSON(matrix.skip) }}
       device: ${{ matrix.device }}
       device-name: ${{ matrix.device-name }}
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
@@ -364,8 +324,6 @@ jobs:
     uses: ./.github/workflows/ios_run_ui_test.yml
     with:
       test: ${{ matrix.test }}
-      only-tests: ${{ toJSON(matrix.only) }}
-      skip-tests: ${{ toJSON(matrix.skip) }}
       device: ${{ matrix.device }}
       device-name: ${{ matrix.device-name }}
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}

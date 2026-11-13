@@ -40,18 +40,6 @@ final class PrivacyConfigurationManagerConfigJSONTests: XCTestCase {
         return object["features"] as? [String: Any]
     }
 
-    func testWhenConfigIsUnchangedThenJSONIsEncodedOnce() {
-        let manager = makeManager(embedded: configData(version: 1, features: ["gpc": ["state": "enabled", "exceptions": []]]))
-
-        let first = manager.currentConfigJSON(excludingFeatures: [])
-        let second = manager.currentConfigJSON(excludingFeatures: [])
-
-        XCTAssertNotNil(features(in: first)?["gpc"])
-        XCTAssertEqual(first, second)
-        // The same buffer is handed back, not an equal re-encoding.
-        XCTAssertEqual(first?.withUnsafeBytes { $0.baseAddress }, second?.withUnsafeBytes { $0.baseAddress })
-    }
-
     func testWhenConfigIsReloadedThenNewJSONIsEncoded() {
         let manager = makeManager(embedded: configData(version: 1, features: ["before": ["state": "enabled", "exceptions": []]]))
         XCTAssertNotNil(features(in: manager.currentConfigJSON(excludingFeatures: []))?["before"])

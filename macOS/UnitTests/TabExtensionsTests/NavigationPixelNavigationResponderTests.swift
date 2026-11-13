@@ -93,4 +93,52 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
 
         XCTAssertEqual(navigation.cpmMessagingNavigationKind, .sessionRestoration)
     }
+
+    @MainActor
+    func testCPMNavigationKindOfErrorPageIsErrorPage() {
+        let navigation = makeNavigation(types: [.alternateHtmlLoad])
+
+        XCTAssertEqual(navigation.cpmMessagingNavigationKind, .errorPage)
+    }
+
+    @MainActor
+    func testCPMNavigationKindUsesInitialBackForwardActionAfterRedirect() {
+        let navigation = makeNavigation(types: [.backForward(distance: -1), .redirect(.server)])
+
+        XCTAssertEqual(navigation.cpmMessagingNavigationKind, .backForward)
+    }
+
+    @MainActor
+    func testCPMNavigationKindOfAnOrdinaryNavigationWithoutAResponseIsOther() {
+        XCTAssertEqual(makeNavigation(types: [.other]).cpmMessagingNavigationKind, .other)
+        XCTAssertEqual(makeNavigation(types: [.linkActivated(isMiddleClick: false)]).cpmMessagingNavigationKind, .other)
+        XCTAssertEqual(makeNavigation(types: [.redirect(.client(delay: 0)), .redirect(.server)]).cpmMessagingNavigationKind, .other)
+    }
+
+    /// A navigation whose actions have the given types, the last one being the current action.
+    @MainActor
+    private func makeNavigation(types: [NavigationType]) -> Navigation {
+        let webView = WKWebView()
+        let frame = FrameInfo.mainFrame(for: webView)
+        let actions = types.map { type in
+            NavigationAction(
+                request: URLRequest(url: URL(string: "https://example.com/page")!),
+                navigationType: type,
+                currentHistoryItemIdentity: nil,
+                redirectHistory: nil,
+                isUserInitiated: false,
+                sourceFrame: frame,
+                targetFrame: frame,
+                shouldDownload: false,
+                mainFrameNavigation: nil
+            )
+        }
+        return Navigation(
+            identity: NavigationIdentity(nil),
+            responders: ResponderChain(responderRefs: []),
+            state: .started,
+            redirectHistory: actions,
+            isCurrent: true
+        )
+    }
 }

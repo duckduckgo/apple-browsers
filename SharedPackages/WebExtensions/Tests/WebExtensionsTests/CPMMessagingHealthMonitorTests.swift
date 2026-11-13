@@ -488,6 +488,156 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixels.breakages.isEmpty, "the answer is applied before the check")
     }
 
+    // MARK: - Extension lifecycle of other extensions
+
+    func testLifecycleOfAnotherExtensionDoesNotEndWaitsOrTheSeries() {
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+        commit("b", path: "b")
+        for type in [DuckDuckGoWebExtensionType.darkReader, .adBlockingExtension, .searchToken] {
+            monitor.handle(.extensionLifecycle(.willReload(identifier: "x", type: type, trigger: .explicit)))
+            monitor.handle(.extensionLifecycle(.reloaded(identifier: "x", type: type, trigger: .explicit)))
+        }
+        monitor.handle(.extensionLifecycle(.willReload(identifier: "y", type: nil, trigger: .explicit)))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.persistentCount, 1)
+    }
+
+    func testEmbeddedLoadedAndFailedReloadDoNotEndWaits() {
+        commit("a", path: "a")
+        monitor.handle(.extensionLifecycle(.loaded(identifier: "embedded", type: .embedded)))
+        monitor.handle(.extensionLifecycle(.reloadFailed(identifier: "embedded", type: .embedded, trigger: .explicit)))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one)])
+    }
+
+    // MARK: - Suspension edge cases
+
+    func testResumeWithoutSuspensionChangesNothing() {
+        commit("a")
+        advance(20)
+        monitor.handle(.interruptionEnded)
+        advance(10)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one)])
+    }
+
+    func testSecondSuspensionBeginKeepsTheFirstStart() {
+        commit("a")
+        advance(20)
+        monitor.handle(.interruptionBegan)
+        advance(600)
+        monitor.handle(.interruptionBegan)
+        advance(600)
+        monitor.handle(.interruptionEnded)
+        advance(9)
+        monitor.handle(.interruptionEnded)
+        XCTAssertTrue(pixels.breakages.isEmpty, "the whole suspension is excluded, not only the last part")
+
+        advance(1)
+        monitor.handle(.interruptionEnded)
+        XCTAssertEqual(pixels.breakages, [report(.one)])
+    }
+
+    func testClosingAnUnknownTabChangesNothing() {
+        commit("a")
+        monitor.handle(.tabClosed(tabIdentifier: "unknown"))
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one)])
+    }
+
+    // MARK: - Interleaved tabs and answers
+
+    func testAnswerToOneOfTwoWaitingTabsLeavesTheOtherAloneAndNotPersistent() {
+        commit("a", path: "a")
+        commit("b", path: "b")
+        advance(10)
+        monitor.handle(.dashboardResponse(url: url("a")))
+        advance(21)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
+    func testAnswerForAThirdTabBetweenTwoSilentTabsEndsTheEpisode() {
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+        commit("c", path: "c")
+        monitor.handle(.dashboardResponse(url: url("c")))
+        commit("b", path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
+    func testAnswerBetweenTheReportsOfTwoOverlappingTabsEndsTheEpisode() {
+        commit("a", path: "a")
+        advance(10)
+        commit("b", path: "b")
+        advance(21)
+        monitor.handle(.interruptionEnded)
+        monitor.handle(.dashboardResponse(url: url("none")))
+        advance(10)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
+    func testAnswerFromAnOldExtensionDoesNotEndTheEpisode() {
+        monitor.isCurrentEmbeddedExtension = { $0 == "current" }
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+        monitor.handle(.dashboardResponse(url: url("none"), extensionIdentifier: "old"))
+        commit("b", path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.persistentCount, 1)
+    }
+
+    func testAnswerHiddenBySimulationDoesNotEndTheEpisode() {
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+        monitor.setBreakageSimulationEnabled(true)
+        monitor.handle(.dashboardResponse(url: url("none")))
+        commit("b", path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.persistentCount, 1)
+    }
+
+    func testRemovalOfTheEmbeddedExtensionEndsTheEpisode() {
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+        monitor.handle(.embeddedExtensionRemoved)
+        commit("b", path: "b")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.persistentCount, 0)
+    }
+
     // MARK: - Helpers
 
     private func url(_ path: String) -> URL {

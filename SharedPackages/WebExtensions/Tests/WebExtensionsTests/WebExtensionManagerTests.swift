@@ -1925,6 +1925,22 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenTheEmbeddedExtensionIsUninstalledThenTheHealthMonitorIsToldItIsRemoved() throws {
+        let monitor = CapturingCPMRemovalMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "other-id"),
+            makeInstalledWebExtension(uniqueIdentifier: "embedded-id", embeddedType: .embedded)
+        ]
+
+        try manager.uninstallExtension(identifier: "other-id")
+        XCTAssertEqual(monitor.removalCount, 0, "only the embedded extension answers for CPM")
+
+        try manager.uninstallExtension(identifier: "embedded-id")
+        XCTAssertEqual(monitor.removalCount, 1)
+    }
+
+    @MainActor
     func testWhenExtensionsAreUnloadedForDataClearingThenWillReloadIsReportedImmediately() async throws {
         let monitor = CapturingCPMLifecycleMonitor()
         let manager = makeManager(cpmMessagingHealthMonitor: monitor)
@@ -3093,6 +3109,17 @@ private final class CapturingCPMLifecycleMonitor: CPMMessagingHealthMonitoring {
     func handle(_ event: CPMMessagingHealthEvent) {
         guard case .extensionLifecycle(let lifecycleEvent) = event else { return }
         lifecycleEvents.append(lifecycleEvent)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class CapturingCPMRemovalMonitor: CPMMessagingHealthMonitoring {
+    private(set) var removalCount = 0
+
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .embeddedExtensionRemoved = event else { return }
+        removalCount += 1
     }
 }
 

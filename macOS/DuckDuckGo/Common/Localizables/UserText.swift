@@ -1726,6 +1726,14 @@ struct UserText {
     static let browserToolSettingsCaption = NotLocalizedString("browser-tool.settings.caption", value: "Choose what Duck.ai can use in the browser when you ask it to. These apply to every site and chat.", comment: "Caption of the settings section for what Duck.ai can do in the browser")
     static let browserToolSettingsResetAll = NotLocalizedString("browser-tool.settings.reset-all", value: "Reset All", comment: "Button that resets every browser tool permission to its default")
     static let browserToolSettingsReset = NotLocalizedString("browser-tool.settings.reset", value: "Reset to default", comment: "Accessibility label of the button that resets one browser tool permission to its default")
+    static func browserToolSettingsReset(toolName: String) -> String {
+        let localized = NotLocalizedString("browser-tool.settings.reset-tool", value: "Reset %@ to default", comment: "Accessibility label of the button that resets one browser tool permission to its default. Parameter is the tool name, e.g. Search Downloads")
+        return String(format: localized, toolName)
+    }
+    static let browserToolPanelScope = NotLocalizedString("browser-tool.panel.scope", value: "These apply to every site and chat.", comment: "Note at the bottom of the Browser Permissions panel opened from the Duck.ai button menu")
+    static let browserToolPanelAllDefault = NotLocalizedString("browser-tool.panel.all-default", value: "All browser permissions are back to their defaults.", comment: "Note at the bottom of the Browser Permissions panel once every browser tool permission is back to its default")
+    static let browserToolPanelManageInSettings = NotLocalizedString("browser-tool.panel.manage-in-settings", value: "Manage in Settings", comment: "Link in the Browser Permissions panel that opens the Browser Permissions section in Settings")
+    static let browserToolPanelClose = NotLocalizedString("browser-tool.panel.close", value: "Close Browser Permissions", comment: "Tooltip of the tab bar button that closes the Browser Permissions panel")
     static let browserToolSettingsTitleReadTabContent = NotLocalizedString("browser-tool.settings.read-tab-content.title", value: "Read Tab Content", comment: "Name of a browser tool Duck.ai can use, in settings")
     static let browserToolSettingsDetailReadTabContent = NotLocalizedString("browser-tool.settings.read-tab-content.detail", value: "Read the title, address, and text of a tab.", comment: "What a browser tool lets Duck.ai do, in settings")
     static let browserToolSettingsTitleListOpenTabs = NotLocalizedString("browser-tool.settings.list-open-tabs.title", value: "List Open Tabs", comment: "Name of a browser tool Duck.ai can use, in settings")

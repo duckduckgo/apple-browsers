@@ -83,10 +83,6 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     var canResetAll: Bool {
         rows.contains { storedStates[$0.name] != nil }
     }
-
-    static func hasAllowedTool(catalog: BrowserToolCatalog, permissions: BrowserToolPermissionStoring) -> Bool {
-        catalog.enabledTools.contains { permissions.state(forToolNamed: $0.name) == .allow }
-    }
 }
 
 struct PreferencesBrowserToolPermissionsView: View {
@@ -124,10 +120,78 @@ struct PreferencesBrowserToolPermissionsView: View {
     }
 }
 
-private struct BrowserToolPermissionRow: View {
+struct BrowserToolPermissionsPanelView: View {
+
+    @StateObject private var model: BrowserToolPermissionsPreferences
+    // Tools changed from their default when the panel opened. One set back from the dropdown
+    // stays until the panel closes, so it can be changed again; Reset removes it at once.
+    @State private var shownTools: Set<String>
+    private let openSettings: () -> Void
+
+    @MainActor
+    init(model: BrowserToolPermissionsPreferences? = nil, openSettings: @escaping () -> Void) {
+        let model = model ?? BrowserToolPermissionsPreferences()
+        _model = StateObject(wrappedValue: model)
+        _shownTools = State(initialValue: Set(model.storedStates.keys))
+        self.openSettings = openSettings
+    }
+
+    private var rows: [BrowserToolPermissionsPreferences.Row] {
+        model.rows.filter { shownTools.contains($0.name) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(UserText.browserToolSettingsTitle)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+            if rows.isEmpty {
+                Text(UserText.browserToolPanelAllDefault)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                PreferencesWebsitePermissionListContainer {
+                    VStack(spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 {
+                                WebsitePermissionListSeparator()
+                            }
+                            BrowserToolPermissionRow(row: row, model: model, showsDetail: false) {
+                                shownTools.remove(row.name)
+                            }
+                        }
+                    }
+                }
+            }
+
+            scopeNote
+        }
+        .padding(16)
+        .frame(width: 420)
+    }
+
+    private var scopeNote: some View {
+        var link = AttributedString(UserText.browserToolPanelManageInSettings)
+        link.link = URL(string: "about:settings")
+        return Text(AttributedString(UserText.browserToolPanelScope + " ") + link)
+            .font(.system(size: 12))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .fixedSize(horizontal: false, vertical: true)
+            .environment(\.openURL, OpenURLAction { _ in
+                openSettings()
+                return .handled
+            })
+    }
+}
+
+struct BrowserToolPermissionRow: View {
 
     let row: BrowserToolPermissionsPreferences.Row
     @ObservedObject var model: BrowserToolPermissionsPreferences
+    var showsDetail = true
+    var onReset: (() -> Void)?
 
     private static let states: [BrowserToolPermissionState] = [.ask, .allow, .deny]
 
@@ -143,7 +207,8 @@ private struct BrowserToolPermissionRow: View {
                 Text(BrowserToolSettingsText.title(toolName: row.name))
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                if let detail = BrowserToolSettingsText.detail(toolName: row.name) {
+                    .help(showsDetail ? "" : BrowserToolSettingsText.detail(toolName: row.name) ?? "")
+                if showsDetail, let detail = BrowserToolSettingsText.detail(toolName: row.name) {
                     Text(detail)
                         .font(.system(size: 11))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -163,7 +228,10 @@ private struct BrowserToolPermissionRow: View {
             .accessibilityLabel(BrowserToolSettingsText.title(toolName: row.name))
             .accessibilityIdentifier("Preferences.AIChat.browserToolPermissions.\(row.name)")
 
-            Button { model.reset(row) } label: {
+            Button {
+                model.reset(row)
+                onReset?()
+            } label: {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.undo)
                     .renderingMode(.template)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -173,7 +241,8 @@ private struct BrowserToolPermissionRow: View {
             .buttonStyle(HoverHighlightButtonStyle())
             .disabled(model.storedStates[row.name] == nil)
             .opacity(model.storedStates[row.name] == nil ? 0.4 : 1)
-            .accessibilityLabel(UserText.browserToolSettingsReset)
+            .help(UserText.browserToolSettingsReset)
+            .accessibilityLabel(UserText.browserToolSettingsReset(toolName: BrowserToolSettingsText.title(toolName: row.name)))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

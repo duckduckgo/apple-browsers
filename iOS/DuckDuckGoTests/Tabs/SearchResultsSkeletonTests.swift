@@ -155,19 +155,19 @@ struct SearchResultsSkeletonTests {
         let off = MockFeatureFlagger(enabledFeatureFlags: [])
         let on = MockFeatureFlagger(enabledFeatureFlags: [.searchSubmitPageCover])
 
-        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isPad: false, featureFlagger: off))
-        #expect(MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isPad: false, featureFlagger: on))
-        #expect(!MainViewController.learnsSearchPageHeader(from: Self.website, isFireTab: false, isPad: false, featureFlagger: on))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isLargeWidth: false, featureFlagger: off))
+        #expect(MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isLargeWidth: false, featureFlagger: on))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.website, isFireTab: false, isLargeWidth: false, featureFlagger: on))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("iPad never gets the cover or learns the header, even with the flag on", .timeLimit(.minutes(1)))
-    func iPadNeverCovers() {
+    @Test("The large-width iPad layout never gets the cover or learns the header, even with the flag on", .timeLimit(.minutes(1)))
+    func largeWidthNeverCovers() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.searchSubmitPageCover])
 
-        #expect(MainViewController.coversSearchSubmit(isPad: false, featureFlagger: flagger))
-        #expect(!MainViewController.coversSearchSubmit(isPad: true, featureFlagger: flagger))
-        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isPad: true, featureFlagger: flagger))
+        #expect(MainViewController.coversSearchSubmit(isLargeWidth: false, featureFlagger: flagger))
+        #expect(!MainViewController.coversSearchSubmit(isLargeWidth: true, featureFlagger: flagger))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isLargeWidth: true, featureFlagger: flagger))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -175,7 +175,7 @@ struct SearchResultsSkeletonTests {
     func fireTabNeverTeachesHeader() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.searchSubmitPageCover])
 
-        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: true, isPad: false, featureFlagger: flagger))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: true, isLargeWidth: false, featureFlagger: flagger))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -209,13 +209,13 @@ struct SearchResultsSkeletonTests {
     @Test("The cover flag changing while the app runs applies to the next page", .timeLimit(.minutes(1)))
     func headerFollowsFlagChanges() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isPad: false, featureFlagger: flagger))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isLargeWidth: false, featureFlagger: flagger))
 
         flagger.enabledFeatureFlags = [.searchSubmitPageCover]
-        #expect(MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isPad: false, featureFlagger: flagger))
+        #expect(MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isLargeWidth: false, featureFlagger: flagger))
 
         flagger.enabledFeatureFlags = []
-        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isPad: false, featureFlagger: flagger))
+        #expect(!MainViewController.learnsSearchPageHeader(from: Self.search, isFireTab: false, isLargeWidth: false, featureFlagger: flagger))
     }
 
     @available(iOS 16, macOS 13, *)

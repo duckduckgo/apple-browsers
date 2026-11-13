@@ -10630,7 +10630,7 @@ extension MainViewController {
 
     /// Unified Input feeds chat status to its own flows; everywhere else the tab's page does.
     fileprivate func reportDuckAIChatStatusOutsideUnifiedInput(_ status: AIChatStatusValue, for handler: AIChatContentHandling) {
-        guard !unifiedToggleInputFeature.isAvailable,
+        guard !unifiedToggleInputFeature.isFullTabChatInputAvailable,
               let tab = tabManager.currentTabsModel.tabs.first(where: { tabManager.controller(for: $0)?.aiChatContentHandler === handler }) else { return }
         duckAIWideEventInstrumentation.chatStatusChanged(status, scope: .tab(tab.uid))
     }

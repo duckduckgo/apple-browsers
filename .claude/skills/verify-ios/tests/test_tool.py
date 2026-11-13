@@ -809,7 +809,7 @@ class LivePIRTests(unittest.TestCase):
         def run():
             return dict(id="run", results=[result()], scanErrors=[], events=list(events))
         def event(summary):
-            events.append(dict(kind="history", summary=summary, profileQuery="query"))
+            events.append(dict(kind="History", summary=summary, profileQuery="query"))
         def handle(method, path, headers, body):
             requests.append((method, path))
             self.assertEqual(headers.get("X-PIR-Debug-Instance"), "owner")

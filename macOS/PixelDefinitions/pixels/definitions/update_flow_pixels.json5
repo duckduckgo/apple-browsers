@@ -293,6 +293,12 @@
                 "type": "string",
                 "description": "macOS version"
             },
+            {
+                "key": "promptSurface",
+                "type": "string",
+                "description": "The update entry point the user last clicked in the 7 days before the update, or none.",
+                "enum": ["menu-item", "menu-row", "menu-card", "toolbar-button", "none"]
+            },
             "appVersion",
             "pixelSource",
             "channel"
@@ -335,6 +341,12 @@
                 "key": "osVersion",
                 "type": "string",
                 "description": "macOS version"
+            },
+            {
+                "key": "promptSurface",
+                "type": "string",
+                "description": "The update entry point the user last clicked in the 7 days before the update, or none.",
+                "enum": ["menu-item", "menu-row", "menu-card", "toolbar-button", "none"]
             },
             "appVersion",
             "pixelSource",

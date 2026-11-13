@@ -108,7 +108,8 @@ public final class SparkleUpdateCompletionValidator {
                 pixelFiring?.fire(UpdateFlowPixels.updateApplicationUnexpected(
                     targetVersion: currentVersion,
                     targetBuild: currentBuild,
-                    osVersion: osVersionString
+                    osVersion: osVersionString,
+                    promptSurface: promptAttribution.consumePromptSurface()
                 ), frequency: .dailyAndCount)
             }
 
@@ -128,7 +129,8 @@ public final class SparkleUpdateCompletionValidator {
                 failureStatus: failureStatus,
                 initiationType: initiationType,
                 updateConfiguration: updateConfiguration,
-                osVersion: osVersionString
+                osVersion: osVersionString,
+                promptSurface: promptAttribution.consumePromptSurface()
             ), frequency: .dailyAndCount)
         }
     }

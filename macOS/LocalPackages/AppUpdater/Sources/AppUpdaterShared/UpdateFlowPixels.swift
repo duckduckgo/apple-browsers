@@ -101,13 +101,15 @@ public enum UpdateFlowPixels: PixelKit.Event {
         failureStatus: String,
         initiationType: String,
         updateConfiguration: String,
-        osVersion: String
+        osVersion: String,
+        promptSurface: String
     )
 
     case updateApplicationUnexpected(
         targetVersion: String,
         targetBuild: String,
-        osVersion: String
+        osVersion: String,
+        promptSurface: String
     )
 
     // Debug Sparkle updater pixels
@@ -176,7 +178,7 @@ public enum UpdateFlowPixels: PixelKit.Event {
         case .updateApplicationFailure(let sourceVersion, let sourceBuild, let expectedVersion,
                                         let expectedBuild, let actualVersion, let actualBuild,
                                         let failureStatus, let initiationType, let updateConfiguration,
-                                        let osVersion):
+                                        let osVersion, let promptSurface):
             return [
                 "sourceVersion": sourceVersion,
                 "sourceBuild": sourceBuild,
@@ -187,13 +189,15 @@ public enum UpdateFlowPixels: PixelKit.Event {
                 "failureStatus": failureStatus,
                 "initiationType": initiationType,
                 "updateConfiguration": updateConfiguration,
-                "osVersion": osVersion
+                "osVersion": osVersion,
+                "promptSurface": promptSurface
             ]
-        case .updateApplicationUnexpected(let targetVersion, let targetBuild, let osVersion):
+        case .updateApplicationUnexpected(let targetVersion, let targetBuild, let osVersion, let promptSurface):
             return [
                 "targetVersion": targetVersion,
                 "targetBuild": targetBuild,
-                "osVersion": osVersion
+                "osVersion": osVersion,
+                "promptSurface": promptSurface
             ]
         case .updateConfigurationDaily(let configuration):
             return ["configuration": configuration]

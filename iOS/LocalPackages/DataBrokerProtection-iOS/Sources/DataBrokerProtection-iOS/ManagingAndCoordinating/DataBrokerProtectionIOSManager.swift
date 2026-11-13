@@ -876,9 +876,29 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         }
 
         do {
+            var port = DataBrokerProtectionDebugHTTPServer.defaultPort
+            var instanceID: String?
+            #if DEBUG
+            let environment = ProcessInfo.processInfo.environment
+            if let value = environment["PIR_DEBUG_PORT"] {
+                guard let requestedPort = UInt16(value), requestedPort > 0 else { return false }
+                port = requestedPort
+            }
+            if let value = environment["PIR_DEBUG_INSTANCE_ID"] {
+                guard UUID(uuidString: value) != nil else { return false }
+                instanceID = value
+            }
+            #endif
+            let subscriptionManager = subscriptionManager
+            let settings = settings
             let server = DataBrokerProtectionDebugHTTPServer(provider: self,
                                                              logReader: DataBrokerProtectionIOSLogReader(),
-                                                             runManager: DebugModeRunManager(runner: try makeDebugModeRunner(contentBlocking: contentBlocking)))
+                                                             runManager: DebugModeRunManager(runner: try makeDebugModeRunner(contentBlocking: contentBlocking)),
+                                                             port: port,
+                                                             instanceID: instanceID,
+                                                             prerequisiteReader: {
+                await Self.readDebugPrerequisites(subscriptionManager: subscriptionManager, settings: settings)
+            })
             try server.start()
             debugServer = server
             return true
@@ -886,6 +906,39 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    @MainActor
+    private static func readDebugPrerequisites(subscriptionManager: DataBrokerProtectionSubscriptionManaging,
+                                               settings: DataBrokerProtectionSettings) async -> DebugPrerequisiteResult {
+        guard let manager = subscriptionManager as? DataBrokerProtectionSubscriptionManager else {
+            return DebugPrerequisiteResult(status: .unavailable, backend: "subscription", environment: "unknown")
+        }
+        guard !manager.isEntitlementCheckBypassed else {
+            return DebugPrerequisiteResult(status: .bypass, backend: "subscription", environment: "integrationTests")
+        }
+        let authenticated = manager.isSubscriptionAuthenticated
+        let status: DebugPrerequisiteResult.Status
+        var errorCode: String?
+        if !authenticated {
+            status = .unauthenticated
+        } else {
+            do {
+                status = try await manager.debugEntitlement() ? .ready : .notEntitled
+            } catch {
+                status = .error
+                errorCode = "entitlementCheckFailed"
+            }
+        }
+        var endpoint = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: false)
+        endpoint?.user = nil
+        endpoint?.password = nil
+        endpoint?.query = nil
+        endpoint?.fragment = nil
+        return DebugPrerequisiteResult(status: status, backend: "subscription-auth-v2",
+                                       environment: manager.entitlementEnvironment,
+                                       pirEnvironment: settings.selectedEnvironment.rawValue,
+                                       pirEndpoint: endpoint?.string, authenticated: authenticated, errorCode: errorCode)
     }
 
     public func makeDebugModeRunner(contentBlocking: DBPWebViewContentBlocking?) throws -> DebugModeRunner {

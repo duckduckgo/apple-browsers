@@ -56,7 +56,8 @@ final class SubscriptionOnboardingOrderConfirmationViewModelTests: XCTestCase {
             activeOffers: hasTrial ? [DuckDuckGoSubscription.Offer(type: .trial)] : [],
             tier: .plus,
             availableChanges: nil,
-            pendingPlans: nil)
+            pendingPlans: nil,
+            planCountry: nil)
     }
 
     private func makeViewModel(subscription: DuckDuckGoSubscription?,

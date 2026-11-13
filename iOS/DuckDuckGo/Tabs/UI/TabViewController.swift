@@ -133,7 +133,6 @@ struct HTTPSUpgradeNavigationTracker {
 }
 
 class TabViewController: UIViewController {
-    private var cpmReadinessDocumentIsGET = false
 
     private struct Constants {
         static let frameLoadInterruptedErrorCode = 102
@@ -274,6 +273,29 @@ class TabViewController: UIViewController {
         get { return findInPageScript?.findInPage }
         set { findInPageScript?.findInPage = newValue }
     }
+
+    private var delegateSessionFindInPage: (any FindInPageSearching)?
+    var delegateSessionFindInPageQuery: String { tabModel.delegateSessionFindInPageQuery }
+
+    var customFindInPage: (any FindInPageSearching)? {
+        delegateSessionFindInPage ?? findInPage
+    }
+
+    func releaseCustomFindInPage() {
+        delegateSessionFindInPage = nil
+        findInPage = nil
+    }
+
+    func endCustomFindInPage() {
+        customFindInPage?.done()
+        releaseCustomFindInPage()
+    }
+
+    private func closeDelegateSessionFindInPage() {
+        guard delegateSessionFindInPage != nil else { return }
+        delegate?.closeFindInPage(tab: self)
+        endCustomFindInPage()
+    }
     
     var daxEasterEggHandler: DaxEasterEggHandling?
     var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
@@ -288,6 +310,16 @@ class TabViewController: UIViewController {
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
+    private var appliedViewportInsetRange: (minimum: UIEdgeInsets, maximum: UIEdgeInsets)?
+    private var isInteractiveObscuredInsetsChangeActive = false
+
+    private enum InteractiveObscuredInsetsChangeSelector {
+        static let begin = NSSelectorFromString("_beginInteractiveObscuredInsetsChange")
+        static let end = NSSelectorFromString("_endInteractiveObscuredInsetsChange")
+    }
+    private var lastDuckAIInnerScrollInsets: UIEdgeInsets?
+    private var scrollingBeforeFloatingAIChrome: Bool?
+    private var backgroundBeforeFloatingAIChrome: (view: UIColor?, outer: UIColor?, container: UIColor?, isOpaque: Bool)?
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
@@ -472,6 +504,7 @@ class TabViewController: UIViewController {
     public var url: URL? {
         willSet {
             if newValue != url {
+                closeDelegateSessionFindInPage()
                 delegate?.closeFindInPage(tab: self)
             }
         }
@@ -523,6 +556,8 @@ class TabViewController: UIViewController {
         return activeLink.merge(with: storedLink)
     }
     
+    var duckAISwipeNewChat: DuckAISwipeNewChatHandler?
+
     /// Convenience property which passes back the value of `isAITab` from the underlying `TabModel`
     var isAITab: Bool {
         tabModel.isAITab
@@ -881,6 +916,7 @@ class TabViewController: UIViewController {
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             usageContextProvider: usageContextProvider,
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
+            onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStore(keyValueStore: keyValueStore),
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
         )
@@ -999,6 +1035,7 @@ class TabViewController: UIViewController {
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
                                                          onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
+                                                         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStore(keyValueStore: keyValueStore),
                                                          unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
@@ -1097,6 +1134,7 @@ class TabViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setSitePermissionsGeolocationActive(true)
+        installDuckAISwipeNewChatIfNeeded()
         
         registerForResignActive()
         registerForCreditCardAutofillKeyboardNotifications()
@@ -1104,7 +1142,9 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
+        duckAISwipeNewChat?.cancel()
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
@@ -1178,13 +1218,37 @@ class TabViewController: UIViewController {
         applyWebViewLayout(for: 1.0)
     }
 
+    func applyFloatingAIChromeBackground(_ color: UIColor?) {
+        guard isAITab || backgroundBeforeFloatingAIChrome != nil else { return }
+        if let color {
+            if backgroundBeforeFloatingAIChrome == nil {
+                backgroundBeforeFloatingAIChrome = (view.backgroundColor, outerContainer.backgroundColor,
+                                                    webViewContainer.backgroundColor, webView.isOpaque)
+            }
+            view.backgroundColor = color
+            outerContainer.backgroundColor = color
+            webViewContainer.backgroundColor = color
+            webView.isOpaque = false
+        } else if let previous = backgroundBeforeFloatingAIChrome {
+            view.backgroundColor = previous.view
+            outerContainer.backgroundColor = previous.outer
+            webViewContainer.backgroundColor = previous.container
+            if !webView.isLoading {
+                webView.isOpaque = previous.isOpaque
+            }
+            backgroundBeforeFloatingAIChrome = nil
+        }
+    }
+
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         lastAppliedBarsVisibilityPercent = barsVisibilityPercent
         applyWebViewLayout(for: barsVisibilityPercent)
     }
 
     func updateWebViewLayoutForKeyboard() {
-        guard floatingUIManager.isFloatingUIEnabled, webView != nil else { return }
+        guard webView != nil,
+              floatingUIManager.isFloatingUIEnabled || customFindInPage?.isDelegateSessionExperiment == true
+                || hasAppliedFloatingUIScrollViewInsets else { return }
         applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent, forceFloatingUIInsets: true)
     }
 
@@ -1254,6 +1318,51 @@ class TabViewController: UIViewController {
         return true
     }
 
+    /// WebKit's unobscured area follows the chrome on every frame, so page-fixed content moves with the
+    /// bar instead of jumping once the bar and the scroll have both settled.
+    private func updateWebViewObscuredInsetsFollowingChrome(_ insets: UIEdgeInsets,
+                                                            barsVisibilityPercent: CGFloat,
+                                                            tracksChrome: Bool) {
+        let isChromeMidTransition = barsVisibilityPercent > 0 && barsVisibilityPercent < 1
+        if tracksChrome {
+            updateWebViewViewportInsetRange()
+            if isChromeMidTransition {
+                setInteractiveObscuredInsetsChange(active: true)
+            }
+        }
+        setWebViewObscuredContentInsetsIfSupported(insets)
+        if !isChromeMidTransition {
+            setInteractiveObscuredInsetsChange(active: false)
+        }
+    }
+
+    /// While the chrome moves, WebKit treats inset changes like a scroll: page-fixed content follows
+    /// every frame, but the page only gets one `resize` once the chrome settles instead of one per
+    /// frame, which heavy pages can't keep up with. No-op if WebKit drops the selectors.
+    private func setInteractiveObscuredInsetsChange(active: Bool) {
+        guard active != isInteractiveObscuredInsetsChangeActive, let webView else { return }
+        let selector = active ? InteractiveObscuredInsetsChangeSelector.begin : InteractiveObscuredInsetsChangeSelector.end
+        guard webView.responds(to: selector) else { return }
+        isInteractiveObscuredInsetsChangeActive = active
+        webView.perform(selector)
+    }
+
+    /// Tells WebKit how far the chrome can move, from fully hidden to fully shown, so it can place
+    /// page-fixed content continuously while the obscured insets change mid-scroll.
+    private func updateWebViewViewportInsetRange() {
+        guard #available(iOS 15.5, *), let webView, let chromeDelegate else { return }
+        let hidden = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
+        let shown = chromeDelegate.floatingWebViewObscuredInsets(for: 1)
+        // WebKit rejects a range whose minimum exceeds its maximum on any edge.
+        let minimum = UIEdgeInsets(top: min(hidden.top, shown.top), left: min(hidden.left, shown.left),
+                                   bottom: min(hidden.bottom, shown.bottom), right: min(hidden.right, shown.right))
+        let maximum = UIEdgeInsets(top: max(hidden.top, shown.top), left: max(hidden.left, shown.left),
+                                   bottom: max(hidden.bottom, shown.bottom), right: max(hidden.right, shown.right))
+        if let applied = appliedViewportInsetRange, applied.minimum == minimum, applied.maximum == maximum { return }
+        appliedViewportInsetRange = (minimum, maximum)
+        webView.setMinimumViewportInset(minimum, maximumViewportInset: maximum)
+    }
+
     private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat, forceInsets: Bool = false) {
         guard #available(iOS 26, *) else {
             assertionFailure("Floating UI requires iOS 26")
@@ -1264,12 +1373,21 @@ class TabViewController: UIViewController {
         borderView.isTopVisible = false
         borderView.isBottomVisible = false
 
-        // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
-        // full-bleed with no obscured region there.
+        // AI tabs keep the web view full-bleed while native controls float above it.
         let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        let usesFloatingAIChrome = if #available(iOS 26, *) {
+            isUnifiedToggleInputAffectingLayout
+                && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
+        } else {
+            false
+        }
         var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+        if usesFloatingAIChrome {
+            obscuredInsets.top = chromeDelegate?.floatingAIChatHeaderObscuredHeight ?? 0
+            obscuredInsets.bottom = chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0
+        }
 
         // While a dialog is up the obscured top region offsets the stack instead of the web view, or
         // the page gets pushed down twice. Measured at full chrome visibility so the dialog (and the
@@ -1308,31 +1426,70 @@ class TabViewController: UIViewController {
         let hadDeferredInsets = hasDeferredFloatingUIInsets
         let animateTopAlignment = hadDeferredInsets
             && !webView.scrollView.isTracking && !webView.scrollView.isDragging && !webView.scrollView.isDecelerating
-        let shouldUpdateScrollInsets = forceInsets || WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+        let shouldUpdateScrollInsets = forceInsets || usesFloatingAIChrome || WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
             barsVisibilityPercent: barsVisibilityPercent,
             hasAppliedInsets: hasAppliedFloatingUIScrollViewInsets
         )
         // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
         hasDeferredFloatingUIInsets = false
+        updateWebViewObscuredInsetsFollowingChrome(obscuredInsets,
+                                                   barsVisibilityPercent: barsVisibilityPercent,
+                                                   tracksChrome: !isUnifiedToggleInputAffectingLayout)
         if shouldUpdateScrollInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
                                                isFloatingUIEnabled: true, animated: animateTopAlignment)
             hasAppliedFloatingUIScrollViewInsets = true
-            // Keep WebKit's viewport stable too. Changing it on every display-link tick can
-            // relayout page-fixed content while the glass is morphing over a full-bleed web view.
-            setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
+            updateFloatingAIChatScrolling(isEnabled: usesFloatingAIChrome, topInset: obscuredInsets.top)
+            if isAITab, usesFloatingAIChrome || lastDuckAIInnerScrollInsets != nil {
+                let innerInsets = usesFloatingAIChrome ? obscuredInsets : .zero
+                if lastDuckAIInnerScrollInsets != innerInsets {
+                    DuckAIChatScrollInsetStyler.apply(innerInsets, keepsEndInView: keepsDuckAIChatEndInView, to: webView)
+                    lastDuckAIInnerScrollInsets = innerInsets
+                }
+            }
         }
         // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
         hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
     }
 
+    private func updateFloatingAIChatScrolling(isEnabled: Bool, topInset: CGFloat) {
+        let host = (webView.url ?? tabModel.link?.url)?.host?.lowercased()
+        let usesInnerChatScrolling = host == "duck.ai" || host?.hasSuffix(".duck.ai") == true
+        guard isEnabled, usesInnerChatScrolling else {
+            restoreScrollingAfterFloatingAIChrome()
+            return
+        }
+        if scrollingBeforeFloatingAIChrome == nil {
+            scrollingBeforeFloatingAIChrome = webView.scrollView.isScrollEnabled
+        }
+        // Chat owns scrolling. Pin the outer view.
+        webView.scrollView.isScrollEnabled = false
+        webView.scrollView.contentOffset.y = -topInset
+    }
+
+    private func restoreScrollingAfterFloatingAIChrome() {
+        guard let scrollingBeforeFloatingAIChrome else { return }
+        webView.scrollView.isScrollEnabled = scrollingBeforeFloatingAIChrome
+        self.scrollingBeforeFloatingAIChrome = nil
+    }
+
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        restoreScrollingAfterFloatingAIChrome()
         hasDeferredFloatingUIInsets = false
         applyContextualOnboardingTopInset(0)
         webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
+        if let insets = chromeDelegate?.findInPageObscuredInsets(in: webView) {
+            if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
+                scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+            }
+            WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: insets)
+            setWebViewObscuredContentInsetsIfSupported(insets)
+            hasAppliedFloatingUIScrollViewInsets = true
+            return
+        }
         setWebViewObscuredContentInsetsIfSupported(.zero)
         if hasAppliedFloatingUIScrollViewInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
@@ -1367,6 +1524,11 @@ class TabViewController: UIViewController {
         guard let behavior = scrollViewAdjustmentBehaviorBeforeFloatingUI else { return }
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
         scrollViewAdjustmentBehaviorBeforeFloatingUI = nil
+        setInteractiveObscuredInsetsChange(active: false)
+        if #available(iOS 15.5, *), appliedViewportInsetRange != nil {
+            appliedViewportInsetRange = nil
+            webView.setMinimumViewportInset(.zero, maximumViewportInset: .zero)
+        }
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -1500,8 +1662,11 @@ class TabViewController: UIViewController {
                        consumeCookies: Bool,
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
+        lastDuckAIInnerScrollInsets = nil
+        scrollingBeforeFloatingAIChrome = nil
         cancelWebExtensionNavigationWait()
         instrumentation.willPrepareWebView()
+        closeDelegateSessionFindInPage()
         pageContextNavigationID = UUID()
         pageContextLoadedNavigationID = nil
         pageContextNavigationInProgress = false
@@ -1747,6 +1912,7 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        closeDelegateSessionFindInPage()
         freezeMonitor.end(.fire)
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
@@ -1824,6 +1990,7 @@ class TabViewController: UIViewController {
                 }
                 self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
                 self.webView.scrollView.alwaysBounceVertical = !self.isAITab
+                self.duckAISwipeNewChatURLDidChange()
                 (self.webView as? WebView)?.setInputAccessoryViewHidden(self.isAITab)
                 if #available(iOS 18.4, *) {
                     self.notifyWebExtensionOfPropertyChange([.URL])
@@ -1965,6 +2132,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        closeDelegateSessionFindInPage()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -2378,6 +2546,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
         progressWorker.progressBar = nil
@@ -2575,6 +2744,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        delegateSessionFindInPage?.done()
         webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
@@ -2910,9 +3080,6 @@ extension TabViewController: WKNavigationDelegate {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
                 .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
             )
-            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.matchReadinessRecoveryNavigation(tabIdentifier: tabModel.uid) {
-                $0 === navigation
-            }
         }
         sitePermissionsDidStartProvisionalNavigation(webView, navigation: navigation)
         navigationPixelResponder.didStart(navigation)
@@ -2943,6 +3110,12 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         terminationReloadMonitor.didFinish()
+        if isAITab, #available(iOS 26, *),
+           floatingUIManager.isDuckAIAndInputLiquidGlassEnabled {
+            DuckAIChatScrollInsetStyler.apply(lastDuckAIInnerScrollInsets ?? .zero,
+                                              keepsEndInView: keepsDuckAIChatEndInView,
+                                              to: webView)
+        }
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
@@ -2966,9 +3139,6 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = webView.url {
             if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
-                webExtensionManager.cpmMessagingHealthMonitor.registerReadinessRecoveryDocument(
-                    tabIdentifier: tabModel.uid, webView: webView, isGET: cpmReadinessDocumentIsGET
-                )
                 webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
                     tabIdentifier: tabModel.uid,
                     url: url,
@@ -3606,9 +3776,6 @@ extension TabViewController: WKNavigationDelegate {
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
         let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
             if case .allow = decision {
-                if navigationAction.isTargetingMainFrame {
-                    self?.cpmReadinessDocumentIsGET = navigationAction.request.httpMethod == "GET"
-                }
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
             decisionHandler(decision.webKitPolicy)
@@ -3880,7 +4047,10 @@ extension TabViewController: WKNavigationDelegate {
                     subscriptionDataReporter.saveSearchCount()
                 }
 
-                self.delegate?.closeFindInPage(tab: self)
+                if !self.findInPageImplementation.isDelegateSessionExperiment || webView === self.webView {
+                    self.closeDelegateSessionFindInPage()
+                    self.delegate?.closeFindInPage(tab: self)
+                }
             }
             // If navigating to the URL is allowed and we're not sideloading a special error page, forward the event to
             // the SpecialErrorPageNavigationHandler regardless of whether app links are enabled.
@@ -4734,10 +4904,12 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        guard !findInPageImplementation.isDelegateSessionExperiment || webView === self.webView else { return }
         // Before the delegate call below, which can start the next termination reload.
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            closeDelegateSessionFindInPage()
             cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)
@@ -4930,6 +5102,15 @@ extension TabViewController: UIGestureRecognizerDelegate {
     func requestFindInPage() {
         pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
 
+        if #available(iOS 27.0, *), findInPageImplementation == .delegateSessionExperiment {
+            if delegateSessionFindInPage == nil {
+                delegateSessionFindInPage = DelegateSessionFindInPage(webView: webView, query: delegateSessionFindInPageQuery) { [weak self] query in
+                    self?.tabModel.delegateSessionFindInPageQuery = query
+                }
+            }
+            delegate?.tabDidRequestFindInPage(tab: self)
+            return
+        }
         if #available(iOS 16.0, *), findInPageImplementation == .system {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction

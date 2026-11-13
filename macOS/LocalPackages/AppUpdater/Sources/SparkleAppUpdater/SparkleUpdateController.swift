@@ -424,7 +424,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     /// to reduce noise - users who quit within that time get the update silently.
     /// Critical updates show immediately. Manual updates show immediately (unchanged behavior).
     /// With more prominent updates on, the persisted prompt stage replaces the delay and the popover: the menu item
-    /// shows as soon as the update is ready, and the dot only at the first prompt.
+    /// and the dot both follow the stage.
     private func handleUpdateNotification() {
         guard let latestUpdate, hasPendingUpdate else {
             hideUpdateIndicators()
@@ -434,8 +434,8 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         if isMoreProminentUpdatesOn {
             pendingNotificationTask?.cancel()
             pendingNotificationTask = nil
-            mustShowUpdateIndicators = true
-            needsNotificationDot = promptStage == .firstPrompt
+            mustShowUpdateIndicators = promptStage.showsMenuUpdate
+            needsNotificationDot = promptStage.showsNotificationDot
             return
         }
 

@@ -45,6 +45,22 @@ final class ChromeWebStoreUpdaterTests: XCTestCase {
         }, report: { [weak self] identifier, outcome in self?.events.append((identifier, outcome)) })
     }
 
+    func testAmbiguousInstalledIdentityDoesNotDownloadAFullPackage() async throws {
+        installationIDs = ["first-installation", "second-installation"]
+        let fixture = try ChromeWebStoreFixture()
+        let counter = PreparationCounter()
+        let updater = updater { _ in
+            await counter.increment()
+            return fixture.package
+        }
+
+        await updater.prepare(try offer(fixture))
+
+        let downloads = await counter.value
+        XCTAssertEqual(downloads, 0)
+        XCTAssertTrue(events.isEmpty)
+    }
+
     func testValidPackageIsHandedOverAsVerifiedZIPAndSameVersionIsNotDownloadedAgain() async throws {
         let fixture = try ChromeWebStoreFixture()
         let store = ChromeWebStorePendingUpdateStore()
@@ -59,6 +75,7 @@ final class ChromeWebStoreUpdaterTests: XCTestCase {
         await updater.prepare(update)
         await updater.prepare(update)
         let pending = await store.pendingUpdate(for: fixture.identifier)
+        XCTAssertEqual(pending?.installationIdentifier, "installed")
         let verified = try XCTUnwrap(pending)
         XCTAssertEqual(verified.extensionID, fixture.identifier)
         XCTAssertEqual(verified.version, "1.0")
@@ -279,13 +296,27 @@ private actor RejectingPendingUpdateStore: ChromeWebStorePendingUpdateStoring {
         offeredFile = update.fileURL
         throw CocoaError(.fileWriteUnknown)
     }
+    func allPendingUpdates() -> [ChromeWebStoreVerifiedUpdate] { [] }
+    func copyForInstallation(_ update: ChromeWebStoreVerifiedUpdate) throws -> ChromeWebStoreVerifiedUpdate? { throw CocoaError(.fileReadUnknown) }
+    func remove(_ update: ChromeWebStoreVerifiedUpdate) { }
+    func removeInstallationCopy(_ update: ChromeWebStoreVerifiedUpdate) { }
+    func cleanupAbandonedInstallationCopies() { }
+    func setUpdateStoredHandler(_ handler: (@Sendable (ChromeWebStoreVerifiedUpdate) -> Void)?) { }
 }
 
 private actor AcceptingPendingUpdateReceiver: ChromeWebStorePendingUpdateStoring {
     private var update: ChromeWebStoreVerifiedUpdate?
+    private var storedHandler: (@Sendable (ChromeWebStoreVerifiedUpdate) -> Void)?
     func pendingUpdate(for extensionID: String) -> ChromeWebStoreVerifiedUpdate? { update }
     func store(_ update: ChromeWebStoreVerifiedUpdate) -> Bool {
         self.update = update
+        storedHandler?(update)
         return true
     }
+    func allPendingUpdates() -> [ChromeWebStoreVerifiedUpdate] { update.map { [$0] } ?? [] }
+    func copyForInstallation(_ update: ChromeWebStoreVerifiedUpdate) throws -> ChromeWebStoreVerifiedUpdate? { throw CocoaError(.fileReadUnknown) }
+    func remove(_ update: ChromeWebStoreVerifiedUpdate) { if self.update == update { self.update = nil } }
+    func removeInstallationCopy(_ update: ChromeWebStoreVerifiedUpdate) { }
+    func cleanupAbandonedInstallationCopies() { }
+    func setUpdateStoredHandler(_ handler: (@Sendable (ChromeWebStoreVerifiedUpdate) -> Void)?) { storedHandler = handler }
 }

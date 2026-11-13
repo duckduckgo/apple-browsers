@@ -26,22 +26,58 @@ import Foundation
 import Persistence
 import PrivacyConfig
 
+public enum UpdatePromptMenuStyle: Sendable {
+    case row
+    case card
+}
+
 /// How far along the prompt ramp a user who hasn't updated is.
 public enum UpdatePromptStage: Int, Comparable, CaseIterable, Sendable {
     case none
     case available
     case firstPrompt
     case secondPrompt
+    case thirdPrompt
 
     public static func < (lhs: UpdatePromptStage, rhs: UpdatePromptStage) -> Bool {
         lhs.rawValue < rhs.rawValue
+    }
+
+    /// Whether the menu button shows the notification dot. The toolbar button takes over from it at `.thirdPrompt`.
+    public var showsNotificationDot: Bool {
+        switch self {
+        case .none, .available, .thirdPrompt: false
+        case .firstPrompt, .secondPrompt: true
+        }
+    }
+
+    /// Whether the menu offers the update at all.
+    public var showsMenuUpdate: Bool {
+        self >= .firstPrompt
+    }
+
+    /// The prominent update prompt the menu shows in place of the regular update item, if any.
+    public var prominentMenuPrompt: UpdatePromptMenuStyle? {
+        switch self {
+        case .none, .available, .firstPrompt: nil
+        case .secondPrompt: .row
+        case .thirdPrompt: .card
+        }
+    }
+
+    /// Whether the toolbar shows the update button next to the menu button.
+    public var showsToolbarButton: Bool {
+        switch self {
+        case .none, .available, .firstPrompt, .secondPrompt: false
+        case .thirdPrompt: true
+        }
     }
 }
 
 /// Tracks the update prompt stage from a persisted clock that starts at the first check finding a newer version (day 0).
 ///
 /// The clock survives relaunches and newer releases, and is cleared when the installed version changes,
-/// when a check no longer finds an update, or while the feature is off. Critical updates go straight to `.secondPrompt`.
+/// when a check no longer finds an update, or while the feature is off. Critical updates go straight to `.thirdPrompt`.
 @MainActor
 public final class UpdatePromptStageTracker {
 
@@ -138,18 +174,25 @@ public final class UpdatePromptStageTracker {
 
         let settings = settings()
         let elapsed = currentDate.timeIntervalSince(startDate)
-        let computedStage = isCriticalUpdate ? .secondPrompt : Self.stage(afterElapsed: elapsed, settings: settings)
+        let computedStage = isCriticalUpdate ? .thirdPrompt : Self.stage(afterElapsed: elapsed, settings: settings)
         stage = forcedStage() ?? computedStage
 
-        guard computedStage < .secondPrompt else { return }
-        let nextThreshold = computedStage == .available ? settings.firstPromptDelay : settings.secondPromptDelay
+        let nextThreshold: TimeInterval
+        switch computedStage {
+        case .none, .available: nextThreshold = settings.firstPromptDelay
+        case .firstPrompt: nextThreshold = settings.secondPromptDelay
+        case .secondPrompt: nextThreshold = settings.thirdPromptDelay
+        case .thirdPrompt: return
+        }
         pendingReevaluation = schedule(nextThreshold - elapsed) { [weak self] in
             self?.reevaluate()
         }
     }
 
     static func stage(afterElapsed elapsed: TimeInterval, settings: MoreProminentUpdatesSettings) -> UpdatePromptStage {
-        if elapsed >= settings.secondPromptDelay {
+        if elapsed >= settings.thirdPromptDelay {
+            return .thirdPrompt
+        } else if elapsed >= settings.secondPromptDelay {
             return .secondPrompt
         } else if elapsed >= settings.firstPromptDelay {
             return .firstPrompt
@@ -165,6 +208,7 @@ public final class UpdatePromptStageTracker {
         case .none, .available: 0
         case .firstPrompt: settings.firstPromptDelay
         case .secondPrompt: settings.secondPromptDelay
+        case .thirdPrompt: settings.thirdPromptDelay
         }
         startClock(at: now() - max(threshold - timeRemaining, 0))
         reevaluate()

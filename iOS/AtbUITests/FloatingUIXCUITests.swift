@@ -1975,6 +1975,11 @@ final class FindInPagePadTests: FloatingUIXCUITestCase {
 
     override var barPosition: FloatingUIBarPosition { .top }
 
+    override func setUpWithError() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "Requires iPad")
+        try super.setUpWithError()
+    }
+
     func testGlassWithFloatingFlagOff() { verifyIPadFindInPageUsesGlassWithFloatingFlagOff() }
     func testDelegateSessionBottomEdgeWithClassicUI() throws { try verifyDelegateSessionBottomEdgeWithClassicUI() }
 }

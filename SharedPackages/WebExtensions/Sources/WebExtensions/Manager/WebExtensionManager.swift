@@ -1460,6 +1460,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             ?? []
     }
 
+    @MainActor
+    public func hasAccessToPrivateData(for identifier: String) -> Bool? {
+        permissionController?.hasAccessToPrivateData(for: identifier)
+    }
+
+    @MainActor
+    public func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {
+        try permissionController?.setHasAccessToPrivateData(allowed, for: identifier)
+    }
+
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
         contexts.first { Self.url(url, isWithin: $0.baseURL) }
     }

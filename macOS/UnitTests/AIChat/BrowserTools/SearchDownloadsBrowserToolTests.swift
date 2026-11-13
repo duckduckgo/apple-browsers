@@ -68,12 +68,12 @@ final class SearchDownloadsBrowserToolTests: XCTestCase {
         XCTAssertEqual(result, .success(["results": []]))
     }
 
-    func testWhenNoLimitIsGivenThenTenResultsAreReturned() async {
+    func testWhenNoQueryOrLimitIsGivenThenTheTenNewestDownloadsAreReturned() async {
         let items = (0..<60).map { item("file\($0).pdf", from: "https://example.com/\($0).pdf", at: TimeInterval($0)) }
         let tool = SearchDownloadsBrowserTool(downloads: { items })
 
-        let defaulted = await tool.execute(arguments: ["query": "file"], context: context)
-        let limited = await tool.execute(arguments: ["query": "file", "limit": 50], context: context)
+        let defaulted = await tool.execute(arguments: [:], context: context)
+        let limited = await tool.execute(arguments: ["query": "", "limit": 50], context: context)
 
         XCTAssertEqual(defaulted.results?.count, 10)
         XCTAssertEqual(defaulted.results?.first?["fileName"], "file59.pdf")
@@ -84,7 +84,7 @@ final class SearchDownloadsBrowserToolTests: XCTestCase {
         let tool = SearchDownloadsBrowserTool(downloads: { [] })
         let tooLong = String(repeating: "a", count: BrowserToolOutputLimits.query + 1)
 
-        for arguments: JSONValue in [[:], ["query": ""], ["query": 1], ["query": .string(tooLong)],
+        for arguments: JSONValue in [["query": 1], ["query": .string(tooLong)],
                                      ["query": "a", "limit": 0], ["query": "a", "limit": 51], ["query": "a", "limit": "5"]] {
             let result = await tool.execute(arguments: arguments, context: context)
             XCTAssertEqual(result, .failure(.invalidArguments), "\(arguments)")

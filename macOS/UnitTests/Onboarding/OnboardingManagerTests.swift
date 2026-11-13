@@ -122,6 +122,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
+            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
             order: "v4",
             env: "development",
             locale: "en",
@@ -130,6 +131,26 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(manager.configuration, expectedConfig)
+    }
+
+    @MainActor
+    func testConfigurationSteps_WhenSearchOrChatFlagOff_ListsV4StepsMinusExcluded() {
+        let manager = makeManager(enabledFlags: [], aiChatPreferencesStorage: MockAIChatPreferencesStorage(),
+                                  homepageSearchModeSeedPersistor: HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
+
+        XCTAssertEqual(manager.configuration.steps, ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"])
+        XCTAssertEqual(manager.configuration.exclude, ["duckPlayerSingle"])
+        XCTAssertEqual(manager.configuration.order, "v4")
+    }
+
+    @MainActor
+    func testConfigurationSteps_WhenSearchOrChatFlagOn_AppendsSearchOrChatAndKeepsExclude() {
+        let manager = makeManager(enabledFlags: [.onboardingSearchOrChat], aiChatPreferencesStorage: MockAIChatPreferencesStorage(),
+                                  homepageSearchModeSeedPersistor: HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
+
+        XCTAssertEqual(manager.configuration.steps, ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode", "searchOrChat"])
+        XCTAssertEqual(manager.configuration.exclude, ["duckPlayerSingle"])
+        XCTAssertEqual(manager.configuration.order, "v4")
     }
 
     func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCanBeInstalled_AndTreatmentCohortAssigned_IncludesChromeExtensionInstallOption() {
@@ -180,6 +201,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
+            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
             order: "v4",
             env: "development",
             locale: "en",

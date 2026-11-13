@@ -185,6 +185,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
+                                       steps: buildSteps(excluding: excludedSteps),
                                        order: "v4",
                                        env: env,
                                        locale: preferredLocale,
@@ -193,6 +194,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private func buildExcludedSteps() -> [String] {
         [OnboardingExcludedStep.duckPlayerSingle.rawValue]
+    }
+
+    /// Steps the page may show; the page decides their order.
+    private func buildSteps(excluding excludedSteps: [String]) -> [String] {
+        var steps = OnboardingSteps.allCases.map(\.rawValue).filter { !excludedSteps.contains($0) }
+        if featureFlagger.isFeatureOn(.onboardingSearchOrChat) {
+            steps.append("searchOrChat")
+        }
+        return steps
     }
 
     private var didRequestDefaultBrowser: Bool = false

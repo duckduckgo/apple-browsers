@@ -233,6 +233,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
     case onboardingNonBlockingV2
 
+    /// Adds the "Try a search or AI chat" step to onboarding
+    /// TODO: Apple Feature Flags Registry task URL
+    case onboardingSearchOrChat
+
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.

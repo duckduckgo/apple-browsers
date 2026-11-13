@@ -436,26 +436,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyCardLayout(layout, animated: animated)
     }
 
-    func refreshGlassAfterReappearing() {
-        guard #available(iOS 26, *), usesFloatingUI, let inputView = viewIfLoaded,
-              let parent = inputView.superview,
-              let index = parent.subviews.firstIndex(of: inputView) else { return }
-        let constraints = parent.constraints.filter {
-            ($0.firstItem as? UIView) === inputView || ($0.secondItem as? UIView) === inputView
-        }
-        let wasFirstResponder = isInputFirstResponder
-        // Reattach to restore glass after hidden NTP chrome.
-        UIView.performWithoutAnimation {
-            inputView.removeFromSuperview()
-            parent.insertSubview(inputView, at: index)
-            NSLayoutConstraint.activate(constraints)
-            parent.layoutIfNeeded()
-            if wasFirstResponder && !isInputFirstResponder {
-                activateInput()
-            }
-        }
-    }
-
     func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
         inputBarView.setFlankingAccessoriesVisible(accessories)
     }

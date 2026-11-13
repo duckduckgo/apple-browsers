@@ -3475,7 +3475,8 @@ class MainViewController: UIViewController {
     private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         coordinator.setContentOverlaySuppressed(false)
-        coordinator.deactivateToOmnibar()
+        // Page swap cuts off the dismiss fade.
+        coordinator.deactivateToOmnibar(animateDismiss: false)
         if !tab.isAITab {
             coordinator.hide()
             coordinator.unbind()

@@ -789,7 +789,7 @@
         ]
     },
     "m_ios_wide_subscription_cancellation": {
-        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription check, right after the App Store sheet closes or on app launch or foreground, finds the outcome or 24 hours pass after the entry tap",
+        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription change shows the outcome, an error stops the user from cancelling, or 24 hours pass after the entry tap",
         "owners": ["hanyutang-sandra"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily"],
@@ -823,8 +823,8 @@
             {
                 "key": "feature.data.ext.status_reason",
                 "type": "string",
-                "description": "Reason for the outcome: auto_renew_disabled on SUCCESS; not_cancelled_before_timeout, plan_changed, no_subscription or partial_data on UNKNOWN",
-                "enum": ["auto_renew_disabled", "not_cancelled_before_timeout", "plan_changed", "no_subscription", "partial_data"]
+                "description": "Reason for the outcome: auto_renew_disabled on SUCCESS; plan_changed on CANCELLED; timeout, no_subscription or partial_data on UNKNOWN; none on FAILURE (see the error parameters)",
+                "enum": ["auto_renew_disabled", "timeout", "plan_changed", "no_subscription", "partial_data"]
             },
             {
                 "key": "feature.data.ext.entry_point",

@@ -46,15 +46,7 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     let startDate: Date
 
     var errorData: WideEventErrorData?
-
-    var subscriptionFetcher: (() async throws -> DuckDuckGoSubscription?)?
-
-    private enum CodingKeys: String, CodingKey {
-        case globalData, contextData, appData
-        case entryPoint, purchasePlatform, isTrial, subscriptionIdentifier
-        case daysSincePurchase, daysUntilRenewal, startDate
-        case errorData
-    }
+    var statusReason: StatusReason?
 
     init(entryPoint: EntryPoint,
          purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform,
@@ -81,15 +73,7 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         switch trigger {
         case .appLaunch:
-            let now = Date()
-            guard let subscriptionFetcher else {
-                return timeoutDecision(now: now, reason: .partialData)
-            }
-            do {
-                return completionDecision(for: try await subscriptionFetcher(), now: now)
-            } catch {
-                return timeoutDecision(now: now, reason: .partialData)
-            }
+            return timeoutDecision(now: Date())
         }
     }
 
@@ -103,17 +87,18 @@ final class SubscriptionCancellationWideEventData: WideEventData {
             return .complete(.success(reason: StatusReason.autoRenewDisabled.rawValue))
         case .autoRenewable, .gracePeriod:
             if subscription.productId != subscriptionIdentifier {
-                return .complete(.unknown(reason: StatusReason.planChanged.rawValue))
+                statusReason = .planChanged
+                return .complete(.cancelled)
             }
-            return timeoutDecision(now: now, reason: .notCancelledBeforeTimeout)
+            return timeoutDecision(now: now)
         case .expired, .inactive, .unknown:
             return .complete(.unknown(reason: StatusReason.partialData.rawValue))
         }
     }
 
-    private func timeoutDecision(now: Date, reason: StatusReason) -> WideEventCompletionDecision {
+    private func timeoutDecision(now: Date) -> WideEventCompletionDecision {
         if now >= startDate.addingTimeInterval(Self.cancellationTimeout) {
-            return .complete(.unknown(reason: reason.rawValue))
+            return .complete(.unknown(reason: StatusReason.timeout.rawValue))
         }
         return .keepPending
     }
@@ -128,9 +113,9 @@ extension SubscriptionCancellationWideEventData {
         case changePlan = "change_plan"
     }
 
-    enum StatusReason: String {
+    enum StatusReason: String, Codable {
         case autoRenewDisabled = "auto_renew_disabled"
-        case notCancelledBeforeTimeout = "not_cancelled_before_timeout"
+        case timeout
         case planChanged = "plan_changed"
         case noSubscription = "no_subscription"
         case partialData = "partial_data"
@@ -144,6 +129,7 @@ extension SubscriptionCancellationWideEventData {
             (WideEventParameter.SubscriptionCancellationFeature.subscriptionIdentifier, subscriptionIdentifier),
             (WideEventParameter.SubscriptionCancellationFeature.daysSincePurchase, daysSincePurchase.rawValue),
             (WideEventParameter.SubscriptionCancellationFeature.daysUntilRenewal, daysUntilRenewal.rawValue),
+            (WideEventParameter.Feature.statusReason, statusReason?.rawValue),
         ])
     }
 }

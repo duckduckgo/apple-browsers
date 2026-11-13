@@ -88,14 +88,14 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
     }
 
     func manageSubscriptionFailed(_ error: Error) {
-        attachErrorToPendingCancellation(error)
+        failPendingCancellation(error)
     }
 
-    private func attachErrorToPendingCancellation(_ error: Error) {
+    private func failPendingCancellation(_ error: Error) {
         guard let wideEvent else { return }
         for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
             data.errorData = WideEventErrorData(error: error)
-            wideEvent.updateFlow(data)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
         }
     }
 
@@ -106,20 +106,11 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
                                                                                           isTrial: subscriptionBefore.hasActiveTrialOffer,
                                                                                           daysSincePurchase: daysSincePurchase))
         }
-        completePendingCancellation(with: subscriptionAfter)
-    }
-
-    private func completePendingCancellation(with subscription: DuckDuckGoSubscription?) {
-        guard let wideEvent else { return }
-        for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
-            guard case .complete(let status) = data.completionDecision(for: subscription, now: now()) else { continue }
-            wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
-        }
     }
 
     func flowLoadFailed(_ error: Error) {
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(error), frequency: .dailyAndCount)
-        attachErrorToPendingCancellation(error)
+        failPendingCancellation(error)
     }
 
     func featureInfoFailed(entitlement: SubscriptionEntitlement) {

@@ -7,7 +7,7 @@ and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services 
 A run passes only when the proof returned, recorded at least one passing check and no failing one, and the app was
 still in the foreground at the end. Anything that goes wrong before the proof's own steps is an error, not a failure.
 """
-import importlib.util, inspect, json, os, shutil, signal, sys, time, traceback, urllib.parse, uuid
+import importlib.util, inspect, json, os, shlex, shutil, signal, sys, time, traceback, urllib.parse, uuid
 
 from . import env
 from .device import Device, fixture, fixture_release
@@ -716,7 +716,8 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
                     for r in results if r.get("device") in env.DEVICE_TYPES},
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",
-        rerun=f"{SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}"
+        # the checkout comes from the working directory, so the rerun names it (a before/after run proves another one)
+        rerun=f"cd {shlex.quote(ROOT)} && {SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}"
               + evidence_args(decision_log, evidence_dir) + ("" if video else " --no-video"),
         decisionLog=os.path.realpath(decision_log) if decision_log else None,
         evidenceDir=os.path.realpath(evidence_dir) if evidence_dir else None,

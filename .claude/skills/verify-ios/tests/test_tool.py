@@ -506,6 +506,7 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(manifest["video"], {"iphone": "iphone/recording.mp4"})
         self.assertEqual(manifest["evidenceDir"], os.path.realpath(out_dir))
         self.assertTrue(manifest["rerun"].endswith(f"--evidence-dir {os.path.realpath(out_dir)}"), manifest["rerun"])
+        self.assertTrue(manifest["rerun"].startswith(f"cd {env.ROOT} && "), "the rerun proves the same checkout")
         code, again = harness.prove(proof, evidence_dir=out_dir)
         self.assertNotEqual(again["evidence"], out["evidence"], "each run gets a fresh attempt folder")
 

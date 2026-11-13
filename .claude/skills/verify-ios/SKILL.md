@@ -195,7 +195,7 @@ failures; pass them on, never hide them.
 **Before and after (bug fixes).** Run the same proof against the base commit: add a worktree at it and run *this*
 checkout's `verify-ios` from inside that worktree. The checkout is taken from the current directory and the skill
 from the script's own path, so the base app is built and proved with today's skill and proof, on that worktree's own
-simulators:
+simulators. Each report's rerun command starts with `cd` into the checkout it proved:
 
 ```bash
 base=../base-verify; V="$PWD/$V"                     # absolute, so it still names this checkout's skill from there

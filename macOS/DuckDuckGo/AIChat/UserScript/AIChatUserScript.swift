@@ -276,14 +276,25 @@ final class AIChatUserScript: NSObject, Subfeature {
 
 extension AIChatUserScript: ClientToolPermissionPrompting {
 
-    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
     @MainActor
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
-        false
+        browserTools?.permissionPrompts.present(prompt, chatWebView: webView, prompter: self) ?? false
     }
 
     @MainActor
-    func withdrawClientToolPermissionPrompt(requestID: String) {}
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        browserTools?.permissionPrompts.withdraw(requestID: requestID)
+    }
+
+    @MainActor
+    func clientToolUseDidStart(requestID: String, toolName: String) {
+        browserTools?.permissionPrompts.startUse(requestID: requestID, toolName: toolName, chatWebView: webView)
+    }
+
+    @MainActor
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {
+        browserTools?.permissionPrompts.endUse(requestID: requestID, completed: completed)
+    }
 
     /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
     /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.

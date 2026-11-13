@@ -1226,7 +1226,7 @@ final class AddressBarButtonsViewController: NSViewController {
         DuckAiVoiceChatShieldScope.isOnlyMicInPlay(
             domain: domain,
             usedPermissions: tabViewModel.usedPermissions,
-            persistedPermissionTypes: permissionManager.persistedPermissionTypes(forDomain: domain),
+            persistedPermissionTypes: permissionManager.persistedPermissionTypes(forDomain: domain).filter { !$0.isBrowserTool },
             featureFlagger: featureFlagger
         )
     }

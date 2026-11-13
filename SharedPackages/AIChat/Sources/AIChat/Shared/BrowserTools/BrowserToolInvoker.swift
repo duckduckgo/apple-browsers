@@ -43,7 +43,9 @@ public final class BrowserToolInvoker {
         guard Self.isAcceptedInput(request.input, for: tool) else {
             return .failure(callId: request.callId, error: .invalidArguments)
         }
-        let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, prompter: permissionPrompter)
+        let targetsOtherTab = request.input["tabId"]?.stringValue.map { $0 != context.ownerTabID } ?? false
+        let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, targetsOtherTab: targetsOtherTab,
+                                                                  prompter: permissionPrompter)
         switch authorization {
         case .refused(.cancelled):
             return .failure(callId: request.callId, error: .cancelled)

@@ -86,7 +86,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return mediaAuthorizationState(for: .audio)
         case .camera:
             return mediaAuthorizationState(for: .video)
-        case .popups, .externalScheme, .autoplayPolicy:
+        case .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return .authorized
         }
     }
@@ -102,7 +102,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return mediaAuthorizationState(for: .audio)
         case .camera:
             return mediaAuthorizationState(for: .video)
-        case .popups, .externalScheme, .autoplayPolicy:
+        case .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return .authorized
         }
     }
@@ -118,7 +118,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return mediaAuthorizationState(for: .video) != .authorized
         case .microphone:
             return mediaAuthorizationState(for: .audio) != .authorized
-        case .popups, .externalScheme, .autoplayPolicy:
+        case .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return false
         }
     }
@@ -155,7 +155,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
                 completion(granted ? .authorized : .denied)
             }
             return nil
-        case .popups, .externalScheme, .autoplayPolicy:
+        case .popups, .externalScheme, .autoplayPolicy, .browserTool:
             completion(.authorized)
             return nil
         }

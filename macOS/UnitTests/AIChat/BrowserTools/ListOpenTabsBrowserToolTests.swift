@@ -156,7 +156,6 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(tool.name, "listOpenTabs")
         XCTAssertEqual(tool.permissionMode, .ask)
-        XCTAssertEqual(tool.permissionReason, "Duck.ai wants to see your open tabs.")
     }
 
     // MARK: -

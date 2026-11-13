@@ -372,15 +372,16 @@ extension ClientToolInvokerTests {
 @MainActor
 private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoordinating {
     let outcome: String
-    var calls: [(callID: String, tool: any BrowserTool, prompter: (any ClientToolPermissionPrompting)?)] = []
+    var calls: [(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, prompter: (any ClientToolPermissionPrompting)?)] = []
     var permissionConfirmationCount = 0
 
     init(outcome: String) {
         self.outcome = outcome
     }
 
-    func authorize(callID: String, tool: any BrowserTool, prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
-        calls.append((callID, tool, prompter))
+    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool,
+                   prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
+        calls.append((callID, tool, targetsOtherTab, prompter))
         guard outcome != "denied" else { return .refused(.denied) }
         return .granted(performExecution: { [self] operation in
             permissionConfirmationCount += 1

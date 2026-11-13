@@ -26,7 +26,6 @@ final class ReadTabContentBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.readTabContent`, which is how the catalog gates it.
     let name = "readTabContent"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "Duck.ai wants to read this tab's content."
 
     let inputSchema: JSONValue = [
         "type": "object",

@@ -58,7 +58,8 @@ final class ClientToolTestHarness {
 
     func answer(_ prompt: ClientToolPermissionPrompt, decision: ClientToolPermissionDecision,
                 source: ClientToolTestSource? = nil, callID: String? = nil, requestID: String? = nil) {
-        let answered = ClientToolPermissionPrompt(requestID: requestID ?? prompt.requestID, callID: callID ?? prompt.callID, toolName: prompt.toolName)
+        let answered = ClientToolPermissionPrompt(requestID: requestID ?? prompt.requestID, callID: callID ?? prompt.callID, toolName: prompt.toolName,
+                                                  targetsOtherTab: prompt.targetsOtherTab)
         coordinator.respond(to: answered, decision: decision, from: source ?? self.source)
     }
 }
@@ -86,8 +87,7 @@ final class ClientToolTestPermissions: BrowserToolPermissionStoring {
 final class ClientToolTestTool: BrowserTool {
     let name: String
     var permissionMode: BrowserToolPermissionMode = .ask
-    var permissionReason = "Read this page?"
-    var inputSchema: JSONValue { ["type": "object", "properties": ["key": ["type": "array"]]] }
+    var inputSchema: JSONValue { ["type": "object", "properties": ["key": ["type": "array"], "tabId": ["type": "string"]]] }
     var result: BrowserToolResult = .success(["content": "page"])
     var clientResult: ((JSONValue) -> BrowserToolResult)?
     var calls: [(JSONValue?, BrowserToolCallContext)] = []
@@ -107,11 +107,20 @@ final class ClientToolTestTool: BrowserTool {
 final class ClientToolTestSource: ClientToolPermissionPrompting {
     var prompts: [ClientToolPermissionPrompt] = []
     var withdrawn: [String] = []
+    var uses: [String] = []
     var onPush: ((ClientToolPermissionPrompt) -> Bool)?
     private var waiters: [(Int, CheckedContinuation<Void, Never>)] = []
 
     func withdrawClientToolPermissionPrompt(requestID: String) {
         withdrawn.append(requestID)
+    }
+
+    func clientToolUseDidStart(requestID: String, toolName: String) {
+        uses.append("start \(toolName)")
+    }
+
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {
+        uses.append(completed ? "end" : "end cancelled")
     }
 
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {

@@ -46,6 +46,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         static let duckAISidebarCloseImageName = NSImage.Name("Sidebar-Close-16")
         static let duckAISidebarDetachedImageName = NSImage.Name("Sidebar-Detached-16")
         static let duckAIControlSpacingBeforeFireButton: CGFloat = 5
+        static let browserToolPermissionSlideDuration: TimeInterval = 0.2
+        static let browserToolUsePulseDuration: TimeInterval = 0.5
+        static let browserToolUsePulseScale: CGFloat = 1.3
+        static let browserToolUseSlideOutDelay: TimeInterval = 0.65
+        static let browserToolUseSlideOutDuration: TimeInterval = 0.3
     }
 
     private let standardTabHeight: CGFloat
@@ -204,6 +209,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var duckAIChromeTitleButton: MouseOverButton?
     private var duckAIChromeSidebarButton: MouseOverButton?
     private var duckAIChromeDivider: ColorView?
+    private var browserToolPermissionButton: MouseOverButton?
+    private var browserToolPermissionButtonWidth: NSLayoutConstraint?
+    private var browserToolPermissionAction: ((NSView) -> Void)?
+    private var browserToolPermissionIcon: NSImage?
+    private var browserToolPermissionHover: AnyCancellable?
+    private var isShowingBrowserToolUse = false
+    private var browserToolUseSlideOut: DispatchWorkItem?
+    private let browserToolPermissionCloseIcon: NSImage = {
+        let icon = DesignSystemImages.Glyphs.Size16.close
+        icon.isTemplate = true
+        return icon
+    }()
 
     private var isFireWindow: Bool {
         tabCollectionViewModel.isBurner
@@ -922,7 +939,217 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         updateDuckAIChromeSegmentedControlState()
     }
 
+    // MARK: - Duck.ai browser tool permission
+
+    func showBrowserToolPermissionButton(icon: NSImage, title: String, action: @escaping (NSView) -> Void, shown: @escaping (NSView) -> Void) {
+        cancelBrowserToolUseSlideOut()
+        isShowingBrowserToolUse = false
+        browserToolPermissionAction = action
+        revealBrowserToolButton(icon: icon, title: title) { [weak self] button in
+            self?.styleBrowserToolPermissionButton(button, filled: true)
+            shown(button)
+        }
+    }
+
+    func showBrowserToolUse(icon: NSImage, title: String) {
+        cancelBrowserToolUseSlideOut()
+        isShowingBrowserToolUse = true
+        browserToolPermissionAction = nil
+        revealBrowserToolButton(icon: icon, title: title) { [weak self] button in
+            self?.styleBrowserToolPermissionButton(button, filled: false)
+        }
+    }
+
+    func finishBrowserToolUse() {
+        guard isShowingBrowserToolUse, browserToolUseSlideOut == nil,
+              let button = browserToolPermissionButton, !button.isHidden else { return }
+        pulseBrowserToolButton(button)
+        let slideOut = DispatchWorkItem { [weak self] in
+            self?.browserToolUseSlideOut = nil
+            self?.slideOutBrowserToolButton()
+        }
+        browserToolUseSlideOut = slideOut
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.browserToolUseSlideOutDelay, execute: slideOut)
+    }
+
+    private func cancelBrowserToolUseSlideOut() {
+        browserToolUseSlideOut?.cancel()
+        browserToolUseSlideOut = nil
+    }
+
+    private func pulseBrowserToolButton(_ button: NSButton) {
+        guard let layer = button.layer else { return }
+        button.superview?.layer?.masksToBounds = false
+        let center = CGPoint(x: layer.bounds.midX, y: layer.bounds.midY)
+        func scaled(_ scale: CGFloat) -> NSValue {
+            let transform = CATransform3DScale(CATransform3DMakeTranslation(center.x, center.y, 0), scale, scale, 1)
+            return NSValue(caTransform3D: CATransform3DTranslate(transform, -center.x, -center.y, 0))
+        }
+        let pulse = CAKeyframeAnimation(keyPath: "transform")
+        pulse.values = [scaled(1), scaled(Constants.browserToolUsePulseScale), scaled(1)]
+        pulse.keyTimes = [0, 0.4, 1]
+        pulse.timingFunctions = [CAMediaTimingFunction(name: .easeOut), CAMediaTimingFunction(name: .easeInEaseOut)]
+        pulse.duration = Constants.browserToolUsePulseDuration
+        layer.add(pulse, forKey: "pulse")
+    }
+
+    private func slideOutBrowserToolButton() {
+        guard let button = browserToolPermissionButton, !button.isHidden else { return }
+        button.superview?.layer?.masksToBounds = true
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = Constants.browserToolUseSlideOutDuration
+            context.allowsImplicitAnimation = true
+            browserToolPermissionButtonWidth?.animator().constant = 0
+            button.animator().alphaValue = 0
+            rightSideStackView.layoutSubtreeIfNeeded()
+        }, completionHandler: { [weak self, weak button] in
+            // A show during the slide brings the alpha back.
+            guard let self, let button, isShowingBrowserToolUse, button.alphaValue == 0 else { return }
+            isShowingBrowserToolUse = false
+            button.isHidden = true
+            applyDuckAIChromeButtonVisibility()
+        })
+    }
+
+    private func revealBrowserToolButton(icon: NSImage, title: String, revealed: @escaping (MouseOverButton) -> Void) {
+        applyDuckAIChromeButtonVisibility()
+        let button = browserToolPermissionButton ?? makeBrowserToolPermissionButton()
+        icon.isTemplate = true
+        browserToolPermissionIcon = icon
+        button.image = button.isMouseOver && browserToolPermissionAction != nil ? browserToolPermissionCloseIcon : icon
+        button.toolTip = title
+        button.setAccessibilityTitle(title)
+        guard button.isHidden || button.alphaValue == 0 || browserToolPermissionButtonWidth?.constant == 0 else {
+            revealed(button)
+            return
+        }
+        styleBrowserToolPermissionButton(button, filled: false)
+        button.superview?.layer?.masksToBounds = true
+        button.isHidden = false
+        button.alphaValue = 0
+        browserToolPermissionButtonWidth?.constant = 0
+        rightSideStackView.layoutSubtreeIfNeeded()
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = Constants.browserToolPermissionSlideDuration
+            context.allowsImplicitAnimation = true
+            browserToolPermissionButtonWidth?.animator().constant = theme.tabBarButtonSize - 2
+            button.animator().alphaValue = 1
+            rightSideStackView.layoutSubtreeIfNeeded()
+        }, completionHandler: { [weak button] in
+            guard let button, !button.isHidden else { return }
+            revealed(button)
+        })
+    }
+
+    func hideBrowserToolPermissionButton() {
+        cancelBrowserToolUseSlideOut()
+        browserToolPermissionAction = nil
+        isShowingBrowserToolUse = false
+        if let button = browserToolPermissionButton {
+            button.layer?.removeAnimation(forKey: "pulse")
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0
+                browserToolPermissionButtonWidth?.animator().constant = 0
+                button.animator().alphaValue = 0
+            }
+            button.isHidden = true
+        }
+        applyDuckAIChromeButtonVisibility()
+    }
+
+    private func makeBrowserToolPermissionButton() -> MouseOverButton {
+        let size = theme.tabBarButtonSize - 4
+        let slot = NSView(frame: .zero)
+        slot.translatesAutoresizingMaskIntoConstraints = false
+        slot.wantsLayer = true
+        slot.layer?.masksToBounds = true
+
+        let button = MouseOverButton(frame: .zero)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.target = self
+        button.action = #selector(browserToolPermissionButtonAction(_:))
+        button.setAccessibilityIdentifier("TabBarViewController.browserToolPermissionButton")
+        button.isHidden = true
+        slot.addSubview(button)
+
+        let width = slot.widthAnchor.constraint(equalToConstant: 0)
+        NSLayoutConstraint.activate([
+            width,
+            slot.heightAnchor.constraint(equalToConstant: theme.tabBarButtonSize),
+            button.widthAnchor.constraint(equalToConstant: size),
+            button.heightAnchor.constraint(equalToConstant: size),
+            button.leadingAnchor.constraint(equalTo: slot.leadingAnchor),
+            button.centerYAnchor.constraint(equalTo: slot.centerYAnchor)
+        ])
+
+        if let contentStack = duckAIChromeTitleButton?.superview as? NSStackView {
+            contentStack.addArrangedSubview(slot)
+        } else {
+            let index = rightSideStackView.arrangedSubviews.firstIndex(of: fireButton) ?? rightSideStackView.arrangedSubviews.count
+            rightSideStackView.insertArrangedSubview(slot, at: index)
+        }
+
+        browserToolPermissionHover = button.publisher(for: \.isMouseOver)
+            .sink { [weak self, weak button] isMouseOver in
+                guard let self, let button else { return }
+                button.image = isMouseOver && browserToolPermissionAction != nil ? browserToolPermissionCloseIcon : browserToolPermissionIcon
+            }
+
+        browserToolPermissionButton = button
+        browserToolPermissionButtonWidth = width
+        return button
+    }
+
+    private func styleBrowserToolPermissionButton(_ button: MouseOverButton, filled: Bool) {
+        let palette = theme.palette
+        button.setCornerRadius(theme.toolbarButtonsCornerRadius - 2)
+        guard let layer = button.layer else { return }
+        // Own layer: MouseOverButton's background layer would cover the glyph.
+        // Plain `cgColor` may resolve the other appearance's shade.
+        var fill: CGColor?
+        var border: CGColor?
+        NSAppearance.withAppAppearance {
+            fill = (filled ? palette.accentPrimary : .clear).cgColor
+            border = palette.accentPrimary.cgColor
+        }
+        if layer.backgroundColor != fill {
+            let fade = CABasicAnimation(keyPath: "backgroundColor")
+            fade.fromValue = layer.backgroundColor
+            fade.duration = Constants.browserToolPermissionSlideDuration
+            layer.add(fade, forKey: "backgroundColor")
+        }
+        layer.backgroundColor = fill
+        layer.borderColor = border
+        layer.borderWidth = filled ? 0 : 1.5
+        let tint = filled ? palette.accentContentPrimary : palette.accentPrimary
+        button.normalTintColor = tint
+        button.mouseOverTintColor = tint
+        button.mouseDownTintColor = tint
+    }
+
+    @objc private func browserToolPermissionButtonAction(_ sender: NSButton) {
+        browserToolPermissionAction?(sender)
+    }
+
     private func applyDuckAIChromeButtonVisibility() {
+        applyDuckAIChromeUserButtonVisibility()
+        guard let container = duckAIChromeControlContainer, let titleButton = duckAIChromeTitleButton else { return }
+        let showsForTools = (browserToolPermissionAction != nil || isShowingBrowserToolUse) && container.isHidden
+        titleButton.isEnabled = !showsForTools
+        titleButton.alphaValue = showsForTools ? 0.4 : 1
+        guard showsForTools else { return }
+        container.isHidden = false
+        container.menu = nil
+        titleButton.isHidden = false
+        duckAIChromeSidebarButton?.isHidden = true
+        duckAIChromeDivider?.isHidden = true
+        titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+        container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+    }
+
+    private func applyDuckAIChromeUserButtonVisibility() {
         guard let container = duckAIChromeControlContainer,
               let titleButton = duckAIChromeTitleButton,
               let sidebarButton = duckAIChromeSidebarButton,
@@ -1085,6 +1312,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.duckAIChromeTitleButton = nil
         self.duckAIChromeSidebarButton = nil
         self.duckAIChromeDivider = nil
+        browserToolPermissionButton = nil
+        browserToolPermissionButtonWidth = nil
+        browserToolPermissionHover = nil
+        cancelBrowserToolUseSlideOut()
+        isShowingBrowserToolUse = false
         self.aiChatButtonHoverCancellable = nil
         self.duckAIChromeDividerInsetConstraint = nil
         self.duckAIChromeDividerFullConstraint = nil

@@ -879,10 +879,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             .sink { [weak self] videoDetails in
                 let (videoID, pillTimestamp, pillType) = videoDetails
                 
-                // When on youtube, we use the timestamp from the pill if it's an entry pill
-                // Otherwise, we use the timestamp from the UserScript (DuckPlayer)
                 Task {
-                    let timestamp = pillType == .entry ? self?.youtubeTimestamp : pillTimestamp
+                    let timestamp = self?.playbackTimestamp(for: pillType, pillTimestamp: pillTimestamp)
                     await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
                 }
             }
@@ -932,6 +930,17 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
     }
     
+    /// Where Duck Player should start when a pill is tapped. The YouTube page reports its position continuously,
+    /// so it wins unless the user got further in Duck Player before dismissing it.
+    private func playbackTimestamp(for pillType: DuckPlayerNativeUIPresenter.PillType, pillTimestamp: TimeInterval?) -> TimeInterval? {
+        switch pillType {
+        case .welcome, .entry:
+            return youtubeTimestamp
+        case .reEntry:
+            return [youtubeTimestamp, pillTimestamp].compactMap { $0 }.max()
+        }
+    }
+
     /// Stores timestamp from DuckPlayer view dismissal
     /// This should be called when DuckPlayer view is dismissed with a timestamp
     func storeDuckPlayerTimestamp(_ timestamp: TimeInterval?) {

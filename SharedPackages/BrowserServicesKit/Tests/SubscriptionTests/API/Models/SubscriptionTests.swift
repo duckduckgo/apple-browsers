@@ -33,7 +33,8 @@ final class SubscriptionTests: XCTestCase {
                                 activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
                                 tier: nil,
                                 availableChanges: nil,
-                                pendingPlans: nil)
+                                pendingPlans: nil,
+                                planCountry: nil)
         let b = DuckDuckGoSubscription(productId: "1",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -44,7 +45,8 @@ final class SubscriptionTests: XCTestCase {
                                 activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
                                 tier: nil,
                                 availableChanges: nil,
-                                pendingPlans: nil)
+                                pendingPlans: nil,
+                                planCountry: nil)
         let c = DuckDuckGoSubscription(productId: "2",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -55,7 +57,8 @@ final class SubscriptionTests: XCTestCase {
                                 activeOffers: [],
                                 tier: nil,
                                 availableChanges: nil,
-                                pendingPlans: nil)
+                                pendingPlans: nil,
+                                planCountry: nil)
         XCTAssertEqual(a, b)
         XCTAssertNotEqual(a, c)
     }
@@ -342,6 +345,73 @@ final class SubscriptionTests: XCTestCase {
         let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
 
         XCTAssertNil(subscription.tier)
+    }
+
+    // MARK: - Plan Country
+
+    func testPlanCountryDecoding() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"planCountry\": \"FR\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertEqual(subscription.planCountry, "FR")
+    }
+
+    func testPlanCountryDecoding_WithoutPlanCountry_ReturnsNil() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": []
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNil(subscription.planCountry)
+    }
+
+    func testEqualityWhenPlanCountryDiffers() throws {
+        func makeSubscription(planCountry: String?) -> DuckDuckGoSubscription {
+            DuckDuckGoSubscription(productId: "1",
+                                   name: "a",
+                                   billingPeriod: .monthly,
+                                   startedAt: Date(timeIntervalSince1970: 1000),
+                                   expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
+                                   platform: .stripe,
+                                   status: .autoRenewable,
+                                   activeOffers: [],
+                                   tier: nil,
+                                   availableChanges: nil,
+                                   pendingPlans: nil,
+                                   planCountry: planCountry)
+        }
+
+        XCTAssertEqual(makeSubscription(planCountry: "FR"), makeSubscription(planCountry: "FR"))
+        XCTAssertNotEqual(makeSubscription(planCountry: nil), makeSubscription(planCountry: "FR"))
     }
 
     // MARK: - AvailableChanges Decoding Tests
@@ -798,6 +868,7 @@ extension DuckDuckGoSubscription {
                      activeOffers: activeOffers,
                      tier: tier,
                      availableChanges: availableChanges,
-                     pendingPlans: pendingPlans)
+                     pendingPlans: pendingPlans,
+                     planCountry: nil)
     }
 }

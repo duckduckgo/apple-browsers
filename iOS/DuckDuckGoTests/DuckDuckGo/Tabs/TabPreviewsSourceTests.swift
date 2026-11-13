@@ -231,7 +231,7 @@ class TabPreviewsSourceTests: XCTestCase {
         let contents = pngFiles(in: storeURL)
         XCTAssertEqual(contents.count, 4)
 
-        await source.removePreviewsWithIdNotIn([ "v1", "v2" ])
+        _ = source.removePreviewsWithIdNotIn([ "v1", "v2" ])
 
         let newContents = pngFiles(in: storeURL)
         XCTAssertEqual(newContents.count, 2)

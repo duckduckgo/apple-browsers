@@ -154,16 +154,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
    }
 
    func updateUIView(_ webView: WKWebView, context: Context) {
-       guard let url = viewModel.getVideoURL() else { return }
-       Logger.duckplayer.debug("Loading video with URL: \(url)")
-       var request = URLRequest(url: url)
-       request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
-       
-       // Optimize for slow connections       
-       request.timeoutInterval = 30.0
-       request.networkServiceType = .video
-       
-       webView.load(request)
+       // SwiftUI calls this on unrelated updates such as rotation; reloading would restart the video.
+       guard let url = viewModel.getVideoURL(), url != context.coordinator.loadedURL else { return }
+       context.coordinator.load(url, in: webView)
    }
 
    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
@@ -171,6 +164,20 @@ struct DuckPlayerWebView: UIViewRepresentable {
        weak var webView: WKWebView?
        weak var duckPlayerUserScript: DuckPlayerUserScriptPlayer?
        weak var contentScopeUserScripts: ContentScopeUserScript?
+       private(set) var loadedURL: URL?
+
+       func load(_ url: URL, in webView: WKWebView) {
+           Logger.duckplayer.debug("Loading video with URL: \(url)")
+           var request = URLRequest(url: url)
+           request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
+
+           // Optimize for slow connections
+           request.timeoutInterval = 30.0
+           request.networkServiceType = .video
+
+           loadedURL = url
+           webView.load(request)
+       }
 
        init(viewModel: DuckPlayerViewModel) {
            self.viewModel = viewModel
@@ -249,6 +256,13 @@ struct DuckPlayerWebView: UIViewRepresentable {
            // Loading failed during provisional navigation
            viewModel?.isLoading = false
            Logger.duckplayer.error("[DuckPlayer] Provisional loading failed with error: \(error)")
+       }
+
+       func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+           // Without this, WebKit reloads the original URL and the video starts over.
+           Logger.duckplayer.error("[DuckPlayer] Web content process terminated, resuming playback")
+           guard let url = viewModel?.getResumeVideoURL() else { return }
+           load(url, in: webView)
        }
        
    }

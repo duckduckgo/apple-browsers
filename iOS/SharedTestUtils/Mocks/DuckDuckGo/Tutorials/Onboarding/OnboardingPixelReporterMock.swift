@@ -22,7 +22,13 @@ import Core
 import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingDownloadReasonPixelReporting {
+final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingDownloadReasonPixelReporting, OnboardingTimeLimitReporting {
+
+    private(set) var timeLimitReasons: [OnboardingSharedPixelEvent.TimeLimitReason] = []
+
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason) {
+        timeLimitReasons.append(reason)
+    }
 
     private(set) var didCallMeasureOnboardingIntroImpression = false
     private(set) var didCallMeasureSkipOnboardingCTAAction = false

@@ -55,7 +55,6 @@ public class StatisticsLoader {
          },
          fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
-            StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
             StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
             StatisticsLoader.fireOnboardingByDownloadReasonSearchExperimentPixels()
          },
@@ -86,39 +85,19 @@ public class StatisticsLoader {
         }
     }
 
-    // Per-download-reason d5-7 search retention for the onboarding-by-download-reason experiment.
+    // Per-download-reason d5-7 search retention for the onboarding VPN download-reason experiment.
     // No-op for users who haven't selected a reason or aren't enrolled (fireExperimentPixelIfThresholdReached guards both).
-    // Kept for the follow-up experiment; each reason's pixel token needs a matching
-    // `download_reason_search_retention_*` metric in native_experiments.json5.
+    // Each reason's pixel token needs a matching `download_reason_search_retention_*` metric in native_experiments.json5.
     static func fireOnboardingByDownloadReasonSearchExperimentPixels() {
         guard let pixelToken = OnboardingDownloadReasonStore.currentPixelToken() else { return }
         let metric = "download_reason_search_retention_\(pixelToken)"
         for threshold in [1, 4, 6, 11, 21, 30] {
             PixelKit.fireExperimentPixelIfThresholdReached(
-                for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+                for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
                 metric: metric,
                 conversionWindowDays: 5...7,
                 threshold: threshold
             )
-        }
-    }
-
-    /// Transitional: preserves the previous 8-15 search window for experiments already running when
-    /// the canonical window was shortened to 8-14, so their in-flight analysis keeps the window it
-    /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
-    static func fireLegacySearchRetentionExperimentPixels() {
-        let inProgressExperiments = [
-            iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue
-        ]
-        for subfeatureID in inProgressExperiments {
-            for threshold in [4, 6, 11, 21, 30] {
-                PixelKit.fireExperimentPixelIfThresholdReached(
-                    for: subfeatureID,
-                    metric: "search",
-                    conversionWindowDays: 8...15,
-                    threshold: threshold
-                )
-            }
         }
     }
 

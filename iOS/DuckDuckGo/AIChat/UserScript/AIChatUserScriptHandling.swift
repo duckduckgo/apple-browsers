@@ -433,6 +433,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pixelFiring?.fire(DuckAiTermsOfServicePixel.duplicateAcceptanceContext(context), frequency: .dailyAndCount)
     }
 
+    /// The app's acceptance outlives the web app's record, which a Fire tab or a restored device can lack.
+    /// The page reads its records once it has this config, so the restored record is in place before then.
+    private func restoreTermsOfServiceRecordIfNeeded() {
+        guard featureFlagger.isFeatureOn(.duckAITermsOfServiceRecordRestore),
+              isNativeStorageBridgeAvailable,
+              termsOfServiceStore.hasAccepted,
+              let source = termsOfServiceWebRecordSource else { return }
+
+        let key = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        do {
+            guard !DuckAiNativeStorageConsent.isTermsOfServiceAccepted(try source.getEntry(key: key)) else { return }
+            try source.putEntry(key: key, value: "true")
+            Logger.aiChat.debug("[TermsOfService] Restored the web app's record from the app's acceptance")
+        } catch {
+            Logger.aiChat.error("[TermsOfService] Failed to restore the web app's record: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     /// Read when the page asks for the native config, before the web app writes its own acceptance.
     private func readTermsOfServicePageLoadState() -> DuckAiTermsOfServicePageLoadState {
         guard isNativeStorageBridgeAvailable, let source = termsOfServiceWebRecordSource else { return .unknown }
@@ -530,6 +548,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let supportsTabContexts = supportsContextualMode || supportsBrowserTabContexts
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
+        restoreTermsOfServiceRecordIfNeeded()
         termsOfServicePageLoadState = readTermsOfServicePageLoadState()
 
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)

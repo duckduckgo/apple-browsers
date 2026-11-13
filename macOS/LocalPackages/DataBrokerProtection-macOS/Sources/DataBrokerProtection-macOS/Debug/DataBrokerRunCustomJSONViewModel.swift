@@ -192,29 +192,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let brokerResources: [BrokerResource]
     var brokers: [DataBroker] { brokerResources.map(\.broker) }
 
-    private let emailService: EmailService
-    lazy var emailConfirmationDataService: EmailConfirmationDataServiceProvider = {
-        EmailConfirmationDataService(emailConfirmationStore: debugEmailConfirmationStore,
-                                     database: nil,
-                                     emailServiceV0: emailService,
-                                     emailServiceV1: emailServiceV1,
-                                     pixelHandler: pixelHandler,
-                                     debugEventHandler: { [weak self] message in
-                                        self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
-                                     })
-    }()
-    let debugEmailConfirmationStore = DebugEmailConfirmationStore()
-    let captchaService: CaptchaService
-    private let emailServiceV1: EmailServiceV1Protocol
-    let privacyConfigManager: PrivacyConfigurationManaging
-    let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
-        Logger.dataBrokerProtection.debug("Debug event: \(String(describing: event), privacy: .public)")
-    }
-    let contentScopeProperties: ContentScopeProperties
-    private let authenticationManager: DataBrokerProtectionAuthenticationManaging
-    let featureFlagger: DBPFeatureFlagging
-    let brokerJobExecutionConfig = BrokerJobExecutionConfig()
+    let runner: DebugModeRunner
+    var debugEmailConfirmationStore: DebugEmailConfirmationStore { runner.debugEmailConfirmationStore }
+    var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { runner.pixelHandler }
+    var featureFlagger: DBPFeatureFlagging { runner.featureFlagger }
+    var brokerJobExecutionConfig: BrokerJobExecutionConfig { runner.brokerJobExecutionConfig }
 
     private var isSyncingAgeFields = false
 
@@ -234,70 +216,14 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
          featureFlagger: DBPFeatureFlagging) {
-        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        self.featureFlagger = featureFlagger
-        let features = ContentScopeFeatureToggles(emailProtection: false,
-                                                  emailProtectionIncontextSignup: false,
-                                                  credentialsAutofill: false,
-                                                  identitiesAutofill: false,
-                                                  creditCardsAutofill: false,
-                                                  credentialsSaving: false,
-                                                  passwordGeneration: false,
-                                                  inlineIconCredentials: false,
-                                                  thirdPartyCredentialsProvider: false,
-                                                  unknownUsernameCategorization: false,
-                                                  partialFormSaves: false,
-                                                  passwordVariantCategorization: false,
-                                                  inputFocusApi: false,
-                                                  autocompleteAttributeSupport: false)
-
-        let sessionKey = UUID().uuidString
-        let messageSecret = UUID().uuidString
-        self.authenticationManager = authenticationManager
-        let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
-                                                            sessionKey: sessionKey,
-                                                            messageSecret: messageSecret,
-                                                            featureToggles: features)
-
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-        let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: fakePixelHandler,
-                                                                                   settings: dbpSettings)
-        self.emailService = EmailService(authenticationManager: authenticationManager,
-                                         settings: dbpSettings,
-                                         servicePixel: backendServicePixels)
-        self.captchaService = CaptchaService(authenticationManager: authenticationManager,
-                                             settings: dbpSettings,
-                                             servicePixel: backendServicePixels)
-
-        self.privacyConfigManager = privacyConfigurationManager
-        self.contentScopeProperties = contentScopeProperties
-
-        let pixelKit = PixelKit.shared!
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
-        self.pixelHandler = sharedPixelsHandler
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigurationManager)
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-        let vault = try! vaultFactory.makeVault(reporter: reporter)
-
-        self.brokerResources = try! vault.fetchAllBrokerResources()
-
-        self.emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
-                                             settings: dbpSettings,
-                                             servicePixel: backendServicePixels)
-
-        loadPresets()
-    }
-
-    private func withOptionalTimeout<T: Sendable>(_ timeout: TimeInterval?,
-                                                  do operation: @escaping @Sendable () async throws -> T) async throws -> T {
-        guard let timeout else {
-            return try await operation()
+        let runner = try! DebugModeRunner(authenticationManager: authenticationManager, featureFlagger: featureFlagger)
+        self.runner = runner
+        self.brokerResources = try! runner.storedBrokerResources()
+        runner.emailConfirmationEventHandler = { [weak self] message in
+            self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
         }
 
-        return try await withTimeout(timeout,
-                                     throwing: DataBrokerProtectionError.jobTimeout,
-                                     do: operation)
+        loadPresets()
     }
 
     @MainActor
@@ -330,31 +256,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                     actionType: actionType,
                                     details: details,
                                     stepType: .scan,
-                                    brokerProfileQueryData: query)
+                                    dataBroker: query.dataBroker,
+                                    profileQuery: query.profileQuery)
                             }
-                            let runner = BrokerProfileScanSubJobWebRunner(
-                                privacyConfig: self.privacyConfigManager,
-                                prefs: self.contentScopeProperties,
-                                context: query,
-                                emailConfirmationDataService: self.emailConfirmationDataService,
-                                captchaService: self.captchaService,
-                                featureFlagger: self.featureFlagger,
-                                stageDurationCalculator: stageCalculator,
-                                pixelHandler: fakePixelHandler,
-                                executionConfig: self.brokerJobExecutionConfig,
-                                shouldRunNextStep: { true }
-                            )
-                            let extractedProfiles = try await self.withOptionalTimeout(scanTimeout) {
-                                try await runner.scan(showWebView: showWebView) { true }
-                            }
-                            let brokerId = DebugHelper.stableId(for: query.dataBroker)
-                            let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
-                            let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
-                                debugEmailConfirmationStore.storeExtractedProfile(profile,
-                                                                             brokerId: brokerId,
-                                                                             profileQueryId: profileQueryId,
-                                                                             stableId: DebugHelper.stableId(for: profile))
-                            }
+                            let assignedProfiles = try await self.runner.scan(query,
+                                                                              showWebView: showWebView,
+                                                                              timeout: scanTimeout,
+                                                                              stageCalculator: stageCalculator)
                             addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
 
                             Task { @MainActor in
@@ -409,15 +317,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         addOptOutStartedEvent(for: scanResult)
         let optOutTimeout = usesConfiguredTimeouts ? brokerJobExecutionConfig.optOutJobTimeout : nil
         let showWebView = !hidesWebView
-        let brokerProfileQueryData = BrokerProfileQueryData(
-            dataBroker: dataBroker,
-            profileQuery: scanResult.profileQuery,
-            scanJobData: ScanJobData(
-                brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
-                profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
-                historyEvents: [HistoryEvent]()
-            )
-        )
         Task {
             do {
                 let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
@@ -426,28 +325,16 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                         actionType: actionType,
                         details: details,
                         stepType: .optOut,
-                        brokerProfileQueryData: brokerProfileQueryData)
+                        dataBroker: dataBroker,
+                        profileQuery: scanResult.profileQuery)
                 }
-                let runner = BrokerProfileOptOutSubJobWebRunner(
-                    privacyConfig: self.privacyConfigManager,
-                    prefs: self.contentScopeProperties,
-                    context: brokerProfileQueryData,
-                    emailConfirmationDataService: self.emailConfirmationDataService,
-                    captchaService: self.captchaService,
-                    featureFlagger: self.featureFlagger,
-                    stageCalculator: stageCalculator,
-                    pixelHandler: fakePixelHandler,
-                    executionConfig: self.brokerJobExecutionConfig,
-                    actionsHandlerMode: .optOut,
-                    shouldRunNextStep: { true }
-                )
+                let requiresEmailConfirmation = try await self.runner.optOut(scanResult,
+                                                                             dataBroker: dataBroker,
+                                                                             showWebView: showWebView,
+                                                                             timeout: optOutTimeout,
+                                                                             stageCalculator: stageCalculator)
 
-                try await self.withOptionalTimeout(optOutTimeout) {
-                    try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                            showWebView: showWebView) { true }
-                }
-
-                if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
+                if requiresEmailConfirmation {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
                     Task { @MainActor in
                         self.isProgressActive = false
@@ -490,23 +377,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 phones: [String](),
                 birthYear: Int(birthYear) ?? 1990
             )
-        let profileQueries = profile.profileQueries
-        var brokerProfileQueryData = [BrokerProfileQueryData]()
-
-        let resolvedBroker = broker.with(id: DebugHelper.stableId(for: broker))
-        for profileQuery in profileQueries {
-            let profileQueryId = DebugHelper.stableId(for: profileQuery)
-            let fakeScanJobData = ScanJobData(brokerId: DebugHelper.stableId(for: resolvedBroker),
-                                              profileQueryId: profileQueryId,
-                                              historyEvents: [HistoryEvent]())
-            brokerProfileQueryData.append(
-                .init(dataBroker: resolvedBroker,
-                      profileQuery: profileQuery.with(id: profileQueryId),
-                      scanJobData: fakeScanJobData)
-            )
-            profileQueryLabels[profileQueryId] = profileQueryText(for: profileQuery)
+        let brokerProfileQueryData = runner.brokerProfileQueryData(for: broker, profile: profile)
+        for query in brokerProfileQueryData {
+            profileQueryLabels[DebugHelper.stableId(for: query.profileQuery)] = profileQueryText(for: query.profileQuery)
         }
-
         return brokerProfileQueryData
     }
 
@@ -602,20 +476,15 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                              actionType: ActionType?,
                              details: String,
                              stepType: StepType,
-                             brokerProfileQueryData: BrokerProfileQueryData) {
-        let broker = brokerProfileQueryData.dataBroker
-        let summary = kind == .challenge
-            ? "\(broker.name) > Challenge"
-            : actionSummary(stepType: stepType, actionType: actionType)
-        let progressText = kind == .challenge
-            ? "Challenge: \(broker.name)"
-            : currentActionText(stepType: stepType, actionType: actionType, prefix: kind.rawValue)
+                             dataBroker: DataBroker,
+                             profileQuery: ProfileQuery) {
+        let text = DebugModeRunner.runnerEventText(kind: kind, actionType: actionType, stepType: stepType, broker: dataBroker)
         addDebugEvent(
             kind: kind,
-            summary: summary,
-            profileQueryLabel: profileQueryText(for: brokerProfileQueryData.profileQuery),
+            summary: text.summary,
+            profileQueryLabel: profileQueryText(for: profileQuery),
             details: details,
-            progressText: progressText)
+            progressText: text.progressText)
     }
 
     func addHistoryDebugEvent(summary: String, details: String) {
@@ -632,19 +501,15 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     func actionSummary(stepType: StepType, actionType: ActionType?) -> String {
-        let typeText = actionType?.rawValue ?? "unknown"
-        return "\(stepType.rawValue) > \(typeText)"
+        DebugModeRunner.actionSummary(stepType: stepType, actionType: actionType)
     }
 
     func currentActionText(stepType: StepType, actionType: ActionType?, prefix: String) -> String {
-        let typeText = actionType?.rawValue ?? "unknown"
-        return "\(prefix): \(stepType.rawValue) > \(typeText)"
+        DebugModeRunner.currentActionText(stepType: stepType, actionType: actionType, prefix: prefix)
     }
 
     func profileQueryText(for profileQuery: ProfileQuery) -> String {
-        let nameText = "\(profileQuery.firstName) \(profileQuery.lastName)"
-        let locationText = "\(profileQuery.city) \(profileQuery.state)"
-        return "\(nameText) x \(locationText)"
+        DebugModeRunner.profileQueryText(for: profileQuery)
     }
 
     func updateProgress(_ text: String) {
@@ -779,108 +644,6 @@ struct DebugEventRow: Identifiable {
     let profileQueryLabel: String
     let summary: String
     let details: String
-}
-
-final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventReporting {
-
-    var attemptId: UUID = UUID()
-    var isImmediateOperation: Bool = false
-    var isFreeScan: Bool?
-    var tries = 1
-    private let onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)?
-
-    init(onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)? = nil) {
-        self.onDebugEvent = onDebugEvent
-    }
-
-    func durationSinceLastStage() -> Double {
-        0.0
-    }
-
-    func durationSinceStartTime() -> Double {
-        0.0
-    }
-
-    func awakeDurationSinceStartTime() -> Double {
-        0.0
-    }
-
-    func fireOptOutStart() {
-    }
-
-    func setEmailPattern(_ emailPattern: String?) {
-    }
-
-    func fireOptOutEmailGenerate() {
-    }
-
-    func fireOptOutCaptchaParse() {
-    }
-
-    func fireOptOutCaptchaSend() {
-    }
-
-    func fireOptOutCaptchaSolve() {
-    }
-
-    func fireOptOutSubmit() {
-    }
-
-    func fireOptOutEmailReceive() {
-    }
-
-    func fireOptOutEmailConfirm() {
-    }
-
-    func fireOptOutEmailGetData() {
-    }
-
-    func fireOptOutFillForm() {
-    }
-
-    func fireOptOutValidate() {
-    }
-
-    func fireOptOutSubmitSuccess(tries: Int) {
-    }
-
-    func fireOptOutFailure(tries: Int, error: Error) {
-    }
-
-    func fireScanSuccess(matchesFound: Int) {
-    }
-
-    func fireScanNoResults() {
-    }
-
-    func fireScanError(error: Error) {
-    }
-
-    func setStage(_ stage: Stage) {
-    }
-
-    func setLastAction(_ action: Action) {
-    }
-
-    func fireOptOutConditionFound() {
-    }
-
-    func fireOptOutConditionNotFound() {
-    }
-
-    func resetTries() {
-        self.tries = 1
-    }
-
-    func incrementTries() {
-        self.tries += 1
-    }
-
-    func recordDebugEvent(kind: DebugEventKind,
-                          actionType: ActionType?,
-                          details: String) {
-        onDebugEvent?(kind, actionType, details)
-    }
 }
 
 extension DataBrokerProtectionError {

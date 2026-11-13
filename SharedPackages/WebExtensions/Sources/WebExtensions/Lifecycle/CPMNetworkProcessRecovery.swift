@@ -72,7 +72,7 @@ final class CPMNetworkProcessRecovery {
         featureFlagSubscription = featureFlagUpdates?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                MainActor.assumeIsolated {
+                _ = MainActor.assumeIsolated {
                     self?.recoverIfNeeded()
                 }
             }

@@ -31,7 +31,7 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
         // GIVEN
         let now = Date(timeIntervalSince1970: 1751005822) // 27 June 2025 6:30:22 AM GMT
         let yesterday = now.daysAgo(1)
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let activity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 2, lastActiveDate: now, secondLastActiveDate: yesterday)
         let sut = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
 
@@ -53,7 +53,7 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
         let yesterday = now.daysAgo(1)
         let activity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 2, lastActiveDate: now, secondLastActiveDate: yesterday)
         let encodedActivity = try encodeActivity(activity)
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         storageMock.underlyingDict = [DefaultBrowserPromptUserActivityKeyValueFilesStore.StorageKey.userActivity: encodedActivity]
         let sut = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
 
@@ -67,7 +67,7 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
     @Test("Check Empty Activity Is Retrieved If None Stored")
     func whenActivityIsNotStoredThenReturnEmptyFromStorage() throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let sut = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
 
         // WHEN
@@ -82,7 +82,7 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
     @Test("Check Saving Activity Send The Right Event When Fail")
     func whenSavingActivityFailsThenAnErrorEventIsSent() throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
         storageMock.throwOnSet = expectedError
         var capturedEvent: DefaultBrowserPromptUserActivityKeyValueFilesStore.DebugEvent?
@@ -103,7 +103,7 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
     @Test("Check Retrieved Activity Send The Right Event When Fail")
     func whenRetrievingActivityFailsThenAnErrorEventIsSent() throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
         storageMock.throwOnRead = expectedError
         var capturedEvent: DefaultBrowserPromptUserActivityKeyValueFilesStore.DebugEvent?

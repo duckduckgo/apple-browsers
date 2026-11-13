@@ -133,7 +133,7 @@ extension SuggestionResult {
             return false
         }
         let localURLs = Set((topHits + localSuggestions).compactMap(\.url))
-        let retainedTopHits = remoteTopHits.filter { !($0.url.map { localURLs.contains($0) } ?? false) && !topHits.contains($0) }
+        let retainedTopHits = remoteTopHits.filter { !($0.url.map { localURLs.contains($0) } ?? false) }
         let combinedTopHits = topHits + retainedTopHits
         let remoteSuggestions = (Array(combinedTopHits.dropFirst(2)) + previous.duckduckgoSuggestions).filter {
             !combinedTopHits.prefix(2).contains($0) && !($0.url.map { localURLs.contains($0) } ?? false)

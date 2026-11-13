@@ -45,6 +45,10 @@ public struct SimplifiedSyncSettingsView: View {
         List {
             syncWarningBanners
             newDevicesCardSection
+            if model.isSyncEnabled, model.areSyncNotificationsAvailable,
+               let notificationModel = model.notificationSettingsViewModel {
+                SyncNotificationPermissionCard(model: notificationModel)
+            }
             headerSection
 
             if model.isSyncEnabled {
@@ -54,6 +58,7 @@ public struct SimplifiedSyncSettingsView: View {
                 syncDisabledSections
             }
         }
+        .syncNotificationSettings(model.notificationSettingsViewModel)
         .navigationTitle(UserText.syncTitle)
         .animation(.easeInOut(duration: 0.3), value: model.isSyncEnabled)
         .animation(.easeInOut(duration: 0.3), value: model.devices.isEmpty)
@@ -664,6 +669,13 @@ extension SimplifiedSyncSettingsView {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                if model.areSyncNotificationsAvailable, let notificationModel = model.notificationSettingsViewModel {
+                    SyncNotificationSettingsRow(model: notificationModel)
+                }
+            } footer: {
+                if model.areSyncNotificationsAvailable, model.notificationSettingsViewModel != nil {
+                    Text(UserText.syncNotificationsDescription)
+                }
             }
             .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }

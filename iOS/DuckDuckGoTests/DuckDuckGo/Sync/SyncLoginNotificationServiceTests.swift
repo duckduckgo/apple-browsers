@@ -20,6 +20,7 @@
 import XCTest
 @testable import DDGSync
 import UserNotifications
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @MainActor
@@ -28,6 +29,7 @@ final class SyncLoginNotificationServiceTests: XCTestCase {
     private var flags: MockFeatureFlagger!
     private var center: MockUNUserNotificationCenter!
     private var service: SyncLoginNotificationService!
+    private var settingsStorage: (any KeyedStoring<SyncNotificationSettingsStorageKeys>)!
 
     override func setUpWithError() throws {
         sync = MockDDGSyncing(authState: .active, isSyncInProgress: false)
@@ -36,7 +38,9 @@ final class SyncLoginNotificationServiceTests: XCTestCase {
         sync.isAuditLogPollingAvailableStub = true
         flags = MockFeatureFlagger(enabledFeatureFlags: [.syncLoginAuditLog, .syncLoginNotification])
         center = MockUNUserNotificationCenter()
-        service = SyncLoginNotificationService(syncService: sync, featureFlagger: flags, notificationCenter: center)
+        settingsStorage = MockKeyValueStore().keyedStoring()
+        service = SyncLoginNotificationService(syncService: sync, featureFlagger: flags, notificationCenter: center,
+                                               settingsStorage: settingsStorage)
     }
 
     private func notification(count: Int = 1, accountID: String = "account") -> SyncLoginNotification {
@@ -107,6 +111,36 @@ final class SyncLoginNotificationServiceTests: XCTestCase {
         XCTAssertFalse(center.didRequestAuthorization)
         XCTAssertEqual(center.addedRequests.count, 2)
         XCTAssertTrue(center.addedRequests.allSatisfy { $0.content.body == "New devices have been added to Sync & Backup." })
+    }
+
+    func testOptOutPreventsQuietAndFullDeliveryAndRuntimeChangesTakeEffect() async {
+        settingsStorage.isEnabled = false
+        for status: UNAuthorizationStatus in [.notDetermined, .provisional, .authorized] {
+            center.authorizationStatus = status
+            await service.deliver(notification())
+        }
+        XCTAssertFalse(center.didRequestAuthorization)
+        XCTAssertTrue(center.addedRequests.isEmpty)
+        settingsStorage.isEnabled = true
+        for status: UNAuthorizationStatus in [.provisional, .authorized] {
+            center.authorizationStatus = status
+            await service.deliver(notification())
+        }
+        XCTAssertEqual(center.addedRequests.count, 2)
+    }
+
+    func testNotificationSettingsPersistAndRequestFullAuthorization() async throws {
+        let settings = SyncNotificationSettings(storage: settingsStorage, notificationCenter: center)
+        XCTAssertTrue(settings.isEnabled)
+        XCTAssertFalse(settings.isPermissionCardDismissed)
+        settings.isEnabled = false
+        settings.isPermissionCardDismissed = true
+        let reopened = SyncNotificationSettings(storage: settingsStorage, notificationCenter: center)
+        XCTAssertFalse(reopened.isEnabled)
+        XCTAssertTrue(reopened.isPermissionCardDismissed)
+        try await reopened.requestAuthorization()
+        XCTAssertEqual(center.requestedAuthorizationOptions, [.alert])
+        XCTAssertFalse(center.requestedAuthorizationOptions.contains(.provisional))
     }
 
     func testDeniedAuthorizationNeverPromptsOrSchedules() async {
@@ -207,6 +241,7 @@ final class SyncLoginNotificationServiceTests: XCTestCase {
     }
 
     func testReviewedEntriesAreFilteredAgainAfterAuthorizationCompletes() async throws {
+        center.authorizationStatus = .authorized
         let cutoff = Date(timeIntervalSince1970: 100)
         let batch = SyncLoginNotification(identifier: "batch", accountID: "account", events: [
             SyncLoginEvent(id: "reviewed", occurredAt: cutoff, deviceName: "First"),

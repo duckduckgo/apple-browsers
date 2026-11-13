@@ -61,12 +61,15 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private let browserTools: AIChatBrowserToolsService?
+    private let bonusMessageLog: AIChatBonusMessageLogging?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
-         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService) {
+         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
+         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
         self.handler = handler
         self.browserTools = browserTools
+        self.bonusMessageLog = bonusMessageLog
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -376,6 +379,7 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
               let host = webView.url?.host,
               messageDestinationPolicy.isAllowed(host) else { return }
         broker.push(method: AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue, params: payload, for: self, into: webView)
+        bonusMessageLog?.record(.push, method: "\(AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue) → \(host)", body: payload)
     }
 
     /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.

@@ -35,6 +35,7 @@ public protocol MediaCaptureUserScriptDelegate: AnyObject {
     func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
                                 requestPermissionFor permissionTypes: Set<SitePermissionType>,
                                 requestID: String,
+                                topLevelOrigin: SitePermissionSecurityOrigin,
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision
 }
@@ -89,6 +90,9 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
               let requestsVideo = body["video"] as? Bool,
               let requestsAudio = body["audio"] as? Bool,
               requestsVideo || requestsAudio,
+              let topOrigin = body["topOrigin"] as? String,
+              let topOriginURL = URL(string: topOrigin),
+              let topLevelOrigin = SitePermissionSecurityOrigin(topOriginURL),
               let webView = message.webView,
               !message.frameInfo.securityOrigin.host.isEmpty else {
             return (["decision": MediaCaptureBridgeDecision.deny.rawValue], nil)
@@ -105,6 +109,7 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
         let decision = await delegate.mediaCaptureUserScript(self,
                                                                requestPermissionFor: permissionTypes,
                                                                requestID: requestID,
+                                                               topLevelOrigin: topLevelOrigin,
                                                                in: message.frameInfo,
                                                                webView: webView)
         return (["decision": decision.rawValue], nil)

@@ -375,7 +375,9 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             try archive.data.write(to: file, options: .atomic)
             let webExtension = try await WKWebExtension.makeCopyingErrors(at: file)
 
-            guard webExtension.errors.isEmpty else {
+            // macOS 15 WebKit flags MV3 extensions using `webRequest` with a non-fatal background persistence error.
+            let fatalErrors = webExtension.errors.map(NSError.webKitSafe).filter { !$0.isBackgroundPersistenceWarning }
+            guard fatalErrors.isEmpty else {
                 throw ChromeWebStoreError.unsupportedManifest
             }
 

@@ -32,6 +32,11 @@ extension NSError {
         domain == WKWebExtensionContext.errorDomain && code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
     }
 
+    @available(macOS 15.4, iOS 18.4, *)
+    var isBackgroundPersistenceWarning: Bool {
+        domain == WKWebExtension.errorDomain && code == WKWebExtension.Error.Code.invalidBackgroundPersistence.rawValue
+    }
+
     /// `error` as an `NSError`, without Swift's `Error` -> `NSError` bridge.
     ///
     /// A real `NSError` is returned as is; a `WKNSError` proxy is copied.

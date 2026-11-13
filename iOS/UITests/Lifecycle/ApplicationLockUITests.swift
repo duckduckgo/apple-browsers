@@ -65,7 +65,7 @@ final class ApplicationLockUITests: UITestCase {
         enableApplicationLock()
 
         try XCTContext.runActivity(named: "Authenticate after relaunch") { _ in
-            try relaunchAppPreservingState()
+            try relaunchAppPreservingState(delayAfterTermination: 2)
 
             let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
             let needsRecovery = waitForAuthenticationPromptOrRecovery(authenticationReason)
@@ -101,7 +101,7 @@ final class ApplicationLockUITests: UITestCase {
         }
 
         try XCTContext.runActivity(named: "Restore the page without authentication") { _ in
-            try relaunchAppPreservingState()
+            try relaunchAppPreservingState(delayAfterTermination: 2)
 
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),

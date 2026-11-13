@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import Foundation
-import os.log
+import PixelKit
 
 enum DefaultBrowserConfirmationSource: String {
     case winBack = "default-browser-win-back"
@@ -53,11 +53,6 @@ protocol DefaultBrowserConfirmationStoring: AnyObject {
     var pendingConfirmation: DefaultBrowserPendingConfirmation? { get set }
 }
 
-enum DefaultBrowserConfirmationResult: Equatable {
-    case confirmed(DefaultBrowserConfirmationCheck)
-    case notConfirmed
-}
-
 protocol DefaultBrowserConfirmationMonitoring: AnyObject {
     func start(clickDate: Date)
 }
@@ -88,9 +83,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
     private let dateProvider: () -> Date
     private let afterClickDelay: TimeInterval
     private let deadlineInterval: TimeInterval
-    // Temporary: lets tests read results until pixels are added, then pixel firing replaces it.
-    // https://app.asana.com/1/137249556945/project/1209825025475019/task/1215996183949490
-    private let report: ((DefaultBrowserConfirmationResult) -> Void)?
+    private let pixelFiring: PixelFiring?
 
     private var pending: DefaultBrowserPendingConfirmation? {
         didSet { store.pendingConfirmation = pending }
@@ -107,7 +100,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
          dateProvider: @escaping () -> Date = Date.init,
          afterClickDelay: TimeInterval = 5,
          deadlineInterval: TimeInterval = 24 * 60 * 60,
-         report: ((DefaultBrowserConfirmationResult) -> Void)? = nil) {
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.source = source
         self.store = store
         self.defaultBrowserProvider = defaultBrowserProvider
@@ -115,7 +108,7 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
         self.dateProvider = dateProvider
         self.afterClickDelay = afterClickDelay
         self.deadlineInterval = deadlineInterval
-        self.report = report
+        self.pixelFiring = pixelFiring
 
         appActiveCancellable = notificationCenter.publisher(for: NSApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
@@ -181,27 +174,18 @@ final class DefaultBrowserConfirmationMonitor: DefaultBrowserConfirmationMonitor
 
     private func evaluate(_ confirmation: DefaultBrowserPendingConfirmation, at check: DefaultBrowserConfirmationCheck) {
         if defaultBrowserProvider.isDefault {
-            finish(with: .confirmed(check))
+            finish(with: .confirmed(source: source, check: check))
         } else if let next = check.next {
-            // Temporary: This logging will be removed when pixels are added, before release.
-            // https://app.asana.com/1/137249556945/project/1209825025475019/task/1215996183949490
-            Logger.general.info("Default browser confirmation (\(self.source.rawValue)): not yet confirmed, next check \(next.rawValue)")
             pending = DefaultBrowserPendingConfirmation(clickDate: confirmation.clickDate, nextCheck: next)
         } else {
-            finish(with: .notConfirmed)
+            finish(with: .notConfirmed(source: source))
         }
     }
 
-    private func finish(with result: DefaultBrowserConfirmationResult) {
+    private func finish(with pixel: DefaultBrowserConfirmationPixel) {
         pending = nil
         invalidateTimers()
-        if let report {
-            report(result)
-        } else {
-            // Temporary: This logging will be replaced with pixels before release.
-            // https://app.asana.com/1/137249556945/project/1209825025475019/task/1215996183949490
-            Logger.general.info("Default browser confirmation (\(self.source.rawValue)): \(String(describing: result))")
-        }
+        pixelFiring?.fire(pixel)
     }
 
     // MARK: - Timers

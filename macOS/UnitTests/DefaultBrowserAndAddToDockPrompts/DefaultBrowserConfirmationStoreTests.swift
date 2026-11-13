@@ -18,6 +18,7 @@
 
 import XCTest
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserConfirmationStoreTests: XCTestCase {
@@ -25,16 +26,19 @@ final class DefaultBrowserConfirmationStoreTests: XCTestCase {
     private static let key = "default-browser-win-back.pending-confirmation"
 
     private var keyValueStore: MockThrowingKeyValueStore!
+    private var pixelFiring: PixelKitMock!
     private var sut: DefaultBrowserConfirmationStore!
 
     override func setUp() {
         super.setUp()
         keyValueStore = MockThrowingKeyValueStore()
-        sut = DefaultBrowserConfirmationStore(source: .winBack, keyValueStore: keyValueStore)
+        pixelFiring = PixelKitMock()
+        sut = DefaultBrowserConfirmationStore(source: .winBack, keyValueStore: keyValueStore, pixelFiring: pixelFiring)
     }
 
     override func tearDown() {
         sut = nil
+        pixelFiring = nil
         keyValueStore = nil
         super.tearDown()
     }
@@ -55,9 +59,28 @@ final class DefaultBrowserConfirmationStoreTests: XCTestCase {
         XCTAssertNil(keyValueStore.underlyingDict[Self.key])
     }
 
-    func testWhenStoredValueIsCorruptThenReadsNil() {
+    func testWhenStoredValueIsCorruptThenReadsNilFiresReadFailedAndRemovesIt() {
         keyValueStore.underlyingDict[Self.key] = Data("not json".utf8)
 
         XCTAssertNil(sut.pendingConfirmation)
+        assertSingleFailurePixel(named: "default-browser-win-back_pending-confirmation_read-failed_macos")
+        XCTAssertNil(keyValueStore.underlyingDict[Self.key])
+    }
+
+    func testWhenWriteFailsThenWriteFailedPixelFires() {
+        keyValueStore.shouldThrowOnSet = true
+
+        sut.pendingConfirmation = DefaultBrowserPendingConfirmation(clickDate: Date(), nextCheck: .afterClick)
+
+        assertSingleFailurePixel(named: "default-browser-win-back_pending-confirmation_write-failed_macos")
+    }
+
+    private func assertSingleFailurePixel(named name: String, file: StaticString = #filePath, line: UInt = #line) {
+        let calls = pixelFiring.actualFireCalls
+        XCTAssertEqual(calls.count, 1, file: file, line: line)
+        XCTAssertEqual(calls.first?.pixel.name, name, file: file, line: line)
+        XCTAssertEqual(calls.first?.pixel.namePrefix, PixelKitNamePrefix.none, file: file, line: line)
+        XCTAssertNotNil(calls.first?.pixel.error, file: file, line: line)
+        XCTAssertEqual(calls.first?.frequency, .dailyAndCount, file: file, line: line)
     }
 }

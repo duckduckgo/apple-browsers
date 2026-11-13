@@ -17,6 +17,7 @@
 //
 
 import AppKit
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -31,7 +32,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
     private var center: NotificationCenter!
     private var timerFactory: MockTimerFactory!
     private var now: Date!
-    private var results: [DefaultBrowserConfirmationResult]!
+    private var pixelFiring: PixelKitMock!
     private var monitors: [DefaultBrowserConfirmationMonitor] = []
 
     override func setUp() {
@@ -41,13 +42,13 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
         center = NotificationCenter()
         timerFactory = MockTimerFactory()
         now = clickDate
-        results = []
+        pixelFiring = PixelKitMock()
         monitors = []
     }
 
     override func tearDown() {
         monitors = []
-        results = nil
+        pixelFiring = nil
         now = nil
         timerFactory = nil
         center = nil
@@ -62,13 +63,18 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
 
         fireTimer(interval: afterClickDelay)
 
-        XCTAssertTrue(results.isEmpty)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
         XCTAssertEqual(store.pendingConfirmation?.nextCheck, .nextActivation)
 
         provider.isDefault = true
         center.post(name: NSApplication.didBecomeActiveNotification, object: nil)
 
-        XCTAssertEqual(results, [.confirmed(.nextActivation)])
+        XCTAssertEqual(firedPixels, [.confirmed(source: .winBack, check: .nextActivation)])
+        let call = pixelFiring.actualFireCalls.first
+        XCTAssertEqual(call?.pixel.name, "default-browser-win-back_default-confirmed_macos")
+        XCTAssertEqual(call?.pixel.namePrefix, PixelKitNamePrefix.none)
+        XCTAssertEqual(call?.pixel.parameters, ["check": "next-activation"])
+        XCTAssertEqual(call?.frequency, .standard)
         XCTAssertNil(store.pendingConfirmation)
     }
 
@@ -81,7 +87,11 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
 
         fireTimer(interval: deadlineInterval)
 
-        XCTAssertEqual(results, [.notConfirmed])
+        XCTAssertEqual(firedPixels, [.notConfirmed(source: .winBack)])
+        let call = pixelFiring.actualFireCalls.first
+        XCTAssertEqual(call?.pixel.name, "default-browser-win-back_default-not-confirmed_macos")
+        XCTAssertEqual(call?.pixel.namePrefix, PixelKitNamePrefix.none)
+        XCTAssertNil(call?.pixel.parameters)
         XCTAssertNil(store.pendingConfirmation)
     }
 
@@ -93,7 +103,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
 
         sut.resume()
 
-        XCTAssertEqual(results, [.confirmed(.deadline)])
+        XCTAssertEqual(firedPixels, [.confirmed(source: .winBack, check: .deadline)])
         XCTAssertNil(store.pendingConfirmation)
     }
 
@@ -106,7 +116,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
 
         center.post(name: NSApplication.didBecomeActiveNotification, object: nil)
 
-        XCTAssertEqual(results, [.confirmed(.deadline)])
+        XCTAssertEqual(firedPixels, [.confirmed(source: .winBack, check: .deadline)])
         XCTAssertNil(store.pendingConfirmation)
     }
 
@@ -116,11 +126,11 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
         now = clickDate.addingTimeInterval(60)
         let sut = makeMonitor()
         sut.resume()
-        XCTAssertTrue(results.isEmpty)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
 
         fireTimer(interval: 0)
 
-        XCTAssertEqual(results, [.confirmed(.afterClick)])
+        XCTAssertEqual(firedPixels, [.confirmed(source: .winBack, check: .afterClick)])
     }
 
     func testWhenResumedBeforeDeadlineThenDeadlineTimerScheduledForRemainingTime() {
@@ -132,7 +142,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
 
         XCTAssertEqual(timerFactory.createdTimers.count, 1)
         XCTAssertEqual(timerFactory.createdTimers.first?.timeInterval, deadlineInterval - 3 * 60 * 60)
-        XCTAssertTrue(results.isEmpty)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     func testExactlyOneResultPerClick() {
@@ -140,16 +150,20 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
         sut.start(clickDate: clickDate)
         provider.isDefault = true
         fireTimer(interval: afterClickDelay)
-        XCTAssertEqual(results, [.confirmed(.afterClick)])
+        XCTAssertEqual(firedPixels, [.confirmed(source: .winBack, check: .afterClick)])
 
         center.post(name: NSApplication.didBecomeActiveNotification, object: nil)
         timerFactory.createdTimers.forEach { $0.fire() }
         sut.resume()
 
-        XCTAssertEqual(results, [.confirmed(.afterClick)])
+        XCTAssertEqual(firedPixels, [.confirmed(source: .winBack, check: .afterClick)])
     }
 
     // MARK: - Helpers
+
+    private var firedPixels: [DefaultBrowserConfirmationPixel] {
+        pixelFiring.actualFireCalls.compactMap { $0.pixel as? DefaultBrowserConfirmationPixel }
+    }
 
     private func makeMonitor() -> DefaultBrowserConfirmationMonitor {
         let monitor = DefaultBrowserConfirmationMonitor(source: .winBack,
@@ -160,7 +174,7 @@ final class DefaultBrowserConfirmationMonitorTests: XCTestCase {
                                                         dateProvider: { [unowned self] in now },
                                                         afterClickDelay: afterClickDelay,
                                                         deadlineInterval: deadlineInterval,
-                                                        report: { [unowned self] in results.append($0) })
+                                                        pixelFiring: pixelFiring)
         monitors.append(monitor)
         return monitor
     }

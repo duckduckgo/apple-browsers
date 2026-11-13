@@ -22,6 +22,7 @@ import Combine
 import XCTest
 import Common
 import FoundationExtensions
+import BrowserServicesKit
 
 @testable import DuckDuckGo
 
@@ -215,4 +216,75 @@ final class DuckPlayerTests: XCTestCase {
         XCTAssertTrue(mockSettings.nativeUISettingsMapped, "nativeUISettingsMapped should be set during initialization")
         XCTAssertNotNil(newDuckPlayer, "DuckPlayer should be created successfully")
     }
+
+    func testCustomErrorSendsConfigSettingsUnderSettingsKey() throws {
+        let configJSON = #"{"signInRequiredSelector":"a.sign-in","youtubeErrorSelector":".ytp-error"}"#
+        let configSettings = try JSONDecoder().decode(CustomErrorSettings.self, from: Data(configJSON.utf8))
+        let customError = InitialPlayerSettings.CustomError(state: .enabled, settings: configSettings)
+
+        let encoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(customError)) as? NSDictionary
+        let expected: NSDictionary = [
+            "state": "enabled",
+            "settings": ["signInRequiredSelector": "a.sign-in", "youtubeErrorSelector": ".ytp-error"]
+        ]
+        XCTAssertEqual(encoded, expected)
+    }
+
+    func testCustomErrorSettingsDecodeWithoutYouTubeErrorSelector() throws {
+        let configJSON = #"{"signInRequiredSelector":"a.sign-in"}"#
+        let configSettings = try JSONDecoder().decode(CustomErrorSettings.self, from: Data(configJSON.utf8))
+        XCTAssertEqual(configSettings, CustomErrorSettings(signInRequiredSelector: "a.sign-in", youtubeErrorSelector: nil))
+    }
+
+    // MARK: - Pill playback timestamp
+
+    @MainActor
+    func testWhenReEntryPillIsTappedAfterProgressInDuckPlayerThenVideoLoadsAtDuckPlayerPosition() async {
+        let timestamp = await presentedTimestamp(youtubeTimestamp: 30, pillTimestamp: 120, pillType: .reEntry)
+        XCTAssertEqual(timestamp, 120)
+    }
+
+    @MainActor
+    func testWhenReEntryPillIsTappedAfterProgressOnYouTubeThenVideoLoadsAtYouTubePosition() async {
+        let timestamp = await presentedTimestamp(youtubeTimestamp: 90, pillTimestamp: 20, pillType: .reEntry)
+        XCTAssertEqual(timestamp, 90)
+    }
+
+    @MainActor
+    func testWhenEntryPillIsTappedThenVideoLoadsAtYouTubePosition() async {
+        let timestamp = await presentedTimestamp(youtubeTimestamp: 30, pillTimestamp: 120, pillType: .entry)
+        XCTAssertEqual(timestamp, 30)
+    }
+
+    @MainActor
+    private func presentedTimestamp(youtubeTimestamp: TimeInterval,
+                                    pillTimestamp: TimeInterval,
+                                    pillType: DuckPlayerNativeUIPresenter.PillType) async -> TimeInterval? {
+        let player = DuckPlayer(settings: mockSettings,
+                                featureFlagger: mockFeatureFlagger,
+                                nativeUIPresenter: mockNativeUIPresenter,
+                                featureDiscovery: StubFeatureDiscovery())
+        let host = MockDuckPlayerHosting()
+        player.setHostViewController(host)
+
+        let presented = expectation(description: "Duck Player presented")
+        var timestamp: TimeInterval?
+        mockNativeUIPresenter.onPresentDuckPlayer = {
+            timestamp = $0
+            presented.fulfill()
+        }
+
+        player.currentTimeStampPublisher.send(youtubeTimestamp)
+        mockNativeUIPresenter.videoPlaybackRequest.send((videoID: "abc123", timestamp: pillTimestamp, pillType: pillType))
+
+        await fulfillment(of: [presented], timeout: 5)
+        return timestamp
+    }
+}
+
+private struct StubFeatureDiscovery: FeatureDiscovery {
+    func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {}
+    func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool { false }
+    func daysSinceLastUsed(_ feature: WasUsedBeforeFeature) -> Int? { nil }
+    func addToParams(_ params: [String: String], forFeature feature: WasUsedBeforeFeature) -> [String: String] { params }
 }

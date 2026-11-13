@@ -141,14 +141,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// FE→native: runs one advertised `clientTools` capability. The reply carries the tool result.
     case executeClientTool
 
-    /// Pushed (native→FE) when a pending `executeClientTool` needs the user's permission.
-    case clientToolPermissionRequested
-
     /// Pushed (native→FE) when feature flags change the advertised client-tool capabilities.
     case clientToolsChanged
-
-    /// FE→native: the user's answer to `clientToolPermissionRequested`. Always acknowledged with `{}`.
-    case respondToClientToolPermission
 
     // MARK: - Bonus offer
 
@@ -169,5 +163,24 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// Pushed (native→FE) to every Duck.ai tab after the bonus record changes.
     case submitAIChatBonusRecord
+
+    // MARK: - Local models
+
+    /// Requested (FE→native) to run a task such as `summarize` on the local model. Native replies with the
+    /// model right away and streams the text with `submitAIChatLocalRunChunk`.
+    case startAIChatLocalRun
+
+    /// Pushed (native→FE) with the next part of a local run. The last chunk has `done`, `status` and `metrics`.
+    case submitAIChatLocalRunChunk
+
+    /// Posted (FE→native) to stop a local run.
+    case cancelAIChatLocalRun
+
+    /// Requested (FE→native) when the user asks for a summary before turning on the local model.
+    /// Native asks the user and replies with their answer.
+    case requestAIChatLocalModelAccess
+
+    /// Pushed (native→FE) to every Duck.ai page when the local model's state changes.
+    case submitAIChatLocalModelState
 }
 // swiftlint:enable inclusive_language

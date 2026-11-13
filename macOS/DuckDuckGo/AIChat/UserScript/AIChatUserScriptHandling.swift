@@ -135,8 +135,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     // MARK: Browser tools
 
-    @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable?
-    @MainActor func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable?
+    @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -211,6 +210,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
     private let browserTools: AIChatBrowserToolsService
+    private let localModelService: AIChatLocalModelServing?
     private let fireNewAIChatExperimentPixels: () -> Void
     private let featureDiscovery: FeatureDiscovery
     private let termsOfServiceStore: DuckAiTermsOfServiceStore
@@ -267,9 +267,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels,
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
-        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        localModelService: AIChatLocalModelServing? = nil
     ) {
         self.storage = storage
+        self.localModelService = localModelService
         self.termsOfServiceStore = termsOfServiceStore
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
@@ -334,7 +336,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
         let isFireWindow = isFireWindowProvider?() ?? false
-        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+        var config = messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+        config.localModel = localModelService?.config()
+        return config
     }
 
     @MainActor
@@ -1342,16 +1346,16 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 extension AIChatUserScriptHandler {
 
     /// Always replies with the request's `callId`, including for an invalid payload.
-    /// - Parameter permissionPusher: the chat page that made the call. `nil` means the page may not
+    /// - Parameter permissionPrompter: asks for the chat that made the call. `nil` means the page may not
     ///   use client tools, so the call is `unavailable`.
     @MainActor
-    func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable? {
+    func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable? {
         guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
             return ExecuteClientToolResponse.invalidRequest(rawParams: params)
         }
 
         // Scoped by the owner tab, never the key window, so a backgrounded chat cannot act on another window.
-        guard let permissionPusher,
+        guard let permissionPrompter,
               let ownerTabID = ownerTabID(for: message),
               let ownerCollection = AIChatTabPickerSource.ownerCollection(for: message.messageWebView,
                                                                           ownerTabID: ownerTabID,
@@ -1363,17 +1367,8 @@ extension AIChatUserScriptHandler {
             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
             isBurner: ownerCollection.isBurner
         )
-        let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPusher: permissionPusher)
+        let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
         return response.limitedToResultBytes()
-    }
-
-    /// Always acknowledged with `{}`. A late, mismatched or unreadable answer changes nothing.
-    @MainActor
-    func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable? {
-        if let response: RespondToClientToolPermissionRequest = DecodableHelper.decode(from: params) {
-            browserTools.clientToolPermissions.respond(to: response, from: source)
-        }
-        return RespondToClientToolPermissionResponse()
     }
 
     /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached

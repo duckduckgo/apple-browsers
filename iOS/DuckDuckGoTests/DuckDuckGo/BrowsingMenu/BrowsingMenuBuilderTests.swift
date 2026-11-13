@@ -85,7 +85,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             internalFeedbackEntry: .named(MockBrowsingMenuEntryBuilder.internalFeedbackName)
         )
 
-        for context in [BrowsingMenuContext.newTabPage, .website] {
+        for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
             let model = makeBuilder(entryBuilder: entryBuilder).buildMenu(
                 context: context,
                 bookmarksInterface: MockMenuBookmarksInteractor(),
@@ -576,6 +576,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             MediaCaptureUserScript(),
             requestPermissionFor: [.camera],
             requestID: UUID().uuidString.replacingOccurrences(of: "-", with: "") + ":1",
+            topLevelOrigin: SitePermissionSecurityOrigin(URL(string: "https://example.com")!)!,
             in: frame,
             webView: sut.webView
         )
@@ -678,7 +679,7 @@ private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
 private extension BrowsingMenuEntry {
 
     var name: String? {
-        guard case let .regular(name, _, _, _, _, _, _, _, _) = self else { return nil }
+        guard case let .regular(name, _, _, _, _, _, _, _, _, _) = self else { return nil }
         return name
     }
 

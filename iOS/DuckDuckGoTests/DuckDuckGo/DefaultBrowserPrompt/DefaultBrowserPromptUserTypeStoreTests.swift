@@ -30,7 +30,7 @@ final class DefaultBrowserPromptUserTypeStoreTests {
     private var sut: DefaultBrowserPromptUserTypeStore
 
     init() throws {
-        storeMock = try MockKeyValueFileStore()
+        storeMock = MockKeyValueFileStore()
         sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { _, _, _, _ in })
     }
 

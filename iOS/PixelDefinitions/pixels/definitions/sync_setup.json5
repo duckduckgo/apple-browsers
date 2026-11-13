@@ -485,7 +485,7 @@
         ]
     },
     "sync_setup_ended_successful": {
-        "description": "Fired when Sync setup completes successfully.",
+        "description": "Fired when Sync setup completes successfully by pairing with another device or recovering with a code. Not fired when the app creates a Sync account for this device only, which m_sync_signup_direct reports.",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],

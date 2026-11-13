@@ -66,8 +66,9 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             XCTAssertEqual(nativeCallCount, index + 1)
             XCTAssertEqual(handler.receivedBodies.count, index + 1)
             let body = try XCTUnwrap(handler.receivedBodies.last)
-            XCTAssertEqual(Set(body.keys), ["capability", "requestID", "video", "audio", "isEligible"])
+            XCTAssertEqual(Set(body.keys), ["capability", "requestID", "video", "audio", "isEligible", "topOrigin"])
             XCTAssertEqual(body["capability"] as? String, MediaCaptureUserScript.capabilityToken)
+            XCTAssertEqual(body["topOrigin"] as? String, "https://duck.ai")
             for permission in ["video", "audio"] {
                 XCTAssertEqual(body[permission] as? Bool, constraints[permission])
                 XCTAssertEqual(nativeConstraints[permission] as? Bool, constraints[permission])
@@ -219,6 +220,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(result["result"] as? String, "native-result")
         XCTAssertEqual(result["nativeCallCount"] as? Int, 1)
         XCTAssertEqual(handler.receivedBodies.count, 1)
+        XCTAssertEqual(handler.receivedBodies.first?["topOrigin"] as? String, "https://duck.ai")
     }
 
     func testInjectedJavaScriptMarksOpaqueSandboxIneligibleAfterAttributeRemovalWithoutCallingNative() async throws {
@@ -764,6 +766,7 @@ private final class MediaCapturePermissionDelegate: MediaCaptureUserScriptDelega
     func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
                                 requestPermissionFor permissionTypes: Set<SitePermissionType>,
                                 requestID: String,
+                                topLevelOrigin: SitePermissionSecurityOrigin,
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
         requestCount += 1

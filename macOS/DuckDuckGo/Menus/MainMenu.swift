@@ -84,6 +84,8 @@ final class LazyBookmarkFolderMenuDelegate: NSObject, NSMenuDelegate {
 
 final class MainMenu: NSMenu {
 
+    private var debugMenuFavorites: DebugMenuFavorites?
+
     enum Constants {
         static let maxTitleLength = 55
     }
@@ -683,10 +685,7 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                            isBitwardenEnabled: { [featureFlagger] in
-                                featureFlagger.isFeatureOn(.webExtensionBitwarden)
-                            }
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
@@ -1283,6 +1282,7 @@ final class MainMenu: NSMenu {
         debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
 
         debugMenu.autoenablesItems = false
+        debugMenuFavorites = DebugMenuFavorites(menu: debugMenu, onChange: searchDelegate.reapplyFilter)
         return debugMenu
     }
 
@@ -1484,6 +1484,7 @@ final class MainMenu: NSMenu {
 
 private class DebugMenuSearchDelegate: NSObject, NSSearchFieldDelegate {
     weak var menu: NSMenu?
+    private var searchText = ""
 
     init(menu: NSMenu) {
         self.menu = menu
@@ -1491,16 +1492,23 @@ private class DebugMenuSearchDelegate: NSObject, NSSearchFieldDelegate {
     }
 
     func controlTextDidChange(_ obj: Notification) {
-        guard let searchField = obj.object as? NSSearchField,
-              let menu = menu else { return }
+        guard let searchField = obj.object as? NSSearchField else { return }
+        searchText = searchField.stringValue.lowercased()
+        applyFilter()
+    }
 
-        let searchText = searchField.stringValue.lowercased()
-
+    func applyFilter() {
+        guard let menu else { return }
         if searchText.isEmpty {
             menu.showAllMenuItems()
         } else {
             menu.filterMenuItems(searchText: searchText)
         }
+    }
+
+    func reapplyFilter() {
+        guard !searchText.isEmpty else { return }
+        applyFilter()
     }
 }
 
@@ -1514,7 +1522,7 @@ extension NSMenu {
                 continue
             }
 
-            if !item.isSeparatorItem && item.view == nil {
+            if !item.isSeparatorItem && (item.view == nil || item.view is DebugMenuItemView) {
                 item.isHidden = false
                 item.submenu?.showAllMenuItems()
             }
@@ -1534,7 +1542,7 @@ extension NSMenu {
             }
 
             // Skip custom view items
-            if item.view != nil {
+            if item.view != nil && !(item.view is DebugMenuItemView) {
                 continue
             }
 

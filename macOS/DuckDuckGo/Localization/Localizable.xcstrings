@@ -61,6 +61,126 @@
         }
       }
     },
+    "duckai.local-model-access.no-thanks" : {
+      "comment" : "Button in the local model pop-up that declines, so Duck.ai summarizes the page with a cloud model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.prompt.message" : {
+      "comment" : "Explanation in the pop-up that asks whether Duck.ai may summarize pages with Apple Intelligence on the Mac. 'Your plan' is the user's Duck.ai usage allowance",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Apple Intelligence will read this page's title, address, and text on your Mac. Nothing is sent to a cloud model, and it uses less of your plan."
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.prompt.title" : {
+      "comment" : "Title of the pop-up shown when the user asks Duck.ai to summarize a page before turning on the local model. %@ is the model's name, such as Apple Intelligence, shown as a badge",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai wants to use %@ to summarize this page"
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.turn-off" : {
+      "comment" : "Button in Settings > AI Features that stops Duck.ai from using the local model, such as Apple Intelligence",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn Off"
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.turn-on" : {
+      "comment" : "Button that lets Duck.ai use the local model, such as Apple Intelligence, for page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn On"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.apple-intelligence.caption" : {
+      "comment" : "Caption under Apple Intelligence in the Local Model Access section of Settings > AI Features, saying what Duck.ai uses it for",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Used for page summaries"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.caption" : {
+      "comment" : "Explanation under the Local Model Access title in Settings > AI Features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Local models add additional privacy and reduce Duck.ai plan usage."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.title" : {
+      "comment" : "Title of the section in Settings > AI Features where the user turns the local model on or off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Local Model Access"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.turn-on-confirmation.message" : {
+      "comment" : "Message of the alert shown when the user turns on Apple Intelligence for Duck.ai in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai will use Apple Intelligence on this Mac for page summaries. Pages are processed on your Mac, nothing is sent to a cloud model, and it uses less of your Duck.ai plan."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.turn-on-confirmation.title" : {
+      "comment" : "Title of the alert shown when the user turns on Apple Intelligence for Duck.ai in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn On Apple Intelligence?"
+          }
+        }
+      }
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {
@@ -125713,18 +125833,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "More Options"
-          }
-        }
-      }
-    },
-    "webExtensions.settings.password-managers" : {
-      "comment" : "Header of the password manager extensions section in the Extensions settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Password Managers"
           }
         }
       }

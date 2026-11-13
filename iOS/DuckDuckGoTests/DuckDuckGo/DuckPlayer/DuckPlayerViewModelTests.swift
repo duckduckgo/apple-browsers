@@ -122,7 +122,6 @@ final class DuckPlayerViewModelTests: XCTestCase {
     @MainActor
     func testGetVideoURL_IncludesCorrectParametersAndTimestamp_WhenTimestampIsAboveThreshold() {
         // Given
-        let expectedBaseURL = DuckPlayerViewModel.Constants.baseURL
         let expectedVideoID = "testVideoID"
         let expectedTimestamp: TimeInterval = 30.5
         viewModel.timestamp = expectedTimestamp
@@ -150,7 +149,6 @@ final class DuckPlayerViewModelTests: XCTestCase {
     @MainActor
     func testGetVideoURL_ExcludesStartParameter_WhenTimestampIsBelowThreshold() {
         // Given
-        let expectedVideoID = "testVideoID"
         let expectedTimestamp: TimeInterval = 4.9
         viewModel.timestamp = expectedTimestamp
         mockSettings.autoplay = false
@@ -172,7 +170,6 @@ final class DuckPlayerViewModelTests: XCTestCase {
     @MainActor
     func testGetVideoURL_IncludesStartParameter_WhenTimestampIsExactlyFive() {
         // Given
-        let expectedVideoID = "testVideoID"
         let expectedTimestamp: TimeInterval = 5.0
         viewModel.timestamp = expectedTimestamp
 
@@ -191,7 +188,6 @@ final class DuckPlayerViewModelTests: XCTestCase {
     @MainActor
     func testGetVideoURL_ExcludesStartParameter_WhenTimestampIsZero() {
         // Given
-        let expectedVideoID = "testVideoID"
         viewModel.timestamp = 0
 
         // When
@@ -377,6 +373,21 @@ final class DuckPlayerViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 5.0)
         XCTAssertEqual(receivedTimestamp, updatedTimestamp, "Should emit the updated current timestamp, not the initial timestamp")
         XCTAssertNotEqual(receivedTimestamp, initialTimestamp, "Should not emit the initial timestamp")
+    }
+
+    @MainActor
+    func testWhenVideoURLIsBuiltTwiceThenURLsAreEqual() {
+        XCTAssertEqual(viewModel.getVideoURL(), viewModel.getVideoURL())
+    }
+
+    @MainActor
+    func testWhenPlaybackHasProgressedThenResumeURLStartsAtCurrentPosition() {
+        viewModel.updateTimeStamp(timeStamp: 42.7)
+
+        let url = viewModel.getResumeVideoURL()
+
+        let start = URLComponents(url: url!, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "start" }?.value
+        XCTAssertEqual(start, "42")
     }
 
 

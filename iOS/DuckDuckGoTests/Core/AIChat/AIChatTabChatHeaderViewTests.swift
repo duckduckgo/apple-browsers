@@ -351,4 +351,6 @@ private final class SpyAIChatTabChatHeaderViewDelegate: AIChatTabChatHeaderViewD
     func aiChatTabChatHeaderDidTapNewSearch() {}
     func aiChatTabChatHeaderDidTapNewFireTab() {}
     func aiChatTabChatHeaderDidTapTabSwitcher() {}
+    func aiChatTabChatHeaderPlusMenuWillOpen() {}
+    func aiChatTabChatHeaderPlusMenuWillCloseInPlace() {}
 }

@@ -179,7 +179,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUI: Bool = false
     var autoplay: Bool = false
     var customError: Bool = false
-    var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "")
+    var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "", youtubeErrorSelector: nil)
     var nativeUISERPEnabled: Bool = true
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var variant: DuckDuckGo.DuckPlayerVariant = .classicWeb
@@ -468,6 +468,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     var dismissPillCalled = false
     var presentDuckPlayerCalled = false
     var lastTimestampValue: TimeInterval?
+    var onPresentDuckPlayer: ((TimeInterval?) -> Void)?
     var presentDuckPlayerRequest: PassthroughSubject<Void, Never>
     var duckPlayerTimestampUpdate: PassthroughSubject<TimeInterval?, Never>
     var pixelHandler: any DuckDuckGo.DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self
@@ -484,6 +485,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     @MainActor
     func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: any DuckDuckGo.DuckPlayerHosting, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
         presentDuckPlayerCalled = true
+        onPresentDuckPlayer?(timestamp)
         return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
 
@@ -636,9 +638,17 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var isInMinimalChromeLayout: Bool = false
 
-    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
+    var floatingBottomObscuredHeight: CGFloat = 0
+
+    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { floatingBottomObscuredHeight }
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat = 0
 
     var obscuredContentInsets: UIEdgeInsets = .zero
+
+    var findInPageInsets: UIEdgeInsets?
+
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? { findInPageInsets }
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { obscuredContentInsets }
 

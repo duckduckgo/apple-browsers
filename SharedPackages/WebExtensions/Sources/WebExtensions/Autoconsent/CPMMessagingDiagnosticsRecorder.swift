@@ -67,8 +67,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             case contextError(String)
             case contextUnloadFailed(String)
             case extensionFilesRemoveFailed(String)
-            case graveyardHold
-            case graveyardRelease
             case proxyInstalled
             case proxyRemoved
             case interruption
@@ -89,7 +87,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     private(set) var backgroundProcessIsUnresponsive = false
 
     private let featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)?
-    let backgroundWebViewGraveyard: CPMBackgroundWebViewGraveyard
     private var featureFlagsCancellable: AnyCancellable?
 
     private let tabResolver: TabResolver
@@ -126,7 +123,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     /// - Parameters:
     ///   - tabResolver: Maps the health monitor's tab identifier to the tab's web view. Platform-specific.
     ///   - observesMemoryPressure: Disable in tests to avoid installing a dispatch source.
-    ///   - featureFlags: Delegate-proxy and graveyard-treatment switches; `nil` disables graveyard retention.
+    ///   - featureFlags: Delegate-proxy switch; `nil` keeps the proxy enabled.
     public init(tabResolver: @escaping TabResolver,
                 observesMemoryPressure: Bool = true,
                 featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)? = nil,
@@ -135,18 +132,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         self.appSession = appSession
         self.tabResolver = tabResolver
         self.featureFlags = featureFlags
-        self.backgroundWebViewGraveyard = CPMBackgroundWebViewGraveyard(featureFlags: featureFlags)
         self.now = now
         self.backgroundReadinessObserver = CPMBackgroundReadinessObserver(now: now) { [weak featureFlags] in
             featureFlags?.isBackgroundDelegateProxyEnabled ?? true
-        }
-        self.backgroundWebViewGraveyard.lifecycleEventHandler = { [weak self] event in
-            switch event {
-            case .held:
-                self?.record(.graveyardHold)
-            case .released:
-                self?.record(.graveyardRelease)
-            }
         }
         if observesMemoryPressure {
             installMemoryPressureSource()
@@ -227,7 +215,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         // Preserve the latest update across context reloads, without carrying over old-context callbacks.
         backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
         backgroundProcessIsUnresponsive = false
-        backgroundWebViewGraveyard.resetForNewContext()
         record(.contextLoad)
         if let previousContextBaseURL,
            previousContextBaseURL.identifier == context.uniqueIdentifier,
@@ -280,7 +267,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         lastBackgroundLoadError = nil
         lastReportedBackgroundLoadErrors = []
         backgroundReadinessObserver.stopObserving()
-        backgroundWebViewGraveyard.handleContextUnload()
         pruneDeallocatedBackgroundWebViews()
         if !liveBackgroundWebViews.isEmpty {
             Logger.webExtensions.error("[CPM Diagnostics] \(self.liveBackgroundWebViews.count, privacy: .public) background web view(s) still alive after context unload")
@@ -476,7 +462,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             [CPM Diagnostics] Background WebContent process #\(self.backgroundWebViewCreateCount, privacy: .public) died: \
             reason=\(reason?.description ?? "unknown", privacy: .public) pid=\(self.previousBackgroundWebProcessIdentifier.map(String.init) ?? "unknown", privacy: .public)
             """)
-        backgroundWebViewGraveyard.handleProcessTermination(of: webView, reason: reason)
     }
 
     public func backgroundWebViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
@@ -607,8 +592,6 @@ extension CPMMessagingDiagnosticsRecorder.BackgroundEvent.Kind: CustomStringConv
         case .contextError(let descriptor): return "error_\(descriptor)"
         case .contextUnloadFailed(let descriptor): return "context_unload_failed_\(descriptor)"
         case .extensionFilesRemoveFailed(let descriptor): return "extension_files_remove_failed_\(descriptor)"
-        case .graveyardHold: return "hold"
-        case .graveyardRelease: return "release"
         case .proxyInstalled: return "proxy_on"
         case .proxyRemoved: return "proxy_off"
         case .interruption: return "interruption"

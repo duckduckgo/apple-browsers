@@ -97,7 +97,9 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
     var hasAcceptedTermsAndConditions: Bool = false
+    var pageSummariesModel: AIChatPageSummariesModel = .duckAI
 
+    let pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> = Empty().eraseToAnyPublisher()
     let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
@@ -120,6 +122,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
         hasAcceptedTermsAndConditions = false
+        pageSummariesModel = .duckAI
     }
 }
 

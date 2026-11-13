@@ -113,7 +113,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
     @MainActor
     private func makeDataSource(tabsModel: TabsModel? = nil) -> AutocompleteSuggestionsDataSource {
 
-        var mockHistoryCoordinator = NullHistoryCoordinator()
+        let mockHistoryCoordinator = NullHistoryCoordinator()
         mockHistoryCoordinator.history = [
             makeHistory(.appStore, "App Store"),
             makeHistory(.mac, "DDG for macOS")

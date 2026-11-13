@@ -24,6 +24,7 @@ import Onboarding
 import Persistence
 import PrivacyConfig
 import FeatureFlags_iOS
+import Subscription
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet
@@ -63,6 +64,7 @@ final class OnboardingManager {
     private let variantManager: VariantManager
     private let isIphone: Bool
     private let tutorialSettings: TutorialSettings
+    private let subscriptionManager: any SubscriptionManager
     private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
 
@@ -92,6 +94,7 @@ final class OnboardingManager {
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
         onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
@@ -101,6 +104,7 @@ final class OnboardingManager {
         self.isIphone = isIphone
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
         self.tutorialSettings = tutorialSettings
+        self.subscriptionManager = subscriptionManager
         self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
     }
@@ -161,6 +165,7 @@ extension OnboardingIntroStep {
     static let addressBarPositionSelection: Self = .renderable(.addressBarPositionSelection)
     static let searchExperienceSelection: Self = .renderable(.searchExperienceSelection)
     static let duckAIQuerySelection: Self = .renderable(.duckAIQuerySelection)
+    static let tryVPN: Self = .renderable(.tryVPN)
 
     static func introDialog(isReturningUser: Bool) -> Self {
         .renderable(.introDialog(isReturningUser: isReturningUser))
@@ -184,6 +189,7 @@ extension OnboardingIntroStep {
         case addressBarPositionSelection
         case searchExperienceSelection
         case duckAIQuerySelection
+        case tryVPN // VPN download reason: offers the VPN free trial.
     }
 
     /// Identifies which interlude experience the host should run.
@@ -216,6 +222,7 @@ extension OnboardingIntroStep {
         case .renderable(.addressBarPositionSelection): return .addressBarPositionSelection
         case .renderable(.searchExperienceSelection): return .searchExperienceSelection
         case .renderable(.duckAIQuerySelection): return .duckAIQuerySelection
+        case .renderable(.tryVPN): return .tryVPN
         case .interlude(.duckAI): return .interludeDuckAI
         }
     }
@@ -256,6 +263,7 @@ enum OnboardingResumeStep: String {
     case appIconSelection
     case addressBarPositionSelection
     case searchExperienceSelection
+    case tryVPN
     /// User reached the Duck.ai / search selection screen but has not yet submitted a query.
     case duckAIQuerySelection
     /// User submitted a Duck.ai query and is waiting for the Fire onboarding dialog.
@@ -269,11 +277,20 @@ protocol OnboardingStepsProvider: AnyObject {
     var onboardingSteps: [OnboardingIntroStep] { get }
 }
 
-/// Handles the user's answer on the Download Screen shown in the iPhone default flow.
+/// Handles the user's answer on the Download Screen shown in the iPhone default flow, and enrollment in the
+/// `onboardingVPNDownloadReasonExperiment` experiment.
 protocol OnboardingDownloadReasonHandling: AnyObject {
     /// The reason the user selected on the Download Screen, or `nil` before they've answered
     /// (and for flows without the Download Screen). Used to tailor reason-specific content.
     var currentDownloadReason: OnboardingDownloadReason? { get }
+
+    /// Whether the Download Screen offers the VPN reason: only to the experiment's treatment cohort.
+    var isVPNDownloadReasonAvailable: Bool { get }
+
+    /// Enrolls the user in the VPN download-reason experiment if they qualify.
+    ///
+    /// Called when the user taps the intro CTA to start onboarding.
+    func enrollInDownloadReasonVPNExperimentIfNeeded()
 
     /// Records the user's selected download reason and returns the steps that follow the Download Screen.
     ///
@@ -294,6 +311,23 @@ extension OnboardingManager: OnboardingDownloadReasonHandling {
 
     var currentDownloadReason: OnboardingDownloadReason? {
         tutorialSettings.onboardingDownloadReason
+    }
+
+    var isVPNDownloadReasonAvailable: Bool {
+        downloadReasonVPNExperimentCohort == .treatment
+    }
+
+    func enrollInDownloadReasonVPNExperimentIfNeeded() {
+        guard tutorialSettings.onboardingFlowType == .default,
+              isIphone,
+              isNewUser,
+              subscriptionManager.isPurchaseEligibilityKnown,
+              subscriptionManager.isSubscriptionPurchaseEligible,
+              subscriptionManager.isUserEligibleForFreeTrial() else { return }
+
+        guard featureFlagger.resolveCohort(for: FeatureFlag.onboardingVPNDownloadReasonExperiment) != nil else { return }
+
+        sharedPixelsStorage.onboardingFlow = .tailoredByDownloadReasonVPN
     }
 
     func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
@@ -368,9 +402,6 @@ extension OnboardingManager: OnboardingFlowManaging {
         OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
 
         tutorialSettings.onboardingFlowType = resolvedFlow
-        // Enrol the user in the download reason VPN experiment before sending pixels.
-        // Users enrolled in the experiment will override the flow type sent to the pixels to avoid polluting onboarding dashboards.
-        enrollInDownloadReasonVPNExperimentIfNeeded(resolvedFlow: resolvedFlow)
         persistOnboardingPixelContext(flow: resolvedFlow, source: onboardingSource)
     }
 
@@ -402,17 +433,8 @@ private extension OnboardingManager {
         return downloadReasonVPNExperimentCohort != nil
     }
 
-    var downloadReasonVPNExperimentCohort: FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort? {
-        // To update in O-O VPN Experiment. Safe as `FeatureFlag.onboardingFlowByDownloadReasonExperiment` is disabled
-        featureFlagger.assignedCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
-    }
-
-    /// Enrolls default-flow users in the download-reason experiment.
-    func enrollInDownloadReasonVPNExperimentIfNeeded(resolvedFlow: OnboardingFlowType) {
-        // The experiment targets new installers on iPhone. Locale/region targeting is handled remotely
-        // via the feature flag rollout, so it isn't gated here.
-        guard resolvedFlow == .default, isIphone, isNewUser else { return }
-        _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
+    var downloadReasonVPNExperimentCohort: FeatureFlag.OnboardingVPNDownloadReasonExperimentCohort? {
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingVPNDownloadReasonExperiment) as? FeatureFlag.OnboardingVPNDownloadReasonExperimentCohort
     }
 
     /// Persist the flow and source for onboarding pixels based on the evaluated context.
@@ -420,6 +442,9 @@ private extension OnboardingManager {
     func persistOnboardingPixelContext(flow: OnboardingFlowType, source: OnboardingSource) {
         /// iPhone users in the default flow see the flow tailored by download reason, so they are reported under the
         /// `.tailoredByDownloadReason` pixel to keep them separate from iPad users, who still see the standard default flow.
+        /// Users in the VPN download-reason experiment (both arms) are reported under `.tailoredByDownloadReasonVPN`.
+        /// They're normally enrolled later, by `enrollInDownloadReasonVPNExperimentIfNeeded()`, which switches the
+        /// pixel flow itself; this covers a device that's already enrolled.
         func onboardingPixelFlow(for flow: OnboardingFlowType) -> OnboardingPixelParameter.Flow {
             guard flow == .default, isIphone else { return OnboardingPixelParameter.Flow(flow) }
 
@@ -467,6 +492,8 @@ private extension OnboardingManager {
         switch reason {
         case .browserPrivately:
             personalisationSteps = [.searchExperienceSelection]
+        case .vpn:
+            personalisationSteps = [.tryVPN, .searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:

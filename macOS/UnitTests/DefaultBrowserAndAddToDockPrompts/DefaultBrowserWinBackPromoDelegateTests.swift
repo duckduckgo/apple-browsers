@@ -17,6 +17,8 @@
 //
 
 import Combine
+@_spi(Testing) import PixelKit
+import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -28,6 +30,8 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
     private var promptStore: MockDefaultBrowserAndDockPromptStore!
     private var uiHosting: MockDefaultBrowserAndDockPromptUIHosting!
     private var modal: MockDefaultBrowserAndDockPromptModal!
+    private var confirmationMonitor: MockDefaultBrowserConfirmationMonitor!
+    private var pixelFiring: PixelKitMock!
     private var isFeatureEnabled = true
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
     private var capturedTypes: [DefaultBrowserAndDockPromptType] = []
@@ -43,8 +47,10 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         churnState.hasChurnedFromDefault = true
         promptStore = MockDefaultBrowserAndDockPromptStore()
         uiHosting = MockDefaultBrowserAndDockPromptUIHosting()
-        uiHosting.modalAnchor = NSWindow()
+        uiHosting.modalAnchor = MockWindow()
         modal = MockDefaultBrowserAndDockPromptModal()
+        confirmationMonitor = MockDefaultBrowserConfirmationMonitor()
+        pixelFiring = PixelKitMock()
         isFeatureEnabled = true
         capturedTypes = []
         onConfirm = nil
@@ -58,6 +64,8 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         promptStore = nil
         uiHosting = nil
         modal = nil
+        confirmationMonitor = nil
+        pixelFiring = nil
         capturedTypes = []
         onConfirm = nil
         onDismiss = nil
@@ -69,6 +77,8 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
             actionPerformer: actionPerformer,
             churnState: churnState,
             promptStore: promptStore,
+            confirmationMonitor: confirmationMonitor,
+            pixelFiring: pixelFiring,
             isFeatureEnabled: { [unowned self] in isFeatureEnabled },
             uiHosting: { [unowned self] in uiHosting },
             modalFactory: { [unowned self] type, onConfirm, onDismiss in
@@ -84,6 +94,10 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         let delegate = makeDelegate()
         delegate.refreshEligibility()
         return delegate.isEligible
+    }
+
+    private var firedPixels: [DefaultBrowserWinBackPixel] {
+        pixelFiring.actualFireCalls.compactMap { $0.pixel as? DefaultBrowserWinBackPixel }
     }
 
     private func startShow(_ delegate: DefaultBrowserWinBackPromoDelegate) async -> Task<PromoResult, Never> {
@@ -172,6 +186,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(result, .noChange)
         XCTAssertTrue(capturedTypes.isEmpty)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     func testWhenShownThenModalPresentedOverAnchorWithPendingType() async {
@@ -182,6 +197,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(capturedTypes, [.setAsDefaultPrompt])
         XCTAssertTrue(modal.presentedWindow === uiHosting.modalAnchor)
+        XCTAssertEqual(firedPixels, [.shown(type: .setAsDefaultPrompt)])
         delegate.hide()
         _ = await task.value
     }
@@ -195,8 +211,18 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(result, .actioned())
         XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 1)
+        XCTAssertEqual(confirmationMonitor.startClickDates, [now])
         XCTAssertEqual(promptStore.inactiveUserModalShownDate, now.timeIntervalSince1970)
         XCTAssertEqual(modal.dismissCallCount, 0)
+
+        let dismissed = expectation(description: "modal dismissed")
+        modal.didDismiss = { dismissed.fulfill() }
+        actionPerformer.pendingPromptType = nil
+        delegate.hide()
+        await fulfillment(of: [dismissed], timeout: 1)
+
+        XCTAssertEqual(firedPixels, [.shown(type: .bothDefaultBrowserAndDockPrompt),
+                                     .confirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt)])
     }
 
     func testWhenDismissThenIgnored() async throws {
@@ -208,8 +234,11 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(result, .ignored())
         XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 0)
+        XCTAssertTrue(confirmationMonitor.startClickDates.isEmpty)
         XCTAssertEqual(promptStore.inactiveUserModalShownDate, now.timeIntervalSince1970)
         XCTAssertEqual(modal.dismissCallCount, 0)
+        XCTAssertEqual(firedPixels, [.shown(type: .bothDefaultBrowserAndDockPrompt),
+                                     .dismissed(type: .bothDefaultBrowserAndDockPrompt)])
     }
 
     func testWhenHideThenNoChangeAndModalDismissed() async {
@@ -225,6 +254,23 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .noChange)
         XCTAssertEqual(modal.dismissCallCount, 1)
         XCTAssertNil(promptStore.inactiveUserModalShownDate)
+        XCTAssertEqual(firedPixels, [.shown(type: .bothDefaultBrowserAndDockPrompt)])
+    }
+
+    func testWhenHiddenAfterDefaultSetElsewhereThenDefaultSetWithoutPromoActionPixelFires() async {
+        let delegate = makeDelegate()
+        let task = await startShow(delegate)
+        actionPerformer.pendingPromptType = .addToDockPrompt
+        let dismissed = expectation(description: "modal dismissed")
+        modal.didDismiss = { dismissed.fulfill() }
+
+        delegate.hide()
+        let result = await task.value
+        await fulfillment(of: [dismissed], timeout: 1)
+
+        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(firedPixels, [.shown(type: .bothDefaultBrowserAndDockPrompt),
+                                     .defaultSetWithoutPromoAction])
     }
 
     func testWhenButtonTappedAfterHideThenNothingHappens() async throws {
@@ -236,6 +282,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         try XCTUnwrap(onConfirm)()
 
         XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 0)
+        XCTAssertTrue(confirmationMonitor.startClickDates.isEmpty)
         XCTAssertNil(promptStore.inactiveUserModalShownDate)
     }
 }

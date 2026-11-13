@@ -186,18 +186,3 @@ struct LocalModelAccessPromptView: View {
         Color(designSystemColor: color, palette: themeManager.designColorPalette)
     }
 }
-
-/// A stand-in for Apple's artwork, which isn't in the asset catalog yet.
-struct AppleIntelligenceGlyph: View {
-
-    let size: CGFloat
-
-    var body: some View {
-        // Brand colors, not theme colors: the glyph looks the same in light and dark mode.
-        Circle()
-            .strokeBorder(AngularGradient(colors: [.orange, .pink, .purple, .blue, .cyan, .orange], center: .center),
-                          lineWidth: size / 6)
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
-    }
-}

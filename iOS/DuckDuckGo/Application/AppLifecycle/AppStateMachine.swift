@@ -128,7 +128,7 @@ protocol ForegroundHandling {
 protocol BackgroundHandling {
 
     func onTransition()
-    func willLeave()
+    func willLeave(actionToHandle: AppAction?) -> any BackgroundHandling
     func didReturn()
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
@@ -321,7 +321,7 @@ final class AppStateMachine {
             background.didReturn()
             actionToHandle = nil
         case .willEnterForeground:
-            background.willLeave()
+            currentState = .background(background.willLeave(actionToHandle: actionToHandle))
         case .willConnectToWindow(let window): // Please remove once we stop supporting iOS 16
             storeWindowIdentifier(window)
             currentState = .connected(background.makeConnectedState(window: window, actionToHandle: actionToHandle))

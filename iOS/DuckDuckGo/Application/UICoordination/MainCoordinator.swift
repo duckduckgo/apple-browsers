@@ -374,6 +374,24 @@ final class MainCoordinator {
         controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
+    /// Whether a warm return puts up the after-idle New Tab Page before its first frame, given the UI it's returning to.
+    func drawsNewTabPageForIdleReturnOnForeground(outcome: IdleReturnOutcome,
+                                                  isFeatureOn: Bool,
+                                                  hasLaunchAction: Bool,
+                                                  isTabClearingEnabled: Bool) -> Bool {
+        outcome.drawsNewTabPageOnForeground(isFeatureOn: isFeatureOn,
+                                            hasLaunchAction: hasLaunchAction,
+                                            isClearingTabs: isTabClearingEnabled || controller.autoClearInProgress,
+                                            isVoiceSessionActive: voiceSessionStateManager.isVoiceSessionActive,
+                                            hasPageToReplace: tabManager.currentTabsModel.currentTab?.link != nil,
+                                            isScreenPresented: controller.presentedViewController != nil)
+    }
+
+    /// Before a warm return's first frame, so the previous page isn't drawn again first.
+    func drawNewTabPageForIdleReturnOnForeground() {
+        controller.openNewTabPageAfterIdleReturn()
+    }
+
     private func subscribeToDarkReaderChanges() {
         darkReaderFeatureSettings.forceDarkModeChangedPublisher
             .sink { [weak self] _ in
@@ -906,7 +924,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query, fromExternalLink: true, entrance: .fromOutsideTheApp)
+        controller.loadQueryInNewTab(query, reuseExisting: .any, fromExternalLink: true, entrance: .fromOutsideTheApp)
     }
 
     private func handleSearchPassword() {
@@ -987,10 +1005,9 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
-        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true, entrance: .fromOutsideTheApp)
+            self.controller.openNewTabPageAfterIdleReturn()
             completion(.openedNewTab)
         }
     }
@@ -1010,6 +1027,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
         startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+    }
+
+    func releaseHeldNewTabPage() {
+        controller.releaseHeldNewTabPage()
     }
 
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and

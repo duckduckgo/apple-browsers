@@ -35,9 +35,9 @@ env:
   STATUS_OPTIONS: '{"waiting_for_approval": "1220497931497851", "pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
 
 jobs:
-  # Attempt 0 makes the change from the plan. Each fix attempt starts from the previous attempt's patch
-  # and fixes what its verify job reported, up to WORKER_FIX_ROUNDS times (default 2). There are two fix
-  # attempt jobs, so allowing more means adding another one
+  # Attempt 0 makes the change from the plan. When its build, tests or Maestro flow fail, attempt 1 starts
+  # from its patch and fixes what failed, and attempt 2 does the same after attempt 1. For more fix
+  # attempts, add another job like attempt-2 and add it to final
   attempt-0:
     uses: ./.github/workflows/agent-worker-attempt.yml
     with:
@@ -52,7 +52,7 @@ jobs:
 
   attempt-1:
     needs: attempt-0
-    if: needs.attempt-0.outputs.ok == 'false' && fromJSON(vars.WORKER_FIX_ROUNDS || '2') >= 1
+    if: needs.attempt-0.outputs.ok == 'false'
     uses: ./.github/workflows/agent-worker-attempt.yml
     with:
       task_gid: ${{ inputs.task_gid }}
@@ -66,7 +66,7 @@ jobs:
 
   attempt-2:
     needs: attempt-1
-    if: needs.attempt-1.outputs.ok == 'false' && fromJSON(vars.WORKER_FIX_ROUNDS || '2') >= 2
+    if: needs.attempt-1.outputs.ok == 'false'
     uses: ./.github/workflows/agent-worker-attempt.yml
     with:
       task_gid: ${{ inputs.task_gid }}

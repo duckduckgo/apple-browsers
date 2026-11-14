@@ -386,7 +386,6 @@ jobs:
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TASK_GID: ${{ inputs.task_gid }}
-          FIX_ROUNDS: ${{ vars.WORKER_FIX_ROUNDS || '2' }}
         run: |
           mkdir -p "$RUNNER_TEMP/verify"
           ROOT_URL="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX" \

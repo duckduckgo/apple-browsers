@@ -2,8 +2,8 @@
 """Write verify.md, the one page an approver reads before a draft PR is opened.
 
 Usage: verify_md.py <plan dir> <out dir>
-Env: ROOT_URL (the run's evidence, with an r<N>/ prefix per attempt), ROUND (this attempt), FIX_ROUNDS,
-RUN_URL, TASK_GID
+Env: ROOT_URL (the run's evidence, with an r<N>/ prefix per attempt), ROUND (this attempt), RUN_URL,
+TASK_GID
 
 Combines the agent's result.json, pr.md, changes.patch and plan-notes.txt from plan dir with the build,
 test and screen results that verify.sh wrote to results.md in out dir. Writes nothing to the log
@@ -49,7 +49,7 @@ def main():
     if attempt:
         earlier = ", ".join(f"[{'first attempt' if n == 0 else f'fix attempt {n}'}]({root}/r{n}/verify/verify.md)"
                             for n in range(attempt))
-        md += [f"This is fix attempt {attempt} of up to {e.get('FIX_ROUNDS', '?')}. The agent fixed what failed "
+        md += [f"This is fix attempt {attempt}. The agent fixed what failed "
                f"in the earlier results: {earlier}.", ""]
 
     md += ["## Summary", "", (r.get("result") or "").strip() or "The agent left no summary.", ""]

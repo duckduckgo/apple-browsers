@@ -1,0 +1,162 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a subscription cancellation journey, from the moment an auto-renewing subscriber taps Cancel Subscription, Manage Subscription, Manage Payment or Cancel, or Change Plan in Subscription Settings. It ends when a subscription change within 24 hours of the tap shows auto-renew turned off or the subscription expired (SUCCESS), the plan changed (CANCELLED), or no subscription or unreadable data (UNKNOWN). After 24 hours it ends as UNKNOWN timeout, whatever the subscription shows. It ends as FAILURE when an error stops the user from cancelling and no other cancellation path is shown; errors that fall back to another path are sent with the eventual outcome.",
+    "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-subscription-cancellation" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["subscription-cancellation"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Why the journey ended: `not_auto_renewable` or `expired` on SUCCESS; `plan_changed` (product changed; deferred changes are not detected) on CANCELLED; `timeout`, `no_subscription` or `partial_data` on UNKNOWN. Not sent on FAILURE.",
+                                    "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "partial_data"]
+                                },
+                                "entry_point": {
+                                    "type": "string",
+                                    "description": "The Subscription Settings button that started the journey.",
+                                    "enum": ["cancel_subscription", "manage_subscription", "manage_payment_or_cancel", "change_plan"]
+                                },
+                                "purchase_platform": {
+                                    "type": "string",
+                                    "description": "Platform the subscription was purchased on.",
+                                    "enum": ["app_store", "stripe"]
+                                },
+                                "is_trial": {
+                                    "type": "boolean",
+                                    "description": "Whether the subscription had an active free trial offer at the entry tap."
+                                },
+                                "manage_subscription_sheet_shown": {
+                                    "type": "boolean",
+                                    "description": "Whether the App Store manage subscription sheet or the Stripe portal was shown in the app during the journey."
+                                },
+                                "subscription_identifier": {
+                                    "type": "string",
+                                    "description": "Product identifier of the subscription at the entry tap, e.g. ddg.privacy.pro.monthly.renews.us."
+                                },
+                                "days_since_purchase_bucketed": {
+                                    "type": "string",
+                                    "description": "Days between the subscription start and the entry tap, bucketed.",
+                                    "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+                                },
+                                "days_until_renewal_bucketed": {
+                                    "type": "string",
+                                    "description": "Days between the entry tap and the subscription's next renewal or expiry date, bucketed.",
+                                    "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+                                },
+                                "error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "error_description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

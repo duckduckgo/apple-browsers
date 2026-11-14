@@ -27,12 +27,15 @@ import VPN
 actor WideEventService {
     private let wideEvent: WideEventManaging
     private let subscriptionManager: SubscriptionManager
+    private let subscriptionCancellationObserver: SubscriptionCancellationWideEventObserving
 
     private var isProcessing = false
 
     init(wideEvent: WideEventManaging, subscriptionManager: SubscriptionManager) {
         self.wideEvent = wideEvent
         self.subscriptionManager = subscriptionManager
+        self.subscriptionCancellationObserver = Self.makeSubscriptionCancellationObserver(wideEvent: wideEvent,
+                                                                                         subscriptionManager: subscriptionManager)
     }
 
     nonisolated func resume() {
@@ -55,6 +58,7 @@ actor WideEventService {
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
         await processCompletion(PostIdleSessionWideEventData.self, trigger: trigger)
         await processCompletion(NewTabPageSessionWideEventData.self, trigger: trigger)
+        await processCompletion(SubscriptionCancellationWideEventData.self, trigger: trigger)
 
         if includingLaunchOnlyEvents {
             // Launch-only: only a cold launch proves a still-pending refresh is genuinely stalled.
@@ -91,6 +95,19 @@ actor WideEventService {
         } catch {
             return false
         }
+    }
+}
+
+extension WideEventService {
+
+    private static func makeSubscriptionCancellationObserver(wideEvent: WideEventManaging,
+                                                             subscriptionManager: SubscriptionManager) -> SubscriptionCancellationWideEventObserving {
+        let observer = SubscriptionCancellationWideEventObserver(
+            wideEvent: wideEvent,
+            subscriptionFetcher: { try await subscriptionManager.getSubscription() }
+        )
+        observer.startObservingSubscriptionChanges()
+        return observer
     }
 }
 

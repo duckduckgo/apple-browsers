@@ -788,6 +788,90 @@
             }
         ]
     },
+    "m_ios_wide_subscription_cancellation": {
+        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription change within 24 hours of the entry tap shows the outcome, when an error with no other cancellation path stops the user, or when 24 hours pass",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-subscription-cancellation"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["subscription-cancellation"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason for the outcome: not_auto_renewable or expired on SUCCESS; plan_changed (product changed; deferred changes are not detected) on CANCELLED; timeout, no_subscription or partial_data on UNKNOWN; none on FAILURE",
+                "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "partial_data"]
+            },
+            {
+                "key": "feature.data.ext.entry_point",
+                "type": "string",
+                "description": "The Subscription Settings button that started the journey",
+                "enum": ["cancel_subscription", "manage_subscription", "manage_payment_or_cancel", "change_plan"]
+            },
+            {
+                "key": "feature.data.ext.purchase_platform",
+                "type": "string",
+                "description": "Platform the subscription was purchased on",
+                "enum": ["app_store", "stripe"]
+            },
+            {
+                "key": "feature.data.ext.is_trial",
+                "type": "boolean",
+                "description": "Whether the subscription had an active free trial offer at the entry tap"
+            },
+            {
+                "key": "feature.data.ext.manage_subscription_sheet_shown",
+                "type": "boolean",
+                "description": "Whether the App Store manage subscription sheet or the Stripe portal was shown in the app during the journey"
+            },
+            {
+                "key": "feature.data.ext.subscription_identifier",
+                "type": "string",
+                "description": "Product identifier of the subscription at the entry tap, e.g. ddg.privacy.pro.monthly.renews.us"
+            },
+            {
+                "key": "feature.data.ext.days_since_purchase_bucketed",
+                "type": "string",
+                "description": "Days between the subscription start and the entry tap, bucketed",
+                "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+            },
+            {
+                "key": "feature.data.ext.days_until_renewal_bucketed",
+                "type": "string",
+                "description": "Days between the entry tap and the next renewal or expiry date, bucketed",
+                "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+            },
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Part of the shared error parameters; not set by this event, which reports only the error domain and code"
+            }
+        ]
+    },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
     "m_ios_wide_auth_v2_token_refresh": {
         "description": "Wide pixel sent after an AuthV2 token refresh",

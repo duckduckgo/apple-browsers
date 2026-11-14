@@ -53,6 +53,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
+    private var shouldRefreshAfterStripePortal = false
     let withdrawal: SubscriptionWithdrawalModel
     private var withdrawalCancellable: AnyCancellable?
 
@@ -184,7 +185,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     func cancelSubscriptionTapped() {
-        cancellationInstrumentation.cancelClicked()
+        cancellationInstrumentation.cancelSubscriptionTapped(subscription: state.subscriptionInfo)
+    }
+
+    private var manageEntryPoint: SubscriptionCancellationWideEventData.EntryPoint {
+        if isAppleSubscriptionWithCancellationFlowEnabled {
+            return .manageSubscription
+        }
+        return featureFlagger.isFeatureOn(.allowProTierPurchase) ? .managePaymentOrCancel : .changePlan
     }
 
     @MainActor
@@ -238,7 +246,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          locale: Locale = .current,
-         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation(),
+         cancellationInstrumentation: SubscriptionCancellationInstrumenting? = nil,
          withdrawalInstrumentation: SubscriptionWithdrawalInstrumenting = SubscriptionWithdrawalInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
@@ -248,7 +256,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
         self.locale = locale
-        self.cancellationInstrumentation = cancellationInstrumentation
+        self.cancellationInstrumentation = cancellationInstrumentation ?? SubscriptionCancellationInstrumentation(wideEvent: wideEvent)
         self.withdrawal = SubscriptionWithdrawalModel(subscriptionManager: subscriptionManager,
                                                       featureFlagger: featureFlagger,
                                                       locale: locale,
@@ -382,6 +390,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return
         }
 
+        cancellationInstrumentation.manageSubscriptionTapped(entryPoint: manageEntryPoint, subscription: state.subscriptionInfo)
+
         switch platform {
         case .apple:
             Task {
@@ -390,6 +400,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         case .google:
             displayGoogleView(true)
         case .stripe:
+            shouldRefreshAfterStripePortal = true
             Task { await manageStripeSubscription() }
         case .unknown:
             manageInternalSubscription()
@@ -567,6 +578,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         if value != state.isShowingStripeView {
             state.isShowingStripeView = value
         }
+        if !value, shouldRefreshAfterStripePortal {
+            shouldRefreshAfterStripePortal = false
+            Task { @MainActor in
+                _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
+            }
+        }
     }
 
     func displayInternalSubscriptionNotice(_ value: Bool) {
@@ -624,8 +641,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 do {
                     try await AppStore.showManageSubscriptions(in: windowScene)
+                    cancellationInstrumentation.manageSubscriptionSheetShown()
                     await refetchAndDetectCancellation(since: subscriptionBefore, entry: entry)
                 } catch {
+                    cancellationInstrumentation.appStoreSheetFailed(error)
                     self.openURL(url)
                 }
             } else {
@@ -650,6 +669,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         do {
             // Get Stripe Customer Portal URL and update the model
             let url = try await subscriptionManager.getCustomerPortalURL()
+            cancellationInstrumentation.manageSubscriptionSheetShown()
             if let existingModel = state.stripeViewModel {
                 existingModel.url = url
             } else {
@@ -663,6 +683,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
         } catch {
             Logger.subscription.error("Failed to get Stripe customer portal URL: \(error, privacy: .public)")
+            cancellationInstrumentation.stripePortalFailed(error)
         }
         Task { @MainActor in
             self.displayStripeView(true)

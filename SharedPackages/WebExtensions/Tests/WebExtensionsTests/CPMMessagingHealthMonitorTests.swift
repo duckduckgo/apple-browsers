@@ -158,21 +158,19 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     }
 
     func testDuckPlayerVideoIsNotMeasured() {
-        let embed = URL(string: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")!
-        monitor.handle(.navigationCommitted(tabIdentifier: "a", url: embed, navigationKind: .other, extensionIsLoaded: true))
+        commit("a", path: "embed/video", kind: .duckPlayerVideo)
         advance(100)
         monitor.handle(.interruptionEnded)
 
         XCTAssertTrue(pixels.breakages.isEmpty)
     }
 
-    func testOtherYoutubeNoCookiePagesAreStillMeasured() {
-        let page = URL(string: "https://www.youtube-nocookie.com/other")!
-        monitor.handle(.navigationCommitted(tabIdentifier: "a", url: page, navigationKind: .other, extensionIsLoaded: true))
-        advance(100)
-        monitor.handle(.interruptionEnded)
-
-        XCTAssertEqual(pixels.breakages, [.one])
+    func testOnlyAnOrdinaryNavigationBecomesADuckPlayerVideo() {
+        XCTAssertEqual(CPMNavigationKind.other.resolved(isDuckPlayerVideo: true), .duckPlayerVideo)
+        XCTAssertEqual(CPMNavigationKind.other.resolved(isDuckPlayerVideo: false), .other)
+        for kind in [CPMNavigationKind.sessionRestoration, .backForward, .errorPage, .nonHTMLDocument] {
+            XCTAssertEqual(kind.resolved(isDuckPlayerVideo: true), kind)
+        }
     }
 
     func testOnlyAnOrdinaryNavigationBecomesANonHTMLDocument() {

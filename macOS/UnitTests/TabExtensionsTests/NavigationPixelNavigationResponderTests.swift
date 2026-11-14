@@ -116,6 +116,17 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     }
 
     @MainActor
+    func testCPMNavigationKindOfADuckPlayerVideoIsDuckPlayerVideo() {
+        let embed = URL(string: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")!
+        let otherPage = URL(string: "https://www.youtube-nocookie.com/other")!
+
+        XCTAssertEqual(makeNavigation(types: [.other], url: embed).cpmMessagingNavigationKind, .duckPlayerVideo)
+        XCTAssertEqual(makeNavigation(types: [.other], url: otherPage).cpmMessagingNavigationKind, .other)
+        XCTAssertEqual(makeNavigation(types: [.backForward(distance: -1)], url: embed).cpmMessagingNavigationKind, .backForward)
+        XCTAssertEqual(makeNavigation(types: [.alternateHtmlLoad], url: embed).cpmMessagingNavigationKind, .errorPage)
+    }
+
+    @MainActor
     func testCPMNavigationKindOfADocumentThatIsNotHTMLIsNonHTMLDocument() {
         for mimeType in ["application/pdf", "image/png", "video/mp4", "text/plain", "application/json"] {
             XCTAssertEqual(Navigation.cpmMessagingNavigationKind(isErrorPage: false, initialNavigationType: .other, responseMimeType: mimeType),
@@ -143,12 +154,12 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
 
     /// A navigation whose actions have the given types, the last one being the current action.
     @MainActor
-    private func makeNavigation(types: [NavigationType]) -> Navigation {
+    private func makeNavigation(types: [NavigationType], url: URL = URL(string: "https://example.com/page")!) -> Navigation {
         let webView = WKWebView()
         let frame = FrameInfo.mainFrame(for: webView)
         let actions = types.map { type in
             NavigationAction(
-                request: URLRequest(url: URL(string: "https://example.com/page")!),
+                request: URLRequest(url: url),
                 navigationType: type,
                 currentHistoryItemIdentity: nil,
                 redirectHistory: nil,

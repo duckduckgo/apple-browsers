@@ -181,6 +181,31 @@ class TabTests: XCTestCase {
     }
 
     @available(iOS 18.4, *)
+    func testCPMCommitEventOfADuckPlayerVideoIsADuckPlayerVideoOnlyForAnOrdinaryNavigation() {
+        let embed = URL(string: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")!
+        let otherPage = URL(string: "https://www.youtube-nocookie.com/other")!
+        let cases: [(URL, CPMNavigationKind, CPMNavigationKind)] = [
+            (embed, .other, .duckPlayerVideo),
+            (embed, .backForward, .backForward),
+            (embed, .nonHTMLDocument, .nonHTMLDocument),
+            (otherPage, .other, .other)
+        ]
+        for (url, committingKind, expectedKind) in cases {
+            let event = TabViewController.cpmCommitEvent(tabIdentifier: "tab",
+                                                         url: url,
+                                                         isLinkPreview: false,
+                                                         isErrorPage: false,
+                                                         committingNavigationKind: committingKind,
+                                                         extensionIsLoaded: true)
+
+            guard case .navigationCommitted(_, _, let kind, _) = event else {
+                return XCTFail("Expected a navigationCommitted event for \(url)")
+            }
+            XCTAssertEqual(kind, expectedKind, "\(url) committed as \(committingKind)")
+        }
+    }
+
+    @available(iOS 18.4, *)
     func testCPMCommitEventOfTheErrorPageIsAnErrorPageWhateverTheCommittingKind() {
         let event = TabViewController.cpmCommitEvent(tabIdentifier: "tab",
                                                      url: URL(string: "https://example.com")!,

@@ -131,6 +131,8 @@ final class PrivacyDashboardTabExtension {
         }
     }
 
+    /// Backstop for tabs that never reach the tab-close hook (the AI Chat sidebar tab, a modal tab): they are not in
+    /// a tab collection, so releasing them is the only sign that they are gone.
     deinit {
         DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, tabIdentifier] in
             guard #available(macOS 15.4, *) else { return }
@@ -281,15 +283,24 @@ extension Navigation {
     /// Resolves CPM attribution from the first action in a logical navigation.
     /// The current action may describe a redirect rather than the initiating restoration or history load.
     var cpmMessagingNavigationKind: CPMNavigationKind {
+        Self.cpmMessagingNavigationKind(isErrorPage: navigationAction.navigationType == .alternateHtmlLoad,
+                                        initialNavigationType: (redirectHistory.first ?? navigationAction).navigationType,
+                                        responseMimeType: navigationResponse?.response.mimeType)
+    }
+
+    static func cpmMessagingNavigationKind(isErrorPage: Bool,
+                                           initialNavigationType: NavigationType,
+                                           responseMimeType: String?) -> CPMNavigationKind {
         // The error page is loaded as alternate HTML for the failed URL: it reports that http(s) URL but runs no content scripts.
-        if navigationAction.navigationType == .alternateHtmlLoad {
+        if isErrorPage {
             return .errorPage
         }
-        let initialNavigationType = (redirectHistory.first ?? navigationAction).navigationType
         if initialNavigationType == .sessionRestoration {
             return .sessionRestoration
         }
-        return initialNavigationType.isBackForward ? .backForward : .other
+        // The response of the navigation is known at commit and tells a non-HTML document from a page.
+        let kind: CPMNavigationKind = initialNavigationType.isBackForward ? .backForward : .other
+        return kind.resolved(forMimeType: responseMimeType)
     }
 }
 

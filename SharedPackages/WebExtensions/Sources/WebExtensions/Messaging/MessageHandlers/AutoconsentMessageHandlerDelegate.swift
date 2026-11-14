@@ -81,6 +81,14 @@ public struct ConsentStatusInfo {
         self.cpmConfigVersion = consentStatus["cpmConfigVersion"] as? String
     }
 
+    /// The extension's stages in which it is running but will never answer the page's init.
+    static let unanswerableCPMStages: Set<String> = ["config_unavailable", "settings_missing"]
+
+    /// Whether the extension said it cannot answer the page's init: no configuration, or no settings.
+    var cpmCannotAnswerPage: Bool {
+        cpmStage.map(Self.unanswerableCPMStages.contains) ?? false
+    }
+
     private static func cappedCPMErrors(_ errors: String) -> String {
         String(errors.prefix(maximumCPMErrorsLength))
     }

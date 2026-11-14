@@ -23,6 +23,20 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
+    func testBreakageUsesCanonicalPixelKitContract() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(tabs: .many))
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_macos")
+        XCTAssertEqual(call.pixel.namePrefix, .none)
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.parameters, ["tabs": "many"])
+        XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+        XCTAssertNil(call.additionalParameters)
+        XCTAssertTrue(call.includeAppVersionParameter)
+    }
+
     func testUpdatePixelsUseOnlyAllowedParameters() throws {
         for pixelExtension in WebExtensionPixelExtension.allCases {
             var cases: [(WebExtensionPixelEvent, String, [String: String])] = [
@@ -146,6 +160,45 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             let call = try XCTUnwrap(pixels.actualFireCalls.first)
             pixelKit.fire(call.pixel, frequency: call.frequency)
             XCTAssertEqual(names, [expectedName + "_daily", expectedName + "_count"])
+        }
+    }
+
+    func testPersistentBreakageUsesDailyAndCountWithoutCustomParameters() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakagePersistent)
+
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_persistent_macos")
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.namePrefix, .none)
+        XCTAssertTrue((call.pixel.parameters ?? [:]).isEmpty)
+        XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+        XCTAssertNil(call.additionalParameters)
+        XCTAssertTrue(call.includeAppVersionParameter)
+    }
+
+    func testPersistentBreakageWireNamesMatchDefinitions() throws {
+        let sources: [PixelKit.Source] = [.macDMG, .macStore]
+        for source in sources {
+            let pixels = PixelKitMock()
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakagePersistent)
+            let call = try XCTUnwrap(pixels.actualFireCalls.first)
+            let suite = "\(#function)-\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            var names: [String] = []
+            let pixelKit = PixelKit(dryRun: false,
+                                    appVersion: "1.0.0",
+                                    source: source.rawValue,
+                                    defaultHeaders: [:],
+                                    pixelCalendar: nil,
+                                    defaults: defaults) { name, _, _, _, _, completion in
+                names.append(name)
+                completion(true, nil)
+            }
+            pixelKit.fire(call.pixel, frequency: call.frequency)
+            XCTAssertEqual(names, ["web_extension_cpm_breakage_persistent_macos_daily", "web_extension_cpm_breakage_persistent_macos_count"])
         }
     }
 

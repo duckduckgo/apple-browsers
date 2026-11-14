@@ -7917,6 +7917,9 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didCloseTab(tab)
+        }
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
         refreshTabBar()

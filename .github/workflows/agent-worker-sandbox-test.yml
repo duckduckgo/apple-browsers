@@ -53,6 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/identity" && echo "dummy-token" > "$RUNNER_TEMP/identity/token"
+          # srt points TMPDIR here for sandboxed commands
+          mkdir -p /tmp/claude
           python3 - <<'PY'
           import json, os
           ws, tmp = os.environ["GITHUB_WORKSPACE"], os.environ["RUNNER_TEMP"]
@@ -60,8 +62,9 @@ jobs:
               "network": {"allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com"], "deniedDomains": []},
               "filesystem": {
                   "denyRead": [f"{tmp}/identity"],
-                  "allowWrite": [ws, tmp, os.path.expanduser("~/Library/Developer"), os.path.expanduser("~/Library/Caches"),
-                                 "/private/tmp", "/private/var/folders"],
+                  "allowWrite": [ws, tmp, "/private/tmp", "/private/var/folders"] + [os.path.expanduser(p) for p in (
+                      "~/Library/Developer", "~/Library/Caches", "~/Library/Logs", "~/Library/org.swift.swiftpm",
+                      "~/.swiftpm", "~/.cache")],
                   "denyWrite": [],
               },
           }
@@ -89,7 +92,7 @@ jobs:
         run: |
           set -o pipefail
           srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
-            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO" 2>&1 | tee "$RUNNER_TEMP/build.log" | tail -40
+            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO" 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*sandbox|BUILD|Operation not permitted|couldNot" | sort | uniq -c | sort -rn | head -40
 
       - name: One unit test under the sandbox
         if: steps.build.outcome == 'success'

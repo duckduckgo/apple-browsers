@@ -70,7 +70,6 @@ public final class TranslationManifestStore: @unchecked Sendable {
             try keyValueStore.set(data, forKey: Key.manifest)
             try keyValueStore.set(response.value(forHTTPHeaderField: "ETag"), forKey: Key.etag)
         } catch {
-            // TODO: fire a pixel so failed saves are visible outside Console.
             Logger.webPageTranslation.error("Saving the translation manifest failed: \(error.localizedDescription, privacy: .public)")
         }
         return manifest

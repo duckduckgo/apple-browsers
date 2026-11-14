@@ -31,14 +31,16 @@ def a(url, text):
 
 def evidence(e):
     ev = e.get("EVIDENCE_URL", "").rstrip("/")
-    return ev, (f"{a(ev + '/result.md', 'result.md')} (the agent's summary)" if ev else "the evidence linked in the run summary")
+    return ev, (a(ev + "/summary.md", "summary") if ev else "the summary linked in the run summary")
 
 
 def approval_comment(e):
     ev, summary = evidence(e)
-    patch = f"{a(ev + '/changes.patch', 'changes.patch')} (the change) and " if ev else ""
-    return ("<body><strong>The agent made a change. It needs approval before a draft PR is opened.</strong>\n"
-            f"<ol><li>Review {patch}{summary}.</li>"
+    change = f" and the {a(ev + '/changes.patch', 'change')}" if ev else ""
+    return ("<body><strong>The agent made a change. Please review it before a draft PR is opened.</strong>\n"
+            f"<ol><li>Read the agent's {summary}{change}.</li>"
+            "<li>Check that nothing sensitive would go into the public PR: no user data, crash details, "
+            "internal links or internal names in the code, comments or PR text.</li>"
             f"<li>Open the {a(e['RUN_URL'], 'worker run')} and click <strong>Review deployments</strong>.</li>"
             "<li>Tick <strong>agent-publish</strong>, then click <strong>Approve and deploy</strong> to open the draft PR, "
             "or <strong>Reject</strong> to drop the change.</li></ol>"
@@ -60,7 +62,7 @@ def outcome(e):
     if e["AGENT"] != "success":
         _, summary = evidence(e)
         return "needs_attention", ("<body><strong>The agent failed or made no change.</strong>\n"
-                                   f"<ol><li>Open the {run} and {summary} to see why.</li>"
+                                   f"<ol><li>Open the {run} and the agent's {summary} to see why.</li>"
                                    "<li>Fix the cause, or add what the agent needs as a comment.</li>" + RETRY + "</ol></body>")
     return "needs_attention", ("<body><strong>The agent's change wasn't published.</strong> The approval was rejected or the publish step failed.\n"
                                f"<ol><li>Open the {run} to see which.</li>" + RETRY + "</ol></body>")

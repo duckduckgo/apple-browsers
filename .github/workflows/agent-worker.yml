@@ -181,8 +181,8 @@ jobs:
               --disallowedTools "Bash,WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
               --max-turns 50 --output-format json \
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
-          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/result_md.py" \
-            "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence/result.md" "$rc" || true
+          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/summary_md.py" \
+            "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence" "$rc" || true
           echo "rc=$rc" >> "$GITHUB_ENV"
 
       - name: Export changes as a patch
@@ -195,11 +195,11 @@ jobs:
           git add -A
           git diff --cached --binary > "$RUNNER_TEMP/evidence/changes.patch"
           if [[ ! -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
-            printf '\n## Changes\n\nNone, so nothing will be published.\n' >> "$RUNNER_TEMP/evidence/result.md"
+            printf '\n## Changes\n\nNone, so nothing will be published.\n' >> "$RUNNER_TEMP/evidence/summary.md"
             echo "::error::agent made no changes"
             exit 1
           fi
-          { printf '\n## Changes\n\n```\n'; git diff --cached --stat; printf '```\n'; } >> "$RUNNER_TEMP/evidence/result.md"
+          { printf '\n## Changes\n\n```\n'; git diff --cached --stat; printf '```\n'; } >> "$RUNNER_TEMP/evidence/summary.md"
           if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
             echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
             exit 1
@@ -220,6 +220,11 @@ jobs:
         if: always() && steps.anthropic.outcome == 'success'
         run: |
           set -euo pipefail
+          # The run details go last in summary.md
+          if [[ -f "$RUNNER_TEMP/evidence/run-details.md" ]]; then
+            cat "$RUNNER_TEMP/evidence/run-details.md" >> "$RUNNER_TEMP/evidence/summary.md"
+            rm "$RUNNER_TEMP/evidence/run-details.md"
+          fi
           az storage blob upload-batch --auth-mode login --only-show-errors \
             --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
             --destination-path "$EVIDENCE_PREFIX" --source "$RUNNER_TEMP/evidence" > /dev/null
@@ -233,7 +238,7 @@ jobs:
             else
               echo "**No patch, so nothing will be published (SSO):**"
             fi
-            echo "- [result.md]($url/result.md) (agent result, readable)"
+            echo "- [summary.md]($url/summary.md) (the agent's summary and run details)"
             echo "- [result.json]($url/result.json) (raw agent output)"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -322,7 +327,7 @@ jobs:
             --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
             --name "$EVIDENCE_PREFIX/pr.md" --file "$RUNNER_TEMP/pr.md" > /dev/null 2>&1 || echo "no PR text from the agent"
 
-      # The agent's title and description, as the approver saw them in result.md, or a fallback
+      # The agent's title and description, as the approver saw them in summary.md, or a fallback
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}

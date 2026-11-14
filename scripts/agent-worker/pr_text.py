@@ -3,12 +3,12 @@
 
 Usage:
   pr_text.py extract <repo dir> <evidence dir>   Move the agent's .agent-pr.md out of the checkout into
-                                                 evidence as pr.md, cleaned, and add it to result.md
+                                                 evidence as pr.md, cleaned, and add it to summary.md
   pr_text.py render <pr.md> <out dir>            Write title.txt and body.md for gh pr create
                                                  (env: TASK_GID, RUN_URL, RUN_ID)
 
 The PR is public, so lines with links are dropped and the title is one plain line. The person who
-approves agent-publish sees the text in result.md before it's used
+approves agent-publish sees the text in summary.md before it's used
 """
 
 import os
@@ -47,7 +47,7 @@ def extract(repo, evidence):
     text = "\n".join([title, ""] + body).rstrip() + "\n"
     with open(os.path.join(evidence, "pr.md"), "w") as f:
         f.write(text)
-    with open(os.path.join(evidence, "result.md"), "a") as f:
+    with open(os.path.join(evidence, "summary.md"), "a") as f:
         f.write(f"\n## Pull request\n\n**Title:** {title}\n\n" + "\n".join(body).strip() + "\n")
     print("PR text saved to evidence")
 

@@ -42,7 +42,7 @@ def approval_comment(e):
     else:
         change = f" and the {a(ev + '/changes.patch', 'change')}" if ev else ""
         review = f"Review the agent's {summary}{change} (the worker couldn't build or test it)"
-    return ("<body><strong>The agent made a change. Please review it before a draft PR is opened.</strong>\n"
+    return ("<body><strong>The agent has a proposed fix ready for review.</strong> Nothing is published until it's approved.\n"
             f"<ol><li>{review}. Check that the fix makes sense and that nothing sensitive would go into the public PR, "
             "such as user data, crash details or internal links and names.</li>"
             f"<li>Approve the {a(e['RUN_URL'], 'worker run')} to open the PR: click <strong>Review deployments</strong>, "

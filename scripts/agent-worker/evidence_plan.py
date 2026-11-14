@@ -5,7 +5,7 @@ Usage: evidence_plan.py extract <repo dir> <evidence dir>
 
 Moves .agent-evidence/tests.txt and .agent-evidence/flow.yaml out of the checkout so they never go into
 the patch. Accepted ones are saved to evidence for the verify job. Rejected ones are dropped and the
-reason is added to summary.md, so a bad flow never stops the build or tests
+reason goes to plan-notes.txt and summary.md, so a bad flow never stops the build or tests
 """
 
 import os
@@ -86,6 +86,9 @@ def extract(repo, evidence):
 
     if os.path.isdir(src):
         shutil.rmtree(src)
+    if notes:
+        with open(os.path.join(evidence, "plan-notes.txt"), "w") as f:
+            f.write("\n".join(f"- {n}" for n in notes) + "\n")
     with open(os.path.join(evidence, "summary.md"), "a") as f:
         f.write("\n## Evidence plan\n\n")
         f.write(("Tests: " + ", ".join(f"`{t}`" for t in tests)) if tests else "Tests: none")

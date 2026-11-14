@@ -139,8 +139,12 @@ jobs:
             echo "    - tapOn: \"Settings\""
             echo "    - takeScreenshot: settings"
             echo "    - stopRecording"
-            echo "  Skip flow.yaml when the fix has nothing to see, such as a race or a nil check, and say why in your"
-            echo "  final message."
+            echo "  TEMP: always write flow.yaml, even when the fix has nothing to see. Then open the app, go to the"
+            echo "  screen nearest the code you changed and record it."
+            echo
+            echo "Your final message goes to the approver on one page with the build, test and recording results."
+            echo "Explain the cause, the fix, why it's safe, and any risk or follow-up. Don't mention building, testing"
+            echo "or recording, since those results are on the same page."
             echo
             echo "When you're done, write .agent-pr.md at the repository root for the pull request, which is public:"
             echo "the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does,"
@@ -309,8 +313,9 @@ jobs:
       - name: Download patch and evidence plan
         run: |
           set -euo pipefail
+          echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/plan"
-          for f in changes.patch tests.txt flow.yaml; do
+          for f in changes.patch tests.txt flow.yaml result.json pr.md plan-notes.txt; do
             az storage blob download --auth-mode login --only-show-errors \
               --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
               --name "$EVIDENCE_PREFIX/$f" --file "$RUNNER_TEMP/plan/$f" > /dev/null 2>&1 || echo "no $f"
@@ -371,6 +376,17 @@ jobs:
           env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN UDID="$UDID" PACKAGES="$RUNNER_TEMP/packages" \
             bash "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify.sh" "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
 
+      # One page for the approver: the agent's summary, the proposed PR, the changes and the results
+      - name: Write verify.md
+        if: always()
+        env:
+          EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TASK_GID: ${{ inputs.task_gid }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/verify"
+          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify_md.py" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
+
       - name: Azure login again (GitHub OIDC)
         if: always()
         uses: azure/login@v2
@@ -388,9 +404,8 @@ jobs:
           az storage blob upload-batch --auth-mode login --only-show-errors \
             --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
             --destination-path "$EVIDENCE_PREFIX/verify" --source "$RUNNER_TEMP/verify" > /dev/null
-          url="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "- [verify.md]($url/verify.md) (build, tests and screens, SSO)" >> "$GITHUB_STEP_SUMMARY"
+          echo "url=$VERIFY_URL" >> "$GITHUB_OUTPUT"
+          echo "**Review [verify.md]($VERIFY_URL/verify.md) before approving agent-publish (SSO)**" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Azure logout
         if: always()

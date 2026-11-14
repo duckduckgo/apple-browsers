@@ -36,13 +36,16 @@ def evidence(e):
 
 def approval_comment(e):
     ev, summary = evidence(e)
-    change = f" and the {a(ev + '/changes.patch', 'change')}" if ev else ""
     vu = e.get("VERIFY_URL", "").rstrip("/")
-    verify = (f"<li>Check the {a(vu + '/verify.md', 'build, test and screen results')}. They don't block the PR, "
-              "so decide whether a failure matters.</li>") if vu else \
-        "<li>The worker couldn't build or record the change, so there are no test results or screens.</li>"
+    if vu:
+        review = (f"<li>Read the {a(vu + '/verify.md', 'review page')}: the agent's summary, the proposed PR, the changes, "
+                  "and the build, test and screen results. Failed results don't block the PR, so decide whether they matter.</li>")
+    else:
+        change = f" and the {a(ev + '/changes.patch', 'change')}" if ev else ""
+        review = (f"<li>Read the agent's {summary}{change}. The worker couldn't build or record the change, "
+                  "so there are no test results or screens.</li>")
     return ("<body><strong>The agent made a change. Please review it before a draft PR is opened.</strong>\n"
-            f"<ol><li>Read the agent's {summary}{change}.</li>{verify}"
+            f"<ol>{review}"
             "<li>Check that nothing sensitive would go into the public PR: no user data, crash details, "
             "internal links or internal names in the code, comments or PR text.</li>"
             f"<li>Open the {a(e['RUN_URL'], 'worker run')} and click <strong>Review deployments</strong>.</li>"

@@ -38,21 +38,17 @@ def approval_comment(e):
     ev, summary = evidence(e)
     vu = e.get("VERIFY_URL", "").rstrip("/")
     if vu:
-        review = (f"<li>Read the {a(vu + '/verify.md', 'review page')}: the agent's summary, the proposed PR, the changes, "
-                  "and the build, test and screen results. Failed results don't block the PR, so decide whether they matter.</li>")
+        review = f"Review the {a(vu + '/verify.md', 'summary')}"
     else:
         change = f" and the {a(ev + '/changes.patch', 'change')}" if ev else ""
-        review = (f"<li>Read the agent's {summary}{change}. The worker couldn't build or record the change, "
-                  "so there are no test results or screens.</li>")
+        review = f"Review the agent's {summary}{change} (the worker couldn't build or test it)"
     return ("<body><strong>The agent made a change. Please review it before a draft PR is opened.</strong>\n"
-            f"<ol>{review}"
-            "<li>Check that nothing sensitive would go into the public PR: no user data, crash details, "
-            "internal links or internal names in the code, comments or PR text.</li>"
-            f"<li>Open the {a(e['RUN_URL'], 'worker run')} and click <strong>Review deployments</strong>.</li>"
-            "<li>Tick <strong>agent-publish</strong>, then click <strong>Approve and deploy</strong> to open the draft PR, "
+            f"<ol><li>{review}. Check that the fix makes sense and that nothing sensitive would go into the public PR, "
+            "such as user data, crash details or internal links and names.</li>"
+            f"<li>Approve the {a(e['RUN_URL'], 'worker run')} to open the PR: click <strong>Review deployments</strong>, "
+            "tick <strong>agent-publish</strong> and click <strong>Approve and deploy</strong>, "
             "or <strong>Reject</strong> to drop the change.</li></ol>"
-            "Only reviewers of the agent-publish environment can approve. "
-            "This task moves to PR open when the PR is opened, or Needs attention if it's rejected.</body>")
+            "Only reviewers of the agent-publish environment can approve.</body>")
 
 
 RETRY = "<li>Set Agent Status back to <strong>Ready</strong> to try again, or mark the task complete to drop it.</li>"

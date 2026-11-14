@@ -19,11 +19,9 @@
 
 import BackgroundTasks
 import Combine
-import ConcurrencyExtensions
 import enum UIKit.UIBackgroundRefreshStatus
 import Foundation
 import MaliciousSiteProtection
-import Testing
 @testable import DuckDuckGo
 
 final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManaging {
@@ -36,11 +34,7 @@ final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManagin
     var lastHashPrefixSetUpdateDate: Date = .distantPast
     var lastFilterSetUpdateDate: Date = .distantPast
 
-    var onUpdateDatasets: (() -> Void)?
-    var onHashPrefixUpdate: (() -> Void)?
-    var onFilterSetUpdate: (() -> Void)?
-
-    var updateDataTaskExecutionTime: TimeInterval = 0
+    var nextUpdateTask: Task<Void, Never>?
 
     func startPeriodicUpdates() -> Task<Void, any Error> {
         Task { }
@@ -49,17 +43,9 @@ final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManagin
     func updateData(datasetType: MaliciousSiteProtection.DataManager.StoredDataType.Kind) -> Task<Void, Never> {
         updateCallCount += 1
         updateDatasets[datasetType] = true
-        if datasetType == .hashPrefixSet {
-            onHashPrefixUpdate?()
-        } else if datasetType == .filterSet {
-            onFilterSetUpdate?()
-        }
-        onUpdateDatasets?()
-        return Task {
-            if updateDataTaskExecutionTime > 0 {
-                try? await Task.sleep(interval: updateDataTaskExecutionTime)
-            }
-        }
+        let task = nextUpdateTask ?? Task {}
+        nextUpdateTask = nil
+        return task
     }
 }
 
@@ -101,10 +87,7 @@ final class MockBackgroundScheduler: BGTaskScheduling {
     private(set) var capturedSubmittedTaskRequest: BGTaskRequest?
     private(set) var submittedTaskRequests: [BGTaskRequest] = []
 
-    private(set) var didCallCancelTaskRequestWithIdentifier = false
-    private(set) var capturedCanceledTaskRequestIdentifier: String?
-
-    var scheduleBackgroundTaskConfirmation: Confirmation?
+    private(set) var canceledTaskRequestIdentifiers: [String] = []
 
     var launchHandlers: [String: ((BGTaskInterface) -> Void)?] = [:]
 
@@ -120,12 +103,10 @@ final class MockBackgroundScheduler: BGTaskScheduling {
         didCallSubmitTaskRequest = true
         capturedSubmittedTaskRequest = taskRequest
         submittedTaskRequests.append(taskRequest)
-        scheduleBackgroundTaskConfirmation?()
     }
     
     func cancel(taskRequestWithIdentifier identifier: String) {
-        didCallCancelTaskRequestWithIdentifier = true
-        capturedCanceledTaskRequestIdentifier = identifier
+        canceledTaskRequestIdentifiers.append(identifier)
     }
     
     func pendingTaskRequests() async -> [BGTaskRequest] {
@@ -143,6 +124,7 @@ final class MockBGTask: BGTaskInterface {
 
     let identifier: String
     var expirationHandler: (() -> Void)?
+    var onCompletion: ((Bool) -> Void)?
 
     init(identifier: String) {
         self.identifier = identifier
@@ -151,6 +133,7 @@ final class MockBGTask: BGTaskInterface {
     func setTaskCompleted(success: Bool) {
         didCallSetTaskCompleted = true
         capturedTaskCompletedSuccess = success
+        onCompletion?(success)
     }
 }
 

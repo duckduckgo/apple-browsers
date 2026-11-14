@@ -73,7 +73,11 @@ final class MaliciousSiteProtectionService {
         let maliciousSiteProtectionDatasetsFetcher = MaliciousSiteProtectionDatasetsFetcher(
             updateManager: updateManager,
             featureFlagger: maliciousSiteProtectionFeatureFlagger,
-            userPreferencesManager: preferencesManager
+            userPreferencesManager: preferencesManager,
+            featureFlagChanges: {
+                let handler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>
+                return handler?.flagDidChangePublisher
+            }
         )
 
         manager = MaliciousSiteProtectionManager(

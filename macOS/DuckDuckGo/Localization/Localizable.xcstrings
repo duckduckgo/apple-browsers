@@ -112368,6 +112368,18 @@
         }
       }
     },
+    "subscription.progress.view.withdrawing.subscription" : {
+      "comment" : "Progress view title while withdrawing from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdrawal in progress…"
+          }
+        }
+      }
+    },
     "subscription.settings.menu.item" : {
       "comment" : "Title for Subscription Settings item in the options menu",
       "extractionState" : "extracted_with_value",

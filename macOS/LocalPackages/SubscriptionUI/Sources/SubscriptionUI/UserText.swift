@@ -281,6 +281,73 @@ enum UserText {
     static let removeSubscriptionDialogCancel = NSLocalizedString("subscription.dialog.remove.cancel.button", bundle: Bundle.module, value: "Cancel", comment: "Button to cancel removing subscription from device")
     static let removeSubscriptionDialogConfirm = NSLocalizedString("subscription.dialog.remove.confirm", bundle: Bundle.module, value: "Remove Subscription", comment: "Button to confirm removing subscription from device")
 
+    // MARK: - Withdrawal
+    static let withdrawSectionTitle = NSLocalizedString("subscription.preferences.withdraw.section.title", bundle: Bundle.module, value: "Withdraw from contract", comment: "Header of the subscription settings section that lets the user withdraw from the subscription contract with a full refund")
+    static let withdrawButton = NSLocalizedString("subscription.preferences.withdraw.button", bundle: Bundle.module, value: "Withdraw from contract", comment: "Button that starts withdrawing from the subscription contract with a full refund")
+
+    static func withdrawSectionCaption(eligibleUntil: String) -> String {
+        let localized = NSLocalizedString("subscription.preferences.withdraw.section.caption",
+                                          bundle: Bundle.module,
+                                          value: "You can withdraw and get a full refund until %@",
+                                          comment: "Caption of the withdraw from contract section. Parameter is the last date the user can withdraw.")
+        return String(format: localized, eligibleUntil)
+    }
+
+    static let withdrawDialogTitle = NSLocalizedString("subscription.dialog.withdraw.title", bundle: Bundle.module, value: "Withdraw from your subscription?", comment: "Title of the dialog confirming withdrawal from the subscription contract")
+
+    static func withdrawDialogMessage(tierName: String, refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.dialog.withdraw.message",
+                                          bundle: Bundle.module,
+                                          value: "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days.",
+                                          comment: "Message of the dialog confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency.")
+        return String(format: localized, tierName, refundAmount)
+    }
+
+    static func withdrawDialogMessage(tierName: String) -> String {
+        let localized = NSLocalizedString("subscription.dialog.withdraw.message.no.amount",
+                                          bundle: Bundle.module,
+                                          value: "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days.",
+                                          comment: "Message of the dialog confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).")
+        return String(format: localized, tierName)
+    }
+
+    static func withdrawDialogFeaturesMessage(features: String) -> String {
+        let localized = NSLocalizedString("subscription.dialog.withdraw.features.message",
+                                          bundle: Bundle.module,
+                                          value: "%@ stop working once you confirm.",
+                                          comment: "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+        return String(format: localized, features)
+    }
+
+    static let withdrawDialogConfirmButton = NSLocalizedString("subscription.dialog.withdraw.confirm.button", bundle: Bundle.module, value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
+    static let withdrawDialogKeepButton = NSLocalizedString("subscription.dialog.withdraw.keep.button", bundle: Bundle.module, value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
+
+    static let notSubscribedStatusIndicator = NSLocalizedString("subscription.preferences.subscription.settings.not.subscribed", bundle: Bundle.module, value: "Not Subscribed", comment: "Title for the status indicator shown after the user withdrew from the subscription contract")
+
+    static func withdrawnInfo(withdrawalDate: String) -> String {
+        let localized = NSLocalizedString("subscription.preferences.withdrawn.info",
+                                          bundle: Bundle.module,
+                                          value: "You withdrew on %@.",
+                                          comment: "Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date.")
+        return String(format: localized, withdrawalDate)
+    }
+
+    static func withdrawnRefundInfo(refundAmount: String) -> String {
+        let localized = NSLocalizedString("subscription.preferences.withdrawn.refund.info",
+                                          bundle: Bundle.module,
+                                          value: "Your refund of %@ is being processed.",
+                                          comment: "Shown below the withdrawal confirmation. Parameter is the refunded amount with currency.")
+        return String(format: localized, refundAmount)
+    }
+
+    static func withdrawErrorMessage(helpPageURL: String) -> String {
+        let localized = NSLocalizedString("subscription.dialog.withdraw.error.message",
+                                          bundle: Bundle.module,
+                                          value: "We couldn’t process your withdrawal automatically. Please visit our [help page](%@) to complete your withdrawal.",
+                                          comment: "Message of the dialog shown when withdrawing from the subscription contract fails. The text in square brackets is a link; keep the square brackets and the (%@) right after them. Parameter is the help page URL.")
+        return String(format: localized, helpPageURL)
+    }
+
     // MARK: - Activate subscription modal
     static let addSubscriptionModalTitle = NSLocalizedString("subscription.add.subscription.modal.title", bundle: Bundle.module, value: "Add your subscription to this device", comment: "Title of a view for adding subscription to the device")
 

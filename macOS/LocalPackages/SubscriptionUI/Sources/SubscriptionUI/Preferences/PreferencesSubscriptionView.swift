@@ -107,6 +107,7 @@ public struct SubscriptionDialog<Buttons>: View where Buttons: View {
     public var imageName: String
     public var title: String
     public var description: String
+    var attributedDescription: AttributedString?
 
     @ViewBuilder let buttons: () -> Buttons
 
@@ -117,7 +118,7 @@ public struct SubscriptionDialog<Buttons>: View where Buttons: View {
                 .font(.title2)
                 .bold()
                 .foregroundColor(Color(.textPrimary))
-            Text(description)
+            (attributedDescription.map { Text($0) } ?? Text(description))
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .fixMultilineScrollableText()
@@ -126,5 +127,16 @@ public struct SubscriptionDialog<Buttons>: View where Buttons: View {
             Spacer()
             buttons()
         }
+    }
+}
+
+extension SubscriptionDialog {
+
+    init(imageName: String, title: String, description: AttributedString, @ViewBuilder buttons: @escaping () -> Buttons) {
+        self.init(imageName: imageName,
+                  title: title,
+                  description: String(description.characters),
+                  attributedDescription: description,
+                  buttons: buttons)
     }
 }

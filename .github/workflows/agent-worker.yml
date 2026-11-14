@@ -327,17 +327,20 @@ jobs:
           echo "url=$(tail -n 1 "$RUNNER_TEMP/pr-url")" >> "$GITHUB_OUTPUT"
 
   # Sets the task's Agent Status from how the run ended: PR open with the PR link, or Needs attention.
-  # A fresh runner, so nothing the agent wrote runs next to the Asana token
+  # Acts as the Apple Agent Asana App Actor, on a fresh runner so nothing the agent wrote runs next to it
   status:
     needs: [agent, publish]
     if: always()
     runs-on: ubuntu-latest
+    environment: agent-worker
     timeout-minutes: 5
     permissions: {}
     steps:
       - name: Set Agent Status
         env:
-          ASANA_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_APP_CLIENT_ID: ${{ secrets.ASANA_APP_CLIENT_ID }}
+          ASANA_APP_CLIENT_SECRET: ${{ secrets.ASANA_APP_CLIENT_SECRET }}
+          ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
           TASK_GID: ${{ inputs.task_gid }}
           # Agent Status field and its option gids in the agent project
           FIELD: "1220497931497848"
@@ -348,7 +351,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           python3 - <<'PY'
-          import json, os, re, sys, urllib.request
+          import json, os, re, sys, urllib.parse, urllib.request
           e = os.environ
           if not re.fullmatch(r"[0-9]{1,20}", e["TASK_GID"]):
               sys.exit("bad task_gid")
@@ -359,10 +362,18 @@ jobs:
           else:
               status, text = "needs_attention", f"Agent worker's change was not published (approval declined or publish failed): {e['RUN_URL']}"
 
+          # A 1-hour access token from the App Actor's refresh token
+          grant = urllib.parse.urlencode({"grant_type": "refresh_token", "client_id": e["ASANA_APP_CLIENT_ID"],
+                                          "client_secret": e["ASANA_APP_CLIENT_SECRET"],
+                                          "refresh_token": e["ASANA_APP_REFRESH_TOKEN"]}).encode()
+          with urllib.request.urlopen("https://app.asana.com/-/oauth_token", data=grant, timeout=30) as resp:
+              token = json.load(resp)["access_token"]
+          print(f"::add-mask::{token}")
+
           def call(method, path, data):
               req = urllib.request.Request(f"https://app.asana.com/api/1.0{path}", method=method,
                                            data=json.dumps({"data": data}).encode(),
-                                           headers={"Authorization": f"Bearer {e['ASANA_TOKEN']}", "Content-Type": "application/json"})
+                                           headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
               urllib.request.urlopen(req, timeout=30).close()
 
           option = json.loads(e["OPTIONS"])[status]

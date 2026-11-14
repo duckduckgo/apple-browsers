@@ -37,6 +37,10 @@ env:
   STATUS_OPTIONS: '{"waiting_for_approval": "1220497931497851", "pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
 
 jobs:
+  # Attempt 0 makes the change from the plan. Each later attempt (fix-N) starts from the previous attempt's
+  # patch and fixes what its verify job reported, up to WORKER_FIX_ROUNDS times (2 by default, at most 3).
+  # The fix and verify jobs reuse these steps through YAML anchors, and each attempt's evidence goes under
+  # its own r<N>/ prefix
   agent:
     runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
     environment: agent-worker
@@ -44,9 +48,11 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      ROUND: "0"
     outputs:
       evidence_url: ${{ steps.evidence.outputs.url }}
-    steps:
+    steps: &agent-steps
       - name: Kill switch
         if: vars.AGENTS_ENABLED != 'true'
         run: |
@@ -106,18 +112,37 @@ jobs:
           echo "$SHA256  $RUNNER_TEMP/plan.md" | shasum -a 256 -c --status ||
             { echo "::error::plan hash does not match; refusing to run"; exit 1; }
           echo "plan downloaded and verified ($(wc -c < "$RUNNER_TEMP/plan.md") bytes)"
+          # A fix attempt starts from the previous attempt's patch, evidence plan, PR text and results
+          if [[ $ROUND != 0 ]]; then
+            mkdir -p "$RUNNER_TEMP/prev"
+            for f in changes.patch pr.md tests.txt flow.yaml verify/results.md; do
+              az storage blob download --auth-mode login --only-show-errors \
+                --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
+                --name "$EVIDENCE_PREFIX/r$((ROUND - 1))/$f" --file "$RUNNER_TEMP/prev/${f#verify/}" > /dev/null 2>&1 ||
+                echo "no previous $f"
+            done
+            [[ -s "$RUNNER_TEMP/prev/changes.patch" ]] || { echo "::error::no previous patch"; exit 1; }
+          fi
 
       - name: Azure logout
         if: always()
         run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
 
-      # The template is scripts/agent-worker/prompts/worker.md, with the plan appended
+      # The agent edits the previous attempt's change and its evidence plan and PR text in place
+      - name: Apply the previous attempt
+        if: env.ROUND != '0'
+        working-directory: target
+        run: |
+          set -euo pipefail
+          git apply --index "$RUNNER_TEMP/prev/changes.patch"
+          mkdir -p .agent-evidence
+          [[ ! -f "$RUNNER_TEMP/prev/pr.md" ]] || cp "$RUNNER_TEMP/prev/pr.md" .agent-pr.md
+          for f in tests.txt flow.yaml; do [[ ! -f "$RUNNER_TEMP/prev/$f" ]] || cp "$RUNNER_TEMP/prev/$f" .agent-evidence/; done
+
       - name: Write prompt
         run: |
-          python3 -I -c 'import sys
-          t = open(sys.argv[1]).read().replace("{{REPO_DIR}}", sys.argv[2])
-          open(sys.argv[4], "w").write(t.replace("{{PLAN}}", open(sys.argv[3]).read()))' \
-            worker/scripts/agent-worker/prompts/worker.md "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" "$RUNNER_TEMP/prompt.md"
+          python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" \
+            "$RUNNER_TEMP/prev/results.md" > "$RUNNER_TEMP/prompt.md"
 
       - name: Install Claude Code
         run: |
@@ -190,6 +215,10 @@ jobs:
             echo "::error::agent made no changes"
             exit 1
           fi
+          if [[ $ROUND != 0 ]] && cmp -s "$RUNNER_TEMP/evidence/changes.patch" "$RUNNER_TEMP/prev/changes.patch"; then
+            echo "::error::the fix attempt changed nothing"
+            exit 1
+          fi
           { printf '\n## Changes\n\n```\n'; git diff --cached --stat; printf '```\n'; } >> "$RUNNER_TEMP/evidence/summary.md"
           if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
             echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
@@ -218,8 +247,8 @@ jobs:
           fi
           az storage blob upload-batch --auth-mode login --only-show-errors \
             --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
-            --destination-path "$EVIDENCE_PREFIX" --source "$RUNNER_TEMP/evidence" > /dev/null
-          url="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX"
+            --destination-path "$EVIDENCE_PREFIX/r$ROUND" --source "$RUNNER_TEMP/evidence" > /dev/null
+          url="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/r$ROUND"
           echo "Evidence (SSO): $url/"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           {
@@ -251,9 +280,13 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      ROUND: "0"
     outputs:
       url: ${{ steps.upload.outputs.url }}
-    steps:
+      prefix: ${{ steps.upload.outputs.prefix }}
+      ok: ${{ steps.result.outputs.ok }}
+    steps: &verify-steps
       - uses: actions/checkout@v7
         with:
           ref: ${{ env.DEFAULT_BRANCH }}
@@ -278,12 +311,12 @@ jobs:
       - name: Download patch and evidence plan
         run: |
           set -euo pipefail
-          echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify" >> "$GITHUB_ENV"
+          echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/r$ROUND/verify" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/plan"
           for f in changes.patch tests.txt flow.yaml result.json pr.md plan-notes.txt; do
             az storage blob download --auth-mode login --only-show-errors \
               --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-              --name "$EVIDENCE_PREFIX/$f" --file "$RUNNER_TEMP/plan/$f" > /dev/null 2>&1 || echo "no $f"
+              --name "$EVIDENCE_PREFIX/r$ROUND/$f" --file "$RUNNER_TEMP/plan/$f" > /dev/null 2>&1 || echo "no $f"
           done
           [[ -s "$RUNNER_TEMP/plan/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
 
@@ -345,12 +378,23 @@ jobs:
       - name: Write verify.md
         if: always()
         env:
-          EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TASK_GID: ${{ inputs.task_gid }}
+          FIX_ROUNDS: ${{ vars.WORKER_FIX_ROUNDS || '2' }}
         run: |
           mkdir -p "$RUNNER_TEMP/verify"
-          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify_md.py" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
+          ROOT_URL="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX" \
+            python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify_md.py" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
+
+      # ok=false starts the next fix attempt, when one is left
+      - name: Result
+        id: result
+        if: always()
+        run: |
+          ok=true
+          grep -qxE "build=yes" "$RUNNER_TEMP/verify/status" 2> /dev/null || ok=false
+          ! grep -qxE "(tests|maestro)=failed" "$RUNNER_TEMP/verify/status" 2> /dev/null || ok=false
+          echo "ok=$ok" | tee -a "$GITHUB_OUTPUT"
 
       - name: Azure login again (GitHub OIDC)
         if: always()
@@ -368,18 +412,132 @@ jobs:
           [[ -d "$RUNNER_TEMP/verify" ]] || { echo "nothing to upload"; exit 0; }
           az storage blob upload-batch --auth-mode login --only-show-errors \
             --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
-            --destination-path "$EVIDENCE_PREFIX/verify" --source "$RUNNER_TEMP/verify" > /dev/null
-          echo "url=$VERIFY_URL" >> "$GITHUB_OUTPUT"
+            --destination-path "$EVIDENCE_PREFIX/r$ROUND/verify" --source "$RUNNER_TEMP/verify" > /dev/null
+          { echo "url=$VERIFY_URL"; echo "prefix=$EVIDENCE_PREFIX/r$ROUND"; } >> "$GITHUB_OUTPUT"
           echo "**Review [verify.md]($VERIFY_URL/verify.md) before approving agent-publish (SSO)**" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Azure logout
         if: always()
         run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
 
+  fix-1:
+    needs: verify
+    if: needs.verify.outputs.ok == 'false' && fromJSON(vars.WORKER_FIX_ROUNDS || '2') >= 1
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    environment: agent-worker
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ROUND: "1"
+    steps: *agent-steps
+
+  verify-1:
+    needs: fix-1
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    environment: agent-worker
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ROUND: "1"
+    outputs:
+      url: ${{ steps.upload.outputs.url }}
+      prefix: ${{ steps.upload.outputs.prefix }}
+      ok: ${{ steps.result.outputs.ok }}
+    steps: *verify-steps
+
+  fix-2:
+    needs: verify-1
+    if: needs.verify-1.outputs.ok == 'false' && fromJSON(vars.WORKER_FIX_ROUNDS || '2') >= 2
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    environment: agent-worker
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ROUND: "2"
+    steps: *agent-steps
+
+  verify-2:
+    needs: fix-2
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    environment: agent-worker
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ROUND: "2"
+    outputs:
+      url: ${{ steps.upload.outputs.url }}
+      prefix: ${{ steps.upload.outputs.prefix }}
+      ok: ${{ steps.result.outputs.ok }}
+    steps: *verify-steps
+
+  fix-3:
+    needs: verify-2
+    if: needs.verify-2.outputs.ok == 'false' && fromJSON(vars.WORKER_FIX_ROUNDS || '2') >= 3
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    environment: agent-worker
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ROUND: "3"
+    steps: *agent-steps
+
+  verify-3:
+    needs: fix-3
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    environment: agent-worker
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ROUND: "3"
+    outputs:
+      url: ${{ steps.upload.outputs.url }}
+      prefix: ${{ steps.upload.outputs.prefix }}
+      ok: ${{ steps.result.outputs.ok }}
+    steps: *verify-steps
+
+  # The last attempt that was verified is the one to review and publish. If no attempt was verified,
+  # it's attempt 0 without results
+  final:
+    needs: [agent, verify, fix-1, verify-1, fix-2, verify-2, fix-3, verify-3]
+    if: ${{ !cancelled() && needs.agent.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      prefix: ${{ steps.pick.outputs.prefix }}
+      evidence_url: ${{ steps.pick.outputs.evidence_url }}
+      verify_url: ${{ steps.pick.outputs.verify_url }}
+    steps:
+      - name: Pick the last verified attempt
+        id: pick
+        env:
+          PREFIX: ${{ needs.verify-3.outputs.prefix || needs.verify-2.outputs.prefix || needs.verify-1.outputs.prefix || needs.verify.outputs.prefix }}
+          VERIFY_URL: ${{ needs.verify-3.outputs.url || needs.verify-2.outputs.url || needs.verify-1.outputs.url || needs.verify.outputs.url }}
+        run: |
+          set -euo pipefail
+          prefix=${PREFIX:-$EVIDENCE_PREFIX/r0}
+          [[ $prefix == "$EVIDENCE_PREFIX"/r[0-9] ]] || { echo "::error::unexpected prefix"; exit 1; }
+          {
+            echo "prefix=$prefix"
+            echo "evidence_url=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$prefix"
+            echo "verify_url=$VERIFY_URL"
+          } | tee -a "$GITHUB_OUTPUT"
+
   # Moves the Asana task to Waiting for approval, with the evidence links and what to click to approve
   approval-request:
-    needs: [agent, verify]
-    if: ${{ !cancelled() && needs.agent.result == 'success' }}
+    needs: final
     runs-on: ubuntu-latest
     environment: agent-worker
     timeout-minutes: 5
@@ -400,16 +558,15 @@ jobs:
           ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
           TASK_GID: ${{ inputs.task_gid }}
           STAGE: approval
-          EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
-          VERIFY_URL: ${{ needs.verify.outputs.url }}
+          EVIDENCE_URL: ${{ needs.final.outputs.evidence_url }}
+          VERIFY_URL: ${{ needs.final.outputs.verify_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: python3 -I worker/scripts/agent-worker/set_agent_status.py
 
   # A person reviews the evidence and approves the agent-publish environment before anything in
   # this public repo is created. The patch comes from artifacts.go, never a public artifact
   publish:
-    needs: [agent, verify]
-    if: ${{ !cancelled() && needs.agent.result == 'success' }}
+    needs: final
     runs-on: ubuntu-latest
     environment: agent-publish
     timeout-minutes: 10
@@ -419,6 +576,7 @@ jobs:
       id-token: write
     env:
       BRANCH: agent/worker-${{ github.run_id }}
+      PREFIX: ${{ needs.final.outputs.prefix }}
     outputs:
       pr_url: ${{ steps.pr.outputs.url }}
     steps:
@@ -452,10 +610,10 @@ jobs:
           set -euo pipefail
           az storage blob download --auth-mode login --only-show-errors \
             --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-            --name "$EVIDENCE_PREFIX/changes.patch" --file "$RUNNER_TEMP/changes.patch" > /dev/null
+            --name "$PREFIX/changes.patch" --file "$RUNNER_TEMP/changes.patch" > /dev/null
           az storage blob download --auth-mode login --only-show-errors \
             --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-            --name "$EVIDENCE_PREFIX/pr.md" --file "$RUNNER_TEMP/pr.md" > /dev/null 2>&1 || echo "no PR text from the agent"
+            --name "$PREFIX/pr.md" --file "$RUNNER_TEMP/pr.md" > /dev/null 2>&1 || echo "no PR text from the agent"
 
       # The agent's title and description, as the approver saw them in summary.md, or a fallback
       - uses: actions/checkout@v7
@@ -501,7 +659,7 @@ jobs:
   # Sets the task's Agent Status from how the run ended: PR open with the PR link, or Needs attention.
   # Acts as the Apple Agent Asana App Actor, on a fresh runner so nothing the agent wrote runs next to it
   status:
-    needs: [agent, verify, publish]
+    needs: [agent, final, publish]
     if: always()
     runs-on: ubuntu-latest
     environment: agent-worker
@@ -523,9 +681,9 @@ jobs:
           ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
           TASK_GID: ${{ inputs.task_gid }}
           AGENT: ${{ needs.agent.result }}
-          EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
+          EVIDENCE_URL: ${{ needs.final.outputs.evidence_url || needs.agent.outputs.evidence_url }}
           PUBLISH: ${{ needs.publish.result }}
           PR_URL: ${{ needs.publish.outputs.pr_url }}
-          VERIFY_URL: ${{ needs.verify.outputs.url }}
+          VERIFY_URL: ${{ needs.final.outputs.verify_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: python3 -I worker/scripts/agent-worker/set_agent_status.py

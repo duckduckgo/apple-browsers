@@ -2,7 +2,8 @@
 """Write verify.md, the one page an approver reads before a draft PR is opened.
 
 Usage: verify_md.py <plan dir> <out dir>
-Env: EVIDENCE_URL (the run's evidence), VERIFY_URL (where out dir is uploaded), RUN_URL, TASK_GID
+Env: ROOT_URL (the run's evidence, with an r<N>/ prefix per attempt), ROUND (this attempt), FIX_ROUNDS,
+RUN_URL, TASK_GID
 
 Combines the agent's result.json, pr.md, changes.patch and plan-notes.txt from plan dir with the build,
 test and screen results that verify.sh wrote to results.md in out dir. Writes nothing to the log
@@ -25,7 +26,8 @@ def read(path, limit=200000):
 def main():
     plan, out = sys.argv[1:3]
     e = os.environ
-    ev, run = e.get("EVIDENCE_URL", "").rstrip("/"), e.get("RUN_URL", "")
+    root, run, attempt = e.get("ROOT_URL", "").rstrip("/"), e.get("RUN_URL", ""), int(e.get("ROUND", "0"))
+    ev = f"{root}/r{attempt}" if root else ""
     try:
         r = json.loads(read(os.path.join(plan, "result.json")))
     except ValueError:
@@ -39,6 +41,16 @@ def main():
     task = f"[Asana task](https://app.asana.com/0/0/{e['TASK_GID']}/f)" if e.get("TASK_GID") else "the task"
     md += [f"The agent's proposed fix for {task}, built and tested on a clean runner. Approving the publish step "
            f"in the [worker run]({run}) opens it as a draft PR with the title and description below.", ""]
+    status = dict(l.split("=", 1) for l in read(os.path.join(out, "status")).split() if "=" in l)
+    words = {"yes": "passed", "no": "failed"}
+    parts = [f"build {words.get(status.get('build'), "didn't run")}"]
+    parts += [f"{k} {status[k]}" for k in ("tests", "maestro") if k in status]
+    md += [f"**Results:** {', '.join(parts).replace('maestro', 'Maestro flow')}.", ""]
+    if attempt:
+        earlier = ", ".join(f"[{'first attempt' if n == 0 else f'fix attempt {n}'}]({root}/r{n}/verify/verify.md)"
+                            for n in range(attempt))
+        md += [f"This is fix attempt {attempt} of up to {e.get('FIX_ROUNDS', '?')}. The agent fixed what failed "
+               f"in the earlier results: {earlier}.", ""]
 
     md += ["## Summary", "", (r.get("result") or "").strip() or "The agent left no summary.", ""]
 

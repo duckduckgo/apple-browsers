@@ -4,6 +4,7 @@
 # puts into verify.md
 #
 # Usage: verify.sh <repo dir> <plan dir> <out dir>
+# Writes build=, tests= and maestro= lines to <out dir>/status for the fix attempts
 # Env: DEST (iOS Simulator destination), UDID (that simulator), PACKAGES (cloned source packages dir),
 # VERIFY_URL (where out dir is uploaded, for links)
 # Output to the log is status words only, since this repo's logs are public
@@ -11,7 +12,7 @@
 set -uo pipefail
 repo=$1 plan=$2 out=$3
 mkdir -p "$out"
-md="$out/results.md"
+md="$out/results.md" status="$out/status"
 url=${VERIFY_URL:-.}
 cd "$repo" || exit 0
 
@@ -28,6 +29,7 @@ common=(-derivedDataPath DerivedData -clonedSourcePackagesDirPath "$PACKAGES" -d
   -skipPackagePluginValidation -skipMacroValidation)
 
 : > "$md"
+: > "$status"
 
 # A small copy of a screenshot that fits on screen, linked to the full size one
 thumb() {
@@ -48,6 +50,7 @@ start=$SECONDS
 SPM_FORCE_DEBUG=1 xcodebuild build-for-testing "${build[@]}" "${common[@]}" OTHER_CODE_SIGN_FLAGS=--timestamp=none \
   > "$out/build.log" 2>&1 && built=yes || built=no
 echo "build: $built"
+echo "build=$built" >> "$status"
 {
   echo "## Build and tests"
   echo
@@ -68,10 +71,11 @@ if [[ -s "$plan/tests.txt" ]]; then
     -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 \
     > "$out/test.log" 2>&1 && tested=passed || tested=failed
   echo "tests: $tested"
+  echo "tests=$tested" >> "$status"
   {
     echo; echo "Tests **$tested**: ${only[*]#-only-testing:} ([test.log.gz]($url/test.log.gz))"
     echo; echo '```'
-    grep -E "^Test Case .*(passed|failed)|Executed [0-9]+ test|^Test .* (passed|failed)|TEST (EXECUTE )?(SUCCEEDED|FAILED)|: error:" "$out/test.log" | cut -c1-300 | head -40
+    grep -E "^Test Case .*(passed|failed)|Executed [0-9]+ test|^Test .* (passed|failed)|TEST (EXECUTE )?(SUCCEEDED|FAILED)|: error:" "$out/test.log" | cut -c1-1000 | head -40
     echo '```'
   } >> "$md"
   gzip -f "$out/test.log"
@@ -112,6 +116,7 @@ mkdir -p "$out/maestro" && cp "$plan/flow.yaml" "$out/maestro/flow.yaml"
 (cd "$out/maestro" && MAESTRO_CLI_NO_ANALYTICS=1 maestro --device "$UDID" test --test-output-dir "$out/maestro/output" flow.yaml > ../maestro.log 2>&1) &&
   flowed=passed || flowed=failed
 echo "maestro: $flowed"
+echo "maestro=$flowed" >> "$status"
 {
   echo
   echo "Maestro flow **$flowed** ([flow.yaml]($url/maestro/flow.yaml), [maestro.log]($url/maestro.log))."

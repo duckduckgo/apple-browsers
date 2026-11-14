@@ -23,4 +23,6 @@ Your final message goes to the approver on one page with the build, test and rec
 
 When you're done, write .agent-pr.md at the repository root for the pull request, which is public: the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does, then a blank line and 2 to 4 bullets on what changed and why. Describe only the code. No links, crash counts, versions, user data, or anything from Asana or Sentry.
 
+{{FIX}}
+
 {{PLAN}}

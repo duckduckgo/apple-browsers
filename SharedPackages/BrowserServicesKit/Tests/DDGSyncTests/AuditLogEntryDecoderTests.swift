@@ -110,7 +110,7 @@ struct AuditLogEntryDecoderTests {
         for recoveryFails in [true, false] {
             let scopedAccess = ScopedAccessCredentialManagingMock()
             if recoveryFails {
-                scopedAccess.fetchAccessCredentialsError = AuditLogRecoveryTestError.expected
+                scopedAccess.recoverScopedPasswordError = AuditLogRecoveryTestError.expected
             }
             let entries = [
                 try makeThirdPartyEntry(id: "cached", name: "Native browser", password: cachedPassword, fixture: fixture),
@@ -126,7 +126,7 @@ struct AuditLogEntryDecoderTests {
             let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
 
             #expect(scopedAccess.fetchAccessCredentialsCalls.count == 1)
-            #expect(scopedAccess.recoverScopedPasswordCalls.count == (recoveryFails ? 0 : 1))
+            #expect(scopedAccess.recoverScopedPasswordCalls.count == 1)
             guard page.entries.count == 3,
                   case .decoded(let cached) = page.entries[0],
                   case .decoded(let historicalOne) = page.entries[1],
@@ -390,13 +390,187 @@ struct AuditLogEntryDecoderTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Audit key loading preserves the shared cache", .timeLimit(.minutes(1)))
+    func testAuditKeyLoadingDoesNotPersistFetchedKeys() async throws {
+        let fixture = try makeFixture()
+        let secureStore = SecureStorageStub()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [fixture.protectedKey]
+        let keyManager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: CryptingMock())
+        let (manager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: RegisteredDeviceMappingTestDouble(), keyManager: keyManager)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest([AuditLogEntry(id: "entry", version: "1", payload: "unreadable")])
+
+        _ = try await manager.fetchAuditLog(for: account, cursor: nil)
+
+        #expect(secureStore.theProtectedKeysData == nil)
+        #expect(secureStore.theScopedPassword == nil)
+        #expect(scopedAccess.fetchProtectedKeysCalls.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An inaccessible audit key cache stops the page without fetching", .timeLimit(.minutes(1)))
+    func testAuditKeyLoadingPropagatesKeychainFailure() async throws {
+        let fixture = try makeFixture()
+        let secureStore = SecureStorageStub()
+        secureStore.mockReadError = .failedToReadSecureStore(status: -25308)
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [fixture.protectedKey]
+        let keyManager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: CryptingMock())
+        let (manager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: RegisteredDeviceMappingTestDouble(), keyManager: keyManager)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest([AuditLogEntry(id: "entry", version: "1", payload: "unreadable")])
+
+        await #expect(throws: SyncError.failedToReadSecureStore(status: -25308)) {
+            _ = try await manager.fetchAuditLog(for: account, cursor: nil)
+        }
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An audit credential request failure stops the whole page", .timeLimit(.minutes(1)))
+    func testAuditCredentialRequestPropagatesUnauthorizedError() async throws {
+        let fixture = try makeFixture()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchAccessCredentialsError = SyncError.unexpectedStatusCode(401)
+        let mapper = makeMapper(scopedAccess: scopedAccess, accountInfoKeys: fixture.keyManager, cachedScopedPassword: { nil })
+        let (manager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
+        let entry = try makeThirdPartyEntry(id: "entry", name: "Browser", password: Data(repeating: 1, count: 32), fixture: fixture)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest([entry])
+
+        await #expect(throws: SyncError.unexpectedStatusCode(401)) {
+            _ = try await manager.fetchAuditLog(for: account, cursor: nil)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An unreadable historical-password cache stops the audit page", .timeLimit(.minutes(1)))
+    func testAuditPasswordCacheFailureDoesNotFetchCredentials() async throws {
+        let fixture = try makeFixture()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let mapper = makeMapper(scopedAccess: scopedAccess, accountInfoKeys: fixture.keyManager,
+                                cachedScopedPassword: { throw SyncError.failedToReadSecureStore(status: -25308) })
+        let (manager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
+        let entry = try makeThirdPartyEntry(id: "entry", name: "Browser", password: Data(repeating: 1, count: 32), fixture: fixture)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest([entry])
+
+        await #expect(throws: SyncError.failedToReadSecureStore(status: -25308)) {
+            _ = try await manager.fetchAuditLog(for: account, cursor: nil)
+        }
+        #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Audit key and name decoding share one credential recovery per page", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testAuditPageSharesCredentialRecovery(hasStaleCachedKey: Bool) async throws {
+        let fixture = try makeFixture()
+        let password = Data(repeating: 4, count: 32)
+        let mainKey = ScopedAccessKeyDerivation.mainKey(from: password, userID: account.userId)
+        let encryptedPrivateKey = try #require(Base64URL.decode(fixture.protectedKey.encryptedPrivateKey))
+        let privateKey = try CryptingMock().decryptData(encryptedPrivateKey, using: accountSecretKey)
+        let wrappedPrivateKey = try JWECompactCodec().encryptDirect(payload: privateKey, contentEncryptionKey: mainKey, kid: SyncCredentialID.thirdParty)
+        let protectedKey = ProtectedKey(kid: fixture.protectedKey.kid, encryptedPrivateKey: wrappedPrivateKey,
+                                         publicKey: fixture.protectedKey.publicKey, encryptedWith: SyncCredentialID.thirdParty,
+                                         purpose: ProtectedKeyPurpose.accountInfo)
+        let secureStore = SecureStorageStub()
+        if hasStaleCachedKey {
+            let staleKey = ProtectedKey(kid: protectedKey.kid, encryptedPrivateKey: "invalid-jwe",
+                                       publicKey: protectedKey.publicKey, encryptedWith: SyncCredentialID.thirdParty,
+                                       purpose: ProtectedKeyPurpose.accountInfo)
+            secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([staleKey])
+        }
+        let cachedData = secureStore.theProtectedKeysData
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [protectedKey]
+        scopedAccess.recoverScopedPasswordStub = password
+        let keyManager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: CryptingMock())
+        let mapper = makeMapper(scopedAccess: scopedAccess, accountInfoKeys: keyManager, cachedScopedPassword: { nil })
+        let (manager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper, keyManager: keyManager)
+        let entry = try makeThirdPartyEntry(id: "entry", name: "Recovered browser", password: password, fixture: fixture)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest([entry])
+
+        let page = try await manager.fetchAuditLog(for: account, cursor: nil)
+
+        guard case .decoded(let event) = page.entries.first else {
+            Issue.record("Expected the recovered key and password to decode the event")
+            return
+        }
+        #expect(event.device.name == "Recovered browser")
+        #expect(scopedAccess.fetchAccessCredentialsCalls.count == 1)
+        #expect(scopedAccess.recoverScopedPasswordCalls.count == 1)
+        #expect(secureStore.theProtectedKeysData == cachedData)
+        #expect(secureStore.theScopedPassword == nil)
+
+        _ = try await manager.fetchAuditLog(for: account, cursor: .before("older"))
+        #expect(scopedAccess.fetchAccessCredentialsCalls.count == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A completed nil recovery is shared with name decoding", .timeLimit(.minutes(1)))
+    func testAuditPageSharesNilRecoveryAfterDefaultKeyFallback() async throws {
+        let fixture = try makeFixture()
+        let staleKey = ProtectedKey(kid: fixture.protectedKey.kid, encryptedPrivateKey: "invalid-jwe",
+                                   publicKey: fixture.protectedKey.publicKey, encryptedWith: SyncCredentialID.thirdParty,
+                                   purpose: ProtectedKeyPurpose.accountInfo)
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([staleKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [fixture.protectedKey]
+        let keyManager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: CryptingMock())
+        let mapper = makeMapper(scopedAccess: scopedAccess, accountInfoKeys: keyManager, cachedScopedPassword: { nil })
+        let (manager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper, keyManager: keyManager)
+        let entry = try makeThirdPartyEntry(id: "entry", name: "Unavailable name", password: Data(repeating: 4, count: 32), fixture: fixture)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest([entry])
+
+        let page = try await manager.fetchAuditLog(for: account, cursor: nil)
+
+        guard case .decoded(let event) = page.entries.first else {
+            Issue.record("Expected the event with a fallback name")
+            return
+        }
+        #expect(event.device.name == "Browser")
+        #expect(scopedAccess.fetchAccessCredentialsCalls.count == 1)
+        #expect(scopedAccess.recoverScopedPasswordCalls.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Empty recovered passwords are treated as a completed nil result", .timeLimit(.minutes(1)))
+    func testEmptyRecoveredPasswordIsNotUsed() async throws {
+        let cache = ThirdPartyPasswordRecoveryCache()
+        let password = try await cache.recoverPasswordOnce { Data() }
+        #expect(password == nil)
+        _ = try await cache.recoverPasswordOnce {
+            Issue.record("An empty result must not repeat credential recovery")
+            return Data([1])
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A thrown recovery remains retryable but a completed nil result is cached", .timeLimit(.minutes(1)))
+    func testPasswordRecoveryCanRetryAfterThrowing() async throws {
+        let cache = ThirdPartyPasswordRecoveryCache()
+        await #expect(throws: AuditLogRecoveryTestError.self) {
+            try await cache.recoverPasswordOnce { throw AuditLogRecoveryTestError.expected }
+        }
+        var retryCount = 0
+        let password = try await cache.recoverPasswordOnce {
+            retryCount += 1
+            return nil
+        }
+        #expect(password == nil)
+        #expect(retryCount == 1)
+        _ = try await cache.recoverPasswordOnce {
+            Issue.record("A completed recovery must not be repeated")
+            return Data([1])
+        }
+    }
+
     private func makeFixture() throws -> AuditLogTestFixture {
         try AuditLogTestFixture.make(accountSecretKey: accountSecretKey)
     }
 
     private func makeMapper(scopedAccess: ScopedAccessCredentialManagingMock,
                             accountInfoKeys: AccountInfoKeyManaging,
-                            cachedScopedPassword: @escaping () -> Data?) -> RegisteredDeviceMapper {
+                            cachedScopedPassword: @escaping () throws -> Data?) -> RegisteredDeviceMapper {
         RegisteredDeviceMapper(crypter: CryptingMock(),
                                scopedAccess: scopedAccess,
                                accountInfoKeys: accountInfoKeys,
@@ -406,14 +580,15 @@ struct AuditLogEntryDecoderTests {
     }
 
     private func makeAccountManager(fixture: AuditLogTestFixture,
-                                    mapper: any RegisteredDeviceMapping) -> (AccountManager, RemoteAPIRequestCreatingMock, URL) {
+                                    mapper: any RegisteredDeviceMapping,
+                                    keyManager: AccountInfoKeyManaging? = nil) -> (AccountManager, RemoteAPIRequestCreatingMock, URL) {
         let api = RemoteAPIRequestCreatingMock()
         let endpoint = URL(string: "https://dev.null/sync/account/audit-log")!
         let accountManager = AccountManager(endpoints: Endpoints(baseURL: URL(string: "https://dev.null")!),
                                             api: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
-                                            accountInfoKeys: fixture.keyManager,
+                                            accountInfoKeys: keyManager ?? fixture.keyManager,
                                             isScopedAccessCredentialsEnabled: { true })
         return (accountManager, api, endpoint)
     }
@@ -464,11 +639,16 @@ struct AuditLogEntryDecoderTests {
 private struct RegisteredDeviceMappingTestDouble: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool,
-                                          accountInfoKey: AccountInfoKey?,
-                                          thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult {
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
         let devices = entries.map { RegisteredDevice(id: $0.id, name: $0.name ?? "Unknown", type: $0.type ?? "unknown") }
         return RegisteredDeviceMappingResult(devices: devices, needsCurrentDeviceInfoRepair: false)
+    }
+
+    func registeredAuditLogDevices(from entries: [RegisteredDeviceEntry],
+                                   account: SyncAccount,
+                                   accountInfoKey: AccountInfoKey?,
+                                   thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async throws -> RegisteredDeviceMappingResult {
+        await registeredDevicesWithRepairState(from: entries, account: account, isUnifiedReadEnabled: true)
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? { nil }

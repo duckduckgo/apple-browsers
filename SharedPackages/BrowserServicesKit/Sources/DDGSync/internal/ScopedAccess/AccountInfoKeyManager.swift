@@ -26,6 +26,11 @@ struct AccountInfoKey: @unchecked Sendable {
     let privateKey: SecKey
 }
 
+struct AuditLogKeyMaterial: Sendable {
+    let key: AccountInfoKey
+    let passwordRecovery: ThirdPartyPasswordRecoveryState
+}
+
 enum AccountInfoKeyManagerError: Error, Equatable {
     case missingProtectedKey
     case invalidProtectedKeySet
@@ -40,6 +45,7 @@ protocol AccountInfoKeyProviding {
 }
 
 protocol AccountInfoKeyManaging: AccountInfoKeyProviding {
+    func loadKeyForAuditLog(for account: SyncAccount) async throws -> AuditLogKeyMaterial
     func preloadKey(from protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], for account: SyncAccount) async throws
     func clearCachedKey(for account: SyncAccount) async
 }
@@ -101,6 +107,77 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         return try await refreshKey(for: account)
     }
 
+    /// Audit requests use fetched keys in memory without updating normal Sync's caches.
+    func loadKeyForAuditLog(for account: SyncAccount) async throws -> AuditLogKeyMaterial {
+        try Task.checkCancellation()
+        var passwordRecovery = ThirdPartyPasswordRecoveryState.notAttempted
+        if let data = try secureStore.protectedKeys(),
+           let protectedKeys = try? JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: data),
+           let keys = try? validatedAccountInfoKeys(from: protectedKeys.removingDuplicateWrappingIdentities()),
+           let key = try await auditLogKey(from: keys, account: account, passwordRecovery: &passwordRecovery) {
+            return AuditLogKeyMaterial(key: key, passwordRecovery: passwordRecovery)
+        }
+        try Task.checkCancellation()
+        let protectedKeys = try await scopedAccess.fetchProtectedKeys(account).removingDuplicateWrappingIdentities()
+        try Task.checkCancellation()
+        let keys = try validatedAccountInfoKeys(from: protectedKeys)
+        guard let key = try await auditLogKey(from: keys, account: account, passwordRecovery: &passwordRecovery) else {
+            throw AccountInfoKeyManagerError.unableToUnwrapPrivateKey
+        }
+        return AuditLogKeyMaterial(key: key, passwordRecovery: passwordRecovery)
+    }
+
+    private func auditLogKey(from keys: [ProtectedKey],
+                             account: SyncAccount,
+                             passwordRecovery: inout ThirdPartyPasswordRecoveryState) async throws -> AccountInfoKey? {
+        // Default wrappers need no password reads or network recovery.
+        for protectedKey in keys where protectedKey.encryptedWith == SyncCredentialID.defaultCredential {
+            do {
+                let privateKey = try await unwrapPrivateKey(protectedKey, account: account, providedAccessCredentials: nil)
+                return try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKey)
+            } catch {
+                // A bad wrapper may still have a readable third-party alternative.
+            }
+        }
+        let thirdPartyKeys = keys.filter { $0.encryptedWith == SyncCredentialID.thirdParty }
+        guard !thirdPartyKeys.isEmpty else { return nil }
+        if let password = try secureStore.scopedPassword(), !password.isEmpty,
+           let key = auditLogKey(from: thirdPartyKeys, password: password, account: account) {
+            return key
+        }
+        try Task.checkCancellation()
+        let password: Data?
+        switch passwordRecovery {
+        case .completed(let recoveredPassword):
+            password = recoveredPassword
+        case .notAttempted:
+            let credentials = try await scopedAccess.fetchAccessCredentials(account)
+            try Task.checkCancellation()
+            let recoveredPassword = try? scopedAccess.recoverScopedPassword(from: credentials, primaryKey: account.primaryKey, userID: account.userId)
+            password = recoveredPassword.flatMap { $0.isEmpty ? nil : $0 }
+            passwordRecovery = .completed(password)
+        }
+        guard let password else {
+            return nil
+        }
+        return auditLogKey(from: thirdPartyKeys, password: password, account: account)
+    }
+
+    private func auditLogKey(from keys: [ProtectedKey], password: Data, account: SyncAccount) -> AccountInfoKey? {
+        let mainKey = ScopedAccessKeyDerivation.mainKey(from: password, userID: account.userId)
+        for protectedKey in keys {
+            do {
+                let privateKey = try jweCompactCodec.decryptDirect(token: protectedKey.encryptedPrivateKey,
+                                                                  contentEncryptionKey: mainKey,
+                                                                  expectedKid: SyncCredentialID.thirdParty)
+                return try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKey)
+            } catch {
+                // Try another wrapper without changing shared storage.
+            }
+        }
+        return nil
+    }
+
     func preloadKey(from protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], for account: SyncAccount) async throws {
         let key = try await makeAccountInfoKey(
             from: protectedKeys.removingDuplicateWrappingIdentities(),
@@ -153,14 +230,7 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
     private func makeAccountInfoKey(from protectedKeys: [ProtectedKey],
                                     account: SyncAccount,
                                     providedAccessCredentials: [AccessCredential]? = nil) async throws -> AccountInfoKey {
-        let accountInfoKeys = protectedKeys.filter { $0.purpose == ProtectedKeyPurpose.accountInfo }
-        guard let firstKey = accountInfoKeys.first else {
-            throw AccountInfoKeyManagerError.missingProtectedKey
-        }
-        guard !firstKey.kid.isEmpty,
-              accountInfoKeys.allSatisfy({ $0.kid == firstKey.kid && $0.publicKey == firstKey.publicKey }) else {
-            throw AccountInfoKeyManagerError.invalidProtectedKeySet
-        }
+        let accountInfoKeys = try validatedAccountInfoKeys(from: protectedKeys)
 
         let defaultCredentialKeys = accountInfoKeys.filter { $0.encryptedWith == SyncCredentialID.defaultCredential }
         let otherKeys = accountInfoKeys.filter { $0.encryptedWith != SyncCredentialID.defaultCredential }
@@ -195,6 +265,19 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             throw lastError
         }
         throw AccountInfoKeyManagerError.unableToUnwrapPrivateKey
+    }
+
+    private func validatedAccountInfoKeys(from protectedKeys: [ProtectedKey]) throws -> [ProtectedKey] {
+        let accountInfoKeys = protectedKeys.filter { $0.purpose == ProtectedKeyPurpose.accountInfo }
+        guard let firstKey = accountInfoKeys.first else {
+            throw AccountInfoKeyManagerError.missingProtectedKey
+        }
+        guard !firstKey.kid.isEmpty,
+              accountInfoKeys.allSatisfy({ $0.kid == firstKey.kid && $0.publicKey == firstKey.publicKey }) else {
+            throw AccountInfoKeyManagerError.invalidProtectedKeySet
+        }
+
+        return accountInfoKeys
     }
 
     private func unwrapPrivateKey(_ protectedKey: ProtectedKey,

@@ -50,29 +50,37 @@ struct RegisteredDeviceMappingResult {
     }
 }
 
-/// Historical audit-log entries may need the same password recovery, which fetches credentials from the server.
-/// Cache its result for one page so entries do not repeat that request, even when recovery fails.
+enum ThirdPartyPasswordRecoveryState: Sendable {
+    case notAttempted
+    case completed(Data?)
+}
+
+/// Reuses completed recovery within one page, including a nil result. Thrown errors remain retryable.
 /// The cache is used sequentially and is intentionally not Sendable.
 final class ThirdPartyPasswordRecoveryCache {
-    private var hasAttemptedRecovery = false
-    private var cachedPassword: Data?
+    private var recovery: ThirdPartyPasswordRecoveryState
 
-    func recoverPasswordOnce(using operation: () async -> Data?) async -> Data? {
-        guard !hasAttemptedRecovery else {
-            return cachedPassword
-        }
-        hasAttemptedRecovery = true
-        cachedPassword = await operation()
-        return cachedPassword
+    init(recovery: ThirdPartyPasswordRecoveryState = .notAttempted) {
+        self.recovery = recovery
+    }
+
+    func recoverPasswordOnce(using operation: () async throws -> Data?) async throws -> Data? {
+        if case .completed(let password) = recovery { return password }
+        let password = try await operation()
+        let usablePassword = password.flatMap { $0.isEmpty ? nil : $0 }
+        recovery = .completed(usablePassword)
+        return usablePassword
     }
 }
 
 protocol RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool,
-                                          accountInfoKey: AccountInfoKey?,
-                                          thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult
+    func registeredAuditLogDevices(from entries: [RegisteredDeviceEntry],
+                                   account: SyncAccount,
+                                   accountInfoKey: AccountInfoKey?,
+                                   thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async throws -> RegisteredDeviceMappingResult
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice?
     func registeredDevice(fromDefaultCredentialLoginEntryWithID id: String,
                           encryptedName: String,
@@ -81,16 +89,6 @@ protocol RegisteredDeviceMapping {
 }
 
 extension RegisteredDeviceMapping {
-    func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
-                                          account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
-        await registeredDevicesWithRepairState(from: entries,
-                                               account: account,
-                                               isUnifiedReadEnabled: isUnifiedReadEnabled,
-                                               accountInfoKey: nil,
-                                               thirdPartyPasswordRecoveryCache: nil)
-    }
-
     func registeredDevices(from entries: [RegisteredDeviceEntry],
                            account: SyncAccount,
                            isUnifiedReadEnabled: Bool) async -> [RegisteredDevice] {
@@ -203,18 +201,8 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool,
-                                          accountInfoKey: AccountInfoKey?,
-                                          thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult {
-        let accountInfoKeyResolution: AccountInfoKeyResolution
-        if let accountInfoKey {
-            // Audit-log snapshots reuse the key already resolved for their page.
-            accountInfoKeyResolution = .available(accountInfoKey)
-        } else {
-            accountInfoKeyResolution = await accountInfoKeyIfNeeded(for: entries,
-                                                                    account: account,
-                                                                    isUnifiedReadEnabled: isUnifiedReadEnabled)
-        }
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
+        let accountInfoKeyResolution = await accountInfoKeyIfNeeded(for: entries, account: account, isUnifiedReadEnabled: isUnifiedReadEnabled)
         let initialMappings = entries.map { entry in
             registeredDevice(from: entry,
                              account: account,
@@ -225,8 +213,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         var finalMappings = initialMappings
         var wasAccountInfoKeyRefreshCancelled = false
         var accountInfoKeyRefreshFailureReason: UnifiedDeviceListEvent.AccountInfoKeyUnavailableReason?
-        if accountInfoKey == nil,
-           initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
+        if initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
            let accountInfoKeys {
             do {
                 let refreshedAccountInfoKey = try await accountInfoKeys.refreshKey(for: account)
@@ -247,8 +234,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         }
         let resolvedMappings = await mappingsApplyingThirdPartyFallback(to: finalMappings,
                                                                         entries: entries,
-                                                                        account: account,
-                                                                        thirdPartyPasswordRecoveryCache: thirdPartyPasswordRecoveryCache)
+                                                                        account: account)
         return RegisteredDeviceMappingResult(
             devices: resolvedMappings.map(\.device),
             needsCurrentDeviceInfoRepair: needsCurrentDeviceInfoRepair(in: resolvedMappings,
@@ -267,6 +253,56 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
                                           source: $0.source.debugSource,
                                           deviceInfoIssue: $0.unifiedDeviceInfoFailure?.description)
             })
+    }
+
+    // Historical snapshots use the page key without refreshing keys or repairing the current device list.
+    func registeredAuditLogDevices(from entries: [RegisteredDeviceEntry],
+                                   account: SyncAccount,
+                                   accountInfoKey: AccountInfoKey?,
+                                   thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async throws -> RegisteredDeviceMappingResult {
+        var mappings = entries.map {
+            registeredDevice(from: $0, account: account, accountInfoKey: accountInfoKey, thirdPartyMainKey: nil, isUnifiedReadEnabled: true)
+        }
+        let fallbackIndices = entries.indices.filter {
+            entries[$0].credentialId == SyncCredentialID.thirdParty && mappings[$0].source != .deviceInfo
+        }
+        if !fallbackIndices.isEmpty,
+           let mainKey = try await auditLogThirdPartyMainKey(for: fallbackIndices.map { entries[$0] },
+                                                            account: account,
+                                                            recoveryCache: thirdPartyPasswordRecoveryCache) {
+            for index in fallbackIndices {
+                mappings[index] = registeredDevice(from: entries[index], account: account, accountInfoKey: accountInfoKey,
+                                                    thirdPartyMainKey: mainKey, isUnifiedReadEnabled: true)
+            }
+        }
+        return RegisteredDeviceMappingResult(devices: mappings.map(\.device),
+                                             needsCurrentDeviceInfoRepair: false,
+                                             deviceInfoDeviceIDs: Set(mappings.filter { $0.source == .deviceInfo }.map { $0.device.id }))
+    }
+
+    private func auditLogThirdPartyMainKey(for entries: [RegisteredDeviceEntry],
+                                           account: SyncAccount,
+                                           recoveryCache: ThirdPartyPasswordRecoveryCache?) async throws -> Data? {
+        guard isScopedAccessCredentialsEnabled() else { return nil }
+        // Storage and request failures stop the page; malformed historical credentials still use placeholders.
+        if let password = try cachedScopedPassword(), !password.isEmpty,
+           let mainKey = thirdPartyMainKey(for: entries, password: password, account: account) {
+            return mainKey
+        }
+        guard let scopedAccess else { return nil }
+        let recoverPassword = {
+            try Task.checkCancellation()
+            let credentials = try await scopedAccess.fetchAccessCredentials(account)
+            try Task.checkCancellation()
+            return try? scopedAccess.recoverScopedPassword(from: credentials, primaryKey: account.primaryKey, userID: account.userId)
+        }
+        let password: Data?
+        if let recoveryCache {
+            password = try await recoveryCache.recoverPasswordOnce(using: recoverPassword)
+        } else {
+            password = try await recoverPassword()
+        }
+        return password.map { ScopedAccessKeyDerivation.mainKey(from: $0, userID: account.userId) }
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {
@@ -326,8 +362,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     private func mappingsApplyingThirdPartyFallback(to mappings: [MappingAttempt],
                                                     entries: [RegisteredDeviceEntry],
-                                                    account: SyncAccount,
-                                                    thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> [MappingAttempt] {
+                                                    account: SyncAccount) async -> [MappingAttempt] {
         let fallbackEntryIndices = entries.indices.filter {
             entries[$0].credentialId == SyncCredentialID.thirdParty
                 && mappings[$0].source != .deviceInfo
@@ -335,8 +370,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         let fallbackEntries = fallbackEntryIndices.map { entries[$0] }
         guard !fallbackEntries.isEmpty,
               let thirdPartyMainKey = await thirdPartyMainKeyIfNeeded(for: fallbackEntries,
-                                                                      account: account,
-                                                                      thirdPartyPasswordRecoveryCache: thirdPartyPasswordRecoveryCache) else {
+                                                                      account: account) else {
             return mappings
         }
 
@@ -571,8 +605,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     }
 
     private func thirdPartyMainKeyIfNeeded(for entries: [RegisteredDeviceEntry],
-                                           account: SyncAccount,
-                                           thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> Data? {
+                                           account: SyncAccount) async -> Data? {
         guard entries.contains(where: { $0.credentialId == SyncCredentialID.thirdParty }) else {
             return nil
         }
@@ -584,14 +617,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
             return cachedMainKey
         }
 
-        let recoveredPassword: Data?
-        if let thirdPartyPasswordRecoveryCache {
-            recoveredPassword = await thirdPartyPasswordRecoveryCache.recoverPasswordOnce(using: { [self] in
-                await recoveredScopedPassword(for: account)
-            })
-        } else {
-            recoveredPassword = await recoveredScopedPassword(for: account)
-        }
+        let recoveredPassword = await recoveredScopedPassword(for: account)
         return recoveredPassword
             .map { ScopedAccessKeyDerivation.mainKey(from: $0, userID: account.userId) }
     }
@@ -601,7 +627,11 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
             return nil
         }
 
-        let mainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        return thirdPartyMainKey(for: entries, password: scopedPassword, account: account)
+    }
+
+    private func thirdPartyMainKey(for entries: [RegisteredDeviceEntry], password: Data, account: SyncAccount) -> Data? {
+        let mainKey = ScopedAccessKeyDerivation.mainKey(from: password, userID: account.userId)
         let thirdPartyEntries = entries.filter { $0.credentialId == SyncCredentialID.thirdParty }
         // A cached scoped password is only trusted if it can decrypt the 3party fields in this response.
         guard thirdPartyEntries.allSatisfy({ canDecryptThirdPartyDeviceEntry($0, using: mainKey) }) else {

@@ -27,6 +27,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     private var date = Date(timeIntervalSince1970: 1_000_000)
     private let pixels = CapturingWebExtensionPixelFiring()
     private lazy var monitor = CPMMessagingHealthMonitor(pixelFiring: pixels,
+                                                         isUnmeasuredPage: { $0.path.hasPrefix("/unmeasured") },
                                                          silenceWindow: 30,
                                                          now: { [unowned self] in self.date })
 
@@ -157,22 +158,13 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixels.breakages.isEmpty)
     }
 
-    func testDuckPlayerVideoIsNotMeasured() {
-        let embed = URL(string: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")!
-        monitor.handle(.navigationCommitted(tabIdentifier: "a", url: embed, navigationKind: .other, extensionIsLoaded: true))
+    func testPageTheAppSaysIsUnmeasuredIsNotMeasured() {
+        commit("a", path: "unmeasured/video")
+        commit("b", path: "page")
         advance(100)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertTrue(pixels.breakages.isEmpty)
-    }
-
-    func testOtherYoutubeNoCookiePagesAreStillMeasured() {
-        let page = URL(string: "https://www.youtube-nocookie.com/other")!
-        monitor.handle(.navigationCommitted(tabIdentifier: "a", url: page, navigationKind: .other, extensionIsLoaded: true))
-        advance(100)
-        monitor.handle(.interruptionEnded)
-
-        XCTAssertEqual(pixels.breakages, [.one])
+        XCTAssertEqual(pixels.breakages, [.one], "only b is measured")
     }
 
     func testOnlyAnOrdinaryNavigationBecomesANonHTMLDocument() {

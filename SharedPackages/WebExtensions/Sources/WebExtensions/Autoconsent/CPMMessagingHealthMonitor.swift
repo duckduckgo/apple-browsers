@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import DuckPlayer
 import Foundation
 import OSLog
 import WebKit
@@ -122,15 +121,20 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private var suspensionStart: Date?
 
     private let pixelFiring: WebExtensionPixelFiring
+    private let isUnmeasuredPage: (URL) -> Bool
     private let silenceWindow: TimeInterval
     private let now: () -> Date
 
     /// - Parameters:
+    ///   - isUnmeasuredPage: Whether the extension's message can never be matched to the page committed at this URL,
+    ///     because the tab reports another URL to the extension (a Duck Player video). Such pages are not measured.
     ///   - silenceWindow: How long a committed page may stay silent before its tab is reported.
     public init(pixelFiring: WebExtensionPixelFiring,
+                isUnmeasuredPage: @escaping (URL) -> Bool,
                 silenceWindow: TimeInterval = 30,
                 now: @escaping () -> Date = CPMMessagingHealthMonitor.uptimeDate) {
         self.pixelFiring = pixelFiring
+        self.isUnmeasuredPage = isUnmeasuredPage
         self.silenceWindow = silenceWindow
         self.now = now
     }
@@ -192,12 +196,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     }
 
     /// Whether the extension can answer on the committed page: http(s), and not the browser's own error page,
-    /// a history restore (WebKit may not rerun content scripts), a restored session or a Duck Player video.
-    /// The web view of a Duck Player video shows the youtube-nocookie embed, but the tab reports its `duck://player`
-    /// URL to the extension, so the extension's answer could never be matched to the page.
+    /// a history restore (WebKit may not rerun content scripts), a restored session, or a page the app says is not
+    /// measured.
     private func isEligible(url: URL, navigationKind: CPMNavigationKind) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return false }
-        guard !url.isDuckPlayer else { return false }
+        guard !isUnmeasuredPage(url) else { return false }
         return navigationKind == .other
     }
 

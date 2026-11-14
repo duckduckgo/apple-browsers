@@ -411,6 +411,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let modelId: String?
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
+        /// Set when the prompt came from a native control for a task the local model can run, such as
+        /// the summarize chip, so Duck.ai can route it the way it routes its own chip.
+        public let localTask: AIChatLocalModelTask?
 
         public var images: [NativePromptImage]? { attachments.images }
         public var files: [NativePromptFile]? { attachments.files }
@@ -422,6 +425,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             case modelId
             case mode
             case reasoningEffort
+            case localTask
         }
 
         public init(
@@ -431,7 +435,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
             attachments: AIChatPromptAttachments,
             modelId: String?,
             mode: String?,
-            reasoningEffort: AIChatReasoningEffort?
+            reasoningEffort: AIChatReasoningEffort?,
+            localTask: AIChatLocalModelTask? = nil
         ) {
             self.prompt = prompt
             self.autoSubmit = autoSubmit
@@ -440,6 +445,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             self.modelId = modelId
             self.mode = mode
             self.reasoningEffort = reasoningEffort
+            self.localTask = localTask
         }
 
         public init(from decoder: Decoder) throws {
@@ -452,6 +458,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
             reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+            localTask = try container.decodeIfPresent(AIChatLocalModelTask.self, forKey: .localTask)
         }
 
         public func encode(to encoder: Encoder) throws {
@@ -463,6 +470,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             try container.encodeIfPresent(modelId, forKey: .modelId)
             try container.encodeIfPresent(mode, forKey: .mode)
             try container.encodeIfPresent(reasoningEffort, forKey: .reasoningEffort)
+            try container.encodeIfPresent(localTask, forKey: .localTask)
         }
     }
 
@@ -591,8 +599,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         try container.encodeIfPresent(termsAccepted, forKey: .termsAccepted)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, attachments: AIChatPromptAttachments = .none, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, attachments: attachments, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, attachments: AIChatPromptAttachments = .none, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil, localTask: AIChatLocalModelTask? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, attachments: attachments, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort, localTask: localTask)), pageContext: pageContext, selections: selections)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

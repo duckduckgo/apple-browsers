@@ -62,6 +62,7 @@ enum DebugScreen: Identifiable {
         let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
         let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
         let daxGreetingDebugging: DaxGreetingDebugging
+        var aiChatLocalModel: AIChatLocalModelDependencies?
 
     }
 

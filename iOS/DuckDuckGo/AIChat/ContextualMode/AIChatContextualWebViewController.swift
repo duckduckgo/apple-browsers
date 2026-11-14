@@ -78,6 +78,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private var floatingInputObscuredHeight: CGFloat = 0
 
     private(set) var aiChatContentHandler: AIChatContentHandling
+    private(set) weak var aiChatUserScript: AIChatUserScript?
 
     /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
@@ -591,6 +592,7 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     }
 
     func configureContentHandler(with userScript: AIChatUserScript) {
+        aiChatUserScript = userScript
         aiChatContentHandler.setup(with: userScript, webView: webView, displayMode: .contextual)
         userScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScript)

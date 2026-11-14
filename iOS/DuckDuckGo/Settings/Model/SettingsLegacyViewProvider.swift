@@ -66,6 +66,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
     let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+    let aiChatLocalModel: AIChatLocalModelDependencies?
     let daxGreetingDebugging: DaxGreetingDebugging
 
     init(syncService: any DDGSyncing,
@@ -93,7 +94,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
          promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
-         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
+         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil,
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -119,6 +121,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
         self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
+        self.aiChatLocalModel = aiChatLocalModel
         self.daxGreetingDebugging = daxGreetingDebugging
     }
     
@@ -175,7 +178,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             aiChatBonusMessageLog: self.aiChatBonusMessageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
             promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter,
-            daxGreetingDebugging: self.daxGreetingDebugging))
+            daxGreetingDebugging: self.daxGreetingDebugging,
+            aiChatLocalModel: self.aiChatLocalModel))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

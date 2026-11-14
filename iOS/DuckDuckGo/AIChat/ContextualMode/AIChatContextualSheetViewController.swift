@@ -1079,10 +1079,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             }
         case .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
-            if let persistentUTIHost {
-                persistentUTIHost.submitQuickActionPrompt(action.prompt)
-            } else {
-                submitPromptFromNativeInput(action.prompt, sentWithAsk: false)
+            submittingSummary {
+                if let persistentUTIHost {
+                    persistentUTIHost.submitQuickActionPrompt(action.prompt)
+                } else {
+                    submitPromptFromNativeInput(action.prompt, sentWithAsk: false)
+                }
             }
         }
     }
@@ -1200,8 +1202,23 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         guard isFrontendReady else { return false }
         guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
 
-        submitSuggestionPrompt(suggestion.prompt)
+        if suggestion.id == Self.summarizePageSuggestionID {
+            submittingSummary { submitSuggestionPrompt(suggestion.prompt) }
+        } else {
+            submitSuggestionPrompt(suggestion.prompt)
+        }
         return true
+    }
+
+    private static let summarizePageSuggestionID = "summarize-page"
+
+    /// Tells Duck.ai the prompt is a page summary, which it can run on the local model.
+    private func submittingSummary(_ submit: () -> Void) {
+        guard let userScript = webViewController?.aiChatUserScript else {
+            submit()
+            return
+        }
+        userScript.submitting(localTask: .summarize, submit)
     }
 
     /// A sheet promoted for a submission that never arrived would sit on the web view with no input at

@@ -52,6 +52,7 @@ struct SettingsAIFeaturesView: View {
                 viewModel.onRequestDismissSettings?()
             }.foregroundColor(Color(designSystemColor: .textPrimary))) : AnyView(EmptyView()))
         .onAppear {
+            viewModel.localModelAccessSettingsViewModel?.refresh()
             PixelKit.fire(Pixel.Event.aiChatSettingsDisplayed,
                           frequency: .dailyAndCount,
                           options: .parameters(viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat)))
@@ -129,6 +130,11 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
                 Text(UserText.settingsDuckAiSectionHeader)
             }
             .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+
+            if let localModelAccess = viewModel.localModelAccessSettingsViewModel {
+                LocalModelAccessSettingsSection(model: localModelAccess,
+                                                isPad: UIDevice.current.userInterfaceIdiom == .pad)
+            }
         }
 
         // Always shown: the button disables all AI while any is on, then greys out

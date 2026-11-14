@@ -531,7 +531,8 @@ extension MainViewController {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
-                                                            promoCoordinationCooldownResetter: promoCoordinationService)
+                                                            promoCoordinationCooldownResetter: promoCoordinationService,
+                                                            aiChatLocalModel: userScriptsDependencies.aiChatLocalModel)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
@@ -666,7 +667,8 @@ extension MainViewController {
             aiChatBonusMessageLog: self.userScriptsDependencies.aiChatBonusOffer.messageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
-            daxGreetingDebugging: self.daxGreetingService))
+            daxGreetingDebugging: self.daxGreetingService,
+            aiChatLocalModel: self.userScriptsDependencies.aiChatLocalModel))
 
         let closeButton = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
         debug.navigationItem.rightBarButtonItem = closeButton

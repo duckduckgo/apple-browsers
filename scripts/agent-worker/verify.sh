@@ -29,6 +29,18 @@ common=(-derivedDataPath DerivedData -clonedSourcePackagesDirPath "$PACKAGES" -d
 
 : > "$md"
 
+# A small copy of a screenshot that fits on screen, linked to the full size one
+thumb() {
+  local small="${1%.png}-small.png" name
+  name=$(basename "$1")
+  if sips --resampleWidth 300 "$1" --out "$small" > /dev/null 2>&1; then
+    echo "[![$2]($url/$(basename "$small"))]($url/$name)"
+  else
+    echo "[$2]($url/$name)"
+  fi
+}
+shot() { echo -e "\n$(thumb "$1" "$2")" >> "$md"; }
+
 # Lines worth showing from an xcodebuild log, without the long command echoes
 errors() { grep -E ": error:|^error:|BUILD FAILED|Testing failed|failed \(" "$1" | grep -v "^ *export " | cut -c1-300 | sort -u | head -30; }
 
@@ -77,9 +89,10 @@ if [[ -z $app || -z ${UDID:-} ]]; then
 fi
 xcrun simctl boot "$UDID" > /dev/null 2>&1
 xcrun simctl bootstatus "$UDID" > /dev/null 2>&1
-if xcrun simctl install "$UDID" "$app" > /dev/null 2>&1 && xcrun simctl launch "$UDID" com.duckduckgo.mobile.ios > /dev/null 2>&1; then
+if xcrun simctl install "$UDID" "$app" > /dev/null 2>&1 && xcrun simctl launch "$UDID" com.duckduckgo.mobile.ios \
+    -isOnboardingCompleted true -isRunningUITests true > /dev/null 2>&1; then
   sleep 15
-  xcrun simctl io "$UDID" screenshot "$out/launch.png" > /dev/null 2>&1 && echo "![The app after launch]($url/launch.png)" >> "$md"
+  xcrun simctl io "$UDID" screenshot "$out/launch.png" > /dev/null 2>&1 && shot "$out/launch.png" "The app after launch"
   xcrun simctl terminate "$UDID" com.duckduckgo.mobile.ios > /dev/null 2>&1
 else
   echo "Couldn't install or launch the app on the simulator." >> "$md"
@@ -88,7 +101,7 @@ fi
 
 # TEMP: a launch recording when there's no flow, to test the recording path
 if [[ ! -s "$plan/flow.yaml" ]]; then
-  printf 'appId: com.duckduckgo.mobile.ios\n---\n- launchApp\n- startRecording: launch\n- waitForAnimationToEnd\n- takeScreenshot: home\n- stopRecording\n' > "$plan/flow.yaml"
+  printf 'appId: com.duckduckgo.mobile.ios\n---\n- launchApp:\n    arguments:\n      isOnboardingCompleted: "true"\n      isRunningUITests: "true"\n- startRecording: launch\n- waitForAnimationToEnd\n- takeScreenshot: home\n- stopRecording\n' > "$plan/flow.yaml"
   echo -e "\nThere's no flow for this change, so this is a plain launch recording." >> "$md"
 fi
 if ! command -v maestro > /dev/null; then
@@ -96,7 +109,7 @@ if ! command -v maestro > /dev/null; then
   exit 0
 fi
 mkdir -p "$out/maestro" && cp "$plan/flow.yaml" "$out/maestro/flow.yaml"
-(cd "$out/maestro" && MAESTRO_CLI_NO_ANALYTICS=1 maestro --device "$UDID" test flow.yaml > ../maestro.log 2>&1) &&
+(cd "$out/maestro" && MAESTRO_CLI_NO_ANALYTICS=1 maestro --device "$UDID" test --test-output-dir "$out/maestro/output" flow.yaml > ../maestro.log 2>&1) &&
   flowed=passed || flowed=failed
 echo "maestro: $flowed"
 {
@@ -108,17 +121,24 @@ echo "maestro: $flowed"
     echo '```'
   fi
 } >> "$md"
+# Maestro writes screenshots and recordings to the flow's directory or the output dir, depending on its version
+find "$out/maestro" -type f \( -name '*.mp4' -o -name '*.png' \) -print0 |
+  while IFS= read -r -d '' f; do [[ $(dirname "$f") == "$out/maestro" ]] || mv -n "$f" "$out/maestro/"; done
+gifs=() pngs=()
 for v in "$out"/maestro/*.mp4; do
   [[ -f $v ]] || continue
   gif="$out/$(basename "${v%.mp4}").gif"
   if ffmpeg -loglevel error -y -i "$v" -vf "fps=8,scale=320:-1:flags=lanczos" -t 30 "$gif" 2> /dev/null; then
-    echo -e "\n![Recording $(basename "$gif")]($url/$(basename "$gif"))" >> "$md"
+    gifs+=("![Recording $(basename "$gif")]($url/$(basename "$gif"))")
   fi
   rm -f "$v"
 done
+[[ ${#gifs[@]} -gt 0 ]] && echo -e "\n${gifs[*]}" >> "$md"
 for p in "$out"/maestro/*.png; do
   [[ -f $p ]] || continue
   mv "$p" "$out/"
-  echo -e "\n![$(basename "$p")]($url/$(basename "$p"))" >> "$md"
+  pngs+=("$(thumb "$out/$(basename "$p")" "$(basename "${p%.png}")")")
 done
+[[ ${#pngs[@]} -gt 0 ]] && echo -e "\n${pngs[*]}" >> "$md"
+[[ ${#gifs[@]} -gt 0 || ${#pngs[@]} -gt 0 ]] || echo -e "\nThe flow saved no recording or screenshots." >> "$md"
 exit 0

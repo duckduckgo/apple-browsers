@@ -81,6 +81,8 @@ jobs:
                       "~/.swiftpm", "~/.cache", "~/.maestro")],
                   "denyWrite": [],
               },
+              # xcodebuild test sets up a pseudo-terminal for the test runner
+              "allowPty": True,
           }
           for p in (os.path.expanduser("~/.srt-settings.json"), f"{tmp}/srt-settings.json"):
               json.dump(policy, open(p, "w"), indent=2)
@@ -156,6 +158,7 @@ jobs:
             OTHER_SWIFT_FLAGS='$(inherited) -disable-sandbox' > "$RUNNER_TEMP/prebuild.log" 2>&1 && rc=0 || rc=$?
           grep -E "BUILD (SUCCEEDED|FAILED)|Command PhaseScriptExecution failed|^error:|: error:" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export " | sort | uniq -c | sort -rn | head -20 || true
           grep -B12 "Command PhaseScriptExecution failed" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export \|^ *cd \|^ *builtin" | head -60 || true
+          ls -la DerivedData/Build/Intermediates.noindex/XCBuildData | head -20 || true
           exit $rc
 
       - name: Stand-in for the agent's edit
@@ -178,6 +181,27 @@ jobs:
           grep -E "BUILD (SUCCEEDED|FAILED)|Command [A-Za-z]+ failed|: error:|^error:|Operation not permitted|sandbox_extension|couldNot" "$RUNNER_TEMP/build.log" | grep -v "^ *export " | cut -c1-240 | sort | uniq -c | sort -rn | head -30 || true
           grep -B15 -E "Command [A-Za-z]+ failed" "$RUNNER_TEMP/build.log" | grep -v "^ *export \|^ *cd \|^ *builtin-SwiftDriver" | cut -c1-240 | head -60 || true
           echo "files compiled: $(grep -c "^SwiftCompile\|^CompileSwift" "$RUNNER_TEMP/build.log" || true)"
+          ls -la DerivedData/Build/Intermediates.noindex/XCBuildData | head -20 || true
+          exit $rc
+
+      # If this compiles almost nothing, sandboxed builds are incremental with each other and only the first
+      # one after the prebuild starts over
+      - name: No-op build under the sandbox
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        working-directory: target
+        env:
+          DEST: ${{ steps.sim.outputs.destination }}
+        run: |
+          set -o pipefail
+          source "$RUNNER_TEMP/sx.sh"
+          sx "env -i /bin/bash '$RUNNER_TEMP/xcb.sh' build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+            -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
+            -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none COMPILATION_CACHE_ENABLE_CACHING=NO \
+            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/noop.log" 2>&1 && rc=0 || rc=$?
+          grep -E "BUILD (SUCCEEDED|FAILED)" "$RUNNER_TEMP/noop.log" || true
+          echo "files compiled: $(grep -c "^SwiftCompile\|^CompileSwift" "$RUNNER_TEMP/noop.log" || true)"
+          ls -la DerivedData/Build/Intermediates.noindex/XCBuildData | head -20 || true
           exit $rc
 
       - name: One unit test under the sandbox
@@ -242,7 +266,9 @@ jobs:
           cd "$GITHUB_WORKSPACE/rec"
           source "$RUNNER_TEMP/sx.sh"
           export MAESTRO_CLI_NO_ANALYTICS=1
-          sx "maestro test flow.yaml" 2>&1 | tail -20 || echo "maestro failed under the sandbox"
+          sx "maestro test flow.yaml" > maestro.log 2>&1 || echo "maestro failed under the sandbox"
+          grep -E "Exception|Caused by|rror" maestro.log | grep -v "^\s*at " | head -20 || true
+          tail -15 maestro.log
           ls -la
           if [[ -f demo.mp4 ]]; then
             ffmpeg -loglevel error -y -i demo.mp4 -vf "fps=8,scale=320:-1:flags=lanczos" -t 8 demo.gif

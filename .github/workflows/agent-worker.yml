@@ -118,8 +118,29 @@ jobs:
             echo "The repository to change is checked out at $GITHUB_WORKSPACE/target. Make all changes there."
             echo "Follow the plan below. Do not copy the plan, task details or links into code, comments or files."
             echo "You run unattended and nobody can answer questions. If the plan is ambiguous, make the smallest"
-            echo "change consistent with it and finish. You only have file tools: building, testing, committing and"
-            echo "opening the PR happen after you, so don't plan for them."
+            echo "change consistent with it and finish. You only have file tools. After you finish, the worker builds"
+            echo "your change, runs the tests you name and records the app, so don't plan to do any of that yourself."
+            echo
+            echo "Write an evidence plan in .agent-evidence/ at the repository root, so the approver can see the fix work:"
+            echo "- tests.txt: up to 5 tests that cover the change, one per line in xcodebuild -only-testing form,"
+            echo "  for example UnitTests/SwipeTabsCoordinatorTests or UnitTests/SwipeTabsCoordinatorTests/testSwipe."
+            echo "  Add a focused unit test for the fix when you can."
+            echo "- flow.yaml, for iOS changes with a visible effect: a short Maestro flow that opens the app, goes to"
+            echo "  the screen the change affects and shows it working. Use only these commands: launchApp, stopApp,"
+            echo "  killApp, clearState, tapOn, doubleTapOn, longPressOn, inputText, eraseText, pressKey, back,"
+            echo "  hideKeyboard, scroll, scrollUntilVisible, swipe, assertVisible, assertNotVisible,"
+            echo "  waitForAnimationToEnd, extendedWaitUntil, takeScreenshot, startRecording, stopRecording,"
+            echo "  setOrientation, copyTextFrom, pasteText. Select elements by visible text or accessibility id from"
+            echo "  the code. For example:"
+            echo "    appId: com.duckduckgo.mobile.ios"
+            echo "    ---"
+            echo "    - launchApp"
+            echo "    - startRecording: demo"
+            echo "    - tapOn: \"Settings\""
+            echo "    - takeScreenshot: settings"
+            echo "    - stopRecording"
+            echo "  Skip flow.yaml when the fix has nothing to see, such as a race or a nil check, and say why in your"
+            echo "  final message."
             echo
             echo "When you're done, write .agent-pr.md at the repository root for the pull request, which is public:"
             echo "the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does,"
@@ -192,6 +213,7 @@ jobs:
           set -euo pipefail
           # The PR text goes to evidence for the approver, never into the patch
           python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/pr_text.py" extract . "$RUNNER_TEMP/evidence"
+          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/evidence_plan.py" extract . "$RUNNER_TEMP/evidence"
           git add -A
           git diff --cached --binary > "$RUNNER_TEMP/evidence/changes.patch"
           if [[ ! -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
@@ -248,10 +270,136 @@ jobs:
           echo "::error::claude exited with $rc"
           exit 1
 
-  # Moves the Asana task to Waiting for approval, with the evidence links and what to click to approve
-  approval-request:
+  # Builds the patch on a fresh runner, runs the agent's tests and records its Maestro flow. Results go to
+  # evidence for the approver and never fail the run. The Azure login is only held before and after the
+  # build, never while the agent's code runs
+  verify:
     needs: agent
     if: needs.agent.result == 'success'
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    environment: agent-worker
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      url: ${{ steps.upload.outputs.url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          path: target
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: worker
+          sparse-checkout: scripts/agent-worker
+          persist-credentials: false
+
+      - name: Azure login (GitHub OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
+          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Download patch and evidence plan
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/plan"
+          for f in changes.patch tests.txt flow.yaml; do
+            az storage blob download --auth-mode login --only-show-errors \
+              --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
+              --name "$EVIDENCE_PREFIX/$f" --file "$RUNNER_TEMP/plan/$f" > /dev/null 2>&1 || echo "no $f"
+          done
+          [[ -s "$RUNNER_TEMP/plan/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
+
+      - name: Azure logout
+        if: always()
+        run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
+
+      # From main's manifests, before the patch is applied, and the key is removed before any agent code runs
+      - uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Resolve packages
+        working-directory: target
+        run: |
+          set -o pipefail
+          xcodebuild -resolvePackageDependencies -scheme 'iOS Browser' -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" \
+            -skipPackagePluginValidation -skipMacroValidation > "$RUNNER_TEMP/resolve.log" 2>&1 && echo "resolved" || echo "resolve failed"
+
+      - name: Remove the deploy key
+        run: |
+          ssh-add -D || true
+          ssh-agent -k || true
+          echo "SSH_AUTH_SOCK=" >> "$GITHUB_ENV"
+
+      - name: Select iOS Simulator
+        id: sim
+        uses: ./target/.github/actions/select-ios-simulator
+        with:
+          preferred-versions: "27.0,26.2,26.1,26.0"
+
+      - name: Install Maestro and ffmpeg
+        continue-on-error: true
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash > /dev/null
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          command -v ffmpeg > /dev/null || brew install ffmpeg > /dev/null
+
+      - name: Apply patch
+        working-directory: target
+        run: git apply --index "$RUNNER_TEMP/plan/changes.patch"
+
+      # The agent's code runs from here, without the OIDC request variables
+      - name: Build, test and record
+        continue-on-error: true
+        env:
+          DEST: ${{ steps.sim.outputs.destination }}
+          IOS_VERSION: ${{ steps.sim.outputs.ios-version }}
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -I -c '
+          import json, os, sys
+          v = "iOS-" + os.environ["IOS_VERSION"].replace(".", "-")
+          d = json.load(sys.stdin)["devices"]
+          print(next((x["udid"] for rt, xs in d.items() if rt.endswith(v) for x in xs if x["name"] == "iPhone 17"), ""))') || true
+          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN UDID="$UDID" PACKAGES="$RUNNER_TEMP/packages" \
+            bash "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify.sh" "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
+
+      - name: Azure login again (GitHub OIDC)
+        if: always()
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
+          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Upload results to artifacts.go
+        id: upload
+        if: always()
+        run: |
+          set -euo pipefail
+          [[ -d "$RUNNER_TEMP/verify" ]] || { echo "nothing to upload"; exit 0; }
+          az storage blob upload-batch --auth-mode login --only-show-errors \
+            --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
+            --destination-path "$EVIDENCE_PREFIX/verify" --source "$RUNNER_TEMP/verify" > /dev/null
+          url="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "- [verify.md]($url/verify.md) (build, tests and screens, SSO)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Azure logout
+        if: always()
+        run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
+
+  # Moves the Asana task to Waiting for approval, with the evidence links and what to click to approve
+  approval-request:
+    needs: [agent, verify]
+    if: ${{ !cancelled() && needs.agent.result == 'success' }}
     runs-on: ubuntu-latest
     environment: agent-worker
     timeout-minutes: 5
@@ -273,13 +421,15 @@ jobs:
           TASK_GID: ${{ inputs.task_gid }}
           STAGE: approval
           EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
+          VERIFY_URL: ${{ needs.verify.outputs.url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: python3 -I worker/scripts/agent-worker/set_agent_status.py
 
   # A person reviews the evidence and approves the agent-publish environment before anything in
   # this public repo is created. The patch comes from artifacts.go, never a public artifact
   publish:
-    needs: agent
+    needs: [agent, verify]
+    if: ${{ !cancelled() && needs.agent.result == 'success' }}
     runs-on: ubuntu-latest
     environment: agent-publish
     timeout-minutes: 10
@@ -371,7 +521,7 @@ jobs:
   # Sets the task's Agent Status from how the run ended: PR open with the PR link, or Needs attention.
   # Acts as the Apple Agent Asana App Actor, on a fresh runner so nothing the agent wrote runs next to it
   status:
-    needs: [agent, publish]
+    needs: [agent, verify, publish]
     if: always()
     runs-on: ubuntu-latest
     environment: agent-worker
@@ -396,5 +546,6 @@ jobs:
           EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
           PUBLISH: ${{ needs.publish.result }}
           PR_URL: ${{ needs.publish.outputs.pr_url }}
+          VERIFY_URL: ${{ needs.verify.outputs.url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: python3 -I worker/scripts/agent-worker/set_agent_status.py

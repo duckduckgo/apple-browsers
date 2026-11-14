@@ -68,6 +68,14 @@ jobs:
           path: target
           persist-credentials: false
 
+      # The worker's own scripts, from this branch and outside the agent's writable checkout
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: worker
+          sparse-checkout: scripts/agent-worker
+          persist-credentials: false
+
       - name: Azure login (GitHub OIDC)
         uses: azure/login@v2
         with:
@@ -163,36 +171,8 @@ jobs:
               --disallowedTools "Bash,WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
               --max-turns 50 --output-format json \
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
-          python3 - "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence/result.md" "$rc" <<'PY' || true
-          import json, re, sys
-          src, md, rc = sys.argv[1:4]
-          try:
-              r = json.load(open(src))
-          except Exception:
-              print("no parsable result")
-              open(md, "w").write(f"# Agent result\n\nClaude exited with {rc} and wrote no parsable result. See result.json and claude.err.\n")
-              sys.exit()
-          summary = {k: r.get(k) for k in ("subtype", "is_error", "num_turns", "total_cost_usd")}
-          # Tool names only, never inputs, so blocked writes show up without leaking plan text
-          summary["permission_denials"] = sorted({d.get("tool_name", "?") for d in r.get("permission_denials") or []})
-          print(summary)
-          # A readable copy of result.json for the artifacts viewer, which renders Markdown but not JSON.
-          # It goes to evidence only, never the log or job summary
-          cost, secs = r.get("total_cost_usd"), (r.get("duration_ms") or 0) / 1000
-          text = r.get("result") or ""
-          fence = "`" * max(3, max((len(m) for m in re.findall(r"`+", text)), default=0) + 1)
-          lines = [
-              "# Agent result", "",
-              "| | |", "|---|---|",
-              f"| Outcome | {r.get('subtype')}{' (error)' if r.get('is_error') else ''}, exit {rc} |",
-              f"| Turns | {r.get('num_turns')} |",
-              f"| Cost | {'$%.2f' % cost if cost is not None else '-'} |",
-              f"| Duration | {secs:.0f}s |",
-              f"| Denied tools | {', '.join(summary['permission_denials']) or 'none'} |",
-              "", "## Final message", "", fence, text, fence, "",
-          ]
-          open(md, "w").write("\n".join(lines))
-          PY
+          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/result_md.py" \
+            "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence/result.md" "$rc" || true
           echo "rc=$rc" >> "$GITHUB_ENV"
 
       - name: Export changes as a patch
@@ -208,8 +188,8 @@ jobs:
             exit 1
           fi
           { printf '\n## Changes\n\n```\n'; git diff --cached --stat; printf '```\n'; } >> "$RUNNER_TEMP/evidence/result.md"
-          if git diff --cached --name-only | grep -qE '^\.github/'; then
-            echo "::error::patch touches .github/; refusing"
+          if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
+            echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
             exit 1
           fi
           git diff --cached --stat
@@ -302,8 +282,8 @@ jobs:
           set -euo pipefail
           git switch -c "$BRANCH"
           git apply --index "$RUNNER_TEMP/changes.patch"
-          if git diff --cached --name-only | grep -qE '^\.github/'; then
-            echo "::error::patch touches .github/; refusing"
+          if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
+            echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
             exit 1
           fi
           git config user.name "github-actions[bot]"
@@ -334,8 +314,16 @@ jobs:
     runs-on: ubuntu-latest
     environment: agent-worker
     timeout-minutes: 5
-    permissions: {}
+    permissions:
+      contents: read
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: worker
+          sparse-checkout: scripts/agent-worker
+          persist-credentials: false
+
       - name: Set Agent Status
         env:
           ASANA_APP_CLIENT_ID: ${{ secrets.ASANA_APP_CLIENT_ID }}
@@ -349,35 +337,4 @@ jobs:
           PUBLISH: ${{ needs.publish.result }}
           PR_URL: ${{ needs.publish.outputs.pr_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          python3 - <<'PY'
-          import json, os, re, sys, urllib.parse, urllib.request
-          e = os.environ
-          if not re.fullmatch(r"[0-9]{1,20}", e["TASK_GID"]):
-              sys.exit("bad task_gid")
-          if e["PUBLISH"] == "success" and re.fullmatch(r"https://github\.com/[^\s]+/pull/[0-9]+", e.get("PR_URL", "")):
-              status, text = "pr_open", f"Agent worker opened a draft PR: {e['PR_URL']}"
-          elif e["AGENT"] != "success":
-              status, text = "needs_attention", f"Agent worker failed or made no changes: {e['RUN_URL']}"
-          else:
-              status, text = "needs_attention", f"Agent worker's change was not published (approval declined or publish failed): {e['RUN_URL']}"
-
-          # A 1-hour access token from the App Actor's refresh token
-          grant = urllib.parse.urlencode({"grant_type": "refresh_token", "client_id": e["ASANA_APP_CLIENT_ID"],
-                                          "client_secret": e["ASANA_APP_CLIENT_SECRET"],
-                                          "refresh_token": e["ASANA_APP_REFRESH_TOKEN"]}).encode()
-          with urllib.request.urlopen("https://app.asana.com/-/oauth_token", data=grant, timeout=30) as resp:
-              token = json.load(resp)["access_token"]
-          print(f"::add-mask::{token}")
-
-          def call(method, path, data):
-              req = urllib.request.Request(f"https://app.asana.com/api/1.0{path}", method=method,
-                                           data=json.dumps({"data": data}).encode(),
-                                           headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
-              urllib.request.urlopen(req, timeout=30).close()
-
-          option = json.loads(e["OPTIONS"])[status]
-          call("PUT", f"/tasks/{e['TASK_GID']}", {"custom_fields": {e["FIELD"]: option}})
-          call("POST", f"/tasks/{e['TASK_GID']}/stories", {"text": text})
-          print(f"task {e['TASK_GID']}: Agent Status {status}")
-          PY
+        run: python3 -I worker/scripts/agent-worker/set_agent_status.py

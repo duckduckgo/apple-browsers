@@ -4164,10 +4164,6 @@ public extension Pixel.Event {
         case settingToggled(to: Bool)
         case matchesApiTimeout
         case failedToDownloadInitialDataSets(category: ThreatKind, type: DataManager.StoredDataType.Kind)
-        case singleDataSetUpdatePerformance(MaliciousSiteProtection.SingleDataSetUpdatePerformanceInfo)
-        case singleDataSetUpdateDiskUsage(MaliciousSiteProtection.SingleDataSetUpdateDiskUsageInfo)
-        case aggregateDataSetUpdatePerformance(MaliciousSiteProtection.AggregateDataSetPerformanceInfo)
-        case aggregateDataSetUpdateDiskUsage(MaliciousSiteProtection.AggregateDataSetUpdateDiskUsageInfo)
 
         public init?(_ pixelKitEvent: MaliciousSiteProtection.Event) {
             switch pixelKitEvent {
@@ -4184,17 +4180,13 @@ public extension Pixel.Event {
             case .matchesApiTimeout:
                 self = .matchesApiTimeout
             case .matchesApiFailure:
+                // Only logged.
                 return nil
             case .failedToDownloadInitialDataSets(category: let category, type: let type):
                 self = .failedToDownloadInitialDataSets(category: category, type: type)
-            case .singleDataSetUpdatePerformance(let dataSetUpdateInfo):
-                self = .singleDataSetUpdatePerformance(dataSetUpdateInfo)
-            case .singleDataSetUpdateDiskUsage(let dataSetUpdateInfo):
-                self = .singleDataSetUpdateDiskUsage(dataSetUpdateInfo)
-            case .aggregateDataSetUpdatePerformance(let aggregateDataSetsUpdateInfo):
-                self = .aggregateDataSetUpdatePerformance(aggregateDataSetsUpdateInfo)
-            case .aggregateDataSetUpdateDiskUsage(let aggregateDataSetsUpdateInfo):
-                self = .aggregateDataSetUpdateDiskUsage(aggregateDataSetsUpdateInfo)
+            default:
+                // The other events are fired as `MaliciousSiteProtectionDebugPixel`.
+                return nil
             }
         }
 
@@ -4214,20 +4206,12 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.matchesApiTimeout
             case .failedToDownloadInitialDataSets(let category, let type):
                 return MaliciousSiteProtection.Event.failedToDownloadInitialDataSets(category: category, type: type)
-            case .singleDataSetUpdatePerformance(let info):
-                return MaliciousSiteProtection.Event.singleDataSetUpdatePerformance(info)
-            case .singleDataSetUpdateDiskUsage(let info):
-                return MaliciousSiteProtection.Event.singleDataSetUpdateDiskUsage(info)
-            case .aggregateDataSetUpdatePerformance(let info):
-                return MaliciousSiteProtection.Event.aggregateDataSetUpdatePerformance(info)
-            case .aggregateDataSetUpdateDiskUsage(let info):
-                return MaliciousSiteProtection.Event.aggregateDataSetUpdateDiskUsage(info)
             }
         }
 
         var name: String {
             switch self {
-            case .failedToDownloadInitialDataSets, .singleDataSetUpdatePerformance, .singleDataSetUpdateDiskUsage, .aggregateDataSetUpdatePerformance, .aggregateDataSetUpdateDiskUsage:
+            case .failedToDownloadInitialDataSets:
                 return "debug_\(event.name)"
             default:
                 return event.name

@@ -22,15 +22,28 @@ import MaliciousSiteProtection
 import Common
 import FoundationExtensions
 import Core
+import PixelKit
+import UIKit
 
 typealias MaliciousSiteProtectionManaging = MaliciousSiteDetecting & MaliciousSiteProtectionDatasetsFetching
+
+/// Says whether datasets are in memory, without loading them.
+protocol MaliciousSiteProtectionDataLoadStateProviding {
+    func isLoaded(_ kind: MaliciousSiteProtection.DataManager.StoredDataType.Kind, for threatKinds: [ThreatKind]) async -> Bool
+}
+
+extension MaliciousSiteProtection.DataManager: MaliciousSiteProtectionDataLoadStateProviding {}
 
 final class MaliciousSiteProtectionManager {
     private let detector: MaliciousSiteDetecting
     private let dataFetcher: MaliciousSiteProtectionDatasetsFetching
     private let preferencesManager: MaliciousSiteProtectionPreferencesReading
     private let maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger
-    
+    private let dataLoadStateProvider: MaliciousSiteProtectionDataLoadStateProviding
+    private let isInBackground: @MainActor () -> Bool
+    private let supportedThreatsProvider: SupportedThreatsProvider
+    private let pixelFiring: () -> PixelFiring?
+
     init(
         dataFetcher: MaliciousSiteProtectionDatasetsFetching,
         api: MaliciousSiteProtectionAPI,
@@ -38,16 +51,23 @@ final class MaliciousSiteProtectionManager {
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,
         preferencesManager: MaliciousSiteProtectionPreferencesReading,
         maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger,
-        supportedThreatsProvider: @escaping SupportedThreatsProvider
+        supportedThreatsProvider: @escaping SupportedThreatsProvider,
+        isInBackground: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState == .background },
+        dataLoadStateProvider: MaliciousSiteProtectionDataLoadStateProviding? = nil,
+        pixelFiring: @escaping () -> PixelFiring? = { PixelKit.shared }
     ) {
         self.dataFetcher = dataFetcher
         self.preferencesManager = preferencesManager
         self.maliciousSiteProtectionFeatureFlagger = maliciousSiteProtectionFeatureFlagger
+        self.dataLoadStateProvider = dataLoadStateProvider ?? dataManager
+        self.isInBackground = isInBackground
+        self.supportedThreatsProvider = supportedThreatsProvider
+        self.pixelFiring = pixelFiring
         self.detector = detector ?? MaliciousSiteDetector(
             apiEnvironment: api.environment,
             service: api.service,
             dataManager: dataManager,
-            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
+            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents(),
             supportedThreatsProvider: supportedThreatsProvider
         )
     }
@@ -77,7 +97,24 @@ extension MaliciousSiteProtectionManager: MaliciousSiteDetecting {
             return .none
         }
 
+        // Read before the detector runs, because the detector loads the hash prefixes.
+        let isCached = await dataLoadStateProvider.isLoaded(.hashPrefixSet, for: supportedThreatsProvider())
+        fireBackgroundURLCheckPixel(isCached: isCached)
+
         return await detector.evaluate(url)
+    }
+
+    /// Counts checks that run in the background, by whether the hash prefixes were in memory or read from disk.
+    /// Filter sets aren't counted: they're only read after a hash prefix match.
+    /// Runs in its own task so detection doesn't wait for the main thread.
+    @discardableResult
+    func fireBackgroundURLCheckPixel(isCached: Bool) -> Task<Void, Never> {
+        Task { [isInBackground, pixelFiring] in
+            // `applicationState` can only be read on the main thread.
+            guard await isInBackground() else { return }
+
+            pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.backgroundURLCheck(dataState: isCached ? .cached : .disk), frequency: .dailyAndCount)
+        }
     }
 
 }

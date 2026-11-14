@@ -44,7 +44,8 @@ final class MaliciousSiteProtectionService {
                 dataStoreURL: applicationSupportDirectory
             ),
             embeddedDataProvider: nil,
-            fileNameProvider: MaliciousSiteProtectionManager.fileName(for:)
+            fileNameProvider: MaliciousSiteProtectionManager.fileName(for:),
+            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents()
         )
 
         let maliciousSiteProtectionFeatureFlagger = MaliciousSiteProtectionFeatureFlags(featureFlagger: featureFlagger,
@@ -65,7 +66,7 @@ final class MaliciousSiteProtectionService {
             apiEnvironment: maliciousSiteProtectionAPI.environment,
             service: maliciousSiteProtectionAPI.service,
             dataManager: maliciousSiteProtectionDataManager,
-            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
+            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents(),
             updateIntervalProvider: remoteIntervalProvider,
             supportedThreatsProvider: supportedThreatsProvider
         )

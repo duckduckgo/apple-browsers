@@ -259,16 +259,16 @@ struct AccountManager: AccountManaging {
             }
         }
         try Task.checkCancellation()
-        let accountInfoKey: AccountInfoKey?
+        let keyMaterial: AuditLogKeyMaterial?
         if response.auditLog.entries.contains(where: { $0.version == AuditLogEntry.supportedVersion }) {
             guard let accountInfoKeys else { throw AuditLogError.accountInfoKeyUnavailable }
             // Load once for the page; key-ID mismatches remain per-entry unreadable outcomes.
-            accountInfoKey = try await accountInfoKeys.loadKey(for: account)
+            keyMaterial = try await accountInfoKeys.loadKeyForAuditLog(for: account)
         } else {
-            accountInfoKey = nil
+            keyMaterial = nil
         }
-        let pagePasswordRecoveryCache = ThirdPartyPasswordRecoveryCache()
-        let decoder = AuditLogEntryDecoder(accountInfoKey: accountInfoKey,
+        let pagePasswordRecoveryCache = ThirdPartyPasswordRecoveryCache(recovery: keyMaterial?.passwordRecovery ?? .notAttempted)
+        let decoder = AuditLogEntryDecoder(accountInfoKey: keyMaterial?.key,
                                            deviceMapper: registeredDeviceMapper,
                                            thirdPartyPasswordRecoveryCache: pagePasswordRecoveryCache)
         var entries = [AuditLogEntryDecodingResult]()

@@ -117,11 +117,10 @@ struct AuditLogEntryDecoder {
         let snapshots = [payload.device] + (payload.actor.map { [$0] } ?? [])
         try Task.checkCancellation()
         // Audit-log snapshots describe historical events and use the unified payload schema regardless of the current device-list flag.
-        let mapping = await deviceMapper.registeredDevicesWithRepairState(from: snapshots,
-                                                                           account: account,
-                                                                           isUnifiedReadEnabled: true,
-                                                                           accountInfoKey: accountInfoKey,
-                                                                           thirdPartyPasswordRecoveryCache: thirdPartyPasswordRecoveryCache)
+        let mapping = try await deviceMapper.registeredAuditLogDevices(from: snapshots,
+                                                                       account: account,
+                                                                       accountInfoKey: accountInfoKey,
+                                                                       thirdPartyPasswordRecoveryCache: thirdPartyPasswordRecoveryCache)
         try Task.checkCancellation()
         guard let device = mapping.devices.first else {
             return .unreadable(id: entry.id, reason: .invalidPayload)

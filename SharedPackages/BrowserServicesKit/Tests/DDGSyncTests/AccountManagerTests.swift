@@ -1665,9 +1665,7 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
 
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool,
-                                          accountInfoKey: AccountInfoKey?,
-                                          thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult {
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
         registeredDevicesHandler?()
         registeredDevicesCallEntryIDs = entries.map(\.id)
         unifiedReadEnabledValues.append(isUnifiedReadEnabled)
@@ -1679,6 +1677,13 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
         }
         return RegisteredDeviceMappingResult(devices: devices,
                                              needsCurrentDeviceInfoRepair: false)
+    }
+
+    func registeredAuditLogDevices(from entries: [RegisteredDeviceEntry],
+                                   account: SyncAccount,
+                                   accountInfoKey: AccountInfoKey?,
+                                   thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async throws -> RegisteredDeviceMappingResult {
+        await registeredDevicesWithRepairState(from: entries, account: account, isUnifiedReadEnabled: true)
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {

@@ -121,6 +121,11 @@ jobs:
             echo "change consistent with it and finish. You only have file tools: building, testing, committing and"
             echo "opening the PR happen after you, so don't plan for them."
             echo
+            echo "When you're done, write .agent-pr.md at the repository root for the pull request, which is public:"
+            echo "the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does,"
+            echo "then a blank line and 2 to 4 bullets on what changed and why. Describe only the code. No links,"
+            echo "crash counts, versions, user data, or anything from Asana or Sentry."
+            echo
             cat "$RUNNER_TEMP/plan.md"
           } > "$RUNNER_TEMP/prompt.md"
 
@@ -185,6 +190,8 @@ jobs:
         working-directory: target
         run: |
           set -euo pipefail
+          # The PR text goes to evidence for the approver, never into the patch
+          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/pr_text.py" extract . "$RUNNER_TEMP/evidence"
           git add -A
           git diff --cached --binary > "$RUNNER_TEMP/evidence/changes.patch"
           if [[ ! -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
@@ -311,6 +318,24 @@ jobs:
           az storage blob download --auth-mode login --only-show-errors \
             --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
             --name "$EVIDENCE_PREFIX/changes.patch" --file "$RUNNER_TEMP/changes.patch" > /dev/null
+          az storage blob download --auth-mode login --only-show-errors \
+            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
+            --name "$EVIDENCE_PREFIX/pr.md" --file "$RUNNER_TEMP/pr.md" > /dev/null 2>&1 || echo "no PR text from the agent"
+
+      # The agent's title and description, as the approver saw them in result.md, or a fallback
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: worker
+          sparse-checkout: scripts/agent-worker
+          persist-credentials: false
+
+      - name: PR text
+        env:
+          TASK_GID: ${{ inputs.task_gid }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 -I worker/scripts/agent-worker/pr_text.py render "$RUNNER_TEMP/pr.md" "$RUNNER_TEMP"
 
       - name: Apply, commit, push
         run: |
@@ -323,21 +348,18 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -q -m "Agent worker run ${{ github.run_id }}"
+          git commit -q -F "$RUNNER_TEMP/title.txt"
           git push -q -u origin "$BRANCH"
 
-      # The PR body holds only the Asana link and the run link, in the repo's PR template shape
+      # In the repo's PR template shape: the Asana link, the agent's description and the run link
       - name: Open draft PR
         id: pr
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
-          TASK_GID: ${{ inputs.task_gid }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           gh pr create --draft --base "$DEFAULT_BRANCH" --head "$BRANCH" \
-            --title "Agent worker run ${{ github.run_id }}" \
-            --body "Task/Issue URL: https://app.asana.com/0/0/$TASK_GID/f"$'\n\n'"### Description"$'\n'"Draft change from the agent worker, for a person to review and finish. Run: $RUN_URL" \
+            --title "$(cat "$RUNNER_TEMP/title.txt")" --body-file "$RUNNER_TEMP/body.md" \
             > "$RUNNER_TEMP/pr-url"
           echo "url=$(tail -n 1 "$RUNNER_TEMP/pr-url")" >> "$GITHUB_OUTPUT"
 

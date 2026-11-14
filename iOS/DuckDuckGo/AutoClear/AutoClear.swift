@@ -38,6 +38,7 @@ final class AutoClear: AutoClearing {
     private let worker: FireExecuting
     private var timestamp: TimeInterval?
     private let appSettings: AppSettings
+    private let acceleratesFiveMinuteDelay: Bool
 
     var isClearingEnabled: Bool {
         return AutoClearSettingsModel(settings: appSettings) != nil
@@ -49,9 +50,12 @@ final class AutoClear: AutoClearing {
     }
 
     init(worker: FireExecuting,
-         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         launchOptions: LaunchOptionsHandler = LaunchOptionsHandler(),
+         arguments: [String] = ProcessInfo.processInfo.arguments) {
         self.worker = worker
         self.appSettings = appSettings
+        self.acceleratesFiveMinuteDelay = launchOptions.isUITesting && arguments.contains("autoclear-ui-test")
     }
 
     @MainActor
@@ -70,15 +74,11 @@ final class AutoClear: AutoClearing {
     private func shouldClearData(elapsedTime: TimeInterval) -> Bool {
         guard let settings = AutoClearSettingsModel(settings: appSettings) else { return false }
 
-        if ProcessInfo.processInfo.arguments.contains("autoclear-ui-test") {
-            return elapsedTime > 5
-        }
-
         switch settings.timing {
         case .termination:
             return false
         case .delay5min:
-            return elapsedTime > 5 * 60
+            return elapsedTime > (acceleratesFiveMinuteDelay ? 5 : 5 * 60)
         case .delay15min:
             return elapsedTime > 15 * 60
         case .delay30min:

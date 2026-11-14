@@ -125,7 +125,7 @@ jobs:
           set -o pipefail
           bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
-            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO \
+            -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none \
             OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/prebuild.log" 2>&1 && rc=0 || rc=$?
           grep -E "BUILD (SUCCEEDED|FAILED)|Command PhaseScriptExecution failed|^error:|: error:" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export " | sort | uniq -c | sort -rn | head -20 || true
           grep -B12 "Command PhaseScriptExecution failed" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export \|^ *cd \|^ *builtin" | head -60 || true
@@ -145,7 +145,7 @@ jobs:
           set -o pipefail
           srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
-            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO \
+            -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none \
             OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*sandbox|BUILD|Operation not permitted|couldNot" | sort | uniq -c | sort -rn | head -40
 
       - name: One unit test under the sandbox

@@ -2451,6 +2451,9 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Kind of the navigation that will commit next, read when it started.
+    private var committingNavigationKind: CPMNavigationKind = .other
+
     private var pendingNativeLoadURL: URL?
 
     private lazy var navigationPixelResponder = NavigationPixelNavigationResponder(
@@ -2919,8 +2922,16 @@ extension TabViewController: WKNavigationDelegate {
         tabModel.clearPendingSessionRestoration()
 
         if let url = webView.url {
-            if #available(iOS 18.4, *) {
-                webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationCommitted(tabIdentifier: tabModel.uid, url: url))
+            if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
+                // The error page reports the failed URL but never runs content scripts.
+                let isErrorPage = specialErrorPageNavigationHandler.isSpecialErrorPageRequest
+                let event = CPMMessagingHealthEvent.navigationCommitted(
+                    tabIdentifier: tabModel.uid,
+                    url: url,
+                    navigationKind: isErrorPage ? .errorPage : committingNavigationKind,
+                    extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded
+                )
+                webExtensionManager.cpmMessagingHealthMonitor.handle(event)
             }
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -3144,12 +3155,9 @@ extension TabViewController: WKNavigationDelegate {
         // macOS gets the equivalent from `redirectHistory.first`.
         let isSessionRestoration = tabModel.hasPendingSessionRestoration
         if #available(iOS 18.4, *) {
-            let navigationKind = Self.cpmNavigationKind(
+            committingNavigationKind = Self.cpmNavigationKind(
                 isSessionRestoration: isSessionRestoration,
                 isBackForward: didGoBackForward
-            )
-            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
-                .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
             )
         }
         sitePermissionsDidStartProvisionalNavigation(webView, navigation: navigation)
@@ -3210,16 +3218,6 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
-
-        if let url = webView.url {
-            if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
-                webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
-                    tabIdentifier: tabModel.uid,
-                    url: url,
-                    extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded
-                ))
-            }
-        }
 
         fireProductTelemetry(for: webView)
         
@@ -3677,9 +3675,6 @@ extension TabViewController: WKNavigationDelegate {
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
 
-        if #available(iOS 18.4, *) {
-            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabModel.uid))
-        }
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
@@ -3738,9 +3733,6 @@ extension TabViewController: WKNavigationDelegate {
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
 
-        if #available(iOS 18.4, *) {
-            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabModel.uid))
-        }
         sitePermissionsDidFailProvisionalNavigation(webView, navigation: navigation)
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         pendingNativeLoadURL = nil

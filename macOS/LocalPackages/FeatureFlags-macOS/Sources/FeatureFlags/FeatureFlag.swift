@@ -104,11 +104,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
     case webExtensionStateRestorationGate
 
-    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
-    /// background-load readiness observation.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
-    case cpmBackgroundDelegateProxy
-
     /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
     case webExtensionNativeMessaging
 
@@ -129,10 +124,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Follows iCloud Passwords' extensions catalog entry, which also controls installing iCloud Passwords.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219792476428276?focus=true
     case webExtensionICloudPasswords
-
-    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
-    case cpmDiagnosticsRecorder
 
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
@@ -827,10 +818,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate), category: .webExtensions)
-        case .cpmBackgroundDelegateProxy:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
-        case .cpmDiagnosticsRecorder:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
         case .cpmBackgroundLoadRestart:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRestart), category: .webExtensions)
         case .cpmNetworkProcessRecovery:

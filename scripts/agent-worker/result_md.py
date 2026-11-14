@@ -8,7 +8,6 @@ evidence behind SSO, never the log or job summary
 """
 
 import json
-import re
 import sys
 
 
@@ -29,9 +28,8 @@ def main():
     print(summary)
 
     cost, secs = r.get("total_cost_usd"), (r.get("duration_ms") or 0) / 1000
-    text = r.get("result") or ""
-    # A fence longer than any backtick run in the text, so its Markdown can't break out
-    fence = "`" * max(3, max((len(m) for m in re.findall(r"`+", text)), default=0) + 1)
+    # Rendered as Markdown; the artifacts viewer sanitizes the HTML it produces
+    text = (r.get("result") or "").strip() or "(none)"
     lines = [
         "# Agent result", "",
         "| | |", "|---|---|",
@@ -40,7 +38,7 @@ def main():
         f"| Cost | {'$%.2f' % cost if cost is not None else '-'} |",
         f"| Duration | {secs:.0f}s |",
         f"| Denied tools | {', '.join(summary['permission_denials']) or 'none'} |",
-        "", "## Final message", "", fence, text, fence, "",
+        "", "## Final message", "", text, "",
     ]
     with open(md, "w") as f:
         f.write("\n".join(lines))

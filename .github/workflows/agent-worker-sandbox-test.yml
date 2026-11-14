@@ -112,7 +112,26 @@ jobs:
           ssh-agent -k || true
           echo "SSH_AUTH_SOCK=" >> "$GITHUB_ENV"
 
-      - name: Build under the sandbox
+      # main is built once outside the sandbox, before any agent change and with no credentials on the
+      # runner. Builds inside the sandbox are then incremental, so ibtool (which can't run nested) isn't needed
+      - name: Prebuild main outside the sandbox
+        id: prebuild
+        continue-on-error: true
+        working-directory: target
+        env:
+          DEST: ${{ steps.sim.outputs.destination }}
+        run: |
+          set -o pipefail
+          bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+            -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
+            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" 2>&1 | grep -E "error:|BUILD" | sort | uniq -c | sort -rn | head -20
+
+      - name: Stand-in for the agent's edit
+        working-directory: target
+        run: echo "// sandbox test edit" >> iOS/DuckDuckGo/Main/SwipeTabsCoordinator.swift
+
+      - name: Incremental build under the sandbox
         id: build
         continue-on-error: true
         working-directory: target

@@ -68,6 +68,14 @@ jobs:
           path: target
           persist-credentials: false
 
+      # The worker's own scripts, from this branch and outside the agent's writable checkout
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: worker
+          sparse-checkout: scripts/agent-worker
+          persist-credentials: false
+
       - name: Azure login (GitHub OIDC)
         uses: azure/login@v2
         with:
@@ -163,36 +171,8 @@ jobs:
               --disallowedTools "Bash,WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
               --max-turns 50 --output-format json \
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
-          python3 - "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence/result.md" "$rc" <<'PY' || true
-          import json, re, sys
-          src, md, rc = sys.argv[1:4]
-          try:
-              r = json.load(open(src))
-          except Exception:
-              print("no parsable result")
-              open(md, "w").write(f"# Agent result\n\nClaude exited with {rc} and wrote no parsable result. See result.json and claude.err.\n")
-              sys.exit()
-          summary = {k: r.get(k) for k in ("subtype", "is_error", "num_turns", "total_cost_usd")}
-          # Tool names only, never inputs, so blocked writes show up without leaking plan text
-          summary["permission_denials"] = sorted({d.get("tool_name", "?") for d in r.get("permission_denials") or []})
-          print(summary)
-          # A readable copy of result.json for the artifacts viewer, which renders Markdown but not JSON.
-          # It goes to evidence only, never the log or job summary
-          cost, secs = r.get("total_cost_usd"), (r.get("duration_ms") or 0) / 1000
-          text = r.get("result") or ""
-          fence = "`" * max(3, max((len(m) for m in re.findall(r"`+", text)), default=0) + 1)
-          lines = [
-              "# Agent result", "",
-              "| | |", "|---|---|",
-              f"| Outcome | {r.get('subtype')}{' (error)' if r.get('is_error') else ''}, exit {rc} |",
-              f"| Turns | {r.get('num_turns')} |",
-              f"| Cost | {'$%.2f' % cost if cost is not None else '-'} |",
-              f"| Duration | {secs:.0f}s |",
-              f"| Denied tools | {', '.join(summary['permission_denials']) or 'none'} |",
-              "", "## Final message", "", fence, text, fence, "",
-          ]
-          open(md, "w").write("\n".join(lines))
-          PY
+          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/result_md.py" \
+            "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence/result.md" "$rc" || true
           echo "rc=$rc" >> "$GITHUB_ENV"
 
       - name: Export changes as a patch
@@ -208,8 +188,8 @@ jobs:
             exit 1
           fi
           { printf '\n## Changes\n\n```\n'; git diff --cached --stat; printf '```\n'; } >> "$RUNNER_TEMP/evidence/result.md"
-          if git diff --cached --name-only | grep -qE '^\.github/'; then
-            echo "::error::patch touches .github/; refusing"
+          if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
+            echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
             exit 1
           fi
           git diff --cached --stat
@@ -262,6 +242,8 @@ jobs:
       id-token: write
     env:
       BRANCH: agent/worker-${{ github.run_id }}
+    outputs:
+      pr_url: ${{ steps.pr.outputs.url }}
     steps:
       # Pushes and PRs made with GITHUB_TOKEN don't start CI, so publish with the GitHub App when the
       # agent-publish environment has it, scoped to this repo
@@ -300,8 +282,8 @@ jobs:
           set -euo pipefail
           git switch -c "$BRANCH"
           git apply --index "$RUNNER_TEMP/changes.patch"
-          if git diff --cached --name-only | grep -qE '^\.github/'; then
-            echo "::error::patch touches .github/; refusing"
+          if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
+            echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
             exit 1
           fi
           git config user.name "github-actions[bot]"
@@ -311,6 +293,7 @@ jobs:
 
       # The PR body holds only the Asana link and the run link, in the repo's PR template shape
       - name: Open draft PR
+        id: pr
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
           TASK_GID: ${{ inputs.task_gid }}
@@ -319,4 +302,39 @@ jobs:
           set -euo pipefail
           gh pr create --draft --base "$DEFAULT_BRANCH" --head "$BRANCH" \
             --title "Agent worker run ${{ github.run_id }}" \
-            --body "Task/Issue URL: https://app.asana.com/0/0/$TASK_GID/f"$'\n\n'"### Description"$'\n'"Draft change from the agent worker, for a person to review and finish. Run: $RUN_URL"
+            --body "Task/Issue URL: https://app.asana.com/0/0/$TASK_GID/f"$'\n\n'"### Description"$'\n'"Draft change from the agent worker, for a person to review and finish. Run: $RUN_URL" \
+            > "$RUNNER_TEMP/pr-url"
+          echo "url=$(tail -n 1 "$RUNNER_TEMP/pr-url")" >> "$GITHUB_OUTPUT"
+
+  # Sets the task's Agent Status from how the run ended: PR open with the PR link, or Needs attention.
+  # Acts as the Apple Agent Asana App Actor, on a fresh runner so nothing the agent wrote runs next to it
+  status:
+    needs: [agent, publish]
+    if: always()
+    runs-on: ubuntu-latest
+    environment: agent-worker
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: worker
+          sparse-checkout: scripts/agent-worker
+          persist-credentials: false
+
+      - name: Set Agent Status
+        env:
+          ASANA_APP_CLIENT_ID: ${{ secrets.ASANA_APP_CLIENT_ID }}
+          ASANA_APP_CLIENT_SECRET: ${{ secrets.ASANA_APP_CLIENT_SECRET }}
+          ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
+          TASK_GID: ${{ inputs.task_gid }}
+          # Agent Status field and its option gids in the agent project
+          FIELD: "1220497931497848"
+          OPTIONS: '{"pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
+          AGENT: ${{ needs.agent.result }}
+          PUBLISH: ${{ needs.publish.result }}
+          PR_URL: ${{ needs.publish.outputs.pr_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 -I worker/scripts/agent-worker/set_agent_status.py

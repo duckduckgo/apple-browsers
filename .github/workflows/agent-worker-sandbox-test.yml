@@ -21,6 +21,7 @@ jobs:
           path: target
           fetch-depth: 0
           filter: blob:none
+          submodules: recursive
           persist-credentials: false
 
       - name: Git history
@@ -125,7 +126,11 @@ jobs:
           bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO \
-            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" 2>&1 | grep -E "error:|BUILD" | sort | uniq -c | sort -rn | head -20
+            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/prebuild.log" 2>&1
+          rc=$?
+          grep -E "BUILD (SUCCEEDED|FAILED)|Command PhaseScriptExecution failed|^error:|: error:" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export " | sort | uniq -c | sort -rn | head -20
+          grep -B12 "Command PhaseScriptExecution failed" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export \|^ *cd \|^ *builtin" | head -60
+          exit $rc
 
       - name: Stand-in for the agent's edit
         working-directory: target

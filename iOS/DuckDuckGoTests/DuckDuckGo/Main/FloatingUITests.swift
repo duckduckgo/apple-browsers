@@ -3510,8 +3510,35 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         XCTAssertEqual(sut.collectionView(collection, numberOfItemsInSection: 0), 2)
     }
 
-    private func makeSUT(isHandoffEnabled: Bool) -> (SwipeTabsCoordinator, UICollectionView) {
-        let coordinator = MainViewCoordinator(parentController: UIViewController())
+    func testWhenViewHasNoWindowThenFullScreenSnapshotIsNotReplaced() {
+        let previewsSource = MockTabPreviewsSource()
+        let parentController = UIViewController()
+        parentController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let (sut, _) = makeSUT(isHandoffEnabled: true, isFloatingUIEnabled: false, parentController: parentController, tabPreviewsSource: previewsSource)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertEqual(previewsSource.updateFullScreenSnapshotCallCount, 0)
+    }
+
+    func testWhenViewHasZeroSizeThenFullScreenSnapshotIsNotReplaced() {
+        let previewsSource = MockTabPreviewsSource()
+        let parentController = UIViewController()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(parentController.view)
+        parentController.view.frame = .zero
+        let (sut, _) = makeSUT(isHandoffEnabled: true, isFloatingUIEnabled: false, parentController: parentController, tabPreviewsSource: previewsSource)
+
+        sut.updateFullScreenSnapshot(forTab: tabsModel.tabs[0])
+
+        XCTAssertEqual(previewsSource.updateFullScreenSnapshotCallCount, 0)
+    }
+
+    private func makeSUT(isHandoffEnabled: Bool,
+                         isFloatingUIEnabled: Bool = true,
+                         parentController: UIViewController = UIViewController(),
+                         tabPreviewsSource: MockTabPreviewsSource = MockTabPreviewsSource()) -> (SwipeTabsCoordinator, UICollectionView) {
+        let coordinator = MainViewCoordinator(parentController: parentController)
         mainViewCoordinator = coordinator
         let collection = MainViewFactory.NavigationBarCollectionView(
             frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
@@ -3523,11 +3550,11 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: isHandoffEnabled ? [.aiChatTabHandoffImprovements] : [])
         let sut = SwipeTabsCoordinator(
             coordinator: coordinator,
-            tabPreviewsSource: MockTabPreviewsSource(),
+            tabPreviewsSource: tabPreviewsSource,
             appSettings: AppSettingsMock(),
             omnibarDependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
             floatingUIManager: FloatingUIManager(
-                isFloatingUIFeatureEnabled: true,
+                isFloatingUIFeatureEnabled: isFloatingUIEnabled,
                 isPadProvider: { false },
                 isSupportedOSProvider: { true },
                 unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)

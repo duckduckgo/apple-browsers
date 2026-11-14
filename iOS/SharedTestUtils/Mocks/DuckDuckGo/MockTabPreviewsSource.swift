@@ -27,6 +27,7 @@ class MockTabPreviewsSource: TabPreviewsSource {
     var onRemovePreviewsWithIdNotIn: (() -> Void)?
     private(set) var removeAllPreviewsCalled = false
     var totalStoredPreviewsReturnValue: Int?
+    private(set) var updateFullScreenSnapshotCallCount = 0
 
     init(totalStoredPreviews: Int? = nil) {
         self.totalStoredPreviewsReturnValue = totalStoredPreviews
@@ -65,6 +66,7 @@ class MockTabPreviewsSource: TabPreviewsSource {
     }
 
     func updateFullScreenSnapshot(_ snapshot: UIImage, forTab tab: DuckDuckGo.Tab) {
+        updateFullScreenSnapshotCallCount += 1
     }
 
 }

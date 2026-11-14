@@ -602,13 +602,17 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// only paints once — no visible flash.
     private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
         let superview = coordinator.superview
-        guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
+        guard superview.window != nil, superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
 
         let priorAlpha = swipeOverlayView?.alpha ?? 0
         swipeOverlayView?.alpha = 0
         defer { swipeOverlayView?.alpha = priorAlpha }
 
-        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
+        // Standard range avoids CoreGraphics converting extended-range / wide-colour surfaces,
+        // which can fault when the backing memory is released mid-draw.
+        let format = UIGraphicsImageRendererFormat.preferred()
+        format.preferredRange = .standard
+        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size, format: format)
         return renderer.image { _ in
             superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
         }

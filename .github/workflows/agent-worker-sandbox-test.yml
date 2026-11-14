@@ -122,7 +122,8 @@ jobs:
           set -o pipefail
           srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
-            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO" 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*sandbox|BUILD|Operation not permitted|couldNot" | sort | uniq -c | sort -rn | head -40
+            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*sandbox|BUILD|Operation not permitted|couldNot" | sort | uniq -c | sort -rn | head -40
 
       - name: One unit test under the sandbox
         if: steps.build.outcome == 'success'
@@ -144,7 +145,7 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -euo pipefail
-          udid=$(echo "$DEST" | sed -n 's/.*id=\([^,]*\).*/\1/p')
+          udid=booted
           app=$(find DerivedData/Build/Products -maxdepth 2 -name 'DuckDuckGo.app' | head -1)
           echo "simulator $udid, app $app"
           srt -c "xcrun simctl boot ${udid:-booted}" || true
@@ -153,6 +154,37 @@ jobs:
           sleep 15
           srt -c "xcrun simctl io ${udid:-booted} screenshot '$GITHUB_WORKSPACE/screenshot.png'"
           ls -la "$GITHUB_WORKSPACE/screenshot.png"
+
+      # Maestro is installed outside the sandbox, then a short flow records the app under it
+      - name: Install Maestro and ffmpeg
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash > /dev/null
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          command -v ffmpeg || brew install ffmpeg > /dev/null
+
+      - name: Recording under the sandbox
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/rec"
+          cat > "$GITHUB_WORKSPACE/rec/flow.yaml" <<'YAML'
+          appId: com.duckduckgo.mobile.ios
+          ---
+          - startRecording: demo
+          - launchApp
+          - waitForAnimationToEnd
+          - stopRecording
+          YAML
+          cd "$GITHUB_WORKSPACE/rec"
+          srt -c "maestro test flow.yaml" 2>&1 | tail -20 || echo "maestro failed under the sandbox"
+          ls -la
+          if [[ -f demo.mp4 ]]; then
+            ffmpeg -loglevel error -y -i demo.mp4 -vf "fps=8,scale=320:-1:flags=lanczos" -t 8 demo.gif
+            ls -la demo.gif
+          fi
 
       - name: Sandbox violations in the build log
         if: always()

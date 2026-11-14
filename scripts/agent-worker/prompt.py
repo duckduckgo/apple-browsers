@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Print the agent's prompt from prompts/worker.md, adding prompts/fix.md on a fix attempt.
+"""Print the agent's prompt from prompts/worker.md, adding a retry section on a retry.
 
-Usage: prompt.py <repo dir> <plan.md> <previous results.md>
-Env: ROUND (0 for the first attempt)
+Usage: prompt.py <repo dir> <plan.md> <previous run dir>
+Env: RETRY (0 for a new plan)
 
-On a fix attempt the previous attempt's build, test and flow results go into the prompt with their
-links removed, since the agent mustn't copy links into code
+On a retry that has the previous run's patch, prompts/fix.md goes in with that run's build, test and
+flow results, links removed since the agent mustn't copy links into code. When the previous run made
+no change, prompts/retry.md goes in with how its agent run ended
 """
+
+import json
 
 import os
 import re
@@ -24,11 +27,19 @@ def read(path):
 
 
 def main():
-    repo, plan, results = sys.argv[1:4]
-    attempt = int(os.environ.get("ROUND", "0"))
+    repo, plan, prev = sys.argv[1:4]
+    attempt = int(os.environ.get("RETRY", "0"))
     fix = ""
-    if attempt > 0:
-        text = read(results)
+    has_patch = bool(read(os.path.join(prev, "changes.patch")).strip())
+    if attempt > 0 and not has_patch:
+        try:
+            r = json.loads(read(os.path.join(prev, "result.json")))
+        except ValueError:
+            r = {}
+        ended = r.get("subtype") or "no result"
+        fix = read(os.path.join(HERE, "retry.md")).replace("{{ENDED}}", f"{ended}{' (error)' if r.get('is_error') else ''}")
+    elif attempt > 0:
+        text = read(os.path.join(prev, "results.md"))
         text = re.sub(r"^\[?!\[.*$", "", text, flags=re.M)            # screenshots and recordings
         text = re.sub(r"\s*\(\[[^\]]*\]\([^)]*\)(, \[[^\]]*\]\([^)]*\))*\)", "", text)  # (log links)
         text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)           # any other link, keeping its text

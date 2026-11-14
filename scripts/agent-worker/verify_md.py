@@ -2,8 +2,8 @@
 """Write verify.md, the one page an approver reads before a draft PR is opened.
 
 Usage: verify_md.py <plan dir> <out dir>
-Env: ROOT_URL (the run's evidence, with an r<N>/ prefix per attempt), ROUND (this attempt), RUN_URL,
-TASK_GID
+Env: EVIDENCE_URL (this run's evidence), RETRY (0 for a new plan), PREV_URL (the retried run's
+evidence), RUN_URL, TASK_GID
 
 Combines the agent's result.json, pr.md, changes.patch and plan-notes.txt from plan dir with the build,
 test and screen results that verify.sh wrote to results.md in out dir. Writes nothing to the log
@@ -26,8 +26,7 @@ def read(path, limit=200000):
 def main():
     plan, out = sys.argv[1:3]
     e = os.environ
-    root, run, attempt = e.get("ROOT_URL", "").rstrip("/"), e.get("RUN_URL", ""), int(e.get("ROUND", "0"))
-    ev = f"{root}/r{attempt}" if root else ""
+    ev, run, attempt = e.get("EVIDENCE_URL", "").rstrip("/"), e.get("RUN_URL", ""), int(e.get("RETRY", "0"))
     try:
         r = json.loads(read(os.path.join(plan, "result.json")))
     except ValueError:
@@ -47,10 +46,9 @@ def main():
     parts += [f"{k} {status[k]}" for k in ("tests", "maestro") if k in status]
     md += [f"**Results:** {', '.join(parts).replace('maestro', 'Maestro flow')}.", ""]
     if attempt:
-        earlier = ", ".join(f"[{'first attempt' if n == 0 else f'fix attempt {n}'}]({root}/r{n}/verify/verify.md)"
-                            for n in range(attempt))
-        md += [f"This is fix attempt {attempt}. The agent fixed what failed "
-               f"in the earlier results: {earlier}.", ""]
+        prev = e.get("PREV_URL", "").rstrip("/")
+        md += [f"This is retry {attempt}. The agent started from the previous run's change and fixed what failed in "
+               f"[its results]({prev}/verify/verify.md).", ""]
 
     md += ["## Summary", "", (r.get("result") or "").strip() or "The agent left no summary.", ""]
 

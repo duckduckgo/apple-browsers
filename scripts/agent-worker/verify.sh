@@ -4,7 +4,7 @@
 # puts into verify.md
 #
 # Usage: verify.sh <repo dir> <plan dir> <out dir>
-# Writes build=, tests= and maestro= lines to <out dir>/status for the fix attempts
+# Writes build=, tests= and maestro= lines to <out dir>/status, which decide between approval and a retry
 # Env: DEST (iOS Simulator destination), IOS_VERSION (its iOS version), PACKAGES (cloned source packages dir),
 # VERIFY_URL (where out dir is uploaded, for links)
 # Output to the log is status words only, since this repo's logs are public

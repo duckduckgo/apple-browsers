@@ -42,6 +42,15 @@ public final class ModelStore: @unchecked Sendable {
         self.root = root
         self.session = session
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        // Models don't belong in iCloud or computer backups.
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var rootURL = root
+        try rootURL.setResourceValues(values)
+
+        // Anything left in staging is from an install the app was killed during.
+        try? FileManager.default.removeItem(at: staging)
     }
 
     /// Installs `bundle`, reporting progress from 0 to 1. Finishes at once when it's already installed.
@@ -85,6 +94,43 @@ public final class ModelStore: @unchecked Sendable {
         lock.withLock { running[id] }?.cancel()
     }
 
+    /// Every complete bundle under `root`, sorted by id. Staging folders never hold a record, so they're skipped.
+    public func installed() -> [InstalledBundle] {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
+        return names
+            .compactMap { name in
+                let folder = folderURL(name)
+                guard let data = try? Data(contentsOf: recordURL(in: folder)),
+                      let record = try? JSONDecoder().decode(Record.self, from: data) else {
+                    return nil
+                }
+
+                return InstalledBundle(id: record.id, version: record.version, folder: folder)
+            }
+            .sorted { $0.id < $1.id }
+    }
+
+    /// The folder of an installed bundle, or nil when it isn't installed.
+    public func folder(for id: String) -> URL? {
+        guard (try? Self.validateName(id)) != nil, isInstalled(id) else {
+            return nil
+        }
+
+        return folderURL(id)
+    }
+
+    /// Cancels a running install of `id`, then deletes its folder. Does nothing when it isn't installed.
+    public func delete(_ id: String) throws {
+        try Self.validateName(id)
+        cancel(id)
+        // shortcut: an install already past its last cancellation check can still move its folder in after this; make delete wait for the install if callers ever delete one mid-install.
+        guard FileManager.default.fileExists(atPath: folderURL(id).path) else {
+            return
+        }
+
+        try FileManager.default.removeItem(at: folderURL(id))
+    }
+
     // MARK: - Paths
 
     private func folderURL(_ id: String) -> URL {
@@ -112,9 +158,13 @@ public final class ModelStore: @unchecked Sendable {
         // The id and each file name are separate path components, so each is checked on its own.
         let names = [bundle.id] + bundle.files.map(\.name)
         for name in names {
-            if name.isEmpty || name.hasPrefix(".") || name.contains("/") {
-                throw ModelStoreError.invalidName(name)
-            }
+            try validateName(name)
+        }
+    }
+
+    private static func validateName(_ name: String) throws {
+        if name.isEmpty || name.hasPrefix(".") || name.contains("/") {
+            throw ModelStoreError.invalidName(name)
         }
     }
 

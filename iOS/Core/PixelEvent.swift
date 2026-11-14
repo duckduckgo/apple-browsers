@@ -928,7 +928,6 @@ extension Pixel {
         
         case missingDownloadedFile
         
-        case compilationResult(result: CompileRulesResult, waitTime: BucketAggregation, appState: AppState)
         
         case emailAutofillKeychainError
         
@@ -2929,9 +2928,6 @@ extension Pixel.Event {
             
         case .missingDownloadedFile: return "m_d_missing_downloaded_file"
             
-        case .compilationResult(result: let result, waitTime: let waitTime, appState: let appState):
-            return "m_compilation_result_\(result)_time_\(waitTime)_state_\(appState)"
-            
         case .emailAutofillKeychainError: return "m_email_autofill_keychain_error"
         
         case .debugBookmarksInitialStructureQueryFailed: return "m_d_bookmarks-initial-structure-query-failed"
@@ -4072,26 +4068,6 @@ extension Pixel.Event {
                 self = .more
             }
         }
-        
-    }
-    
-    public enum CompileRulesResult: String, CustomStringConvertible {
-        
-        public var description: String { rawValue }
-        
-        case tabClosed = "tab_closed"
-        case appQuit = "app_quit"
-        case appBackgrounded = "app_backgrounded"
-        case success
-        
-    }
-    
-    public enum AppState: String, CustomStringConvertible {
-        
-        public var description: String { rawValue }
-        
-        case onboarding
-        case regular
         
     }
     

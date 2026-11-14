@@ -56,6 +56,7 @@ import WebExtensions
 import WebKit
 import WidgetKit
 import FeatureFlags_iOS
+import WebPageTranslation
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
@@ -613,6 +614,7 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     private let promptExposureReporter: PromptExposureReporting
+    let translationModels: TranslationModels?
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let promoCoordinationService:
@@ -822,9 +824,11 @@ class MainViewController: UIViewController {
             & AppRatingPromptGating)? = nil,
         usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-        promptExposureReporter: PromptExposureReporting
+        promptExposureReporter: PromptExposureReporting,
+        translationModels: TranslationModels? = nil
     ) {
         self.pixelFiring = pixelFiring
+        self.translationModels = translationModels
         self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader

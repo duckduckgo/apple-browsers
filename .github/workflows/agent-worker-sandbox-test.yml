@@ -146,7 +146,11 @@ jobs:
           srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*sandbox|BUILD|Operation not permitted|couldNot" | sort | uniq -c | sort -rn | head -40
+            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/build.log" 2>&1 && rc=0 || rc=$?
+          grep -E "BUILD (SUCCEEDED|FAILED)|Command [A-Za-z]+ failed|: error:|^error:|Operation not permitted|sandbox_extension|couldNot" "$RUNNER_TEMP/build.log" | grep -v "^ *export " | cut -c1-240 | sort | uniq -c | sort -rn | head -30 || true
+          grep -B15 -E "Command [A-Za-z]+ failed" "$RUNNER_TEMP/build.log" | grep -v "^ *export \|^ *cd \|^ *builtin-SwiftDriver" | cut -c1-240 | head -60 || true
+          echo "files compiled: $(grep -c "^SwiftCompile\|^CompileSwift" "$RUNNER_TEMP/build.log" || true)"
+          exit $rc
 
       - name: One unit test under the sandbox
         if: steps.build.outcome == 'success'

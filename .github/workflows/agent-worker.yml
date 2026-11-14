@@ -176,23 +176,19 @@ jobs:
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
           allow-no-subscriptions: true
 
-      - name: Download patch from artifacts.go
-        run: |
-          set -euo pipefail
-          az storage blob download --auth-mode login --only-show-errors \
-            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-            --name "$PREFIX/changes.patch" --file "$RUNNER_TEMP/changes.patch" > /dev/null
-          az storage blob download --auth-mode login --only-show-errors \
-            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-            --name "$PREFIX/pr.md" --file "$RUNNER_TEMP/pr.md" > /dev/null 2>&1 || echo "no PR text from the agent"
-
-      # The agent's title and description, as the approver saw them in summary.md, or a fallback
+      # The worker's scripts, and the agent's title and description as the approver saw them, or a fallback
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           path: worker
           sparse-checkout: scripts/agent-worker
           persist-credentials: false
+
+      - name: Download patch from artifacts.go
+        run: |
+          set -euo pipefail
+          worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP" "$PREFIX" changes.patch pr.md
+          [[ -s "$RUNNER_TEMP/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
 
       - name: PR text
         env:

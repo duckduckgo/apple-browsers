@@ -107,26 +107,11 @@ jobs:
           SHA256: ${{ inputs.sha256 }}
         run: |
           set -euo pipefail
-          size=$(az storage blob show --auth-mode login --only-show-errors \
-            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-            --name "$PLAN_BLOB" --query properties.contentLength -o tsv)
-          [[ "$size" =~ ^[0-9]+$ && "$size" -gt 0 && "$size" -le 200000 ]] ||
-            { echo "::error::plan is missing, empty or too large"; exit 1; }
-          az storage blob download --auth-mode login --only-show-errors \
-            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-            --name "$PLAN_BLOB" --file "$RUNNER_TEMP/plan.md" > /dev/null
-          echo "$SHA256  $RUNNER_TEMP/plan.md" | shasum -a 256 -c --status ||
-            { echo "::error::plan hash does not match; refusing to run"; exit 1; }
-          echo "plan downloaded and verified ($(wc -c < "$RUNNER_TEMP/plan.md") bytes)"
+          worker/scripts/agent-worker/blobs.sh plan "$RUNNER_TEMP/plan.md" "$SHA256"
           # A fix attempt starts from the previous attempt's patch, evidence plan, PR text and results
           if [[ $ROUND != 0 ]]; then
-            mkdir -p "$RUNNER_TEMP/prev"
-            for f in changes.patch pr.md tests.txt flow.yaml verify/results.md; do
-              az storage blob download --auth-mode login --only-show-errors \
-                --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-                --name "$EVIDENCE_PREFIX/r$((ROUND - 1))/$f" --file "$RUNNER_TEMP/prev/${f#verify/}" > /dev/null 2>&1 ||
-                echo "no previous $f"
-            done
+            worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/prev" "$EVIDENCE_PREFIX/r$((ROUND - 1))" \
+              changes.patch pr.md tests.txt flow.yaml verify/results.md
             [[ -s "$RUNNER_TEMP/prev/changes.patch" ]] || { echo "::error::no previous patch"; exit 1; }
           fi
 
@@ -164,29 +149,9 @@ jobs:
           SERVICE_ACCOUNT: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
           WORKSPACE: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
         run: |
-          set -euo pipefail
-          dir="$RUNNER_TEMP/anthropic-identity"
-          mkdir -p "$dir" && chmod 0700 "$dir"
-          fetch() {
-            curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" |
-              python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])' > "$dir/token.tmp" &&
-              mv "$dir/token.tmp" "$dir/token"
-          }
-          fetch
-          (while sleep 60; do fetch || true; done) > /dev/null 2>&1 &
-          {
-            echo "ANTHROPIC_FEDERATION_RULE_ID=$RULE"
-            echo "ANTHROPIC_ORGANIZATION_ID=$ORG"
-            echo "ANTHROPIC_SERVICE_ACCOUNT_ID=$SERVICE_ACCOUNT"
-            if [ -n "$WORKSPACE" ]; then echo "ANTHROPIC_WORKSPACE_ID=$WORKSPACE"; fi
-            echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$dir/token"
-          } >> "$GITHUB_ENV"
-          echo "identity-dir=$dir" >> "$GITHUB_OUTPUT"
+          worker/scripts/agent-worker/anthropic_identity.sh "$RUNNER_TEMP/anthropic-identity"
+          echo "identity-dir=$RUNNER_TEMP/anthropic-identity" >> "$GITHUB_OUTPUT"
 
-      # Write and Edit are limited to the checkout, so the agent can't change actions or tools that
-      # later steps run. It can't read the identity token, Azure CLI state or other processes'
-      # environments either. Output goes to files only. The log gets the exit code, turn count and cost
       - name: Run coding agent
         working-directory: target
         env:
@@ -211,30 +176,11 @@ jobs:
         if: env.rc == '0'
         working-directory: target
         run: |
-          set -euo pipefail
-          # The PR text goes to evidence for the approver, never into the patch
-          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/pr_text.py" extract . "$RUNNER_TEMP/evidence"
-          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/evidence_plan.py" extract . "$RUNNER_TEMP/evidence"
-          git add -A
-          git diff --cached --binary > "$RUNNER_TEMP/evidence/changes.patch"
-          if [[ ! -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
-            printf '\n## Changes\n\nNone, so nothing will be published.\n' >> "$RUNNER_TEMP/evidence/summary.md"
-            echo "::error::agent made no changes"
-            exit 1
-          fi
-          if [[ $ROUND != 0 ]] && cmp -s "$RUNNER_TEMP/evidence/changes.patch" "$RUNNER_TEMP/prev/changes.patch"; then
-            echo "::error::the fix attempt changed nothing"
-            exit 1
-          fi
-          { printf '\n## Changes\n\n```\n'; git diff --cached --stat; printf '```\n'; } >> "$RUNNER_TEMP/evidence/summary.md"
-          if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
-            echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
-            exit 1
-          fi
-          git diff --cached --stat
+          prev=""
+          [[ $ROUND == 0 ]] || prev="$RUNNER_TEMP/prev/changes.patch"
+          "$GITHUB_WORKSPACE/worker/scripts/agent-worker/export_patch.sh" "$RUNNER_TEMP/evidence" $prev
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      # Evidence is uploaded even when the agent fails, so the run can be debugged behind SSO
       - name: Azure login again (GitHub OIDC)
         if: always() && steps.anthropic.outcome == 'success'
         uses: azure/login@v3
@@ -249,26 +195,12 @@ jobs:
         run: |
           set -euo pipefail
           # The run details go last in summary.md
-          if [[ -f "$RUNNER_TEMP/evidence/run-details.md" ]]; then
-            cat "$RUNNER_TEMP/evidence/run-details.md" >> "$RUNNER_TEMP/evidence/summary.md"
-            rm "$RUNNER_TEMP/evidence/run-details.md"
-          fi
-          az storage blob upload-batch --auth-mode login --only-show-errors \
-            --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
-            --destination-path "$EVIDENCE_PREFIX/r$ROUND" --source "$RUNNER_TEMP/evidence" > /dev/null
-          url="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/r$ROUND"
+          ev="$RUNNER_TEMP/evidence"
+          if [[ -f "$ev/run-details.md" ]]; then cat "$ev/run-details.md" >> "$ev/summary.md" && rm "$ev/run-details.md"; fi
+          url=$(worker/scripts/agent-worker/blobs.sh put "$ev" "$EVIDENCE_PREFIX/r$ROUND")
           echo "Evidence (SSO): $url/"
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          {
-            if [[ -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
-              echo "**Approving agent-publish opens a draft PR with this patch. Review it first (SSO):**"
-              echo "- [changes.patch]($url/changes.patch)"
-            else
-              echo "**No patch, so nothing will be published (SSO):**"
-            fi
-            echo "- [summary.md]($url/summary.md) (the agent's summary and run details)"
-            echo "- [result.json]($url/result.json) (raw agent output)"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "- Attempt $ROUND (SSO): [summary.md]($url/summary.md), [changes.patch]($url/changes.patch), [result.json]($url/result.json)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail if the agent failed
         if: env.rc != '0'
@@ -318,12 +250,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/r$ROUND/verify" >> "$GITHUB_ENV"
-          mkdir -p "$RUNNER_TEMP/plan"
-          for f in changes.patch tests.txt flow.yaml result.json pr.md plan-notes.txt; do
-            az storage blob download --auth-mode login --only-show-errors \
-              --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
-              --name "$EVIDENCE_PREFIX/r$ROUND/$f" --file "$RUNNER_TEMP/plan/$f" > /dev/null 2>&1 || echo "no $f"
-          done
+          worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$EVIDENCE_PREFIX/r$ROUND" \
+            changes.patch tests.txt flow.yaml result.json pr.md plan-notes.txt
           [[ -s "$RUNNER_TEMP/plan/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
 
       - name: Azure logout
@@ -372,15 +300,9 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
           IOS_VERSION: ${{ steps.sim.outputs.ios-version }}
         run: |
-          UDID=$(xcrun simctl list devices available -j | python3 -I -c '
-          import json, os, sys
-          v = "iOS-" + os.environ["IOS_VERSION"].replace(".", "-")
-          d = json.load(sys.stdin)["devices"]
-          print(next((x["udid"] for rt, xs in d.items() if rt.endswith(v) for x in xs if x["name"] == "iPhone 17"), ""))') || true
-          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN UDID="$UDID" PACKAGES="$RUNNER_TEMP/packages" \
+          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN PACKAGES="$RUNNER_TEMP/packages" \
             bash "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify.sh" "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
 
-      # One page for the approver: the agent's summary, the proposed PR, the changes and the results
       - name: Write verify.md
         if: always()
         env:
@@ -415,11 +337,9 @@ jobs:
         run: |
           set -euo pipefail
           [[ -d "$RUNNER_TEMP/verify" ]] || { echo "nothing to upload"; exit 0; }
-          az storage blob upload-batch --auth-mode login --only-show-errors \
-            --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
-            --destination-path "$EVIDENCE_PREFIX/r$ROUND/verify" --source "$RUNNER_TEMP/verify" > /dev/null
+          worker/scripts/agent-worker/blobs.sh put "$RUNNER_TEMP/verify" "$EVIDENCE_PREFIX/r$ROUND/verify" > /dev/null
           { echo "url=$VERIFY_URL"; echo "prefix=$EVIDENCE_PREFIX/r$ROUND"; } >> "$GITHUB_OUTPUT"
-          echo "**Review [verify.md]($VERIFY_URL/verify.md) before approving agent-publish (SSO)**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Attempt $ROUND results (SSO): [verify.md]($VERIFY_URL/verify.md)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Azure logout
         if: always()

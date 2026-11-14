@@ -5,7 +5,7 @@
 #
 # Usage: verify.sh <repo dir> <plan dir> <out dir>
 # Writes build=, tests= and maestro= lines to <out dir>/status for the fix attempts
-# Env: DEST (iOS Simulator destination), UDID (that simulator), PACKAGES (cloned source packages dir),
+# Env: DEST (iOS Simulator destination), IOS_VERSION (its iOS version), PACKAGES (cloned source packages dir),
 # VERIFY_URL (where out dir is uploaded, for links)
 # Output to the log is status words only, since this repo's logs are public
 
@@ -15,6 +15,13 @@ mkdir -p "$out"
 md="$out/results.md" status="$out/status"
 url=${VERIFY_URL:-.}
 cd "$repo" || exit 0
+
+# The iPhone 17 simulator for IOS_VERSION, for simctl and Maestro
+UDID=$(xcrun simctl list devices available -j | python3 -I -c '
+import json, os, sys
+v = "iOS-" + os.environ.get("IOS_VERSION", "").replace(".", "-")
+d = json.load(sys.stdin)["devices"]
+print(next((x["udid"] for rt, xs in d.items() if rt.endswith(v) for x in xs if x["name"] == "iPhone 17"), ""))') || UDID=""
 
 platform=ios name=iOS
 if git diff --cached --name-only | grep -q '^macOS/' && ! git diff --cached --name-only | grep -q '^iOS/'; then

@@ -66,6 +66,24 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         self.runTypeProvider = runTypeProvider
     }
 
+    public var isSubscriptionAuthenticated: Bool { subscriptionManager.isUserAuthenticated }
+
+    public var entitlementEnvironment: String {
+        subscriptionManager.currentEnvironment.serviceEnvironment.rawValue
+    }
+
+    /// Uses the normal token policy but preserves failures instead of falling back to cached entitlements.
+    public func debugEntitlement() async throws -> Bool {
+        guard !isEntitlementCheckBypassed else { return false }
+        guard subscriptionManager.isUserAuthenticated else { return false }
+        let container = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        return container.decodedAccessToken.subscriptionEntitlements.contains(.dataBrokerProtection)
+    }
+
+    public var isEntitlementCheckBypassed: Bool {
+        runTypeProvider.runType == .integrationTests
+    }
+
     public func hasValidEntitlement() async throws -> Bool {
         if runTypeProvider.runType == .integrationTests {
             return true // real entitlements check are not possible here in AuthV2 because the SubscriptionManager has no token

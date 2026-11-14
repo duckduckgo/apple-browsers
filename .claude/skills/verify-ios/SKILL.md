@@ -81,6 +81,7 @@ from verify_ios import steps
 DEVICES = ["iphone", "ipad"]   # default: both
 LIVE = []                      # live services it depends on, e.g. ["duck.ai"]; empty = local fixture / app only
 FLAGS = {}                     # remote feature flags to pin for this proof (env.PINNED_FLAGS are always pinned)
+INPUT_ENV = []                 # environment variables the proof reads; must be set, recorded in the rerun command
 
 def run(ios):
     steps.fresh_start(ios)                         # reinstall + launch: one blank tab, address bar not focused
@@ -260,3 +261,7 @@ Keep the runner's fixes: the animation-idle swizzle, the `record(_:)` override, 
 loopback-only binding and the token check.
 
 Keep [features/](features/README.md) honest as the app changes: `/maintain-verification-skill`.
+
+## Verify a live broker scan and opt-out
+
+Run a live broker scan and complete the opt-out for the selected record, with a pause for manual subscription setup. Read [features/pir.md](features/pir.md) and use the [worked proof](examples/live/pir.py). This flow is invoked explicitly; ordinary example wildcards do not include live broker submissions.

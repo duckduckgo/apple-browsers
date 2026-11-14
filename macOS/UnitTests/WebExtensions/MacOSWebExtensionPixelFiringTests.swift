@@ -25,11 +25,10 @@ import WebExtensions
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
     func testBreakageUsesCanonicalPixelKitContract() throws {
         let pixels = PixelKitMock()
-        let report = CPMMessagingBreakageReport(tabs: .many)
-        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(report))
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(tabs: .many))
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
-        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage")
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_macos")
         XCTAssertEqual(call.pixel.namePrefix, .none)
         XCTAssertEqual(call.frequency, .dailyAndCount)
         XCTAssertEqual(call.pixel.parameters, ["tabs": "many"])
@@ -170,7 +169,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
 
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
-        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_persistent")
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_persistent_macos")
         XCTAssertEqual(call.frequency, .dailyAndCount)
         XCTAssertEqual(call.pixel.namePrefix, .none)
         XCTAssertTrue((call.pixel.parameters ?? [:]).isEmpty)
@@ -199,7 +198,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
                 completion(true, nil)
             }
             pixelKit.fire(call.pixel, frequency: call.frequency)
-            XCTAssertEqual(names, ["web_extension_cpm_breakage_persistent_daily", "web_extension_cpm_breakage_persistent_count"])
+            XCTAssertEqual(names, ["web_extension_cpm_breakage_persistent_macos_daily", "web_extension_cpm_breakage_persistent_macos_count"])
         }
     }
 

@@ -40,7 +40,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         advance(1)
         monitor.handle(.interruptionEnded)
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testSilentPageIsReportedOnce() {
@@ -69,7 +69,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(30)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testNavigationAfterTheWindowReportsTheReplacedPage() {
@@ -77,7 +77,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         commit("a", path: "b")
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testNavigationBeforeTheWindowReportsNothing() {
@@ -157,6 +157,24 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixels.breakages.isEmpty)
     }
 
+    func testDuckPlayerVideoIsNotMeasured() {
+        let embed = URL(string: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")!
+        monitor.handle(.navigationCommitted(tabIdentifier: "a", url: embed, navigationKind: .other, extensionIsLoaded: true))
+        advance(100)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertTrue(pixels.breakages.isEmpty)
+    }
+
+    func testOtherYoutubeNoCookiePagesAreStillMeasured() {
+        let page = URL(string: "https://www.youtube-nocookie.com/other")!
+        monitor.handle(.navigationCommitted(tabIdentifier: "a", url: page, navigationKind: .other, extensionIsLoaded: true))
+        advance(100)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [.one])
+    }
+
     func testOnlyAnOrdinaryNavigationBecomesANonHTMLDocument() {
         XCTAssertEqual(CPMNavigationKind.other.resolved(forMimeType: "application/pdf"), .nonHTMLDocument)
         XCTAssertEqual(CPMNavigationKind.other.resolved(forMimeType: "text/html"), .other)
@@ -226,7 +244,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testMessageGoesOnlyToTheWaitingTabsShowingItsPage() {
@@ -238,7 +256,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)], "a got the message, b waits on another page")
+        XCTAssertEqual(pixels.breakages, [.one], "a got the message, b waits on another page")
     }
 
     func testMessageThatMatchesTwoTabsAnswersBoth() {
@@ -267,7 +285,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testMessageFromAnOldExtensionDoesNotAnswer() {
@@ -298,7 +316,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.many), report(.many), report(.many)],
+        XCTAssertEqual(pixels.breakages, [.many, .many, .many],
                        "tabs found silent together are not a single-tab breakage")
         XCTAssertEqual(pixels.persistentCount, 1)
     }
@@ -314,7 +332,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.many), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.one, .many, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -325,7 +343,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         commit("a", path: "c")
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -338,7 +356,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -362,7 +380,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.one, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -375,7 +393,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(40)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testMessageOfAnotherHostDoesNotAnswerTheWaitingTab() {
@@ -385,7 +403,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(40)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     // MARK: - Messages that are not answers
@@ -396,7 +414,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testRefreshThatCannotAnswerStillShowsTheCurrentExtensionIsAlive() {
@@ -417,7 +435,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.one, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -429,7 +447,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)],
+        XCTAssertEqual(pixels.breakages, [.one, .one],
                        "the extension is running, so the tabs are not many")
         XCTAssertEqual(pixels.persistentCount, 0)
     }
@@ -441,7 +459,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -454,7 +472,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -476,7 +494,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.many), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.many, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -492,7 +510,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.many), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.many, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -516,7 +534,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testPageCommittedWhileSuspendedStartsWaitingWhenTheAppResumes() {
@@ -539,7 +557,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionBegan)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testExtensionReloadEndsTheSeries() {
@@ -551,7 +569,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -578,7 +596,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.one, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -589,7 +607,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     // MARK: - Suspension edge cases
@@ -601,7 +619,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(10)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testSecondSuspensionBeginKeepsTheFirstStart() {
@@ -618,7 +636,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         advance(1)
         monitor.handle(.interruptionEnded)
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     func testClosingAnUnknownTabChangesNothing() {
@@ -627,7 +645,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
     }
 
     // MARK: - Interleaved tabs and answers
@@ -640,7 +658,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(21)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -654,7 +672,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -668,7 +686,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(10)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -682,7 +700,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.one, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -696,7 +714,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.many)])
+        XCTAssertEqual(pixels.breakages, [.one, .many])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -709,7 +727,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one), report(.one)])
+        XCTAssertEqual(pixels.breakages, [.one, .one])
         XCTAssertEqual(pixels.persistentCount, 0)
     }
 
@@ -726,21 +744,17 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     private func advance(_ seconds: TimeInterval) {
         date = date.addingTimeInterval(seconds)
     }
-
-    private func report(_ tabs: CPMSilentTabs) -> CPMMessagingBreakageReport {
-        CPMMessagingBreakageReport(tabs: tabs)
-    }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 private final class CapturingWebExtensionPixelFiring: WebExtensionPixelFiring {
-    private(set) var breakages: [CPMMessagingBreakageReport] = []
+    private(set) var breakages: [CPMSilentTabs] = []
     private(set) var persistentCount = 0
 
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
-        case .cpmMessagingBreakage(let report):
-            breakages.append(report)
+        case .cpmMessagingBreakage(let tabs):
+            breakages.append(tabs)
         case .cpmMessagingBreakagePersistent:
             persistentCount += 1
         default:

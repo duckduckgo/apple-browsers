@@ -120,9 +120,10 @@ enum WebExtensionPixel: PixelKit.Event {
     /// An extension's toolbar button, when the click performs its action rather than closing its popup.
     case toolbarClicked(extension: WebExtensionPixelExtension)
 
-    // MARK: - Debug
+    // MARK: - CPM messaging breakage
 
-    case debugCPM(CPMWebExtensionPixelMetadata)
+    case cpmMessagingBreakage(tabs: String)
+    case cpmMessagingBreakagePersistent
 
     // MARK: - PixelKit.Event
 
@@ -229,9 +230,10 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_ad_blocking_not_loaded_macos"
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
-        case .debugCPM(let metadata):
-            // Preserve the shared canonical CPM names on both platforms.
-            return metadata.name
+        case .cpmMessagingBreakage:
+            return "web_extension_cpm_breakage_macos"
+        case .cpmMessagingBreakagePersistent:
+            return "web_extension_cpm_breakage_persistent_macos"
         case .enabled:
             return "web_extension_enabled_macos"
         case .disabled:
@@ -328,8 +330,8 @@ enum WebExtensionPixel: PixelKit.Event {
                     "unsupported_url_count": String(unsupportedURLCount)]
         case .bitwardenDailyActive(let isDefault):
             return ["is_default": isDefault ? "true" : "false"]
-        case .debugCPM(let metadata):
-            return metadata.parameters
+        case .cpmMessagingBreakage(let tabs):
+            return ["tabs": tabs]
         case .reloadError(let parameters):
             return parameters
         default:
@@ -341,7 +343,7 @@ enum WebExtensionPixel: PixelKit.Event {
         switch self {
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
              .updateApplied, .updateInstallFailed,
-             .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
+             .cpmMessagingBreakage, .cpmMessagingBreakagePersistent, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
              .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
              .getClicked, .detailsOpened, .publisherLinkClicked, .toolbarClicked:
             return .none
@@ -472,9 +474,10 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
-            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-            pixel = .debugCPM(metadata)
+        case .cpmMessagingBreakage(let tabs):
+            pixel = .cpmMessagingBreakage(tabs: tabs.rawValue)
+        case .cpmMessagingBreakagePersistent:
+            pixel = .cpmMessagingBreakagePersistent
         case .defaultPasswordManagerSet(let pixelExtension):
             pixel = .defaultPasswordManagerSet(extension: pixelExtension)
         case .bitwardenDailyActive(let isDefault):

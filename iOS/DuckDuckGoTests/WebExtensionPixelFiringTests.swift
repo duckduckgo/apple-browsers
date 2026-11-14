@@ -26,8 +26,7 @@ import WebExtensions
 final class WebExtensionPixelFiringTests: XCTestCase {
     func testBreakageUsesCanonicalPixelKitContract() throws {
         let pixels = PixelKitMock()
-        let report = CPMMessagingBreakageReport(tabs: .many)
-        iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(report))
+        iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(tabs: .many))
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
         XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage")

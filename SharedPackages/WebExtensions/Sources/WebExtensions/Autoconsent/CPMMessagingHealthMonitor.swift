@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DuckPlayer
 import Foundation
 import OSLog
 import WebKit
@@ -191,9 +192,12 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     }
 
     /// Whether the extension can answer on the committed page: http(s), and not the browser's own error page,
-    /// a history restore (WebKit may not rerun content scripts) or a restored session.
+    /// a history restore (WebKit may not rerun content scripts), a restored session or a Duck Player video.
+    /// The web view of a Duck Player video shows the youtube-nocookie embed, but the tab reports its `duck://player`
+    /// URL to the extension, so the extension's answer could never be matched to the page.
     private func isEligible(url: URL, navigationKind: CPMNavigationKind) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return false }
+        guard !url.isDuckPlayer else { return false }
         return navigationKind == .other
     }
 
@@ -244,7 +248,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         for (tabIdentifier, _) in silent {
             pendingCommits[tabIdentifier] = nil
             if cannotBeAnsweredTabs.remove(tabIdentifier) != nil {
-                pixelFiring.fire(.cpmMessagingBreakage(CPMMessagingBreakageReport(tabs: .one)))
+                pixelFiring.fire(.cpmMessagingBreakage(tabs: .one))
             } else {
                 reportSilentTab(tabIdentifier)
             }
@@ -253,8 +257,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     private func reportSilentTab(_ tabIdentifier: String) {
         let otherTabsWereSilent = !silentTabs.subtracting([tabIdentifier]).isEmpty
-        let report = CPMMessagingBreakageReport(tabs: otherTabsWereSilent ? .many : .one)
-        pixelFiring.fire(.cpmMessagingBreakage(report))
+        let tabs: CPMSilentTabs = otherTabsWereSilent ? .many : .one
+        pixelFiring.fire(.cpmMessagingBreakage(tabs: tabs))
         guard silentTabs.count >= 2, !didReportPersistentBreakage else { return }
         didReportPersistentBreakage = true
         pixelFiring.fire(.cpmMessagingBreakagePersistent)

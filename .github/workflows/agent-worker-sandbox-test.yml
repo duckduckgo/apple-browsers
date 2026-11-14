@@ -55,11 +55,16 @@ jobs:
           mkdir -p "$RUNNER_TEMP/identity" && echo "dummy-token" > "$RUNNER_TEMP/identity/token"
           # srt points TMPDIR here for sandboxed commands
           mkdir -p /tmp/claude
+          # macOS can't nest sandboxes, so SwiftPM's own manifest and plugin sandbox has to be off. They
+          # still run inside srt's sandbox
+          defaults write com.apple.dt.Xcode IDEPackageSupportDisableManifestSandbox -bool YES
+          defaults write com.apple.dt.Xcode IDEPackageSupportDisablePluginExecutionSandbox -bool YES
           python3 - <<'PY'
           import json, os
           ws, tmp = os.environ["GITHUB_WORKSPACE"], os.environ["RUNNER_TEMP"]
           policy = {
-              "network": {"allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com"], "deniedDomains": []},
+              "network": {"allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com"], "deniedDomains": [],
+                          "allowMachLookup": ["com.apple.CoreSimulator.*", "com.apple.dt.*"]},
               "filesystem": {
                   "denyRead": [f"{tmp}/identity"],
                   "allowWrite": [ws, tmp, "/private/tmp", "/private/var/folders"] + [os.path.expanduser(p) for p in (

@@ -126,10 +126,9 @@ jobs:
           bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO \
-            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/prebuild.log" 2>&1
-          rc=$?
-          grep -E "BUILD (SUCCEEDED|FAILED)|Command PhaseScriptExecution failed|^error:|: error:" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export " | sort | uniq -c | sort -rn | head -20
-          grep -B12 "Command PhaseScriptExecution failed" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export \|^ *cd \|^ *builtin" | head -60
+            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/prebuild.log" 2>&1 && rc=0 || rc=$?
+          grep -E "BUILD (SUCCEEDED|FAILED)|Command PhaseScriptExecution failed|^error:|: error:" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export " | sort | uniq -c | sort -rn | head -20 || true
+          grep -B12 "Command PhaseScriptExecution failed" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export \|^ *cd \|^ *builtin" | head -60 || true
           exit $rc
 
       - name: Stand-in for the agent's edit

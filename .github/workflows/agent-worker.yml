@@ -82,7 +82,7 @@ jobs:
           persist-credentials: false
 
       - name: Azure login (GitHub OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
@@ -235,7 +235,7 @@ jobs:
       # Evidence is uploaded even when the agent fails, so the run can be debugged behind SSO
       - name: Azure login again (GitHub OIDC)
         if: always() && steps.anthropic.outcome == 'success'
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
@@ -304,7 +304,7 @@ jobs:
           persist-credentials: false
 
       - name: Azure login (GitHub OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
@@ -389,7 +389,7 @@ jobs:
 
       - name: Azure login again (GitHub OIDC)
         if: always()
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
@@ -476,7 +476,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token || github.token }}
 
       - name: Azure login (GitHub OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}

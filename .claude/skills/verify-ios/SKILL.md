@@ -1,22 +1,23 @@
 ---
 name: verify-ios
-description: Prove a change works in the DuckDuckGo iOS browser built from this worktree, on dedicated iPhone and iPad simulators, by running a short proof that acts like a user and checks the result, pixels and wide events. Produces reproducible evidence for a pull request. Invoke explicitly after implementing an iOS change, or to investigate iOS app behavior.
+description: Prove a change works in the DuckDuckGo iOS browser built from this worktree, on dedicated iPhone and iPad simulators, by running a short Python proof that acts like a user and checks the result, pixels and wide events. Produces PR-ready evidence per device (screen recording, key-frame screenshots, telemetry, a per-scenario report.md) in a directory you choose. Use it to verify an iOS change before opening a pull request, to reproduce an iOS bug before and after a fix, or to investigate iOS app behavior.
 disable-model-invocation: true
 ---
 
 # verify-ios
 
-Proves iOS behavior in the real app. You write a **proof**: a short Python file for this one change, saved with its
-evidence and never committed. `prove` checks it, runs it on each device, captures evidence, and always cleans up.
+Proves iOS behavior in the real app (`iOS/`, the DuckDuckGo browser) and produces evidence a reviewer can check: a
+screen recording and screenshots per device, raw pixels and wide events, and a `report.md` laid out as one PR
+verification scenario. You write a **proof**: a short Python file for this one change, saved with its evidence and
+never committed. `prove` checks it, runs it on each device, captures evidence, and always cleans up. Everything runs
+from one command line, so any agent or person with a shell on a Mac with Xcode can use it.
 
 ```bash
 V=.claude/skills/verify-ios/bin/verify-ios      # from the worktree root; every example below uses $V
 ```
 
-**How it gets used.** Only when someone asks for it: agents never pick it on their own (`disable-model-invocation`),
-and nothing in the repo's agent instructions points to it. With AStack's `auto`, name it when you start, for example
-"/auto fix … and use verify-ios to verify" (auto honours an explicitly named driver). Outside auto, invoke
-`/verify-ios` directly.
+**How it gets used.** Agents don't pick this skill on their own (`disable-model-invocation`), so name it when you start
+a task ("… and verify it with verify-ios"), or invoke `/verify-ios`.
 
 Before writing a proof, read the feature files in [features/](features/README.md) for what you are changing: they
 list the real ids, the iPhone/iPad differences and the app quirks that make a naive proof fail.
@@ -162,19 +163,48 @@ plus `nth=<n>` when several match (otherwise the action fails with AMBIGUOUS; it
 `prove` writes, per attempt, `<state dir>/evidence/<stamp>-<name>-<id>/` (`$V info` prints the state dir):
 `proof.py`, `manifest.json` (git revision and dirty flag, the build's source fingerprint and sha256, the running
 binary's sha256 per device as verified at launch, pinned flags, skill sha256, Xcode, simulators, live services and
-live hosts seen, rerun command), `report.md`, and per device `transcript.jsonl`, your screenshots, `final.png`,
-`final-snapshot.txt`, `pixels.json`, `pixels.ndjson` (raw), `wide-events.json`, `result.json`.
+live hosts seen, video per device, rerun command), `report.md`, and per device `recording.mp4`, `transcript.jsonl`,
+your screenshots, `final.png`, `final-snapshot.txt`, `pixels.json`, `pixels.ndjson` (raw), `wide-events.json`,
+`result.json`.
 
 An attempt folder is used once: a proof inside a folder that holds anything else is copied to a new folder.
 
-With an AStack show-me-your-work decision log, pass `--decision-log <path to decisions.tsv>` to `new-proof` and
-`prove`: attempt folders then go in `proofs/` next to the log, so the log can link them, and the manifest records it.
-Keep the log outside the checkout, so evidence never lands in the repo.
+**Where evidence goes.** Pass one of these to `new-proof` and `prove` (the manifest and rerun command record it):
+- `--evidence-dir <dir>`: any directory outside the checkout, created if missing; each run writes a fresh attempt
+  folder in it. Use the directory your tooling publishes evidence from.
+- `--decision-log <path>`: a `decisions.tsv` outside the checkout; attempt folders go in `proofs/` next to it, so the
+  log can link them.
+
+Either one inside the checkout is refused, so evidence never lands in the repo.
+
+**Video.** `prove` records each device's screen to `<device>/recording.mp4` (h264) from launch until the final
+screenshot, on pass, fail and cancel. Your `shot()` screenshots and `final.png` are the key frames. A recording that
+fails is listed under Problems (exit 2), never as a failed proof. `--no-video` turns it off.
+
+**`report.md`** is one verification scenario, in the order a PR description presents it: **Verified** (the proof's
+docstring), **Evidence** (relative links per device: video, final screen, screenshots, telemetry, transcript),
+**Outcome** (passed and failed checks, problems and warnings per device), **Details** (revision and dirty flag, build,
+devices, live services or local fixture, pinned flags, capture conditions, rerun command), then **Unverified**. Write
+the docstring's first line as the claim a reviewer reads: what the user sees, under which conditions.
 
 Report to the user from `report.md`: **passed, failed and unverified** behavior per device, whether the evidence used
 live services or only the local fixture, the revision, the rerun command, and links to the evidence. Look at the
 screenshots before claiming anything about appearance. The report's **Problems** section lists cleanup and evidence
 failures; pass them on, never hide them.
+
+**Before and after (bug fixes).** Run the same proof against the base commit: add a worktree at it and run *this*
+checkout's `verify-ios` from inside that worktree. The checkout is taken from the current directory and the skill
+from the script's own path, so the base app is built and proved with today's skill and proof, on that worktree's own
+simulators. Each report's rerun command starts with `cd` into the checkout it proved:
+
+```bash
+base=../base-verify; V="$PWD/$V"                     # absolute, so it still names this checkout's skill from there
+git worktree add "$base" "$(git merge-base HEAD origin/main)" && git -C "$base" submodule update --init --recursive
+(cd "$base" && $V --device iphone setup && $V build &&
+ $V prove "$proof" --devices iphone --evidence-dir "$dir/before")   # expected to fail: the bug
+$V prove "$proof" --devices iphone --evidence-dir "$dir/after"      # expected to pass: the fix
+(cd "$base" && $V cleanup --all --delete-sims) && git worktree remove --force "$base"   # --force: it has submodules
+```
 
 Exit codes: `0` pass · `1` a check failed (the product, or the proof) · `2` error: setup, stale build, driver, a proof
 rejected by `check`, or a pass with cleanup/evidence problems · `3` not supported · `75` device busy (another proof
@@ -246,7 +276,7 @@ $V prove .claude/skills/verify-ios/examples/*.py                                
 | path | what |
 |---|---|
 | `bin/verify-ios` | command line: setup, build, new-proof, check, prove, explore, doctor, cleanup (`-h`) |
-| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `steps.py`, `telemetry.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
+| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `steps.py`, `telemetry.py`, `video.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
 | `lib/vrunner_start.sh` | start one runner and report its pids (called by the driver, which also stops it) |
 | `lib/ios_identity.sh` | running-binary sha256 vs build (called by doctor) |
 | `runner/` | Swift XCUITest runner, XcodeGen spec and generated project; regenerate with `cd runner && xcodegen generate` |

@@ -34,6 +34,7 @@ final class Endpoints {
     private(set) var login: URL
     private(set) var logoutDevice: URL
     private(set) var deleteAccount: URL
+    private(set) var auditLog: URL
 
     private(set) var syncGet: URL
     private(set) var syncPatch: URL
@@ -56,6 +57,7 @@ final class Endpoints {
         login = baseURL.appendingPathComponent("sync/login")
         logoutDevice = baseURL.appendingPathComponent("sync/logout-device")
         deleteAccount = baseURL.appendingPathComponent("sync/delete-account")
+        auditLog = baseURL.appendingPathComponent("sync/account/audit-log")
         connect = baseURL.appendingPathComponent("sync/connect")
 
         syncGet = baseURL.appendingPathComponent("sync")
@@ -80,6 +82,7 @@ extension Endpoints {
         login = baseURL.appendingPathComponent("sync/login")
         logoutDevice = baseURL.appendingPathComponent("sync/logout-device")
         deleteAccount = baseURL.appendingPathComponent("sync/delete-account")
+        auditLog = baseURL.appendingPathComponent("sync/account/audit-log")
         connect = baseURL.appendingPathComponent("sync/connect")
 
         syncGet = baseURL.appendingPathComponent("sync")

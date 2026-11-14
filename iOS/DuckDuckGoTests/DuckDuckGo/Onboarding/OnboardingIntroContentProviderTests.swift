@@ -554,6 +554,36 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.secondaryCTA == UserText.onboardingSkip)
         }
 
+        @available(iOS 16, macOS 13, *)
+        @Test("Check VPN activation content reuses the subscription onboarding copy", .timeLimit(.minutes(1)))
+        func checkVPNActivationContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.vpnActivationContent
+
+            // THEN
+            #expect(result.offTitle == UserText.subscriptionOnboardingVPNActivationOffTitle)
+            #expect(result.turnOnCTA == UserText.subscriptionOnboardingVPNActivationTurnOnButton)
+            #expect(result.skipCTA == UserText.onboardingSkip)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check subscription reminder content bolds the Settings path", .timeLimit(.minutes(1)))
+        func checkSubscriptionReminderContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.subscriptionReminderContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.SubscriptionReminder.title)
+            #expect(String(result.message.characters) == "Add the subscription anytime in Settings > Subscription")
+            #expect(result.cta == UserText.Onboarding.SubscriptionReminder.cta)
+        }
+
     }
 
     @MainActor

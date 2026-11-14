@@ -73,7 +73,7 @@ struct OnboardingStepsHelper {
         case .browserPrivately:
             personalisationSteps = [.searchExperienceSelection]
         case .vpn:
-            personalisationSteps = [.tryVPN, .searchExperienceSelection]
+            personalisationSteps = [.tryVPN, .tryVPNFollowUp, .searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:

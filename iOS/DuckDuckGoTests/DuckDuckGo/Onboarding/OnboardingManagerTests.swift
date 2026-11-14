@@ -1063,9 +1063,16 @@ struct OnboardingDownloadReasonFlowTests {
         let result = sut.selectDownloadReason(.vpn)
 
         // THEN
-        #expect(result == [.setDefaultBrowser, .tryVPN, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection])
+        #expect(result == [.setDefaultBrowser, .tryVPN, .tryVPNFollowUp, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection])
         #expect(OnboardingIntroStep.tryVPN.resumeStep == .tryVPN)
         #expect(OnboardingIntroStep.tryVPN.countsTowardProgress(flow: .default))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The step after Try VPN has its own checkpoint and doesn't add to the step count", .timeLimit(.minutes(1)))
+    func tryVPNFollowUpHasCheckpointAndDoesNotCount() {
+        #expect(OnboardingIntroStep.tryVPNFollowUp.resumeStep == .tryVPNFollowUp)
+        #expect(!OnboardingIntroStep.tryVPNFollowUp.countsTowardProgress(flow: .default))
     }
 
     // MARK: - Helpers

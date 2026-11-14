@@ -40,6 +40,8 @@ protocol OnboardingIntroContentProviding {
     var searchExperienceContent: OnboardingSearchExperienceContent { get }
     var duckAIQueryContent: OnboardingDuckAIQueryContent { get }
     var tryVPNContent: OnboardingTryVPNContent { get }
+    var vpnActivationContent: OnboardingVPNActivationContent { get }
+    var subscriptionReminderContent: OnboardingSubscriptionReminderContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -527,6 +529,41 @@ extension OnboardingIntroContentProvider {
         )
     }
 
+    var vpnActivationContent: OnboardingVPNActivationContent {
+        OnboardingVPNActivationContent(
+            offTitle: UserText.subscriptionOnboardingVPNActivationOffTitle,
+            turnOnCTA: UserText.subscriptionOnboardingVPNActivationTurnOnButton,
+            skipCTA: UserText.onboardingSkip,
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var subscriptionReminderContent: OnboardingSubscriptionReminderContent {
+        OnboardingSubscriptionReminderContent(
+            title: UserText.Onboarding.SubscriptionReminder.title,
+            message: (try? AttributedString(markdown: UserText.Onboarding.SubscriptionReminder.message))
+                ?? AttributedString(UserText.Onboarding.SubscriptionReminder.message),
+            cta: UserText.Onboarding.SubscriptionReminder.cta,
+            daxAnimation: .wingLeft
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Try VPN follow-up
+
+struct OnboardingVPNActivationContent: Equatable {
+    let offTitle: String
+    let turnOnCTA: String
+    let skipCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
+struct OnboardingSubscriptionReminderContent: Equatable {
+    let title: String
+    let message: AttributedString
+    let cta: String
+    let daxAnimation: DaxAnimation?
 }
 
 // MARK: - Content Provider + Add to Dock (Add me to your Dock!)

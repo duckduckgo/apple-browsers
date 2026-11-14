@@ -2910,6 +2910,12 @@ public struct UserText {
             public static let cta = NotLocalizedString("onboarding.tryVPN.cta", value: "Try for Free", comment: "Button on the onboarding screen to start the VPN free trial.")
         }
 
+        public enum SubscriptionReminder {
+            public static let title = NotLocalizedString("onboarding.subscriptionReminder.title", value: "If you change your mind…", comment: "Title of the onboarding screen shown to users who chose VPN as their download reason but didn't subscribe.")
+            public static let message = NotLocalizedString("onboarding.subscriptionReminder.message", value: "Add the subscription anytime in **Settings > Subscription**", comment: "Message of the onboarding screen telling users where to subscribe later. The text between ** is shown in bold.")
+            public static let cta = NotLocalizedString("onboarding.subscriptionReminder.cta", value: "Next", comment: "Button to continue to the next onboarding screen.")
+        }
+
         public enum Personalization {
 
             public enum AIModel {

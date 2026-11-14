@@ -73,10 +73,12 @@ jobs:
       - name: Canary (both must be blocked)
         run: |
           set +e
-          srt "cat '$RUNNER_TEMP/identity/token'" && echo "CANARY FAIL: token readable" || echo "canary ok: token read blocked"
-          srt "curl -sS -m 10 https://example.com -o /dev/null" && echo "CANARY FAIL: example.com reachable" || echo "canary ok: example.com blocked"
-          srt "bash -c 'cat $RUNNER_TEMP/identity/token'" && echo "CANARY FAIL: child process read token" || echo "canary ok: child process blocked"
-          srt "curl -sS -m 10 https://github.com -o /dev/null" && echo "allowed domain reachable" || echo "NOTE: github.com not reachable under sandbox"
+          cat "$RUNNER_TEMP/identity/token" > /dev/null && echo "control: token readable outside the sandbox"
+          srt -c "echo control: srt runs commands" || echo "CONTROL FAIL: srt can't run a command"
+          srt -c "cat '$RUNNER_TEMP/identity/token'" && echo "CANARY FAIL: token readable" || echo "canary ok: token read blocked"
+          srt -c "curl -sS -m 10 https://example.com -o /dev/null" && echo "CANARY FAIL: example.com reachable" || echo "canary ok: example.com blocked"
+          srt -c "bash -c 'cat $RUNNER_TEMP/identity/token'" && echo "CANARY FAIL: child process read token" || echo "canary ok: child process blocked"
+          srt -c "curl -sS -m 10 https://github.com -o /dev/null" && echo "allowed domain reachable" || echo "NOTE: github.com not reachable under sandbox"
 
       - name: Build under the sandbox
         id: build
@@ -86,7 +88,7 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -o pipefail
-          srt "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+          srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO" 2>&1 | tee "$RUNNER_TEMP/build.log" | tail -40
 
       - name: One unit test under the sandbox
@@ -97,7 +99,7 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -o pipefail
-          srt "xcodebuild test-without-building -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+          srt -c "xcodebuild test-without-building -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -only-testing:DuckDuckGoTests/SwipeTabsNewTabDestinationTests" 2>&1 | tail -30
 
       - name: Screenshot under the sandbox
@@ -111,11 +113,11 @@ jobs:
           udid=$(echo "$DEST" | sed -n 's/.*id=\([^,]*\).*/\1/p')
           app=$(find DerivedData/Build/Products -maxdepth 2 -name 'DuckDuckGo.app' | head -1)
           echo "simulator $udid, app $app"
-          srt "xcrun simctl boot ${udid:-booted}" || true
-          srt "xcrun simctl install ${udid:-booted} '$app'"
-          srt "xcrun simctl launch ${udid:-booted} com.duckduckgo.mobile.ios"
+          srt -c "xcrun simctl boot ${udid:-booted}" || true
+          srt -c "xcrun simctl install ${udid:-booted} '$app'"
+          srt -c "xcrun simctl launch ${udid:-booted} com.duckduckgo.mobile.ios"
           sleep 15
-          srt "xcrun simctl io ${udid:-booted} screenshot '$GITHUB_WORKSPACE/screenshot.png'"
+          srt -c "xcrun simctl io ${udid:-booted} screenshot '$GITHUB_WORKSPACE/screenshot.png'"
           ls -la "$GITHUB_WORKSPACE/screenshot.png"
 
       - name: Sandbox violations in the build log

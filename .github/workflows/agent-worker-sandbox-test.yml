@@ -75,7 +75,7 @@ jobs:
                   "denyRead": [f"{tmp}/identity"],
                   "allowWrite": [ws, tmp, "/private/tmp", "/private/var/folders"] + [os.path.expanduser(p) for p in (
                       "~/Library/Developer", "~/Library/Caches", "~/Library/Logs", "~/Library/org.swift.swiftpm",
-                      "~/.swiftpm", "~/.cache")],
+                      "~/.swiftpm", "~/.cache", "~/.maestro")],
                   "denyWrite": [],
               },
           }
@@ -123,7 +123,8 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -o pipefail
-          bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+          # Same TMPDIR as srt gives sandboxed commands, so the sandboxed build can be incremental
+          TMPDIR=/tmp/claude bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none COMPILATION_CACHE_ENABLE_CACHING=NO \
             OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/prebuild.log" 2>&1 && rc=0 || rc=$?
@@ -162,7 +163,7 @@ jobs:
           set -o pipefail
           srt -c "xcodebuild test-without-building -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
-            -only-testing:DuckDuckGoTests/SwipeTabsNewTabDestinationTests" 2>&1 | tail -30
+            -only-testing:UnitTests/SwipeTabsNewTabDestinationTests" 2>&1 | tail -30
 
       - name: Screenshot under the sandbox
         if: steps.build.outcome == 'success'
@@ -172,7 +173,11 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -euo pipefail
-          udid=booted
+          # The device ID is looked up outside the sandbox; everything after runs inside it
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["devices"]
+          print(next(x["udid"] for rt, xs in d.items() if "iOS-27" in rt for x in xs if x["name"] == "iPhone 17"))')
           app=$(find DerivedData/Build/Products -maxdepth 2 -name 'DuckDuckGo.app' | head -1)
           echo "simulator $udid, app $app"
           srt -c "xcrun simctl boot ${udid:-booted}" || true

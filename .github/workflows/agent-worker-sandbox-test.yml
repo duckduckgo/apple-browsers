@@ -125,7 +125,7 @@ jobs:
           set -o pipefail
           bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
-            -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+            -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none COMPILATION_CACHE_ENABLE_CACHING=NO \
             OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/prebuild.log" 2>&1 && rc=0 || rc=$?
           grep -E "BUILD (SUCCEEDED|FAILED)|Command PhaseScriptExecution failed|^error:|: error:" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export " | sort | uniq -c | sort -rn | head -20 || true
           grep -B12 "Command PhaseScriptExecution failed" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export \|^ *cd \|^ *builtin" | head -60 || true
@@ -145,7 +145,7 @@ jobs:
           set -o pipefail
           srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
-            -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+            -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none COMPILATION_CACHE_ENABLE_CACHING=NO \
             OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/build.log" 2>&1 && rc=0 || rc=$?
           grep -E "BUILD (SUCCEEDED|FAILED)|Command [A-Za-z]+ failed|: error:|^error:|Operation not permitted|sandbox_extension|couldNot" "$RUNNER_TEMP/build.log" | grep -v "^ *export " | cut -c1-240 | sort | uniq -c | sort -rn | head -30 || true
           grep -B15 -E "Command [A-Za-z]+ failed" "$RUNNER_TEMP/build.log" | grep -v "^ *export \|^ *cd \|^ *builtin-SwiftDriver" | cut -c1-240 | head -60 || true

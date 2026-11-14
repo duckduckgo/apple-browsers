@@ -42,6 +42,10 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
+        if isIPadFullTabChatInput {
+            handleIPadFullTabChatInputIntent(intent)
+            return
+        }
         defer { updateAddressBarSuppressionForNewTabPage() }
 
         switch intent {
@@ -156,53 +160,10 @@ private extension MainViewController {
     }
 
     func handleShowExpandedIntent(animationStyle: UTIAnimationStyle) {
-        // WKWebView snaps to the new size in one frame while the outer layer animates; mask the
-        // gap with a snapshot of the chat at its old visual state.
-        let snapshotMask = installContentContainerSnapshotMaskForAITabExpandIfNeeded()
-        animationStyle.perform({ [self] in
+        animationStyle.perform { [self] in
             applyAITabExpandedPose()
-        }, completion: { _ in
-            snapshotMask?.removeFromSuperview()
-        })
+        }
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
-    }
-
-    /// Captures a snapshot of `contentContainer` at its current (pre-expand) size and pins a
-    /// clipping wrapper that follows the container's frame. Caller removes the wrapper on
-    /// animation completion.
-    private func installContentContainerSnapshotMaskForAITabExpandIfNeeded() -> UIView? {
-        guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isAITabState,
-              let target = viewCoordinator.contentContainer,
-              let parent = target.superview,
-              let snapshot = target.snapshotView(afterScreenUpdates: false) else { return nil }
-
-        let oldSize = target.bounds.size
-
-        let wrapper = UIView()
-        wrapper.translatesAutoresizingMaskIntoConstraints = false
-        wrapper.clipsToBounds = true
-        wrapper.isUserInteractionEnabled = false
-
-        snapshot.translatesAutoresizingMaskIntoConstraints = false
-        wrapper.addSubview(snapshot)
-        // Sit just above `target` — masks the WKWebView's model-layer snap, but stays below the
-        // AI-tab header so the pill drop shadows that bleed into the content area aren't clipped.
-        parent.insertSubview(wrapper, aboveSubview: target)
-
-        NSLayoutConstraint.activate([
-            wrapper.topAnchor.constraint(equalTo: target.topAnchor),
-            wrapper.leadingAnchor.constraint(equalTo: target.leadingAnchor),
-            wrapper.trailingAnchor.constraint(equalTo: target.trailingAnchor),
-            wrapper.bottomAnchor.constraint(equalTo: target.bottomAnchor),
-
-            snapshot.topAnchor.constraint(equalTo: wrapper.topAnchor),
-            snapshot.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
-            snapshot.widthAnchor.constraint(equalToConstant: oldSize.width),
-            snapshot.heightAnchor.constraint(equalToConstant: oldSize.height)
-        ])
-        parent.layoutIfNeeded()
-        return wrapper
     }
 
     /// Visual end-state for `.aiTab(.expanded)`: container shown, chrome and content anchor

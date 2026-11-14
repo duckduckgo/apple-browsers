@@ -20,7 +20,7 @@
 import Combine
 import Foundation
 
-public protocol AIChatPreferencesStorage {
+public protocol AIChatPreferencesStorage: AIChatPageSummariesModelStoring {
     var isAIFeaturesEnabled: Bool { get set }
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -90,6 +90,10 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.showSearchAndDuckAITogglePublisher
     }
 
+    public var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
+        userDefaults.pageSummariesModelPublisher
+    }
+
     public init(userDefaults: UserDefaults = .standard,
                 notificationCenter: NotificationCenter = .default) {
         self.userDefaults = userDefaults
@@ -151,6 +155,11 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.hasAcceptedTermsAndConditions = newValue }
     }
 
+    public var pageSummariesModel: AIChatPageSummariesModel {
+        get { AIChatPageSummariesModel(rawValue: userDefaults.pageSummariesModel) ?? .duckAI }
+        set { userDefaults.pageSummariesModel = newValue.rawValue }
+    }
+
     public func reset() {
         userDefaults.isAIFeaturesEnabled = UserDefaults.isAIFeaturesEnabledDefaultValue
         userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
@@ -163,6 +172,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.userDidSeeToggleOnboarding = false
         userDefaults.lastUsedSidebarWidth = nil
         userDefaults.hasAcceptedTermsAndConditions = false
+        userDefaults.pageSummariesModel = AIChatPageSummariesModel.duckAI.rawValue
     }
 }
 
@@ -179,6 +189,7 @@ private extension UserDefaults {
         static let userDidSeeToggleOnboarding = "aichat.userDidSeeToggleOnboarding"
         static let lastUsedSidebarWidth = "aichat.sidebar.lastUsedWidth"
         static let hasAcceptedTermsAndConditions = "aichat.hasAcceptedTermsAndConditions"
+        static let pageSummariesModel = "aichat.pageSummariesModel"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -313,6 +324,23 @@ private extension UserDefaults {
 
     var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.showSearchAndDuckAIToggle).eraseToAnyPublisher()
+    }
+
+    @objc dynamic var pageSummariesModel: String {
+        get {
+            value(forKey: Keys.pageSummariesModel) as? String ?? AIChatPageSummariesModel.duckAI.rawValue
+        }
+
+        set {
+            guard newValue != pageSummariesModel else { return }
+            set(newValue, forKey: Keys.pageSummariesModel)
+        }
+    }
+
+    var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
+        publisher(for: \.pageSummariesModel)
+            .map { AIChatPageSummariesModel(rawValue: $0) ?? .duckAI }
+            .eraseToAnyPublisher()
     }
 
     var userDidSeeToggleOnboarding: Bool {

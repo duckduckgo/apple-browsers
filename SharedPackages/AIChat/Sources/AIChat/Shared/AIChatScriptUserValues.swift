@@ -169,6 +169,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// canonical chat format, so the web app may write canonical chats to native storage. Absent on
     /// builds that predate it, which must keep receiving the legacy format.
     public let supportsCanonicalChatFormat: Bool
+    /// What the local model can do on this device. Left out when the local-models flag is off,
+    /// which Duck.ai treats as unsupported.
+    public var localModel: AIChatLocalModelConfig?
     /// Browser tools Duck.ai may call through `executeClientTool`. Omitted outside a Duck.ai chat,
     /// in Fire, and when no tool is enabled.
     public var clientTools: ClientToolsConfiguration?
@@ -251,7 +254,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsAttachmentPrivacyDisplay: Bool = false,
                 supportsHomePageChatSuggestions: Bool = false,
                 supportsBonusOffer: Bool = false,
-                supportsCanonicalChatFormat: Bool = false) {
+                supportsCanonicalChatFormat: Bool = false,
+                localModel: AIChatLocalModelConfig? = nil) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -286,6 +290,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
         self.supportsBonusOffer = supportsBonusOffer
         self.supportsCanonicalChatFormat = supportsCanonicalChatFormat
+        self.localModel = localModel
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

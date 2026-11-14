@@ -535,11 +535,48 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
-    func testRefreshTriggerThresholdIsBoundedForFloatingUIWithoutChangingClassicUI() {
-        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: true), 120)
-        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 200, isFloatingUIEnabled: true), 80)
-        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: false), 253.2,
-                       accuracy: 0.01)
+    func testRefreshTriggerThresholdScalesWithContainerHeightAndKeepsMinimum() {
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844), 253.2, accuracy: 0.01)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 390), 117, accuracy: 0.01)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 200), 80)
+    }
+
+    func testShortPullDoesNotRefreshAndDeliberatePullRefreshesOnceInBothLayouts() {
+        for isFloatingUIEnabled in [false, true] {
+            let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+            let pullableView = UIView(frame: hostView.bounds)
+            let pageScrollView = UIScrollView(frame: pullableView.bounds)
+            hostView.addSubview(pullableView)
+            pullableView.addSubview(pageScrollView)
+            pageScrollView.contentOffset.y = -1
+            var refreshCount = 0
+            let adapter = PullToRefreshViewAdapter(with: pageScrollView,
+                                                   pullableView: pullableView,
+                                                   isFloatingUIEnabled: isFloatingUIEnabled,
+                                                   onRefresh: { refreshCount += 1 })
+            let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+            let selector = NSSelectorFromString("handlePanGesture:")
+            adapter.perform(selector, with: gesture)
+            gesture.stubbedState = .changed
+            gesture.translationY = 1
+            adapter.perform(selector, with: gesture)
+
+            gesture.translationY = 200
+            adapter.perform(selector, with: gesture)
+            XCTAssertEqual(refreshCount, 0)
+
+            gesture.translationY = 300
+            adapter.perform(selector, with: gesture)
+            XCTAssertEqual(refreshCount, 1)
+
+            gesture.translationY = 350
+            adapter.perform(selector, with: gesture)
+            XCTAssertEqual(refreshCount, 1)
+
+            gesture.stubbedState = .ended
+            adapter.perform(selector, with: gesture)
+            adapter.endRefreshing()
+        }
     }
 
     func testWhenFloatingUIIsDisabledThenRefreshHostRemainsBehindPullableView() throws {

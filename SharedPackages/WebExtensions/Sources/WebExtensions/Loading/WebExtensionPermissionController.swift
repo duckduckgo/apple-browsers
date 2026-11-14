@@ -294,7 +294,17 @@ public final class WebExtensionPermissionController {
         return true
     }
 
-    /// Also updates a loaded context, so a future preferences UI can use the same entry point.
+    /// Read from the store, so it's known while the extension is disabled.
+    public func hasAccessToPrivateData(for identifier: String) -> Bool? {
+        do {
+            return try store.settings(for: identifier)?.hasAccessToPrivateData
+        } catch {
+            Logger.webExtensions.error("Could not read extension permissions: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Also updates a loaded context, so the change applies without a reload.
     public func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {
         guard var settings = try store.settings(for: identifier) else { return }
         settings.hasAccessToPrivateData = allowed

@@ -90,6 +90,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
+    private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
     let featureFlagger: FeatureFlagger
     private let privacyFeatures: AnyPrivacyFeatures
     private let fireproofDomains: FireproofDomains
@@ -321,6 +322,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
         self.themeManager = themeManager
+        self.webExtensionManagerProvider = webExtensionManagerProvider
 
         self.specialPagesUserScript = SpecialPagesUserScript()
         self.onboardingActionsManager = specialPagesUserScript?.withAllSubfeatures()
@@ -1121,6 +1123,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         invalidateInteractionStateData()
 
         let source = content.source
+        // Pages of loaded extensions show in `webExtensionPageWebView`; `webView` loads an empty stand-in to keep the page in its history.
+        // Others load here to show the error page.
+        if isLoadedWebExtensionPage(url) {
+            return webView.navigator(distributedNavigationDelegate: navigationDelegate)
+                .loadSimulatedRequest(URLRequest(url: url), responseHTML: "", withExpectedNavigationType: source.navigationType)
+        }
         if url.isFileURL {
             // WebKit won‘t load local page‘s external resouces even with `allowingReadAccessTo` provided
             // this could be fixed using a custom scheme handler loading local resources in future.
@@ -1185,6 +1193,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         case .contentUpdated:
             return true
         }
+    }
+
+    @MainActor
+    private func isLoadedWebExtensionPage(_ url: URL) -> Bool {
+        guard #available(macOS 15.4, *), url.isWebExtensionUrl else {
+            return false
+        }
+
+        return webExtensionManagerProvider()?.extensionContext(for: url)?.webViewConfiguration != nil
     }
 
     @MainActor
@@ -1597,6 +1614,12 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
                 // navigation failure with MaliciousSiteError is achieved by redirecting to a special token-protected
                 // duck://error?.. URL performed in SpecialErrorPageTabExtension.swift
                 || error as NSError is MaliciousSiteError else { return }
+
+        // `webView` can't load a loaded extension's page for real (on reload or uncached history): restore its stand-in.
+        guard !isLoadedWebExtensionPage(url) else {
+            webView.loadAlternateHTML("", baseURL: url, forUnreachableURL: url)
+            return
+        }
 
         self.error = error
 

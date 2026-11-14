@@ -48,6 +48,7 @@ final class MockTimerFactory: TimerCreating {
     private(set) var capturedRepeats: Bool?
 
     private(set) var createdTimer: MockTimer?
+    private(set) var createdTimers: [MockTimer] = []
 
     func makeTimer(withTimeInterval interval: TimeInterval, repeats: Bool, on runLoop: RunLoop, block: @escaping @Sendable (TimerInterface) -> Void) -> TimerInterface {
         didCallMakeTimer = true
@@ -56,6 +57,7 @@ final class MockTimerFactory: TimerCreating {
 
         let timer = MockTimer(timeInterval: interval, repeats: repeats, block: block)
         createdTimer = timer
+        createdTimers.append(timer)
         return timer
     }
 

@@ -54,6 +54,7 @@ final class PromoRegistryTests: XCTestCase {
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             userChurnService: MockUserChurnStateProvider(),
+            defaultBrowserWinBackConfirmationMonitor: MockDefaultBrowserConfirmationMonitor(),
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),

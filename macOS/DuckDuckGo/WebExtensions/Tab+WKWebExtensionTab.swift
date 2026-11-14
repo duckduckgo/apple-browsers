@@ -165,7 +165,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     func loadURL(_ url: URL, for context: WKWebExtensionContext) async throws {
-        setContent(.url(url, credential: nil, source: .ui))
+        setContent(.contentFromURL(url, source: .ui))
     }
 
     func reload(fromOrigin: Bool, for context: WKWebExtensionContext) async throws {

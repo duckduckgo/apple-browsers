@@ -1433,6 +1433,49 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testGetConfigPassesPastedTextAndPromptLimitsThrough() async throws {
+        let off: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(off.enablePastedText, false)
+        XCTAssertNil(off.pastedTextLimits)
+
+        configProvider.isPastedTextEnabled = true
+        configProvider.pastedTextLimits = .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000)
+        let on: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(on.enablePastedText, true)
+        XCTAssertEqual(on.pastedTextLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
+    }
+
+    @MainActor
+    func testSubmitChatForwardsPastedTextWhenEnabled() async throws {
+        configProvider.isPastedTextEnabled = true
+        let mock = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+
+        let action: [String: Any] = ["chat": "Summarize", "target": "same-tab", "textPasted": [["content": "long paste"]]]
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(mock.lastSubmitChatTextPasted, [.init(content: "long paste")])
+    }
+
+    @MainActor
+    func testSubmitChatDropsPastedTextWhenDisabled() async throws {
+        let mock = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+
+        let action: [String: Any] = ["chat": "Summarize", "target": "same-tab", "textPasted": [["content": "long paste"]]]
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertNil(mock.lastSubmitChatTextPasted)
+    }
+
+    func testSubmitChatDecodesWithAndWithoutPastedText() throws {
+        let withPaste = Data(#"{"chat":"Hi","target":"same-tab","textPasted":[{"content":"a"},{"content":"b"}]}"#.utf8)
+        let decoded = try JSONDecoder().decode(NewTabPageDataModel.SubmitChatAction.self, from: withPaste)
+        XCTAssertEqual(decoded.textPasted, [.init(content: "a"), .init(content: "b")])
+
+        let withoutPaste = Data(#"{"chat":"Hi","target":"same-tab"}"#.utf8)
+        XCTAssertNil(try JSONDecoder().decode(NewTabPageDataModel.SubmitChatAction.self, from: withoutPaste).textPasted)
+    }
+
+    @MainActor
     func testCaptureScreenshotReturnsTheProvidersResponse() async throws {
         let provider = MockNewTabPageOmnibarScreenshotProvider()
         provider.captureResponse = .init(image: .init(data: "AAAA", format: "png", kind: "window"))

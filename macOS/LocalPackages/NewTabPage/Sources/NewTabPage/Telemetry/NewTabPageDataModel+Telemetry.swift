@@ -38,6 +38,11 @@ public extension NewTabPageDataModel {
         case omnibarScreenshotTaken(kind: String)
         case omnibarScreenshotRemoved
         case omnibarScreenshotFailed(reason: String)
+        /// Pasted-text chips in the Duck.ai omnibar. Edited means changed text was saved.
+        case omnibarPastedTextAttached
+        case omnibarPastedTextRemoved
+        case omnibarPastedTextEdited
+        case omnibarPastedTextDialogOpened
     }
 }
 
@@ -65,6 +70,10 @@ extension NewTabPageDataModel.TelemetryEvent: Decodable {
         case .omnibarScreenshotTaken: self = .omnibarScreenshotTaken(kind: try Self.value(.kind, in: payload))
         case .omnibarScreenshotRemoved: self = .omnibarScreenshotRemoved
         case .omnibarScreenshotFailed: self = .omnibarScreenshotFailed(reason: try Self.value(.reason, in: payload))
+        case .omnibarPastedTextAttached: self = .omnibarPastedTextAttached
+        case .omnibarPastedTextRemoved: self = .omnibarPastedTextRemoved
+        case .omnibarPastedTextEdited: self = .omnibarPastedTextEdited
+        case .omnibarPastedTextDialogOpened: self = .omnibarPastedTextDialogOpened
         }
     }
 }
@@ -95,6 +104,10 @@ private extension NewTabPageDataModel.TelemetryEvent {
         case omnibarScreenshotTaken = "omnibar_screenshot_taken"
         case omnibarScreenshotRemoved = "omnibar_screenshot_removed"
         case omnibarScreenshotFailed = "omnibar_screenshot_failed"
+        case omnibarPastedTextAttached = "omnibar_pasted_text_attached"
+        case omnibarPastedTextRemoved = "omnibar_pasted_text_removed"
+        case omnibarPastedTextEdited = "omnibar_pasted_text_edited"
+        case omnibarPastedTextDialogOpened = "omnibar_pasted_text_dialog_opened"
     }
 
     enum CustomizerState: String, Decodable {

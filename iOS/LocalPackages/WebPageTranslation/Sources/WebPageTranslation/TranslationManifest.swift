@@ -24,7 +24,6 @@ import LocalModels
 public struct TranslationManifest: Decodable, Equatable, Sendable {
 
     public static let supportedSchemaVersion = 1
-    public static let url = URL(string: "https://staticcdn.duckduckgo.com/translations/models/models.json")!
 
     public let schemaVersion: Int
     public let baseUrl: URL

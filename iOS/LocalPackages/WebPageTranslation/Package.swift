@@ -30,6 +30,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/LocalModels"),
+        .package(path: "../../../SharedPackages/Persistence"),
         .package(url: "https://github.com/duckduckgo/translate-kit", exact: "0.4.0"),
     ],
     targets: [
@@ -37,6 +38,7 @@ let package = Package(
             name: "WebPageTranslation",
             dependencies: [
                 "LocalModels",
+                "Persistence",
                 .product(name: "TranslateKit", package: "translate-kit"),
             ],
             swiftSettings: [

@@ -1,39 +1,124 @@
 name: Agent worker
 
-# Smoke test for Anthropic workload identity federation, to be replaced by the real worker. The
-# federation rule only accepts this file on the agent-worker branch in the agent-worker environment
+# Agent worker: applies a plan from the apple-agent-orchestrator and opens a draft PR after a person approves
 
 on:
-  push:
-    branches: [agent-worker]
   workflow_dispatch:
+    inputs:
+      task_gid:
+        description: "Asana task gid"
+        required: true
+        type: string
+      handoff:
+        description: "Handoff ID (a UUID, the handoff's prefix in the auto artifacts container)"
+        required: true
+        type: string
+      sha256:
+        description: "SHA-256 of the plan"
+        required: true
+        type: string
 
 permissions: {}
 
+concurrency:
+  group: agent-worker
+  cancel-in-progress: false
+
+env:
+  ARTIFACTS_ACCOUNT: ddgartifactsuse
+  ARTIFACTS_CONTAINER: auto
+  # Inputs are checked in the first step before any of these paths are used
+  PLAN_BLOB: ${{ inputs.handoff }}/plan.md
+  # Create-only storage, so each attempt gets its own prefix
+  EVIDENCE_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ github.run_id }}-${{ github.run_attempt }}
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
 jobs:
-  federation-check:
-    name: Claude via federation (${{ matrix.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: bitrise-macos
-            runs-on: [image:osx-27-edge, general-purpose]
-          - name: github-ubuntu
-            runs-on: ubuntu-latest
-    runs-on: ${{ matrix.runs-on }}
+  agent:
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
     environment: agent-worker
-    timeout-minutes: 15
+    timeout-minutes: 60
     permissions:
+      contents: read
       id-token: write
     steps:
+      - name: Kill switch
+        if: vars.AGENTS_ENABLED != 'true'
+        run: |
+          echo "::error::AGENTS_ENABLED is not 'true'"
+          exit 1
+
+      - name: Check inputs and branch
+        env:
+          TASK_GID: ${{ inputs.task_gid }}
+          HANDOFF: ${{ inputs.handoff }}
+          SHA256: ${{ inputs.sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$TASK_GID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::bad task_gid"; exit 1; }
+          [[ "$HANDOFF" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]] || { echo "::error::bad handoff"; exit 1; }
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::bad sha256"; exit 1; }
+          [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]] ||
+            { echo "::error::dispatch on the agent-worker branch, not $DEFAULT_BRANCH"; exit 1; }
+
+      # The agent works on the default branch's code, whatever branch the workflow runs from
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          path: target
+          persist-credentials: false
+
+      - name: Azure login (GitHub OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
+          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      # The plan goes to a file and is never printed. The Azure login is removed before the agent
+      # runs, so the agent never has a storage token
+      - name: Download plan from artifacts.go
+        env:
+          SHA256: ${{ inputs.sha256 }}
+        run: |
+          set -euo pipefail
+          size=$(az storage blob show --auth-mode login --only-show-errors \
+            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
+            --name "$PLAN_BLOB" --query properties.contentLength -o tsv)
+          [[ "$size" =~ ^[0-9]+$ && "$size" -gt 0 && "$size" -le 200000 ]] ||
+            { echo "::error::plan is missing, empty or too large"; exit 1; }
+          az storage blob download --auth-mode login --only-show-errors \
+            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
+            --name "$PLAN_BLOB" --file "$RUNNER_TEMP/plan.md" > /dev/null
+          echo "$SHA256  $RUNNER_TEMP/plan.md" | shasum -a 256 -c --status ||
+            { echo "::error::plan hash does not match; refusing to run"; exit 1; }
+          echo "plan downloaded and verified ($(wc -c < "$RUNNER_TEMP/plan.md") bytes)"
+
+      - name: Azure logout
+        if: always()
+        run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
+
+      - name: Write prompt
+        run: |
+          set -euo pipefail
+          {
+            echo "The repository to change is checked out at $GITHUB_WORKSPACE/target. Make all changes there."
+            echo "Follow the plan below. Do not copy the plan, task details or links into code, comments or files."
+            echo "You run unattended and nobody can answer questions. If the plan is ambiguous, make the smallest"
+            echo "change consistent with it and finish. You only have file tools: building, testing, committing and"
+            echo "opening the PR happen after you, so don't plan for them."
+            echo
+            cat "$RUNNER_TEMP/plan.md"
+          } > "$RUNNER_TEMP/prompt.md"
+
       - name: Install Claude Code
         run: |
           set -euo pipefail
-          curl -fsSL https://claude.ai/install.sh | bash -s stable
+          curl -fsSL https://claude.ai/install.sh | bash -s stable > /dev/null
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Anthropic credentials (workload identity federation)
+        id: anthropic
         env:
           RULE: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
           ORG: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
@@ -43,29 +128,195 @@ jobs:
           set -euo pipefail
           dir="$RUNNER_TEMP/anthropic-identity"
           mkdir -p "$dir" && chmod 0700 "$dir"
-          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" |
-            python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])' > "$dir/token"
-          # Print the claims the rule matches on, never the token itself
-          python3 - "$dir/token" <<'PY'
-          import base64, json, sys
-          p = open(sys.argv[1]).read().split(".")[1]
-          c = json.loads(base64.urlsafe_b64decode(p + "=" * (-len(p) % 4)))
-          for k in ("sub", "aud", "repository_owner_id", "workflow_ref", "environment", "runner_environment"):
-              print(f"{k}: {c.get(k)}")
-          PY
+          fetch() {
+            curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" |
+              python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])' > "$dir/token.tmp" &&
+              mv "$dir/token.tmp" "$dir/token"
+          }
+          fetch
+          (while sleep 60; do fetch || true; done) > /dev/null 2>&1 &
           {
-            echo "ANTHROPIC_FEDERATION_RULE_ID=${RULE:?}"
-            echo "ANTHROPIC_ORGANIZATION_ID=${ORG:?}"
-            echo "ANTHROPIC_SERVICE_ACCOUNT_ID=${SERVICE_ACCOUNT:?}"
+            echo "ANTHROPIC_FEDERATION_RULE_ID=$RULE"
+            echo "ANTHROPIC_ORGANIZATION_ID=$ORG"
+            echo "ANTHROPIC_SERVICE_ACCOUNT_ID=$SERVICE_ACCOUNT"
             if [ -n "$WORKSPACE" ]; then echo "ANTHROPIC_WORKSPACE_ID=$WORKSPACE"; fi
             echo "ANTHROPIC_IDENTITY_TOKEN_FILE=$dir/token"
           } >> "$GITHUB_ENV"
+          echo "identity-dir=$dir" >> "$GITHUB_OUTPUT"
 
-      - name: Call Claude
+      # Write and Edit are limited to the checkout, so the agent can't change actions or tools that
+      # later steps run. It can't read the identity token, Azure CLI state or other processes'
+      # environments either. Output goes to files only. The log gets the exit code, turn count and cost
+      - name: Run coding agent
+        working-directory: target
+        env:
+          IDENTITY_DIR: ${{ steps.anthropic.outputs.identity-dir }}
         run: |
           set -euo pipefail
-          claude --version
+          mkdir -p "$RUNNER_TEMP/evidence"
+          rc=0
           env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN \
-            -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN \
-            claude -p "Reply with the single word OK" --max-turns 1 --output-format text
+            claude -p "$(cat "$RUNNER_TEMP/prompt.md")" \
+              --permission-mode dontAsk \
+              --allowedTools "Read,Glob,Grep,Edit(./**),Write(./**)" \
+              --disallowedTools "Bash,WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
+              --max-turns 50 --output-format json \
+              > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
+          python3 - "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence/result.md" "$rc" <<'PY' || true
+          import json, re, sys
+          src, md, rc = sys.argv[1:4]
+          try:
+              r = json.load(open(src))
+          except Exception:
+              print("no parsable result")
+              open(md, "w").write(f"# Agent result\n\nClaude exited with {rc} and wrote no parsable result. See result.json and claude.err.\n")
+              sys.exit()
+          summary = {k: r.get(k) for k in ("subtype", "is_error", "num_turns", "total_cost_usd")}
+          # Tool names only, never inputs, so blocked writes show up without leaking plan text
+          summary["permission_denials"] = sorted({d.get("tool_name", "?") for d in r.get("permission_denials") or []})
+          print(summary)
+          # A readable copy of result.json for the artifacts viewer, which renders Markdown but not JSON.
+          # It goes to evidence only, never the log or job summary
+          cost, secs = r.get("total_cost_usd"), (r.get("duration_ms") or 0) / 1000
+          text = r.get("result") or ""
+          fence = "`" * max(3, max((len(m) for m in re.findall(r"`+", text)), default=0) + 1)
+          lines = [
+              "# Agent result", "",
+              "| | |", "|---|---|",
+              f"| Outcome | {r.get('subtype')}{' (error)' if r.get('is_error') else ''}, exit {rc} |",
+              f"| Turns | {r.get('num_turns')} |",
+              f"| Cost | {'$%.2f' % cost if cost is not None else '-'} |",
+              f"| Duration | {secs:.0f}s |",
+              f"| Denied tools | {', '.join(summary['permission_denials']) or 'none'} |",
+              "", "## Final message", "", fence, text, fence, "",
+          ]
+          open(md, "w").write("\n".join(lines))
+          PY
+          echo "rc=$rc" >> "$GITHUB_ENV"
+
+      - name: Export changes as a patch
+        if: env.rc == '0'
+        working-directory: target
+        run: |
+          set -euo pipefail
+          git add -A
+          git diff --cached --binary > "$RUNNER_TEMP/evidence/changes.patch"
+          if [[ ! -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
+            printf '\n## Changes\n\nNone, so nothing will be published.\n' >> "$RUNNER_TEMP/evidence/result.md"
+            echo "::error::agent made no changes"
+            exit 1
+          fi
+          { printf '\n## Changes\n\n```\n'; git diff --cached --stat; printf '```\n'; } >> "$RUNNER_TEMP/evidence/result.md"
+          if git diff --cached --name-only | grep -qE '^\.github/'; then
+            echo "::error::patch touches .github/; refusing"
+            exit 1
+          fi
+          git diff --cached --stat
+
+      # Evidence is uploaded even when the agent fails, so the run can be debugged behind SSO
+      - name: Azure login again (GitHub OIDC)
+        if: always() && steps.anthropic.outcome == 'success'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
+          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Upload evidence to artifacts.go
+        if: always() && steps.anthropic.outcome == 'success'
+        run: |
+          set -euo pipefail
+          az storage blob upload-batch --auth-mode login --only-show-errors \
+            --account-name "$ARTIFACTS_ACCOUNT" --destination "$ARTIFACTS_CONTAINER" \
+            --destination-path "$EVIDENCE_PREFIX" --source "$RUNNER_TEMP/evidence" > /dev/null
+          url="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX"
+          echo "Evidence (SSO): $url/"
+          {
+            if [[ -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
+              echo "**Approving agent-publish opens a draft PR with this patch. Review it first (SSO):**"
+              echo "- [changes.patch]($url/changes.patch)"
+            else
+              echo "**No patch, so nothing will be published (SSO):**"
+            fi
+            echo "- [result.md]($url/result.md) (agent result, readable)"
+            echo "- [result.json]($url/result.json) (raw agent output)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if the agent failed
+        if: env.rc != '0'
+        run: |
+          echo "::error::claude exited with $rc"
+          exit 1
+
+  # A person reviews the evidence and approves the agent-publish environment before anything in
+  # this public repo is created. The patch comes from artifacts.go, never a public artifact
+  publish:
+    needs: agent
+    runs-on: ubuntu-latest
+    environment: agent-publish
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    env:
+      BRANCH: agent/worker-${{ github.run_id }}
+    steps:
+      # Pushes and PRs made with GITHUB_TOKEN don't start CI, so publish with the GitHub App when the
+      # agent-publish environment has it, scoped to this repo
+      - name: GitHub App token
+        id: app-token
+        if: vars.AGENT_APP_CLIENT_ID != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.AGENT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Azure login (GitHub OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
+          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Download patch from artifacts.go
+        run: |
+          set -euo pipefail
+          az storage blob download --auth-mode login --only-show-errors \
+            --account-name "$ARTIFACTS_ACCOUNT" --container-name "$ARTIFACTS_CONTAINER" \
+            --name "$EVIDENCE_PREFIX/changes.patch" --file "$RUNNER_TEMP/changes.patch" > /dev/null
+
+      - name: Apply, commit, push
+        run: |
+          set -euo pipefail
+          git switch -c "$BRANCH"
+          git apply --index "$RUNNER_TEMP/changes.patch"
+          if git diff --cached --name-only | grep -qE '^\.github/'; then
+            echo "::error::patch touches .github/; refusing"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Agent worker run ${{ github.run_id }}"
+          git push -q -u origin "$BRANCH"
+
+      # The PR body holds only the Asana link and the run link, in the repo's PR template shape
+      - name: Open draft PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          TASK_GID: ${{ inputs.task_gid }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          gh pr create --draft --base "$DEFAULT_BRANCH" --head "$BRANCH" \
+            --title "Agent worker run ${{ github.run_id }}" \
+            --body "Task/Issue URL: https://app.asana.com/0/0/$TASK_GID/f"$'\n\n'"### Description"$'\n'"Draft change from the agent worker, for a person to review and finish. Run: $RUN_URL"

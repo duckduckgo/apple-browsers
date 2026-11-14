@@ -16,3 +16,11 @@ self-hosted-runner:
     - general-purpose
     - ui-tests
     - m4pro
+
+# actionlint's copy of create-github-app-token@v3 predates client-id, which v3 has and prefers over the
+# deprecated app-id
+paths:
+  .github/workflows/agent-worker.yml:
+    ignore:
+      - 'input "client-id" is not defined in action "actions/create-github-app-token@v3"'
+      - 'missing input "app-id" which is required by action "actions/create-github-app-token@v3"'

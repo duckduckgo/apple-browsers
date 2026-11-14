@@ -565,8 +565,10 @@ struct OnboardingIntroContentProviderTests {
 
             // THEN
             #expect(result.offTitle == UserText.subscriptionOnboardingVPNActivationOffTitle)
+            #expect(result.onTitle == UserText.subscriptionOnboardingVPNActivationOnTitle)
             #expect(result.turnOnCTA == UserText.subscriptionOnboardingVPNActivationTurnOnButton)
             #expect(result.skipCTA == UserText.onboardingSkip)
+            #expect(result.nextCTA == UserText.subscriptionOnboardingVPNActivationNextButton)
         }
 
         @available(iOS 16, macOS 13, *)

@@ -46,8 +46,11 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
 extension OnboardingVPNActivationContent {
     static let mock = OnboardingVPNActivationContent(
         offTitle: "Off",
+        onTitle: "On",
         turnOnCTA: "Turn On",
+        tryAgainCTA: "Try Again",
         skipCTA: "Skip",
+        nextCTA: "Next",
         daxAnimation: nil
     )
 }

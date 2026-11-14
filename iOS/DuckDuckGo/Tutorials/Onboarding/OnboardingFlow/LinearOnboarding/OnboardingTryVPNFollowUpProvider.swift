@@ -25,6 +25,9 @@ import Subscription
 protocol OnboardingTryVPNFollowUpProviding {
     /// Whether the user's subscription includes the VPN.
     func hasVPNAccess() async -> Bool
+
+    /// Builds the view model that turns the VPN on, reusing the subscription onboarding's.
+    func makeVPNActivationViewModel() -> SubscriptionOnboardingVPNActivationViewModel
 }
 
 @MainActor
@@ -38,6 +41,10 @@ struct OnboardingTryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding {
 
     func hasVPNAccess() async -> Bool {
         (try? await subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false
+    }
+
+    func makeVPNActivationViewModel() -> SubscriptionOnboardingVPNActivationViewModel {
+        SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(pixelFiring: nil))
     }
 
 }

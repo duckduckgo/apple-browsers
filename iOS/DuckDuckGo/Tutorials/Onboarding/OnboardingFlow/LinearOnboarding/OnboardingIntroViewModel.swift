@@ -377,6 +377,10 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
+    func makeVPNActivationViewModel() -> SubscriptionOnboardingVPNActivationViewModel {
+        tryVPNFollowUpProvider.makeVPNActivationViewModel()
+    }
+
     func adBlockingContinueAction() {
         pixelReporter.measureAdBlockingSelection(
             youTubeAdBlockingEnabled: personalizationManager.isYouTubeAdBlockingEnabled,

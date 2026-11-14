@@ -32,6 +32,9 @@ env:
   # Create-only storage, so each attempt gets its own prefix
   EVIDENCE_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ github.run_id }}-${{ github.run_attempt }}
   DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+  # Agent Status field and its option gids in the agent project
+  STATUS_FIELD: "1220497931497848"
+  STATUS_OPTIONS: '{"waiting_for_approval": "1220497931497851", "pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
 
 jobs:
   agent:
@@ -233,7 +236,7 @@ jobs:
           echo "::error::claude exited with $rc"
           exit 1
 
-  # Tells the Asana task there's a patch waiting, with the evidence links and what to click to approve
+  # Moves the Asana task to Waiting for approval, with the evidence links and what to click to approve
   approval-request:
     needs: agent
     if: needs.agent.result == 'success'
@@ -250,7 +253,7 @@ jobs:
           sparse-checkout: scripts/agent-worker
           persist-credentials: false
 
-      - name: Comment on the Asana task
+      - name: Set Agent Status to Waiting for approval
         env:
           ASANA_APP_CLIENT_ID: ${{ secrets.ASANA_APP_CLIENT_ID }}
           ASANA_APP_CLIENT_SECRET: ${{ secrets.ASANA_APP_CLIENT_SECRET }}
@@ -362,10 +365,8 @@ jobs:
           ASANA_APP_CLIENT_SECRET: ${{ secrets.ASANA_APP_CLIENT_SECRET }}
           ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
           TASK_GID: ${{ inputs.task_gid }}
-          # Agent Status field and its option gids in the agent project
-          FIELD: "1220497931497848"
-          OPTIONS: '{"pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
           AGENT: ${{ needs.agent.result }}
+          EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
           PUBLISH: ${{ needs.publish.result }}
           PR_URL: ${{ needs.publish.outputs.pr_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

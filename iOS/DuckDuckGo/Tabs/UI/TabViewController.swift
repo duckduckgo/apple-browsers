@@ -3121,8 +3121,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     /// The commit the health monitor is told about, or nil when nothing would ever answer the page.
-    /// A link preview has no extension attached; the error page reports the failed URL but never runs content scripts;
-    /// a Duck Player video is reported to the extension under another URL than the one committed.
+    /// A link preview has no extension attached; the error page reports the failed URL but never runs content scripts.
     @available(iOS 18.4, *)
     static func cpmCommitEvent(tabIdentifier: String,
                                url: URL,
@@ -3131,10 +3130,9 @@ extension TabViewController: WKNavigationDelegate {
                                committingNavigationKind: CPMNavigationKind,
                                extensionIsLoaded: Bool) -> CPMMessagingHealthEvent? {
         guard !isLinkPreview else { return nil }
-        let kind = isErrorPage ? CPMNavigationKind.errorPage : committingNavigationKind.resolved(isDuckPlayerVideo: url.isDuckPlayer)
         return .navigationCommitted(tabIdentifier: tabIdentifier,
                                     url: url,
-                                    navigationKind: kind,
+                                    navigationKind: isErrorPage ? .errorPage : committingNavigationKind,
                                     extensionIsLoaded: extensionIsLoaded)
     }
 

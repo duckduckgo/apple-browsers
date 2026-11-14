@@ -283,10 +283,9 @@ extension Navigation {
     /// Resolves CPM attribution from the first action in a logical navigation.
     /// The current action may describe a redirect rather than the initiating restoration or history load.
     var cpmMessagingNavigationKind: CPMNavigationKind {
-        let kind = Self.cpmMessagingNavigationKind(isErrorPage: navigationAction.navigationType == .alternateHtmlLoad,
-                                                   initialNavigationType: (redirectHistory.first ?? navigationAction).navigationType,
-                                                   responseMimeType: navigationResponse?.response.mimeType)
-        return kind.resolved(isDuckPlayerVideo: url.isDuckPlayer)
+        Self.cpmMessagingNavigationKind(isErrorPage: navigationAction.navigationType == .alternateHtmlLoad,
+                                        initialNavigationType: (redirectHistory.first ?? navigationAction).navigationType,
+                                        responseMimeType: navigationResponse?.response.mimeType)
     }
 
     static func cpmMessagingNavigationKind(isErrorPage: Bool,

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DuckPlayer
 import Foundation
 import OSLog
 import WebKit
@@ -32,9 +33,6 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
     /// A main-frame document that is not HTML (a PDF, an image, a video, plain text). The extension's content
     /// scripts may not initialize there, so CPM cannot answer.
     case nonHTMLDocument = "non_html_document"
-    /// A Duck Player video. The web view shows the youtube-nocookie embed, but the tab reports its `duck://player`
-    /// URL to the extension, so the extension's answer can never be matched to the page.
-    case duckPlayerVideo = "duck_player_video"
     /// Any other main-frame navigation.
     case other
 
@@ -49,12 +47,6 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
     public func resolved(forMimeType mimeType: String?) -> CPMNavigationKind {
         guard self == .other, !Self.isHTMLDocument(mimeType: mimeType) else { return self }
         return .nonHTMLDocument
-    }
-
-    /// The kind once the page is known to be a Duck Player video: only an ordinary navigation turns into one.
-    public func resolved(isDuckPlayerVideo: Bool) -> CPMNavigationKind {
-        guard self == .other, isDuckPlayerVideo else { return self }
-        return .duckPlayerVideo
     }
 }
 
@@ -200,10 +192,12 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     }
 
     /// Whether the extension can answer on the committed page: http(s), and not the browser's own error page,
-    /// a history restore (WebKit may not rerun content scripts), a restored session, a non-HTML document or a
-    /// Duck Player video.
+    /// a history restore (WebKit may not rerun content scripts), a restored session or a Duck Player video.
+    /// The web view of a Duck Player video shows the youtube-nocookie embed, but the tab reports its `duck://player`
+    /// URL to the extension, so the extension's answer could never be matched to the page.
     private func isEligible(url: URL, navigationKind: CPMNavigationKind) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return false }
+        guard !url.isDuckPlayer else { return false }
         return navigationKind == .other
     }
 

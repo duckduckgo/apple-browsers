@@ -53,6 +53,7 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "DuckPlayer", package: "BrowserServicesKit"),
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),

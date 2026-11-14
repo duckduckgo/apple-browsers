@@ -1,0 +1,130 @@
+name: Agent worker sandbox test
+
+# Throwaway: checks that git, xcodebuild and the Simulator work under the sandbox Claude Code uses,
+# and that the sandbox still blocks a token file and the network. No secrets, never merged
+
+on:
+  push:
+    branches: [jashby/sandbox-test]
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox:
+    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          path: target
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Git history
+        working-directory: target
+        run: |
+          git log -3 --oneline -- iOS/DuckDuckGo/Main/SwipeTabsCoordinator.swift
+          git blame -L 600,606 iOS/DuckDuckGo/Main/SwipeTabsCoordinator.swift
+          git tag -l '7.245.0+ios'
+
+      - name: Tooling
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes | head -20
+          npm install -g @anthropic-ai/sandbox-runtime@latest > /dev/null
+          srt --help || true
+
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions
+          path: actions-src
+          persist-credentials: false
+
+      - name: Select iOS Simulator
+        id: sim
+        uses: ./actions-src/.github/actions/select-ios-simulator
+        with:
+          preferred-versions: "27.0,26.2,26.1,26.0,18.6"
+
+      - name: Sandbox policy
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/identity" && echo "dummy-token" > "$RUNNER_TEMP/identity/token"
+          python3 - <<'PY'
+          import json, os
+          ws, tmp = os.environ["GITHUB_WORKSPACE"], os.environ["RUNNER_TEMP"]
+          policy = {
+              "network": {"allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com"], "deniedDomains": []},
+              "filesystem": {
+                  "denyRead": [f"{tmp}/identity"],
+                  "allowWrite": [ws, tmp, os.path.expanduser("~/Library/Developer"), os.path.expanduser("~/Library/Caches"),
+                                 "/private/tmp", "/private/var/folders"],
+                  "denyWrite": [],
+              },
+          }
+          for p in (os.path.expanduser("~/.srt-settings.json"), f"{tmp}/srt-settings.json"):
+              json.dump(policy, open(p, "w"), indent=2)
+          print(json.dumps(policy, indent=2))
+          PY
+
+      - name: Canary (both must be blocked)
+        run: |
+          set +e
+          srt "cat '$RUNNER_TEMP/identity/token'" && echo "CANARY FAIL: token readable" || echo "canary ok: token read blocked"
+          srt "curl -sS -m 10 https://example.com -o /dev/null" && echo "CANARY FAIL: example.com reachable" || echo "canary ok: example.com blocked"
+          srt "bash -c 'cat $RUNNER_TEMP/identity/token'" && echo "CANARY FAIL: child process read token" || echo "canary ok: child process blocked"
+          srt "curl -sS -m 10 https://github.com -o /dev/null" && echo "allowed domain reachable" || echo "NOTE: github.com not reachable under sandbox"
+
+      - name: Build under the sandbox
+        id: build
+        continue-on-error: true
+        working-directory: target
+        env:
+          DEST: ${{ steps.sim.outputs.destination }}
+        run: |
+          set -o pipefail
+          srt "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+            -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO" 2>&1 | tee "$RUNNER_TEMP/build.log" | tail -40
+
+      - name: One unit test under the sandbox
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        working-directory: target
+        env:
+          DEST: ${{ steps.sim.outputs.destination }}
+        run: |
+          set -o pipefail
+          srt "xcodebuild test-without-building -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+            -only-testing:DuckDuckGoTests/SwipeTabsNewTabDestinationTests" 2>&1 | tail -30
+
+      - name: Screenshot under the sandbox
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        working-directory: target
+        env:
+          DEST: ${{ steps.sim.outputs.destination }}
+        run: |
+          set -euo pipefail
+          udid=$(echo "$DEST" | sed -n 's/.*id=\([^,]*\).*/\1/p')
+          app=$(find DerivedData/Build/Products -maxdepth 2 -name 'DuckDuckGo.app' | head -1)
+          echo "simulator $udid, app $app"
+          srt "xcrun simctl boot ${udid:-booted}" || true
+          srt "xcrun simctl install ${udid:-booted} '$app'"
+          srt "xcrun simctl launch ${udid:-booted} com.duckduckgo.mobile.ios"
+          sleep 15
+          srt "xcrun simctl io ${udid:-booted} screenshot '$GITHUB_WORKSPACE/screenshot.png'"
+          ls -la "$GITHUB_WORKSPACE/screenshot.png"
+
+      - name: Sandbox violations in the build log
+        if: always()
+        run: grep -iE "sandbox|deny|operation not permitted|blocked" "$RUNNER_TEMP/build.log" 2>/dev/null | sort | uniq -c | sort -rn | head -40 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sandbox-test
+          path: screenshot.png
+          if-no-files-found: ignore

@@ -70,7 +70,10 @@ jobs:
                           "deniedDomains": [],
                           "allowMachLookup": ["com.apple.CoreSimulator.*", "com.apple.dt.*", "com.apple.trustd",
                                               "com.apple.trustd.agent", "com.apple.SecurityServer", "com.apple.ocspd",
-                                              "com.apple.securityd.xpc"]},
+                                              "com.apple.securityd.xpc"],
+                          # testmanagerd's socket for xcodebuild test, and localhost ports for Maestro's driver
+                          "allowUnixSockets": ["/private/var/tmp", "/private/tmp"],
+                          "allowLocalBinding": True},
               "filesystem": {
                   "denyRead": [f"{tmp}/identity"],
                   "allowWrite": [ws, tmp, "/private/tmp", "/private/var/folders"] + [os.path.expanduser(p) for p in (
@@ -83,6 +86,25 @@ jobs:
               json.dump(policy, open(p, "w"), indent=2)
           print(json.dumps(policy, indent=2))
           PY
+          # srt runs "which bash" with a 1s timeout, which can time out on a busy runner. sx retries only that error
+          cat > "$RUNNER_TEMP/sx.sh" <<'SH'
+          sx() {
+            local rc i
+            for i in 1 2 3; do
+              rc=0; srt -c "$1" 2> "$RUNNER_TEMP/srt.err" || rc=$?
+              cat "$RUNNER_TEMP/srt.err" >&2
+              if (( rc != 0 )) && grep -q "not found in PATH" "$RUNNER_TEMP/srt.err"; then sleep 3; continue; fi
+              return $rc
+            done
+            return $rc
+          }
+          SH
+          # Both builds run xcodebuild with the same saved environment, in case srt's extra variables are what
+          # made the sandboxed build recompile everything
+          cat > "$RUNNER_TEMP/xcb.sh" <<SH
+          source "$RUNNER_TEMP/build.env"
+          exec xcodebuild "\$@"
+          SH
 
       - name: Canary (both must be blocked)
         run: |
@@ -123,11 +145,15 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -o pipefail
-          # Same TMPDIR as srt gives sandboxed commands, so the sandboxed build can be incremental
-          TMPDIR=/tmp/claude bash -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
-            -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
+          # Same TMPDIR as srt gives sandboxed commands
+          export TMPDIR=/tmp/claude
+          export -p > "$RUNNER_TEMP/build.env"
+          echo "variables srt adds or changes:"
+          comm -13 <(env | sort) <(srt -c env | sort) | cut -d= -f1 | sort -u
+          env -i /bin/bash "$RUNNER_TEMP/xcb.sh" build-for-testing -scheme 'iOS Browser' -destination "$DEST" -derivedDataPath DerivedData \
+            -clonedSourcePackagesDirPath "$GITHUB_WORKSPACE/SourcePackages" -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none COMPILATION_CACHE_ENABLE_CACHING=NO \
-            OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/prebuild.log" 2>&1 && rc=0 || rc=$?
+            OTHER_SWIFT_FLAGS='$(inherited) -disable-sandbox' > "$RUNNER_TEMP/prebuild.log" 2>&1 && rc=0 || rc=$?
           grep -E "BUILD (SUCCEEDED|FAILED)|Command PhaseScriptExecution failed|^error:|: error:" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export " | sort | uniq -c | sort -rn | head -20 || true
           grep -B12 "Command PhaseScriptExecution failed" "$RUNNER_TEMP/prebuild.log" | grep -v "^ *export \|^ *cd \|^ *builtin" | head -60 || true
           exit $rc
@@ -144,7 +170,8 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -o pipefail
-          srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+          source "$RUNNER_TEMP/sx.sh"
+          sx "env -i /bin/bash '$RUNNER_TEMP/xcb.sh' build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation OTHER_CODE_SIGN_FLAGS=--timestamp=none COMPILATION_CACHE_ENABLE_CACHING=NO \
             OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" > "$RUNNER_TEMP/build.log" 2>&1 && rc=0 || rc=$?
@@ -161,7 +188,8 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -o pipefail
-          srt -c "xcodebuild test-without-building -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+          source "$RUNNER_TEMP/sx.sh"
+          sx "xcodebuild test-without-building -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -only-testing:UnitTests/SwipeTabsNewTabDestinationTests" 2>&1 | tail -30
 
@@ -180,11 +208,12 @@ jobs:
           print(next(x["udid"] for rt, xs in d.items() if "iOS-27" in rt for x in xs if x["name"] == "iPhone 17"))')
           app=$(find DerivedData/Build/Products -maxdepth 2 -name 'DuckDuckGo.app' | head -1)
           echo "simulator $udid, app $app"
-          srt -c "xcrun simctl boot ${udid:-booted}" || true
-          srt -c "xcrun simctl install ${udid:-booted} '$app'"
-          srt -c "xcrun simctl launch ${udid:-booted} com.duckduckgo.mobile.ios"
+          source "$RUNNER_TEMP/sx.sh"
+          sx "xcrun simctl boot ${udid:-booted}" || true
+          sx "xcrun simctl install ${udid:-booted} '$app'"
+          sx "xcrun simctl launch ${udid:-booted} com.duckduckgo.mobile.ios"
           sleep 15
-          srt -c "xcrun simctl io ${udid:-booted} screenshot '$GITHUB_WORKSPACE/screenshot.png'"
+          sx "xcrun simctl io ${udid:-booted} screenshot '$GITHUB_WORKSPACE/screenshot.png'"
           ls -la "$GITHUB_WORKSPACE/screenshot.png"
 
       # Maestro is installed outside the sandbox, then a short flow records the app under it
@@ -211,7 +240,9 @@ jobs:
           - stopRecording
           YAML
           cd "$GITHUB_WORKSPACE/rec"
-          srt -c "maestro test flow.yaml" 2>&1 | tail -20 || echo "maestro failed under the sandbox"
+          source "$RUNNER_TEMP/sx.sh"
+          export MAESTRO_CLI_NO_ANALYTICS=1
+          sx "maestro test flow.yaml" 2>&1 | tail -20 || echo "maestro failed under the sandbox"
           ls -la
           if [[ -f demo.mp4 ]]; then
             ffmpeg -loglevel error -y -i demo.mp4 -vf "fps=8,scale=320:-1:flags=lanczos" -t 8 demo.gif

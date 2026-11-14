@@ -41,6 +41,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    outputs:
+      evidence_url: ${{ steps.evidence.outputs.url }}
     steps:
       - name: Kill switch
         if: vars.AGENTS_ENABLED != 'true'
@@ -204,6 +206,7 @@ jobs:
           allow-no-subscriptions: true
 
       - name: Upload evidence to artifacts.go
+        id: evidence
         if: always() && steps.anthropic.outcome == 'success'
         run: |
           set -euo pipefail
@@ -212,6 +215,7 @@ jobs:
             --destination-path "$EVIDENCE_PREFIX" --source "$RUNNER_TEMP/evidence" > /dev/null
           url="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX"
           echo "Evidence (SSO): $url/"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
           {
             if [[ -s "$RUNNER_TEMP/evidence/changes.patch" ]]; then
               echo "**Approving agent-publish opens a draft PR with this patch. Review it first (SSO):**"
@@ -228,6 +232,34 @@ jobs:
         run: |
           echo "::error::claude exited with $rc"
           exit 1
+
+  # Tells the Asana task there's a patch waiting, with the evidence links and what to click to approve
+  approval-request:
+    needs: agent
+    if: needs.agent.result == 'success'
+    runs-on: ubuntu-latest
+    environment: agent-worker
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: worker
+          sparse-checkout: scripts/agent-worker
+          persist-credentials: false
+
+      - name: Comment on the Asana task
+        env:
+          ASANA_APP_CLIENT_ID: ${{ secrets.ASANA_APP_CLIENT_ID }}
+          ASANA_APP_CLIENT_SECRET: ${{ secrets.ASANA_APP_CLIENT_SECRET }}
+          ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
+          TASK_GID: ${{ inputs.task_gid }}
+          STAGE: approval
+          EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 -I worker/scripts/agent-worker/set_agent_status.py
 
   # A person reviews the evidence and approves the agent-publish environment before anything in
   # this public repo is created. The patch comes from artifacts.go, never a public artifact

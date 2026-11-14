@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Set the Asana task's Agent Status from how the worker run ended, as the Apple Agent App Actor.
+"""Update the Asana task as the worker run goes, as the Apple Agent App Actor.
 
-PR open with a comment linking the draft PR, or Needs attention with a comment linking the run.
+STAGE=approval: comment that a patch is waiting, with the evidence links and what to click to approve.
+Otherwise, when the run ends: set Agent Status to PR open with a comment linking the draft PR, or
+Needs attention with a comment linking the run.
 
-Env: ASANA_APP_CLIENT_ID, ASANA_APP_CLIENT_SECRET, ASANA_APP_REFRESH_TOKEN, TASK_GID, FIELD (Agent
-Status field gid), OPTIONS (JSON map of status to option gid), AGENT and PUBLISH (job results),
-PR_URL, RUN_URL
+Env: ASANA_APP_CLIENT_ID, ASANA_APP_CLIENT_SECRET, ASANA_APP_REFRESH_TOKEN, TASK_GID, RUN_URL, and
+EVIDENCE_URL for the approval stage, or FIELD (Agent Status field gid), OPTIONS (JSON map of status to
+option gid), AGENT and PUBLISH (job results) and PR_URL at the end
 """
 
+import html
 import json
 import os
 import re
@@ -16,6 +19,21 @@ import urllib.parse
 import urllib.request
 
 API = "https://app.asana.com/api/1.0"
+
+
+def approval_comment(e):
+    """Rich text, so the steps show as a numbered list with links"""
+    esc = lambda v: html.escape(v, quote=True)
+    ev, run = e.get("EVIDENCE_URL", "").rstrip("/"), e["RUN_URL"]
+    review = (f'<a href="{esc(ev)}/changes.patch">changes.patch</a> (the change) and '
+              f'<a href="{esc(ev)}/result.md">result.md</a> (the agent\'s summary)') if ev else "the evidence linked in the run summary"
+    return ("<body><strong>The agent made a change. It needs approval before a draft PR is opened.</strong>\n"
+            f"<ol><li>Review {review}.</li>"
+            f'<li>Open the <a href="{esc(run)}">worker run</a> and click <strong>Review deployments</strong>.</li>'
+            "<li>Tick <strong>agent-publish</strong>, then click <strong>Approve and deploy</strong> to open the draft PR, "
+            "or <strong>Reject</strong> to drop the change.</li></ol>"
+            "Only reviewers of the agent-publish environment can approve. "
+            "This task moves to PR open when the PR is opened, or Needs attention if it's rejected.</body>")
 
 
 def outcome(e):
@@ -49,6 +67,10 @@ def main():
     gid = e["TASK_GID"]
     if not re.fullmatch(r"[0-9]{1,20}", gid):
         sys.exit("bad task_gid")
+    if e.get("STAGE") == "approval":
+        call(access_token(e), "POST", f"/tasks/{gid}/stories", {"html_text": approval_comment(e)})
+        print(f"task {gid}: commented that a patch is waiting for approval")
+        return
     status, text = outcome(e)
     token = access_token(e)
     call(token, "PUT", f"/tasks/{gid}", {"custom_fields": {e["FIELD"]: json.loads(e["OPTIONS"])[status]}})

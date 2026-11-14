@@ -30,6 +30,7 @@ def main():
     info = {k: r.get(k) for k in ("subtype", "is_error", "num_turns", "total_cost_usd")}
     # Tool names only, never inputs, so blocked writes show up without leaking plan text
     info["permission_denials"] = sorted({d.get("tool_name", "?") for d in r.get("permission_denials") or []})
+    info["models"] = sorted(r.get("modelUsage") or {})
     print(info)
 
     # Rendered as Markdown; the artifacts viewer sanitizes the HTML it produces
@@ -44,6 +45,7 @@ def main():
             "| | |", "|---|---|",
             f"| Outcome | {r.get('subtype')}{' (error)' if r.get('is_error') else ''}, exit {rc} |",
             f"| Turns | {r.get('num_turns')} |",
+            f"| Model | {', '.join(info['models']) or '-'} |",
             f"| Cost | {'$%.2f' % cost if cost is not None else '-'} |",
             f"| Duration | {secs:.0f}s |",
             f"| Denied tools | {', '.join(info['permission_denials']) or 'none'} |", "",

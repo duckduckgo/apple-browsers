@@ -200,7 +200,7 @@ jobs:
               --permission-mode dontAsk \
               --allowedTools "Read,Glob,Grep,Edit(./**),Write(./**)" \
               --disallowedTools "Bash,WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
-              --max-turns 50 --output-format json \
+              --model opus --max-turns 50 --max-budget-usd 10 --output-format json \
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
           python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/summary_md.py" \
             "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence" "$rc" || true

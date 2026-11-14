@@ -20,6 +20,7 @@
 import UIKit
 import WebKit
 import DesignResourcesKit
+import PixelKit
 
 /// Hides the previous page after a typed search or URL until the new page first paints.
 ///
@@ -97,6 +98,8 @@ final class FirstPaintCover {
     private let scheduler: Scheduler
     private let fadeOut: FadeOut
     private let animateHandoff: AnimateHandoff
+    private let pixelFiring: PixelFiring?
+    private var destination: FirstPaintCoverPixel.Destination = .website
     private var cancelTimeout: (() -> Void)?
     private var fadeAnimator: UIViewPropertyAnimator?
     private var handoffAnimators: [UIViewPropertyAnimator] = []
@@ -118,10 +121,12 @@ final class FirstPaintCover {
 
     init(scheduler: @escaping Scheduler = FirstPaintCover.mainQueueScheduler,
          fadeOut: @escaping FadeOut = FirstPaintCover.defaultFadeOut,
-         animateHandoff: @escaping AnimateHandoff = FirstPaintCover.defaultHandoff) {
+         animateHandoff: @escaping AnimateHandoff = FirstPaintCover.defaultHandoff,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.scheduler = scheduler
         self.fadeOut = fadeOut
         self.animateHandoff = animateHandoff
+        self.pixelFiring = pixelFiring
     }
 
     var isCovering: Bool { phase != .idle }
@@ -135,6 +140,7 @@ final class FirstPaintCover {
         armedAt = CACurrentMediaTime()
         armGeneration += 1
         contentCheck = handoff.isContentReady
+        destination = handoff.showsSearchResultsSkeleton ? .search : .website
 
         let view = coverView ?? makeCoverView()
         if view.superview !== container {
@@ -348,7 +354,12 @@ final class FirstPaintCover {
     private func restartTimeout(after delay: TimeInterval) {
         cancelTimeout?()
         cancelTimeout = scheduler(delay) { [weak self] in
-            self?.reveal(animated: true)
+            guard let self else { return }
+            // Commit window ran out: lifting on the old page. Other waits ending is normal.
+            if delay == Constants.commitTimeout, self.phase == .awaitingCommit {
+                self.pixelFiring?.fire(FirstPaintCoverPixel.commitTimeout(self.destination), frequency: .dailyAndCount)
+            }
+            self.reveal(animated: true)
         }
     }
 

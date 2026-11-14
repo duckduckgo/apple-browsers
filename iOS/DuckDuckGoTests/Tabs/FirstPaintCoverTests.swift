@@ -20,6 +20,7 @@
 import Testing
 import UIKit
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @MainActor
 struct FirstPaintCoverTests {
@@ -39,6 +40,7 @@ struct FirstPaintCoverTests {
         let webView = UIView()
         /// Stands in for the WKNavigation of the covered load.
         let navigation = NSObject()
+        let pixelFiring = PixelKitMock()
         lazy var cover = FirstPaintCover(
             scheduler: { [unowned self] delay, action in
                 let index = self.timeouts.count
@@ -52,7 +54,8 @@ struct FirstPaintCoverTests {
             animateHandoff: { [unowned self] _, snapshot, destinationColor in
                 self.handoffs.append((snapshot, destinationColor))
                 return []
-            })
+            },
+            pixelFiring: pixelFiring)
 
         init() {
             container.addSubview(webView)
@@ -213,6 +216,53 @@ struct FirstPaintCoverTests {
 
         #expect(harness.cover.phase == .idle)
         #expect(harness.timeouts.last?.delay == FirstPaintCover.Constants.commitTimeout)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Running out the commit wait fires the timeout pixel, tagged with where the load was going", .timeLimit(.minutes(1)),
+          arguments: [(false, FirstPaintCoverPixel.Destination.website), (true, .search)])
+    func commitTimeoutFiresPixel(isSearch: Bool, destination: FirstPaintCoverPixel.Destination) {
+        let harness = Harness()
+        var handoff = FirstPaintCover.Handoff()
+        handoff.showsSearchResultsSkeleton = isSearch
+        harness.cover.arm(in: harness.container, above: harness.webView, handoff: handoff)
+        harness.cover.didStartNavigation(harness.navigation)
+
+        harness.fireLatestTimeout()
+
+        #expect(harness.pixelFiring.actualFireCalls.count == 1)
+        let call = harness.pixelFiring.actualFireCalls.first
+        #expect(call?.pixel.name == "search_submit_page_cover_commit_timeout")
+        #expect(call?.pixel.parameters == ["destination": destination.rawValue])
+        #expect(call?.frequency == .dailyAndCount)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Lifting any other way fires no timeout pixel", .timeLimit(.minutes(1)))
+    func otherRevealsFireNoPixel() {
+        // Paint wait running out after commit.
+        let painted = Harness()
+        painted.cover.arm(in: painted.container, above: painted.webView)
+        painted.startAndCommit()
+        painted.fireLatestTimeout()
+
+        // Short grace after a policy cancel with nothing re-issued.
+        let cancelled = Harness()
+        cancelled.cover.arm(in: cancelled.container, above: cancelled.webView)
+        cancelled.cover.willDecidePolicy()
+        cancelled.cover.didDecidePolicy(allowed: false, isSameDocument: false)
+        cancelled.fireLatestTimeout()
+
+        // Meaningful paint before any wait runs out.
+        let loaded = Harness()
+        loaded.cover.arm(in: loaded.container, above: loaded.webView)
+        loaded.startAndCommit()
+        loaded.cover.renderingProgressDidChange(Self.firstMeaningfulPaint)
+
+        for harness in [painted, cancelled, loaded] {
+            #expect(harness.cover.phase == .idle)
+            #expect(harness.pixelFiring.actualFireCalls.isEmpty)
+        }
     }
 
     @available(iOS 16, macOS 13, *)

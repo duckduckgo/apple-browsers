@@ -63,8 +63,13 @@ jobs:
           import json, os
           ws, tmp = os.environ["GITHUB_WORKSPACE"], os.environ["RUNNER_TEMP"]
           policy = {
-              "network": {"allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com"], "deniedDomains": [],
-                          "allowMachLookup": ["com.apple.CoreSimulator.*", "com.apple.dt.*"]},
+              # Apple's certificate checks are for verifying signed binary frameworks such as Lottie.xcframework
+              "network": {"allowedDomains": ["github.com", "*.github.com", "*.githubusercontent.com",
+                                             "ocsp.apple.com", "ocsp2.apple.com", "crl.apple.com", "valid.apple.com"],
+                          "deniedDomains": [],
+                          "allowMachLookup": ["com.apple.CoreSimulator.*", "com.apple.dt.*", "com.apple.trustd",
+                                              "com.apple.trustd.agent", "com.apple.SecurityServer", "com.apple.ocspd",
+                                              "com.apple.securityd.xpc"]},
               "filesystem": {
                   "denyRead": [f"{tmp}/identity"],
                   "allowWrite": [ws, tmp, "/private/tmp", "/private/var/folders"] + [os.path.expanduser(p) for p in (

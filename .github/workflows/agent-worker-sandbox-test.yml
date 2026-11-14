@@ -88,6 +88,25 @@ jobs:
           srt -c "bash -c 'cat $RUNNER_TEMP/identity/token'" && echo "CANARY FAIL: child process read token" || echo "canary ok: child process blocked"
           srt -c "curl -sS -m 10 https://github.com -o /dev/null" && echo "allowed domain reachable" || echo "NOTE: github.com not reachable under sandbox"
 
+      # Packages are resolved before the sandbox, from main's manifests, with the deploy key for the private
+      # font package. The key is gone before anything runs in the sandbox
+      - uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Resolve packages outside the sandbox
+        working-directory: target
+        run: |
+          set -o pipefail
+          xcodebuild -resolvePackageDependencies -scheme 'iOS Browser' -clonedSourcePackagesDirPath "$GITHUB_WORKSPACE/SourcePackages" \
+            -skipPackagePluginValidation -skipMacroValidation 2>&1 | tail -5
+
+      - name: Remove the deploy key
+        run: |
+          ssh-add -D || true
+          ssh-agent -k || true
+          echo "SSH_AUTH_SOCK=" >> "$GITHUB_ENV"
+
       - name: Build under the sandbox
         id: build
         continue-on-error: true
@@ -97,6 +116,7 @@ jobs:
         run: |
           set -o pipefail
           srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+            -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO" 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*sandbox|BUILD|Operation not permitted|couldNot" | sort | uniq -c | sort -rn | head -40
 
       - name: One unit test under the sandbox
@@ -108,6 +128,7 @@ jobs:
         run: |
           set -o pipefail
           srt -c "xcodebuild test-without-building -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
+            -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -only-testing:DuckDuckGoTests/SwipeTabsNewTabDestinationTests" 2>&1 | tail -30
 
       - name: Screenshot under the sandbox

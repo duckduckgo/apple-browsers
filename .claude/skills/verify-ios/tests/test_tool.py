@@ -1,14 +1,15 @@
 """Tests for verify-ios's own logic that need no simulator: locks, process ownership, state, preflight, telemetry
 parsing, evidence. Run: python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'
 """
-import json, multiprocessing, os, subprocess, sys, tempfile, textwrap, time, unittest
+import json, multiprocessing, os, shlex, signal, subprocess, sys, tempfile, textwrap, time, unittest
+from unittest import mock
 
 TMP = tempfile.mkdtemp(prefix="verify-ios-test-")
 os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives in this temp dir
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import device, env, harness, telemetry  # noqa: E402
+from verify_ios import device, env, harness, telemetry, video  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -429,6 +430,59 @@ class FakeVideo:
         return []
 
 
+class FakeRecorder:
+    """Stands in for the `simctl io recordVideo` process."""
+    def __init__(self, exit_on_sigint=0, writes=b"movie"):
+        self.returncode, self.signals, self.exit_on_sigint, self.writes = None, [], exit_on_sigint, writes
+
+    def poll(self):
+        return self.returncode
+
+    def send_signal(self, sig):
+        self.signals.append(sig)
+
+    def wait(self, timeout=None):
+        self.returncode = self.exit_on_sigint
+        return self.returncode
+
+    def kill(self):
+        self.returncode = -9
+
+
+class VideoTests(unittest.TestCase):
+    def recorder(self, proc, said=""):
+        path = os.path.join(tempfile.mkdtemp(dir=TMP), video.Video.FILE)
+        with open(path, "wb") as f:
+            f.write(proc.writes)
+        v = video.Video("udid", path)
+        p = mock.patch.object(video.subprocess, "Popen", side_effect=lambda *a, **k: (open(v.log, "w").write(said), proc)[1])
+        p.start()
+        self.addCleanup(p.stop)
+        return v
+
+    def test_stopped_with_sigint_and_kept(self):
+        proc = FakeRecorder()
+        v = self.recorder(proc, said="Recording started").start()
+        self.assertEqual(v.stop(), [])
+        self.assertEqual(proc.signals, [signal.SIGINT])
+        self.assertTrue(v.ok)
+
+    def test_failed_finish_is_a_problem_even_with_a_file(self):
+        v = self.recorder(FakeRecorder(exit_on_sigint=1), said="Recording started").start()
+        problems = v.stop()
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("failed to finish", problems[0])
+        self.assertFalse(v.ok)
+
+    def test_interrupted_start_stops_the_recorder(self):
+        proc = FakeRecorder()
+        v = self.recorder(proc)
+        with mock.patch.object(video.time, "sleep", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                v.start()
+        self.assertEqual(proc.signals, [signal.SIGINT], "the caller never gets the object, so start() must stop it")
+
+
 class HarnessTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeDevice()
@@ -488,7 +542,7 @@ class HarnessTests(unittest.TestCase):
             f.write('"""The thing works.\n\nMore about what it covers."""\nDEVICES = ["iphone"]\n\n'
                     'def run(ios):\n    ios.shot("after-tap")\n    ios.check("the thing", True)\n'
                     '    ios.unverified("the other thing", "needs a live service")\n')
-        out_dir = tempfile.mkdtemp(dir=TMP)
+        out_dir = os.path.join(tempfile.mkdtemp(dir=TMP), "my evidence")   # a space: the rerun must quote it
         code, out = harness.prove(proof, evidence_dir=out_dir)
         self.assertEqual(code, 0, out)
         self.assertEqual(os.path.dirname(out["evidence"]), os.path.realpath(out_dir))
@@ -505,8 +559,11 @@ class HarnessTests(unittest.TestCase):
             manifest = json.load(f)
         self.assertEqual(manifest["video"], {"iphone": "iphone/recording.mp4"})
         self.assertEqual(manifest["evidenceDir"], os.path.realpath(out_dir))
-        self.assertTrue(manifest["rerun"].endswith(f"--evidence-dir {os.path.realpath(out_dir)}"), manifest["rerun"])
-        self.assertTrue(manifest["rerun"].startswith(f"cd {env.ROOT} && "), "the rerun proves the same checkout")
+        self.assertTrue(manifest["rerun"].startswith(f"cd {shlex.quote(env.ROOT)} && "), "the rerun proves the same checkout")
+        argv = shlex.split(manifest["rerun"].split(" && ", 1)[1])
+        self.assertEqual(argv[1], "prove")
+        self.assertTrue(argv[2].startswith(out["evidence"] + os.sep), argv)   # the attempt's copy, space and all
+        self.assertEqual(argv[-2:], ["--evidence-dir", os.path.realpath(out_dir)], manifest["rerun"])
         code, again = harness.prove(proof, evidence_dir=out_dir)
         self.assertNotEqual(again["evidence"], out["evidence"], "each run gets a fresh attempt folder")
 
@@ -706,6 +763,19 @@ class DecisionLogTests(unittest.TestCase):
                 harness.evidence_root(log)
         finally:
             os.remove(log)
+            os.rmdir(inside)
+
+
+    def test_proofs_symlink_into_the_checkout_is_refused(self):
+        audit = tempfile.mkdtemp(dir=TMP)
+        log = os.path.join(audit, "decisions.tsv")
+        open(log, "w").close()
+        inside = tempfile.mkdtemp(dir=os.path.join(env.ROOT, ".claude"))
+        os.symlink(inside, os.path.join(audit, "proofs"))
+        try:
+            with self.assertRaises(env.Failed):
+                harness.evidence_root(log)
+        finally:
             os.rmdir(inside)
 
 

@@ -451,7 +451,7 @@ def evidence_root(decision_log=None, evidence_dir=None):
         log = os.path.realpath(decision_log)
         if not os.path.isfile(log) or not log.endswith(".tsv"):
             raise Failed(f"--decision-log must be an existing decisions .tsv file: {decision_log}")
-        root, what = os.path.join(os.path.dirname(log), "proofs"), "the decision log"
+        root, what = os.path.realpath(os.path.join(os.path.dirname(log), "proofs")), "the decision log"
     else:
         return EVIDENCE
     if (root + os.sep).startswith(os.path.realpath(ROOT) + os.sep):
@@ -463,8 +463,8 @@ def evidence_root(decision_log=None, evidence_dir=None):
 def evidence_args(decision_log=None, evidence_dir=None):
     """The rerun command's evidence option, so a rerun writes next to the first run."""
     if decision_log:
-        return f" --decision-log {os.path.realpath(decision_log)}"
-    return f" --evidence-dir {os.path.realpath(evidence_dir)}" if evidence_dir else ""
+        return ["--decision-log", os.path.realpath(decision_log)]
+    return ["--evidence-dir", os.path.realpath(evidence_dir)] if evidence_dir else []
 
 
 def _new_attempt(stem, root=EVIDENCE):
@@ -717,8 +717,10 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",
         # the checkout comes from the working directory, so the rerun names it (a before/after run proves another one)
-        rerun=f"cd {shlex.quote(ROOT)} && {SKILL}/bin/verify-ios prove {proof_path} --devices {','.join(devices)}"
-              + evidence_args(decision_log, evidence_dir) + ("" if video else " --no-video"),
+        rerun=f"cd {shlex.quote(ROOT)} && " + shlex.join([f"{SKILL}/bin/verify-ios", "prove", proof_path,
+                                                          "--devices", ",".join(devices)]
+                                                         + evidence_args(decision_log, evidence_dir)
+                                                         + ([] if video else ["--no-video"])),
         decisionLog=os.path.realpath(decision_log) if decision_log else None,
         evidenceDir=os.path.realpath(evidence_dir) if evidence_dir else None,
         video={r["device"]: f"{r['device']}/{r['video']}" if r.get("video") else None

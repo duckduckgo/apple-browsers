@@ -52,6 +52,10 @@ protocol ScriptSourceProviding {
     var syncErrorHandler: SyncErrorHandling { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
+    /// The page-world Content Scope Scripts source every tab of this update shares.
+    var contentScopeSource: ContentScopeScriptSource { get }
+    /// The isolated Content Scope Scripts source every tab of this update shares.
+    var contentScopeIsolatedSource: ContentScopeScriptSource { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -81,6 +85,7 @@ protocol ScriptSourceProviding {
         fireproofDomains: Application.appDelegate.fireproofDomains,
         fireCoordinator: Application.appDelegate.fireCoordinator,
         autoconsentManagement: Application.appDelegate.autoconsentManagement,
+        contentScopePreferences: Application.appDelegate.contentScopePreferences,
         syncServiceProvider: { [weak appDelegate = Application.appDelegate] in
             return appDelegate?.syncService
         },
@@ -121,6 +126,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let appearancePreferences: AppearancePreferences
     let dockCustomization: DockCustomization
+    private let contentScopeSources: ContentScopeScriptSources
+
+    var contentScopeSource: ContentScopeScriptSource { contentScopeSources.contentScope }
+    var contentScopeIsolatedSource: ContentScopeScriptSource { contentScopeSources.contentScopeIsolated }
 
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -143,6 +152,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
+         contentScopePreferences: ContentScopePreferences,
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
@@ -176,8 +186,24 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.appearancePreferences = appearancePreferences
         self.dockCustomization = dockCustomization
 
-        self.sessionKey = generateSessionKey()
-        self.messageSecret = generateSessionKey()
+        let sessionKey = Self.generateSessionKey()
+        let messageSecret = Self.generateSessionKey()
+        let currentCohorts = Self.generateCurrentCohorts(experimentManager: experimentManager)
+        self.sessionKey = sessionKey
+        self.messageSecret = messageSecret
+        self.currentCohorts = currentCohorts
+        self.contentScopeSources = Self.makeContentScopeSources(
+            privacyConfigurationManager: privacyConfigurationManager,
+            properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
+                                               sessionKey: sessionKey,
+                                               messageSecret: messageSecret,
+                                               isInternalUser: featureFlagger.internalUserDecider.isInternalUser,
+                                               debug: contentScopePreferences.isDebugStateEnabled,
+                                               featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig),
+                                               currentCohorts: currentCohorts,
+                                               themeVariant: appearancePreferences.themeName.rawValue),
+            surrogateTrackerData: trackerProtectionDataSource?.surrogateFilteredTrackerData
+        )
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager(
             onboardingNavigationDelegate,
@@ -195,10 +221,35 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             tld: tld,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )
-        self.currentCohorts = generateCurrentCohorts()
     }
 
-    private func generateSessionKey() -> String {
+    /// Builds the Content Scope Scripts sources now, on the calling thread, rather than when the first tab asks for them.
+    func buildContentScopeSources() {
+        contentScopeSources.build()
+    }
+
+    private static func makeContentScopeSources(privacyConfigurationManager: PrivacyConfigurationManaging,
+                                                properties: ContentScopeProperties,
+                                                surrogateTrackerData: TrackerData?) -> ContentScopeScriptSources {
+        // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
+        // Windows found injecting it broke the aiChat message bridge, which is shared code.
+        let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
+        return ContentScopeScriptSources(
+            privacyConfigurationManager: privacyConfigurationManager,
+            properties: properties,
+            surrogateTrackerData: surrogateTrackerData,
+            contentScopeExcludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue] + nativeOnlyFeatures,
+            contentScopeIsolatedExcludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures,
+            onFailure: { error in
+                if let error = error as? UserScriptError {
+                    error.fireLoadJSFailedPixelIfNeeded()
+                }
+                fatalError("Failed to build the Content Scope Scripts source: \(error.localizedDescription)")
+            }
+        )
+    }
+
+    private static func generateSessionKey() -> String {
         return UUID().uuidString
     }
 
@@ -258,7 +309,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         return data
     }
 
-    private func generateCurrentCohorts() -> [ContentScopeExperimentData] {
+    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging) -> [ContentScopeExperimentData] {
         let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)

@@ -162,45 +162,17 @@ public class PrivacyConfigurationManager: PrivacyConfigurationManaging {
         return embeddedConfigData.rawData
     }
 
-    // Every tab builds two content scope scripts from this JSON, so it's encoded once per config
-    // version for each exclusion set. `reload` clears it and bumps the generation, so an encode
-    // that races a reload is returned but not stored.
-    private let configJSONLock = NSLock()
-    private var configJSONCache: [[String]: Data] = [:]
-    private var configJSONGeneration = 0
-
+    /// Encoded from the already parsed config. Not cached: each content-blocking update builds its Content Scope Scripts
+    /// sources once, off the main thread, and they keep this JSON for as long as the update is in use.
     public func currentConfigJSON(excludingFeatures excludedFeatures: [String]) -> Data? {
-        configJSONLock.lock()
-        if let cached = configJSONCache[excludedFeatures] {
-            configJSONLock.unlock()
-            return cached
-        }
-        let generation = configJSONGeneration
-        configJSONLock.unlock()
-
         let config = fetchedConfigData?.data ?? embeddedConfigData.data
-        guard let json = try? config.toJSONData(excludeFeatures: excludedFeatures) else { return nil }
-
-        configJSONLock.lock()
-        if generation == configJSONGeneration {
-            configJSONCache[excludedFeatures] = json
-        }
-        configJSONLock.unlock()
-        return json
-    }
-
-    private func invalidateConfigJSON() {
-        configJSONLock.lock()
-        configJSONGeneration += 1
-        configJSONCache.removeAll()
-        configJSONLock.unlock()
+        return try? config.toJSONData(excludeFeatures: excludedFeatures)
     }
 
     @discardableResult
     public func reload(etag: String?, data: Data?) -> ReloadResult {
 
         defer {
-            invalidateConfigJSON()
             self.updatesSubject.send()
         }
 

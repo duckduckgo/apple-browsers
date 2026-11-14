@@ -22,6 +22,7 @@ import BrowserServicesKit
 import UserScript
 import os.log
 import Combine
+import TrackerRadarKit
 
 final class DataBrokerUserContentController: WKUserContentController {
 
@@ -29,20 +30,17 @@ final class DataBrokerUserContentController: WKUserContentController {
     var dataBrokerUserScripts: DataBrokerUserScript?
 
     @MainActor
-    init(with privacyConfigurationManager: PrivacyConfigurationManaging,
-         prefs: ContentScopeProperties,
+    init(with sources: DataBrokerUserScriptSources,
          delegate: CCFCommunicationDelegate,
          executionConfig: BrokerJobExecutionConfig,
          shouldContinueActionHandler: @escaping () -> Bool,
-         contentBlocking: DBPWebViewContentBlocking?) throws {
+         contentBlocking: DBPWebViewContentBlocking?) {
         super.init()
 
-        dataBrokerUserScripts = try DataBrokerUserScript(privacyConfig: privacyConfigurationManager,
-                                                         prefs: prefs,
-                                                         delegate: delegate,
-                                                         executionConfig: executionConfig,
-                                                         shouldContinueActionHandler: shouldContinueActionHandler,
-                                                         contentBlocking: contentBlocking)
+        dataBrokerUserScripts = DataBrokerUserScript(sources: sources,
+                                                     delegate: delegate,
+                                                     executionConfig: executionConfig,
+                                                     shouldContinueActionHandler: shouldContinueActionHandler)
         dataBrokerUserScripts?.userScripts.forEach {
             let userScript = $0.makeWKUserScriptSync()
             self.installUserScripts([userScript], handlers: [$0])
@@ -81,6 +79,33 @@ final class DataBrokerUserContentController: WKUserContentController {
     }
 }
 
+/// The Content Scope Scripts sources for a broker web view.
+///
+/// The tracker protection script embeds the whole privacy configuration, and the broker protection script parses and
+/// re-encodes it to add the override, so both are generated off the main thread.
+struct DataBrokerUserScriptSources {
+    let brokerProtection: ContentScopeScriptSource
+    let trackerProtection: ContentScopeScriptSource?
+
+    static func make(privacyConfig: PrivacyConfigurationManaging,
+                     prefs: ContentScopeProperties,
+                     surrogateTrackerData: TrackerData?,
+                     includesTrackerProtection: Bool) async throws -> DataBrokerUserScriptSources {
+        let brokerProtection = try await ContentScopeScriptSource.make(privacyConfigurationManager: privacyConfig.withDataBrokerProtectionFeatureOverride,
+                                                                       properties: prefs,
+                                                                       scriptContext: .brokerProtection,
+                                                                       privacyConfigurationJSONGenerator: nil)
+        guard includesTrackerProtection else {
+            return DataBrokerUserScriptSources(brokerProtection: brokerProtection, trackerProtection: nil)
+        }
+        let trackerProtection = try await ContentScopeScriptSource.make(privacyConfigurationManager: privacyConfig,
+                                                                        properties: prefs,
+                                                                        scriptContext: .contentScope(surrogateTrackerData: surrogateTrackerData),
+                                                                        privacyConfigurationJSONGenerator: nil)
+        return DataBrokerUserScriptSources(brokerProtection: brokerProtection, trackerProtection: trackerProtection)
+    }
+}
+
 @MainActor
 final class DataBrokerUserScript: UserScriptsProvider {
     lazy var userScripts: [UserScript] = {
@@ -95,30 +120,17 @@ final class DataBrokerUserScript: UserScriptsProvider {
     let contentScopeUserScriptForTrackerProtection: ContentScopeUserScript?
     var dataBrokerFeature: DataBrokerProtectionFeature
 
-    init(privacyConfig: PrivacyConfigurationManaging,
-         prefs: ContentScopeProperties,
+    init(sources: DataBrokerUserScriptSources,
          delegate: CCFCommunicationDelegate,
          executionConfig: BrokerJobExecutionConfig,
-         shouldContinueActionHandler: @escaping () -> Bool,
-         contentBlocking: DBPWebViewContentBlocking?) throws {
-        contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
-                                                                    properties: prefs,
-                                                                    scriptContext: .brokerProtection,
-                                                                    privacyConfigurationJSONGenerator: nil)
+         shouldContinueActionHandler: @escaping () -> Bool) {
+        contentScopeUserScriptIsolated = ContentScopeUserScript(source: sources.brokerProtection)
         dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
         dataBrokerFeature.broker = contentScopeUserScriptIsolated.broker
         contentScopeUserScriptIsolated.registerSubfeature(delegate: dataBrokerFeature)
 
-        if let contentBlocking {
-            contentScopeUserScriptForTrackerProtection = try ContentScopeUserScript(
-                privacyConfig,
-                properties: prefs,
-                scriptContext: .contentScope(surrogateTrackerData: contentBlocking.surrogateTrackerData),
-                allowedNonisolatedFeatures: [TrackerProtectionSubfeature.featureNameValue],
-                privacyConfigurationJSONGenerator: nil
-            )
-        } else {
-            contentScopeUserScriptForTrackerProtection = nil
+        contentScopeUserScriptForTrackerProtection = sources.trackerProtection.map {
+            ContentScopeUserScript(source: $0, allowedNonisolatedFeatures: [TrackerProtectionSubfeature.featureNameValue])
         }
     }
 
@@ -174,20 +186,18 @@ extension WKUserContentController {
 extension WKWebViewConfiguration {
 
     @MainActor
-    func applyDataBrokerConfiguration(privacyConfig: PrivacyConfigurationManaging,
-                                      prefs: ContentScopeProperties,
+    func applyDataBrokerConfiguration(sources: DataBrokerUserScriptSources,
                                       delegate: CCFCommunicationDelegate,
                                       executionConfig: BrokerJobExecutionConfig,
                                       shouldContinueActionHandler: @escaping () -> Bool,
-                                      contentBlocking: DBPWebViewContentBlocking?) throws {
+                                      contentBlocking: DBPWebViewContentBlocking?) {
         setURLSchemeHandler(WebViewSchemeHandler(), forURLScheme: WebViewSchemeHandler.dataBrokerProtectionScheme)
         preferences.isFraudulentWebsiteWarningEnabled = false
-        let userContentController = try DataBrokerUserContentController(with: privacyConfig,
-                                                                        prefs: prefs,
-                                                                        delegate: delegate,
-                                                                        executionConfig: executionConfig,
-                                                                        shouldContinueActionHandler: shouldContinueActionHandler,
-                                                                        contentBlocking: contentBlocking)
+        let userContentController = DataBrokerUserContentController(with: sources,
+                                                                    delegate: delegate,
+                                                                    executionConfig: executionConfig,
+                                                                    shouldContinueActionHandler: shouldContinueActionHandler,
+                                                                    contentBlocking: contentBlocking)
         self.userContentController = userContentController
     }
 }

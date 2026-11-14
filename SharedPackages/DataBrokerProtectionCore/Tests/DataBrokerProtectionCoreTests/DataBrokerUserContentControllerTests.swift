@@ -51,7 +51,7 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
     // MARK: - contentBlocking == nil
 
     func testWhenContentBlockingIsNil_thenOnlyIsolatedScriptIsInstalledAndNoRuleLists() async throws {
-        let sut = try makeSUT(contentBlocking: nil)
+        let sut = try await makeSUT(contentBlocking: nil)
 
         XCTAssertTrue(sut.installedContentRuleLists.isEmpty)
         XCTAssertEqual(sut.dataBrokerUserScripts?.userScripts.count, 1)
@@ -62,7 +62,7 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
 
     func testWhenContentBlockingIsProvided_thenInstallsRuleListsAndAddsNonIsolatedScript() async throws {
         let mock = DBPWebViewContentBlockingMock(contentRuleLists: [ruleList])
-        let sut = try makeSUT(contentBlocking: mock)
+        let sut = try await makeSUT(contentBlocking: mock)
 
         XCTAssertEqual(sut.installedContentRuleLists.count, 1)
         XCTAssertEqual(sut.installedContentRuleLists.first?.identifier, ruleList.identifier)
@@ -74,7 +74,7 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
 
     func testWhenCleanUpBeforeClosingCalled_thenRuleListsAndScriptsAreCleared() async throws {
         let mock = DBPWebViewContentBlockingMock(contentRuleLists: [ruleList])
-        let sut = try makeSUT(contentBlocking: mock)
+        let sut = try await makeSUT(contentBlocking: mock)
         XCTAssertEqual(sut.installedContentRuleLists.count, 1)
 
         sut.cleanUpBeforeClosing()
@@ -85,7 +85,7 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeSUT(contentBlocking: DBPWebViewContentBlocking?) throws -> DataBrokerUserContentController {
+    private func makeSUT(contentBlocking: DBPWebViewContentBlocking?) async throws -> DataBrokerUserContentController {
         let privacyConfigManager = PrivacyConfigurationManagingMock()
         let prefs = ContentScopeProperties(
             gpcEnabled: false,
@@ -108,9 +108,12 @@ final class DataBrokerUserContentControllerTests: XCTestCase {
                 autocompleteAttributeSupport: false
             )
         )
-        return try DataBrokerUserContentController(
-            with: privacyConfigManager,
-            prefs: prefs,
+        let sources = try await DataBrokerUserScriptSources.make(privacyConfig: privacyConfigManager,
+                                                                 prefs: prefs,
+                                                                 surrogateTrackerData: contentBlocking?.surrogateTrackerData,
+                                                                 includesTrackerProtection: contentBlocking != nil)
+        return DataBrokerUserContentController(
+            with: sources,
             delegate: CCFCommunicationDelegateMock(),
             executionConfig: BrokerJobExecutionConfig(),
             shouldContinueActionHandler: { true },

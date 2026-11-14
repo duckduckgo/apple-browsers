@@ -35,6 +35,10 @@ public protocol ScriptSourceProviding {
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var autofillSourceProvider: AutofillUserScriptSourceProvider { get }
     var contentScopeProperties: ContentScopeProperties { get }
+    /// The page-world Content Scope Scripts source every tab of this update shares.
+    var contentScopeSource: ContentScopeScriptSource { get }
+    /// The isolated Content Scope Scripts source every tab of this update shares.
+    var contentScopeIsolatedSource: ContentScopeScriptSource { get }
     var sessionKey: String { get }
     var messageSecret: String { get }
     var currentCohorts: [ContentScopeExperimentData] { get }
@@ -79,6 +83,10 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let aiChatBonusOffer: AIChatBonusOfferDependencies
+    private let contentScopeSources: ContentScopeScriptSources
+
+    var contentScopeSource: ContentScopeScriptSource { contentScopeSources.contentScope }
+    var contentScopeIsolatedSource: ContentScopeScriptSource { contentScopeSources.contentScopeIsolated }
 
     init(dependencies: Dependencies) {
 
@@ -109,6 +117,21 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         currentCohorts: currentCohorts)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
+        contentScopeSources = ContentScopeScriptSources(privacyConfigurationManager: privacyConfigurationManager,
+                                                        properties: contentScopeProperties,
+                                                        surrogateTrackerData: trackerProtectionDataSource?.surrogateFilteredTrackerData,
+                                                        contentScopeExcludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue],
+                                                        onFailure: { error in
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build the Content Scope Scripts source: \(error)")
+        })
+    }
+
+    /// Builds the Content Scope Scripts sources now, on the calling thread, rather than when the first tab asks for them.
+    func buildContentScopeSources() {
+        contentScopeSources.build()
     }
 
     private static func generateSessionKey() -> String { UUID().uuidString }

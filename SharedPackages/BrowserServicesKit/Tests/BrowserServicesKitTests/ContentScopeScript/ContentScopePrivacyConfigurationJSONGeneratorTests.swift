@@ -36,7 +36,7 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
     }
 
     private func generatedJSON(from manager: MockPrivacyConfigurationManager) -> [String: Any]? {
-        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(privacyConfigurationManager: manager)
         guard let data = generator.privacyConfiguration,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
@@ -113,7 +113,7 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         let manager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
         manager.currentConfigString = "not valid json"
 
-        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(privacyConfigurationManager: manager)
         XCTAssertNil(generator.privacyConfiguration)
     }
 }

@@ -27,7 +27,6 @@ public protocol CustomisedPrivacyConfigurationJSONGenerating {
 
 /// A JSON generator for content scope privacy configuration.
 public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating {
-    let featureFlagger: FeatureFlagger
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let excludedFeatures: [String]
 
@@ -39,10 +38,8 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
         PrivacyFeature.eventHub.rawValue
     ]
 
-    public init(featureFlagger: FeatureFlagger,
-                privacyConfigurationManager: PrivacyConfigurationManaging,
+    public init(privacyConfigurationManager: PrivacyConfigurationManaging,
                 excludedFeatures: [String] = Self.defaultExcludedFeatures) {
-        self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.excludedFeatures = excludedFeatures
     }

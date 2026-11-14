@@ -298,7 +298,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         let privacyConfig = DBPPrivacyConfigurationManager()
         let prefs = ContentScopeProperties.contentScopePropertiesForDBP()
 
-        guard let handler = try? DataBrokerProtectionWebViewHandler(
+        guard let handler = try? await DataBrokerProtectionWebViewHandler(
             privacyConfig: privacyConfig,
             prefs: prefs,
             delegate: nullCCFDelegateReference,

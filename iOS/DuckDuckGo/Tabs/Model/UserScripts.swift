@@ -103,28 +103,10 @@ final class UserScripts: UserScriptsProvider {
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
-        do {
-            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                                                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue])
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
-                                                                properties: sourceProvider.contentScopeProperties,
-                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
-                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue,
-                                                                                             SelectionFrameUserScript.featureName],
-                                                                privacyConfigurationJSONGenerator: configGenerator)
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
-                                                                        properties: sourceProvider.contentScopeProperties,
-                                                                        scriptContext: .contentScopeIsolated,
-                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator)
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            fatalError("Failed to initialize ContentScopeUserScript: \(error)")
-        }
+        contentScopeUserScript = ContentScopeUserScript(source: sourceProvider.contentScopeSource,
+                                                        allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue,
+                                                                                     TrackerProtectionSubfeature.featureNameValue, SelectionFrameUserScript.featureName])
+        contentScopeUserScriptIsolated = ContentScopeUserScript(source: sourceProvider.contentScopeIsolatedSource)
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             webExtensionAvailability: sourceProvider.webExtensionAvailability,

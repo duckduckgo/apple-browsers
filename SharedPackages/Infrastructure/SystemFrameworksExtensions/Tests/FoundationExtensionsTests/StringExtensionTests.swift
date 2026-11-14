@@ -486,6 +486,87 @@ final class StringExtensionTests {
         #expect(result.hasSuffix(" after"))
     }
 
+    private static let replacementEdgeCases: [(template: String, replacements: [String: String])] = [
+        // Keys sharing a first byte, so the memchr path runs
+        ("var a = $A$; var b = $B$; $A$$B$$", ["$A$": "1", "$B$": "two"]),
+        ("$AB$ $A$ $ABC$ $AB", ["$A$": "a", "$AB$": "ab", "$ABC$": "abc"]),
+        ("ends with a partial key $US", ["$USER$": "x"]),
+        ("$K$", ["$K$": ""]),
+        ("", ["$K$": "x"]),
+        ("no placeholders at all", ["$K$": "x"]),
+        ("é$É$ü\u{2028}$É$\u{1F600}", ["$É$": "\u{1F600}"]),
+        // Keys with different first bytes, so the lookup table path runs
+        ("%A% $B$ %A%$B$ %", ["%A%": "1", "$B$": "2"]),
+        ("hello world hello", ["hello": "bye", "world": "earth"]),
+        ("ééé", ["é": "e", "x": "y"]),
+        // Keys that start with a multi-byte character
+        ("€1 €2 €", ["€1": "one", "€2": "two"])
+    ]
+
+    @available(iOS 16, macOS 13, *)
+    @Test("applyingReplacements matches the previous byte-by-byte scan", .timeLimit(.minutes(1)))
+    func applyingReplacementsMatchesPreviousImplementation() {
+        for (template, replacements) in Self.replacementEdgeCases {
+            #expect(template.applyingReplacements(replacements) == Self.referenceApplyingReplacements(template, replacements),
+                    "template: \(template)")
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("applyingReplacements matches the previous byte-by-byte scan on generated templates", .timeLimit(.minutes(1)))
+    func applyingReplacementsMatchesPreviousImplementationOnGeneratedTemplates() {
+        let alphabet: [String] = ["$", "A", "B", "$A$", "$AB$", "é", "\u{2028}", " ", "%", "%A%"]
+        let replacementSets: [[String: String]] = [
+            ["$A$": "1", "$AB$": "22"],
+            ["$A$": "1", "%A%": "3", "é": "e"]
+        ]
+        var generator = SystemRandomNumberGenerator()
+        for _ in 0..<500 {
+            let length = Int.random(in: 0..<40, using: &generator)
+            let template = (0..<length).map { _ in alphabet.randomElement(using: &generator)! }.joined()
+            for replacements in replacementSets {
+                #expect(template.applyingReplacements(replacements) == Self.referenceApplyingReplacements(template, replacements),
+                        "template: \(template)")
+            }
+        }
+    }
+
+    /// The implementation `applyingReplacements` replaced, kept as the reference for its output.
+    private static func referenceApplyingReplacements(_ string: String, _ replacements: [String: String]) -> String {
+        let templateUTF8 = Array(string.utf8)
+        let keys = replacements
+            .filter { !$0.key.isEmpty }
+            .map { (utf8: Array($0.key.utf8), value: Array($0.value.utf8)) }
+            .sorted { $0.utf8.count > $1.utf8.count }
+        guard !keys.isEmpty else { return string }
+        let firstBytes = Set(keys.map { $0.utf8[0] })
+        var result = [UInt8]()
+        var i = 0
+        while i < templateUTF8.count {
+            if firstBytes.contains(templateUTF8[i]) {
+                var matched = false
+                for entry in keys {
+                    let end = i + entry.utf8.count
+                    if end <= templateUTF8.count, templateUTF8[i..<end].elementsEqual(entry.utf8) {
+                        result.append(contentsOf: entry.value)
+                        i = end
+                        matched = true
+                        break
+                    }
+                }
+                if !matched {
+                    result.append(templateUTF8[i])
+                    i += 1
+                }
+            } else {
+                result.append(templateUTF8[i])
+                i += 1
+            }
+        }
+        // swiftlint:disable:next optional_data_string_conversion
+        return String(decoding: result, as: UTF8.self)
+    }
+
     // MARK: - truncated(to:position:ellipsis:trimmingWhitespace:)
 
     // MARK: Short / equal-length strings pass through unchanged

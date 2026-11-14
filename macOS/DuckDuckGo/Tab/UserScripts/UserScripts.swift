@@ -72,17 +72,13 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     /// `nil` when web extensions are unavailable or the user is not an internal user.
     let webExtensionPageStubUserScript: UserScript?
 
-    private let contentScopePreferences: ContentScopePreferences
-
     // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding,
-         contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          sponsorBlockPreferences: SponsorBlockPreferences = NSApp.delegateTyped.sponsorBlockPreferences,
          sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = NSApp.delegateTyped.sponsorBlockSegmentsProvider,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
-        self.contentScopePreferences = contentScopePreferences
         let featureFlagger = sourceProvider.featureFlagger
         sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
                                                         preferences: sponsorBlockPreferences,
@@ -161,40 +157,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
         homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
 
-        let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
-        let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
-        let sessionKey = sourceProvider.sessionKey ?? ""
-        let messageSecret = sourceProvider.messageSecret ?? ""
-        let currentCohorts = sourceProvider.currentCohorts ?? []
-        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
-        let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
-                                           sessionKey: sessionKey,
-                                           messageSecret: messageSecret,
-                                           isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
-                                           debug: contentScopePreferences.isDebugStateEnabled,
-                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
-                                           currentCohorts: currentCohorts,
-                                           themeVariant: themeVariant)
-        do {
-            // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
-            // Windows found injecting it broke the aiChat message bridge, which is shared code.
-            let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
-            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
-                featureFlagger: sourceProvider.featureFlagger,
-                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue] + nativeOnlyFeatures)
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
-                featureFlagger: sourceProvider.featureFlagger,
-                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
-        }
+        contentScopeUserScript = ContentScopeUserScript(source: sourceProvider.contentScopeSource,
+                                                        allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue])
+        contentScopeUserScriptIsolated = ContentScopeUserScript(source: sourceProvider.contentScopeIsolatedSource)
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 

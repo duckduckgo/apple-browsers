@@ -120,13 +120,14 @@ jobs:
           DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -o pipefail
-          srt -c "xcodebuild build-for-testing -scheme 'iOS Browser' -only-testing:DuckDuckGoTests/SwipeTabsNewTabDestinationTests -destination '$DEST' -derivedDataPath DerivedData \
+          srt -c "xcodebuild build -scheme 'iOS Browser' -destination '$DEST' -derivedDataPath DerivedData \
             -clonedSourcePackagesDirPath '$GITHUB_WORKSPACE/SourcePackages' -disableAutomaticPackageResolution \
             -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO \
             OTHER_SWIFT_FLAGS='\$(inherited) -disable-sandbox'" 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*sandbox|BUILD|Operation not permitted|couldNot" | sort | uniq -c | sort -rn | head -40
 
+      # Off on macos-latest: its Xcode 26.6 can't build some test targets that need Xcode 27
       - name: One unit test under the sandbox
-        if: steps.build.outcome == 'success'
+        if: false
         continue-on-error: true
         working-directory: target
         env:

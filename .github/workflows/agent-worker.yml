@@ -1,11 +1,6 @@
 name: Agent worker
 
-# Dispatched with a handoff ID, task gid and plan hash, never plan text. The plan comes from
-# artifacts.go.duckduckgo.com and is checked against the hash. This repo's logs are public, so no
-# plan text or agent output goes to logs, artifacts or the job summary. A person approves publish.
-# Runs use the agent-worker branch so they can't write to the default branch's Actions cache, and
-# the Anthropic and Azure federation only trust the agent-worker environment, which only allows that
-# branch. Change the worker with a PR to agent-worker; the copy on the default branch never runs.
+# Agent worker: applies a plan from the apple-agent-orchestrator and opens a draft PR after a person approves
 
 on:
   workflow_dispatch:

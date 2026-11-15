@@ -230,7 +230,7 @@ jobs:
       group: macos-appstore-upload-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: xcode-27-xlarge
+    runs-on: [image:osx-27-edge, m4pro]
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}

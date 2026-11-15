@@ -41,14 +41,15 @@ ABSENT = {"NOT_FOUND", "TIMEOUT"}
 class Ios:
     """The handle a proof receives: user actions, reads, waiting assertions, telemetry and evidence for one device."""
 
-    def __init__(self, device, evidence, flags=None, device_obj=None, launch=None):
+    def __init__(self, device, evidence, flags=None, device_obj=None, launch=None, inputs=None):
         self.device = device                     # "iphone" | "ipad"
         self.form_factor = "phone" if device == "iphone" else "tablet"   # pixel names end in _ios_<form_factor>
         self.d = device_obj or Device(device)
         self.evidence = evidence
         self.flags = dict(flags or {})
         self.launch_config = env.validate_launch(launch or {})
-        self.checks, self.unverified_items, self.notes, self.warnings = [], [], [], []
+        self.inputs = inputs
+        self.checks, self.unverified_items, self.notes, self.warnings, self.human_steps = [], [], [], [], []
         self.hosts = set()                       # non-local hosts the proof saw, to check LIVE
         self.cleanups = []                       # (what, fn) undo steps, run in reverse after the proof
         self.capture = {}                        # capture conditions screenshots depend on, for the manifest
@@ -86,46 +87,17 @@ class Ios:
     def _session(self, action, fn):
         """A launch that fails is setup trouble (build identity, readiness, runner), not the behavior under proof."""
         try:
-            self.launched = self._log(action, [self.flags], fn)
+            self.launched = self._log(action, [self.flags, self.launch_config], fn)
         except Failed as e:
             raise SetupFailed(f"{action}: {e}", **e.extra) from e
         return self.launched
 
-    def checkpoint(self, instruction, timeout=900):
-        """Pause in this attempt; acknowledge or cancel with the paths written to checkpoint.json."""
-        if not isinstance(timeout, (int, float)) or not 0 < timeout <= 3600:
-            raise SetupFailed("checkpoint timeout must be between 0 and 3600 seconds")
-        checkpoint_id = uuid.uuid4().hex
-        ack = os.path.join(self.evidence, f"ack-{checkpoint_id}")
-        cancel = os.path.join(self.evidence, f"cancel-{checkpoint_id}")
-        record = dict(id=checkpoint_id, instruction=instruction, acknowledge=ack, cancel=cancel, timeout=timeout,
-                      startedAt=time.time(), deadlineAt=time.time() + timeout, status="pending")
-        path = os.path.join(self.evidence, "checkpoint.json")
-        def save():
-            _write(path, json.dumps(record, indent=2))
-        save()
-        print(f"{instruction}\nAcknowledge: touch {ack}\nCancel: touch {cancel}", flush=True)
-        deadline = time.monotonic() + timeout
-        try:
-            while True:
-                if os.path.exists(cancel):
-                    record["status"] = "cancelled"
-                    raise _Stop("manual checkpoint")
-                if os.path.exists(ack):
-                    record["status"] = "acknowledged"
-                    record["acknowledgedAt"] = time.time()
-                    print(f"Acknowledged checkpoint {checkpoint_id}; continuing", flush=True)
-                    return checkpoint_id
-                if time.monotonic() >= deadline:
-                    record["status"] = "timedOut"
-                    raise SetupFailed("manual checkpoint timed out")
-                time.sleep(0.2)
-        finally:
-            if record["status"] == "pending":
-                record["status"] = "interrupted"
-            record["finishedAt"] = time.time()
-            save()
-            self._log("checkpoint", [checkpoint_id], lambda: record)
+    def human_step(self, step):
+        """Record a step a person performs during this run. The manifest and report mark the run human-assisted, so a
+        reader of the evidence or of the rerun command knows it. Returns the record for the caller to add outcomes to."""
+        record = dict(step=step, startedAt=time.time())
+        self.human_steps.append(record)
+        return record
 
     def doctor(self):
         return self._log("doctor", [], self.d.doctor)
@@ -465,6 +437,7 @@ def load(path):
         problems.append("INPUT_ENV must be a list of environment variable names")
     else:
         problems += [f"set {name}: the proof reads its input from it" for name in input_env if not os.environ.get(name)]
+        mod._input_env = {name: _input_record(os.environ.get(name, "")) for name in input_env}
     flags = getattr(mod, "FLAGS", {})
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map feature flag names to True/False")
@@ -472,11 +445,19 @@ def load(path):
         problems.append(f"FLAGS: {env.flag_problem(flags)}")
     try:
         env.validate_launch(getattr(mod, "LAUNCH", {}))
-        validator = getattr(mod, "validate", None)
-        if validator:
-            validator()
-    except Exception as error:
-        problems.append(f"proof configuration: {error}")
+    except Failed as error:
+        problems.append(str(error))
+    validator = getattr(mod, "validate", None)
+    if validator is not None and (not callable(validator) or len(inspect.signature(validator).parameters) != 0):
+        problems.append("validate() must take no arguments")
+    elif validator is not None and (inspect.iscoroutinefunction(validator) or inspect.isgeneratorfunction(validator)
+                                    or inspect.isasyncgenfunction(validator)):
+        problems.append("validate() must be a plain function: an async or generator validate() would return without running")
+    else:
+        try:
+            mod._inputs = validator() if validator else None
+        except Exception as error:
+            problems.append(f"proof configuration: {error}")
     if not (mod.__doc__ or "").strip():
         problems.append("needs a docstring saying what it proves")
     return mod, problems
@@ -588,7 +569,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
         _ignore_signals()   # writing the manifest and report must not be interrupted
     try:
         manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log,
-                             evidence_dir, video, getattr(mod, "INPUT_ENV", []))
+                             evidence_dir, video, getattr(mod, "_input_env", {}))
         with open(f"{attempt}/manifest.json", "w") as f:
             json.dump(manifest, f, indent=1)
         with open(f"{attempt}/report.md", "w") as f:
@@ -611,7 +592,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, video=True)
     status, reason, ios, phase, recording, problems = "error", None, None, "setup", None, []
     try:
         try:
-            ios = Ios(device, evidence, flags, device_obj, getattr(mod, "LAUNCH", {}))
+            ios = Ios(device, evidence, flags, device_obj, getattr(mod, "LAUNCH", {}), getattr(mod, "_inputs", None))
             ios.launch()
             if video:   # a recording that fails is an evidence problem, never a proof failure
                 try:
@@ -662,6 +643,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, video=True)
                       checks=ios.checks if ios else [], unverified=ios.unverified_items if ios else [],
                       notes=ios.notes if ios else [], warnings=ios.warnings if ios else [], problems=problems,
                       liveHostsSeen=sorted(ios.hosts) if ios else [], launched=ios.launched if ios else None,
+                      launch=ios.launch_config if ios else None, humanSteps=ios.human_steps if ios else [],
                       capture=ios.capture if ios else {}, evidence=evidence,
                       video=Video.FILE if recording and recording.ok else None)
         with open(f"{evidence}/result.json", "w") as f:
@@ -748,11 +730,16 @@ def _skill_hash():
     return h.hexdigest()
 
 
+def _input_record(value):
+    """An INPUT_ENV value as the proof saw it, with the file it names hashed at the same moment."""
+    return dict(value=value, sha256=env.sha256(value) if os.path.isfile(value) else None)
+
+
 def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None, evidence_dir=None,
-              video=True, input_env=()):
+              video=True, input_env=None):
     xcode = run(["xcodebuild", "-version"]).stdout.split()
-    inputs = {name: os.environ.get(name, "") for name in input_env}
-    prefix = "".join(f"{name}={shlex.quote(value)} " for name, value in inputs.items())
+    inputs = input_env or {}
+    prefix = "".join(f"{name}={shlex.quote(r['value'])} " for name, r in inputs.items())
     hosts = sorted({h for r in results for h in r.get("liveHostsSeen", [])})
     return dict(
         proof=os.path.relpath(proof_path, attempt),
@@ -763,12 +750,13 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         flags={**env.PINNED_FLAGS, **flags},
         capture={r["device"]: r.get("capture") for r in results if r.get("device") != "-"},
         skillSha256=_skill_hash(), xcode=" ".join(xcode[:4]),
-        simulators={r["device"]: dict(udid=(r.get("launched") or {}).get("udid"), type=env.DEVICE_TYPES[r["device"]], runtime=env.RUNTIME,
-                                    observed=(r.get("launched") or {}).get("simulator"))
+        simulators={r["device"]: dict(udid=(r.get("launched") or {}).get("udid"), type=env.DEVICE_TYPES[r["device"]], runtime=env.RUNTIME)
                     for r in results if r.get("device") in env.DEVICE_TYPES},
         live=live or [], liveHostsSeen=hosts,
         evidenceKind="live services: " + ", ".join(live) if live else "local fixture and app only",
         inputEnv=inputs,
+        launch={r["device"]: r.get("launch") for r in results if r.get("device") != "-"},
+        humanAssisted={r["device"]: r["humanSteps"] for r in results if r.get("humanSteps")},
         # the checkout comes from the working directory, so the rerun names it (a before/after run proves another one)
         rerun=f"cd {shlex.quote(ROOT)} && {prefix}" + shlex.join([f"{SKILL}/bin/verify-ios", "prove", proof_path,
                                                           "--devices", ",".join(devices)]
@@ -794,6 +782,9 @@ def _report(mod, m, results):
     for r in runs:
         lines.append(f"| {r['device']} | " + " | ".join(_evidence_links(r)) + " |")
     lines += ["", "## Outcome", ""]
+    if m["humanAssisted"]:
+        lines += ["**Human-assisted** (a rerun needs a person for the same steps): " + "; ".join(
+            f"{d}: {s['step']} ({s.get('status', 'started')})" for d, steps in m["humanAssisted"].items() for s in steps), ""]
     for r in results:
         label = "INCONCLUSIVE" if r["status"] == "error" and (r.get("reason") or "").startswith("setup") else r["status"].upper()
         lines.append(f"### {r['device']}: {label}" + (f" ({r['reason']})" if r.get("reason") else ""))
@@ -815,6 +806,7 @@ def _report(mod, m, results):
               "- Devices: " + ", ".join(f"{d} ({s['type']}, {s['runtime'].rsplit('.', 1)[-1]})" for d, s in m["simulators"].items()),
               f"- Evidence: {m['evidenceKind']}" + (f". **Undeclared live hosts seen: {', '.join(undeclared)}**" if undeclared else ""),
               f"- Pinned flags: {', '.join(f'{k}={v}' for k, v in m['flags'].items()) or '(none)'}"]
+    lines += [f"- Launch configuration, {d}: {json.dumps(c)}" for d, c in m["launch"].items() if c]
     lines += [f"- Capture conditions, {r['device']}: " + ", ".join(f"{k} {v}" for k, v in r["capture"].items() if k != "window")
               for r in runs if r.get("capture")]
     lines += [f"- Rerun: `{m['rerun']}`", "", "## Unverified", ""]

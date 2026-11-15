@@ -49,8 +49,7 @@ class Device:
         """Every simulator with this worktree's name, including unavailable ones (their runtime was removed).
         Looked up by name, never remembered across commands: each proof deletes its simulator when it ends."""
         devs = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"]).stdout)["devices"]
-        return [dict(d, runtime=runtime) for runtime, ds in devs.items() for d in ds
-                if d["name"] == self.name]
+        return [d for ds in devs.values() for d in ds if d["name"] == self.name]
 
     def _find(self):
         """This worktree's usable simulator for the device, or None."""
@@ -221,8 +220,7 @@ class Device:
         ident = self.identity()
         if not ident.get("ok"):
             raise Failed("running app is not this worktree's build", build=ident)
-        return dict(device=self.device, udid=self.udid, simulator=self._find(),
-                    bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
+        return dict(device=self.device, udid=self.udid, bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
                     ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
                     runnerStarted=bool(started))
 

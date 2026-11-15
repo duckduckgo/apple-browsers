@@ -3,6 +3,7 @@ The repository to change is checked out at {{REPO_DIR}}. Make all changes there.
 - `xc test [tests]`: runs tests in xcodebuild -only-testing form, or the ones in .agent-evidence/tests.txt when you name none. Build first after changing code.
 - `xc lint`: SwiftLint --strict on the Swift files you changed.
 - `xc mv <from> <to>` and `xc rm <path>...`: move, rename or delete files in the repository.
+- `xc build` and `xc test` print the path of their full log. Use the Grep and Read tools on it when the printed errors aren't enough.
 - Read-only git: `git log`, `git show`, `git blame`, `git diff`, `git status` and `git grep`, for the history of the code you're changing.
 
 Before you finish, build your change and run the tests in tests.txt, fix what fails and repeat until the build and the tests pass, then run `xc lint` and fix what it reports. Don't delete, skip or weaken existing tests to make them pass. Builds are slow, so read the code carefully before building rather than building to find out. After you finish, the worker builds your change again on a clean machine, runs the tests in tests.txt and records the app, and the approver sees those results.

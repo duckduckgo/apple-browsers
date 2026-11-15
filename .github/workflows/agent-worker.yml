@@ -45,6 +45,7 @@ env:
   # Inputs are checked in the agent job's first step before any of these paths are used. Storage is
   # create-only, so each run gets its own prefix, and a retry reads the failed run's under the same handoff
   PLAN_BLOB: ${{ inputs.handoff }}/plan.md
+  HANDOFF_PREFIX: ${{ inputs.handoff }}
   EVIDENCE_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ github.run_id }}-${{ github.run_attempt }}
   PREV_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ inputs.prev_run }}
   RETRY: ${{ inputs.retry }}
@@ -123,13 +124,17 @@ jobs:
       - name: Download plan from artifacts.go
         env:
           SHA256: ${{ inputs.sha256 }}
+          PREV_RUN: ${{ inputs.prev_run }}
         run: |
           set -euo pipefail
           worker/scripts/agent-worker/blobs.sh plan "$RUNNER_TEMP/plan.md" "$SHA256"
           # A retry starts from the previous run's patch, evidence plan, PR text and results, when it got that far
           if [[ $RETRY != 0 ]]; then
             worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/prev" "$PREV_PREFIX" \
-              changes.patch pr.md tests.txt flow.yaml excluded.txt verify/results.md result.json
+              changes.patch pr.md tests.txt flow.yaml excluded.txt verify/results.md result.json attempts.json
+            # Earlier attempts' agent stats, carried forward for the cost table on the verify page
+            mkdir -p "$RUNNER_TEMP/evidence"
+            python3 -I worker/scripts/agent-worker/attempts.py "$RUNNER_TEMP/prev" "$PREV_RUN" "$RUNNER_TEMP/evidence/attempts.json"
           fi
 
       - name: Azure logout
@@ -267,7 +272,8 @@ jobs:
           set -euo pipefail
           echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify" >> "$GITHUB_ENV"
           worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$EVIDENCE_PREFIX" \
-            changes.patch tests.txt flow.yaml excluded.txt retry.txt result.json pr.md plan-notes.txt
+            changes.patch tests.txt flow.yaml excluded.txt retry.txt result.json pr.md plan-notes.txt attempts.json
+          worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$HANDOFF_PREFIX" plan-stats.json
           [[ -s "$RUNNER_TEMP/plan/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
 
       - name: Azure logout

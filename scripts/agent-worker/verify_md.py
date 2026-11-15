@@ -23,6 +23,34 @@ def read(path, limit=200000):
         return ""
 
 
+def money(v):
+    return f"${v:.2f}"
+
+
+def cost_rows(plan, cost):
+    """Planner and earlier attempt rows when their stats exist, then a total of every cost shown"""
+    def load(name):
+        try:
+            return json.loads(read(os.path.join(plan, name)))
+        except ValueError:
+            return None
+    rows, costs = [], [cost]
+    p = load("plan-stats.json")
+    if isinstance(p, dict) and isinstance(p.get("total_cost_usd"), (int, float)):
+        mins = (p.get("duration_ms") or 0) / 60000
+        rows.append(f"| Planner | {money(p['total_cost_usd'])}, {p.get('num_turns', '-')} turns, {mins:.0f} min |")
+        costs.append(p["total_cost_usd"])
+    earlier = [a for a in load("attempts.json") or [] if isinstance(a, dict) and isinstance(a.get("cost"), (int, float))]
+    if earlier:
+        total = sum(a["cost"] for a in earlier)
+        runs = "1 run" if len(earlier) == 1 else f"{len(earlier)} runs"
+        rows.append(f"| Earlier attempts | {money(total)} over {runs} |")
+        costs.append(total)
+    if not rows or not all(isinstance(c, (int, float)) for c in costs):
+        return rows
+    return rows + [f"| **Total** | **{money(sum(costs))}** |"]
+
+
 def main():
     plan, out = sys.argv[1:3]
     e = os.environ
@@ -91,8 +119,8 @@ def main():
            f"| Turns | {r.get('num_turns', '-')} |",
            f"| Cost | {'$%.2f' % cost if cost is not None else '-'} |",
            f"| Duration | {secs / 60:.0f} min |",
-           f"| Denied tools | {', '.join(sorted({d.get('tool_name', '?') for d in r.get('permission_denials') or []})) or 'none'} |",
-           ""]
+           f"| Denied tools | {', '.join(sorted({d.get('tool_name', '?') for d in r.get('permission_denials') or []})) or 'none'} |"]
+    md += cost_rows(plan, cost) + [""]
     if ev:
         md += [f"Raw output: [result.json]({ev}/result.json)", ""]
 

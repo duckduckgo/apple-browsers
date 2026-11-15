@@ -17,8 +17,6 @@ Write an evidence plan in .agent-evidence/ at the repository root, so the approv
   - stopRecording
   ```
 
-  TEMP: always write flow.yaml, even when the fix has nothing to see. Then open the app, go to the screen nearest the code you changed and record it.
-
 Your final message goes to the approver on one page with the build, test and recording results. Explain the cause, the fix, why it's safe, and any risk or follow-up. Don't mention building, testing or recording, since those results are on the same page.
 
 When you're done, write .agent-pr.md at the repository root for the pull request, which is public: the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does, then a blank line and 2 to 4 bullets on what changed and why. Describe only the code. No links, crash counts, versions, user data, or anything from Asana or Sentry.

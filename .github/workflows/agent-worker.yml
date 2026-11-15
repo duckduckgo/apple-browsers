@@ -225,8 +225,8 @@ jobs:
           exit 1
 
   # Builds the patch on a fresh runner, runs the agent's tests and records its Maestro flow. Results go to
-  # evidence for the approver, and ok=false sends the task to a retry or Needs attention instead of
-  # approval. The Azure login is only held before and after the build, never while the agent's code runs
+  # evidence for the approver. A failed build or failed tests set ok=false, which sends the task to a
+  # retry or Needs attention instead of approval. The Maestro flow is evidence only and never blocks. The Azure login is only held before and after the build, never while the agent's code runs
   verify:
     needs: agent
     if: needs.agent.result == 'success'
@@ -330,7 +330,8 @@ jobs:
             PREV_URL="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$PREV_PREFIX" \
             python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify_md.py" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
 
-      # ok=false sends the task to a retry or Needs attention, and failure says why in the Asana comment
+      # ok=false sends the task to a retry or Needs attention, and failure says why in the Asana comment. A failed
+      # Maestro flow shows on the verify page for the approver but doesn't set ok=false
       - name: Result
         id: result
         if: always()
@@ -338,9 +339,7 @@ jobs:
           s="$RUNNER_TEMP/verify/status"
           failure=""
           if ! grep -qxE "build=yes" "$s" 2> /dev/null; then failure="the build failed"
-          elif grep -qx "tests=failed" "$s" && grep -qx "maestro=failed" "$s"; then failure="the tests and the Maestro flow failed"
           elif grep -qx "tests=failed" "$s"; then failure="the tests failed"
-          elif grep -qx "maestro=failed" "$s"; then failure="the Maestro flow failed"
           fi
           { echo "ok=$([[ -z $failure ]] && echo true || echo false)"; echo "failure=$failure"; } | tee -a "$GITHUB_OUTPUT"
 

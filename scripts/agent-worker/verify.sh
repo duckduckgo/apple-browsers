@@ -4,7 +4,8 @@
 # puts into verify.md
 #
 # Usage: verify.sh <repo dir> <plan dir> <out dir>
-# Writes build=, tests= and maestro= lines to <out dir>/status, which decide between approval and a retry
+# Writes build=, tests= and maestro= lines to <out dir>/status. build= and tests= decide between approval
+# and a retry, and maestro= is evidence only
 # Env: DEST (iOS Simulator destination), IOS_VERSION (its iOS version), PACKAGES (cloned source packages dir),
 # VERIFY_URL (where out dir is uploaded, for links)
 # Output to the log is status words only, since this repo's logs are public
@@ -110,10 +111,9 @@ else
   exit 0
 fi
 
-# TEMP: a launch recording when there's no flow, to test the recording path
 if [[ ! -s "$plan/flow.yaml" ]]; then
-  printf 'appId: com.duckduckgo.mobile.ios\n---\n- launchApp:\n    arguments:\n      isOnboardingCompleted: "true"\n      isRunningUITests: "true"\n- startRecording: launch\n- waitForAnimationToEnd\n- takeScreenshot: home\n- stopRecording\n' > "$plan/flow.yaml"
-  echo -e "\nThere's no flow for this change, so this is a plain launch recording." >> "$md"
+  echo -e "\nThere's no Maestro flow for this change." >> "$md"
+  exit 0
 fi
 if ! command -v maestro > /dev/null; then
   echo -e "\nMaestro isn't installed, so the flow didn't run." >> "$md"

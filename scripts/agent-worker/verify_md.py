@@ -76,6 +76,9 @@ def main():
     md += ["## Summary", "", (r.get("result") or "").strip() or "The agent left no summary.", ""]
 
     md += ["## Proposed pull request", ""]
+    if run:
+        md += [f"[Approve for PR creation]({run}): click **Review deployments**, tick **agent-publish** and click "
+               "**Approve and deploy**.", ""]
     if title:
         md += [f"**Title:** {title}", "", "**Description:**", "", body or "(no description)", ""]
     else:

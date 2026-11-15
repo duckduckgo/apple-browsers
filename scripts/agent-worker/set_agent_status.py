@@ -4,7 +4,7 @@
 Every status change comes with a comment saying what happened and what a person should do next.
 STAGE=approval: Waiting for approval, with the evidence links and what to click to approve.
 Otherwise, when the run ends:
-- PR open with the draft PR link
+- PR open with the PR link
 - When the agent or verify failed and retries are left: back to Ready for the planner to pick up again,
   with Agent retries one higher and this run in Agent last run, so the retry reuses the plan and starts
   from this run's patch and results
@@ -80,9 +80,8 @@ def outcome(e):
     """The end status, its comment and any retry fields to set"""
     run = a(e["RUN_URL"], "worker run")
     if e["PUBLISH"] == "success" and re.fullmatch(r"https://github\.com/[^\s]+/pull/[0-9]+", e.get("PR_URL", "")):
-        return "pr_open", (f"{REVIEW}<strong>The agent opened a draft PR:</strong> {a(e['PR_URL'], e['PR_URL'])}\n"
+        return "pr_open", (f"{REVIEW}<strong>The agent opened a PR ready for review:</strong> {a(e['PR_URL'], e['PR_URL'])}\n"
                            "<ol><li>Review the PR. The worker's build and test results are in the evidence linked above.</li>"
-                           "<li>Finish the change and mark the PR <strong>Ready for review</strong>.</li>"
                            "<li>When it merges, set Agent Status to <strong>Done</strong>.</li></ol></body>"), {}
     clear = {e["LAST_RUN_FIELD"]: ""} if e.get("LAST_RUN_FIELD") else {}
     if e.get("CANCELLED") == "true":

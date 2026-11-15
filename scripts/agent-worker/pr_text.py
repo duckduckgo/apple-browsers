@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The draft PR's title and description, written by the agent and checked before anyone can publish them.
+"""The PR's title and description, written by the agent and checked before anyone can publish them.
 
 Usage:
   pr_text.py extract <repo dir> <evidence dir>   Move the agent's .agent-pr.md out of the checkout into
@@ -59,12 +59,12 @@ def render(pr_md, out):
         with open(pr_md, errors="replace") as f:
             title, body = clean(f.read())
     title = title or f"Agent worker run {e['RUN_ID']}"
-    description = "\n".join(body).strip() or "Draft change from the agent worker, for a person to review and finish."
+    description = "\n".join(body).strip() or "Change from the agent worker, for a person to review."
     with open(os.path.join(out, "title.txt"), "w") as f:
         f.write(title)
     with open(os.path.join(out, "body.md"), "w") as f:
         f.write(f"Task/Issue URL: https://app.asana.com/0/0/{e['TASK_GID']}/f\n\n### Description\n{description}\n\n"
-                f"Opened by the agent worker as a draft for a person to review and finish. Run: {e['RUN_URL']}\n")
+                f"Opened by the agent worker after a person approved it. Run: {e['RUN_URL']}\n")
 
 
 def main():

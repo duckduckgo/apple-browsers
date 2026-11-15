@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write verify.md, the one page an approver reads before a draft PR is opened.
+"""Write verify.md, the one page an approver reads before a PR is opened.
 
 Usage: verify_md.py <plan dir> <out dir>
 Env: EVIDENCE_URL (this run's evidence), RETRY (0 for a new plan), PREV_URL (the retried run's
@@ -39,7 +39,7 @@ def main():
     md = [f"# {title or 'Agent change'}", ""]
     task = f"[Asana task](https://app.asana.com/0/0/{e['TASK_GID']}/f)" if e.get("TASK_GID") else "the task"
     md += [f"The agent's proposed fix for {task}, built and tested on a clean runner. Approving the publish step "
-           f"in the [worker run]({run}) opens it as a draft PR with the title and description below.", ""]
+           f"in the [worker run]({run}) opens it as a PR with the title and description below.", ""]
     status = dict(l.split("=", 1) for l in read(os.path.join(out, "status")).split() if "=" in l)
     words = {"yes": "passed", "no": "failed"}
     parts = [f"build {words.get(status.get('build'), "didn't run")}"]

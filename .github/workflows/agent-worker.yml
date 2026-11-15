@@ -1,6 +1,6 @@
 name: Agent worker
 
-# Agent worker: applies a plan from the apple-agent-orchestrator and opens a draft PR after a person approves
+# Agent worker: applies a plan from the apple-agent-orchestrator and opens a PR ready for review after a person approves
 
 on:
   workflow_dispatch:
@@ -472,13 +472,13 @@ jobs:
           git push -q -u origin "$BRANCH"
 
       # In the repo's PR template shape: the Asana link, the agent's description and the run link
-      - name: Open draft PR
+      - name: Open PR
         id: pr
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
         run: |
           set -euo pipefail
-          gh pr create --draft --base "$DEFAULT_BRANCH" --head "$BRANCH" \
+          gh pr create --base "$DEFAULT_BRANCH" --head "$BRANCH" \
             --title "$(cat "$RUNNER_TEMP/title.txt")" --body-file "$RUNNER_TEMP/body.md" \
             > "$RUNNER_TEMP/pr-url"
           echo "url=$(tail -n 1 "$RUNNER_TEMP/pr-url")" >> "$GITHUB_OUTPUT"

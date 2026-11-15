@@ -244,6 +244,7 @@ class SwipeTabsCoordinator: NSObject {
     private let allowsSubscriptionUpsellProvider: () -> Bool
     private let hasInlineSearchInput: (Tab?) -> Bool
     private let usesMinimalChromeForWebPages: () -> Bool
+    private let isApplicationActive: () -> Bool
     private let pixelFiring: PixelFiring?
 
     let selectTab: (Tab) -> Void
@@ -289,6 +290,7 @@ class SwipeTabsCoordinator: NSObject {
          allowsSubscriptionUpsellProvider: @escaping () -> Bool,
          hasInlineSearchInput: @escaping (Tab?) -> Bool = { _ in false },
          usesMinimalChromeForWebPages: @escaping () -> Bool = { false },
+         isApplicationActive: @escaping () -> Bool = { UIApplication.shared.applicationState == .active },
          pixelFiring: PixelFiring? = PixelKit.shared,
          selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
@@ -306,6 +308,7 @@ class SwipeTabsCoordinator: NSObject {
         self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.hasInlineSearchInput = hasInlineSearchInput
         self.usesMinimalChromeForWebPages = usesMinimalChromeForWebPages
+        self.isApplicationActive = isApplicationActive
         self.pixelFiring = pixelFiring
         self.selectTab = selectTab
         self.newTab = newTab
@@ -588,10 +591,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// Captures the screen as `tab`'s swipe-back snapshot; call while `tab` is still the one on screen.
     func updateFullScreenSnapshot(forTab tab: Tab) {
         guard !floatingUIManager.isFloatingUIEnabled else { return }
-        // Tab-switcher entry can dismiss editing synchronously in the same run loop.
-        // Capture the restored layout rather than the last rendered focused frame.
-        coordinator.superview.layoutIfNeeded()
-        guard let snapshot = makeFullScreenSnapshot(afterScreenUpdates: true) else { return }
+        // Keep the previous snapshot when the screen can't be captured safely right now.
+        guard let snapshot = makeFullScreenSnapshot() else { return }
         tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
     }
 
@@ -600,9 +601,16 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
     /// snapshot. The alpha flip happens entirely within a single synchronous block, so UIKit
     /// only paints once — no visible flash.
-    private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
+    ///
+    /// Returns nil when the view is off-window, empty, or the app isn't active: during launch,
+    /// foregrounding or a dismissing context menu the render server may have purged the
+    /// layers' backing surfaces, and reading them crashes. Uses the last committed frame
+    /// (`afterScreenUpdates: false`) so no layout or commit is forced mid-transition.
+    private func makeFullScreenSnapshot() -> UIImage? {
         let superview = coordinator.superview
-        guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
+        guard superview.window != nil,
+              superview.bounds.width > 0, superview.bounds.height > 0,
+              isApplicationActive() else { return nil }
 
         let priorAlpha = swipeOverlayView?.alpha ?? 0
         swipeOverlayView?.alpha = 0
@@ -610,7 +618,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
         return renderer.image { _ in
-            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
+            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: false)
         }
     }
 

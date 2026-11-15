@@ -3548,3 +3548,102 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         return (sut, collection)
     }
 }
+
+@MainActor
+final class SwipeTabsFullScreenSnapshotTests: XCTestCase {
+
+    // The coordinator holds these weakly.
+    private var mainViewCoordinator: MainViewCoordinator!
+    private var tabPreviewsSource: MockTabPreviewsSource!
+    private var window: UIWindow?
+
+    override func tearDown() {
+        window?.isHidden = true
+        window = nil
+        mainViewCoordinator = nil
+        tabPreviewsSource = nil
+        super.tearDown()
+    }
+
+    func testWhenViewHasNoWindowThenNoSnapshotIsStored() {
+        let sut = makeSUT(inWindow: false, isApplicationActive: true)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(tabPreviewsSource.updatedFullScreenSnapshotTabs.isEmpty)
+    }
+
+    func testWhenApplicationIsNotActiveThenNoSnapshotIsStored() {
+        let sut = makeSUT(inWindow: true, isApplicationActive: false)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(tabPreviewsSource.updatedFullScreenSnapshotTabs.isEmpty)
+    }
+
+    func testWhenViewHasEmptyBoundsThenNoSnapshotIsStored() {
+        let sut = makeSUT(inWindow: true, isApplicationActive: true)
+        mainViewCoordinator.superview.frame = .zero
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(tabPreviewsSource.updatedFullScreenSnapshotTabs.isEmpty)
+    }
+
+    func testWhenViewIsInWindowAndApplicationIsActiveThenSnapshotIsStored() {
+        let sut = makeSUT(inWindow: true, isApplicationActive: true)
+        let tab = makeTab()
+
+        sut.updateFullScreenSnapshot(forTab: tab)
+
+        XCTAssertEqual(tabPreviewsSource.updatedFullScreenSnapshotTabs.count, 1)
+        XCTAssertTrue(tabPreviewsSource.updatedFullScreenSnapshotTabs.first === tab)
+    }
+
+    private func makeTab() -> Tab {
+        Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))
+    }
+
+    private func makeSUT(inWindow: Bool, isApplicationActive: Bool) -> SwipeTabsCoordinator {
+        let parentController = UIViewController()
+        parentController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        if inWindow {
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+            window.rootViewController = parentController
+            window.isHidden = false
+            self.window = window
+        }
+        let coordinator = MainViewCoordinator(parentController: parentController)
+        mainViewCoordinator = coordinator
+        coordinator.navigationBarCollectionView = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        let previewsSource = MockTabPreviewsSource()
+        tabPreviewsSource = previewsSource
+        return SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: previewsSource,
+            appSettings: AppSettingsMock(),
+            omnibarDependencies: MockOmnibarDependency(featureFlagger: MockFeatureFlagger()),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: false,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
+            ),
+            liveTabControllerProvider: { _ in nil },
+            inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            isApplicationActive: { isApplicationActive },
+            pixelFiring: nil,
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+    }
+}

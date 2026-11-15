@@ -136,17 +136,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     let applicationUpdateDetector: ApplicationUpdateDetector
-    var cpmAppSessionDiagnostics: CPMAppSessionDiagnostics {
-        let versionChange: CPMAppSessionDiagnostics.VersionChange?
-        switch applicationUpdateDetector.isApplicationUpdated() {
-        case .updated: versionChange = .updated
-        case .downgraded: versionChange = .downgraded
-        case .noChange: versionChange = nil
-        }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
-            NSApp.isActive ? .active : .inactive
-        }
-    }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -315,6 +304,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
+    private(set) lazy var localModelAccessPrompt = LocalModelAccessPrompt(themeManager: themeManager)
+
+    @MainActor
     private(set) lazy var aiChatScreenshotCaptureService = AIChatScreenshotCaptureService()
 
     @MainActor
@@ -366,6 +358,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatSessionStore: AIChatSessionStoring
 
     let aiChatBrowserToolsService: AIChatBrowserToolsService
+    let localModelService: AIChatLocalModelService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -424,6 +417,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnService: UserChurnService
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
+    let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
@@ -1018,7 +1012,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     isInternalUserEnabled: isInternalUserEnabled,
                                                                     wideEvent: wideEvent,
                                                                     isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
-                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+                                                                    authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation,
+                                                                    isStripeProductsByPlanCountryEnabled: {
+            featureFlagger.isFeatureOn(.stripeProductsByPlanCountry)
+                                                                    })
 
         // Expired refresh token recovery
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
@@ -1067,6 +1064,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
                                                               windowControllersManager: windowControllersManager,
                                                               historyCoordinator: historyCoordinator)
+        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -1078,7 +1076,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             aiChatMenuConfiguration: aiChatMenuConfiguration,
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
-            promptBarPreferences: promptBarPreferences
+            promptBarPreferences: promptBarPreferences,
+            localModelService: localModelService
         )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
@@ -1468,6 +1467,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         userChurnScheduler = UserChurnBackgroundActivityScheduler(userChurnService: userChurnService)
 
+        defaultBrowserWinBackConfirmationMonitor = DefaultBrowserConfirmationMonitor(
+            source: .winBack,
+            store: DefaultBrowserConfirmationStore(source: .winBack, keyValueStore: keyValueStore),
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dateProvider: DebugSimulatedDateStore.makeDateProvider(keyValueStore: keyValueStore)
+        )
+        defaultBrowserWinBackConfirmationMonitor.resume()
+
         bitwardenManager = BWManagerProvider.makeManager()
         passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: bitwardenManager)
 
@@ -1716,6 +1723,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             userChurnService: userChurnService,
+            defaultBrowserWinBackConfirmationMonitor: defaultBrowserWinBackConfirmationMonitor,
             sessionRestoreCoordinator: sessionRestorePromptCoordinator,
             subscriptionPromoDelegate: subscriptionPromoDelegate,
             featureFlagger: featureFlagger,

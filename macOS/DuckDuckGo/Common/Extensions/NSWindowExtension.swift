@@ -20,6 +20,12 @@ import Cocoa
 
 extension NSWindow {
 
+    /// Includes or excludes the window and its content from the accessibility tree.
+    func setAccessibilityExposed(_ isExposed: Bool) {
+        setAccessibilityEnabled(isExposed)
+        setAccessibilityElement(isExposed)
+    }
+
     var titlebarView: NSView? {
         standardWindowButton(.closeButton)?.superview
     }

@@ -1591,7 +1591,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             toggleModeStorage: mockToggleModeStorage,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFloatingUIEnabled ? [.floatingUIiOS26, .floatingUIiOS27] : []),
-            scheduleOmnibarFocus: schedule)
+            scheduleInputFocus: schedule)
         coordinator.modelStore.models = [model]
         coordinator.intentPublisher.sink { [weak coordinator] intent in
             if case .showOmnibarEditing = intent {
@@ -1715,7 +1715,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             switchBarSubmissionMetrics: mockSubmissionMetrics,
             featureDiscovery: mockFeatureDiscovery,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
-            scheduleOmnibarFocus: { $0() }
+            scheduleInputFocus: { $0() }
         )
         coordinator.delegate = mockDelegate
         return coordinator

@@ -100,6 +100,12 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
                 .targetting(self)
 
+            NSMenuItem(title: "Reset Local Summaries Opt-In", action: #selector(resetLocalSummaries))
+                .targetting(self)
+
+            NSMenuItem(title: "Show Local Model Access Pop-Up", action: #selector(showLocalModelAccessPrompt))
+                .targetting(self)
+
             NSMenuItem.separator()
 
             storageServerMenuItem
@@ -160,6 +166,25 @@ final class AIChatDebugMenu: NSMenu {
 
     @objc private func resetLauncherPromo() {
         DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
+    }
+
+    @MainActor
+    @objc private func resetLocalSummaries() {
+        NSApp.delegateTyped.localModelService.optOut()
+    }
+
+    /// Runs `requestAIChatLocalModelAccess` the way Duck.ai would, until Duck.ai sends it.
+    @MainActor
+    @objc private func showLocalModelAccessPrompt() {
+        let service = NSApp.delegateTyped.localModelService
+        let prompt = NSApp.delegateTyped.localModelAccessPrompt
+        let webView = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController?
+            .mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.webView
+        Task { @MainActor in
+            _ = try? await service.requestAccess {
+                await prompt.ask(from: webView, modelName: service.model.name)
+            }
+        }
     }
 
     // MARK: - Terms of Service

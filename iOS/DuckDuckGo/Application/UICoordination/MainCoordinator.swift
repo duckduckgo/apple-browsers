@@ -444,7 +444,6 @@ final class MainCoordinator {
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             mainViewController: controller,
-            appSession: AppDependencyProvider.shared.appSessionInfo,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
@@ -797,10 +796,10 @@ extension MainCoordinator: URLHandling {
         case .newSearch:
             handleNewSearchDeepLink()
         case .favorites:
-            controller.newTab(reuseExisting: true, allowingKeyboard: false)
+            controller.newTab(reuseExisting: true, allowingKeyboard: false, entrance: .fromOutsideTheApp)
         case .quickLink:
             let query = AppDeepLinkSchemes.query(fromQuickLink: url)
-            controller.loadQueryInNewTab(query, reuseExisting: .any)
+            controller.loadQueryInNewTab(query, reuseExisting: .any, entrance: .fromOutsideTheApp)
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
@@ -845,7 +844,7 @@ extension MainCoordinator: URLHandling {
             return
         }
         controller.clearNavigationStack()
-        controller.newTab(reuseExisting: true)
+        controller.newTab(reuseExisting: true, entrance: .fromOutsideTheApp)
         controller.enterSearch()
     }
 
@@ -906,7 +905,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query, fromExternalLink: true)
+        controller.loadQueryInNewTab(query, fromExternalLink: true, entrance: .fromOutsideTheApp)
     }
 
     private func handleSearchPassword() {
@@ -990,7 +989,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true, entrance: .fromOutsideTheApp)
             completion(.openedNewTab)
         }
     }

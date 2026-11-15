@@ -77,7 +77,8 @@ jobs:
       group: macos-appstore-build-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: [image:osx-27-edge, m4pro]
+    # Keep on macOS 26: packages built on macOS 27 are non-relocatable, so App Store updates overwrite /Applications/DuckDuckGo.app.
+    runs-on: [image:osx-tahoe-27, m4pro]
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}

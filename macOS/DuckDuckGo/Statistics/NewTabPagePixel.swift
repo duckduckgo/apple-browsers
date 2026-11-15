@@ -152,7 +152,8 @@ enum NewTabPagePixel: PixelKit.Event {
 
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case searchSubmitted
-    case promptSubmitted
+    /// `hasPastedText`: the prompt carried pasted-text chips (`has_pasted_text`, as on iOS).
+    case promptSubmitted(hasPastedText: Bool)
     case omnibarModeChanged(mode: OmnibarMode)
     case omnibarHidden
     case omnibarShown
@@ -231,6 +232,10 @@ enum NewTabPagePixel: PixelKit.Event {
             return [
                 "mode": mode.rawValue
             ]
+        case .promptSubmitted(let hasPastedText):
+            return [
+                "has_pasted_text": String(hasPastedText)
+            ]
         case .newTabPageLoadingTime(let duration):
             // "loadingTime" is reported in **milliseconds**
             return [
@@ -260,7 +265,6 @@ enum NewTabPagePixel: PixelKit.Event {
                 .privacyStatsDatabaseError,
                 .newTabPageExceptionReported,
                 .searchSubmitted,
-                .promptSubmitted,
                 .omnibarHidden,
                 .omnibarShown,
                 .aiChatRecentChatSelectedPinnedMouse,

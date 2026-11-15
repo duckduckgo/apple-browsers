@@ -362,6 +362,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
                                           downloadHandler: StubDownloadHandler(), getPageContext: nil,
                                           pixelHandler: StubContextualModePixelHandler(),
                                           onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+                                          onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
                                           utiHostInstaller: { _ in utiHost })
     }
 
@@ -543,7 +544,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
             userAgentManager: stubUserAgent,
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
 
         sut.loadViewIfNeeded()
@@ -567,7 +569,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
 
         sut.loadViewIfNeeded()
@@ -591,7 +594,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         let restoreURL = URL(string: "https://duck.ai/chat?native-input=true")!
 
@@ -613,7 +617,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         let url = URL(string: "https://example.com/path")!
 

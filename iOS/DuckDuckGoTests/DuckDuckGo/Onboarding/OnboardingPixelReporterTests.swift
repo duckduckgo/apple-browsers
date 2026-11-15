@@ -1497,6 +1497,20 @@ final class OnboardingPixelReporterTests: XCTestCase {
         }
     }
 
+    func testWhenMeasureDownloadReasonSelectionWithVPNThenNothingFires() {
+        // GIVEN
+        sharedPixelsStorageMock.onboardingDownloadReasonVariant = nil
+        MockExperimentPixelFiring.reset()
+
+        // WHEN
+        sut.measureDownloadReasonSelection(.vpn)
+
+        // THEN
+        XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
+        XCTAssertNil(sharedPixelsStorageMock.onboardingDownloadReasonVariant)
+        XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.isEmpty)
+    }
+
     func testWhenMeasureAIModelSelectionThenAIModelClickedFires() {
         // WHEN
         sut.measureAIModelSelection(model: "claude")

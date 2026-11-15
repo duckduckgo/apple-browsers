@@ -173,6 +173,7 @@ final class AIChatContextualWebViewController: UIViewController {
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -197,6 +198,7 @@ final class AIChatContextualWebViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
             onboardingActivationRecorder: onboardingActivationRecorder,
+            onboardingExperimentMetricStore: onboardingExperimentMetricStore,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
             debugSettings: debugSettings,
             getPageContext: getPageContext

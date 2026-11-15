@@ -21,6 +21,11 @@
     const rejectPromise = Promise.reject.bind(Promise);
     const callThen = Function.prototype.call.bind(Promise.prototype.then);
     const NativeDOMException = DOMException;
+    const NativePromise = Promise;
+    const permissions = navigator.permissions;
+    const queryPermission = permissions?.query?.bind(permissions);
+    const permissionState = globalThis.PermissionStatus &&
+        apply(getOwnPropertyDescriptor, Object, [PermissionStatus.prototype, "state"])?.get;
     const mediaDevices = navigator.mediaDevices;
     const prototype = mediaDevices && apply(getPrototypeOf, Object, [mediaDevices]);
     const descriptor = prototype && apply(getOwnPropertyDescriptor, Object, [prototype, "getUserMedia"]);
@@ -46,6 +51,9 @@
     const hasNonOpaqueOrigin = origin !== "null" && origin.length > 0;
     const isSyntheticDocument = locationProtocol === "about:";
     const isTopLevel = globalThis.top === globalThis;
+    // Swift checks that the request still belongs to the committed top-level page.
+    const ancestorOrigins = globalThis.location.ancestorOrigins;
+    const topOrigin = isTopLevel ? origin : ancestorOrigins?.[ancestorOrigins.length - 1] ?? "null";
     const isSameOriginAsTopLevel = (() => {
         if (isTopLevel) {
             return true;
@@ -180,6 +188,25 @@
         }
     };
     apply(defineProperty, Object, [globalThis, inheritedPolicyProperty, { value: policyAllows }]);
+    // A cross-origin frame can't read its iframe's allow attribute, but WebKit's Permissions API
+    // reports "denied" for a feature the embedding pages didn't delegate to it. Resolve only a
+    // promise made with the saved constructor: the page can change how derived promises are built.
+    const delegationAllows = (features) => new NativePromise(resolve => {
+        const check = (index) => {
+            if (index === features.length) {
+                resolve(true);
+                return;
+            }
+            try {
+                callThen(queryPermission({ name: features[index] }),
+                    status => apply(permissionState, status, []) === "denied" ? resolve(false) : check(index + 1),
+                    () => resolve(false));
+            } catch (_) {
+                resolve(false);
+            }
+        };
+        check(0);
+    });
     let nextRequestID = 0;
 
     const permissionDenied = () => new NativeDOMException("Permission denied", "NotAllowedError");
@@ -206,22 +233,22 @@
             return apply(nativeGetUserMedia, this, [capturedConstraints]);
         }
 
+        const isCrossOrigin = !isSameOriginAsTopLevel;
         // Send ineligible requests too: Swift checks rollback before denying custom-flow requests.
         const isEligibleContext = this === mediaDevices && hasNonOpaqueOrigin && (isDuckAIHost || (isSecureContext &&
             !isSyntheticDocument &&
-            (!video || policyAllows("camera")) &&
-            (!audio || policyAllows("microphone"))));
+            (isCrossOrigin || ((!video || policyAllows("camera")) &&
+                (!audio || policyAllows("microphone"))))));
 
         nextRequestID += 1;
+        const requestID = `${nonce}:${nextRequestID}`;
+        const post = isEligible => postMessage({ capability, requestID, isEligible, topOrigin, video, audio });
         let bridgePromise;
         try {
-            bridgePromise = postMessage({
-                capability,
-                requestID: `${nonce}:${nextRequestID}`,
-                isEligible: isEligibleContext,
-                video,
-                audio
-            });
+            bridgePromise = !isEligibleContext || !isCrossOrigin || isDuckAIHost
+                ? post(isEligibleContext)
+                : callThen(delegationAllows(video && audio ? ["camera", "microphone"] : [video ? "camera" : "microphone"]),
+                    post);
         } catch (_) {
             return rejectPromise(permissionDenied());
         }

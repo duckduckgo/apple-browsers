@@ -67,6 +67,7 @@ extension OnboardingIntroViewState.Intro {
         case toggleInputModeDialog(content: OnboardingAddressBarToggleModeContent)
         case keepDuckAIDialog(content: OnboardingDuckAIEnabledPersonalizationContent)
         case adBlockingDialog(content: OnboardingPersonalizationContent)
+        case tryVPNDialog(content: OnboardingTryVPNContent)
     }
 
     struct StepInfo: Equatable {

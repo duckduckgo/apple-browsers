@@ -917,8 +917,11 @@ class MainViewCoordinator {
         contentContainer.layer.removeAllAnimations()
         navigationBarContainer.layer.removeAllAnimations()
         statusBackground.layer.removeAllAnimations()
-        superview.layer.removeAllAnimations()
+        // The superview also carries the new-tab transition (transform, corners, fade), so only its layout stops.
+        Self.layoutAnimationKeys.forEach(superview.layer.removeAnimation(forKey:))
     }
+
+    private static let layoutAnimationKeys = ["position", "bounds.origin", "bounds.size"]
 
     func hideAITabChrome() {
         cancelInFlightLayoutAnimations()

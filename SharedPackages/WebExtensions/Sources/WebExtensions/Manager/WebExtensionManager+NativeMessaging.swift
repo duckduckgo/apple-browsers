@@ -81,11 +81,6 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
             }
         }
 #endif
-        if context.webExtension.duckDuckGoWebExtensionType == .embedded {
-            MainActor.assumeIsolated {
-                cpmDiagnosticsRecorder?.contextWillLoad(context)
-            }
-        }
     }
 }
 

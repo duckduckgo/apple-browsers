@@ -162,7 +162,7 @@ final class TabManagerTests: XCTestCase {
         mock.onRemovePreviewsWithIdNotIn = nil
 
         // This is just to keep a reference to the manager to supress the unused warning and keep it from being deinit
-        manager.removeAll()
+        _ = manager.removeAll()
     }
 
     // MARK: - Tab History Cleanup Tests
@@ -196,7 +196,7 @@ final class TabManagerTests: XCTestCase {
         mockHistoryManager.removeTabHistoryExpectation = expectation(description: "removeTabHistory called")
         let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
         
-        manager.removeAll()
+        _ = manager.removeAll()
         
         await fulfillment(of: [mockHistoryManager.removeTabHistoryExpectation!], timeout: 5.0)
         
@@ -263,7 +263,7 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.currentTabsModel.count, 2)
 
-        manager.removeAll()
+        _ = manager.removeAll()
 
         XCTAssertEqual(manager.currentTabsModel.count, 0)
         XCTAssertNil(manager.currentTabsModel.currentTab)
@@ -349,7 +349,7 @@ final class TabManagerTests: XCTestCase {
 
         let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
 
-        manager.removeAll(browsingMode: .fire)
+        _ = manager.removeAll(browsingMode: .fire)
 
         // Previews preserved
         XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
@@ -371,7 +371,7 @@ final class TabManagerTests: XCTestCase {
 
         let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
 
-        manager.removeAll(browsingMode: nil)
+        _ = manager.removeAll(browsingMode: nil)
 
         // Previews removed
         XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
@@ -680,6 +680,28 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(manager.controller(for: firstRecipient.tabModel) === firstRecipient)
         XCTAssertTrue(manager.controller(for: secondRecipient.tabModel) === secondRecipient)
         XCTAssertNil(manager.controller(for: laterTab.tabModel))
+    }
+
+    func testWhenPageOpenedTabWaitsInTheBackgroundThenLRUCapacityDoesNotEvictIt() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let popup = manager.addURLRequest(nil, with: WKWebViewConfiguration(), inheritedAttribution: nil, inBackground: true)
+
+        let laterTab = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertTrue(manager.controller(for: popup.tabModel) === popup)
+        XCTAssertNil(manager.controller(for: laterTab.tabModel))
+    }
+
+    func testWhenPageOpenedTabHasBeenSelectedThenLRUCapacityCanEvictIt() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let currentTab = try XCTUnwrap(manager.current()?.tabModel)
+        let popup = manager.addURLRequest(nil, with: WKWebViewConfiguration(), inheritedAttribution: nil, inBackground: true)
+        _ = manager.select(popup.tabModel)
+        _ = manager.select(currentTab)
+
+        _ = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertNil(manager.controller(for: popup.tabModel))
     }
 
     func testWhenInitialAIChatPromptIsConsumedThenLRUCapacityEvictsItsTab() throws {

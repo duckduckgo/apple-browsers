@@ -26,96 +26,288 @@ import XCTest
 @MainActor
 final class SuggestionLoaderDebounceTests: XCTestCase {
 
-    func testSearchRejectsPreviousQueryDuringDebounce() async throws {
-        for enabled in [false, true] {
-            try await assertPreviousQueryIsRejected(duckAI: false, enabled: enabled, returnToOriginal: false)
+    func testEnabledLocalSuggestionsPublishBeforeRemoteRequestInBothLoaders() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: true)
+            defer { harness.tearDown() }
+            let localResult = expectation(description: "Local suggestions publish without waiting for ac")
+            let subscription = harness.results.dropFirst().filter { $0 > 0 }.prefix(1).sink { _ in localResult.fulfill() }
+            harness.text.send("weather")
+            await fulfillment(of: [localResult], timeout: 2)
+            subscription.cancel()
+            XCTAssertEqual(harness.dataSource.localLoads, 1)
+            XCTAssertTrue(harness.dataSource.queries.isEmpty)
+            XCTAssertNil(harness.lastCompletedQuery())
+
+            await harness.scheduler.advance(by: .milliseconds(149))
+            XCTAssertTrue(harness.dataSource.queries.isEmpty)
+            await harness.scheduler.advance(by: .milliseconds(1))
+            XCTAssertEqual(harness.dataSource.queries, ["weather"])
+            let remoteResult = expectation(description: "Remote response publishes")
+            let remoteSubscription = harness.results.dropFirst().prefix(1).sink { _ in remoteResult.fulfill() }
+            harness.dataSource.completions[0](Data("[]".utf8), nil)
+            await fulfillment(of: [remoteResult], timeout: 2)
+            remoteSubscription.cancel()
+            XCTAssertEqual(harness.lastCompletedQuery(), "weather")
         }
     }
 
-    func testDuckAIRejectsPreviousQueryDuringDebounce() async throws {
-        for enabled in [false, true] {
-            try await assertPreviousQueryIsRejected(duckAI: true, enabled: enabled, returnToOriginal: false)
+    func testDisabledFlagKeeps100MillisecondCombinedFetchAndAcceptsResponseDuringDebounce() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: false)
+            defer { harness.tearDown() }
+            harness.text.send("weather")
+            await harness.scheduler.advance(by: .milliseconds(99))
+            XCTAssertEqual(harness.dataSource.localLoads, 0)
+            XCTAssertTrue(harness.dataSource.queries.isEmpty)
+            await harness.scheduler.advance(by: .milliseconds(1))
+            XCTAssertEqual(harness.dataSource.localLoads, 1)
+            XCTAssertEqual(harness.dataSource.queries, ["weather"])
+            harness.text.send("weather forecast")
+            let response = expectation(description: "Production accepts the last dispatched query during debounce")
+            let subscription = harness.results.dropFirst().prefix(1).sink { _ in response.fulfill() }
+            harness.dataSource.completions[0](Data("[]".utf8), nil)
+            await fulfillment(of: [response], timeout: 2)
+            subscription.cancel()
+            XCTAssertEqual(harness.lastCompletedQuery(), "weather")
+            await harness.scheduler.advance(by: .milliseconds(100))
+            XCTAssertEqual(harness.dataSource.queries, ["weather", "weather forecast"])
         }
     }
 
-    func testSearchFetchesAgainWhenTypingReturnsToOriginalQuery() async throws {
-        for enabled in [false, true] {
-            try await assertPreviousQueryIsRejected(duckAI: false, enabled: enabled, returnToOriginal: true)
+    func testEnabledFirstRemoteResponsePublishesWhileTypingIfLocalResultsAreEmpty() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: true)
+            defer { harness.tearDown() }
+            harness.dataSource.hasBookmarks = false
+            let localResult = expectation(description: "Empty local fetch completes")
+            let localSubscription = harness.results.dropFirst().prefix(1).sink { _ in localResult.fulfill() }
+            harness.text.send("weather")
+            await fulfillment(of: [localResult], timeout: 2)
+            localSubscription.cancel()
+            await harness.scheduler.advance(by: .milliseconds(150))
+            harness.text.send("weather forecast")
+            let remoteResult = expectation(description: "First remote response fills empty list during typing")
+            let subscription = harness.results.dropFirst().filter { $0 > 0 }.prefix(1).sink { _ in remoteResult.fulfill() }
+            harness.dataSource.completions[0](Data(#"[{"phrase":"https://weather.example/","isNav":true}]"#.utf8), nil)
+            await fulfillment(of: [remoteResult], timeout: 2)
+            subscription.cancel()
+            XCTAssertEqual(harness.lastCompletedQuery(), "weather")
         }
     }
 
-    func testDuckAIFetchesAgainWhenTypingReturnsToOriginalQuery() async throws {
-        for enabled in [false, true] {
-            try await assertPreviousQueryIsRejected(duckAI: true, enabled: enabled, returnToOriginal: true)
+    func testEnabledResponseIsRejectedWhileTypingWhenResultsAlreadyExist() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: true)
+            defer { harness.tearDown() }
+            let localResult = expectation(description: "Local suggestions fill the list")
+            let localSubscription = harness.results.dropFirst().filter { $0 > 0 }.prefix(1).sink { _ in localResult.fulfill() }
+            harness.text.send("weather")
+            await fulfillment(of: [localResult], timeout: 2)
+            localSubscription.cancel()
+            await harness.scheduler.advance(by: .milliseconds(150))
+            harness.text.send("weather forecast")
+            let staleResult = expectation(description: "Established list rejects outdated response during debounce")
+            staleResult.isInverted = true
+            let subscription = harness.results.dropFirst().sink { _ in staleResult.fulfill() }
+            harness.dataSource.completions[0](Data("[]".utf8), nil)
+            await fulfillment(of: [staleResult], timeout: 0.2)
+            subscription.cancel()
+            XCTAssertNil(harness.lastCompletedQuery())
         }
     }
 
-    private func assertPreviousQueryIsRejected(duckAI: Bool, enabled: Bool, returnToOriginal: Bool) async throws {
+    func testEnabledClearingQueryRejectsRemoteResponseAndRestartsLocalFetch() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: true)
+            defer { harness.tearDown() }
+            let localResult = expectation(description: "Local fetch completes")
+            let localSubscription = harness.results.dropFirst().prefix(1).sink { _ in localResult.fulfill() }
+            harness.text.send("weather")
+            await fulfillment(of: [localResult], timeout: 2)
+            localSubscription.cancel()
+            await harness.scheduler.advance(by: .milliseconds(150))
+            harness.text.send("")
+            XCTAssertEqual(harness.lastCompletedQuery(), "")
+            let staleResult = expectation(description: "Cleared results stay empty")
+            staleResult.isInverted = true
+            let subscription = harness.results.dropFirst().sink { _ in staleResult.fulfill() }
+            harness.dataSource.completions[0](Data("[]".utf8), nil)
+            await fulfillment(of: [staleResult], timeout: 0.2)
+            subscription.cancel()
+            let previousLocalLoads = harness.dataSource.localLoads
+            harness.text.send("forecast")
+            XCTAssertEqual(harness.dataSource.localLoads, previousLocalLoads + 1)
+            XCTAssertEqual(harness.dataSource.queries, ["weather"])
+        }
+    }
+
+    func testDisabledFlagDoesNotRefetchWhenTypingReturnsToLastDispatchedQuery() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: false)
+            defer { harness.tearDown() }
+            harness.text.send("weather")
+            await harness.scheduler.advance(by: .milliseconds(100))
+            harness.text.send("weather forecast")
+            await harness.scheduler.advance(by: .milliseconds(50))
+            harness.text.send("weather")
+            await harness.scheduler.advance(by: .milliseconds(100))
+            XCTAssertEqual(harness.dataSource.queries, ["weather"])
+        }
+    }
+
+    func testReturningToSameQueryRejectsResponseFromEarlierFetch() async {
+        let dataSource = DeferredSuggestionDataSource()
+        let loader = DuckAIURLSuggestionsLoader(dataSource: dataSource,
+                                                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]))
+        loader.fetch(query: "weather")
+        loader.fetch(query: "forecast")
+        loader.fetch(query: "weather")
+        let staleResult = expectation(description: "Earlier fetch for same query is rejected")
+        staleResult.isInverted = true
+        let subscription = loader.$topURLs.dropFirst().sink { _ in staleResult.fulfill() }
+        dataSource.completions[0](Data("[]".utf8), nil)
+        await fulfillment(of: [staleResult], timeout: 0.2)
+        subscription.cancel()
+        XCTAssertNil(loader.lastCompletedFetchQuery)
+
+        let currentResult = expectation(description: "Latest fetch for same query publishes")
+        let currentSubscription = loader.$topURLs.dropFirst().sink { _ in currentResult.fulfill() }
+        defer { currentSubscription.cancel() }
+        dataSource.completions[2](Data("[]".utf8), nil)
+        await fulfillment(of: [currentResult], timeout: 2)
+        XCTAssertEqual(loader.lastCompletedFetchQuery, "weather")
+        XCTAssertFalse(loader.topURLs.isEmpty)
+    }
+
+    func testRemoteSuggestionsStayUntilReplacementIncludingEmptyResponse() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: true)
+            defer { harness.tearDown() }
+            harness.dataSource.hasBookmarks = false
+            await expectUpdate(harness) { harness.fetch("weather", false) }
+            harness.fetch("weather", true)
+            await expectUpdate(harness) {
+                harness.dataSource.completions[0](Data(#"[{"phrase":"weather.example","isNav":true},{"phrase":"weather today"}]"#.utf8), nil)
+            }
+            let first = harness.suggestions()
+            XCTAssertFalse(first.isEmpty)
+
+            await expectUpdate(harness) { harness.fetch("weather forecast", false) }
+            XCTAssertEqual(harness.suggestions(), first)
+            harness.fetch("weather forecast", true)
+            XCTAssertEqual(harness.suggestions(), first)
+            await expectUpdate(harness) {
+                harness.dataSource.completions[1](Data(#"[{"phrase":"forecast.example","isNav":true}]"#.utf8), nil)
+            }
+            XCTAssertNotEqual(harness.suggestions(), first)
+            XCTAssertEqual(harness.suggestions().compactMap(\.url).first?.host, "forecast.example")
+
+            await expectUpdate(harness) { harness.fetch("forecast", false) }
+            harness.fetch("forecast", true)
+            await expectUpdate(harness) { harness.dataSource.completions[2](Data("[]".utf8), nil) }
+            XCTAssertTrue(harness.suggestions().isEmpty)
+            await expectUpdate(harness) { harness.fetch("forecast tomorrow", false) }
+            XCTAssertTrue(harness.suggestions().isEmpty)
+        }
+    }
+
+    func testRemoteCacheSurvivesErrorsAndClearsWithQueryAndSession() async {
+        for duckAI in [false, true] {
+            for clearSession in [false, true] {
+                let harness = Harness(duckAI: duckAI, enabled: true)
+                defer { harness.tearDown() }
+                harness.dataSource.hasBookmarks = false
+                harness.fetch("weather", true)
+                await expectUpdate(harness) {
+                    harness.dataSource.completions[0](Data(#"[{"phrase":"weather.example","isNav":true}]"#.utf8), nil)
+                }
+                let first = harness.suggestions()
+                harness.fetch("forecast", true)
+                await expectUpdate(harness) {
+                    harness.dataSource.completions[1](nil, URLError(.notConnectedToInternet))
+                }
+                XCTAssertEqual(harness.suggestions(), first)
+                if clearSession {
+                    harness.reset()
+                } else {
+                    harness.fetch("", true)
+                }
+                XCTAssertTrue(harness.suggestions().isEmpty)
+                await expectUpdate(harness) { harness.fetch("weather", false) }
+                XCTAssertTrue(harness.suggestions().isEmpty)
+            }
+        }
+    }
+
+    func testLocalMatchesRefreshWhileRemoteSuggestionsAreRetained() {
+        let remote = Suggestion.website(url: URL(string: "https://remote.example")!)
+        let oldLocal = Suggestion.historyEntry(title: "Old", url: URL(string: "https://old.example")!, score: 1)
+        let newLocal = Suggestion.historyEntry(title: "New", url: URL(string: "https://new.example")!, score: 1)
+        let previous = SuggestionResult(topHits: [oldLocal, remote], duckduckgoSuggestions: [.phrase(phrase: "weather")], localSuggestions: [])
+        let local = SuggestionResult(topHits: [newLocal], duckduckgoSuggestions: [], localSuggestions: [])
+        let merged = local.retainingRemoteSuggestions(from: previous)
+        XCTAssertEqual(merged.topHits, [newLocal, remote])
+        XCTAssertEqual(merged.duckduckgoSuggestions, [.phrase(phrase: "weather")])
+        XCTAssertFalse(merged.all.contains(oldLocal))
+    }
+
+    private func expectUpdate(_ harness: Harness, action: () -> Void) async {
+        let update = expectation(description: "Suggestions publish")
+        let subscription = harness.results.dropFirst().prefix(1).sink { _ in update.fulfill() }
+        action()
+        await fulfillment(of: [update], timeout: 2)
+        subscription.cancel()
+    }
+
+    @MainActor
+    private final class Harness {
         let scheduler = DispatchQueue.test
         let text = PassthroughSubject<String, Never>()
         let dataSource = DeferredSuggestionDataSource()
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
-        let delay = enabled ? 150 : 100
         let results: AnyPublisher<Int, Never>
         let lastCompletedQuery: () -> String?
         let tearDown: () -> Void
-        if duckAI {
-            let loader = DuckAIURLSuggestionsLoader(dataSource: dataSource, featureFlagger: featureFlagger)
-            loader.subscribeToTextChanges(text, scheduler: scheduler)
-            results = loader.$topURLs.map(\.count).eraseToAnyPublisher()
-            lastCompletedQuery = { loader.lastCompletedFetchQuery }
-            tearDown = { loader.tearDown() }
-        } else {
-            let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: false, featureFlagger: featureFlagger)
-            loader.subscribeToTextChanges(text, scheduler: scheduler)
-            results = loader.$result.map { $0.all.count }.eraseToAnyPublisher()
-            lastCompletedQuery = { loader.lastCompletedFetchQuery }
-            tearDown = { loader.tearDown() }
-        }
-        defer { tearDown() }
+        let fetch: (String, Bool) -> Void
+        let suggestions: () -> [Suggestion]
+        let reset: () -> Void
 
-        text.send("weather forecast")
-        await scheduler.advance(by: .milliseconds(delay))
-        XCTAssertEqual(dataSource.queries, ["weather forecast"])
-        let oldResponse = try XCTUnwrap(dataSource.completions.first)
-
-        text.send("weather forecastx")
-        let staleResult = expectation(description: "Previous query must not publish during debounce")
-        staleResult.isInverted = true
-        var subscription = results.dropFirst().sink { _ in staleResult.fulfill() }
-        oldResponse(Data("[]".utf8), nil)
-        await fulfillment(of: [staleResult], timeout: 0.2)
-        subscription.cancel()
-        XCTAssertNil(lastCompletedQuery())
-        XCTAssertEqual(dataSource.queries, ["weather forecast"])
-
-        if returnToOriginal {
-            text.send("weather forecast")
+        init(duckAI: Bool, enabled: Bool) {
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
+            if duckAI {
+                let loader = DuckAIURLSuggestionsLoader(dataSource: dataSource, featureFlagger: featureFlagger)
+                loader.subscribeToTextChanges(text, scheduler: scheduler)
+                results = loader.$topURLs.map(\.count).eraseToAnyPublisher()
+                lastCompletedQuery = { loader.lastCompletedFetchQuery }
+                tearDown = { loader.tearDown() }
+                fetch = { loader.fetch(query: $0, includeRemoteSuggestions: $1) }
+                suggestions = { loader.topURLs }
+                reset = { loader.tearDown() }
+            } else {
+                let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: false, featureFlagger: featureFlagger)
+                loader.subscribeToTextChanges(text, scheduler: scheduler)
+                results = loader.$result.map { $0.all.count }.eraseToAnyPublisher()
+                lastCompletedQuery = { loader.lastCompletedFetchQuery }
+                tearDown = { loader.tearDown() }
+                fetch = { loader.fetch(query: $0, includeRemoteSuggestions: $1) }
+                suggestions = { loader.result.all }
+                reset = { loader.reset() }
+            }
         }
-        await scheduler.advance(by: .milliseconds(delay))
-        let expectedQuery = returnToOriginal ? "weather forecast" : "weather forecastx"
-        XCTAssertEqual(dataSource.queries, ["weather forecast", expectedQuery])
-        let currentResponse = try XCTUnwrap(dataSource.completions.dropFirst().first)
-        let currentResult = expectation(description: "Current query publishes suggestions")
-        var count = 0
-        subscription = results.dropFirst().sink {
-            count = $0
-            currentResult.fulfill()
-        }
-        defer { subscription.cancel() }
-        currentResponse(Data("[]".utf8), nil)
-        await fulfillment(of: [currentResult], timeout: 2)
-        XCTAssertEqual(lastCompletedQuery(), expectedQuery)
-        XCTAssertGreaterThan(count, 0)
     }
 }
 
 private final class DeferredSuggestionDataSource: SuggestionLoadingDataSource {
     var queries = [String]()
     var completions = [(Data?, Error?) -> Void]()
+    var localLoads = 0
+    var hasBookmarks = true
     var platform: Platform { .mobile }
 
-    func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark] { [WeatherBookmark()] }
+    func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark] {
+        localLoads += 1
+        return hasBookmarks ? [WeatherBookmark()] : []
+    }
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] { [] }
     func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage] { [] }
     func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab] { [] }

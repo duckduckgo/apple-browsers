@@ -142,6 +142,13 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220385578839193?focus=true
+    case legacyFindInPageUIWithSystemFindEngine
+
+    /// Container transform when a new tab opens.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220324835587117
+    case newTabTransition
+
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
@@ -170,14 +177,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
     case alwaysShowKeyboardOnNewTabPage
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
-    case fastTrackingParameterFilter
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219783104084617?focus=true
     case singleTabBurnOptimization
 
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1219652686297425
     case deferredMemoryCacheDelete
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220432472832449
+    case searchSubmitPageCover
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch

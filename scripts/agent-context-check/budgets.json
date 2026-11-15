@@ -1,0 +1,29 @@
+{
+  "bytes_per_token": 2.5,
+  "budgets": {
+    "always-loaded-total": 2300,
+    "root": 650,
+    "nested": 600,
+    "skill-description": 120,
+    "skill-body": 5000,
+    "review": 4000
+  },
+  "overrides": {
+    ".claude/skills/ddg-apple-feedback-review/SKILL.md": 13560,
+    ".claude/skills/ddg-apple-feedback-review/SKILL.md#description": 140,
+    ".claude/skills/ddg-diagnose-ci-failure/SKILL.md": 7040,
+    ".claude/skills/ddg-diagnose-ci-failure/SKILL.md#description": 300,
+    ".claude/skills/ddg-drk-add-icon/SKILL.md#description": 320,
+    ".claude/skills/ddg-macos-add-promo/SKILL.md": 7070,
+    ".claude/skills/ddg-macos-add-promo/SKILL.md#description": 270,
+    ".claude/skills/ddg-sentry-report/SKILL.md": 16240,
+    ".claude/skills/ddg-sentry-report/SKILL.md#description": 220,
+    ".claude/skills/verify-ios/SKILL.md": 7360,
+    ".claude/skills/verify-ios/SKILL.md#description": 160,
+    "REVIEW-pixels.md": 6060
+  },
+  "ignored_references": [
+    "DuckDuckGo.xcworkspace/xcshareddata/swiftpm/Package.resolved",
+    "SizeN"
+  ]
+}

@@ -327,7 +327,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
 
     func testPendingProviderDoesNotKeepUserScriptAlive() async {
         var script: AIChatUserScript? = makeScript()
-        weak var weakScript = script
+        weak let weakScript = script
         let gate = ContextGate(started: expectation(description: "Provider started"))
         let unexpected = expectation(description: "Released script does not dispatch")
         unexpected.isInverted = true

@@ -230,6 +230,7 @@ extension TabViewController {
         return .regular(name: UserText.actionNewTab,
                         accessibilityLabel: UserText.keyCommandNewTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
+                        tag: .newTab,
                         action: { [weak self] in
             self?.onNewTabAction()
         })
@@ -239,6 +240,7 @@ extension TabViewController {
         return .regular(name: UserText.actionNewFireTab,
                         accessibilityLabel: UserText.actionNewFireTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
+                        tag: .newTab,
                         action: { [weak self] in
             self?.onNewFireTabAction()
         })
@@ -286,6 +288,7 @@ extension TabViewController {
         if state == .newTab {
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
                                                      image: DesignSystemImages.Glyphs.Size16.add,
+                                                     tag: .newTab,
                                                      action: { [weak self] in
                 self?.onNewTabAction()
             }))

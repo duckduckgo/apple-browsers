@@ -22,16 +22,6 @@ import Foundation
 import PixelKit
 import WebExtensions
 
-private struct CPMWebExtensionPixel: PixelKit.Event {
-    let metadata: CPMWebExtensionPixelMetadata
-
-    var name: String { metadata.name }
-
-    var parameters: [String: String]? { metadata.parameters }
-    var standardParameters: [PixelKitStandardParameter]? { nil }
-    var namePrefix: PixelKitNamePrefix { .none }
-}
-
 @available(iOS 18.4, *)
 private struct WebExtensionReloadErrorPixel: PixelKit.Event {
     let metadata: WebExtensionReloadErrorPixelMetadata
@@ -172,31 +162,16 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmBackgroundLoadRestart, .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
-            fireCPMPixel(event)
         case .enabled, .disabled, .remotelyDisabled:
             // Store pixels are macOS-only, but iOS debug-menu toggles still reach here, so drop rather than assert.
             break
-        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified:
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified, .updateApplied, .updateInstallFailed:
             // Chrome Web Store updates are only enabled on macOS.
             return
         case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps, .retained14Days, .churned14Days, .installedCount:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so
             // these are only sent there.
             assertionFailure("\(event) is only sent on macOS")
-        }
-    }
-
-    private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
-        guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-        pixelFiring?.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
-    }
-}
-
-private extension CPMWebExtensionPixelFrequency {
-    var pixelKitFrequency: PixelKit.Frequency {
-        switch self {
-        case .dailyAndCount: return .dailyAndCount
         }
     }
 }

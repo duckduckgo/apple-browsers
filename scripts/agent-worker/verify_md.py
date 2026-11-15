@@ -2,8 +2,7 @@
 """Write verify.md, the one page an approver reads before a PR is opened.
 
 Usage: verify_md.py <plan dir> <out dir>
-Env: EVIDENCE_URL (this run's evidence), RETRY (0 for a new plan), PREV_URL (the retried run's
-evidence), RUN_URL, TASK_GID
+Env: EVIDENCE_URL (this run's evidence), RUN_URL, TASK_GID
 
 Combines the agent's result.json, pr.md, changes.patch and plan-notes.txt from plan dir with the build,
 test and screen results that verify.sh wrote to results.md in out dir. Writes nothing to the log
@@ -28,33 +27,24 @@ def money(v):
 
 
 def cost_rows(plan, cost):
-    """Planner and earlier attempt rows when their stats exist, then a total of every cost shown"""
-    def load(name):
-        try:
-            return json.loads(read(os.path.join(plan, name)))
-        except ValueError:
-            return None
-    rows, costs = [], [cost]
-    p = load("plan-stats.json")
-    if isinstance(p, dict) and isinstance(p.get("total_cost_usd"), (int, float)):
-        mins = (p.get("duration_ms") or 0) / 60000
-        rows.append(f"| Planner | {money(p['total_cost_usd'])}, {p.get('num_turns', '-')} turns, {mins:.0f} min |")
-        costs.append(p["total_cost_usd"])
-    earlier = [a for a in load("attempts.json") or [] if isinstance(a, dict) and isinstance(a.get("cost"), (int, float))]
-    if earlier:
-        total = sum(a["cost"] for a in earlier)
-        runs = "1 run" if len(earlier) == 1 else f"{len(earlier)} runs"
-        rows.append(f"| Earlier attempts | {money(total)} over {runs} |")
-        costs.append(total)
-    if not rows or not all(isinstance(c, (int, float)) for c in costs):
-        return rows
-    return rows + [f"| **Total** | **{money(sum(costs))}** |"]
+    """A planner row when its stats exist, then the total of the planner and this run"""
+    try:
+        p = json.loads(read(os.path.join(plan, "plan-stats.json")))
+    except ValueError:
+        return []
+    if not isinstance(p, dict) or not isinstance(p.get("total_cost_usd"), (int, float)):
+        return []
+    mins = (p.get("duration_ms") or 0) / 60000
+    rows = [f"| Planner | {money(p['total_cost_usd'])}, {p.get('num_turns', '-')} turns, {mins:.0f} min |"]
+    if isinstance(cost, (int, float)):
+        rows.append(f"| **Total** | **{money(cost + p['total_cost_usd'])}** |")
+    return rows
 
 
 def main():
     plan, out = sys.argv[1:3]
     e = os.environ
-    ev, run, attempt = e.get("EVIDENCE_URL", "").rstrip("/"), e.get("RUN_URL", ""), int(e.get("RETRY", "0"))
+    ev, run = e.get("EVIDENCE_URL", "").rstrip("/"), e.get("RUN_URL", "")
     try:
         r = json.loads(read(os.path.join(plan, "result.json")))
     except ValueError:
@@ -104,13 +94,6 @@ def main():
 
     # Everything about the agent workflow goes in this last section, so the page above reads as the change
     md += ["## Agent run", ""]
-    if attempt:
-        prev = e.get("PREV_URL", "").rstrip("/")
-        md += [f"This is retry {attempt}. The agent started from the previous run's change and fixed what failed in "
-               f"[its results]({prev}/verify/verify.md).", ""]
-        fixed = read(os.path.join(plan, "retry.txt")).strip()
-        if fixed:
-            md += [f"What this retry fixed, in the agent's words: {fixed}", ""]
     notes = read(os.path.join(plan, "plan-notes.txt")).strip()
     if notes:
         md += [notes, ""]

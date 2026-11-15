@@ -17,21 +17,6 @@ on:
         description: "SHA-256 of the plan"
         required: true
         type: string
-      retry:
-        description: "0 for a new plan, or which retry this is"
-        required: false
-        type: string
-        default: "0"
-      prev_run:
-        description: "On a retry, the failed run (<run id>-<run attempt>) whose patch and results to start from"
-        required: false
-        type: string
-        default: ""
-      max_retries:
-        description: "How many retries a task gets before Needs attention (from the planner's config)"
-        required: false
-        type: string
-        default: "2"
 
 permissions: {}
 
@@ -44,20 +29,14 @@ env:
   ARTIFACTS_ACCOUNT: ddgartifactsuse
   ARTIFACTS_CONTAINER: auto
   # Inputs are checked in the agent job's first step before any of these paths are used. Storage is
-  # create-only, so each run gets its own prefix, and a retry reads the failed run's under the same handoff
+  # create-only, so each run gets its own prefix
   PLAN_BLOB: ${{ inputs.handoff }}/plan.md
   HANDOFF_PREFIX: ${{ inputs.handoff }}
   EVIDENCE_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ github.run_id }}-${{ github.run_attempt }}
-  PREV_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ inputs.prev_run }}
-  RETRY: ${{ inputs.retry }}
-  MAX_RETRIES: ${{ inputs.max_retries }}
   DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
   # Agent Status field and its option gids in the agent project
   STATUS_FIELD: "1220497931497848"
   STATUS_OPTIONS: '{"ready": "1220497931497849", "waiting_for_approval": "1220497931497851", "pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
-  # Agent retries (number) and Agent last run (text) fields. Retries are off until both are set
-  RETRIES_FIELD: "1220544557711344"
-  LAST_RUN_FIELD: "1220544557711346"
 
 jobs:
   agent:
@@ -82,19 +61,11 @@ jobs:
           TASK_GID: ${{ inputs.task_gid }}
           HANDOFF: ${{ inputs.handoff }}
           SHA256: ${{ inputs.sha256 }}
-          PREV_RUN: ${{ inputs.prev_run }}
         run: |
           set -euo pipefail
           [[ "$TASK_GID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::bad task_gid"; exit 1; }
           [[ "$HANDOFF" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]] || { echo "::error::bad handoff"; exit 1; }
           [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::bad sha256"; exit 1; }
-          [[ "$RETRY" =~ ^[0-9]{1,2}$ ]] || { echo "::error::bad retry"; exit 1; }
-          [[ "$MAX_RETRIES" =~ ^[0-9]{1,2}$ ]] || { echo "::error::bad max_retries"; exit 1; }
-          if [[ $RETRY == 0 ]]; then
-            [[ -z "$PREV_RUN" ]] || { echo "::error::prev_run is only for retries"; exit 1; }
-          else
-            [[ "$PREV_RUN" =~ ^[0-9]{1,20}-[0-9]{1,3}$ ]] || { echo "::error::a retry needs prev_run"; exit 1; }
-          fi
           [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]] ||
             { echo "::error::dispatch on the agent-worker branch, not $DEFAULT_BRANCH"; exit 1; }
 
@@ -126,18 +97,7 @@ jobs:
       - name: Download plan from artifacts.go
         env:
           SHA256: ${{ inputs.sha256 }}
-          PREV_RUN: ${{ inputs.prev_run }}
-        run: |
-          set -euo pipefail
-          worker/scripts/agent-worker/blobs.sh plan "$RUNNER_TEMP/plan.md" "$SHA256"
-          # A retry starts from the previous run's patch, evidence plan, PR text and results, when it got that far
-          if [[ $RETRY != 0 ]]; then
-            worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/prev" "$PREV_PREFIX" \
-              changes.patch pr.md tests.txt flow.yaml excluded.txt verify/results.md result.json attempts.json
-            # Earlier attempts' agent stats, carried forward for the cost table on the verify page
-            mkdir -p "$RUNNER_TEMP/evidence"
-            python3 -I worker/scripts/agent-worker/attempts.py "$RUNNER_TEMP/prev" "$PREV_RUN" "$RUNNER_TEMP/evidence/attempts.json"
-          fi
+        run: worker/scripts/agent-worker/blobs.sh plan "$RUNNER_TEMP/plan.md" "$SHA256"
 
       - name: Azure logout
         if: always()
@@ -174,22 +134,9 @@ jobs:
         continue-on-error: true
         run: command -v swiftlint > /dev/null || brew install swiftlint > /dev/null
 
-      # The agent edits the previous run's change and its evidence plan and PR text in place
-      - name: Apply the previous run's change
-        if: env.RETRY != '0'
-        working-directory: target
-        run: |
-          set -euo pipefail
-          [[ -s "$RUNNER_TEMP/prev/changes.patch" ]] || { echo "no previous change; starting from the plan"; exit 0; }
-          git apply --index "$RUNNER_TEMP/prev/changes.patch"
-          mkdir -p .agent-evidence
-          [[ ! -f "$RUNNER_TEMP/prev/pr.md" ]] || cp "$RUNNER_TEMP/prev/pr.md" .agent-pr.md
-          for f in tests.txt flow.yaml excluded.txt; do [[ ! -f "$RUNNER_TEMP/prev/$f" ]] || cp "$RUNNER_TEMP/prev/$f" .agent-evidence/; done
-
       - name: Write prompt
         run: |
-          python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" \
-            "$RUNNER_TEMP/prev" > "$RUNNER_TEMP/prompt.md"
+          python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" > "$RUNNER_TEMP/prompt.md"
 
       - name: Install Claude Code
         run: |
@@ -273,8 +220,8 @@ jobs:
 
   # Builds the patch again on a fresh runner the agent's code never ran on, runs the agent's tests and records
   # its Maestro flow, so approval rests on results the agent couldn't change. Results go to
-  # evidence for the approver. A failed build or failed tests set ok=false, which sends the task to a
-  # retry or Needs attention instead of approval. The Maestro flow is evidence only and never blocks. The Azure login is only held before and after the build, never while the agent's code runs
+  # evidence for the approver. A failed build or failed tests set ok=false, which sends the task to
+  # Needs attention instead of approval. The Maestro flow is evidence only and never blocks. The Azure login is only held before and after the build, never while the agent's code runs
   verify:
     needs: agent
     if: needs.agent.result == 'success'
@@ -315,7 +262,7 @@ jobs:
           set -euo pipefail
           echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify" >> "$GITHUB_ENV"
           worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$EVIDENCE_PREFIX" \
-            changes.patch tests.txt flow.yaml excluded.txt retry.txt result.json pr.md plan-notes.txt attempts.json
+            changes.patch tests.txt flow.yaml excluded.txt result.json pr.md plan-notes.txt
           worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$HANDOFF_PREFIX" plan-stats.json
           [[ -s "$RUNNER_TEMP/plan/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
 
@@ -378,10 +325,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/verify"
           EVIDENCE_URL="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX" \
-            PREV_URL="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$PREV_PREFIX" \
             python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify_md.py" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
 
-      # ok=false sends the task to a retry or Needs attention, and failure says why in the Asana comment. A failed
+      # ok=false sends the task to Needs attention, and failure says why in the Asana comment. A failed
       # Maestro flow shows on the verify page for the approver but doesn't set ok=false
       - name: Result
         id: result
@@ -534,8 +480,7 @@ jobs:
             > "$RUNNER_TEMP/pr-url"
           echo "url=$(tail -n 1 "$RUNNER_TEMP/pr-url")" >> "$GITHUB_OUTPUT"
 
-  # Sets the task's Agent Status from how the run ended: PR open with the PR link, back to Ready for a
-  # retry when the agent or verify failed and retries are left, or Needs attention. Acts as the Apple
+  # Sets the task's Agent Status from how the run ended: PR open with the PR link, or Needs attention. Acts as the Apple
   # Agent Asana App Actor, on a fresh runner so nothing the agent wrote runs next to it
   status:
     needs: [agent, verify, publish]
@@ -567,8 +512,5 @@ jobs:
           PUBLISH: ${{ needs.publish.result }}
           PR_URL: ${{ needs.publish.outputs.pr_url }}
           VERIFY_URL: ${{ needs.verify.outputs.url }}
-          HANDOFF: ${{ inputs.handoff }}
-          SHA256: ${{ inputs.sha256 }}
-          RUN: ${{ github.run_id }}-${{ github.run_attempt }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: python3 -I worker/scripts/agent-worker/set_agent_status.py

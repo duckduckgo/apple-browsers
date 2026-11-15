@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Exports the agent's change as a patch, after moving its PR text and evidence plan out of the checkout
 # so they never go into the patch. Fails when there's no change, or when the patch touches .github/ or
-# scripts/agent-worker/. A retry that leaves the previous patch as it was still goes to verify, since a
-# failure can be flaky
+# scripts/agent-worker/
 #
 # Usage: export_patch.sh <evidence dir>   (run from the checkout)
 

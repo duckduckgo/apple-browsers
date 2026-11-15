@@ -93,8 +93,8 @@ class Ios:
         return self.launched
 
     def human_step(self, step):
-        """Record a step a person performs during this run. The manifest and report mark the run human-assisted, so a
-        reader of the evidence or of the rerun command knows it. Returns the record for the caller to add outcomes to."""
+        """Record a step a person did during the run; the manifest and report mark the run human-assisted.
+        Returns the record so the caller can add the outcome."""
         record = dict(step=step, startedAt=time.time())
         self.human_steps.append(record)
         return record

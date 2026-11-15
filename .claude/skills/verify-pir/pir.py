@@ -1,4 +1,4 @@
-"""PIR.1: scan one exact broker, uniquely match a test record, and complete its opt-out flow.
+"""PIR.1: scan one exact broker, uniquely match a test record, and, with optOut, complete its opt-out flow.
 
 Set PIR_PROOF_INPUT to a local JSON configuration. See SKILL.md. This uses debug jobs,
 not the production scheduler or ordinary pixels, and confirmed does not prove removal.
@@ -59,15 +59,18 @@ def inputs():
         raise ValueError("expectedFile must contain exact result identity fields")
     if not expected.get("profileUrl") and not (expected.get("name") and expected.get("addresses")):
         raise ValueError("expectedFile needs profileUrl or both name and addresses")
-    if not isinstance(config.get("emailConfirmation"), bool):
-        raise ValueError("emailConfirmation must explicitly be true or false")
-    from urllib.parse import urlsplit
-    endpoint = urlsplit(config.get("pirEndpoint", ""))
-    if endpoint.scheme not in ("http", "https") or not endpoint.hostname or endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
-        raise ValueError("pirEndpoint must name the expected credential-free PIR backend URL")
-    for key in ("subscriptionEnvironment", "pirEnvironment"):
-        if config.get(key) not in ("production", "staging"):
-            raise ValueError(f"{key} must explicitly be production or staging")
+    if not isinstance(config.get("optOut"), bool):
+        raise ValueError("optOut must explicitly be true (scan and opt-out) or false (scan only)")
+    if config["optOut"]:
+        if not isinstance(config.get("emailConfirmation"), bool):
+            raise ValueError("emailConfirmation must explicitly be true or false")
+        from urllib.parse import urlsplit
+        endpoint = urlsplit(config.get("pirEndpoint", ""))
+        if endpoint.scheme not in ("http", "https") or not endpoint.hostname or endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
+            raise ValueError("pirEndpoint must name the expected credential-free PIR backend URL")
+        for key in ("subscriptionEnvironment", "pirEnvironment"):
+            if config.get(key) not in ("production", "staging"):
+                raise ValueError(f"{key} must explicitly be production or staging")
     for key, default, maximum in (("checkpointTimeout", 900, 3600), ("activityTimeout", 600, 3600), ("emailTimeout", 300, 1800)):
         value = config.setdefault(key, default)
         if isinstance(value, bool) or not isinstance(value, (float, int)) or not 0 < value <= maximum:
@@ -80,7 +83,7 @@ def validate():
 
 
 def checkpoint(ios, instruction, timeout):
-    """Wait for a person to do `instruction`; they acknowledge or cancel by touching the files named in checkpoint.json."""
+    """Wait for a person to do `instruction`, acknowledged or cancelled by touching a file named in checkpoint.json."""
     checkpoint_id = uuid.uuid4().hex
     ack = os.path.join(ios.evidence, f"ack-{checkpoint_id}")
     cancel = os.path.join(ios.evidence, f"cancel-{checkpoint_id}")
@@ -147,6 +150,8 @@ class Client:
         return result
 
     def prerequisite(self, timeout=35):
+        # The app reads the token with the normal .localValid policy and keeps errors, unlike the feature check's
+        # cached-entitlement fallback, so "ready" does not prove a fresh server-side subscription refresh.
         check_id = str(uuid.uuid4())
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
@@ -164,6 +169,7 @@ class Client:
         raise SetupFailed("PIR prerequisite did not complete within its deadline")
 
     def idle(self, run_id, timeout):
+        # Debug runs live in memory; /api/events reads persisted job history and cannot prove this run.
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             run = self.request("GET", f"/api/debug/runs/{run_id}", timeout=min(10, max(.1, deadline - time.monotonic())))
@@ -227,34 +233,25 @@ def run(ios):
     client = Client(directory)
 
     def collect():
-        # Log capture failures remain cleanup/evidence problems in the runner's report.
+        # A capture failure is an evidence problem, never a proof failure.
         if client.owned:
             client.request("GET", "/api/logs?limit=1000")
         ios.d.app_logs(str(directory / "pir-app.log"))
     ios.on_cleanup("capture PIR debug and application logs", collect)
 
     metadata = dict(configuration=dict(reference=config["configurationFile"], sha256=config["configurationSHA256"]),
-                    policy=dict(emailConfirmation=config["emailConfirmation"], reset="fresh_start before checkpoint; no reset after acknowledgement",
+                    policy=dict(optOut=config["optOut"], emailConfirmation=config.get("emailConfirmation"),
+                                reset="fresh_start before the scan; no reset afterwards",
                                 checkpointTimeout=config["checkpointTimeout"], activityTimeout=config["activityTimeout"], emailTimeout=config["emailTimeout"]),
                     instanceID=INSTANCE, port=PORT, broker=dict(name=broker["name"], version=broker["version"],
                     sha256=config["inputHashes"]["brokerFile"]), profile=dict(reference=config["profileFile"], sha256=config["inputHashes"]["profileFile"]),
                     expected=dict(reference=config["expectedFile"], sha256=config["inputHashes"]["expectedFile"]))
-    # Exact broker bytes, not a re-serialized approximation of the submitted version.
+    # The exact bytes submitted, not a re-serialization.
     (directory / "pir-broker.json").write_bytes(config["brokerBytes"])
     (directory / "pir-inputs.json").write_text(json.dumps(metadata, indent=2))
     steps.fresh_start(ios)
-    before = client.prerequisite()
-    checkpoint(ios, "Use the app's normal subscription UI to activate/restore the test subscription. "
-               "Do not reset or relaunch. Acknowledge when ready; never put credentials in the proof.", config["checkpointTimeout"])
-    after = client.prerequisite()  # new check ID, after acknowledgement, with no reset afterward
-    (directory / "pir-prerequisites.json").write_text(json.dumps(dict(before=before, after=after, build=ios.launched), indent=2))
-    prerequisite = after.get("result", {})
-    if (prerequisite.get("status") != "ready" or prerequisite.get("authenticated") is not True or not after.get("checkedAt")
-            or prerequisite.get("environment") != config["subscriptionEnvironment"]
-            or prerequisite.get("pirEnvironment") != config["pirEnvironment"]
-            or prerequisite.get("pirEndpoint") != config["pirEndpoint"]
-            or after.get("debugRunnerReady") is not True):
-        raise SetupFailed("real entitlement or configured backend prerequisite not satisfied; see pir-prerequisites.json")
+    before = client.prerequisite()  # also proves this launch owns the endpoint; scans need no subscription
+    (directory / "pir-prerequisites.json").write_text(json.dumps(dict(before=before, build=ios.launched), indent=2))
     ios.note("PIR.1 debug scan/opt-out oracle; debug jobs suppress ordinary pixels.")
     ios.unverified("PIR worker and backend traffic", "host observation covers only browser traffic; broker, email and captcha requests run in PIR workers")
     started = client.request("POST", "/api/debug/scans", dict(broker=broker, profile=profile, hidesWebView=True))
@@ -272,6 +269,21 @@ def run(ios):
     if not re.fullmatch(r"[A-Za-z0-9-]+", result_id):
         raise Failed("invalid result ID")
     ios.check("scan uniquely matched the expected record", True)
+    if not config["optOut"]:
+        (directory / "pir-final-run.json").write_text(json.dumps(scan, indent=2))
+        ios.unverified("PIR opt-out", "scan-only run (optOut: false)")
+        return
+    checkpoint(ios, "Use the app's normal subscription UI to activate/restore the test subscription. "
+               "Do not reset or relaunch. Acknowledge when ready; never put credentials in the proof.", config["checkpointTimeout"])
+    after = client.prerequisite()  # a fresh check after acknowledgement
+    (directory / "pir-prerequisites.json").write_text(json.dumps(dict(before=before, after=after, build=ios.launched), indent=2))
+    prerequisite = after.get("result", {})
+    if (prerequisite.get("status") != "ready" or prerequisite.get("authenticated") is not True or not after.get("checkedAt")
+            or prerequisite.get("environment") != config["subscriptionEnvironment"]
+            or prerequisite.get("pirEnvironment") != config["pirEnvironment"]
+            or prerequisite.get("pirEndpoint") != config["pirEndpoint"]
+            or after.get("debugRunnerReady") is not True):
+        raise SetupFailed("real entitlement or configured backend prerequisite not satisfied; see pir-prerequisites.json")
     path = f"/api/debug/runs/{run_id}"
     client.request("POST", f"{path}/optouts/{result_id}")
     opted = client.idle(run_id, config["activityTimeout"])

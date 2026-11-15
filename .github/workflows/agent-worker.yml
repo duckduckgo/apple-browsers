@@ -122,7 +122,7 @@ jobs:
           # A retry starts from the previous run's patch, evidence plan, PR text and results, when it got that far
           if [[ $RETRY != 0 ]]; then
             worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/prev" "$PREV_PREFIX" \
-              changes.patch pr.md tests.txt flow.yaml verify/results.md result.json
+              changes.patch pr.md tests.txt flow.yaml excluded.txt verify/results.md result.json
           fi
 
       - name: Azure logout
@@ -139,7 +139,7 @@ jobs:
           git apply --index "$RUNNER_TEMP/prev/changes.patch"
           mkdir -p .agent-evidence
           [[ ! -f "$RUNNER_TEMP/prev/pr.md" ]] || cp "$RUNNER_TEMP/prev/pr.md" .agent-pr.md
-          for f in tests.txt flow.yaml; do [[ ! -f "$RUNNER_TEMP/prev/$f" ]] || cp "$RUNNER_TEMP/prev/$f" .agent-evidence/; done
+          for f in tests.txt flow.yaml excluded.txt; do [[ ! -f "$RUNNER_TEMP/prev/$f" ]] || cp "$RUNNER_TEMP/prev/$f" .agent-evidence/; done
 
       - name: Write prompt
         run: |
@@ -260,7 +260,7 @@ jobs:
           set -euo pipefail
           echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify" >> "$GITHUB_ENV"
           worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$EVIDENCE_PREFIX" \
-            changes.patch tests.txt flow.yaml result.json pr.md plan-notes.txt
+            changes.patch tests.txt flow.yaml excluded.txt result.json pr.md plan-notes.txt
           [[ -s "$RUNNER_TEMP/plan/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
 
       - name: Azure logout

@@ -13,6 +13,7 @@ python3 -I "$here/pr_text.py" extract . "$evidence"
 python3 -I "$here/evidence_plan.py" extract . "$evidence"
 git add -A
 git diff --cached --binary > "$evidence/changes.patch"
+python3 -I "$here/evidence_plan.py" excluded "$evidence"
 if [[ ! -s "$evidence/changes.patch" ]]; then
   printf '\n## Changes\n\nNone, so nothing will be published.\n' >> "$evidence/summary.md"
   echo "::error::agent made no changes"

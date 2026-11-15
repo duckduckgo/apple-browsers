@@ -69,6 +69,13 @@ def main():
     results = read(os.path.join(out, "results.md")).strip()
     md += [results or "## Build and tests\n\nThe build didn't run. See the worker run for why.", ""]
 
+    excluded = [l.partition(":") for l in read(os.path.join(plan, "excluded.txt")).splitlines() if ":" in l]
+    if excluded:
+        md += ["## Excluded tests", "",
+               "The agent took these tests out of the run. They're tests it didn't add, for code the change doesn't touch. "
+               "Check that its reason holds before approving.", ""]
+        md += [f"- `{t.strip()}`: {r.strip()}" for t, _, r in excluded] + [""]
+
     notes = read(os.path.join(plan, "plan-notes.txt")).strip()
     if notes:
         md += ["## Notes", "", notes, ""]

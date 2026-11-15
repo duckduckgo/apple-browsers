@@ -51,6 +51,10 @@ thumb() {
 }
 shot() { echo -e "\n$(thumb "$1" "$2")" >> "$md"; }
 
+# Maestro names files after the step, with brackets and dots that break markdown links and the artifact
+# server, so keep letters, digits, _ and - only
+safe() { local b; b=$(basename "${1%.*}" | sed -E 's/[^A-Za-z0-9_-]+/_/g; s/_+/_/g; s/^_+|_+$//g'); echo "${b:-file}.${1##*.}"; }
+
 # Lines worth showing from an xcodebuild log, without the long command echoes
 errors() { grep -E ": error:|^error:|BUILD FAILED|Testing failed|failed \(" "$1" | grep -v "^ *export " | cut -c1-300 | sort -u | head -30; }
 
@@ -101,6 +105,9 @@ if [[ -z $app || -z ${UDID:-} ]]; then
 fi
 xcrun simctl boot "$UDID" > /dev/null 2>&1
 xcrun simctl bootstatus "$UDID" > /dev/null 2>&1
+# English and the US region, so text in the app and in web pages matches what the flow looks for
+xcrun simctl spawn "$UDID" defaults write -g AppleLanguages -array en-US > /dev/null 2>&1 || true
+xcrun simctl spawn "$UDID" defaults write -g AppleLocale en_US > /dev/null 2>&1 || true
 if xcrun simctl install "$UDID" "$app" > /dev/null 2>&1 && xcrun simctl launch "$UDID" com.duckduckgo.mobile.ios \
     -isOnboardingCompleted true -isRunningUITests true > /dev/null 2>&1; then
   sleep 15
@@ -139,18 +146,21 @@ find "$out/maestro" -type f \( -name '*.mp4' -o -name '*.png' \) -print0 |
 gifs=() pngs=()
 for v in "$out"/maestro/*.mp4; do
   [[ -f $v ]] || continue
-  gif="$out/$(basename "${v%.mp4}").gif"
+  gif="$out/$(safe "${v%.mp4}.gif")"
   if ffmpeg -loglevel error -y -i "$v" -vf "fps=8,scale=320:-1:flags=lanczos" -t 30 "$gif" 2> /dev/null; then
-    gifs+=("![Recording $(basename "$gif")]($url/$(basename "$gif"))")
+    gifs+=("![Recording $(basename "${gif%.gif}")]($url/$(basename "$gif"))")
   fi
   rm -f "$v"
 done
-[[ ${#gifs[@]} -gt 0 ]] && echo -e "\n${gifs[*]}" >> "$md"
+# Images on one line show side by side, with non-breaking spaces between them
+spaced() { local first=1 i; for i in "$@"; do ((first)) || printf ' &nbsp;&nbsp;&nbsp; '; printf '%s' "$i"; first=0; done; }
+[[ ${#gifs[@]} -gt 0 ]] && echo -e "\n$(spaced "${gifs[@]}")" >> "$md"
 for p in "$out"/maestro/*.png; do
   [[ -f $p ]] || continue
-  mv "$p" "$out/"
-  pngs+=("$(thumb "$out/$(basename "$p")" "$(basename "${p%.png}")")")
+  dest="$out/$(safe "$p")"
+  mv "$p" "$dest"
+  pngs+=("$(thumb "$dest" "$(basename "${dest%.png}")")")
 done
-[[ ${#pngs[@]} -gt 0 ]] && echo -e "\n${pngs[*]}" >> "$md"
+[[ ${#pngs[@]} -gt 0 ]] && echo -e "\n$(spaced "${pngs[@]}")" >> "$md"
 [[ ${#gifs[@]} -gt 0 || ${#pngs[@]} -gt 0 ]] || echo -e "\nThe flow saved no recording or screenshots." >> "$md"
 exit 0

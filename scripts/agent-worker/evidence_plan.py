@@ -69,10 +69,14 @@ def extract(repo, evidence):
     tests = []
     if os.path.isfile(tests_path):
         with open(tests_path, errors="replace") as f:
-            lines = [l.strip().removeprefix("-only-testing:") for l in f.read(5000).splitlines() if l.strip()]
+            # Tolerate list bullets, backticks and quotes around an ID
+            lines = [l.strip().removeprefix("- ").strip("`'\" ").removeprefix("-only-testing:")
+                     for l in f.read(5000).splitlines() if l.strip()]
         tests = [l for l in lines if TEST_ID.fullmatch(l)][:MAX_TESTS]
-        if len(tests) < len(lines):
-            notes.append(f"Dropped {len(lines) - len(tests)} test line(s) that weren't test IDs or were over {MAX_TESTS}.")
+        dropped = [l for l in lines if l not in tests]
+        if dropped:
+            shown = ", ".join(f"`{l[:80]}`" for l in dropped[:5])
+            notes.append(f"Dropped {len(dropped)} test line(s) that weren't test IDs or were over {MAX_TESTS}: {shown}")
     if tests:
         with open(os.path.join(evidence, "tests.txt"), "w") as f:
             f.write("\n".join(tests) + "\n")

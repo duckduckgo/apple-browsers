@@ -148,7 +148,13 @@ private extension TabsModelProvider {
         }
         
         var tabs: [Tab] {
-            normalTabsModel.tabs + fireModeTabsModel.tabs
+            let normalTabs = normalTabsModel.tabs
+            let fireModeTabs = fireModeTabsModel.tabs
+            var result = [Tab]()
+            result.reserveCapacity(normalTabs.count + fireModeTabs.count)
+            result.append(contentsOf: normalTabs)
+            result.append(contentsOf: fireModeTabs)
+            return result
         }
     }
 }

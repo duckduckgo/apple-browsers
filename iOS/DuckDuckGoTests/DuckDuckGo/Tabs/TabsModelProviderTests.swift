@@ -67,6 +67,39 @@ final class TabsModelProviderTests: XCTestCase {
         XCTAssertEqual(sut.aggregateTabsModel.count, 5)
     }
 
+    // MARK: - Aggregate Tabs
+
+    func testWhenBothModelsHaveTabsThenAggregateTabsAreNormalTabsFollowedByFireTabsInOrder() {
+        let normalTabs = [Tab(link: exampleLink), Tab(link: exampleLink)]
+        let fireTabs = [
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true),
+            Tab(link: exampleLink, fireTab: true)
+        ]
+        let normalModel = TabsModel(tabs: normalTabs, desktop: false)
+        let fireModel = TabsModel(tabs: fireTabs, desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        let aggregateTabs = sut.aggregateTabsModel.tabs
+        let expectedTabs = normalTabs + fireTabs
+        XCTAssertEqual(aggregateTabs.count, expectedTabs.count)
+        XCTAssertTrue(zip(aggregateTabs, expectedTabs).allSatisfy { $0 === $1 })
+    }
+
+    func testWhenFireModelIsEmptyThenAggregateTabsMatchNormalTabs() {
+        let normalTabs = [Tab(link: exampleLink), Tab(link: exampleLink)]
+        let normalModel = TabsModel(tabs: normalTabs, desktop: false)
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
+
+        let aggregateTabs = sut.aggregateTabsModel.tabs
+        XCTAssertEqual(aggregateTabs.count, normalTabs.count)
+        XCTAssertTrue(zip(aggregateTabs, normalTabs).allSatisfy { $0 === $1 })
+        XCTAssertEqual(sut.aggregateTabsModel.indexOf(tab: normalTabs[1]), 1)
+    }
+
     // MARK: - Aggregate Count Updates Dynamically
 
     func testWhenTabAddedThenAggregateCountUpdates() {

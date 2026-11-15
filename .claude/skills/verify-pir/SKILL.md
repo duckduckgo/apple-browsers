@@ -7,9 +7,8 @@ disable-model-invocation: true
 # verify-pir
 
 Checks that the scan and opt-out flows work correctly against a live broker. The proof scans one exact broker with a
-test profile, uniquely matches an expected record, and, unless the run is scan-only, completes the opt-out for that
-record. It starts each job through the PIR debug server (`POST /api/debug/...`), which runs scans and opt-outs
-independently of the scheduler, so a failure points at the broker flow itself, not at when or whether the scheduler
+test profile and, unless the run is scan-only, completes the opt-out for one matched record. It starts each job
+through the PIR debug server (`POST /api/debug/...`), which runs scans and opt-outs independently of the scheduler, so a failure points at the broker flow itself, not at when or whether the scheduler
 picked the job up. That is why it lives apart from verify-ios proofs, which act like a user. It does not verify the PIR
 dashboard, profile editor, production scheduler or their entry points; report those as unverified when relevant.
 
@@ -17,23 +16,30 @@ A confirmed opt-out proves the submission and confirmation flow only. Removal ne
 
 ## 1. Choose the scenario
 
-- **Scan only** (`"optOut": false`): scan and uniquely match the expected record, then pass with the opt-out reported
-  as unverified. Scans need no subscription, so nobody has to step in. A broker that shows a captcha during the scan
-  may still need one, because solving it goes through the backend.
-- **Scan and opt-out** (`"optOut": true`): scan and match, pause for a person to set up the subscription, then opt out.
+Every scan result is a record the app's own matching (content-scope-scripts' broker protection: name with middle
+names and nicknames, age, address, phone) accepted for the profile. The proof does no matching of its own.
+
+- **Scan only** (`"optOut": false`): pass when the app matches at least one record, with the opt-out reported as
+  unverified. Scans need no subscription, so nobody has to step in. A broker that shows a captcha during the scan may
+  still need one, because solving it goes through the backend.
+- **Scan and opt-out** (`"optOut": true`): scan, pick one matched record, pause for a person to set up the
+  subscription, then opt out that record. With one match it is picked; with several, `expectedFile` must name the
+  `profileUrl` to opt out, because opting out the wrong one would remove a stranger.
 
 An opt-out sends real requests to a broker and cannot be undone. Before running one, confirm the broker, profile,
-expected record and scenario with the user, and use only ones they authorized for this attempt.
+record and scenario with the user, and use only ones they authorized for this attempt.
 
 ## 2. Prepare
 
 Get a current Debug app and runner with verify-ios: `.claude/skills/verify-ios/bin/verify-ios build` (or
 `build --app-only` after app changes). `prove` refuses a stale build.
 
-Write a configuration outside the checkout, one file per scenario. Paths in it are relative to the file. Supply the
-complete broker JSON, the profile JSON accepted by `-pirProfileJSON`, and an expected-result JSON object. Expected
-identity uses exact API fields: `profileUrl`, or both `name` and `addresses`; optional `age` and `profileQuery` narrow
-the match. The identity and its returned ID must each be unique in the run. Keep credentials out of these files.
+Write a configuration outside the checkout, one file per scenario, in a folder that lasts, such as
+`~/pir-proof/<broker>/`, not a session scratchpad: the report's rerun command points at it. Paths in it are relative
+to the file. Supply the
+complete broker JSON and the profile JSON accepted by `-pirProfileJSON`. `expectedFile` is optional:
+`{"profileUrl": "..."}` picks the record to opt out, and in a scan-only run checks that record was found. Take the URL
+from the scan results in a previous run's `pir-final-run.json` or `pir-http-*.json`. Keep credentials out of these files.
 
 ```json
 {
@@ -51,7 +57,8 @@ the match. The identity and its returned ID must each be unique in the run. Keep
 }
 ```
 
-A scan-only configuration needs only the three files and `"optOut": false`; the other fields apply to the opt-out.
+A scan-only configuration needs only `brokerFile`, `profileFile` and `"optOut": false`; the other fields apply to the
+opt-out.
 
 ## 3. Run
 
@@ -76,7 +83,7 @@ resetting or relaunching the app. When they say it is active, `touch` the acknow
 real PIR entitlement, which is why this step needs a person.
 
 The proof then checks that the subscription is authenticated and entitled, and that the environments and endpoint match
-the configuration. Only then does it submit the matched result ID, poll the run, and check status and history events.
+the configuration. Only then does it submit the picked result ID, poll the run, and check status and history events.
 With `emailConfirmation: true`, it waits for the confirmation link before continuing that result.
 
 ## 5. Report
@@ -89,7 +96,7 @@ Tests, no simulator: `python3 -m unittest discover -s .claude/skills/verify-pir/
 
 ## Gotchas
 
-- No match is inconclusive in both scenarios. Site, authentication, rate-limit, email and opt-out errors cannot turn
+- No matched record is inconclusive in both scenarios. Site, authentication, rate-limit, email and opt-out errors cannot turn
   into a no-match pass.
 - Host observation covers browser traffic only, so PIR worker and backend traffic is listed as unverified.
 - The debug server listens on this worktree's debug server port and refuses mutations with another launch's

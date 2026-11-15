@@ -179,6 +179,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219522935831328
     case dbpChallengeSolver
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220543435225479
+    case dbpEntitlementCheckErrorHandling
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -859,6 +862,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.schedulerDeferralHandling), supportsLocalOverriding: true, category: .dbp)
         case .dbpChallengeSolver:
             Config(source: .remoteReleasable(DBPSubfeature.challengeSolver), category: .dbp)
+        case .dbpEntitlementCheckErrorHandling:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.entitlementCheckErrorHandling), supportsLocalOverriding: true, category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased), category: .sync)
         case .exchangeKeysToSyncWithAnotherDevice:

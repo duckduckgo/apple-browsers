@@ -29,14 +29,17 @@ final class DataBrokerProtectionSubscriptionEventHandlerTests: XCTestCase {
     private var featureDisabler: MockFeatureDisabler!
     private var authenticationManager: MockEntitlementStatusAuthenticationManager!
     private var firedPixels: [String] = []
+    private var firedParameters: [[String: String]] = []
     private var sut: DataBrokerProtectionSubscriptionEventHandler!
 
     override func setUp() async throws {
         featureDisabler = MockFeatureDisabler()
         authenticationManager = MockEntitlementStatusAuthenticationManager()
         firedPixels = []
+        firedParameters = []
         let pixelHandler = EventMapping<DataBrokerProtectionMacOSPixels> { [weak self] event, _, _, _ in
-            self?.firedPixels.append(String(describing: event))
+            self?.firedPixels.append(event.name)
+            self?.firedParameters.append(event.parameters ?? [:])
         }
         sut = DataBrokerProtectionSubscriptionEventHandler(featureDisabler: featureDisabler,
                                                            authenticationManager: authenticationManager,
@@ -45,6 +48,8 @@ final class DataBrokerProtectionSubscriptionEventHandlerTests: XCTestCase {
 
     override func tearDown() async throws {
         sut = nil
+        firedPixels = []
+        firedParameters = []
         authenticationManager = nil
         featureDisabler = nil
     }
@@ -55,16 +60,17 @@ final class DataBrokerProtectionSubscriptionEventHandlerTests: XCTestCase {
         await sut.entitlementsDidChange(hasEntitlements: false)
 
         XCTAssertTrue(featureDisabler.disableAndDeleteWasCalled)
-        XCTAssertEqual(firedPixels, ["entitlementCheckInvalid"])
+        XCTAssertEqual(firedPixels, ["m_mac_dbp_macos_entitlement_invalid"])
     }
 
     func testEntitlementLost_noTokenCanBeRead_keepsTheData() async {
-        authenticationManager.entitlementStatusValue = .error
+        authenticationManager.entitlementStatusValue = .error(.noToken)
 
         await sut.entitlementsDidChange(hasEntitlements: false)
 
         XCTAssertFalse(featureDisabler.disableAndDeleteWasCalled)
-        XCTAssertEqual(firedPixels, ["entitlementCheckError"])
+        XCTAssertEqual(firedPixels, ["m_mac_dbp_macos_entitlement_error"])
+        XCTAssertEqual(firedParameters, [["reason": "no_token"]])
     }
 
     func testEntitlementLost_tokenRestoredWithTheEntitlement_keepsTheData() async {
@@ -73,7 +79,7 @@ final class DataBrokerProtectionSubscriptionEventHandlerTests: XCTestCase {
         await sut.entitlementsDidChange(hasEntitlements: false)
 
         XCTAssertFalse(featureDisabler.disableAndDeleteWasCalled)
-        XCTAssertEqual(firedPixels, ["entitlementCheckValid"])
+        XCTAssertEqual(firedPixels, ["m_mac_dbp_macos_entitlement_valid"])
     }
 
     func testEntitlementGained_keepsTheDataWithoutCheckingTheToken() async {
@@ -82,7 +88,7 @@ final class DataBrokerProtectionSubscriptionEventHandlerTests: XCTestCase {
         await sut.entitlementsDidChange(hasEntitlements: true)
 
         XCTAssertFalse(featureDisabler.disableAndDeleteWasCalled)
-        XCTAssertEqual(firedPixels, ["entitlementCheckValid"])
+        XCTAssertEqual(firedPixels, ["m_mac_dbp_macos_entitlement_valid"])
         XCTAssertEqual(authenticationManager.entitlementStatusCallCount, 0)
     }
 
@@ -94,7 +100,7 @@ final class DataBrokerProtectionSubscriptionEventHandlerTests: XCTestCase {
 }
 
 private final class MockEntitlementStatusAuthenticationManager: DataBrokerProtectionAuthenticationManaging {
-    var entitlementStatusValue: DataBrokerProtectionEntitlementStatus = .error
+    var entitlementStatusValue: DataBrokerProtectionEntitlementStatus = .error(.unknown)
     private(set) var entitlementStatusCallCount = 0
 
     var isUserAuthenticated: Bool { get async { false } }

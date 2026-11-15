@@ -553,7 +553,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - DBP
 
     private lazy var dataBrokerProtectionSubscriptionEventHandler: DataBrokerProtectionSubscriptionEventHandler = {
-        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
+        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager,
+                                                                                            featureFlagger: DBPFeatureFlagger(featureFlagger: featureFlagger))
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
@@ -1810,7 +1811,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             subscriptionManager: subscriptionManager,
-            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            featureFlagger: featureFlagger
         )
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidFinishLaunching()
@@ -1952,7 +1954,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             subscriptionManager: subscriptionManager,
-            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            featureFlagger: featureFlagger
         )
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidBecomeActive()

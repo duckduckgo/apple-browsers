@@ -121,10 +121,11 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))
 
-        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
-
         let dbpFeatureFlagger = DBPFeatureFlagger(configurationManager: configurationManager,
                                                   privacyConfigurationManager: privacyConfigurationManager)
+
+        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager,
+                                                                                                    featureFlagger: dbpFeatureFlagger)
         let buildType = StandardApplicationBuildType()
         let wideEvent = WideEvent(
             useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,

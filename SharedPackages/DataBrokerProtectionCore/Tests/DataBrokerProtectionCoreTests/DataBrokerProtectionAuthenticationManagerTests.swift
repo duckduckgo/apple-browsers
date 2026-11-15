@@ -73,7 +73,7 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
     func testEntitlementStatus_returnsTheSubscriptionManagerStatus() async {
         authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
 
-        for expected in [DataBrokerProtectionEntitlementStatus.enabled, .disabled, .error] {
+        for expected in [DataBrokerProtectionEntitlementStatus.enabled, .disabled, .error(.noToken)] {
             subscriptionManager.entitlementStatusValue = expected
             let status = await authenticationManager.entitlementStatus()
             XCTAssertEqual(status, expected)
@@ -97,7 +97,7 @@ final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSu
 
     var isUserEligibleForFreeTrialValue = false
     var accessTokenValue: String?
-    var entitlementStatusValue: DataBrokerProtectionEntitlementStatus = .error
+    var entitlementStatusValue: DataBrokerProtectionEntitlementStatus = .error(.unknown)
 
     func accessToken() async -> String? {
         accessTokenValue

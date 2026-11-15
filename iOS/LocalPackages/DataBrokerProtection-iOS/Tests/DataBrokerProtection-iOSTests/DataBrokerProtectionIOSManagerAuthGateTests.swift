@@ -42,7 +42,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
-        dependencies.authenticationManager.entitlementStatusValue = .error
+        dependencies.authenticationManager.entitlementStatusValue = .error(.noToken)
 
         let result = await sut.validateRunPrerequisites()
 

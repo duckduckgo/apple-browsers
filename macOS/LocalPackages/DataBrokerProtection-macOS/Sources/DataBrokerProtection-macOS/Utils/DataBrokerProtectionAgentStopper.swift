@@ -82,7 +82,7 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
 
         } catch {
             Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
-            stopAgentBasedOnEntitlementCheckResult(.error)
+            stopAgentBasedOnEntitlementCheckResult(.error(.profileRead))
         }
     }
 
@@ -115,11 +115,11 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
             Logger.dataBrokerProtection.log("Invalid entitlement")
             pixelHandler.fire(.entitlementCheckInvalid)
             stopAgent()
-        case .error:
-            Logger.dataBrokerProtection.log("Error when checking entitlement")
+        case .error(let reason):
+            Logger.dataBrokerProtection.log("Error when checking entitlement: \(reason.rawValue, privacy: .public)")
             /// We don't want to disable the agent in case of an error while checking for entitlements.
             /// Since this is a destructive action, the only situation that should cause the data to be deleted and the agent to be removed is .success(false)
-            pixelHandler.fire(.entitlementCheckError)
+            pixelHandler.fire(.entitlementCheckError(reason: reason))
         }
     }
 }

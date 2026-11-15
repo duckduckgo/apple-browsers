@@ -94,12 +94,8 @@ def outcome(e):
         if e.get("RETRIES_FIELD") and e.get("LAST_RUN_FIELD") and retry < most:
             fields = {e["RETRIES_FIELD"]: retry + 1,
                       e["LAST_RUN_FIELD"]: f"{e['HANDOFF']} {e['SHA256']} {e['RUN']}"}
-            return "ready", (f"<body><strong>{esc(what)}.</strong> "
-                             f"Retrying automatically ({retry + 1} of {most}). No action needed.\n"
-                             f"<ul><li>What failed is in {page}.</li>"
-                             + ("<li>The retry reuses the plan, starts from this change and gets these results to fix.</li>"
-                                if e["AGENT"] == "success" else "<li>The retry reuses the plan and starts again from it.</li>")
-                             + "</ul></body>"), fields
+            return "ready", (f"<body><strong>Run failed</strong> - see the failure notes in {page}. "
+                             f"Retrying automatically ({retry + 1} of {most}).</body>"), fields
         tried = f" That was the last retry ({retry} of {most})." if retry else ""
         return "needs_attention", (f"{ATTENTION}<strong>{esc(what)}.</strong>{tried}\n"
                                    f"<ol><li>Open {page} and the {run} to see why.</li>"

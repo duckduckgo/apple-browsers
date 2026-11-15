@@ -39,16 +39,19 @@ class LivePIRTests(unittest.TestCase):
         ios.on_cleanup("stop the PIR test app", lambda: self.pir.stop_test_app(ios))
         self.assertTrue(any("refusing to terminate" in p for p in ios._run_cleanups()))
 
-    def test_refuses_duplicate_result_id_even_with_unique_identity_match(self):
-        run = dict(results=[dict(id="same", name="Someone Else"), dict(id="same", name="Expected")])
+    def test_refuses_duplicate_result_id_even_with_unique_profile_url(self):
+        run = dict(results=[dict(id="same", profileUrl="other"), dict(id="same", profileUrl="expected")])
         with self.assertRaisesRegex(env.Failed, "ambiguous"):
-            self.pir.selected(run, {"name": "Expected"})
+            self.pir.selected(run, "expected")
 
-    def test_refuses_duplicate_identity_and_identity_changes(self):
+    def test_opt_out_needs_one_record_or_a_profile_url_to_choose(self):
+        one, two = dict(id="a", profileUrl="u1"), dict(id="b", profileUrl="u2")
+        self.assertEqual(self.pir.selected(dict(results=[one])), one)
+        with self.assertRaisesRegex(env.Failed, "set profileUrl"):
+            self.pir.selected(dict(results=[one, two]))
+        self.assertEqual(self.pir.selected(dict(results=[one, two]), "u2"), two)
         with self.assertRaisesRegex(env.Failed, "exactly one"):
-            self.pir.selected(dict(results=[dict(id="a", name="Expected"), dict(id="b", name="Expected")]), {"name": "Expected"})
-        with self.assertRaisesRegex(env.Failed, "identity changed"):
-            self.pir.selected(dict(results=[dict(id="b", name="Expected")]), {"name": "Expected"}, "a")
+            self.pir.selected(dict(results=[two]), result_id="a")
 
     def test_scan_email_site_and_optout_errors_never_become_no_match(self):
         runs = [dict(scanErrors=["site error"], results=[]),
@@ -113,6 +116,14 @@ class LivePIRTests(unittest.TestCase):
         with self.assertRaisesRegex(env.Failed, "different run"):
             client.idle("run", 2)
         self.assertEqual(len(calls), 2)
+        self.assertEqual(len(os.listdir(self.directory.name)), 2)
+
+    def test_unchanged_polls_are_saved_once(self):
+        states = iter(["scan", "scan", "scan", None])
+        def handle(method, path, headers, body):
+            return 200, dict(id="run", activity=next(states), results=[])
+        client = self.pir.Client(self.directory.name, self.server(handle), "owner")
+        client.idle("run", 5)
         self.assertEqual(len(os.listdir(self.directory.name)), 2)
 
     def test_missing_inputs_rejected_before_any_device_work(self):
@@ -206,7 +217,7 @@ class LivePIRTests(unittest.TestCase):
         ios, requests, checkpoints = self.flow(opt_out=False)
         self.assertEqual(checkpoints, 0)
         self.assertFalse(any("/optouts/" in p for m, p in requests))
-        self.assertTrue(any(c["check"] == "scan uniquely matched the expected record" and c["ok"] for c in ios.checks))
+        self.assertTrue(any(c["check"] == "scan found 1 record(s) the app matched to the profile" for c in ios.checks))
         self.assertIn("PIR opt-out", [u["what"] for u in ios.unverified_items])
 
     def test_checkpoint_acknowledgement_and_cancellation_are_recorded_as_human_steps(self):

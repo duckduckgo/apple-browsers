@@ -357,6 +357,9 @@ class TabViewController: UIViewController {
                                                                                    tld: TabViewController.tld)
     private(set) lazy var extensionPromotionManager: AutofillExtensionPromotionManaging = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
     private(set) var tabModel: Tab
+#if DEBUG
+    private var lastKnownWebContentProcessID: Int32 = 0
+#endif
     private(set) var viewModel: TabViewModel
     private(set) var privacyInfo: PrivacyInfo?
     private var previousPrivacyInfosByURL: [URL: PrivacyInfo] = [:]
@@ -2842,6 +2845,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        logWebContentProcess(webView, event: "committed")
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
@@ -3052,6 +3056,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        logWebContentProcess(webView, event: "navigation started")
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
@@ -3109,6 +3114,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        logWebContentProcess(webView, event: "finished")
         terminationReloadMonitor.didFinish()
         if isAITab, #available(iOS 26, *),
            floatingUIManager.isDuckAIAndInputLiquidGlassEnabled {
@@ -4903,7 +4909,23 @@ extension TabViewController: WKUIDelegate {
         handleWebContentProcessDidTerminate(webView, reasonName: WKProcessTerminationReason(rawValue: reason)?.pixelName ?? "unknown")
     }
 
+    private func logWebContentProcess(_ webView: WKWebView, event: String) {
+#if DEBUG
+        guard webView === self.webView,
+              webView.responds(to: NSSelectorFromString("_webProcessIdentifier")),
+              let processID = webView.value(forKey: "_webProcessIdentifier") as? NSNumber else { return }
+
+        let currentPID = processID.int32Value
+        if currentPID > 0 {
+            lastKnownWebContentProcessID = currentPID
+        }
+        let host = webView.url?.host ?? "(no host)"
+        Swift.print("[WebContent PID] event=\(event) pid=\(currentPID) lastKnownPID=\(lastKnownWebContentProcessID) tab=\(tabModel.uid) host=\(host)")
+#endif
+    }
+
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        logWebContentProcess(webView, event: "terminated: \(reasonName ?? "unknown")")
         guard !findInPageImplementation.isDelegateSessionExperiment || webView === self.webView else { return }
         // Before the delegate call below, which can start the next termination reload.
         terminationReloadMonitor.didTerminate()

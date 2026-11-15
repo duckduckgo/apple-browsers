@@ -89,6 +89,7 @@ final class AutofillUserScriptSourceProviderTests: XCTestCase {
     """.data(using: .utf8)!
     lazy var privacyConfig = AutofillTestHelper.preparePrivacyConfig(embeddedConfig: embeddedConfig)
     let properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "1234", messageSecret: "1234", featureToggles: ContentScopeFeatureToggles.allTogglesOn)
+    let blankFrameOptimizedWrapper = "const ddgAutofill = () => {"
 
     func testWhenBuildWithLoadJSThenSourceStrIsBuilt() throws {
         let autofillSourceProvider = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
@@ -96,6 +97,19 @@ final class AutofillUserScriptSourceProviderTests: XCTestCase {
             .withJSLoading()
             .build()
         XCTAssertFalse(autofillSourceProvider.source.isEmpty)
+    }
+
+    func testWhenBlankFrameOptimizationIsOnThenBlankFrameOptimizedScriptIsLoaded() throws {
+        let standard = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig, properties: properties)
+            .withJSLoading()
+            .build()
+        let optimized = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig, properties: properties)
+            .withJSLoading()
+            .withBlankFrameOptimization(true)
+            .build()
+
+        XCTAssertFalse(standard.source.contains(blankFrameOptimizedWrapper))
+        XCTAssertTrue(optimized.source.contains(blankFrameOptimizedWrapper))
     }
 
     func testWhenBuildRuntimeConfigurationThenConfigurationIsBuilt() throws {

@@ -48,14 +48,21 @@ public class DefaultAutofillSourceProvider: AutofillUserScriptSourceProvider {
         self.properties = properties
     }
 
-    public func loadJS(isDebug: Bool) throws {
+    public func loadJS(isDebug: Bool, isBlankFrameOptimized: Bool = false) throws {
         guard let replacements = buildReplacementsString() else {
             sourceStr = ""
             return
         }
-        sourceStr = try AutofillUserScript.loadJS(isDebug ? "autofill-debug" : "autofill",
+        sourceStr = try AutofillUserScript.loadJS(Self.scriptName(isDebug: isDebug, isBlankFrameOptimized: isBlankFrameOptimized),
                                                   from: AutofillResources.bundle,
                                                   withReplacements: replacements)
+    }
+
+    private static func scriptName(isDebug: Bool, isBlankFrameOptimized: Bool) -> String {
+        if isDebug {
+            return "autofill-debug"
+        }
+        return isBlankFrameOptimized ? "autofill.ios" : "autofill"
     }
 
     public func buildRuntimeConfigResponse() -> String? {
@@ -164,6 +171,7 @@ public class DefaultAutofillSourceProvider: AutofillUserScriptSourceProvider {
         private var isDebug: Bool = false
         private var sourceStr: String = ""
         private var shouldLoadJS: Bool = false
+        private var isBlankFrameOptimized: Bool = false
 
         public init(privacyConfigurationManager: PrivacyConfigurationManaging,
                     properties: ContentScopeProperties,
@@ -179,7 +187,7 @@ public class DefaultAutofillSourceProvider: AutofillUserScriptSourceProvider {
                                                          isDebug: isDebug)
 
             if shouldLoadJS {
-                try provider.loadJS(isDebug: isDebug)
+                try provider.loadJS(isDebug: isDebug, isBlankFrameOptimized: isBlankFrameOptimized)
             }
 
             return provider
@@ -187,6 +195,11 @@ public class DefaultAutofillSourceProvider: AutofillUserScriptSourceProvider {
 
         public func withJSLoading() -> Builder {
             self.shouldLoadJS = true
+            return self
+        }
+
+        public func withBlankFrameOptimization(_ isEnabled: Bool) -> Builder {
+            self.isBlankFrameOptimized = isEnabled
             return self
         }
     }

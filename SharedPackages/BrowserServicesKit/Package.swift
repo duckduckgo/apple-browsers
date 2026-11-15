@@ -49,7 +49,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../WideEvent"),
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.1"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.3.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.12.0"),
@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "23.4.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", revision: "78863381556dc23f8a943a51c4ba03ef23c72e64"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),

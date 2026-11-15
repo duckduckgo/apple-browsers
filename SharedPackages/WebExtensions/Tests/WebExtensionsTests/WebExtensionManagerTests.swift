@@ -2924,6 +2924,35 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenBlankFrameOptimizationChangesBetweenLaunches_ThenInstalledCPMPackageFollowsIt() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMBlankFrames-\(UUID().uuidString)")
+        createdTestExtensionDirs.append(directory)
+        let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
+        let descriptor = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded))
+        let optimizedFilename = try XCTUnwrap(descriptor.blankFrameOptimizedResourceFilename)
+
+        for (enabled, expectedFilename) in [(false, descriptor.resourceFilename),
+                                            (true, optimizedFilename),
+                                            (true, optimizedFilename),
+                                            (false, descriptor.resourceFilename)] {
+            let manager = WebExtensionManager(configuration: configurationMock,
+                                              controllerConfiguration: .nonPersistent(),
+                                              windowTabProvider: windowTabProviderMock,
+                                              storageProvider: storage,
+                                              installationStore: installedExtensionStoringMock,
+                                              isBlankFrameOptimizationEnabled: enabled,
+                                              handlerProvider: LaunchUpgradeHandlerProvider())
+            defer { manager.unloadAllExtensions() }
+
+            await manager.syncEmbeddedExtensions(enabledTypes: [.embedded])
+
+            let installed = try XCTUnwrap(manager.installedEmbeddedExtension(for: .embedded))
+            XCTAssertEqual(installed.filename, expectedFilename, "flag \(enabled)")
+            XCTAssertEqual(installedExtensionStoringMock.installedExtensions.filter { $0.embeddedType == .embedded }.count, 1)
+        }
+    }
+
+    @MainActor
     func testLaunchUpgradeKillSwitchAppliesAtManagerCreation() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMLaunchUpgrade-\(UUID().uuidString)")
         createdTestExtensionDirs.append(directory)

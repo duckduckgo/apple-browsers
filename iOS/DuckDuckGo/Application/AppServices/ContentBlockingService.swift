@@ -50,7 +50,8 @@ final class ContentBlockingService {
          fireModeStorageController: FireModeNativeStorageController? = nil,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          aiChatBonusOffer: AIChatBonusOfferDependencies,
-         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil,
+         isBlankFrameOptimizationEnabled: Bool) {
 
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.fireModeStorageController = fireModeStorageController
@@ -67,7 +68,8 @@ final class ContentBlockingService {
                                                                            syncErrorHandler: syncErrorHandler,
                                                                            webExtensionAvailability: webExtensionAvailability,
                                                                            aiChatBonusOffer: aiChatBonusOffer,
-                                                                           aiChatLocalModel: aiChatLocalModel)
+                                                                           aiChatLocalModel: aiChatLocalModel,
+                                                                           isBlankFrameOptimizationEnabled: isBlankFrameOptimizationEnabled)
 
         segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,

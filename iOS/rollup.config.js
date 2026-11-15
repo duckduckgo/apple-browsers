@@ -9,6 +9,13 @@ export default [
             {
                 file: 'DuckDuckGo/Autoconsent/autoconsent-bundle.js',
                 format: 'iife'
+            },
+            {
+                // Used while `blankFrameOptimizations` is on; skips about: frames.
+                file: 'DuckDuckGo/Autoconsent/autoconsent-bundle-skip-blank-frames.js',
+                format: 'iife',
+                banner: "'use strict';\n{\nconst ddgAutoconsent = () => {",
+                footer: "};\nif (window.location.protocol !== 'about:') {\n    ddgAutoconsent();\n}\n}"
             }
         ],
         plugins: [

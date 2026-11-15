@@ -32,7 +32,8 @@ extension WebExtensionManager {
         guard !isLoadingInstalledExtensions else { return }
         connectEventsListener()
         if isEnabled {
-            guard let descriptor = EmbeddedWebExtensionRegistry.descriptor(for: .embedded) else { return }
+            guard let descriptor = EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?
+                .selecting(blankFrameOptimized: isBlankFrameOptimizationEnabled) else { return }
             await syncEmbeddedExtension(descriptor, startScriptlets: false, beforeLoad: true)
         } else {
             if let installed = installedEmbeddedExtension(for: .embedded) {
@@ -58,7 +59,7 @@ extension WebExtensionManager {
         connectEventsListener()
         Logger.webExtensions.debug("🔄 Syncing embedded extensions...")
 
-        for descriptor in EmbeddedWebExtensionRegistry.all {
+        for descriptor in EmbeddedWebExtensionRegistry.all.map({ $0.selecting(blankFrameOptimized: isBlankFrameOptimizationEnabled) }) {
             if enabledTypes.contains(descriptor.type) {
                 await syncEmbeddedExtension(descriptor)
             } else {
@@ -108,8 +109,8 @@ extension WebExtensionManager {
             }
 
             if let installed = installedEmbeddedExtension(for: descriptor.type) {
-                if shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
-                    Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
+                if isInstalledFromOtherPackage(installed, selected: descriptor) || shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
+                    Logger.webExtensions.info("⬆️ Replacing embedded extension \(descriptor.type.rawValue): \(installed.filename) v\(installed.version ?? "?") → \(bundledURL.lastPathComponent) v\(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
                     let oldIdentifier = installed.uniqueIdentifier
 
@@ -270,6 +271,14 @@ extension WebExtensionManager {
     /// Determines if the installed extension should be upgraded to the bundled version.
     private func shouldUpgrade(installed: InstalledWebExtension, bundledVersion: String?) -> Bool {
         SemanticVersionComparator().shouldUpgrade(installedVersion: installed.version, bundledVersion: bundledVersion)
+    }
+
+    /// Both packages of a type can share a version, so the installed filename tells them apart.
+    /// Unknown filenames, such as an extracted install's identifier, are left to the version check.
+    private func isInstalledFromOtherPackage(_ installed: InstalledWebExtension, selected: EmbeddedWebExtensionDescriptor) -> Bool {
+        guard let registered = EmbeddedWebExtensionRegistry.descriptor(for: selected.type) else { return false }
+        let packageFilenames = [registered.resourceFilename, registered.blankFrameOptimizedResourceFilename].compactMap { $0 }
+        return packageFilenames.contains(installed.filename) && installed.filename != selected.resourceFilename
     }
 
 }

@@ -43,6 +43,8 @@ public protocol ScriptSourceProviding {
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
     var aiChatBonusOffer: AIChatBonusOfferDependencies { get }
     var aiChatLocalModel: AIChatLocalModelDependencies? { get }
+    /// Read once at launch, so a change applies after an app restart.
+    var isBlankFrameOptimizationEnabled: Bool { get }
 
 }
 
@@ -60,6 +62,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let webExtensionAvailability: WebExtensionAvailabilityProviding?
         let aiChatBonusOffer: AIChatBonusOfferDependencies
         var aiChatLocalModel: AIChatLocalModelDependencies?
+        var isBlankFrameOptimizationEnabled: Bool = false
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -82,6 +85,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let aiChatBonusOffer: AIChatBonusOfferDependencies
     let aiChatLocalModel: AIChatLocalModelDependencies?
+    let isBlankFrameOptimizationEnabled: Bool
 
     init(dependencies: Dependencies) {
 
@@ -100,6 +104,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         webExtensionAvailability = dependencies.webExtensionAvailability
         aiChatBonusOffer = dependencies.aiChatBonusOffer
         aiChatLocalModel = dependencies.aiChatLocalModel
+        isBlankFrameOptimizationEnabled = dependencies.isBlankFrameOptimizationEnabled
         trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager
         )
@@ -112,18 +117,21 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
                                                         currentCohorts: currentCohorts)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
-                                                         properties: contentScopeProperties)
+                                                         properties: contentScopeProperties,
+                                                         isBlankFrameOptimizationEnabled: dependencies.isBlankFrameOptimizationEnabled)
     }
 
     private static func generateSessionKey() -> String { UUID().uuidString }
     
     private static func makeAutofillSource(privacyConfigurationManager: PrivacyConfigurationManaging,
-                                           properties: ContentScopeProperties) -> AutofillUserScriptSourceProvider {
+                                           properties: ContentScopeProperties,
+                                           isBlankFrameOptimizationEnabled: Bool) -> AutofillUserScriptSourceProvider {
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                              properties: properties,
                                                              isDebug: AppUserDefaults().autofillDebugScriptEnabled)
             .withJSLoading()
+            .withBlankFrameOptimization(isBlankFrameOptimizationEnabled)
             .build()
         } catch {
             if let error = error as? UserScriptError {

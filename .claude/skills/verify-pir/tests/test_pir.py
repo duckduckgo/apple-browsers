@@ -7,12 +7,12 @@ from pathlib import Path
 VERIFY_IOS = Path(__file__).resolve().parents[2] / "verify-ios"
 sys.dont_write_bytecode = True
 sys.path[:0] = [str(VERIFY_IOS / "lib"), str(VERIFY_IOS / "tests")]
-from test_tool import TMP, FakeDevice  # noqa: E402  sets VERIFY_IOS_HOME to a temp dir before verify_ios loads
+from test_tool import TMP, FakeDevice  # noqa: E402  sets VERIFY_IOS_HOME before verify_ios loads
 from verify_ios import env, harness  # noqa: E402
 
 
 class LivePIRTests(unittest.TestCase):
-    """No simulator: exercise the live proof against a real local HTTP boundary."""
+    """Exercises the proof against a real local HTTP server."""
 
     def setUp(self):
         import importlib.util
@@ -121,7 +121,7 @@ class LivePIRTests(unittest.TestCase):
             _, problems = harness.load(str(self.path))
         self.assertTrue(any("proof configuration" in p for p in problems))
 
-    def test_full_email_flow_keeps_one_attempt_and_requires_link_before_continue(self):
+    def flow(self, opt_out):
         from unittest.mock import patch
         from urllib.parse import parse_qs, urlsplit
         events, requests = [], []
@@ -142,10 +142,11 @@ class LivePIRTests(unittest.TestCase):
                 return 200, dict(checkID=check, instanceID="owner", checkedAt="now", debugRunnerReady=True, result=dict(
                     status="ready" if state["ack"] else "unauthenticated", authenticated=state["ack"], environment="staging", pirEnvironment="staging", pirEndpoint="https://backend.test"))
             if path == "/api/debug/scans":
-                self.assertTrue(state["ack"])
+                self.assertFalse(state["ack"], "the scan runs before the subscription step")
                 event("Scan Started")
                 return 202, run()
             if path.endswith("/optouts/record"):
+                self.assertTrue(state["ack"], "the opt-out waits for the subscription step")
                 state["status"] = "awaitingEmailConfirmation"
                 event("Opt-out Started")
                 return 202, run()
@@ -159,7 +160,7 @@ class LivePIRTests(unittest.TestCase):
                 return 202, run()
             return 200, run()
         port = self.server(handle)
-        config = dict(emailConfirmation=True, live=["test worker dependencies"], subscriptionEnvironment="staging", pirEnvironment="staging",
+        config = dict(optOut=opt_out, emailConfirmation=True, subscriptionEnvironment="staging", pirEnvironment="staging",
                       checkpointTimeout=1, activityTimeout=2, emailTimeout=2, pirEndpoint="https://backend.test")
         for key in ("brokerFile", "profileFile", "expectedFile", "configurationFile"):
             path = Path(self.directory.name) / key
@@ -184,7 +185,7 @@ class LivePIRTests(unittest.TestCase):
             state["ack"] = True
         ios.inputs = (config, broker, {}, expected)
         original_client = self.pir.Client
-        with patch.object(self.pir, "checkpoint", side_effect=acknowledge), \
+        with patch.object(self.pir, "checkpoint", side_effect=acknowledge) as checkpoint, \
              patch.object(self.pir, "Client", side_effect=lambda evidence: original_client(evidence, port, "owner")), \
              patch.object(self.pir, "INSTANCE", "owner"), patch.object(self.pir, "PORT", port), \
              patch.object(self.pir.steps, "fresh_start", side_effect=fresh):
@@ -193,8 +194,20 @@ class LivePIRTests(unittest.TestCase):
             self.assertEqual(ios._run_cleanups(), [])
         self.assertEqual(json.loads(Path(self.directory.name, "pir-final-run.json").read_text()), run())
         self.assertFalse(fake.fg, "owned app must terminate even when simulator is retained")
+        return ios, requests, checkpoint.call_count
+
+    def test_full_email_flow_keeps_one_attempt_and_requires_link_before_continue(self):
+        ios, requests, checkpoints = self.flow(opt_out=True)
+        self.assertEqual(checkpoints, 1)
         self.assertTrue(any(c["check"] == "selected record has an email confirmation link" for c in ios.checks))
         self.assertTrue(any(p.endswith("/continue") for m, p in requests))
+
+    def test_scan_only_needs_no_subscription_and_submits_no_opt_out(self):
+        ios, requests, checkpoints = self.flow(opt_out=False)
+        self.assertEqual(checkpoints, 0)
+        self.assertFalse(any("/optouts/" in p for m, p in requests))
+        self.assertTrue(any(c["check"] == "scan uniquely matched the expected record" and c["ok"] for c in ios.checks))
+        self.assertIn("PIR opt-out", [u["what"] for u in ios.unverified_items])
 
     def test_checkpoint_acknowledgement_and_cancellation_are_recorded_as_human_steps(self):
         from unittest.mock import patch

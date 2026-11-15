@@ -17,7 +17,14 @@ Write an evidence plan in .agent-evidence/ at the repository root, so the approv
   - stopRecording
   ```
 
-Your final message goes to the approver on one page with the build, test and recording results. Explain the cause, the fix, why it's safe, and any risk or follow-up. Don't mention building, testing or recording, since those results are on the same page.
+Your final message is the summary teammates read before approving, on one page with the build, test and recording results. Tell the story briefly, as short paragraphs in this order:
+- **Problem.** What the crash data in the plan shows, in 2 or 3 sentences: the crash type and where it happens, how often (events, users, app versions), and what the user was doing when it happened.
+- **Cause.** Why it crashes, and how sure the plan is.
+- **Fix.** What you changed. Name any plan step you skipped and why.
+- **Why it's safe.**
+- **Risk and follow-up.** Say plainly whether the change fixes the root cause or only makes the crash less likely.
+
+Don't open with which plan steps you did. Don't mention building, testing, recording or tools you couldn't use, since the worker does those and the results are on the same page.
 
 When you're done, write .agent-pr.md at the repository root for the pull request, which is public: the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does, then a blank line and 2 to 4 bullets on what changed and why. Describe only the code. No links, crash counts, versions, user data, or anything from Asana or Sentry.
 

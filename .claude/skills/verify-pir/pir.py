@@ -1,9 +1,8 @@
 """PIR.1: scan one exact broker, uniquely match a test record, and complete its opt-out flow.
 
-Set PIR_PROOF_INPUT to a local JSON configuration. See features/pir.md. This uses debug jobs,
+Set PIR_PROOF_INPUT to a local JSON configuration. See SKILL.md. This uses debug jobs,
 not the production scheduler or ordinary pixels, and confirmed does not prove removal.
 """
-import fcntl
 import hashlib
 import json
 import os
@@ -18,9 +17,11 @@ from verify_ios import env, steps
 from verify_ios.env import Failed, SetupFailed
 
 DEVICES = ["iphone"]
+LIVE = ["duckduckgo.com", "data broker sites", "PIR email and captcha services"]
+FLAGS = {"dbpCustomWebViewUserAgent": True, "dbpExtractedProfileRefresh": True}
 INPUT_ENV = ["PIR_PROOF_INPUT"]
 INSTANCE = str(uuid.uuid4())
-PORT = env.BASE_PORT + 5
+PORT = env.BASE_PORT + env.PIR_DEBUG_OFFSET
 LAUNCH = {"environment": {"PIR_DEBUG_SERVER": "true", "PIR_DEBUG_PORT": str(PORT),
                           "PIR_DEBUG_INSTANCE_ID": INSTANCE}}
 
@@ -39,15 +40,6 @@ def configuration():
     config["configurationFile"] = str(config_path)
     config["configurationSHA256"] = hashlib.sha256(config_bytes).hexdigest()
     return config
-
-
-# Import remains device-free. check() reports missing/invalid inputs through validate().
-try:
-    _config = configuration()
-except (ValueError, OSError, KeyError, TypeError):
-    _config = {}
-LIVE = _config.get("live", [])
-FLAGS = _config.get("flags", {})
 
 
 def inputs():
@@ -69,11 +61,6 @@ def inputs():
         raise ValueError("expectedFile needs profileUrl or both name and addresses")
     if not isinstance(config.get("emailConfirmation"), bool):
         raise ValueError("emailConfirmation must explicitly be true or false")
-    if not isinstance(config.get("live"), list) or not config["live"] or not all(isinstance(s, str) and s.strip() for s in config["live"]):
-        raise ValueError("live must declare broker, subscription, PIR email/captcha, and privacy-config dependencies")
-    flags = config.get("flags", {})
-    if not isinstance(flags, dict) or not all(isinstance(v, bool) for v in flags.values()) or not {"dbpCustomWebViewUserAgent", "dbpExtractedProfileRefresh"} <= set(flags):
-        raise ValueError("flags must explicitly pin dbpCustomWebViewUserAgent and dbpExtractedProfileRefresh")
     from urllib.parse import urlsplit
     endpoint = urlsplit(config.get("pirEndpoint", ""))
     if endpoint.scheme not in ("http", "https") or not endpoint.hostname or endpoint.username or endpoint.password or endpoint.query or endpoint.fragment:
@@ -89,7 +76,38 @@ def inputs():
 
 
 def validate():
-    inputs()
+    return inputs()
+
+
+def checkpoint(ios, instruction, timeout):
+    """Wait for a person to do `instruction`; they acknowledge or cancel by touching the files named in checkpoint.json."""
+    checkpoint_id = uuid.uuid4().hex
+    ack = os.path.join(ios.evidence, f"ack-{checkpoint_id}")
+    cancel = os.path.join(ios.evidence, f"cancel-{checkpoint_id}")
+    record = ios.human_step(instruction)
+    record.update(id=checkpoint_id, acknowledge=ack, cancel=cancel, timeout=timeout, status="pending")
+    path = Path(ios.evidence) / "checkpoint.json"
+    path.write_text(json.dumps(record, indent=2))
+    print(f"{instruction}\nAcknowledge: touch {ack}\nCancel: touch {cancel}", flush=True)
+    deadline = time.monotonic() + timeout
+    try:
+        while True:
+            if os.path.exists(cancel):
+                record["status"] = "cancelled"
+                raise SetupFailed("manual checkpoint cancelled")
+            if os.path.exists(ack):
+                record.update(status="acknowledged", acknowledgedAt=time.time())
+                print(f"Acknowledged checkpoint {checkpoint_id}; continuing", flush=True)
+                return checkpoint_id
+            if time.monotonic() >= deadline:
+                record["status"] = "timedOut"
+                raise SetupFailed("manual checkpoint timed out")
+            time.sleep(0.2)
+    finally:
+        if record["status"] == "pending":
+            record["status"] = "interrupted"
+        record["finishedAt"] = time.time()
+        path.write_text(json.dumps(record, indent=2))
 
 
 class Client:
@@ -203,23 +221,9 @@ def stop_test_app(ios):
 
 
 def run(ios):
-    config, broker, profile, expected = inputs()
+    config, broker, profile, expected = ios.inputs
     directory = Path(ios.evidence)
-    lock_dir = Path(env.HOME).parent / "pir-endpoint-locks"
-    lock_dir.mkdir(parents=True, exist_ok=True)
-    endpoint_lock = (lock_dir / f"{PORT}.lock").open("a+")
-    try:
-        fcntl.flock(endpoint_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError as error:
-        endpoint_lock.close()
-        raise SetupFailed("PIR endpoint is owned by another proof") from error
-
-    def cleanup():
-        try:
-            stop_test_app(ios)
-        finally:
-            endpoint_lock.close()
-    ios.on_cleanup("stop PIR work and release its endpoint", cleanup)
+    ios.on_cleanup("stop PIR work", lambda: stop_test_app(ios))
     client = Client(directory)
 
     def collect():
@@ -234,15 +238,14 @@ def run(ios):
                                 checkpointTimeout=config["checkpointTimeout"], activityTimeout=config["activityTimeout"], emailTimeout=config["emailTimeout"]),
                     instanceID=INSTANCE, port=PORT, broker=dict(name=broker["name"], version=broker["version"],
                     sha256=config["inputHashes"]["brokerFile"]), profile=dict(reference=config["profileFile"], sha256=config["inputHashes"]["profileFile"]),
-                    expected=dict(reference=config["expectedFile"], sha256=config["inputHashes"]["expectedFile"]), live=config["live"],
-                    hostCoverage="Main browser host observations do not cover PIR worker or backend traffic.")
+                    expected=dict(reference=config["expectedFile"], sha256=config["inputHashes"]["expectedFile"]))
     # Exact broker bytes, not a re-serialized approximation of the submitted version.
     (directory / "pir-broker.json").write_bytes(config["brokerBytes"])
     (directory / "pir-inputs.json").write_text(json.dumps(metadata, indent=2))
     steps.fresh_start(ios)
     before = client.prerequisite()
-    ios.checkpoint("Use the app's normal subscription UI to activate/restore the test subscription. "
-                   "Do not reset or relaunch. Acknowledge when ready; never put credentials in the proof.", config["checkpointTimeout"])
+    checkpoint(ios, "Use the app's normal subscription UI to activate/restore the test subscription. "
+               "Do not reset or relaunch. Acknowledge when ready; never put credentials in the proof.", config["checkpointTimeout"])
     after = client.prerequisite()  # new check ID, after acknowledgement, with no reset afterward
     (directory / "pir-prerequisites.json").write_text(json.dumps(dict(before=before, after=after, build=ios.launched), indent=2))
     prerequisite = after.get("result", {})
@@ -252,7 +255,8 @@ def run(ios):
             or prerequisite.get("pirEndpoint") != config["pirEndpoint"]
             or after.get("debugRunnerReady") is not True):
         raise SetupFailed("real entitlement or configured backend prerequisite not satisfied; see pir-prerequisites.json")
-    ios.note("PIR.1 debug scan/opt-out oracle; debug jobs suppress ordinary pixels. LIVE declares worker dependencies; host observation covers only browser traffic.")
+    ios.note("PIR.1 debug scan/opt-out oracle; debug jobs suppress ordinary pixels.")
+    ios.unverified("PIR worker and backend traffic", "host observation covers only browser traffic; broker, email and captcha requests run in PIR workers")
     started = client.request("POST", "/api/debug/scans", dict(broker=broker, profile=profile, hidesWebView=True))
     run_id = started.get("id")
     if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9-]+", run_id):

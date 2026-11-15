@@ -28,7 +28,8 @@ API = "https://app.asana.com/api/1.0"
 
 
 def esc(v):
-    return html.escape(str(v), quote=True)
+    # Not html.escape(quote=True): Asana shows &#x27; as text, and apostrophes are safe in double-quoted attributes
+    return html.escape(str(v), quote=False).replace('"', "&quot;")
 
 
 def a(url, text):

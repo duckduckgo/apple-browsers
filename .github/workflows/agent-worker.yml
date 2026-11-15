@@ -35,8 +35,9 @@ on:
 
 permissions: {}
 
+# One run per task at a time, so tasks under the WIP limit run side by side
 concurrency:
-  group: agent-worker
+  group: agent-worker-${{ inputs.task_gid }}
   cancel-in-progress: false
 
 env:
@@ -62,7 +63,7 @@ jobs:
   agent:
     runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
     environment: agent-worker
-    timeout-minutes: 60
+    timeout-minutes: 180
     permissions:
       contents: read
       id-token: write
@@ -102,6 +103,7 @@ jobs:
         with:
           ref: ${{ env.DEFAULT_BRANCH }}
           path: target
+          submodules: recursive
           persist-credentials: false
 
       # The worker's own scripts, from this branch and outside the agent's writable checkout
@@ -141,6 +143,33 @@ jobs:
         if: always()
         run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
 
+      # The agent builds and tests as it goes, so packages are resolved from main's manifests first, for
+      # both apps, and the deploy key is removed before the agent runs
+      - uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Resolve packages
+        working-directory: target
+        run: |
+          set -o pipefail
+          for scheme in 'iOS Browser' 'macOS Browser'; do
+            xcodebuild -resolvePackageDependencies -scheme "$scheme" -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" \
+              -skipPackagePluginValidation -skipMacroValidation >> "$RUNNER_TEMP/resolve.log" 2>&1 && echo "resolved $scheme" || echo "resolve failed for $scheme"
+          done
+
+      - name: Remove the deploy key
+        run: |
+          ssh-add -D || true
+          ssh-agent -k || true
+          echo "SSH_AUTH_SOCK=" >> "$GITHUB_ENV"
+
+      - name: Select iOS Simulator
+        id: sim
+        uses: ./target/.github/actions/select-ios-simulator
+        with:
+          preferred-versions: "27.0,26.2,26.1,26.0"
+
       # The agent edits the previous run's change and its evidence plan and PR text in place
       - name: Apply the previous run's change
         if: env.RETRY != '0'
@@ -175,20 +204,29 @@ jobs:
           worker/scripts/agent-worker/anthropic_identity.sh "$RUNNER_TEMP/anthropic-identity"
           echo "identity-dir=$RUNNER_TEMP/anthropic-identity" >> "$GITHUB_OUTPUT"
 
+      # Besides file tools, the agent can run xc (build, test, lint) and read-only git, so it can check its
+      # change and fix it as it goes. Building and testing runs code the agent wrote, which is why the worker
+      # runs from the agent-worker branch (Security Triage MM1) and holds no Azure login while the agent runs
       - name: Run coding agent
         working-directory: target
         env:
           IDENTITY_DIR: ${{ steps.anthropic.outputs.identity-dir }}
+          DEST: ${{ steps.sim.outputs.destination }}
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/evidence"
+          mkdir -p "$RUNNER_TEMP/evidence" "$RUNNER_TEMP/bin"
+          ln -sf "$GITHUB_WORKSPACE/worker/scripts/agent-worker/xc.sh" "$RUNNER_TEMP/bin/xc"
+          git_ro="Bash(git log:*),Bash(git show:*),Bash(git blame:*),Bash(git diff:*),Bash(git status:*),Bash(git grep:*)"
           rc=0
-          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u SSH_AUTH_SOCK \
+            PATH="$RUNNER_TEMP/bin:$PATH" PACKAGES="$RUNNER_TEMP/packages" \
+            XC_DERIVED="$RUNNER_TEMP/derived" XC_LOGS="$RUNNER_TEMP/xc-logs" \
+            BASH_DEFAULT_TIMEOUT_MS=2700000 BASH_MAX_TIMEOUT_MS=2700000 \
             claude -p "$(cat "$RUNNER_TEMP/prompt.md")" \
               --permission-mode dontAsk \
-              --allowedTools "Read,Glob,Grep,Edit(./**),Write(./**)" \
-              --disallowedTools "Bash,WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
-              --model opus --max-turns 50 --max-budget-usd 10 --output-format json \
+              --allowedTools "Read,Glob,Grep,Edit(./**),Write(./**),Bash(xc:*),$git_ro" \
+              --disallowedTools "WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
+              --model opus --max-turns 150 --max-budget-usd 30 --output-format json \
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
           python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/summary_md.py" \
             "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence" "$rc" || true
@@ -229,7 +267,8 @@ jobs:
           echo "::error::claude exited with $rc"
           exit 1
 
-  # Builds the patch on a fresh runner, runs the agent's tests and records its Maestro flow. Results go to
+  # Builds the patch again on a fresh runner the agent's code never ran on, runs the agent's tests and records
+  # its Maestro flow, so approval rests on results the agent couldn't change. Results go to
   # evidence for the approver. A failed build or failed tests set ok=false, which sends the task to a
   # retry or Needs attention instead of approval. The Maestro flow is evidence only and never blocks. The Azure login is only held before and after the build, never while the agent's code runs
   verify:
@@ -289,8 +328,10 @@ jobs:
         working-directory: target
         run: |
           set -o pipefail
-          xcodebuild -resolvePackageDependencies -scheme 'iOS Browser' -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" \
-            -skipPackagePluginValidation -skipMacroValidation > "$RUNNER_TEMP/resolve.log" 2>&1 && echo "resolved" || echo "resolve failed"
+          for scheme in 'iOS Browser' 'macOS Browser'; do
+            xcodebuild -resolvePackageDependencies -scheme "$scheme" -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" \
+              -skipPackagePluginValidation -skipMacroValidation >> "$RUNNER_TEMP/resolve.log" 2>&1 && echo "resolved $scheme" || echo "resolve failed for $scheme"
+          done
 
       - name: Remove the deploy key
         run: |

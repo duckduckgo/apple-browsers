@@ -1,4 +1,10 @@
-The repository to change is checked out at {{REPO_DIR}}. Make all changes there. Follow the plan below. Do not copy the plan, task details or links into code, comments or files. You run unattended and nobody can answer questions. If the plan is ambiguous, make the smallest change consistent with it and finish. You only have file tools. After you finish, the worker builds your change, runs the tests you name and records the app, so don't plan to do any of that yourself.
+The repository to change is checked out at {{REPO_DIR}}. Make all changes there. Follow the plan below. Do not copy the plan, task details or links into code, comments or files. You run unattended and nobody can answer questions. If the plan is ambiguous, make the smallest change consistent with it and finish. Besides the file tools, you can run these commands from the repository root, and no others:
+- `xc build`: builds the app your change touches for testing (`xc build ios` or `xc build macos` to choose). It takes several minutes, and prints the errors when it fails.
+- `xc test [tests]`: runs tests in xcodebuild -only-testing form, or the ones in .agent-evidence/tests.txt when you name none. Build first after changing code.
+- `xc lint`: SwiftLint --strict on the Swift files you changed.
+- Read-only git: `git log`, `git show`, `git blame`, `git diff`, `git status` and `git grep`, for the history of the code you're changing.
+
+Before you finish, build your change and run the tests in tests.txt, fix what fails and repeat until the build and the tests pass, then run `xc lint` and fix what it reports. Don't delete, skip or weaken existing tests to make them pass. Builds are slow, so read the code carefully before building rather than building to find out. After you finish, the worker builds your change again on a clean machine, runs the tests in tests.txt and records the app, and the approver sees those results.
 
 Write an evidence plan in .agent-evidence/ at the repository root, so the approver can see the fix work:
 - tests.txt: up to 5 tests that cover the change, one per line in xcodebuild -only-testing form. List a whole class (UnitTests/SwipeTabsCoordinatorTests) only for test classes you wrote or changed. For existing classes, list just the methods that exercise the code you changed (UnitTests/TabPreviewsSourceTests/testWhenUpdateFullScreenSnapshotThenItCanBeRetrieved), since other tests in those classes can be slow or flaky and the PR checks run the full suite. Add a focused unit test for the fix when you can.
@@ -24,7 +30,7 @@ Your final message is the summary teammates read before approving, on one page w
 - **Why it's safe.**
 - **Risk and follow-up.** Say plainly whether the change fixes the root cause or only makes the crash less likely.
 
-Don't open with which plan steps you did. Don't mention building, testing, recording or tools you couldn't use, since the worker does those and the results are on the same page.
+Don't open with which plan steps you did. Don't describe your build and test runs, since the worker's results are on the same page.
 
 When you're done, write .agent-pr.md at the repository root for the pull request, which is public: the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does, then a blank line and 2 to 4 bullets on what changed and why. Describe only the code. No links, crash counts, versions, user data, or anything from Asana or Sentry.
 

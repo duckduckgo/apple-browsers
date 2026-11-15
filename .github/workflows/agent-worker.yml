@@ -48,8 +48,8 @@ env:
   STATUS_FIELD: "1220497931497848"
   STATUS_OPTIONS: '{"ready": "1220497931497849", "waiting_for_approval": "1220497931497851", "pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
   # Agent retries (number) and Agent last run (text) fields. Retries are off until both are set
-  RETRIES_FIELD: ""
-  LAST_RUN_FIELD: ""
+  RETRIES_FIELD: "1220544557711344"
+  LAST_RUN_FIELD: "1220544557711346"
 
 jobs:
   agent:

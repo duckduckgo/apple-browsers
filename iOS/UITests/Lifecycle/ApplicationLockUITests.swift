@@ -83,6 +83,8 @@ final class ApplicationLockUITests: UITestCase {
                 "System passcode field did not appear.")
             passcodeField.typeText("password\n")
 
+            springboard.waitForSystemAuthenticationToDismiss(reason: authenticationReason, passcodeField: passcodeField)
+
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
                 "Browser did not unlock after entering the device passcode.")

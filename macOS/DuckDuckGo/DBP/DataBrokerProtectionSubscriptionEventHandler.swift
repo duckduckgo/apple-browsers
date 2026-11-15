@@ -96,9 +96,9 @@ final class DataBrokerProtectionSubscriptionEventHandler {
         case .disabled:
             pixelHandler.fire(.entitlementCheckInvalid)
             featureDisabler.disableAndDelete()
-        case .error:
-            Logger.dataBrokerProtection.error("PIR entitlement lost but the current token can't be read, keeping the PIR data")
-            pixelHandler.fire(.entitlementCheckError)
+        case .error(let reason):
+            Logger.dataBrokerProtection.error("PIR entitlement lost but it can't be checked (\(reason.rawValue, privacy: .public)), keeping the PIR data")
+            pixelHandler.fire(.entitlementCheckError(reason: reason))
         }
     }
 }

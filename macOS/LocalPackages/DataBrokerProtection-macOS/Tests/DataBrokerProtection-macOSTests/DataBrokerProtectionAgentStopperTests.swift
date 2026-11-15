@@ -199,7 +199,7 @@ final class DataBrokerProtectionAgentStopperTests: XCTestCase {
 
     func testUserNotAuthenticated_andUserIsNotFreemium_andNoTokenCanBeRead_thenStopAgentIsNotCalled() async {
         mockAuthenticationManager.isUserAuthenticatedValue = false
-        mockAuthenticationManager.entitlementStatusValue = .error
+        mockAuthenticationManager.entitlementStatusValue = .error(.noToken)
         mockDataManager.profileToReturn = fakeProfile
         mockFreemiumDBPUserStateManager.didActivate = false
 
@@ -233,7 +233,7 @@ final class DataBrokerProtectionAgentStopperTests: XCTestCase {
 
     func testErrorEntitlement_thenStopAgentIsNotCalled() async {
         mockAuthenticationManager.isUserAuthenticatedValue = true
-        mockAuthenticationManager.entitlementStatusValue = .error
+        mockAuthenticationManager.entitlementStatusValue = .error(.noToken)
         mockDataManager.profileToReturn = fakeProfile
 
         let stopper = DefaultDataBrokerProtectionAgentStopper(dataManager: mockDataManager,
@@ -379,7 +379,7 @@ final class DataBrokerProtectionAgentStopperTests: XCTestCase {
 
     func testEntitlementMonitor_noTokenCanBeRead_andUserIsNotFreemium_thenStopAgentIsNotCalled() {
         mockAuthenticationManager.isUserAuthenticatedValue = false
-        mockAuthenticationManager.entitlementStatusValue = .error
+        mockAuthenticationManager.entitlementStatusValue = .error(.noToken)
         mockDataManager.profileToReturn = fakeProfile
         mockFreemiumDBPUserStateManager.didActivate = false
 
@@ -403,7 +403,7 @@ final class DataBrokerProtectionAgentStopperTests: XCTestCase {
 
     func testEntitlementMonitorWithErrorResult_thenStopAgentIsNotCalled() {
         mockAuthenticationManager.isUserAuthenticatedValue = true
-        mockAuthenticationManager.entitlementStatusValue = .error
+        mockAuthenticationManager.entitlementStatusValue = .error(.noToken)
         mockDataManager.profileToReturn = fakeProfile
 
         let stopper = DefaultDataBrokerProtectionAgentStopper(dataManager: mockDataManager,

@@ -55,6 +55,10 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }
 
+    public var isEntitlementCheckErrorHandlingOn: Bool {
+        featureFlagger.isFeatureOn(.dbpEntitlementCheckErrorHandling)
+    }
+
     public init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }

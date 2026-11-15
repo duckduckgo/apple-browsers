@@ -45,11 +45,6 @@ def main():
     parts = [f"build {words.get(status.get('build'), "didn't run")}"]
     parts += [f"{k} {status[k]}" for k in ("tests", "maestro") if k in status]
     md += [f"**Results:** {', '.join(parts).replace('maestro', 'Maestro flow')}.", ""]
-    if attempt:
-        prev = e.get("PREV_URL", "").rstrip("/")
-        md += [f"This is retry {attempt}. The agent started from the previous run's change and fixed what failed in "
-               f"[its results]({prev}/verify/verify.md).", ""]
-
     md += ["## Summary", "", (r.get("result") or "").strip() or "The agent left no summary.", ""]
 
     md += ["## Proposed pull request", ""]
@@ -76,12 +71,21 @@ def main():
                "Check that its reason holds before approving.", ""]
         md += [f"- `{t.strip()}`: {r.strip()}" for t, _, r in excluded] + [""]
 
+    # Everything about the agent workflow goes in this last section, so the page above reads as the change
+    md += ["## Agent run", ""]
+    if attempt:
+        prev = e.get("PREV_URL", "").rstrip("/")
+        md += [f"This is retry {attempt}. The agent started from the previous run's change and fixed what failed in "
+               f"[its results]({prev}/verify/verify.md).", ""]
+        fixed = read(os.path.join(plan, "retry.txt")).strip()
+        if fixed:
+            md += [f"What this retry fixed, in the agent's words: {fixed}", ""]
     notes = read(os.path.join(plan, "plan-notes.txt")).strip()
     if notes:
-        md += ["## Notes", "", notes, ""]
+        md += [notes, ""]
 
     cost, secs = r.get("total_cost_usd"), (r.get("duration_ms") or 0) / 1000
-    md += ["## Agent run", "", "| | |", "|---|---|",
+    md += ["| | |", "|---|---|",
            f"| Outcome | {r.get('subtype', '-')}{' (error)' if r.get('is_error') else ''} |",
            f"| Model | {', '.join(sorted(r.get('modelUsage') or {})) or '-'} |",
            f"| Turns | {r.get('num_turns', '-')} |",

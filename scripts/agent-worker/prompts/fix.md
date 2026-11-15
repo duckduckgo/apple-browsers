@@ -7,7 +7,7 @@ Your change from the previous run is already applied in the repository, along wi
 - When a test you didn't add fails, your change doesn't touch the code it tests, and the failure looks unrelated (for example a timeout), you may take it out of tests.txt. Add a line to .agent-evidence/excluded.txt for it, in the form `UnitTests/Class/testMethod: why it's unrelated`. The approver sees these. If your change mentions the test's class, the worker puts the test back.
 - When the Maestro flow failed on a selector or timing, fix the flow. Delete flow.yaml if the change has no visible effect.
 - Update tests.txt, flow.yaml and .agent-pr.md when your fix changes what they should say.
-- Your final message replaces the previous one. Write the whole summary again in the same order, Problem first, then add one sentence on what this retry fixed.
+- Your final message replaces the previous one. Write the whole summary again in the same order, Problem first, and don't mention the retry in it. Instead, write one sentence on what this retry fixed to .agent-evidence/retry.txt.
 
 Results from the previous run:
 

@@ -5,9 +5,11 @@ Usage:
   evidence_plan.py extract <repo dir> <evidence dir>
   evidence_plan.py excluded <evidence dir>   (after changes.patch is written)
 
-extract moves .agent-evidence/tests.txt, flow.yaml and excluded.txt out of the checkout so they never go
+extract moves .agent-evidence/tests.txt, flow.yaml, excluded.txt and retry.txt out of the checkout so they never go
 into the patch. Accepted ones are saved to evidence for the verify job. Rejected ones are dropped and the
 reason goes to plan-notes.txt and summary.md, so a bad flow never stops the build or tests
+
+retry.txt is the agent's one sentence on what a retry fixed, shown in verify.md's Agent run section.
 
 excluded.txt lists tests the agent took out of tests.txt on a retry, one "<test id>: <reason>" per line.
 An exclusion only stands when the patch doesn't mention the test's class, so the agent can't drop a test
@@ -96,6 +98,14 @@ def extract(repo, evidence):
             raw = f.read(5000)
         with open(os.path.join(evidence, "excluded.txt"), "w") as f:
             f.write(raw)
+
+    retry_path = os.path.join(src, "retry.txt")
+    if os.path.isfile(retry_path):
+        with open(retry_path, errors="replace") as f:
+            raw = " ".join(f.read(1000).split())
+        if raw:
+            with open(os.path.join(evidence, "retry.txt"), "w") as f:
+                f.write(raw + "\n")
 
     if os.path.isdir(src):
         shutil.rmtree(src)

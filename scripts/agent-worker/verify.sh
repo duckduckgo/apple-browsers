@@ -64,7 +64,7 @@ SPM_FORCE_DEBUG=1 xcodebuild build-for-testing "${build[@]}" "${common[@]}" OTHE
 echo "build: $built"
 echo "build=$built" >> "$status"
 {
-  echo "## Build and tests"
+  echo "### Build and tests"
   echo
   if [[ $built == yes ]]; then
     echo "The $name app built in $(( (SECONDS - start) / 60 )) min ([build.log.gz]($url/build.log.gz))."
@@ -97,7 +97,7 @@ fi
 
 [[ $platform == ios ]] || exit 0
 
-echo -e "\n## Screens\n" >> "$md"
+echo -e "\n### Screens\n" >> "$md"
 app=$(find DerivedData/Build/Products -maxdepth 2 -name 'DuckDuckGo.app' | head -1)
 if [[ -z $app || -z ${UDID:-} ]]; then
   echo "No app or simulator to run it on." >> "$md"

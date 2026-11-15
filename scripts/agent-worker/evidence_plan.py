@@ -23,8 +23,9 @@ AGENT_DIR = ".agent-evidence"
 APP_ID = "com.duckduckgo.mobile.ios"
 MAX_TESTS = 5
 MAX_FLOW_BYTES = 20000
-# xcodebuild -only-testing form: Target, Target/Class or Target/Class/testMethod
-TEST_ID = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z_][A-Za-z0-9_]*){0,2}")
+# xcodebuild -only-testing form: Target, Target/Class or Target/Class/testMethod. Target names can have
+# spaces and hyphens (macOS "Unit Tests", "DataBrokerProtection-iOSTests")
+TEST_ID = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*( [A-Za-z0-9_-]+)*(/[A-Za-z_][A-Za-z0-9_]*){0,2}")
 # Maestro commands that drive the UI. Commands that run scripts, load other files or reach the network
 # (runScript, evalScript, runFlow, addMedia, openLink, setLocation) aren't allowed
 COMMANDS = {
@@ -121,7 +122,7 @@ def excluded(evidence):
     with open(os.path.join(evidence, "changes.patch"), errors="replace") as f:
         patch = f.read()
     tests_path = os.path.join(evidence, "tests.txt")
-    tests = open(tests_path).read().split() if os.path.isfile(tests_path) else []
+    tests = open(tests_path).read().splitlines() if os.path.isfile(tests_path) else []
     kept, notes = [], []
     for line in lines[:MAX_TESTS]:
         test, _, reason = line.partition(":")

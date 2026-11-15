@@ -21,7 +21,7 @@ LIVE = ["duckduckgo.com", "data broker sites", "PIR email and captcha services"]
 FLAGS = {"dbpCustomWebViewUserAgent": True, "dbpExtractedProfileRefresh": True}
 INPUT_ENV = ["PIR_PROOF_INPUT"]
 INSTANCE = str(uuid.uuid4())
-PORT = env.BASE_PORT + env.PIR_DEBUG_OFFSET
+PORT = env.BASE_PORT + env.DEBUG_SERVER_OFFSET
 LAUNCH = {"environment": {"PIR_DEBUG_SERVER": "true", "PIR_DEBUG_PORT": str(PORT),
                           "PIR_DEBUG_INSTANCE_ID": INSTANCE}}
 

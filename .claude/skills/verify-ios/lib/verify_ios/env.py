@@ -11,7 +11,7 @@ RUNTIME = "com.apple.CoreSimulator.SimRuntime.iOS-27-0"
 DEVICE_TYPES = {"iphone": "iPhone 17 Pro", "ipad": "iPad Pro 11-inch (M5)"}
 PORT_OFFSET = {"iphone": (0, 1), "ipad": (2, 3)}   # (AutomationServer, runner) offsets from the worktree's base port
 FIXTURE_OFFSET = 4
-PIR_DEBUG_OFFSET = 5
+DEBUG_SERVER_OFFSET = 5
 EXIT_BUSY = 75
 # Remote feature flags pinned on every launch (through LaunchOptionsHandler's `-ff.<flag> true|false` arguments), so
 # proofs never depend on the live privacy configuration. The iPhone ids in steps.py and the feature map assume these.

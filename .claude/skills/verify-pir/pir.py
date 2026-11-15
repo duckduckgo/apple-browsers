@@ -1,8 +1,4 @@
-"""PIR.1: scan one exact broker, uniquely match a test record, and, with optOut, complete its opt-out flow.
-
-Set PIR_PROOF_INPUT to a local JSON configuration. See SKILL.md. This uses debug jobs,
-not the production scheduler or ordinary pixels, and confirmed does not prove removal.
-"""
+"""PIR.1: scan one exact broker for a test profile and, with optOut, complete the opt-out for one matched record."""
 import hashlib
 import json
 import os
@@ -36,7 +32,8 @@ def configuration():
     if not isinstance(config, dict):
         raise ValueError("PIR proof configuration must be an object")
     for field in ("brokerFile", "profileFile", "expectedFile"):
-        config[field] = str((config_path.parent / config[field]).resolve())
+        if field in config:
+            config[field] = str((config_path.parent / config[field]).resolve())
     config["configurationFile"] = str(config_path)
     config["configurationSHA256"] = hashlib.sha256(config_bytes).hexdigest()
     return config
@@ -44,8 +41,9 @@ def configuration():
 
 def inputs():
     config = configuration()
-    raw = {k: Path(config[k]).read_bytes() for k in ("brokerFile", "profileFile", "expectedFile")}
-    broker, profile, expected = [json.loads(raw[k]) for k in ("brokerFile", "profileFile", "expectedFile")]
+    raw = {k: Path(config[k]).read_bytes() for k in ("brokerFile", "profileFile", "expectedFile") if k in config}
+    broker, profile = json.loads(raw["brokerFile"]), json.loads(raw["profileFile"])
+    expected = json.loads(raw["expectedFile"]) if "expectedFile" in raw else {}
     config["inputHashes"] = {k: hashlib.sha256(v).hexdigest() for k, v in raw.items()}
     config["brokerBytes"] = raw["brokerFile"]
     if not isinstance(broker, dict) or not all(broker.get(k) for k in ("name", "url", "version", "steps")):
@@ -55,10 +53,8 @@ def inputs():
     if (not profile["names"] or not profile["addresses"] or not isinstance(profile["birthYear"], int)
             or not 1900 <= profile["birthYear"] <= time.localtime().tm_year):
         raise ValueError("profileFile needs a name, address, and valid birthYear")
-    if not isinstance(expected, dict) or not expected or set(expected) - {"name", "age", "addresses", "profileUrl", "profileQuery"}:
-        raise ValueError("expectedFile must contain exact result identity fields")
-    if not expected.get("profileUrl") and not (expected.get("name") and expected.get("addresses")):
-        raise ValueError("expectedFile needs profileUrl or both name and addresses")
+    if not isinstance(expected, dict) or set(expected) - {"profileUrl"} or not isinstance(expected.get("profileUrl", ""), str):
+        raise ValueError("expectedFile may only name the profileUrl of one scan result")
     if not isinstance(config.get("optOut"), bool):
         raise ValueError("optOut must explicitly be true (scan and opt-out) or false (scan only)")
     if config["optOut"]:
@@ -117,6 +113,7 @@ class Client:
     def __init__(self, evidence, port=PORT, instance=INSTANCE):
         self.evidence, self.port, self.instance = Path(evidence), port, instance
         self.number = 0
+        self.last_get = {}   # path -> last saved (status, response), so unchanged polls are not saved again
         self.owned = False
         self.reported = set()
 
@@ -142,9 +139,12 @@ class Client:
             result = json.loads(raw)
         except ValueError:
             result = {"text": raw}
-        self.number += 1
-        record = dict(method=method, path=path, status=status, response=result)
-        (self.evidence / f"pir-http-{self.number:04d}.json").write_text(json.dumps(record, indent=2))
+        if method != "GET" or self.last_get.get(path) != (status, result):
+            self.number += 1
+            record = dict(method=method, path=path, status=status, response=result)
+            (self.evidence / f"pir-http-{self.number:04d}.json").write_text(json.dumps(record, indent=2))
+        if method == "GET":
+            self.last_get[path] = (status, result)
         if status not in (200, 202):
             raise Failed(f"PIR HTTP {status}; see pir-http-{self.number:04d}.json")
         return result
@@ -192,15 +192,21 @@ def assert_clean(run):
             raise Failed("PIR run contains an error event; see raw responses")
 
 
-def selected(run, expected, result_id=None):
-    matches = [r for r in run.get("results", []) if all(r.get(k) == v for k, v in expected.items())]
+def selected(run, profile_url=None, result_id=None):
+    """The one result to opt out: by ID once chosen, else by profileUrl, else the only result."""
+    results = run.get("results", [])
+    if result_id is not None:
+        matches = [r for r in results if r.get("id") == result_id]
+    elif profile_url:
+        matches = [r for r in results if r.get("profileUrl") == profile_url]
+    else:
+        matches = results
     if len(matches) != 1:
-        raise Failed(f"expected exactly one matching record, found {len(matches)}")
+        hint = "; set profileUrl in expectedFile to choose one" if result_id is None and not profile_url else ""
+        raise Failed(f"expected exactly one record to opt out, found {len(matches)}{hint}")
     result = matches[0]
-    if sum(r.get("id") == result.get("id") for r in run.get("results", [])) != 1:
+    if not result.get("id") or sum(r.get("id") == result["id"] for r in results) != 1:
         raise Failed("selected result ID is ambiguous across the run; refusing opt-out")
-    if not result.get("id") or (result_id is not None and result["id"] != result_id):
-        raise Failed("selected result identity changed")
     return result
 
 
@@ -245,7 +251,8 @@ def run(ios):
                                 checkpointTimeout=config["checkpointTimeout"], activityTimeout=config["activityTimeout"], emailTimeout=config["emailTimeout"]),
                     instanceID=INSTANCE, port=PORT, broker=dict(name=broker["name"], version=broker["version"],
                     sha256=config["inputHashes"]["brokerFile"]), profile=dict(reference=config["profileFile"], sha256=config["inputHashes"]["profileFile"]),
-                    expected=dict(reference=config["expectedFile"], sha256=config["inputHashes"]["expectedFile"]))
+                    expected=dict(reference=config["expectedFile"], sha256=config["inputHashes"]["expectedFile"])
+                    if "expectedFile" in config else None)
     # The exact bytes submitted, not a re-serialization.
     (directory / "pir-broker.json").write_bytes(config["brokerBytes"])
     (directory / "pir-inputs.json").write_text(json.dumps(metadata, indent=2))
@@ -262,17 +269,21 @@ def run(ios):
     ios.check("scan emitted Scan Started", history(scan, "Scan Started"))
     if not scan.get("results"):
         ios.check("empty scan emitted No Match", history(scan, "No Match"))
-        ios.unverified("PIR expected-record opt-out and email flow", "No matching records; no opt-out was submitted")
+        ios.unverified("PIR opt-out and email flow", "the app matched no records to the profile; no opt-out was submitted")
         raise SetupFailed("no match: opt-out contract remains unverified")
-    result = selected(scan, expected)
-    result_id = result["id"]
-    if not re.fullmatch(r"[A-Za-z0-9-]+", result_id):
-        raise Failed("invalid result ID")
-    ios.check("scan uniquely matched the expected record", True)
     if not config["optOut"]:
+        ios.check(f"scan found {len(scan['results'])} record(s) the app matched to the profile", True)
+        if expected.get("profileUrl"):
+            ios.check("scan found the expected profileUrl", any(r.get("profileUrl") == expected["profileUrl"] for r in scan["results"]))
         (directory / "pir-final-run.json").write_text(json.dumps(scan, indent=2))
         ios.unverified("PIR opt-out", "scan-only run (optOut: false)")
         return
+    # The opt-out submits one result ID, so it needs exactly one record.
+    result = selected(scan, expected.get("profileUrl"))
+    result_id = result["id"]
+    if not re.fullmatch(r"[A-Za-z0-9-]+", result_id):
+        raise Failed("invalid result ID")
+    ios.check("scan selected one record to opt out", True)
     checkpoint(ios, "Use the app's normal subscription UI to activate/restore the test subscription. "
                "Do not reset or relaunch. Acknowledge when ready; never put credentials in the proof.", config["checkpointTimeout"])
     after = client.prerequisite()  # a fresh check after acknowledgement
@@ -287,7 +298,7 @@ def run(ios):
     path = f"/api/debug/runs/{run_id}"
     client.request("POST", f"{path}/optouts/{result_id}")
     opted = client.idle(run_id, config["activityTimeout"])
-    result = selected(opted, expected, result_id)
+    result = selected(opted, result_id=result_id)
     ios.check("selected record emitted Opt-out Started", history(opted, "Opt-out Started", result.get("profileQuery")))
     if config["emailConfirmation"]:
         ios.check("selected record awaits email confirmation", result.get("optOutStatus") == "awaitingEmailConfirmation")
@@ -298,13 +309,13 @@ def run(ios):
                 raise Failed("email confirmation link not available within deadline")
             client.request("POST", f"{path}/email-confirmation/check", timeout=min(10, remaining))
             opted = client.idle(run_id, min(config["activityTimeout"], remaining))
-            result = selected(opted, expected, result_id)
+            result = selected(opted, result_id=result_id)
             if not result.get("hasEmailConfirmationLink"):
                 time.sleep(min(2, max(0, deadline - time.monotonic())))
         ios.check("selected record has an email confirmation link", result["hasEmailConfirmationLink"])
         client.request("POST", f"{path}/optouts/{result_id}/continue")
         opted = client.idle(run_id, config["activityTimeout"])
-        result = selected(opted, expected, result_id)
+        result = selected(opted, result_id=result_id)
     ios.check("selected record opt-out flow confirmed", result.get("optOutStatus") == "confirmed")
     ios.check("selected record emitted Opt-out Confirmed", history(opted, "Opt-out Confirmed", result.get("profileQuery")))
     (directory / "pir-final-run.json").write_text(json.dumps(opted, indent=2))

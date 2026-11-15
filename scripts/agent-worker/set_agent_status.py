@@ -49,7 +49,7 @@ def approval_comment(e):
     else:
         change = f" and the {a(ev + '/changes.patch', 'change')}" if ev else ""
         review = f"Review the agent's {summary}{change} (the worker couldn't build or test it)"
-    return ("<body><strong>The agent has a proposed fix ready for review.</strong> Nothing is published until it's approved.\n"
+    return (f"{REVIEW}<strong>The agent has a proposed fix ready for review.</strong> Nothing is published until it's approved.\n"
             f"<ol><li>{review}. Check that the fix makes sense and that nothing sensitive would go into the public PR, "
             "such as user data, crash details or internal links and names.</li>"
             f"<li>Approve the {a(e['RUN_URL'], 'worker run')} to open the PR: click <strong>Review deployments</strong>, "
@@ -61,6 +61,7 @@ def approval_comment(e):
 RETRY = ("<li>Set Agent Status back to <strong>Ready</strong> to try again with a new plan, "
          "or mark the task complete to drop it.</li>")
 ATTENTION = "<body>⚠️ "
+REVIEW = "<body>🙋 "
 
 
 def failure(e):
@@ -79,7 +80,7 @@ def outcome(e):
     """The end status, its comment and any retry fields to set"""
     run = a(e["RUN_URL"], "worker run")
     if e["PUBLISH"] == "success" and re.fullmatch(r"https://github\.com/[^\s]+/pull/[0-9]+", e.get("PR_URL", "")):
-        return "pr_open", (f"<body><strong>The agent opened a draft PR:</strong> {a(e['PR_URL'], e['PR_URL'])}\n"
+        return "pr_open", (f"{REVIEW}<strong>The agent opened a draft PR:</strong> {a(e['PR_URL'], e['PR_URL'])}\n"
                            "<ol><li>Review the PR. The worker's build and test results are in the evidence linked above.</li>"
                            "<li>Finish the change and mark the PR <strong>Ready for review</strong>.</li>"
                            "<li>When it merges, set Agent Status to <strong>Done</strong>.</li></ol></body>"), {}

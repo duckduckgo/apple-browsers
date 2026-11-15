@@ -31,7 +31,9 @@ fi
 if [[ $platform == ios ]]; then
   build=(-scheme 'iOS Browser' -destination "$DEST")
 else
-  build=(-scheme 'macOS Browser' -configuration CI -destination 'platform=macOS' ENABLE_TESTABILITY=true)
+  # No signing assets on this runner, so macOS builds skip signing, like the repo's other non-release checks
+  build=(-scheme 'macOS Browser' -configuration CI -destination 'platform=macOS' ENABLE_TESTABILITY=true
+    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES)
 fi
 common=(-derivedDataPath DerivedData -clonedSourcePackagesDirPath "$PACKAGES" -disableAutomaticPackageResolution
   -skipPackagePluginValidation -skipMacroValidation)

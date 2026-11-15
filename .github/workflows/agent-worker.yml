@@ -170,6 +170,10 @@ jobs:
         with:
           preferred-versions: "27.0,26.2,26.1,26.0"
 
+      - name: Install SwiftLint
+        continue-on-error: true
+        run: command -v swiftlint > /dev/null || brew install swiftlint > /dev/null
+
       # The agent edits the previous run's change and its evidence plan and PR text in place
       - name: Apply the previous run's change
         if: env.RETRY != '0'

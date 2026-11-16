@@ -33,6 +33,7 @@ final class SyncLoginNotificationServiceTests: XCTestCase {
         sync = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         sync.account = SyncAccount(deviceId: "this", deviceName: "This device", deviceType: "phone", userId: "account",
                                    primaryKey: Data(), secretKey: Data(), token: "token", state: .active)
+        sync.isAuditLogPollingAvailableStub = true
         flags = MockFeatureFlagger(enabledFeatureFlags: [.syncLoginAuditLog, .syncLoginNotification])
         center = MockUNUserNotificationCenter()
         service = SyncLoginNotificationService(syncService: sync, featureFlagger: flags, notificationCenter: center)
@@ -43,6 +44,46 @@ final class SyncLoginNotificationServiceTests: XCTestCase {
                               events: (0..<count).map {
             SyncLoginEvent(id: "event-\($0)", occurredAt: Date(), deviceName: "Phone")
         })
+    }
+
+    func testDeliveryDoesNotRequireUIReadiness() async {
+        sync.authState = .initializing
+        center.authorizationStatus = .authorized
+
+        await service.deliver(notification())
+
+        XCTAssertEqual(center.addedRequests.count, 1)
+        XCTAssertFalse(SyncLoginNotificationService.canOpenActivity(for: "account", syncService: sync, featureFlagger: flags))
+    }
+
+    func testUnavailablePollingPreventsDeliveryAndPermissionRequest() async {
+        sync.isAuditLogPollingAvailableStub = false
+
+        await service.deliver(notification())
+
+        XCTAssertFalse(center.didRequestAuthorization)
+        XCTAssertTrue(center.addedRequests.isEmpty)
+    }
+
+    func testPollingBecomingUnavailableDuringAuthorizationPreventsDelivery() async {
+        center.authorizationStatusHandler = { [unowned self] in
+            self.sync.isAuditLogPollingAvailableStub = false
+            return .notDetermined
+        }
+
+        await service.deliver(notification())
+
+        XCTAssertFalse(center.didRequestAuthorization)
+        XCTAssertTrue(center.addedRequests.isEmpty)
+    }
+
+    func testStorageFailurePreventsDeliveryAndPermissionRequest() async {
+        sync.isAuditLogPollingAvailableError = SyncError.failedToReadSecureStore(status: -25308)
+
+        await service.deliver(notification())
+
+        XCTAssertFalse(center.didRequestAuthorization)
+        XCTAssertTrue(center.addedRequests.isEmpty)
     }
 
     func testNotDeterminedRequestsProvisionalAuthorizationAndSchedulesSingularCopy() async throws {

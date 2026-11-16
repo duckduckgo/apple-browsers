@@ -541,6 +541,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
     }
 
+    /// With its native chat input on, iPad hands the page's header to native in every display mode.
+    private var isIPadNativeChatInputOn: Bool {
+        !devicePlatform.isIphone && unifiedToggleInputFeature.isFullTabChatInputAvailable
+    }
+
     /// iPad's contextual sheet and sidebar always use the native input; its full-tab chat does once the iPad flag is on.
     private var isNativeChatInputAvailable: Bool {
         unifiedToggleInputFeature.isFullTabChatInputAvailable || displayMode == .contextual
@@ -577,7 +582,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: supportsTabContexts,
-            supportsAIChatFullMode: supportsFullMode,
+            supportsAIChatFullMode: supportsFullMode || isIPadNativeChatInputOn,
             supportsAIChatContextualMode: supportsContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,

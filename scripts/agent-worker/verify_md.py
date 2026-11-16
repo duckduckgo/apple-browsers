@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write verify.md, the one page an approver reads before a PR is opened.
+"""Write verify.md, the one page with the agent's change and the clean build and test results.
 
 Usage: verify_md.py <plan dir> <out dir>
 Env: EVIDENCE_URL (this run's evidence), RUN_URL, TASK_GID
@@ -56,8 +56,8 @@ def main():
 
     md = [f"# {title or 'Agent change'}", ""]
     task = f"[Asana task](https://app.asana.com/0/0/{e['TASK_GID']}/f)" if e.get("TASK_GID") else "the task"
-    md += [f"The agent's proposed fix for {task}, built and tested on a clean runner. Approving the publish step "
-           f"in the [worker run]({run}) opens it as a PR with the title and description below.", ""]
+    md += [f"The agent's fix for {task}, built and tested on a clean runner. When the build and tests pass, the "
+           f"[worker run]({run}) opens it as a PR with the title and description below.", ""]
     status = dict(l.split("=", 1) for l in read(os.path.join(out, "status")).split() if "=" in l)
     words = {"yes": "passed", "no": "failed"}
     parts = [f"build {words.get(status.get('build'), "didn't run")}"]
@@ -65,10 +65,7 @@ def main():
     md += [f"**Results:** {', '.join(parts).replace('maestro', 'Maestro flow')}.", ""]
     md += ["## Summary", "", (r.get("result") or "").strip() or "The agent left no summary.", ""]
 
-    md += ["## Proposed pull request", ""]
-    if run:
-        md += [f"[Approve for PR creation]({run}): click **Review deployments**, tick **agent-publish** and click "
-               "**Approve and deploy**.", ""]
+    md += ["## Pull request", ""]
     if title:
         md += [f"**Title:** {title}", "", "**Description:**", "", body or "(no description)", ""]
     else:
@@ -89,7 +86,7 @@ def main():
     if excluded:
         md += ["### Excluded tests", "",
                "The agent took these tests out of the run. They're tests it didn't add, for code the change doesn't touch. "
-               "Check that its reason holds before approving.", ""]
+               "Check that its reason holds when reviewing the PR.", ""]
         md += [f"- `{t.strip()}`: {r.strip()}" for t, _, r in excluded] + [""]
 
     # Everything about the agent workflow goes in this last section, so the page above reads as the change

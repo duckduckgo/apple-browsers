@@ -1,6 +1,7 @@
 name: Agent worker
 
-# Agent worker: applies a plan from the apple-agent-orchestrator and opens a PR ready for review after a person approves
+# Agent worker: applies a plan from the apple-agent-orchestrator and opens a PR ready for review when the change builds
+# and its tests pass on a clean runner
 
 on:
   workflow_dispatch:
@@ -36,7 +37,7 @@ env:
   DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
   # Agent Status field and its option gids in the agent project
   STATUS_FIELD: "1220497931497848"
-  STATUS_OPTIONS: '{"ready": "1220497931497849", "waiting_for_approval": "1220497931497851", "pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
+  STATUS_OPTIONS: '{"ready": "1220497931497849", "pr_open": "1220497931497852", "needs_attention": "1220497931497853"}'
 
 jobs:
   agent:
@@ -225,9 +226,9 @@ jobs:
           exit 1
 
   # Builds the patch again on a fresh runner the agent's code never ran on, runs the agent's tests and records
-  # its Maestro flow, so approval rests on results the agent couldn't change. Results go to
-  # evidence for the approver. A failed build or failed tests set ok=false, which sends the task to
-  # Needs attention instead of approval. The Maestro flow is evidence only and never blocks. The Azure login is only held before and after the build, never while the agent's code runs
+  # its Maestro flow, so publishing rests on results the agent couldn't change. Results go to
+  # evidence for the PR reviewer. A failed build or failed tests set ok=false, which sends the task to
+  # Needs attention instead of a PR. The Maestro flow is evidence only and never blocks. The Azure login is only held before and after the build, never while the agent's code runs
   verify:
     needs: agent
     if: needs.agent.result == 'success'
@@ -340,7 +341,7 @@ jobs:
             python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify_md.py" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
 
       # ok=false sends the task to Needs attention, and failure says why in the Asana comment. A failed
-      # Maestro flow shows on the verify page for the approver but doesn't set ok=false
+      # Maestro flow shows on the verify page but doesn't set ok=false
       - name: Result
         id: result
         if: always()
@@ -374,37 +375,8 @@ jobs:
         if: always()
         run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
 
-  # Moves the Asana task to Waiting for approval, with the evidence links and what to click to approve
-  approval-request:
-    needs: [agent, verify]
-    if: needs.verify.outputs.ok == 'true'
-    runs-on: ubuntu-latest
-    environment: agent-worker
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          path: worker
-          sparse-checkout: scripts/agent-worker
-          persist-credentials: false
-
-      - name: Set Agent Status to Waiting for approval
-        env:
-          ASANA_APP_CLIENT_ID: ${{ secrets.ASANA_APP_CLIENT_ID }}
-          ASANA_APP_CLIENT_SECRET: ${{ secrets.ASANA_APP_CLIENT_SECRET }}
-          ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
-          TASK_GID: ${{ inputs.task_gid }}
-          STAGE: approval
-          EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
-          VERIFY_URL: ${{ needs.verify.outputs.url }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: python3 -I worker/scripts/agent-worker/set_agent_status.py
-
-  # A person reviews the evidence and approves the agent-publish environment before anything in
-  # this public repo is created. The patch comes from artifacts.go, never a public artifact
+  # Opens the PR once the clean verify passed, with no approval step. The agent-publish environment holds the
+  # GitHub App key and must have no required reviewers. The patch comes from artifacts.go, never a public artifact
   publish:
     needs: [agent, verify]
     if: needs.verify.outputs.ok == 'true'
@@ -445,7 +417,7 @@ jobs:
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
           allow-no-subscriptions: true
 
-      # The worker's scripts, and the agent's title and description as the approver saw them, or a fallback
+      # The worker's scripts, and the agent's title and description, or a fallback
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
@@ -464,7 +436,7 @@ jobs:
           TASK_GID: ${{ inputs.task_gid }}
           RUN_ID: ${{ github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: python3 -I worker/scripts/agent-worker/pr_text.py render "$RUNNER_TEMP/pr.md" "$RUNNER_TEMP"
+        run: python3 -I worker/scripts/agent-worker/pr_text.py render "$RUNNER_TEMP/pr.md" "$RUNNER_TEMP" .github/PULL_REQUEST_TEMPLATE.md
 
       - name: Apply, commit, push
         run: |
@@ -480,7 +452,7 @@ jobs:
           git commit -q -F "$RUNNER_TEMP/title.txt"
           git push -q -u origin "$BRANCH"
 
-      # In the repo's PR template shape: the Asana link, the agent's description and the run link
+      # Filled from the repo's PR template: the Asana link, the agent's sections and the run link
       - name: Open PR
         id: pr
         env:

@@ -6,11 +6,11 @@ The repository to change is checked out at {{REPO_DIR}}. Make all changes there.
 - `xc build` and `xc test` print the path of their full log. Use the Grep and Read tools on it when the printed errors aren't enough.
 - Read-only git: `git log`, `git show`, `git blame`, `git diff`, `git status` and `git grep`, for the history of the code you're changing.
 
-Before you finish, build your change and run the tests in tests.txt, fix what fails and repeat until the build and the tests pass, then run `xc lint` and fix what it reports. Don't delete, skip or weaken existing tests to make them pass. Builds are slow, so read the code carefully before building rather than building to find out. After you finish, the worker builds your change again on a clean machine, runs the tests in tests.txt and records the app, and the approver sees those results.
+Before you finish, build your change and run the tests in tests.txt, fix what fails and repeat until the build and the tests pass, then run `xc lint` and fix what it reports. Don't delete, skip or weaken existing tests to make them pass. Builds are slow, so read the code carefully before building rather than building to find out. After you finish, the worker builds your change again on a clean machine, runs the tests in tests.txt and records the app. When the build and tests pass there, the worker opens your PR with no further approval, so a person first sees your change as a PR.
 
-Write an evidence plan in .agent-evidence/ at the repository root, so the approver can see the fix work:
+Write an evidence plan in .agent-evidence/ at the repository root, so the PR reviewer can see the fix work:
 - tests.txt: up to 5 tests that cover the change, one per line in xcodebuild -only-testing form, using the target name as the test plan spells it (iOS `UnitTests`, macOS `Unit Tests`). List a whole class (UnitTests/SwipeTabsCoordinatorTests) only for test classes you wrote or changed. For existing classes, list just the methods that exercise the code you changed (UnitTests/TabPreviewsSourceTests/testWhenUpdateFullScreenSnapshotThenItCanBeRetrieved), since other tests in those classes can be slow or flaky and the PR checks run the full suite. Add a focused unit test for the fix when you can.
-- excluded.txt, only when needed: when a test in tests.txt that you didn't add keeps failing, your change doesn't touch the code it tests, and the failure looks unrelated (for example a timeout), take it out of tests.txt and add a line here in the form `UnitTests/Class/testMethod: why it's unrelated`. The approver sees these. If your change mentions the test's class, the worker puts the test back.
+- excluded.txt, only when needed: when a test in tests.txt that you didn't add keeps failing, your change doesn't touch the code it tests, and the failure looks unrelated (for example a timeout), take it out of tests.txt and add a line here in the form `UnitTests/Class/testMethod: why it's unrelated`. The reviewer sees these. If your change mentions the test's class, the worker puts the test back.
 - flow.yaml, for iOS changes with a visible effect: a short Maestro flow that opens the app, goes to the screen the change affects and shows it working. Use only these commands: launchApp, stopApp, killApp, clearState, tapOn, doubleTapOn, longPressOn, inputText, eraseText, pressKey, back, hideKeyboard, scroll, scrollUntilVisible, swipe, assertVisible, assertNotVisible, waitForAnimationToEnd, extendedWaitUntil, takeScreenshot, startRecording, stopRecording, setOrientation, copyTextFrom, pasteText. Read .maestro/AGENTS.md first. You can't run the flow before it's used, so keep it short and only use selectors you can see in the code: prefer accessibility ids, then the app's own English strings. Don't tap or assert on text inside web pages, which changes and can be translated; use web pages only as a backdrop for the app UI. Wait for elements with extendedWaitUntil before acting on them. Launch with the arguments below so the app skips onboarding. For example:
 
   ```yaml
@@ -26,7 +26,7 @@ Write an evidence plan in .agent-evidence/ at the repository root, so the approv
   - stopRecording
   ```
 
-Your final message is the summary teammates read before approving, on one page with the build, test and recording results. Tell the story briefly, as short paragraphs in this order:
+Your final message is the summary teammates read alongside the PR, on one page with the build, test and recording results. Tell the story briefly, as short paragraphs in this order:
 - **Problem.** What the crash data in the plan shows, in 2 or 3 sentences: the crash type and where it happens, how often (events, users, app versions), and what the user was doing when it happened.
 - **Cause.** Why it crashes, and how sure the plan is.
 - **Fix.** What you changed. Name any plan step you skipped and why.
@@ -35,6 +35,13 @@ Your final message is the summary teammates read before approving, on one page w
 
 Don't open with which plan steps you did. Don't describe your build and test runs, since the worker's results are on the same page.
 
-When you're done, write .agent-pr.md at the repository root for the pull request, which is public: the first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does, then a blank line and 2 to 4 bullets on what changed and why. Describe only the code. No links, crash counts, versions, user data, or anything from Asana or Sentry.
+When you're done, write .agent-pr.md at the repository root for the pull request, which is public and opens without anyone reading it first. The first line is the title, starting with 'iOS: ' or 'macOS: ' and saying what the change does. Then a blank line and these sections from the repo's PR template (.github/PULL_REQUEST_TEMPLATE.md), each a heading exactly as written here followed by its text. Follow the template's guidance for each section, and leave out a section that doesn't apply:
+- `### Description`: 2 to 4 bullets on what changed and why, in plain English.
+- `### Testing Steps`: numbered steps a reviewer unfamiliar with this part of the app can follow to check the change, one action per step, with the expected outcome inline. Include running the tests you added.
+- `### Impact`: one line starting with High, Medium, Low or None, then why.
+- `#### What could go wrong?`: only when the risk isn't obvious, one line per scenario as "X could happen → mitigated by Y."
+- `### Quality Considerations`: only when there are edge cases, performance or privacy/security points worth a reviewer's attention.
+
+The worker adds the Task/Issue URL and the template's footer. No links, crash counts, versions, user data, or anything from Asana or Sentry.
 
 {{PLAN}}

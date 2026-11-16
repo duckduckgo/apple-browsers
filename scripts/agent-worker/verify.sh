@@ -4,7 +4,7 @@
 # puts into verify.md
 #
 # Usage: verify.sh <repo dir> <plan dir> <out dir>
-# Writes build=, tests= and maestro= lines to <out dir>/status. build= and tests= decide between approval
+# Writes build=, tests= and maestro= lines to <out dir>/status. build= and tests= decide between a PR
 # and Needs attention, and maestro= is evidence only
 # Env: DEST (iOS Simulator destination), IOS_VERSION (its iOS version), PACKAGES (cloned source packages dir),
 # VERIFY_URL (where out dir is uploaded, for links)

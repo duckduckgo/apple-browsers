@@ -45,7 +45,17 @@ enum AIChatTabPickerSource {
         }
         // A detached Duck.ai window belongs to the tab it was opened from, so the owner tab decides there too.
         guard let ownerTabID = ownerTabID(for: webView, in: windowControllersManager) else { return nil }
-        return collection(containingTabID: ownerTabID, in: windowControllersManager)
+        return pickerOrigin(containingTabID: ownerTabID, in: windowControllersManager)
+    }
+
+    /// Unlike `collection(containingTabID:)`, a shared pinned tab still resolves here: it is in every
+    /// regular window, and any of them offers the same tabs (`tabCollections(forOrigin:)`). `nil` only
+    /// when a Fire Window is among several matches, as its tabs must not be offered to another window.
+    private static func pickerOrigin(containingTabID tabID: TabIdentifier,
+                                     in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        let matches = collections(containingTabID: tabID, in: windowControllersManager)
+        guard matches.count == 1 || !matches.contains(where: { $0.isBurner }) else { return nil }
+        return matches.first
     }
 
     /// Opaque handle for the window a call is scoped to. A tab id is not enough — pinned tabs are
@@ -65,10 +75,15 @@ enum AIChatTabPickerSource {
     /// A shared pinned tab is in every window's collection, so it has no single owner — `nil`.
     static func collection(containingTabID tabID: TabIdentifier,
                            in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        let matches = windowControllersManager.allTabCollectionViewModels.filter {
+        let matches = collections(containingTabID: tabID, in: windowControllersManager)
+        return matches.count == 1 ? matches[0] : nil
+    }
+
+    private static func collections(containingTabID tabID: TabIdentifier,
+                                    in windowControllersManager: WindowControllersManagerProtocol) -> [TabCollectionViewModel] {
+        windowControllersManager.allTabCollectionViewModels.filter {
             $0.indexInAllTabs(where: { $0.uuid == tabID }) != nil
         }
-        return matches.count == 1 ? matches[0] : nil
     }
 
     static func windowToken(forCollection collection: TabCollectionViewModel) -> String {

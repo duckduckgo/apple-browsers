@@ -124,6 +124,30 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: nil, in: manager))
     }
 
+    /// A detached chat opened from a shared pinned tab: the tab is in every regular window, and any
+    /// of them offers the same tabs, so the picker still gets an origin.
+    func testWhenWindowlessCallerIsASharedPinnedTabThenARegularWindowIsTheOrigin() {
+        let pinned = Tab(uuid: "shared", content: .url(URL(string: "https://duck.ai")!, credential: nil, source: .ui))
+        let first = collection([.loaded(pinned)])
+        let second = collection([.unloaded(UnloadedTab(uuid: "shared", content: pinned.content, isSuspended: false))])
+        XCTAssertNil(pinned.webView.window)
+
+        let resolved = AIChatTabPickerSource.originTabCollectionViewModel(for: pinned.webView, in: manager(with: [burnerCollection(), first, second]))
+
+        XCTAssertTrue(resolved === first)
+    }
+
+    /// Fire Windows hold no pinned tabs, but should a tab id ever be in one and in another window,
+    /// the caller can't be placed without risking the Fire Window's tabs.
+    func testWhenWindowlessCallerIsSharedWithAFireWindowThenNoOriginIsResolved() {
+        let burnerMode = BurnerMode(isBurner: true)
+        let fireTab = Tab(uuid: "shared", content: .url(URL(string: "https://duck.ai")!, credential: nil, source: .ui), burnerMode: burnerMode)
+        let fireWindow = collection([.loaded(fireTab)], burnerMode: burnerMode)
+        let regular = collection([.unloaded(UnloadedTab(uuid: "shared", content: fireTab.content, isSuspended: false))])
+
+        XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: fireTab.webView, in: manager(with: [regular, fireWindow])))
+    }
+
     // MARK: - materializeAttachableTab (wake suspended tabs)
 
     func testMaterializeWakesSuspendedTabWithoutChangingSelection() {

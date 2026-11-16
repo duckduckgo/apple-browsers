@@ -35,14 +35,6 @@ enum AssistedOptOutText {
                                                  value: "Finished",
                                                  comment: "Status after the removal request is submitted.")
 
-    static let close = NSLocalizedString("pir.assisted.close", bundle: .module,
-                                                 value: "Close",
-                                                 comment: "Closes the completed removal window.")
-
-    static let closeStops = NSLocalizedString("pir.assisted.close-stops", bundle: .module,
-                                                 value: "Close and stop removal",
-                                                 comment: "Help and accessibility label for closing an unfinished removal window.")
-
     static let closingStops = NSLocalizedString("pir.assisted.closing-stops", bundle: .module,
                                                  value: "Closing stops this removal",
                                                  comment: "Explains that closing an unfinished removal window cancels it.")
@@ -109,6 +101,21 @@ enum AssistedOptOutText {
     static let stop = NSLocalizedString("pir.assisted.stop", bundle: .module,
                                                  value: "Stop",
                                                  comment: "Stops the current removal attempt.")
+
+    static func stopConfirmationTitle(_ brokerName: String) -> String {
+        let format = NSLocalizedString("pir.assisted.stop-confirmation.title", bundle: .module,
+                                      value: "Stop removing you from %@?",
+                                      comment: "Title of the confirmation shown when closing an unfinished removal window. %@ is the data broker name.")
+        return String(format: format, brokerName)
+    }
+
+    static let stopConfirmationDetail = NSLocalizedString("pir.assisted.stop-confirmation.detail", bundle: .module,
+                                                 value: "Closing this window stops the request. You can start it again from the dashboard.",
+                                                 comment: "Explains what closing an unfinished removal window does.")
+
+    static let keepGoing = NSLocalizedString("pir.assisted.keep-going", bundle: .module,
+                                                 value: "Keep Going",
+                                                 comment: "Dismisses the stop confirmation and continues the removal.")
 
     static let yourTurn = NSLocalizedString("pir.assisted.user.title", bundle: .module,
                                                  value: "Your turn",

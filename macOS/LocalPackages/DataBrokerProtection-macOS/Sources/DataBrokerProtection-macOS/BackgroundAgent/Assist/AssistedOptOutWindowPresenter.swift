@@ -24,6 +24,8 @@ import DesignResourcesKit
 import SwiftUI
 import WebKit
 
+typealias AssistedOptOutStopConfirmation = @MainActor (NSWindow, AssistedOptOut.DataBroker, @escaping @MainActor (Bool) -> Void) -> Void
+
 @MainActor
 final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
     private var controllers: [AssistedOptOutID: AssistedOptOutWindowController] = [:]
@@ -31,15 +33,18 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
     private let requestUserAttention: @MainActor () -> Void
     private let makeWindow: @MainActor () -> NSWindow
     private let loadFavicon: @MainActor (AssistedOptOut.DataBroker) async -> Data?
+    private let confirmStop: AssistedOptOutStopConfirmation
 
     init(isApplicationActive: @escaping @MainActor () -> Bool = { NSApp.isActive },
          requestUserAttention: @escaping @MainActor () -> Void = { NSApp.requestUserAttention(.criticalRequest) },
          makeWindow: @escaping @MainActor () -> NSWindow = AssistedOptOutWindowController.makeWindow,
-         loadFavicon: @escaping @MainActor (AssistedOptOut.DataBroker) async -> Data? = AssistedOptOutBrokerLogo.faviconData) {
+         loadFavicon: @escaping @MainActor (AssistedOptOut.DataBroker) async -> Data? = AssistedOptOutBrokerLogo.faviconData,
+         confirmStop: @escaping AssistedOptOutStopConfirmation = AssistedOptOutWindowController.presentStopConfirmation) {
         self.isApplicationActive = isApplicationActive
         self.requestUserAttention = requestUserAttention
         self.makeWindow = makeWindow
         self.loadFavicon = loadFavicon
+        self.confirmStop = confirmStop
     }
 
     func present(_ session: AssistedOptOutSession) {
@@ -70,7 +75,8 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
 
     private func controller(for session: AssistedOptOutSession) -> AssistedOptOutWindowController {
         if let controller = controllers[session.id] { return controller }
-        let controller = AssistedOptOutWindowController(session: session, window: makeWindow(), loadFavicon: loadFavicon) { [weak self] in
+        let controller = AssistedOptOutWindowController(session: session, window: makeWindow(), loadFavicon: loadFavicon,
+                                                        confirmStop: confirmStop) { [weak self] in
             self?.controllers[session.id] = nil
         }
         controllers[session.id] = controller
@@ -79,27 +85,42 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
 }
 
 @MainActor
-final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate {
+final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate {
+    private static let addressItem = NSToolbarItem.Identifier("AssistedOptOutAddress")
+    private static let statusItem = NSToolbarItem.Identifier("AssistedOptOutStatus")
+
     private let session: AssistedOptOutSession
     private let page = AssistedOptOutPageModel()
+    private let confirmStop: AssistedOptOutStopConfirmation
     private let onClose: @MainActor () -> Void
-    private let frameView = AssistedOptOutGlowFrameView()
+    private let pageView = NSView()
+    private let edgeView = AssistedOptOutEdgeOverlayView()
     private let coverView: NSView
     private var cancellables = Set<AnyCancellable>()
     private var isClosed = false
+    private var isConfirmingStop = false
 
     init(session: AssistedOptOutSession, window: NSWindow,
          loadFavicon: @escaping @MainActor (AssistedOptOut.DataBroker) async -> Data?,
+         confirmStop: @escaping AssistedOptOutStopConfirmation = AssistedOptOutWindowController.presentStopConfirmation,
          onClose: @escaping @MainActor () -> Void) {
         self.session = session
+        self.confirmStop = confirmStop
         self.onClose = onClose
         coverView = AssistedOptOutHostingView(rootView: AssistedOptOutAppearanceRoot(content: AssistedOptOutPageCover(session: session)))
         window.title = AssistedOptOutText.removingFrom(session.broker.name)
+        window.titleVisibility = .hidden
+        window.toolbarStyle = .unified
         window.backgroundColor = NSColor(designSystemColor: .surfacePrimary, palette: .default)
         window.isReleasedWhenClosed = false
-        window.minSize = NSSize(width: 960, height: 600)
+        window.minSize = NSSize(width: 800, height: 560)
         super.init(window: window)
         window.delegate = self
+        let toolbar = NSToolbar(identifier: "AssistedOptOutToolbar")
+        toolbar.delegate = self
+        toolbar.displayMode = .iconOnly
+        toolbar.allowsUserCustomization = false
+        window.toolbar = toolbar
         window.contentView = makeContentView(loadFavicon: loadFavicon)
         observeSession()
     }
@@ -110,43 +131,47 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     }
 
     static func makeWindow() -> NSWindow {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1040, height: 680),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered, defer: false)
         window.center()
         return window
     }
 
+    static func presentStopConfirmation(in window: NSWindow, broker: AssistedOptOut.DataBroker, completion: @escaping @MainActor (Bool) -> Void) {
+        let alert = NSAlert()
+        alert.messageText = AssistedOptOutText.stopConfirmationTitle(broker.name)
+        alert.informativeText = AssistedOptOutText.stopConfirmationDetail
+        alert.addButton(withTitle: AssistedOptOutText.keepGoing)
+        alert.addButton(withTitle: AssistedOptOutText.stop).hasDestructiveAction = true
+        alert.beginSheetModal(for: window) { response in
+            MainActor.assumeMainThread {
+                completion(response == .alertSecondButtonReturn)
+            }
+        }
+    }
+
     private func makeContentView(loadFavicon: @escaping @MainActor (AssistedOptOut.DataBroker) async -> Data?) -> NSView {
         let content = AssistedOptOutBackgroundView()
-        let browserArea = NSView()
-        let topBar = AssistedOptOutHostingView(rootView: AssistedOptOutAppearanceRoot(content: AssistedOptOutTopBar(session: session, page: page)))
         let panel = AssistedOptOutHostingView(rootView: AssistedOptOutAppearanceRoot(content: AssistedOptOutStepsPanel(
             session: session,
             close: { [weak self] in self?.window?.performClose(nil) },
             loadFavicon: loadFavicon
         )))
-        let divider = NSBox()
+        // A separator's orientation comes from its initial frame. A zero frame makes it horizontal, and its height then collapses the window.
+        let divider = NSBox(frame: NSRect(x: 0, y: 0, width: 1, height: 100))
         divider.boxType = .separator
 
-        for (view, superview) in [(topBar, browserArea), (frameView, browserArea), (coverView, frameView.contentView),
-                                  (browserArea, content), (divider, content), (panel, content)] as [(NSView, NSView)] {
+        for (view, superview) in [(coverView, pageView), (pageView, content), (edgeView, content),
+                                  (divider, content), (panel, content)] as [(NSView, NSView)] {
             view.translatesAutoresizingMaskIntoConstraints = false
             superview.addSubview(view)
         }
         NSLayoutConstraint.activate([
-            browserArea.topAnchor.constraint(equalTo: content.topAnchor),
-            browserArea.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            browserArea.bottomAnchor.constraint(equalTo: content.bottomAnchor),
-            topBar.topAnchor.constraint(equalTo: browserArea.topAnchor),
-            topBar.leadingAnchor.constraint(equalTo: browserArea.leadingAnchor),
-            topBar.trailingAnchor.constraint(equalTo: browserArea.trailingAnchor),
-            topBar.heightAnchor.constraint(equalToConstant: 46),
-            frameView.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 14),
-            frameView.leadingAnchor.constraint(equalTo: browserArea.leadingAnchor, constant: 14),
-            frameView.trailingAnchor.constraint(equalTo: browserArea.trailingAnchor, constant: -14),
-            frameView.bottomAnchor.constraint(equalTo: browserArea.bottomAnchor, constant: -14),
-            divider.leadingAnchor.constraint(equalTo: browserArea.trailingAnchor),
+            pageView.topAnchor.constraint(equalTo: content.topAnchor),
+            pageView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            pageView.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            divider.leadingAnchor.constraint(equalTo: pageView.trailingAnchor),
             divider.topAnchor.constraint(equalTo: content.topAnchor),
             divider.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             divider.widthAnchor.constraint(equalToConstant: 1),
@@ -154,8 +179,8 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
             panel.topAnchor.constraint(equalTo: content.topAnchor),
             panel.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             panel.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            panel.widthAnchor.constraint(equalToConstant: 380)
-        ] + pinned(coverView, to: frameView.contentView))
+            panel.widthAnchor.constraint(equalToConstant: 320)
+        ] + pinned(coverView, to: pageView) + pinned(edgeView, to: pageView))
         return content
     }
 
@@ -189,11 +214,11 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     }
 
     private func embed(_ webView: WKWebView) {
-        guard webView.superview !== frameView.contentView else { return }
+        guard webView.superview !== pageView else { return }
         webView.removeFromSuperview()
         webView.translatesAutoresizingMaskIntoConstraints = false
-        frameView.contentView.addSubview(webView, positioned: .below, relativeTo: coverView)
-        NSLayoutConstraint.activate(pinned(webView, to: frameView.contentView))
+        pageView.addSubview(webView, positioned: .below, relativeTo: coverView)
+        NSLayoutConstraint.activate(pinned(webView, to: pageView))
         page.observe(webView)
     }
 
@@ -204,9 +229,9 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         }
         coverView.isHidden = phase != .ready && hasLoadedPage
         switch phase {
-        case .ready, .submitted: frameView.setGlow(.none)
-        case .queued, .agentInControl: frameView.setGlow(.agent)
-        case .userTurn: frameView.setGlow(.user)
+        case .ready, .submitted: edgeView.setEdge(.none)
+        case .queued, .agentInControl: edgeView.setEdge(.agent)
+        case .userTurn: edgeView.setEdge(.user)
         }
     }
 
@@ -215,10 +240,48 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         super.close()
     }
 
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [Self.addressItem, .flexibleSpace, Self.statusItem]
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        toolbarDefaultItemIdentifiers(toolbar)
+    }
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
+                 willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        let view: NSView
+        switch itemIdentifier {
+        case Self.addressItem:
+            view = NSHostingView(rootView: AssistedOptOutAppearanceRoot(content: AssistedOptOutAddress(session: session, page: page)))
+        case Self.statusItem:
+            view = NSHostingView(rootView: AssistedOptOutAppearanceRoot(content: AssistedOptOutStatus(session: session)))
+        default:
+            return nil
+        }
+        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+        item.view = view
+        return item
+    }
+
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        // Cancelling can synchronously dismiss and close this window before the delegate returns.
-        session.requestCancel()
-        return !isClosed
+        guard !isClosed else { return false }
+        switch session.phase {
+        case .submitted:
+            return true
+        case .ready:
+            session.requestCancel()
+            return false
+        case .queued, .agentInControl, .userTurn:
+            break
+        }
+        guard !isConfirmingStop else { return false }
+        isConfirmingStop = true
+        confirmStop(sender, session.broker) { [weak self] confirmed in
+            self?.isConfirmingStop = false
+            if confirmed { self?.session.requestCancel() }
+        }
+        return false
     }
 
     func windowWillClose(_ notification: Notification) {

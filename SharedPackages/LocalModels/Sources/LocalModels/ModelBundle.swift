@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 /// One file of a bundle. `size` and `sha256` describe the downloaded bytes; `name` is what's kept on disk.
@@ -66,10 +67,32 @@ public struct InstalledBundle: Sendable, Equatable {
     public let folder: URL
 }
 
-public enum ModelStoreError: Error, Equatable {
+public enum ModelStoreError: DDGError {
     case invalidName(String)
     case alreadyInstalling(String)
     case httpStatus(file: String, code: Int)
     case sizeMismatch(file: String, expected: Int64, actual: Int64)
     case hashMismatch(file: String)
+
+    public static var errorDomain: String { "com.duckduckgo.localModels.ModelStoreError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .invalidName: return 1
+        case .alreadyInstalling: return 2
+        case .httpStatus: return 3
+        case .sizeMismatch: return 4
+        case .hashMismatch: return 5
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .invalidName(let name): return "Invalid bundle or file name: \(name)"
+        case .alreadyInstalling(let id): return "\(id) is already being installed"
+        case .httpStatus(let file, let code): return "Downloading \(file) failed with HTTP \(code)"
+        case .sizeMismatch(let file, let expected, let actual): return "\(file) is \(actual) bytes, expected \(expected)"
+        case .hashMismatch(let file): return "\(file) doesn't match its sha256"
+        }
+    }
 }

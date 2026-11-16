@@ -28,9 +28,13 @@ let package = Package(
     products: [
         .library(name: "LocalModels", targets: ["LocalModels"]),
     ],
+    dependencies: [
+        .package(path: "../DDGError"),
+    ],
     targets: [
         .target(
             name: "LocalModels",
+            dependencies: ["DDGError"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
                 .enableExperimentalFeature("StrictConcurrency")

@@ -29,6 +29,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     struct Row: Identifiable, Equatable {
         let name: String
         let defaultState: BrowserToolPermissionState
+        let asksEveryTime: Bool
         var id: String { name }
     }
 
@@ -57,12 +58,13 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     func reload() {
         rows = catalog.enabledTools
             .sorted { (Self.order.firstIndex(of: $0.name) ?? .max) < (Self.order.firstIndex(of: $1.name) ?? .max) }
-            .map { Row(name: $0.name, defaultState: $0.permissionMode.defaultState) }
+            .map { Row(name: $0.name, defaultState: $0.permissionMode.defaultState, asksEveryTime: $0.asksEveryTime) }
         storedStates = permissions.storedDecisions
     }
 
     func state(of row: Row) -> BrowserToolPermissionState {
-        storedStates[row.name] ?? row.defaultState
+        let state = storedStates[row.name] ?? row.defaultState
+        return row.asksEveryTime && state == .allow ? .ask : state
     }
 
     func setState(_ state: BrowserToolPermissionState, of row: Row) {
@@ -85,7 +87,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     static func hasAllowedTool(catalog: BrowserToolCatalog, permissions: BrowserToolPermissionStoring) -> Bool {
-        catalog.enabledTools.contains { permissions.state(forToolNamed: $0.name) == .allow }
+        catalog.enabledTools.contains { !$0.asksEveryTime && permissions.state(forToolNamed: $0.name) == .allow }
     }
 }
 
@@ -154,7 +156,7 @@ private struct BrowserToolPermissionRow: View {
             Spacer(minLength: 10)
 
             Picker(selection: Binding(get: { model.state(of: row) }, set: { model.setState($0, of: row) }), label: EmptyView()) {
-                ForEach(Self.states, id: \.self) { state in
+                ForEach(row.asksEveryTime ? Self.states.filter { $0 != .allow } : Self.states, id: \.self) { state in
                     Text(Self.title(for: state)).tag(state)
                 }
             }

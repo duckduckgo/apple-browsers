@@ -35,7 +35,7 @@ final class OnboardingEndingSteps {
     /// so every exit resolves against the same cohort.
     func start() -> ContextualOnboardingDecision {
         subscriptionUpsellExperiment.enroll()
-        return .show(.highFive)
+        return .next(.highFive)
     }
 
     /// Asked before a path's own rules on every dialog request. Browsing on is the third way out of High Five.
@@ -55,6 +55,6 @@ final class OnboardingEndingSteps {
     }
 
     private func afterHighFive() -> ContextualOnboardingDecision {
-        subscriptionUpsellExperiment.cohort == .treatment ? .show(.subscriptionUpsell) : .completed
+        subscriptionUpsellExperiment.cohort == .treatment ? .next(.subscriptionUpsell) : .completed
     }
 }

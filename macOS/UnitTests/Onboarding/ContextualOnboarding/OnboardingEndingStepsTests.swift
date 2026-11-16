@@ -36,7 +36,7 @@ struct OnboardingEndingStepsTests {
     @available(iOS 16, macOS 13, *)
     @Test("Starting the ending enrolls once and shows High Five", .timeLimit(.minutes(1)))
     func startEnrollsAndShowsHighFive() {
-        #expect(sut.start() == .show(.highFive))
+        #expect(sut.start() == .next(.highFive))
         #expect(experiment.enrollCallCount == 1)
     }
 
@@ -52,7 +52,7 @@ struct OnboardingEndingStepsTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("After High Five, the treatment cohort gets the upsell and the others complete", .timeLimit(.minutes(1)),
-          arguments: [(FeatureFlag.OnboardingSubscriptionUpsellCohort?.some(.treatment), ContextualOnboardingDecision.show(.subscriptionUpsell)),
+          arguments: [(FeatureFlag.OnboardingSubscriptionUpsellCohort?.some(.treatment), ContextualOnboardingDecision.next(.subscriptionUpsell)),
                       (.some(.control), .completed),
                       (nil, .completed)])
     func afterHighFive(cohort: FeatureFlag.OnboardingSubscriptionUpsellCohort?, expected: ContextualOnboardingDecision) {

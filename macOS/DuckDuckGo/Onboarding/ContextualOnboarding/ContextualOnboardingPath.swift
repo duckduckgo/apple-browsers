@@ -20,7 +20,7 @@ import Foundation
 import PrivacyDashboard
 
 enum ContextualOnboardingDecision: Equatable {
-    case show(ContextualDialogType)
+    case next(ContextualDialogType)
     case none
     case completed
 }
@@ -32,6 +32,5 @@ enum ContextualOnboardingPathKind: String {
 protocol ContextualOnboardingPath: AnyObject {
     var isUILocked: Bool { get }
     func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision
-    func fireUsed() -> ContextualOnboardingDecision
     func gotItPressed(lastDialog: ContextualDialogType) -> ContextualOnboardingDecision
 }

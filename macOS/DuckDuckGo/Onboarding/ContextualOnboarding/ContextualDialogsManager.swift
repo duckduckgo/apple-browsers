@@ -60,15 +60,12 @@ protocol ContextualOnboardingStateUpdater: AnyObject {
 }
 
 /// Protocol for storing onboarding state data.
-protocol ContextualOnboardingStateStoring {
+protocol ContextualOnboardingStateStoring: BlockedTrackerStoring {
     /// Array of string representations of dialogs that have been shown.
     var contextualDialogsSeen: [String] { get set }
 
     /// Current contextual onboarding state stored as a string (notStarted, ongoing, completed).
     var stateString: String { get set }
-
-    /// Flag indicating if a blocked tracker dialog has been shown.
-    var blockedTrackerSeen: Bool { get set }
 
     /// Flag indicating if the fire button has been used.
     var fireButtonUsedOnce: Bool { get set }

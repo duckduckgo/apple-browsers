@@ -535,11 +535,48 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
-    func testRefreshTriggerThresholdIsBoundedForFloatingUIWithoutChangingClassicUI() {
-        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: true), 120)
-        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 200, isFloatingUIEnabled: true), 80)
-        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: false), 253.2,
-                       accuracy: 0.01)
+    func testRefreshTriggerThresholdScalesWithContainerHeightAndKeepsMinimum() {
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844), 253.2, accuracy: 0.01)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 390), 117, accuracy: 0.01)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 200), 80)
+    }
+
+    func testShortPullDoesNotRefreshAndDeliberatePullRefreshesOnceInBothLayouts() {
+        for isFloatingUIEnabled in [false, true] {
+            let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+            let pullableView = UIView(frame: hostView.bounds)
+            let pageScrollView = UIScrollView(frame: pullableView.bounds)
+            hostView.addSubview(pullableView)
+            pullableView.addSubview(pageScrollView)
+            pageScrollView.contentOffset.y = -1
+            var refreshCount = 0
+            let adapter = PullToRefreshViewAdapter(with: pageScrollView,
+                                                   pullableView: pullableView,
+                                                   isFloatingUIEnabled: isFloatingUIEnabled,
+                                                   onRefresh: { refreshCount += 1 })
+            let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+            let selector = NSSelectorFromString("handlePanGesture:")
+            adapter.perform(selector, with: gesture)
+            gesture.stubbedState = .changed
+            gesture.translationY = 1
+            adapter.perform(selector, with: gesture)
+
+            gesture.translationY = 200
+            adapter.perform(selector, with: gesture)
+            XCTAssertEqual(refreshCount, 0)
+
+            gesture.translationY = 300
+            adapter.perform(selector, with: gesture)
+            XCTAssertEqual(refreshCount, 1)
+
+            gesture.translationY = 350
+            adapter.perform(selector, with: gesture)
+            XCTAssertEqual(refreshCount, 1)
+
+            gesture.stubbedState = .ended
+            adapter.perform(selector, with: gesture)
+            adapter.endRefreshing()
+        }
     }
 
     func testWhenFloatingUIIsDisabledThenRefreshHostRemainsBehindPullableView() throws {
@@ -972,33 +1009,157 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         // Midway between 0.6 and 0.85 (0.725) should read as halfway through the ramp.
         XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.725, from: 0.6, to: 0.85), 0.5, accuracy: 0.001)
     }
+}
 
-    func testWhenAtOrBelowCollapseStartThenToolbarButtonRowIsFullyCollapsed() {
-        for percent in [CGFloat(0.85), 0.6, 0.45, 0.0] {
-            XCTAssertEqual(
-                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, collapseStart: 0.85),
-                1,
-                accuracy: 0.001,
-                "the button row must have finished collapsing by collapseStart, at percent \(percent)"
-            )
+/// The bottom bar's collapse into the domain pill has to read as one continuous motion: every part
+/// of the shape moves at every step, and the bar and pill are never drawn at different sizes.
+final class FloatingBottomMorphPoseTests: XCTestCase {
+
+    private let expandedFrame = CGRect(x: 16, y: 700, width: 408, height: 112)
+    private let restFrame = CGRect(x: 160, y: 904, width: 120, height: 28)
+    private let expandedCornerRadius: CGFloat = 40
+
+    private func pose(_ percent: CGFloat) -> FloatingUILayoutPolicy.BottomMorphPose {
+        FloatingUILayoutPolicy.bottomMorphPose(barsVisibilityPercent: percent,
+                                               expandedFrame: expandedFrame,
+                                               restFrame: restFrame,
+                                               expandedCornerRadius: expandedCornerRadius)
+    }
+
+    private var sampledPoses: [FloatingUILayoutPolicy.BottomMorphPose] {
+        (0...100).map { pose(CGFloat($0) / 100) }
+    }
+
+    func testWhenBarsFullyVisibleThenShapeIsTheRestingBar() {
+        let pose = pose(1)
+
+        XCTAssertEqual(pose.frame, expandedFrame)
+        XCTAssertEqual(pose.cornerRadius, expandedCornerRadius, accuracy: 0.001)
+        XCTAssertEqual(pose.barContentAlpha, 1, accuracy: 0.001)
+        XCTAssertFalse(pose.isGlassOnPill)
+        XCTAssertEqual(pose.shadowAmount, 1, accuracy: 0.001)
+        XCTAssertEqual(pose.barTransform, .identity)
+    }
+
+    func testWhenBarsHiddenThenShapeIsTheRestingPill() {
+        let pose = pose(0)
+
+        XCTAssertEqual(pose.frame.width, restFrame.width, accuracy: 0.001)
+        XCTAssertEqual(pose.frame.height, restFrame.height, accuracy: 0.001)
+        XCTAssertEqual(pose.frame.midX, restFrame.midX, accuracy: 0.001)
+        XCTAssertEqual(pose.frame.midY, restFrame.midY, accuracy: 0.001)
+        XCTAssertEqual(pose.cornerRadius, restFrame.height / 2, accuracy: 0.001)
+        XCTAssertEqual(pose.barContentAlpha, 0, accuracy: 0.001)
+        XCTAssertTrue(pose.isGlassOnPill)
+        XCTAssertEqual(pose.domainLabelAlpha, 1, accuracy: 0.001)
+        XCTAssertEqual(pose.shadowAmount, 0, accuracy: 0.001)
+    }
+
+    // A stage where the shape stands still is what made the collapse read as two steps.
+    func testWhenCollapsingThenWidthHeightAndPositionAllChangeAtEveryStep() {
+        let poses = sampledPoses
+        for index in 1..<poses.count {
+            let hidden = poses[index - 1].frame
+            let shown = poses[index].frame
+            XCTAssertGreaterThan(shown.width, hidden.width, "width stalled at \(index)%")
+            XCTAssertGreaterThan(shown.height, hidden.height, "height stalled at \(index)%")
+            XCTAssertLessThan(shown.midY, hidden.midY, "position stalled at \(index)%")
         }
     }
 
-    func testWhenAboveCollapseStartThenToolbarButtonRowCollapseIsGradual() {
-        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, collapseStart: 0.85), 0, accuracy: 0.001)
-        // Halfway between collapseStart (0.85) and 1.0 (0.925) should be halfway collapsed.
-        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.925, collapseStart: 0.85), 0.5, accuracy: 0.001)
+    func testWhenCollapsingThenNoStepIsMuchLargerThanTheAverage() {
+        let poses = sampledPoses
+        let measures: [(String, (CGRect) -> CGFloat)] = [("width", { $0.width }), ("height", { $0.height }), ("midY", { $0.midY })]
+        for (name, measure) in measures {
+            let steps = (1..<poses.count).map { abs(measure(poses[$0].frame) - measure(poses[$0 - 1].frame)) }
+            let average = steps.reduce(0, +) / CGFloat(steps.count)
+            XCTAssertLessThanOrEqual(steps.max() ?? 0, average * 2, "\(name) jumps mid-collapse")
+        }
     }
 
-    // The pill is single-row, so it must not start appearing until the bottom bar is single-row too.
-    func testWhenBottomPillStartsFadingInThenToolbarButtonRowHasFinishedCollapsing() {
-        let pillFadeStart = FloatingDomainCapsuleController.alphaHandoffEnd(for: .bottom)
-        let collapse = FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
-            barsVisibilityPercent: pillFadeStart,
-            collapseStart: FloatingDomainCapsuleController.handoffEnd
-        )
+    func testWhenCollapsingThenCornerRadiusNeverExceedsACapsule() {
+        for pose in sampledPoses {
+            XCTAssertLessThanOrEqual(pose.cornerRadius, pose.frame.height / 2 + 0.001)
+            XCTAssertGreaterThanOrEqual(pose.cornerRadius, restFrame.height / 2 - 0.001)
+        }
+    }
 
-        XCTAssertEqual(collapse, 1, accuracy: 0.001)
+    // Cross-fading two sheets of glass dims both, so the page shows through mid-collapse.
+    func testWhenCollapsingThenGlassIsHandedToThePillOnceAndNeverHandedBack() {
+        let poses = sampledPoses
+
+        XCTAssertFalse(poses[100].isGlassOnPill)
+        XCTAssertTrue(poses[0..<100].allSatisfy { $0.isGlassOnPill })
+    }
+
+    func testWhenGlassIsHandedOverThenPillIsWithinAPointOfTheRestingBar() {
+        let pose = pose(FloatingUILayoutPolicy.bottomMorphGlassHandoff - 0.0001)
+
+        XCTAssertTrue(pose.isGlassOnPill)
+        XCTAssertEqual(pose.frame.width, expandedFrame.width, accuracy: 2)
+        XCTAssertEqual(pose.frame.height, expandedFrame.height, accuracy: 1)
+        XCTAssertEqual(pose.barContentAlpha, 1, accuracy: 0.05)
+    }
+
+    // The bar's content rides inside the glass, so it must be scaled onto exactly the same frame.
+    func testWhenBarContentIsVisibleThenItsTransformPutsItExactlyOnTheGlassFrame() {
+        for pose in sampledPoses where pose.barContentAlpha > 0 {
+            let barFrame = expandedFrame
+                .applying(CGAffineTransform(translationX: -expandedFrame.midX, y: -expandedFrame.midY))
+                .applying(pose.barTransform)
+                .applying(CGAffineTransform(translationX: expandedFrame.midX, y: expandedFrame.midY))
+
+            XCTAssertEqual(barFrame.minX, pose.frame.minX, accuracy: 0.01)
+            XCTAssertEqual(barFrame.minY, pose.frame.minY, accuracy: 0.01)
+            XCTAssertEqual(barFrame.width, pose.frame.width, accuracy: 0.01)
+            XCTAssertEqual(barFrame.height, pose.frame.height, accuracy: 0.01)
+        }
+    }
+
+    func testWhenCollapsingThenBarContentFadesOutAsTheDomainLabelFadesIn() {
+        let poses = sampledPoses
+        for index in 1..<poses.count {
+            XCTAssertGreaterThanOrEqual(poses[index].barContentAlpha, poses[index - 1].barContentAlpha)
+            XCTAssertLessThanOrEqual(poses[index].domainLabelAlpha, poses[index - 1].domainLabelAlpha)
+        }
+        // Some text is always readable: the two fades overlap.
+        for pose in poses {
+            XCTAssertGreaterThan(pose.barContentAlpha + pose.domainLabelAlpha, 0.3)
+        }
+        XCTAssertEqual(pose(FloatingUILayoutPolicy.bottomMorphContentFadeEnd).barContentAlpha, 0, accuracy: 0.001)
+    }
+
+    func testWhenBarelyScrolledThenShapeIsAlreadyShrinking() {
+        let pose = pose(0.99)
+
+        XCTAssertTrue(pose.isGlassOnPill)
+        XCTAssertLessThan(pose.frame.width, expandedFrame.width)
+    }
+
+    func testWhenSpringOvershootsRestThenShapeFollowsOnlyAsFarAsTheOvershootLimit() {
+        let limit = FloatingUILayoutPolicy.bottomMorphOvershoot
+
+        XCTAssertGreaterThan(pose(1 + limit / 2).frame.width, expandedFrame.width)
+        XCTAssertEqual(pose(1.5).frame, pose(1 + limit).frame)
+        XCTAssertEqual(pose(1.5).barContentAlpha, 1, accuracy: 0.001)
+        XCTAssertFalse(pose(1.5).isGlassOnPill)
+    }
+
+    // A pill narrower than its label truncates the domain in the middle until the spring settles.
+    func testWhenSpringOvershootsTheCollapsedEndThenPillNeverGetsSmallerThanItsRestingSize() {
+        for percent in [CGFloat(-0.01), -0.04, -0.5] {
+            XCTAssertEqual(pose(percent).frame, pose(0).frame)
+            XCTAssertTrue(pose(percent).isGlassOnPill)
+        }
+    }
+
+    func testWhenExpandedFrameIsEmptyThenBarIsLeftUntransformed() {
+        let pose = FloatingUILayoutPolicy.bottomMorphPose(barsVisibilityPercent: 0.5,
+                                                          expandedFrame: .zero,
+                                                          restFrame: restFrame,
+                                                          expandedCornerRadius: expandedCornerRadius)
+
+        XCTAssertEqual(pose.barTransform, .identity)
     }
 }
 
@@ -2173,44 +2334,59 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertLessThan(obscured, insets.bottom + FloatingDomainCapsuleController.restEdgePadding + controller.capsuleHeight)
     }
 
-    func testWhenInsideTheHandoffBandThenPillFadesInWhileHoldingTheBarFrame() {
-        for position in [AddressBarPosition.top, .bottom] {
-            let alphaEnd = FloatingDomainCapsuleController.alphaHandoffEnd(for: position)
-            let midBandPercent = (FloatingDomainCapsuleController.handoffStart + alphaEnd) / 2
-            let button = update(barsVisibilityPercent: midBandPercent, addressBarPosition: position)
+    func testWhenTopBarIsInsideTheHandoffBandThenPillFadesInWhileHoldingTheBarFrame() {
+        let midBandPercent = (FloatingDomainCapsuleController.handoffStart + 1) / 2
+        let button = update(barsVisibilityPercent: midBandPercent, addressBarPosition: .top)
 
-            XCTAssertEqual(button?.alpha ?? -1, 0.5, accuracy: 0.01, "position \(position)")
-            // Both bar and pill are geometry-locked throughout the band: the pill already sits at the
-            // bar's full expanded size, so widening the fade can't make either visibly creep.
-            XCTAssertEqual(button?.bounds.width ?? 0, expandedFrame.width, accuracy: 0.5, "position \(position)")
-            XCTAssertEqual(button?.bounds.height ?? 0, expandedFrame.height, accuracy: 0.5, "position \(position)")
-        }
+        XCTAssertEqual(button?.alpha ?? -1, 0.5, accuracy: 0.01)
+        XCTAssertEqual(button?.bounds.width ?? 0, expandedFrame.width, accuracy: 0.5)
+        XCTAssertEqual(button?.bounds.height ?? 0, expandedFrame.height, accuracy: 0.5)
     }
 
-    func testWhenAtItsAlphaHandoffEndThenPillIsHidden() {
+    func testWhenBarsFullyVisibleThenPillIsHiddenInBothPositions() {
         for position in [AddressBarPosition.top, .bottom] {
-            update(barsVisibilityPercent: FloatingDomainCapsuleController.alphaHandoffEnd(for: position), addressBarPosition: position)
+            update(barsVisibilityPercent: 1, addressBarPosition: position)
 
             XCTAssertEqual(capsuleButton?.alpha ?? -1, 0, accuracy: 0.001, "position \(position)")
             XCTAssertEqual(capsuleButton?.isHidden, true, "position \(position)")
         }
     }
 
-    // The top bar has no button row to sequence a collapse cue through first, so its fade must start
-    // immediately at rest (percent 1) rather than holding at full pill-alpha-zero through a silent
-    // dead zone before suddenly fading — that dead-then-fast pattern is what reads as an abrupt swap.
-    func testWhenTopBarAndBarelyScrolledThenPillHasAlreadyStartedFadingIn() {
-        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .top)
-
-        XCTAssertGreaterThan(button?.alpha ?? 0, 0, "the top bar's pill must start fading in the instant scrolling begins, not after a dead zone")
+    func testWhenBarelyScrolledThenPillIsAlreadyShowingInBothPositions() {
+        XCTAssertGreaterThan(update(barsVisibilityPercent: 0.9, addressBarPosition: .top)?.alpha ?? 0, 0)
+        // The bottom pill is the bar's glass from the first step, so it is never part-faded.
+        XCTAssertEqual(update(barsVisibilityPercent: 0.9, addressBarPosition: .bottom)?.alpha ?? 0, 1, accuracy: 0.001)
     }
 
-    // The bottom bar's button row collapses first (over `[handoffEnd, 1]`), so the pill should still
-    // be fully hidden at the same point that would already show a fade on the top bar.
-    func testWhenBottomBarAndBarelyScrolledThenPillHasNotStartedFadingInYet() {
-        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .bottom)
+    // The bottom pill is the bar's shape for the whole collapse, so it never holds the bar's size.
+    func testWhenBottomBarIsCollapsingThenPillShrinksFromTheFirstStep() {
+        let nearlyShown = update(barsVisibilityPercent: 0.9, addressBarPosition: .bottom)?.frame ?? .zero
+        let halfway = update(barsVisibilityPercent: 0.5, addressBarPosition: .bottom)?.frame ?? .zero
+        let hidden = update(barsVisibilityPercent: 0, addressBarPosition: .bottom)?.frame ?? .zero
 
-        XCTAssertEqual(button?.alpha ?? -1, 0, accuracy: 0.001, "the bottom bar's pill should wait for the button row to collapse first")
+        XCTAssertLessThan(nearlyShown.width, expandedFrame.width)
+        XCTAssertLessThan(halfway.width, nearlyShown.width)
+        XCTAssertLessThan(hidden.width, halfway.width)
+        XCTAssertGreaterThan(halfway.midY, nearlyShown.midY)
+        XCTAssertGreaterThan(hidden.midY, halfway.midY)
+    }
+
+    func testWhenBottomBarIsCollapsingThenPillAddsNoLayerShadowOverTheGlass() {
+        for percent in [CGFloat(0.99), 0.5, 0] {
+            let button = update(barsVisibilityPercent: percent, addressBarPosition: .bottom)
+
+            XCTAssertLessThanOrEqual(button?.layer.shadowOpacity ?? 1, Float(BrowserToolbarView.floatingShadowOpacity))
+            if #available(iOS 26.0, *) {
+                XCTAssertEqual(button?.layer.shadowOpacity ?? 1, 0, "p=\(percent)")
+            }
+        }
+    }
+
+    func testWhenBottomBarWithReduceMotionThenPillStaysAtCapsuleSize() {
+        let capsuleWidth = update(barsVisibilityPercent: 0, addressBarPosition: .bottom, reduceMotion: true)?.bounds.width ?? 0
+        let midWidth = update(barsVisibilityPercent: 0.5, addressBarPosition: .bottom, reduceMotion: true)?.bounds.width ?? 0
+
+        XCTAssertEqual(midWidth, capsuleWidth, accuracy: 0.5)
     }
 }
 
@@ -2387,7 +2563,7 @@ final class WebViewPreviewSnapshotCapturerTests: XCTestCase {
 
     func testWhenFirstSnapshotNeverAnswersThenItsPendingCallbackDoesNotKeepTheWebViewAlive() {
         var webView: FakeSnapshottingWebView? = FakeSnapshottingWebView()
-        weak var releasedWebView = webView
+        weak let releasedWebView = webView
         WebViewPreviewSnapshotCapturer().capture(webView: webView!,
                                                  rect: CGRect(x: 0, y: 0, width: 100, height: 100),
                                                  timeout: 60,
@@ -2624,8 +2800,10 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
         }
     }
 
+    // WebKit's insets follow every frame so page-fixed content moves with the bar. The scroll view's
+    // own insets stay put until each endpoint so the scroll range doesn't shift mid-gesture.
     @available(iOS 26, *)
-    func testFloatingChromeKeepsWebKitAndScrollInsetsStableUntilEachEndpoint() {
+    func testFloatingChromeMovesWebKitInsetsEveryFrameButScrollInsetsOnlyAtEachEndpoint() {
         let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())
         tab.floatingUIManager = FloatingUIManager(
             isFloatingUIFeatureEnabled: true,
@@ -2646,7 +2824,7 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
             chrome.obscuredContentInsets = insets
             for progress: CGFloat in [0.2, 0.5, 0.8] {
                 tab.updateWebViewBottomAnchor(for: progress)
-                XCTAssertEqual(tab.webView.obscuredContentInsets, previous)
+                XCTAssertEqual(tab.webView.obscuredContentInsets, insets)
                 XCTAssertEqual(tab.webView.scrollView.contentInset, previous)
                 XCTAssertEqual(tab.webView.scrollView.verticalScrollIndicatorInsets, insets)
             }
@@ -3134,67 +3312,148 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
 
 final class ChromeMorphAnimatorTests: XCTestCase {
 
-    func testSkippedFramesStillCompleteWithinTraversalDuration() {
-        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+    private let frame: CFTimeInterval = 1.0 / 60
+
+    /// Runs `frames` display frames and returns the value emitted for each.
+    @discardableResult
+    private func run(_ animator: ChromeMorphAnimator, frames: Int, from start: CFTimeInterval = 10) -> [CGFloat] {
+        (0..<frames).map { index in
+            let timestamp = start + CFTimeInterval(index) * frame
+            animator.advance(timestamp: timestamp, targetTimestamp: timestamp + frame)
+            return animator.currentValue
+        }
+    }
+
+    func testWhenTargetIsSetThenSpringSettlesOnItAndCompletesOnce() {
+        let animator = ChromeMorphAnimator()
         var values: [CGFloat] = []
         var completions = 0
         animator.setTarget(0, onProgress: { values.append($0) }, onComplete: { completions += 1 })
 
-        animator.advance(timestamp: 10, targetTimestamp: 10.05)
-        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
-        XCTAssertEqual(animator.currentValue, 1.0 / 6, accuracy: 0.001)
-        animator.advance(timestamp: 10.30, targetTimestamp: 10.35)
+        run(animator, frames: 120)
 
         XCTAssertEqual(values.last, 0)
+        XCTAssertEqual(animator.currentValue, 0)
         XCTAssertEqual(completions, 1)
         XCTAssertFalse(animator.isAnimating)
     }
 
-    func testReversingDirectionPreservesTheDisplayedValueAndFrameClock() {
-        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
-        var obsoleteCompletions = 0
-        var completions = 0
-        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
-        animator.advance(timestamp: 10, targetTimestamp: 10.15)
-        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
-
-        animator.setTarget(1, onProgress: { _ in }, onComplete: { completions += 1 })
-        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
-        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
-        XCTAssertEqual(animator.currentValue, 5.0 / 6, accuracy: 0.001)
-        animator.advance(timestamp: 10.30, targetTimestamp: 10.35)
-
-        XCTAssertEqual(animator.currentValue, 1)
-        XCTAssertEqual(obsoleteCompletions, 0)
-        XCTAssertEqual(completions, 1)
-    }
-
-    func testJumpDiscardsThePreviousClockAndCompletion() {
-        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
-        var obsoleteCompletions = 0
-        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
-        animator.advance(timestamp: 10, targetTimestamp: 10.1)
-        animator.jump(to: 1)
-        animator.advance(timestamp: 20, targetTimestamp: 20.1)
-        XCTAssertEqual(animator.currentValue, 1)
-
+    func testWhenCollapsingThenMostOfTheTravelIsDoneWithinTheCollapseDuration() {
+        let animator = ChromeMorphAnimator()
         animator.setTarget(0, onProgress: { _ in }, onComplete: {})
-        animator.advance(timestamp: 30, targetTimestamp: 30.15)
-        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
-        XCTAssertEqual(obsoleteCompletions, 0)
+
+        let frames = Int((ChromeMorphAnimator.defaultCollapseDuration / frame).rounded(.up))
+        let values = run(animator, frames: frames)
+
+        XCTAssertLessThan(values.last ?? 1, 0.1)
         animator.cancel()
     }
 
-    func testTraversalDurationOverrideAppliesOnlyToThatLeg() {
-        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
-        animator.setTarget(0, fullTraversalDuration: 1, onProgress: { _ in }, onComplete: {})
-        animator.advance(timestamp: 10, targetTimestamp: 10.15)
-        XCTAssertEqual(animator.currentValue, 0.85, accuracy: 0.001)
+    // A hard flick must be paced out over several frames, never cut in one.
+    func testWhenTargetJumpsThenNoSingleFrameCoversMoreThanAFifthOfTheTravel() {
+        let animator = ChromeMorphAnimator()
+        animator.setTarget(0, onProgress: { _ in }, onComplete: {})
 
+        let values = [1] + run(animator, frames: 120)
+
+        let largestStep = zip(values, values.dropFirst()).map { abs($0 - $1) }.max() ?? 1
+        XCTAssertLessThan(largestStep, 0.25)
+    }
+
+    func testWhenExpandingThenValueOvershootsSlightlyAndStaysWithinTheShapeLimit() {
+        let animator = ChromeMorphAnimator()
+        animator.jump(to: 0)
         animator.setTarget(1, onProgress: { _ in }, onComplete: {})
-        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
+
+        let values = run(animator, frames: 120)
+
+        let highest = values.max() ?? 1
+        XCTAssertGreaterThan(highest, 1)
+        XCTAssertLessThan(highest, 1 + FloatingUILayoutPolicy.bottomMorphOvershoot)
+    }
+
+    func testWhenCollapsingThenItStopsOnArrivalInsteadOfSpendingTheSpringTailBelowZero() {
+        let animator = ChromeMorphAnimator()
+        var completions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { completions += 1 })
+
+        let values = run(animator, frames: 120)
+
+        XCTAssertGreaterThanOrEqual(values.min() ?? 0, 0)
+        let settledAt = values.firstIndex(of: 0) ?? values.count
+        let frames = Int((ChromeMorphAnimator.defaultCollapseDuration * 2 / frame).rounded(.up))
+        XCTAssertLessThan(settledAt, frames, "collapse lingered after reaching the pill")
+        XCTAssertEqual(completions, 1)
+    }
+
+    func testWhenReversedMidFlightThenValueAndVelocityCarryOver() {
+        let animator = ChromeMorphAnimator()
+        var obsoleteCompletions = 0
+        var completions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
+        let collapsing = run(animator, frames: 8)
+        let valueAtReversal = animator.currentValue
+
+        animator.setTarget(1, onProgress: { _ in }, onComplete: { completions += 1 })
+        XCTAssertEqual(animator.currentValue, valueAtReversal)
+        let reversing = run(animator, frames: 120, from: 10 + 8 * frame)
+
+        // Still moving the old way for a moment: the spring turns round instead of snapping.
+        XCTAssertLessThan(reversing[0], valueAtReversal)
+        let stepBefore = abs(collapsing[7] - collapsing[6])
+        XCTAssertLessThan(abs(reversing[0] - valueAtReversal), stepBefore)
+        XCTAssertEqual(animator.currentValue, 1)
+        XCTAssertEqual(obsoleteCompletions, 0)
+        XCTAssertEqual(completions, 1)
+    }
+
+    func testWhenFramesAreSkippedThenSpringStaysStableAndStillSettles() {
+        let animator = ChromeMorphAnimator()
+        var completions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { completions += 1 })
+
+        var timestamp: CFTimeInterval = 10
+        for _ in 0..<20 {
+            animator.advance(timestamp: timestamp, targetTimestamp: timestamp + 0.05)
+            XCTAssertGreaterThan(animator.currentValue, -0.1)
+            XCTAssertLessThanOrEqual(animator.currentValue, 1)
+            timestamp += 0.25
+        }
+
+        XCTAssertEqual(animator.currentValue, 0)
+        XCTAssertEqual(completions, 1)
+    }
+
+    func testJumpDiscardsThePreviousMotionAndCompletion() {
+        let animator = ChromeMorphAnimator()
+        var obsoleteCompletions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
+        run(animator, frames: 6)
+
+        animator.jump(to: 1)
+        run(animator, frames: 6, from: 20)
+
         XCTAssertEqual(animator.currentValue, 1)
         XCTAssertFalse(animator.isAnimating)
+        XCTAssertEqual(obsoleteCompletions, 0)
+    }
+
+    func testDurationOverrideAppliesOnlyToThatLeg() {
+        let slow = ChromeMorphAnimator()
+        slow.setTarget(0, duration: 1, onProgress: { _ in }, onComplete: {})
+        let fast = ChromeMorphAnimator()
+        fast.setTarget(0, onProgress: { _ in }, onComplete: {})
+        run(slow, frames: 9)
+        run(fast, frames: 9)
+        XCTAssertGreaterThan(slow.currentValue, fast.currentValue + 0.2)
+
+        slow.setTarget(1, onProgress: { _ in }, onComplete: {})
+        run(slow, frames: 120, from: 10 + 9 * frame)
+        slow.setTarget(0, onProgress: { _ in }, onComplete: {})
+        run(slow, frames: 9, from: 20)
+        XCTAssertEqual(slow.currentValue, fast.currentValue, accuracy: 0.001)
+        slow.cancel()
+        fast.cancel()
     }
 }
 

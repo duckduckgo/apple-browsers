@@ -827,7 +827,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             activeOffers: [],
             tier: tier,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
     }
 }

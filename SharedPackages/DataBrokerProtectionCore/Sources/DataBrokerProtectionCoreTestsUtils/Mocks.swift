@@ -2632,8 +2632,9 @@ extension SecureStorageError: @retroactive Equatable {
             return status1 == status2
         case (.secError(let status1), .secError(let status2)):
             return status1 == status2
-        case (.keystoreReadError(let status1), .keystoreReadError(let status2)):
-            return status1 == status2
+        case (.keystoreReadError(let lhsField, let lhsServiceName, let lhsStatus),
+              .keystoreReadError(let rhsField, let rhsServiceName, let rhsStatus)):
+            return lhsField == rhsField && lhsServiceName == rhsServiceName && lhsStatus == rhsStatus
         case (.keystoreUpdateError(let status1), .keystoreUpdateError(let status2)):
             return status1 == status2
         case (.authRequired, .authRequired), (.invalidPassword, .invalidPassword),

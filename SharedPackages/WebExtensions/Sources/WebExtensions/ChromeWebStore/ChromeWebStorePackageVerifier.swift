@@ -38,6 +38,14 @@ public struct ChromeWebStorePackageVerifier: Sendable {
     ])
 
     private let publisherKeyHash: Data
+#if DEBUG && os(macOS)
+    private var allowsUnsignedManualTestFixture = false
+
+    init(allowUnsignedManualTestFixture: Bool) {
+        self.init()
+        allowsUnsignedManualTestFixture = allowUnsignedManualTestFixture
+    }
+#endif
 
     public init() {
         self.init(publisherKeyHash: Self.publisherKeyHash)
@@ -48,6 +56,12 @@ public struct ChromeWebStorePackageVerifier: Sendable {
     }
 
     public func verifiedArchive(in package: Data, extensionID: String) throws -> VerifiedArchive {
+#if DEBUG && os(macOS)
+        // The isolated manual-test profile uses ZIP fixtures; real extension IDs still require CWS signatures.
+        if #available(macOS 15.4, *), allowsUnsignedManualTestFixture, extensionID == ChromeWebStoreManualUpdateTesting.extensionID {
+            return VerifiedArchive(data: package, version: try validateArchive(package))
+        }
+#endif
         guard package.count >= 12,
               package.prefix(4) == Data("Cr24".utf8), uint32(package, at: 4) == 3 else {
             throw ChromeWebStoreError.invalidPackage

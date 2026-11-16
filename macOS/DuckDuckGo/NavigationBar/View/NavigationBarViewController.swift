@@ -80,7 +80,7 @@ final class NavigationBarViewController: NSViewController {
     private(set) var buttonsTopConstraint: NSLayoutConstraint!
     private(set) var addressBarMinWidthConstraint: NSLayoutConstraint?
     private(set) var logoWidthConstraint: NSLayoutConstraint!
-    private(set) var backgroundColorView: MouseOverView!
+    private(set) var backgroundColorView: ColorView!
     private(set) var backgroundBaseColorView: ColorView!
 
     private var feedbackButton: MouseOverButton?
@@ -529,7 +529,7 @@ final class NavigationBarViewController: NSViewController {
         backgroundBaseColorView = ColorView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
         let view = backgroundBaseColorView!
 
-        backgroundColorView = MouseOverView(frame: .zero)
+        backgroundColorView = ColorView(frame: .zero)
         backgroundColorView.translatesAutoresizingMaskIntoConstraints = false
 
         let windowDraggingView = WindowDraggingView()
@@ -1395,10 +1395,7 @@ final class NavigationBarViewController: NSViewController {
             backgroundBaseColorView.backgroundColor = colorsProvider.baseBackgroundColor
             backgroundColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.cornerRadius = topCornerRadius
-            backgroundColorView.maskedCorners = [
-                .layerMinXMaxYCorner,
-                .layerMaxXMaxYCorner
-            ]
+            backgroundColorView.roundedCorners = [.topLeft, .topRight]
         } else {
             backgroundBaseColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.isHidden = true

@@ -1,0 +1,10 @@
+{
+  "covers": ["distractor: cost of always-loaded context on an unrelated task"],
+  "prompt": "Explain what `hasMultipleFileExtensions` does and list the places in the codebase that call it. Don't change any files.",
+  "max_turns": 15,
+  "graders": [
+    {"type": "no_changes"},
+    {"type": "file_not_read", "pattern": "REVIEW(-pixels)?\\.md$"},
+    {"type": "file_not_read", "pattern": "\\.claude/skills/"}
+  ]
+}

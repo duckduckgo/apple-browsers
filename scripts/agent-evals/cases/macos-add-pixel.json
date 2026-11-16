@@ -1,0 +1,8 @@
+{
+  "covers": ["ddg-add-pixel skill"],
+  "prompt": "On macOS, we want to know how often people use the \"Copy\" item in the address bar's context menu. Add measurement for it. Skip building the project and running the test suite; both are too slow here.",
+  "max_turns": 35,
+  "graders": [
+    {"type": "skill_invoked", "skill": "ddg-add-pixel"}
+  ]
+}

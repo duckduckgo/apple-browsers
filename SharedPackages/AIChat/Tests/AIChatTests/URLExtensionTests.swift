@@ -273,6 +273,19 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertEqual(url.duckAIChatID, "abc123")
     }
 
+    func testDuckAISharedChatID() {
+        let url = URL(string: "https://duck.ai/share/c965af1b-6fff-4fdb-994b-726b80e0e4dc#key")!
+        XCTAssertEqual(url.duckAISharedChatID, "c965af1b-6fff-4fdb-994b-726b80e0e4dc")
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAISharedChatIDIsNilElsewhere() {
+        XCTAssertNil(URL(string: "https://duck.ai/chat?chatID=abc123")!.duckAISharedChatID)
+        XCTAssertNil(URL(string: "https://duck.ai/share/")!.duckAISharedChatID)
+        XCTAssertNil(URL(string: "https://duck.ai/share/abc/extra")!.duckAISharedChatID)
+        XCTAssertNil(URL(string: "https://example.com/share/abc")!.duckAISharedChatID)
+    }
+
     // MARK: - DuckDuckGo Homepage Tests
 
     func testIsDuckDuckGoHomepageBareRoot() {

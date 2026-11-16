@@ -259,7 +259,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let toast = try XCTUnwrap(window.subviews.compactMap { $0 as? ActionMessageView }.first)
             toast.onDeinit { toastReleased.fulfill() }
         }
-        weak var releasedTab = tab
+        weak let releasedTab = tab
         let retainedTab = Unmanaged.passRetained(try XCTUnwrap(tab))
         tab = nil
         DispatchQueue.global().async {
@@ -526,9 +526,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     func testBridgeRejectsUntrustedFrameOriginsWithoutPrompting() async {
         let untrustedOrigins = [
             URL(string: "http://top-level.example")!,
-            URL(string: "https://subdomain.top-level.example")!,
-            URL(string: "https://top-level.example:444")!,
-            URL(string: "https://cross-site.example")!,
             URL(string: "about:blank")!
         ]
 
@@ -546,6 +543,69 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
             XCTAssertEqual(decision, .deny, "origin: \(originURL)")
             XCTAssertFalse(didPrompt, "origin: \(originURL)")
+        }
+    }
+
+    func testCrossOriginSubframeIsPromptedForTopLevelSiteAndItsPreapprovalIsConsumed() async {
+        let crossOrigins = [
+            URL(string: "https://subdomain.top-level.example")!,
+            URL(string: "https://top-level.example:444")!,
+            URL(string: "https://cross-site.example")!
+        ]
+
+        for originURL in crossOrigins {
+            let sut = makeSUT()
+            var receivedPrompt: SitePermissionPrompt?
+            sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+                receivedPrompt = prompt
+                completion(.allowOnce)
+            }
+
+            let decision = await requestPermissionThroughBridge(on: sut,
+                                                                originURL: originURL,
+                                                                captureType: .camera)
+
+            XCTAssertEqual(decision, .allow, "origin: \(originURL)")
+            XCTAssertEqual(receivedPrompt?.site.host, "top-level.example", "origin: \(originURL)")
+            // WebKit reports the top-level origin to the delegate and the requester in the frame.
+            let frame = WKFrameInfo.mock(isMainFrame: false,
+                                         securityOrigin: MockWKSecurityOrigin.new(url: originURL),
+                                         webView: sut.webView,
+                                         request: URLRequest(url: originURL))
+            var webKitDecision: WKPermissionDecision?
+            sut.webView(sut.webView,
+                        requestMediaCapturePermissionFor: MockWKSecurityOrigin.new(url: URL(string: "https://top-level.example")!),
+                        initiatedByFrame: frame,
+                        type: .camera,
+                        decisionHandler: { webKitDecision = $0 })
+            XCTAssertEqual(webKitDecision, .grant, "origin: \(originURL)")
+        }
+    }
+
+    func testRequestFromPageTheTabLeftIsDeniedWithoutPrompting() async {
+        let previousPage = URL(string: "https://previous.example")!
+        let requests: [(originURL: URL, isMainFrame: Bool)] = [
+            (previousPage, true),
+            (previousPage, false),
+            (URL(string: "https://cross-site.example")!, false)
+        ]
+
+        for request in requests {
+            let sut = makeSUT()
+            var didPrompt = false
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in
+                didPrompt = true
+                completion(.allowOnce)
+            }
+
+            let decision = await requestPermissionThroughBridge(on: sut,
+                                                                originURL: request.originURL,
+                                                                topLevelURL: previousPage,
+                                                                captureType: .camera,
+                                                                isMainFrame: request.isMainFrame)
+
+            XCTAssertEqual(decision, .deny, "request: \(request)")
+            XCTAssertFalse(didPrompt, "request: \(request)")
         }
     }
 
@@ -646,7 +706,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
         let sut = makeSUT(featureFlagger: featureFlagger)
         var userScript: MediaCaptureUserScript? = MediaCaptureUserScript()
-        weak var retainedUserScript = userScript
+        weak let retainedUserScript = userScript
         sut.configureSitePermissionsMediaCapture(with: userScript)
 
         featureFlagger.enabledFeatureFlags = []
@@ -673,7 +733,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     func testWebContentProcessTerminationRetainsHandlerForReinjectedNewDocument() async throws {
         let sut = makeSUT()
         var userScript: MediaCaptureUserScript? = MediaCaptureUserScript()
-        weak var retainedUserScript = userScript
+        weak let retainedUserScript = userScript
         sut.configureSitePermissionsMediaCapture(with: userScript)
         userScript = nil
 
@@ -697,6 +757,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             installedScript,
             requestPermissionFor: [.camera],
             requestID: "0123456789abcdef0123456789abcdef:1",
+            topLevelOrigin: SitePermissionSecurityOrigin(URL(string: "https://top-level.example")!)!,
             in: frame,
             webView: sut.webView
         )
@@ -1976,6 +2037,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             MediaCaptureUserScript(),
             requestPermissionFor: [.camera],
             requestID: "0123456789abcdef0123456789abcdef:2",
+            topLevelOrigin: SitePermissionSecurityOrigin(URL(string: "https://top-level.example")!)!,
             in: frame,
             webView: sut.webView
         )
@@ -2320,10 +2382,14 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     private func requestPermissionThroughBridge(on sut: TabViewController,
                                                 originURL: URL,
-                                                captureType: WKMediaCaptureType) async -> MediaCaptureBridgeDecision {
+                                                topLevelURL: URL? = nil,
+                                                captureType: WKMediaCaptureType,
+                                                isMainFrame: Bool = false) async -> MediaCaptureBridgeDecision {
         await makeBridgeRequestTask(on: sut,
                                     originURL: originURL,
-                                    captureType: captureType).value
+                                    topLevelURL: topLevelURL,
+                                    captureType: captureType,
+                                    isMainFrame: isMainFrame).value
     }
 
     private func makeBridgeRequestTask(on sut: TabViewController,
@@ -2343,10 +2409,13 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     private func makeBridgeRequestTask(on sut: TabViewController,
                                        webView: WKWebView? = nil,
                                        originURL: URL,
+                                       topLevelURL: URL? = nil,
                                        captureType: WKMediaCaptureType,
                                        requestID: String? = nil,
                                        isMainFrame: Bool = false) -> Task<MediaCaptureBridgeDecision, Never> {
         let targetWebView = webView ?? sut.webView!
+        // By default the frame belongs to the page committed in the web view.
+        let topLevelOrigin = SitePermissionSecurityOrigin(topLevelURL ?? targetWebView.url ?? originURL)!
         let origin = MockWKSecurityOrigin.new(url: originURL)
         let frame = WKFrameInfo.mock(isMainFrame: isMainFrame,
                                      securityOrigin: origin,
@@ -2368,6 +2437,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             await sut.mediaCaptureUserScript(MediaCaptureUserScript(),
                                              requestPermissionFor: permissionTypes,
                                              requestID: requestID,
+                                             topLevelOrigin: topLevelOrigin,
                                              in: frame,
                                              webView: targetWebView)
         }

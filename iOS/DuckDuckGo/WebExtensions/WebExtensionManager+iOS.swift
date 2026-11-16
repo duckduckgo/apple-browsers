@@ -26,24 +26,6 @@ import UIKit
 import WebExtensions
 import WebKit
 
-@available(iOS 18.4, *)
-@MainActor
-private final class IOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
-    private let featureFlagger: FeatureFlagger
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var isBackgroundDelegateProxyEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
-    }
-
-    var updatesPublisher: AnyPublisher<Void, Never> {
-        featureFlagger.updatesPublisher
-    }
-}
-
 // MARK: - AutoconsentPreferencesProviding
 
 final class AutoconsentPreferencesAdapter: AutoconsentPreferencesProviding {
@@ -73,7 +55,6 @@ public enum WebExtensionManagerFactory {
     @MainActor
     static func makeManager(
         mainViewController: MainViewController,
-        appSession: AppSessionInfo? = nil,
         featureFlagger: FeatureFlagger,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferences,
@@ -84,42 +65,13 @@ public enum WebExtensionManagerFactory {
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        let cpmDiagnosticsRecorder = featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
-            tabResolver: { [weak mainViewController] tabIdentifier in
-                guard let mainViewController,
-                      let tab = mainViewController.tabManager.allTabsModel.tabs.first(where: { $0.uid == tabIdentifier }),
-                      let controller = mainViewController.tabManager.controller(for: tab) else {
-                    return nil
-                }
-                return (webView: controller.webView, extensionTab: controller)
-            },
-            featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger),
-            appSession: appSession.map { session in
-                let change: CPMAppSessionDiagnostics.VersionChange?
-                switch session.appVersionChange {
-                case .updated: change = .updated
-                case .downgraded: change = .downgraded
-                case nil: change = nil
-                }
-                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate) {
-                    switch UIApplication.shared.applicationState {
-                    case .active: return .active
-                    case .inactive: return .inactive
-                    case .background: return .background
-                    @unknown default: return .inactive
-                    }
-                }
-            }
-        ) : nil
-
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor()
         return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             isCPMNetworkProcessRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },

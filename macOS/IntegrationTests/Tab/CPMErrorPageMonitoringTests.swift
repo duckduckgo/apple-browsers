@@ -30,8 +30,8 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 /// A failed load is shown as the app's own error page, loaded as alternate HTML for the failed http(s) URL.
-/// That document never runs content scripts, so the CPM health monitor must be told it is an error page
-/// and not measure it; otherwise every error page after an idle background unload is counted as a CPM failure.
+/// That document never runs content scripts, so the commit the tab reports to the CPM health monitor must carry
+/// the error-page kind; otherwise every error page after an idle background unload looks like a CPM failure.
 @available(macOS 15.4, *)
 final class CPMErrorPageMonitoringTests: XCTestCase {
 
@@ -106,8 +106,8 @@ final class CPMErrorPageMonitoringTests: XCTestCase {
 
         let error = try await eNavigationFailed.value
         XCTAssertEqual((error as NSError).domain, "MaliciousSiteError", "expected the malicious site error, got \(error)")
-        let reported = await waitUntil(timeout: 5) { monitor.events.last?.hasPrefix("finished:") == true }
-        XCTAssertTrue(reported, "the warning page finish was not reported to the monitor: \(monitor.events)")
+        let reported = await waitUntil(timeout: 5) { monitor.events.contains { $0.contains("kind=error_page") } }
+        XCTAssertTrue(reported, "the warning page commit was not reported to the monitor: \(monitor.events)")
         assertErrorPageEvents(monitor.events)
     }
 
@@ -139,27 +139,18 @@ final class CPMErrorPageMonitoringTests: XCTestCase {
         _ = try await eNavigationDidFinish.value
         XCTAssertEqual(error.errorCode, expectedErrorCode)
 
-        let reported = await waitUntil(timeout: 5) { monitor.events.last?.hasPrefix("finished:") == true }
-        XCTAssertTrue(reported, "the error page finish was not reported to the monitor: \(monitor.events)")
+        let reported = await waitUntil(timeout: 5) { monitor.events.contains { $0.contains("kind=error_page") } }
+        XCTAssertTrue(reported, "the error page commit was not reported to the monitor: \(monitor.events)")
         assertErrorPageEvents(monitor.events)
     }
 
-    /// After the failed load the error page starts as `.errorPage`, and the failed URL is committed and finished
-    /// only as part of it, so the monitor never measures it.
+    /// The error page commits with the failed URL, and every such commit is reported as an error page.
     @MainActor
     private func assertErrorPageEvents(_ events: [String], file: StaticString = #filePath, line: UInt = #line) {
-        let lastStart = events.lastIndex { $0.hasPrefix("started:") }
-        XCTAssertEqual(lastStart.map { events[$0] }, "started:error_page",
-                       "the error page must start as .errorPage: \(events)", file: file, line: line)
-        let failedIndex = events.firstIndex(of: "failed")
-        XCTAssertNotNil(failedIndex, "the load must fail before the error page: \(events)", file: file, line: line)
-        XCTAssertTrue((failedIndex ?? .max) < (lastStart ?? 0), "the load must fail before the error page starts: \(events)", file: file, line: line)
-        let afterErrorStart = events.suffix(from: lastStart ?? 0)
-        XCTAssertTrue(afterErrorStart.contains("finished:\(failedURL.absoluteString)"),
-                      "the error page reports the failed URL, which the monitor must not measure: \(events)", file: file, line: line)
-        let beforeErrorStart = events.prefix(upTo: lastStart ?? 0)
-        XCTAssertFalse(beforeErrorStart.contains { $0.hasPrefix("finished:") },
-                       "the failed URL must not finish as an ordinary navigation: \(events)", file: file, line: line)
+        XCTAssertTrue(events.contains("committed:\(failedURL.absoluteString):kind=error_page"),
+                      "the error page commit must be reported as an error page: \(events)", file: file, line: line)
+        XCTAssertFalse(events.contains { $0.hasSuffix(":kind=other") },
+                       "no commit of the failed URL may be an ordinary navigation: \(events)", file: file, line: line)
     }
 
     @MainActor
@@ -173,7 +164,7 @@ final class CPMErrorPageMonitoringTests: XCTestCase {
     }
 }
 
-/// Records the navigation events a tab sends to the CPM health monitor.
+/// Records the commits a tab sends to the CPM health monitor.
 @available(macOS 15.4, *)
 private final class RecordingCPMHealthMonitor: CPMMessagingHealthMonitoring, @unchecked Sendable {
 
@@ -181,17 +172,8 @@ private final class RecordingCPMHealthMonitor: CPMMessagingHealthMonitoring, @un
 
     @MainActor
     func handle(_ event: CPMMessagingHealthEvent) {
-        switch event {
-        case .navigationStarted(_, let navigationKind):
-            events.append("started:\(navigationKind.rawValue)")
-        case .navigationFailed:
-            events.append("failed")
-        case .navigationCommitted(_, let url):
-            events.append("committed:\(url.absoluteString)")
-        case .navigationFinished(_, let url, _):
-            events.append("finished:\(url.absoluteString)")
-        default:
-            break
+        if case .navigationCommitted(_, let url, let navigationKind, _) = event {
+            events.append("committed:\(url.absoluteString):kind=\(navigationKind.rawValue)")
         }
     }
 }

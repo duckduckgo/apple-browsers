@@ -6114,13 +6114,12 @@ extension MainViewController: BrowserChromeDelegate {
         return height
     }
 
-    /// Full toolbar slot height at the bottom, measured from the screen bottom: the toolbar height (its
-    /// bottom is pinned to the safe area) plus the safe area itself. In floating bottom-address-bar mode
-    /// the omnibar is hosted inside the toolbar (so `toolbarHeight` already includes it) and the nav bar
-    /// container is hidden, so it must not be added here. A footer resized against this lands exactly on
-    /// the toolbar's top edge.
+    /// Include glass that floats above the toolbar slot.
     private var floatingToolbarSlotHeight: CGFloat {
-        toolbarHeight + view.safeAreaInsets.bottom
+        let slotHeight = toolbarHeight + view.safeAreaInsets.bottom
+        let capsuleFrame = viewCoordinator.toolbar.restingCapsuleFrame(in: view)
+        guard !capsuleFrame.isEmpty else { return slotHeight }
+        return max(slotHeight, view.bounds.maxY - capsuleFrame.minY)
     }
 
     private func floatingChromeOnScreenFraction(for percent: CGFloat) -> CGFloat {

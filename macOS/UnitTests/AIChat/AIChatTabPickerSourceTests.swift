@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
+import SharedTestUtilities
 import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -146,6 +148,34 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         let regular = collection([.unloaded(UnloadedTab(uuid: "shared", content: fireTab.content, isSuspended: false))])
 
         XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: fireTab.webView, in: manager(with: [regular, fireWindow])))
+    }
+
+    /// A window's New Tab Page web view leaves the view hierarchy while another tab is shown, and
+    /// still reloads there. It belongs to its own window, here a Fire Window that isn't key.
+    func testWhenNewTabPageIsOffScreenThenOriginIsItsOwnWindow() {
+        let burnerMode = BurnerMode(isBurner: true)
+        let fireTab = Tab(content: .url(URL(string: "https://fire.example")!, credential: nil, source: .ui), burnerMode: burnerMode)
+        let fireWindow = collection([.loaded(fireTab)], burnerMode: burnerMode)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: fireWindow,
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+            aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger())
+        )
+        let windowController = MainWindowController(
+            window: MockWindow(isVisible: false),
+            mainViewController: mainViewController,
+            fireWindowSession: FireWindowSession(),
+            fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
+            themeManager: MockThemeManager()
+        )
+        let newTabPageWebView = mainViewController.browserTabViewController.newTabPageWebViewModel.webView
+        XCTAssertNil(newTabPageWebView.window)
+        let manager = manager(with: [regularCollection(urls: ["https://a.example"]), fireWindow])
+        manager.mainWindowControllers = [windowController]
+
+        let resolved = AIChatTabPickerSource.originTabCollectionViewModel(for: newTabPageWebView, in: manager)
+
+        XCTAssertTrue(resolved === fireWindow)
     }
 
     // MARK: - materializeAttachableTab (wake suspended tabs)

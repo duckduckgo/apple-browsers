@@ -39,13 +39,25 @@ enum AIChatTabPickerSource {
     static func originTabCollectionViewModel(for webView: WKWebView?,
                                              in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
         guard let webView else { return nil }
-        if let window = webView.window,
-           let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
+        if let controller = mainWindowController(owning: webView, in: windowControllersManager) {
             return controller.mainViewController.tabCollectionViewModel
         }
         // A detached Duck.ai window belongs to the tab it was opened from, so the owner tab decides there too.
         guard let ownerTabID = ownerTabID(for: webView, in: windowControllersManager) else { return nil }
         return pickerOrigin(containingTabID: ownerTabID, in: windowControllersManager)
+    }
+
+    /// The main window showing `webView`, or the one whose New Tab Page it is: that web view is
+    /// per window and leaves the view hierarchy while its window shows another tab.
+    private static func mainWindowController(owning webView: WKWebView,
+                                             in windowControllersManager: WindowControllersManagerProtocol) -> MainWindowController? {
+        if let window = webView.window,
+           let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
+            return controller
+        }
+        return windowControllersManager.mainWindowControllers.first {
+            $0.mainViewController.browserTabViewController.existingNewTabPageWebView === webView
+        }
     }
 
     /// Unlike `collection(containingTabID:)`, a shared pinned tab still resolves here: it is in every

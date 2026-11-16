@@ -136,17 +136,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     let applicationUpdateDetector: ApplicationUpdateDetector
-    var cpmAppSessionDiagnostics: CPMAppSessionDiagnostics {
-        let versionChange: CPMAppSessionDiagnostics.VersionChange?
-        switch applicationUpdateDetector.isApplicationUpdated() {
-        case .updated: versionChange = .updated
-        case .downgraded: versionChange = .downgraded
-        case .noChange: versionChange = nil
-        }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
-            NSApp.isActive ? .active : .inactive
-        }
-    }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -365,6 +354,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Open surfaces stamp it via `NSApp.delegateTyped.aiChatConversationSourceHandler`; the user-script
     /// handler is injected the same instance.
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
+    /// The app's single owner of the Duck.ai bonus record, shared by every consumer.
+    let aiChatBonusService = AIChatBonusService()
+    /// The bonus offer bridge handler and message log, shared by every Duck.ai tab.
+    let aiChatBonusOffer: AIChatBonusOfferDependencies
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
 
@@ -1211,6 +1204,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           wideEventManaging: wideEvent,
                                           aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
 
+        aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(service: aiChatBonusService, factsProvider: AIChatBonusFactsProvider()),
+            messageLog: AIChatBonusMessageLog()
+        )
+
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -1237,6 +1235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
                 syncErrorHandler: syncErrorHandler,
+                aiChatBonusOffer: aiChatBonusOffer,
                 webExtensionAvailability: webExtensionAvailability,
                 dockCustomization: dockCustomization,
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
@@ -1272,6 +1271,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
+            aiChatBonusOffer: aiChatBonusOffer,
             webExtensionAvailability: webExtensionAvailability,
             dockCustomization: dockCustomization,
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
@@ -1342,7 +1342,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 themeManager: themeManager,
                 dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager },
                 // App Store builds can't detect reinstalls, so rules using it fail there rather than treating everyone as new.
-                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil }
+                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil },
+                aiChatBonusStateProvider: aiChatBonusService
             )
             let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
@@ -1911,6 +1912,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         promoService?.applicationDidBecomeActive()
 
         hangMetricsService.resume()
+
+        // Reads and writes end an expired boost too, but neither may happen soon after the app becomes active.
+        try? aiChatBonusService.endBoostIfExpired()
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)

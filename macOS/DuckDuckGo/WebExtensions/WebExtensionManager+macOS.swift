@@ -19,29 +19,12 @@
 import AppKit
 import AppKitExtensions
 import Combine
+import DuckPlayer
 import EventHub
 import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
 import WebExtensions
-
-@available(macOS 15.4, *)
-@MainActor
-private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
-    private let featureFlagger: FeatureFlagger
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var isBackgroundDelegateProxyEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
-    }
-
-    var updatesPublisher: AnyPublisher<Void, Never> {
-        featureFlagger.updatesPublisher
-    }
-}
 
 // MARK: - macOS-specific WebExtensionManager Extensions
 
@@ -140,21 +123,7 @@ enum WebExtensionManagerFactory {
         }
 #endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
-            tabResolver: { tabIdentifier in
-                for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
-                    let viewModel = windowController.mainViewController.tabCollectionViewModel
-                    if let tab = (viewModel.loadedPinnedTabs + viewModel.loadedTabs).first(where: { $0.uuid == tabIdentifier }) {
-                        return (webView: tab.webView, extensionTab: tab)
-                    }
-                }
-                return nil
-            },
-            featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
-            appSession: Application.appDelegate.cpmAppSessionDiagnostics
-        ) : nil
-
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
         let installationStore = InstalledWebExtensionStore()
         let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
@@ -174,7 +143,6 @@ enum WebExtensionManagerFactory {
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             isCPMNetworkProcessRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },

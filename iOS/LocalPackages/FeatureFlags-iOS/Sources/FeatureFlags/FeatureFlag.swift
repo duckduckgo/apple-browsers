@@ -367,6 +367,15 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
     case aiChatContextualUnifiedToggleInput
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserTools
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolListOpenTabs
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolSwitchToTab
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218312902503176
     case aiChatContextualAttachMoreTabs
 
@@ -443,15 +452,6 @@ public enum FeatureFlag: String {
     /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617265
     case webExtensionLightweightReload
-
-    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
-    /// background-load readiness observation.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218782530802146
-    case cpmBackgroundDelegateProxy
-
-    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444896174
-    case cpmDiagnosticsRecorder
 
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
@@ -1002,6 +1002,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .aiChatBrowserTools:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled))
+        case .aiChatBrowserToolListOpenTabs:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.listOpenTabs))
+        case .aiChatBrowserToolSwitchToTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.switchToTab))
         case .aiChatContextualAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualAttachMoreTabs))
         case .aiChatContextualFloatingInput:
@@ -1052,10 +1058,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear))
-        case .cpmBackgroundDelegateProxy:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy))
-        case .cpmDiagnosticsRecorder:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
         case .cpmBackgroundLoadRestart:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRestart))
         case .cpmNetworkProcessRecovery:

@@ -28,6 +28,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
             getStarted: GetStarted(options: [])
         ),
         exclude: [],
+        steps: [],
         order: "",
         env: "environment",
         locale: "en",

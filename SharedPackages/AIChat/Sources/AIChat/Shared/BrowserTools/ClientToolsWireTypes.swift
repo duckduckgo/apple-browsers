@@ -83,6 +83,23 @@ public struct ClientToolsConfiguration: Codable, Equatable, Sendable {
     }
 }
 
+public struct ClientToolsChangedData: Encodable, Equatable {
+    public let clientTools: ClientToolsConfiguration?
+
+    public init(clientTools: ClientToolsConfiguration?) {
+        self.clientTools = clientTools
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientTools
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(clientTools, forKey: .clientTools)
+    }
+}
+
 /// Byte limits apply to the UTF-8 encoded JSON of the whole payload, separately from field limits.
 public enum ClientToolPayloadLimits {
     public static let configBytes = 4096

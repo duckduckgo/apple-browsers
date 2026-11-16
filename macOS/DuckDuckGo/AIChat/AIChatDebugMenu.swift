@@ -108,6 +108,11 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Boost Offer")
+                .submenu(AIChatBoostOfferDebugMenu())
+
+            NSMenuItem.separator()
+
             storageServerMenuItem
 
 #if DEBUG || REVIEW

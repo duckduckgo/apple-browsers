@@ -25,6 +25,7 @@ public final class BrowserToolInvoker {
 
     private let catalog: BrowserToolCatalog
     private let clientToolPermissions: any ClientToolPermissionCoordinating
+    private let requestAccessTool = RequestAccessTool()
 
     public init(catalog: BrowserToolCatalog,
                 clientToolPermissions: any ClientToolPermissionCoordinating) {
@@ -104,7 +105,7 @@ public final class BrowserToolInvoker {
             }
         }
         if !toAsk.isEmpty {
-            let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: RequestAccessTool.shared, targetsOtherTab: false,
+            let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: requestAccessTool, targetsOtherTab: false,
                                                                       chatID: chatID, accessToolNames: toAsk, prompter: permissionPrompter)
             switch authorization {
             case .refused(let error):
@@ -153,7 +154,6 @@ public final class BrowserToolInvoker {
 /// Stands in for `requestAccess` in the permission queue. Not in the catalog, so never in Settings.
 @MainActor
 private final class RequestAccessTool: BrowserTool {
-    static let shared = RequestAccessTool()
     let name = ClientToolCapability.requestAccess.name
     let permissionMode = BrowserToolPermissionMode.ask
     let inputSchema = JSONValue.object([:])

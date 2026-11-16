@@ -598,36 +598,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsCanonicalChatFormat: true
         )
         config.supportsResponseStateReporting = true
-        if hidesWebChatList {
-            hideWebChatList(in: message.messageWebView)
-        }
         return config
-    }
-
-    /// iPad's full-tab chat lists chats natively beside the page (`MainViewController.isIPadChatListSidebarAvailable`).
-    private var hidesWebChatList: Bool {
-        displayMode == .fullTab
-            && !devicePlatform.isIphone
-            && unifiedToggleInputFeature.isFullTabChatInputAvailable
-            && featureFlagger.isFeatureOn(.aiChatNativeStorage)
-    }
-
-    /// The page has no setting for leaving out its chat list, so it's hidden as the page asks for its config,
-    /// before it first draws. Below 900 pt the page swaps the sidebar for a toolbar whose menu, New and fire
-    /// buttons repeat the native sidebar's; above it that toolbar is empty once the native input is on.
-    @MainActor
-    private func hideWebChatList(in webView: WKWebView?) {
-        let script = """
-        (() => {
-            const id = 'ddg-native-chat-list';
-            if (document.getElementById(id)) { return; }
-            const style = document.createElement('style');
-            style.id = id;
-            style.textContent = '[data-testid="duckai-sidebar"], [data-testid="duckai-top-toolbar"] { display: none !important; }';
-            (document.head || document.documentElement).appendChild(style);
-        })();
-        """
-        webView?.evaluateJavaScript(script)
     }
 
     // MARK: - Homepage chat suggestions

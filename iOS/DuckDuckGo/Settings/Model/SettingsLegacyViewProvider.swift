@@ -183,9 +183,6 @@ class SettingsLegacyViewProvider: ObservableObject {
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController {
-        guard AppDependencyProvider.shared.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-            return KeyboardSettingsViewController()
-        }
         let controller = UIHostingController(rootView: KeyboardSettingsView())
         controller.title = UserText.settingsKeyboard
         return controller

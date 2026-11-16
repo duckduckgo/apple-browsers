@@ -350,8 +350,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     func beginEditingOnNewTabPageAppOpen(isRequestValid: @escaping () -> Bool,
                                          completion: @escaping (Bool) -> Void) {
-        if dependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-           unifiedToggleInputOmnibarActivating?.activateFromOmnibarOnAppOpenIfNeeded(
+        if unifiedToggleInputOmnibarActivating?.activateFromOmnibarOnAppOpenIfNeeded(
             currentText: extractCurrentTextForEditing(omniBarView.textField),
             isRequestValid: isRequestValid,
             completion: completion) == .intercept {

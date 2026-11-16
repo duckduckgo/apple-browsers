@@ -76,6 +76,7 @@ final class VideoPlayerCoordinator: ObservableObject {
 
         let item = AVPlayerItem(url: url)
         looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+        queuePlayer.isMuted = true
         queuePlayer.play()
     }
 
@@ -97,6 +98,7 @@ private struct VideoPlayerView: NSViewRepresentable {
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
         view.controlsStyle = .none
+        view.updatesNowPlayingInfoCenter = false
         view.player = player
         return view
     }

@@ -46,25 +46,40 @@ enum WebExtensionWasmPolicyPatch {
     static func patchedPolicy(_ policy: String) -> String? {
         var sources: [String: [String]] = [:]
         var keptDirectives: [String] = []
+
         for directive in policy.split(separator: ";") {
-            let tokens = directive.split(whereSeparator: \.isWhitespace).map { $0.lowercased() }
+            let tokens = directive
+                .split(whereSeparator: \.isWhitespace)
+                .map { $0.lowercased() }
+
             // CSP ignores a repeated directive.
-            guard let name = tokens.first, sources[name] == nil else { continue }
+            guard let name = tokens.first, sources[name] == nil else {
+                continue
+            }
+
             sources[name] = Array(tokens.dropFirst())
+
             if name != "script-src" && name != "default-src" {
                 keptDirectives.append(directive.trimmingCharacters(in: .whitespacesAndNewlines))
             }
         }
 
-        guard let scriptSources = sources["script-src"] ?? sources["default-src"],
-              scriptSources.contains("'wasm-unsafe-eval'") else { return nil }
+        guard let scriptSources = sources["script-src"] ?? sources["default-src"], scriptSources.contains("'wasm-unsafe-eval'") else {
+            return nil
+        }
 
         let addedDirectives = fallbacks.compactMap { name, fallbackNames -> String? in
+
             // A fallback to `child-src` needs no copy: `child-src` stays in the policy.
-            guard sources[name] == nil,
-                  let fallback = fallbackNames.first(where: { sources[$0] != nil }),
-                  fallback != "child-src",
-                  let inherited = sources[fallback] else { return nil }
+            guard
+                sources[name] == nil,
+                let fallback = fallbackNames.first(where: { sources[$0] != nil }),
+                fallback != "child-src",
+                let inherited = sources[fallback]
+            else {
+                return nil
+            }
+
             return ([name] + inherited.filter { $0 == "'self'" || $0 == "'none'" }).joined(separator: " ")
         }
 

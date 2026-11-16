@@ -182,14 +182,20 @@ struct WebExtensionBackgroundPagePatcher {
         guard #unavailable(macOS 26, iOS 26),
               manifest[ManifestKey.manifestVersion] as? Int == 3,
               let policies = manifest[ManifestKey.contentSecurityPolicy] as? [String: Any],
-              let policy = policies[ManifestKey.extensionPages] as? String else { return nil }
+              let policy = policies[ManifestKey.extensionPages] as? String
+        else {
+            return nil
+        }
         return WebExtensionWasmPolicyPatch.patchedPolicy(policy)
     }
 
     /// - Returns: `true` when `manifest` was changed.
     private static func patchWasmPolicy(in manifest: inout [String: Any]) -> Bool {
         guard let patched = patchedWasmPolicy(in: manifest),
-              var policies = manifest[ManifestKey.contentSecurityPolicy] as? [String: Any] else { return false }
+              var policies = manifest[ManifestKey.contentSecurityPolicy] as? [String: Any]
+        else {
+            return false
+        }
         policies[ManifestKey.extensionPages] = patched
         manifest[ManifestKey.contentSecurityPolicy] = policies
         return true

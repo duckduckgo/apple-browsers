@@ -91,11 +91,15 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
 
     func appStoreSheetFailed(_ error: Error) {
         // The App Store web page opens as a fallback, so the user can still cancel there.
-        recordError(error, completingPendingCancellation: false)
+        recordError(error)
     }
 
     func stripePortalFailed(_ error: Error) {
-        recordError(error, completingPendingCancellation: true)
+        guard let wideEvent else { return }
+        for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
+            data.errorData = WideEventErrorData(error: error)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        }
     }
 
     func manageSubscriptionSheetShown() {
@@ -106,15 +110,11 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
         }
     }
 
-    private func recordError(_ error: Error, completingPendingCancellation: Bool) {
+    private func recordError(_ error: Error) {
         guard let wideEvent else { return }
         for data in wideEvent.getAllFlowData(SubscriptionCancellationWideEventData.self) {
             data.errorData = WideEventErrorData(error: error)
-            if completingPendingCancellation {
-                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-            } else {
-                wideEvent.updateFlow(data)
-            }
+            wideEvent.updateFlow(data)
         }
     }
 
@@ -128,7 +128,7 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
     func flowLoadFailed(_ error: Error) {
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(error), frequency: .dailyAndCount)
         // The store cancellation opens as a fallback, so the user can still cancel there.
-        recordError(error, completingPendingCancellation: false)
+        recordError(error)
     }
 
     func featureInfoFailed(entitlement: SubscriptionEntitlement) {

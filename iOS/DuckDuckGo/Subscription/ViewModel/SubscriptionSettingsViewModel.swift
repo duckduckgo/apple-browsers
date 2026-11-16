@@ -188,13 +188,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         cancellationInstrumentation.cancelSubscriptionTapped(subscription: state.subscriptionInfo)
     }
 
-    private var manageEntryPoint: SubscriptionCancellationWideEventData.EntryPoint {
-        if isAppleSubscriptionWithCancellationFlowEnabled {
-            return .manageSubscription
-        }
-        return featureFlagger.isFeatureOn(.allowProTierPurchase) ? .managePaymentOrCancel : .changePlan
-    }
-
     @MainActor
     func openStoreCancellation() async {
         await manageAppleSubscription(entry: .cancellation)
@@ -390,7 +383,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return
         }
 
-        cancellationInstrumentation.manageSubscriptionTapped(entryPoint: manageEntryPoint, subscription: state.subscriptionInfo)
+        let entryPoint: SubscriptionCancellationWideEventData.EntryPoint = if isAppleSubscriptionWithCancellationFlowEnabled {
+            .manageSubscription
+        } else if featureFlagger.isFeatureOn(.allowProTierPurchase) {
+            .managePaymentOrCancel
+        } else {
+            .changePlan
+        }
+        cancellationInstrumentation.manageSubscriptionTapped(entryPoint: entryPoint, subscription: state.subscriptionInfo)
 
         switch platform {
         case .apple:

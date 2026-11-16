@@ -49,6 +49,14 @@ final class SubscriptionCancellationWideEventData: WideEventData {
     let startDate: Date
     var statusReason: StatusReason?
     var manageSubscriptionSheetShown = false
+    var subscriptionChecker: (() async throws -> DuckDuckGoSubscription?)?
+
+    private enum CodingKeys: String, CodingKey {
+        case globalData, contextData, appData, errorData
+        case entryPoint, purchasePlatform, isTrial, subscriptionIdentifier
+        case daysSincePurchase, daysUntilRenewal, startDate
+        case statusReason, manageSubscriptionSheetShown
+    }
 
     init(entryPoint: EntryPoint,
          purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform,
@@ -78,7 +86,16 @@ final class SubscriptionCancellationWideEventData: WideEventData {
             guard hasTimedOut(at: Date()) else {
                 return .keepPending
             }
-            return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+            return .complete(finish(with: await currentStatusReason() ?? .timeout))
+        }
+    }
+
+    private func currentStatusReason() async -> StatusReason? {
+        guard let subscriptionChecker else { return nil }
+        do {
+            return Self.statusReason(for: try await subscriptionChecker(), subscriptionIdentifier: subscriptionIdentifier)
+        } catch {
+            return nil
         }
     }
 
@@ -99,6 +116,12 @@ final class SubscriptionCancellationWideEventData: WideEventData {
         case .inactive, .unknown:
             return .partialData
         }
+    }
+
+    func finish(with reason: StatusReason) -> WideEventStatus {
+        // CANCELLED carries no reason, so plan_changed is sent through jsonParameters.
+        statusReason = reason
+        return Self.status(for: reason)
     }
 
     static func status(for reason: StatusReason) -> WideEventStatus {

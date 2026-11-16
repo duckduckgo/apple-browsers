@@ -79,16 +79,10 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
 
         let now = now()
         for data in pendingFlows {
-            let reason: CancellationData.StatusReason? = data.hasTimedOut(at: now)
-                ? .timeout
-                : CancellationData.statusReason(for: subscription, subscriptionIdentifier: data.subscriptionIdentifier)
+            let reason = CancellationData.statusReason(for: subscription, subscriptionIdentifier: data.subscriptionIdentifier)
+                ?? (data.hasTimedOut(at: now) ? .timeout : nil)
             guard let reason else { continue }
-            await complete(data, reason: reason)
+            _ = try? await wideEvent.completeFlow(data, status: data.finish(with: reason))
         }
-    }
-
-    private func complete(_ data: CancellationData, reason: CancellationData.StatusReason) async {
-        data.statusReason = reason
-        _ = try? await wideEvent.completeFlow(data, status: CancellationData.status(for: reason))
     }
 }

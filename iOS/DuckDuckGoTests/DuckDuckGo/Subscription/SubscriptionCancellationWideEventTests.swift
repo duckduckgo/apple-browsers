@@ -214,44 +214,81 @@ struct SubscriptionCancellationWideEventTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("After 24h, a subscription change completes with UNKNOWN timeout, whatever the subscription shows", .timeLimit(.minutes(1)), arguments: [
-        DuckDuckGoSubscription.Status.notAutoRenewable,
-        .expired,
-        .autoRenewable,
-        .gracePeriod,
-        .inactive
+    @Test("After 24h, a subscription change reports its outcome, and UNKNOWN timeout only while still auto-renewing on the same plan", .timeLimit(.minutes(1)), arguments: [
+        (DuckDuckGoSubscription.Status.notAutoRenewable, WideEventStatus.success(reason: "not_auto_renewable"), "not_auto_renewable"),
+        (.expired, .success(reason: "expired"), "expired"),
+        (.inactive, .unknown(reason: "partial_data"), "partial_data"),
+        (.autoRenewable, .unknown(reason: "timeout"), "timeout"),
+        (.gracePeriod, .unknown(reason: "timeout"), "timeout")
     ])
-    func subscriptionChangeAfterTimeoutCompletesWithTimeout(status: DuckDuckGoSubscription.Status) async {
+    func subscriptionChangeAfterTimeoutPrioritizesOutcome(status: DuckDuckGoSubscription.Status,
+                                                          expectedStatus: WideEventStatus,
+                                                          expectedReason: String) async {
         let (wideEvent, observer) = makePendingObserver(hoursSinceTap: 25)
 
         await observer.handleSubscriptionChange(subscriptionChange(subscription(status: status)))
 
-        #expect(wideEvent.completions.map(\.1) == [.unknown(reason: "timeout")])
-        #expect(sentStatusReason(wideEvent) == "timeout")
+        #expect(wideEvent.completions.map(\.1) == [expectedStatus])
+        #expect(sentStatusReason(wideEvent) == expectedReason)
     }
 
     enum FallbackFetch: CaseIterable {
         case cancelledSubscription, noSubscription, failure
     }
 
+    enum LaunchCheck: CaseIterable {
+        case cancelledSubscription, stillAutoRenewing, noSubscription, failure, noChecker
+    }
+
     @available(iOS 16, macOS 13, *)
-    @Test("On launch, the flow stays pending before 24h and completes with UNKNOWN timeout after", .timeLimit(.minutes(1)), arguments: [
-        (1, String?.none),
-        (25, "timeout")
-    ])
-    func launchUsesTimeoutOnly(hoursSinceTap: Int, expectedReason: String?) async {
-        let data = makeData(start: Date().addingTimeInterval(.hours(-hoursSinceTap)))
+    @Test("On launch before 24h, the flow stays pending without checking the subscription", .timeLimit(.minutes(1)))
+    func launchBeforeTimeoutStaysPending() async {
+        let data = makeData(start: Date().addingTimeInterval(.hours(-1)))
+        var checks = 0
+        data.subscriptionChecker = {
+            checks += 1
+            return nil
+        }
 
         let decision = await data.completionDecision(for: .appLaunch)
 
-        switch (decision, expectedReason) {
-        case (.keepPending, nil):
-            break
-        case (.complete(.unknown(let reason)), let expected?) where reason == expected:
-            break
-        default:
-            Issue.record("Expected \(expectedReason ?? "pending"), got \(decision)")
+        guard case .keepPending = decision else {
+            Issue.record("Expected pending, got \(decision)")
+            return
         }
+        #expect(checks == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("On launch after 24h, the refreshed subscription decides the outcome, falling back to UNKNOWN timeout", .timeLimit(.minutes(1)), arguments: LaunchCheck.allCases)
+    func launchAfterTimeoutChecksSubscription(check: LaunchCheck) async {
+        let data = makeData(start: Date().addingTimeInterval(.hours(-25)))
+        let cancelled = subscription(status: .notAutoRenewable)
+        let renewing = subscription(status: .autoRenewable)
+        if check != .noChecker {
+            data.subscriptionChecker = {
+                switch check {
+                case .cancelledSubscription: return cancelled
+                case .stillAutoRenewing: return renewing
+                case .noSubscription, .noChecker: return nil
+                case .failure: throw TestError()
+                }
+            }
+        }
+
+        let decision = await data.completionDecision(for: .appLaunch)
+
+        let expected: (WideEventStatus, String) = switch check {
+        case .cancelledSubscription: (.success(reason: "not_auto_renewable"), "not_auto_renewable")
+        case .noSubscription: (.unknown(reason: "no_subscription"), "no_subscription")
+        case .stillAutoRenewing, .failure, .noChecker: (.unknown(reason: "timeout"), "timeout")
+        }
+        guard case .complete(let status) = decision else {
+            Issue.record("Expected completion, got \(decision)")
+            return
+        }
+        #expect(status == expected.0)
+        #expect(data.statusReason?.rawValue == expected.1)
     }
 
     @available(iOS 16, macOS 13, *)

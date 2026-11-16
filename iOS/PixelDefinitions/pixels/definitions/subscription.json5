@@ -789,7 +789,7 @@
         ]
     },
     "m_ios_wide_subscription_cancellation": {
-        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription change within 24 hours of the entry tap shows the outcome, when an error with no other cancellation path stops the user, or when 24 hours pass",
+        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription change within 24 hours of the entry tap shows the outcome, when an error with no other cancellation path stops the user, or after 24 hours from a refreshed subscription, with timeout if it is still auto-renewing on the same plan",
         "owners": ["hanyutang-sandra"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily"],

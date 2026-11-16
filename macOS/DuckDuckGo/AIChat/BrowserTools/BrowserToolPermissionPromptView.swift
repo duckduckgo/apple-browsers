@@ -97,12 +97,24 @@ struct BrowserToolPermissionPromptView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .fixedSize(horizontal: false, vertical: true)
                 }
+
+                if let target = prompt.target {
+                    Text(target)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(4)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                        .accessibilityIdentifier("BrowserToolPermissionPrompt.target")
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(spacing: 8) {
                 decisionButton(UserText.browserToolPermissionAllowOnce, .allowOnce, id: "allowOnce", shortcutHint: "⌘↵")
-                decisionButton(UserText.permissionCenterAlwaysAllow, .always, id: "alwaysAllow")
+                if prompt.offersAlways {
+                    decisionButton(UserText.permissionCenterAlwaysAllow, .always, id: "alwaysAllow")
+                }
                 decisionButton(UserText.permissionCenterNeverAllow, .never, id: "neverAllow")
             }
         }

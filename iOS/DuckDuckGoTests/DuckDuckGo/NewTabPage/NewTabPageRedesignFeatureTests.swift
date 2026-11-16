@@ -21,7 +21,6 @@ import FeatureFlags_iOS
 import Testing
 @testable import DuckDuckGo
 
-@available(iOS 16, macOS 13, *)
 struct NewTabPageRedesignFeatureTests {
 
     private final class MockDevicePlatform: DevicePlatformProviding {
@@ -34,21 +33,25 @@ struct NewTabPageRedesignFeatureTests {
                                          devicePlatform: MockDevicePlatform.self)
     }
 
+    @available(iOS 16, *)
     @Test("Sticky input is enabled when the redesign and its flag are on", .timeLimit(.minutes(1)))
     func stickyInputEnabledWhenBothFlagsOn() {
         #expect(makeFeature(enabledFlags: [.newTabPageRedesign, .newTabPageStickyInput]).isStickyInputEnabled)
     }
 
+    @available(iOS 16, *)
     @Test("Sticky input is disabled when its own flag is off", .timeLimit(.minutes(1)))
     func stickyInputDisabledWhenOwnFlagOff() {
         #expect(!makeFeature(enabledFlags: [.newTabPageRedesign]).isStickyInputEnabled)
     }
 
+    @available(iOS 16, *)
     @Test("Sticky input is disabled when the redesign is off", .timeLimit(.minutes(1)))
     func stickyInputDisabledWhenRedesignOff() {
         #expect(!makeFeature(enabledFlags: [.newTabPageStickyInput]).isStickyInputEnabled)
     }
 
+    @available(iOS 16, *)
     @Test("Sticky input is disabled on iPad even with both flags on", .timeLimit(.minutes(1)))
     func stickyInputDisabledOnIPad() {
         #expect(!makeFeature(enabledFlags: [.newTabPageRedesign, .newTabPageStickyInput], isIphone: false).isStickyInputEnabled)

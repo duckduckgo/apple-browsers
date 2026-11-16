@@ -103,6 +103,7 @@ public final class AssistedOptOutQueue {
             cancelAll()
             return
         }
+        let config = loaded.config
         let candidates = loaded.candidates
         let candidateIDs = Set(candidates.map(\.id))
         for session in activeSessions where session.phase != .submitted && !candidateIDs.contains(session.id) {
@@ -135,6 +136,7 @@ public final class AssistedOptOutQueue {
             cancelAll()
             return []
         }
+        let config = loaded.config
         guard config.isEnabled else { return [] }
         let candidates = loaded.candidates
         let live = activeSessions.filter { config.isEnabled(forBrokerURL: $0.broker.url) }.map(\.dashboardItem)
@@ -163,7 +165,7 @@ public final class AssistedOptOutQueue {
         }
         guard runningID == nil, !sessions.values.contains(where: { $0.phase != .submitted }) else { return }
         let loaded = try await loadSnapshot()
-        guard try await isAuthenticated(for: loaded), config.isEnabled, !dependencies.isPausedForRevokedSigningKey,
+        guard try await isAuthenticated(for: loaded), loaded.config.isEnabled, !dependencies.isPausedForRevokedSigningKey,
               runningID == nil, !sessions.values.contains(where: { $0.phase != .submitted }),
               let candidate = loaded.candidates.first(where: { $0.id == id && isAwaiting($0) }),
               let actions = candidate.data.dataBroker.optOutStep()?.actions else { return }
@@ -198,6 +200,7 @@ public final class AssistedOptOutQueue {
     }
 
     private func cancelAttemptsNotEnabled() {
+        let config = config
         for session in activeSessions where !config.isEnabled(forBrokerURL: session.broker.url) {
             cancel(session.id)
         }

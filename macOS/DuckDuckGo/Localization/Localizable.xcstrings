@@ -60807,6 +60807,18 @@
         }
       }
     },
+    "import.history.time-range" : {
+      "comment" : "Label next to the History import option explaining that only the last 30 days of browsing history are imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last 30 days"
+          }
+        }
+      }
+    },
     "import.html.instructions.chromium.new" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -64958,6 +64970,18 @@
         }
       }
     },
+    "import.type-selection.title.all-with-history" : {
+      "comment" : "Title text for the button to select the type of data to import when bookmarks, passwords and history are selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks, Passwords, and History"
+          }
+        }
+      }
+    },
     "import.type-selection.title.bookmarks" : {
       "comment" : "Title text for the button to select the type of data to import when bookmarks selected",
       "extractionState" : "extracted_with_value",
@@ -65018,6 +65042,30 @@
         }
       }
     },
+    "import.type-selection.title.bookmarks-and-history" : {
+      "comment" : "Title text for the button to select the type of data to import when bookmarks and history are selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks and History"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.history" : {
+      "comment" : "Title text for the button to select the type of data to import when history selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import History"
+          }
+        }
+      }
+    },
     "import.type-selection.title.passwords" : {
       "comment" : "Title text for the button to select the type of data to import when passwords selected",
       "extractionState" : "extracted_with_value",
@@ -65074,6 +65122,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импорт паролей"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.passwords-and-history" : {
+      "comment" : "Title text for the button to select the type of data to import when passwords and history are selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Passwords and History"
           }
         }
       }
@@ -65198,6 +65258,30 @@
         }
       }
     },
+    "import.zip.instructions.safari.bookmarks.with-history" : {
+      "comment" : "Instructions to import bookmarks, credit cards and history exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select from **Bookmarks, Credit Cards,** and **History** → **Export** and save the file\n%4$d Upload the exported ZIP or HTML file to DuckDuckGo"
+          }
+        }
+      }
+    },
+    "import.zip.instructions.safari.history" : {
+      "comment" : "Instructions to import history exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select **History** → **Export** and save the file\n%4$d Upload the exported ZIP file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.zip.instructions.safari.passwords" : {
       "comment" : "Instructions to import passwords and credit cards exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -65254,6 +65338,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **Пароли** и **Кредитные карты** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив или CSV-файл в DuckDuckGo"
+          }
+        }
+      }
+    },
+    "import.zip.instructions.safari.passwords.with-history" : {
+      "comment" : "Instructions to import passwords, credit cards and history exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select from **Passwords, Credit Cards,** and **History** → **Export** and save the file\n%4$d Upload the exported ZIP or CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
+    "import.zip.instructions.safari.with-history" : {
+      "comment" : "Instructions to import multiple data types, including history, exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select from **Bookmarks, Passwords, Credit Cards,** and **History** → **Export** and save the file\n%4$d Upload the exported ZIP or CSV file to DuckDuckGo"
           }
         }
       }

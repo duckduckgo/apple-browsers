@@ -156,6 +156,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
+    @MainActor func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession)
@@ -225,6 +226,15 @@ protocol AIChatUserScriptHandling: AnyObject {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            return .invalidRequest(rawParams: params)
+        }
+        guard let source else { return .failure(callId: request.callId, error: .unavailable) }
+        return await source.invokeBrowserTool(request).limitedToResultBytes()
+    }
+
 
     @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?
 

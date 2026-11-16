@@ -24,6 +24,7 @@ final class OpenTabBrowserTool: BrowserTool {
 
     let name = "openTab"
     let permissionMode = BrowserToolPermissionMode.ask
+    let asksEveryTime = true
 
     let inputSchema: JSONValue = [
         "type": "object",

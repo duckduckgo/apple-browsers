@@ -29,6 +29,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
 
     let name = "bookmarkTab"
     let permissionMode = BrowserToolPermissionMode.ask
+    let asksEveryTime = true
 
     let inputSchema: JSONValue = [
         "type": "object",

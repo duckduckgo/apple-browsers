@@ -163,7 +163,7 @@ final class BrowserToolPermissionPromptPresenter {
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(answering: prompt.requestID, popover: popover, in: tabBar.view.window))
+                           keyMonitor: keyMonitor(answering: prompt.requestID, primary: prompt.offersAllowForChat ? .allowForChat : .allowOnce, popover: popover, in: tabBar.view.window))
         tabBar.showBrowserToolPermissionButton(icon: BrowserToolPermissionPromptText.icon(toolName: prompt.toolName),
                                                title: BrowserToolPermissionPromptText.title(toolName: prompt.toolName,
                                                                                             targetsOtherTab: prompt.targetsOtherTab),
@@ -172,7 +172,7 @@ final class BrowserToolPermissionPromptPresenter {
     }
 
     // The popover doesn't take key focus, so SwiftUI shortcuts don't reach it.
-    private func keyMonitor(answering requestID: String, popover: NSPopover, in window: NSWindow?) -> Any? {
+    private func keyMonitor(answering requestID: String, primary: ClientToolPermissionDecision, popover: NSPopover, in window: NSWindow?) -> Any? {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover, weak window] event in
             guard let self, let popover, popover.isShown,
                   event.window === window || event.window === popover.contentViewController?.view.window else { return event }
@@ -181,7 +181,7 @@ final class BrowserToolPermissionPromptPresenter {
             case (53, []): // Esc
                 answer(requestID, with: .dismiss)
             case (36, .command), (76, .command): // ⌘Return, ⌘Enter
-                answer(requestID, with: .allowOnce)
+                answer(requestID, with: primary)
             default:
                 return event
             }

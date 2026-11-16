@@ -28,6 +28,9 @@ public protocol BrowserTool: AnyObject {
     /// The default when the user hasn't chosen one in the prompt or in settings.
     var permissionMode: BrowserToolPermissionMode { get }
 
+    /// A tool that changes the browser: `requestAccess` never grants it, so it keeps its own prompt.
+    var asksEveryTime: Bool { get }
+
     var inputSchema: JSONValue { get }
 
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
@@ -40,6 +43,7 @@ public protocol BrowserTool: AnyObject {
 }
 
 public extension BrowserTool {
+    var asksEveryTime: Bool { false }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
 }
 
@@ -92,4 +96,11 @@ public protocol BrowserToolsConfiguration: AnyObject {
 
     /// The tool's own sub-feature, already combined with the parent.
     func isToolEnabled(named name: String) -> Bool
+
+    /// The `requestAccess` sub-feature, already combined with the parent.
+    var isRequestAccessEnabled: Bool { get }
+}
+
+public extension BrowserToolsConfiguration {
+    var isRequestAccessEnabled: Bool { false }
 }

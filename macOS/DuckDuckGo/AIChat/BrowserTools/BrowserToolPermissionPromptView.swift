@@ -38,6 +38,7 @@ enum BrowserToolPermissionPromptText {
         case ("bookmarkTab", _): UserText.browserToolPermissionTitleBookmarkTab
         case ("switchToTab", _): UserText.browserToolPermissionTitleSwitchToTab
         case ("highlightInPage", _): UserText.browserToolPermissionTitleHighlightInPage
+        case ("requestAccess", _): UserText.browserToolAccessTitle
         default: UserText.browserToolPermissionTitleOther
         }
     }
@@ -77,6 +78,7 @@ enum BrowserToolPermissionPromptText {
         case ("searchDownloads", _): UserText.browserToolPermissionDetailSearchDownloads
         case ("searchBookmarks", _): UserText.browserToolPermissionDetailSearchBookmarks
         case ("closeTabs", _): UserText.browserToolPermissionDetailCloseTabs
+        case ("requestAccess", _): UserText.browserToolAccessDetail
         default: nil
         }
     }
@@ -111,10 +113,41 @@ struct BrowserToolPermissionPromptView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(spacing: 8) {
-                decisionButton(UserText.browserToolPermissionAllowOnce, .allowOnce, id: "allowOnce", shortcutHint: "⌘↵")
-                decisionButton(UserText.permissionCenterAlwaysAllow, .always, id: "alwaysAllow")
-                decisionButton(UserText.permissionCenterNeverAllow, .never, id: "neverAllow")
+            if let accessToolNames = prompt.accessToolNames {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(accessToolNames, id: \.self) { toolName in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(nsImage: BrowserToolPermissionPromptText.icon(toolName: toolName))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(BrowserToolSettingsText.title(toolName: toolName))
+                                    .font(.system(size: 13))
+                                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                                if let detail = BrowserToolSettingsText.detail(toolName: toolName) {
+                                    Text(detail)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                                }
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .accessibilityIdentifier("BrowserToolPermissionPrompt.accessTools")
+
+                VStack(spacing: 8) {
+                    decisionButton(UserText.browserToolAccessAllow, .allowOnce, id: "allowInChat", shortcutHint: "⌘↵")
+                    decisionButton(UserText.browserToolAccessDontAllow, .dontAllow, id: "dontAllow")
+                }
+            } else {
+                VStack(spacing: 8) {
+                    if prompt.offersAllowForChat {
+                        decisionButton(UserText.browserToolPermissionAllowForChat, .allowForChat, id: "allowForChat", shortcutHint: "⌘↵")
+                    } else {
+                        decisionButton(UserText.browserToolPermissionAllowOnce, .allowOnce, id: "allowOnce", shortcutHint: "⌘↵")
+                    }
+                    decisionButton(UserText.permissionCenterAlwaysAllow, .always, id: "alwaysAllow")
+                    decisionButton(UserText.permissionCenterNeverAllow, .never, id: "neverAllow")
+                }
             }
         }
         .padding(20)

@@ -140,7 +140,8 @@ final class BrowserToolsDebugViewController: NSViewController {
             let params: [String: Any] = [
                 "callId": callID,
                 "capability": ["name": capability.name, "version": capability.version],
-                "input": arguments
+                "input": arguments,
+                "chatId": "debug-panel"
             ]
             request.script.registerClientToolPermissionCancellation(source)
             self?.appendToLog(summary: "→ executeClientTool", detail: self?.prettyPrinted(params))
@@ -348,9 +349,12 @@ final class BrowserToolsDebugViewController: NSViewController {
             row.removeFromSuperview()
         }
         argumentFields = []
-        guard let descriptor = service.catalog.enabledTools.first(where: { $0.name == tool }),
-              let properties = descriptor.inputSchema["properties"]?.objectValue else { return }
-        let required = Set(descriptor.inputSchema["required"]?.arrayValue?.compactMap(\.stringValue) ?? [])
+        let schema = tool == ClientToolCapability.requestAccess.name
+            ? JSONValue.object(["properties": .object(["capabilities": .object(["type": .string("array"), "items": .object(["type": .string("string")])])]),
+                                "required": .array([.string("capabilities")])])
+            : service.catalog.enabledTools.first(where: { $0.name == tool })?.inputSchema
+        guard let properties = schema?["properties"]?.objectValue else { return }
+        let required = Set(schema?["required"]?.arrayValue?.compactMap(\.stringValue) ?? [])
 
         for name in properties.keys.sorted(by: { ($0 == "query" || $0 == "quotes") != ($1 == "query" || $1 == "quotes") ? ($0 == "query" || $0 == "quotes") : $0 < $1 }) {
             let schema = properties[name] ?? .null
@@ -400,6 +404,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("searchHistory", "limit"): return "5"
         case ("findInPage", "query"): return "games"
         case ("highlightInPage", "quotes"): return "games"
+        case ("requestAccess", "capabilities"): return "listOpenTabs, readTabContent, searchHistory"
         default: return nil
         }
     }
@@ -409,7 +414,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     /// Stands in for the browser's native prompt: the panel answers it directly, as the browser does.
     private func addPromptEntry(for prompt: ClientToolPermissionPrompt) -> Bool {
         guard prompt.callID == activeCallID else { return false }
-        let answers: [(String, ClientToolPermissionDecision)] = [("Allow once", .allowOnce), ("Always", .always), ("Never", .never), ("Dismiss", .dismiss)]
+        let answers: [(String, ClientToolPermissionDecision)] = [("Allow once", .allowOnce), ("Allow for chat", .allowForChat), ("Always", .always), ("Never", .never), ("Don't allow", .dontAllow), ("Dismiss", .dismiss)]
         let buttons = answers.map { title, decision -> NSView in
             let button = PromptButton(title: title, target: self, action: #selector(answerPrompt(_:)))
             button.bezelStyle = .rounded

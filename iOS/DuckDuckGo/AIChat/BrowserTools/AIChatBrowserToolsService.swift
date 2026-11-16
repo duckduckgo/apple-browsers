@@ -320,7 +320,7 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .switchToTab:
             .aiChatBrowserToolSwitchToTab
         case .featureEnabled, .searchHistory, .readTabContent, .findInPage, .highlightInPage,
-             .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks:
+             .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks, .requestAccess:
             nil
         }
     }

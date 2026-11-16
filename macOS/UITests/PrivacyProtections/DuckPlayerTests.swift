@@ -27,8 +27,9 @@ class DuckPlayerTests: UITestCase {
     private static let organicVideoTitle = "DuckDuckGo vs Google: 5 Reasons You Should Switch - YouTube"
     private static let duckPlayerTabPreffix = "Duck Player - "
     private static let videoTitle = "Videos"
-    private static let duckURLForVideo = "duck://player/3ml7yeKBUhc"
-    private static let youtubeURLForVideo = "https://www.youtube.com/watch?v=3ml7yeKBUhc"
+    private static let youtubeVideoID = "3ml7yeKBUhc"
+    private static let duckURLForVideo = "duck://player/\(youtubeVideoID)"
+    private static let youtubeURLForVideo = "https://www.youtube.com/watch?v=\(youtubeVideoID)"
     private static let youtubeVideoSearchURL = "https://www.youtube.com/results?search_query=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%22&sp=EgIQAQ%253D%253D"
     private static let watchOnDuckPlayerLink = "Watch in Duck Player"
     private static let watchOnYouTubeLink = "Watch on YouTube"
@@ -51,33 +52,17 @@ class DuckPlayerTests: UITestCase {
         addressBarTextField.pasteURL(URL(string: url)!)
     }
 
-    /// Finds a YouTube video link on the SERP that points to a `/watch?v=` URL.
-    /// The SERP can link the same video as `/watch?v=` or `/live/`, and Duck Player only redirects `/watch?v=` URLs,
-    /// so this goes through the result cards for the video and returns the display URL link showing `watch?v=`.
+    /// Finds the organic result's `/watch` link even when the result card has no accessibility label.
     private func findOrganicVideoLink(timeout: TimeInterval = UITests.Timeouts.navigation) -> XCUIElement? {
-        let resultCards = app.webViews.firstMatch.groups
-            .matching(NSPredicate(format: "label BEGINSWITH %@", Self.youtubeVideoTitle))
-        guard resultCards.firstMatch.waitForExistence(timeout: timeout) else { return nil }
-
-        // Matches elements whose label, title or value satisfies `comparison` against `text`
-        let anyText = { (comparison: String, text: String) -> NSPredicate in
-            NSCompoundPredicate(orPredicateWithSubpredicates: ["label", "title", "value"].map {
-                NSPredicate(format: "%K \(comparison) %@", $0, text)
-            })
+        let watchQuery = "watch?v=\(Self.youtubeVideoID)"
+        let urlTextPredicates = ["title", "label"].map { attribute in
+            NSPredicate(format: "%K BEGINSWITH %@ AND %K CONTAINS %@",
+                        attribute, "https://www.youtube.com", attribute, watchQuery)
         }
-        let watchURL = NSCompoundPredicate(andPredicateWithSubpredicates: [
-            anyText("BEGINSWITH", "https://www.youtube.com"),
-            anyText("CONTAINS", "watch?v=")
-        ])
-
-        for card in resultCards.allElementsBoundByIndex {
-            let displayURLLink = card.descendants(matching: .any).matching(watchURL).firstMatch
-            if displayURLLink.exists {
-                return displayURLLink
-            }
-        }
-
-        return nil
+        let link = app.webViews.firstMatch.links
+            .matching(NSCompoundPredicate(orPredicateWithSubpredicates: urlTextPredicates))
+            .firstMatch
+        return link.waitForExistence(timeout: timeout) ? link : nil
     }
 
     /// Finds the video's link on the SERP Videos tab, checking for both possible title formats
@@ -214,9 +199,8 @@ class DuckPlayerTests: UITestCase {
         // Search
         openURL(url: Self.searchURL)
 
-        // Click Link - check both possible title formats
         let organicVideo = findOrganicVideoLink()
-        XCTAssertNotNil(organicVideo, "Could not find YouTube video link on SERP")
+        XCTAssertNotNil(organicVideo, "Could not find the YouTube watch link on SERP")
         organicVideo?.click()
         sleep(2)
 
@@ -258,9 +242,8 @@ class DuckPlayerTests: UITestCase {
         // Search
         openURL(url: Self.searchURL)
 
-        // Click Link - check both possible title formats
         let organicVideo = findOrganicVideoLink()
-        XCTAssertNotNil(organicVideo, "Could not find YouTube video link on SERP")
+        XCTAssertNotNil(organicVideo, "Could not find the YouTube watch link on SERP")
         organicVideo?.click()
         sleep(2)
 

@@ -596,6 +596,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220300732211487
     case duckAIAndInputLiquidGlass
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219797702604966?focus=true
+    case tabSwitcherSwipeUpGesture
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
     case legacyFindInPage
 
@@ -1142,6 +1145,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
         case .duckAIAndInputLiquidGlass:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIAndInputLiquidGlass))
+        case .tabSwitcherSwipeUpGesture:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabSwitcherSwipeUpGesture))
         case .legacyFindInPage:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
         case .legacyFindInPageUIWithSystemFindEngine:

@@ -215,13 +215,13 @@ private extension NewTabPageView {
                 // bottom omnibar chrome.
                 Group {
                     if viewModel.escapeHatch != nil {
-                        NewTabPageDaxLogoView()
+                        NewTabPageDaxLogoView(daxAnchor: viewModel.daxAnchor)
                             .modifier(EscapeHatchLogoLayout(centerY: UIScreen.main.bounds.midY - 55,
                                                            viewport: proxy.frame(in: .global), hatchFrame: escapeHatchFrame,
                                                            destinationHatchFrame: escapeHatchFrame))
                             .offset(y: -proxy.frame(in: .global).midY)
                     } else {
-                        NewTabPageDaxLogoView()
+                        NewTabPageDaxLogoView(daxAnchor: viewModel.daxAnchor)
                             .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
                     }
                 }

@@ -251,6 +251,28 @@ extension MainViewController {
 
         hideAllHighlightsIfNeeded()
 
+        let controller: TabSwitcherViewController?
+        if let preparation = tabSwitcherSwipeUpTransition.tabSwitcherPreparation {
+            controller = await preparation.value
+            guard !preparation.isCancelled else { return }
+        } else {
+            controller = await makeTabSwitcher()
+        }
+
+        // Check again after async work in case another presentation started.
+        guard let controller, tabSwitcherController == nil, presentedViewController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress")
+            return
+        }
+
+        tabSwitcherController = controller
+        // Release as All Tabs covers the page so its keyboard stays down on Done.
+        duckAIInputFocus.release()
+        present(controller, animated: true)
+    }
+
+    /// Builds the destination without presenting it, so a swipe can reveal it before committing.
+    func makeTabSwitcher() async -> TabSwitcherViewController? {
         // Calculate the initial tracker count state before creating the view controller
         // to ensure correct header sizing during the transition
         let initialTrackerCountState = await TabSwitcherTrackerCountViewModel.calculateInitialState(
@@ -259,11 +281,7 @@ extension MainViewController {
             privacyStats: privacyStats
         )
 
-        // Check again after async work in case another presentation started
-        guard tabSwitcherController == nil else {
-            Logger.lifecycle.debug("Tab switcher presentation already in progress")
-            return
-        }
+        guard !Task.isCancelled else { return nil }
 
         let duckAIGridContentProvider = DuckAIGridContentResolver(
             featureFlagger: featureFlagger,
@@ -296,11 +314,7 @@ extension MainViewController {
         controller.recentChatsReaderProvider = makeTabSwitcherRecentChatsReaderProvider()
         controller.modalPresentationStyle = .overCurrentContext
 
-        tabSwitcherController = controller
-
-        // Released as the tab manager starts covering the page, so the keyboard leaves with it and stays down on Done.
-        duckAIInputFocus.release()
-        present(controller, animated: true)
+        return controller
     }
 
     func segueToSettings() {

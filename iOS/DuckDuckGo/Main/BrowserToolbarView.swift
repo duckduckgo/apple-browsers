@@ -732,28 +732,36 @@ final class BrowserToolbarView: UIView {
         updateCornerStyle()
     }
 
-    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
+    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle, animated: Bool = false) {
         guard isFloatingStyleEnabled else { return }
         materialInterfaceStyle = interfaceStyle
-        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshPendingMaterialAppearance() }) else { return }
-        applyMaterialAppearanceIfNeeded()
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshPendingMaterialAppearance(animated: animated) }) else { return }
+        applyMaterialAppearanceIfNeeded(animated: animated)
         scheduleHostedOmnibarMaterialRefresh()
     }
 
-    private func applyMaterialAppearanceIfNeeded() {
-        guard let interfaceStyle = materialInterfaceStyle, appliedMaterialInterfaceStyle != interfaceStyle else { return }
+    private func applyMaterialAppearanceIfNeeded(animated: Bool = false) {
+        guard let interfaceStyle = materialInterfaceStyle, appliedMaterialInterfaceStyle != interfaceStyle || animated else { return }
         appliedMaterialInterfaceStyle = interfaceStyle
-        UIView.performWithoutAnimation {
+        let updates = {
             if #available(iOS 26.0, *) {
-                materialBackgroundView.overrideUserInterfaceStyle = .unspecified
-                chromeContentHost.overrideUserInterfaceStyle = .unspecified
+                self.materialBackgroundView.overrideUserInterfaceStyle = .unspecified
+                self.chromeContentHost.overrideUserInterfaceStyle = .unspecified
             } else {
-                materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
-                chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
+                self.materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+                self.chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
             }
-            materialBackgroundView.effect = nil
-            materialBackgroundView.effect = visibleMaterialEffect
-            materialBackgroundView.setNeedsLayout()
+            // Keep the glass installed while it adapts to the page uncovered by the transition.
+            if !animated {
+                self.materialBackgroundView.effect = nil
+            }
+            self.materialBackgroundView.effect = self.visibleMaterialEffect
+            self.materialBackgroundView.setNeedsLayout()
+        }
+        if animated, !UIAccessibility.isReduceMotionEnabled, !UIAccessibility.isReduceTransparencyEnabled {
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: updates)
+        } else {
+            UIView.performWithoutAnimation(updates)
         }
     }
 
@@ -764,9 +772,9 @@ final class BrowserToolbarView: UIView {
         }
     }
 
-    private func refreshPendingMaterialAppearance() {
+    private func refreshPendingMaterialAppearance(animated: Bool = false) {
         guard isFloatingStyleEnabled else { return }
-        applyMaterialAppearanceIfNeeded()
+        applyMaterialAppearanceIfNeeded(animated: animated)
         (hostedOmnibarView as? DefaultOmniBarView)?.refreshMaterialAppearance(interfaceStyle: materialInterfaceStyle)
     }
 

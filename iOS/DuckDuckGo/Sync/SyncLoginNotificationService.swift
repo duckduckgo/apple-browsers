@@ -46,16 +46,16 @@ final class SyncLoginNotificationService {
     }
 
     func deliver(_ notification: SyncLoginNotification) async {
-        guard !notification.events.isEmpty, canDeliver(for: notification.accountID) else { return }
         do {
+            guard !notification.events.isEmpty, try canDeliver(for: notification.accountID) else { return }
             var status = await notificationCenter.authorizationStatus()
             if status == .notDetermined {
-                guard canDeliver(for: notification.accountID), !Task.isCancelled else { return }
+                guard try canDeliver(for: notification.accountID), !Task.isCancelled else { return }
                 _ = try await notificationCenter.requestAuthorization(options: [.provisional, .alert])
                 status = await notificationCenter.authorizationStatus()
             }
             guard status == .authorized || status == .provisional,
-                  canDeliver(for: notification.accountID), !Task.isCancelled else { return }
+                  try canDeliver(for: notification.accountID), !Task.isCancelled else { return }
             let reviewDate = try syncService.auditLogReviewState(for: notification.accountID)?.reviewedThrough
             let events = notification.events.filter { event in reviewDate.map { event.occurredAt > $0 } ?? true }
             guard !events.isEmpty else { return }
@@ -71,9 +71,10 @@ final class SyncLoginNotificationService {
         }
     }
 
-    private func canDeliver(for accountID: String) -> Bool {
-        Self.canOpenActivity(for: accountID, syncService: syncService, featureFlagger: featureFlagger)
-            && featureFlagger.isFeatureOn(.syncLoginNotification)
+    private func canDeliver(for accountID: String) throws -> Bool {
+        guard featureFlagger.isFeatureOn(.syncLoginAuditLog),
+              featureFlagger.isFeatureOn(.syncLoginNotification) else { return false }
+        return try syncService.isAuditLogPollingAvailable(forAccountID: accountID)
     }
 
     static func canOpenActivity(for accountID: String, syncService: DDGSyncing, featureFlagger: FeatureFlagger) -> Bool {

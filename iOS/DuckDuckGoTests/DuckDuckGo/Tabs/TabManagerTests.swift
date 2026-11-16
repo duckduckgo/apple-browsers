@@ -28,11 +28,68 @@ import Core
 import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest
+import WebExtensions
+import WebExtensionsTestSupport
 import WebKit
 @testable import DuckDuckGo
 
 @MainActor
 final class TabManagerTests: XCTestCase {
+
+    func testOwnerRemovalDetachesSourcesEvenWithoutCachedController() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner) { [weak manager, weak owner = fixture.owner] in
+            guard let manager, let owner else { return nil }
+            return manager.makeBrowserToolScope(for: owner)
+        }
+        XCTAssertNil(manager.controller(for: fixture.owner))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        manager.remove(tab: fixture.owner)
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+    }
+
+    func testNormalControllerReceivesSharedServiceAndWeakOwnerScopeBeforeUse() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner, makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        controller.prepareForDataClearing()
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+        XCTAssertNil(controller.browserToolScopeFactory)
+        XCTAssertNil(controller.browserToolsService)
+        XCTAssertNil(controller.aiChatContextualSheetCoordinator.browserToolScopeFactory)
+    }
+
+    func testControllerCreatedWithParentFlagDisabledReceivesServiceThatEnablesWithoutReplacement() throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [.aiChatBrowserToolListOpenTabs])
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        defer { controller.prepareForDataClearing() }
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner,
+                                       makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        fixture.flags.triggerUpdate()
+        XCTAssertTrue(manager.current(createIfNeeded: true) === controller)
+        XCTAssertEqual(manager.browserToolsService.configuration(for: fixture.script)?.capabilities, [.listOpenTabs])
+    }
 
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
@@ -1173,6 +1230,47 @@ final class TabManagerTests: XCTestCase {
         }
     }
 
+    func testBrowserToolServiceHasStableManagerOwnership() throws {
+        let manager = try makeManager(TabsModel(desktop: false))
+        XCTAssertTrue(manager.browserToolsService === manager.browserToolsService)
+    }
+
+    func testBrowserToolScopeUsesActualOwnerAndLiveNormalModelSelection() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let selected = Tab(uid: "selected", fireTab: false)
+        let fire = Tab(uid: "fire", fireTab: true)
+        let model = TabsModel(tabs: [owner, selected], currentIndex: 1, desktop: false)
+        let manager = try makeManager(model,
+                                      fireModel: TabsModel(tabs: [fire], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertTrue(scope.isValid)
+        XCTAssertEqual(scope.selectedTabID(), selected.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid])
+        XCTAssertNil(manager.makeBrowserToolScope(for: Tab(uid: owner.uid, fireTab: false)))
+        model.select(tab: owner)
+        XCTAssertEqual(scope.selectedTabID(), owner.uid)
+        let added = Tab(fireTab: false)
+        model.insert(tab: added, placement: .atEnd, selectNewTab: true)
+        XCTAssertEqual(scope.selectedTabID(), added.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid, added.uid])
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        let fireScope = try XCTUnwrap(manager.makeBrowserToolScope(for: fire))
+        XCTAssertFalse(fireScope.isValid)
+        manager.remove(tab: owner)
+        XCTAssertFalse(scope.isValid)
+    }
+
+    func testBrowserToolScopeRejectsSelectionWithoutMainController() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let target = Tab(uid: "target", fireTab: false)
+        let model = TabsModel(tabs: [owner, target], desktop: false)
+        let manager = try makeManager(model)
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertFalse(scope.selectTab(target))
+        XCTAssertEqual(model.currentTab?.uid, owner.uid)
+    }
+
     private func makeAttachmentManager() throws -> (TabManager, [Tab]) {
         let tabs = (0..<3).map {
             Tab(link: Link(title: "Page \($0)", url: URL(string: "https://example.com/\($0)")!))
@@ -1366,6 +1464,35 @@ final class TabManagerTests: XCTestCase {
         func escapeHatchDidRequestAfterInactivitySettings() {}
     }
 
+    /// The escape hatch and the Duck.ai onboarding remove tabs through these two overloads and rely on the
+    /// controller's release to end the CPM wait when they do not report the close themselves.
+    @available(iOS 18.4, *)
+    func testWhenATabIsRemovedThenTheCPMMonitorStopsWaitingForIt() async throws {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let manager = try makeManager(model)
+        let monitor = CapturingCPMMonitor()
+        let extensionManager = MockWebExtensionManaging()
+        extensionManager.cpmMessagingHealthMonitor = monitor
+        manager.setWebExtensionManager(extensionManager)
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(tabs[1])
+        _ = manager.select(tabs[2])
+        _ = manager.select(tabs[0])
+
+        manager.remove(tab: tabs[1], in: model)
+        manager.remove(tab: tabs[2], clearTabHistory: false)
+
+        let expected = Set([tabs[1].uid, tabs[2].uid])
+        for _ in 0..<40 where Set(monitor.closedTabIdentifiers) != expected {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(Set(monitor.closedTabIdentifiers), expected)
+        XCTAssertFalse(monitor.closedTabIdentifiers.contains(tabs[0].uid))
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
@@ -1476,6 +1603,17 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
+    }
+}
+
+@available(iOS 18.4, *)
+private final class CapturingCPMMonitor: CPMMessagingHealthMonitoring, @unchecked Sendable {
+    private(set) var closedTabIdentifiers: [String] = []
+
+    @MainActor
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .tabClosed(let tabIdentifier) = event else { return }
+        closedTabIdentifiers.append(tabIdentifier)
     }
 }
 

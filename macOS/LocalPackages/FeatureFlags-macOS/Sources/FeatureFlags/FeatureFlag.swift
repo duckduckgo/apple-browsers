@@ -42,6 +42,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
     case onboardingNonBlocking
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
+    case onboardingSearchOrChat
+
     /// Subscription upsell screen at the end of contextual onboarding
     /// https://app.asana.com/1/137249556945/task/1210565180535541
     case onboardingSubscriptionUpsell
@@ -316,6 +319,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203544?focus=true
     case allowProTierPurchase
+
+    /// Withdraw from contract in Subscription Settings for international Stripe subscribers
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220034712739320?focus=true
+    case stripeInternationalSubscriptionWithdrawal
 
     /// New popup blocking heuristics based on user interaction timing (internal only)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017698257925?focus=true
@@ -715,6 +722,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220338615600254?focus=true
+    case aiChatLimitExtensionPromo
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -781,6 +792,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingNonBlocking:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlockingV2), cohortType: OnboardingNonBlockingCohort.self)
+        case .onboardingSearchOrChat:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
@@ -942,6 +955,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration), category: .duckAI)
         case .allowProTierPurchase:
             Config(source: .remoteReleasable(PrivacyProSubfeature.allowProTierPurchase), category: .subscription)
+        case .stripeInternationalSubscriptionWithdrawal:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.stripeInternationalSubscriptionWithdrawal), category: .subscription)
         case .popupBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(PopupBlockingSubfeature.featureEnabled), category: .popupBlocking)
         case .webNotifications:
@@ -1170,6 +1185,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
+        case .aiChatLimitExtensionPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), category: .duckAI)
         }
     }
 

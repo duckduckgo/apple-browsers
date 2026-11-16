@@ -311,7 +311,6 @@ extension Preferences {
             }
             .frame(maxWidth: Const.maxWidth)
             .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
-            // The card fill is translucent; an opaque backing keeps the footer's pink from tinting it.
             .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
             .accessibilityIdentifier("Preferences.Extensions.\(item.id)")

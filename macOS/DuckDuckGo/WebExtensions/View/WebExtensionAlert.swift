@@ -26,23 +26,17 @@ struct WebExtensionAlert: View {
 
     struct Configuration {
         enum LeadingButton {
-            /// Closes the alert. Escape presses it.
             case cancel(String)
-            /// Another action, such as Learn More. Escape doesn't press it.
             case secondary(String)
         }
 
         enum Icon {
-            /// The extension's own icon, inset from the corner.
             case extensionIcon(NSImage)
-            /// A full-size illustration.
             case illustration(NSImage)
         }
 
         enum Checkbox: Equatable {
-            /// An option for the action, above the buttons.
             case option(String, toolTip: String?)
-            /// Stops the alert coming back, in small print below the message.
             case suppression(String)
         }
 

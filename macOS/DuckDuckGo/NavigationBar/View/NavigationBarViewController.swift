@@ -806,16 +806,20 @@ final class NavigationBarViewController: NSViewController {
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
                                                            selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab },
-                                                           nativeMessagingAlertPresenter: NativeMessagingAlertPresenter(
-                                                               limitationProvider: { NSApp.delegateTyped.webExtensionManager },
-                                                               alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window },
-                                                                                                          themeManager: appThemeManager),
-                                                               windowControllersManager: Application.appDelegate.windowControllersManager
-                                                           ))
+                                                           nativeMessagingAlertPresenter: makeNativeMessagingAlertPresenter())
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
             subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    @available(macOS 15.4, *)
+    private func makeNativeMessagingAlertPresenter() -> NativeMessagingAlertPresenter {
+        NativeMessagingAlertPresenter(
+            limitationProvider: { NSApp.delegateTyped.webExtensionManager },
+            alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window }, themeManager: appThemeManager),
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
     }
 
     /// Only the window the install started from shows the popover.

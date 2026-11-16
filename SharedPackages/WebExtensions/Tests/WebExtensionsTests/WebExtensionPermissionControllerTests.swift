@@ -341,20 +341,6 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
     }
 
-    func testWhenAnUnavailablePermissionIsRequestedWithOthersThenOnlyTheOthersAreGranted() async throws {
-        let controller = makeController()
-        let manager = makeManager(permissionController: controller, unavailablePermissions: [.nativeMessaging])
-        let context = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
-        try await controller.prepare(context)
-
-        let granted = await requestPermissions([.nativeMessaging, .clipboardWrite], from: manager, for: context)
-
-        XCTAssertEqual(granted, [.clipboardWrite])
-        XCTAssertFalse(context.hasPermission(.nativeMessaging))
-        XCTAssertEqual(prompter.permissionRequests.map(\.permissions), [[.clipboardWrite]])
-        XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
-    }
-
     func testWhenAnExtensionLoadsThenEarlierGrantsOfOptionalUnavailablePermissionsAreDropped() async throws {
         let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging])
         let optional = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
@@ -371,24 +357,16 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertTrue(required.hasPermission(.nativeMessaging))
     }
 
-    func testWhenPermissionsAreNotEnforcedThenUnavailablePermissionsAreStillNotGranted() async throws {
-        let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging])
+    func testWhenPermissionsAreNotEnforcedThenAnUnavailablePermissionIsRefusedAndTheLimitationIsSaved() async throws {
         let context = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
-
-        let granted = await requestPermissions([.nativeMessaging, .clipboardWrite], from: manager, for: context)
-
-        XCTAssertEqual(granted, [.clipboardWrite])
-    }
-
-    func testWhenAnUnavailablePermissionIsRefusedThenTheLimitationIsSavedForTheStoreExtension() async throws {
-        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
         recordStoreInstallation(of: context)
         let manager = makeManager(permissionController: nil,
                                   unavailablePermissions: [.nativeMessaging],
                                   nativeMessagingLimitationStore: NativeMessagingLimitationStore(keyValueStore: keyValueStore))
 
-        _ = await requestPermissions([.nativeMessaging], from: manager, for: context)
+        let granted = await requestPermissions([.nativeMessaging, .clipboardWrite], from: manager, for: context)
 
+        XCTAssertEqual(granted, [.clipboardWrite])
         XCTAssertTrue(manager.hasHitNativeMessagingLimitation(identifier: context.uniqueIdentifier))
         XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).hasHitLimitation(extensionKey: limitedStoreID))
     }

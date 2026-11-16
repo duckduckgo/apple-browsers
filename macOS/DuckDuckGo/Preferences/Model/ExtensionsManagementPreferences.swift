@@ -138,7 +138,6 @@ extension ExtensionsManagementPreferences {
         let permissions: [String]
         let matchPatterns: [String]
         let hasAccessToPrivateData: Bool?
-        /// The extension tried to talk to an app on the Mac, which the App Store build can't allow.
         let hasHitNativeMessagingLimitation: Bool
 
         var id: String { record.uniqueIdentifier }

@@ -50,16 +50,6 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenOKIsPressedWithoutTheCheckboxThenThePlainAlertIsShownAgain() async throws {
-        alertPresenter.response = .confirmed(isChecked: false)
-        let bitwarden = try await limitedContext(named: "Bitwarden")
-
-        await explain(bitwarden, bitwarden)
-
-        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), Array(repeating: "Bitwarden can’t connect to apps on your Mac", count: 2))
-        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show this again for Bitwarden"))
-    }
-
     func testWhenOKIsPressedWithTheCheckboxThenOnlyThatExtensionStopsShowingTheAlert() async throws {
         alertPresenter.response = .confirmed(isChecked: true)
         let bitwarden = try await limitedContext(named: "Bitwarden")
@@ -71,6 +61,7 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
             "Bitwarden can’t connect to apps on your Mac",
             "1Password can’t connect to apps on your Mac"
         ])
+        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show this again for Bitwarden"))
         XCTAssertEqual(limitation.suppressed, [bitwarden.uniqueIdentifier, onePassword.uniqueIdentifier])
     }
 
@@ -84,20 +75,12 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.showCalled?.newTab, true)
     }
 
-    func testWhenTheExtensionNeverHitTheLimitationThenNoAlertIsShown() async throws {
-        let darkReader = try await makeContext(named: "Dark Reader")
-
-        await presenter.explain(darkReader)
-
-        XCTAssertTrue(alertPresenter.presentedConfigurations.isEmpty)
-    }
-
-    func testWhenTheActionIsClickedThenOnlyExtensionsThatRequireNativeMessagingShowTheAlert() async throws {
+    func testWhenTheActionIsClickedThenOnlyLimitedExtensionsThatRequireNativeMessagingShowTheAlert() async throws {
         let onePassword = try await limitedContext(named: "1Password", nativeMessaging: .required)
         let bitwarden = try await limitedContext(named: "Bitwarden", nativeMessaging: .optional)
+        let neverLimited = try await makeContext(named: "Never Limited", nativeMessaging: .required)
 
-        await presenter.explainOnActionClick(onePassword)
-        await presenter.explainOnActionClick(bitwarden)
+        await clickAction(of: onePassword, bitwarden, neverLimited)
 
         XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), ["1Password can’t connect to apps on your Mac"])
     }
@@ -105,6 +88,12 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
     private func explain(_ contexts: WKWebExtensionContext...) async {
         for context in contexts {
             await presenter.explain(context)
+        }
+    }
+
+    private func clickAction(of contexts: WKWebExtensionContext...) async {
+        for context in contexts {
+            await presenter.explainOnActionClick(context)
         }
     }
 

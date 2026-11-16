@@ -26,29 +26,34 @@ import WebPageTranslation
 ///
 /// Translation is only enabled when the `webPageTranslation` feature flag is on AND its models could be set up at launch.
 protocol WebPageTranslationCapable {
-    /// Whether web page translation is enabled for this session.
+    /// Whether web page translation is enabled right now.
     var isWebPageTranslationEnabled: Bool { get }
 }
 
 enum WebPageTranslationCapability {
 
-    static let isWebPageTranslationEnabledKey = "com.duckduckgo.webPageTranslation.session.enabled"
+    static let modelsAvailableKey = "com.duckduckgo.webPageTranslation.session.modelsAvailable"
 
-    /// Evaluate the checks once and persist the result for the session.
+    /// Persists whether the models could be set up for this session.
     /// Must be called early in the app launch sequence, before any consumer
-    /// reads `isWebPageTranslationEnabled`, so that every component sees the same value.
-    static func resolve(using featureFlagger: FeatureFlagger, translationModels: TranslationModels?) {
-        let enabled = featureFlagger.isFeatureOn(.webPageTranslation) && translationModels != nil
-        UserDefaults.app.set(enabled, forKey: isWebPageTranslationEnabledKey)
+    /// reads `isWebPageTranslationEnabled`.
+    static func resolve(translationModels: TranslationModels?) {
+        UserDefaults.app.set(translationModels != nil, forKey: modelsAvailableKey)
     }
 
-    static func create() -> WebPageTranslationCapable {
-        WebPageTranslationDefaultCapability()
+    static func create(featureFlagger: FeatureFlagger) -> WebPageTranslationCapable {
+        WebPageTranslationDefaultCapability(featureFlagger: featureFlagger)
     }
 }
 
 struct WebPageTranslationDefaultCapability: WebPageTranslationCapable {
+
+    let featureFlagger: FeatureFlagger
+
+    /// The flag is read live, so turning it off remotely stops translation mid-session.
+    /// Turning it on takes effect at the next launch, when the models are set up.
     var isWebPageTranslationEnabled: Bool {
-        UserDefaults.app.bool(forKey: WebPageTranslationCapability.isWebPageTranslationEnabledKey)
+        featureFlagger.isFeatureOn(.webPageTranslation)
+            && UserDefaults.app.bool(forKey: WebPageTranslationCapability.modelsAvailableKey)
     }
 }

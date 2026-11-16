@@ -25,8 +25,8 @@ struct TranslationModelsDebugView: View {
 
     @StateObject private var viewModel: TranslationModelsDebugViewModel
 
-    init(models: TranslationModels?) {
-        _viewModel = StateObject(wrappedValue: TranslationModelsDebugViewModel(models: models))
+    init(models: TranslationModels?, capability: WebPageTranslationCapable) {
+        _viewModel = StateObject(wrappedValue: TranslationModelsDebugViewModel(models: models, capability: capability))
     }
 
     var body: some View {
@@ -122,7 +122,7 @@ final class TranslationModelsDebugViewModel: ObservableObject {
     /// Downloads in progress and failures; everything else comes from the manifest and the installed bundles.
     private var transientStatuses: [String: Status] = [:]
 
-    init(models: TranslationModels?, capability: WebPageTranslationCapable = WebPageTranslationCapability.create()) {
+    init(models: TranslationModels?, capability: WebPageTranslationCapable) {
         self.models = models
         isAvailable = capability.isWebPageTranslationEnabled && models != nil
         rebuildRows()

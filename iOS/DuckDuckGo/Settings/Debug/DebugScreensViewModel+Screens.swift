@@ -191,7 +191,10 @@ extension DebugScreensViewModel {
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "Translation Models", { d in
-                TranslationModelsDebugView(models: d.translationModels)
+                TranslationModelsDebugView(
+                    models: d.translationModels,
+                    capability: WebPageTranslationCapability.create(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+                )
             }),
             .view(title: "Prompt Coordination", { d in
                 PromptCoordinationDebugView(

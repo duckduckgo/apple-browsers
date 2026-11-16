@@ -201,7 +201,7 @@ struct Launching: LaunchingHandling {
         )
 
         let translationModels = Self.makeTranslationModels(featureFlagger: featureFlagger)
-        WebPageTranslationCapability.resolve(using: featureFlagger, translationModels: translationModels)
+        WebPageTranslationCapability.resolve(translationModels: translationModels)
         if let translationModels {
             Task { _ = await translationModels.refreshManifest() }
         }

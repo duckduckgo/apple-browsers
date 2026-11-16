@@ -420,7 +420,7 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
                 store: store,
                 presentUndoToast: { _, action in undo = action },
                 callbacks: callbacks)
-            weak var weakSUT = sut
+            weak let weakSUT = sut
 
             if removeAll {
                 sut?.removeAllSitePermissions()

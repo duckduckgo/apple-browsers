@@ -72,7 +72,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     /// Whether the initial App Store product fetch has finished, including an empty result or failure.
     var hasResolvedAppStoreProducts: Bool { get }
-    func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
+    func getTierProducts(location: TierProductsLocation, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error>
@@ -87,6 +87,10 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
 
     func getCustomerPortalURL() async throws -> URL
+
+    func getWithdrawalEligibility() async throws -> WithdrawalEligibility
+
+    func withdrawSubscription() async throws -> WithdrawSubscriptionResponse
 
     /// The user email
     var userEmail: String? { get }
@@ -275,6 +279,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 wideEvent: WideEventManaging? = nil,
                 isAuthV2WideEventEnabled: @escaping () -> Bool = { false },
                 authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting? = nil,
+                isStripeProductsByPlanCountryEnabled: @escaping () -> Bool = { true },
                 tierOptionsProvider: SubscriptionTierOptionsProviding? = nil) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
@@ -291,7 +296,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.tierOptionsProvider = tierOptionsProvider ?? DefaultSubscriptionTierOptionsProvider(
             subscriptionEnvironmentPlatform: subscriptionEnvironment.purchasePlatform,
             storePurchaseManager: storePurchaseManager,
-            subscriptionEndpointService: subscriptionEndpointService
+            subscriptionEndpointService: subscriptionEndpointService,
+            isStripeProductsByPlanCountryEnabled: isStripeProductsByPlanCountryEnabled
         )
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
@@ -496,8 +502,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
-        try await subscriptionEndpointService.getTierProducts(region: region, platform: platform)
+    public func getTierProducts(location: TierProductsLocation, platform: String?) async throws -> GetTierProductsResponse {
+        try await subscriptionEndpointService.getTierProducts(location: location, platform: platform)
     }
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
@@ -558,6 +564,24 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             throw SubscriptionManagerError.invalidPortalURL
         }
         return url
+    }
+
+    public func getWithdrawalEligibility() async throws -> WithdrawalEligibility {
+        guard isUserAuthenticated else {
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+
+        let tokenContainer = try await getTokenContainer(policy: .localValid)
+        return try await subscriptionEndpointService.getWithdrawalEligibility(accessToken: tokenContainer.accessToken)
+    }
+
+    public func withdrawSubscription() async throws -> WithdrawSubscriptionResponse {
+        guard isUserAuthenticated else {
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+
+        let tokenContainer = try await getTokenContainer(policy: .localValid)
+        return try await subscriptionEndpointService.withdrawSubscription(accessToken: tokenContainer.accessToken)
     }
 
     // MARK: - User

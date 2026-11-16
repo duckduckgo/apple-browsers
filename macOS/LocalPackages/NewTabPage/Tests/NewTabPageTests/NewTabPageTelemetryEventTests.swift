@@ -38,6 +38,13 @@ final class NewTabPageTelemetryEventTests: XCTestCase {
                        .omnibarScreenshotFailed(reason: "failed"))
     }
 
+    func testDecodesPastedTextEvents() throws {
+        XCTAssertEqual(try decode(#"{"attributes":{"name":"omnibar_pasted_text_attached"}}"#), .omnibarPastedTextAttached)
+        XCTAssertEqual(try decode(#"{"attributes":{"name":"omnibar_pasted_text_removed"}}"#), .omnibarPastedTextRemoved)
+        XCTAssertEqual(try decode(#"{"attributes":{"name":"omnibar_pasted_text_edited"}}"#), .omnibarPastedTextEdited)
+        XCTAssertEqual(try decode(#"{"attributes":{"name":"omnibar_pasted_text_dialog_opened"}}"#), .omnibarPastedTextDialogOpened)
+    }
+
     func testAnEventMissingItsValueFailsToDecode() {
         XCTAssertThrowsError(try decode(#"{"attributes":{"name":"omnibar_screenshot_taken"}}"#))
     }

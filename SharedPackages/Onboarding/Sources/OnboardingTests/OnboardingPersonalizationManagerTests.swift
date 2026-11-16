@@ -38,40 +38,6 @@ struct OnboardingPersonalizationManagerTests {
         )
     }
 
-    // MARK: - Search step
-
-    @Test("Recently-visited reads and writes the app settings store")
-    func recentlyVisitedSites() {
-        // GIVEN
-        let appSettings = MockOnboardingAppSettingsStore()
-        appSettings.recentlyVisitedSitesEnabled = true
-        let manager = makeManager(appSettings: appSettings)
-        #expect(manager.isRecentlyVisitedSitesEnabled)
-
-        // WHEN
-        manager.setRecentlyVisitedSites(false)
-
-        // THEN
-        #expect(!appSettings.recentlyVisitedSitesEnabled)
-        #expect(!manager.isRecentlyVisitedSitesEnabled)
-    }
-
-    @Test("Safe search reads and writes the SERP store")
-    func safeSearch() {
-        // GIVEN
-        let serpSettings = MockOnboardingSERPStore()
-        serpSettings.isSafeSearchEnabled = false
-        let manager = makeManager(serpSettings: serpSettings)
-        #expect(!manager.isSafeSearchEnabled)
-
-        // WHEN
-        manager.setSafeSearch(true)
-
-        // THEN
-        #expect(serpSettings.isSafeSearchEnabled)
-        #expect(manager.isSafeSearchEnabled)
-    }
-
     // MARK: - AI Chat model step
 
     @Test("Setting the model writes it to the store")

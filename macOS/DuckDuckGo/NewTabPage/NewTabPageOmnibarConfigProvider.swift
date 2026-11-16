@@ -97,6 +97,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
     private let remoteSettings: AIChatRemoteSettings
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let firePixel: (PixelKit.Event) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
@@ -126,6 +127,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
          remoteSettings: AIChatRemoteSettings = AIChatRemoteSettings(),
+         privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
@@ -143,6 +145,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
         self.remoteSettings = remoteSettings
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
@@ -607,6 +610,28 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .compactMap { [weak self] in self?.isAttachTabsEnabled }
             .prepend(isAttachTabsEnabled)
             .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var isPastedTextEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpPastedText)
+    }
+
+    var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits? {
+        guard isPastedTextEnabled else { return nil }
+        let limits = AIChatPromptLimits(privacyConfig: privacyConfigurationManager.privacyConfig, subfeature: AIChatSubfeature.ntpPastedText)
+        return .init(pasteConversionThreshold: limits.pasteConversionThreshold, maxCharacters: limits.maxCharacters)
+    }
+
+    /// The feature flagger also reports privacy config updates, so new limits reach an open NTP
+    /// even when the flag doesn't change.
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self.map { ($0.isPastedTextEnabled, $0.pastedTextLimits) } }
+            .prepend((isPastedTextEnabled, pastedTextLimits))
+            .removeDuplicates { $0 == $1 }
+            .dropFirst()
+            .map { _ in () }
             .eraseToAnyPublisher()
     }
 

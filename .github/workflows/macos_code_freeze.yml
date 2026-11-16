@@ -99,6 +99,7 @@ jobs:
     uses: ./.github/workflows/macos_ui_tests.yml
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      all_os_versions: true
     secrets: inherit
 
   sync_end_to_end_tests:

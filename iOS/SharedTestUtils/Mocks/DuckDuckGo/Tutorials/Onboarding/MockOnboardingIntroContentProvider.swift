@@ -24,7 +24,6 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
     var downloadReasonContent: OnboardingDownloadReasonContent = .mock
-    var serpPersonalizationContent: OnboardingPersonalizationContent = .mock
     var aiModelPersonalizationContent: OnboardingAIModelContent = .mock
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent = .mock
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent = .mock
@@ -37,9 +36,21 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
     var duckAIQueryContent: OnboardingDuckAIQueryContent = .mock
+    var tryVPNContent: OnboardingTryVPNContent = .mock
 }
 
 // MARK: - Helpers
+
+extension OnboardingTryVPNContent {
+    static let mock = OnboardingTryVPNContent(
+        title: "Try VPN",
+        message: "Message",
+        footer: "Footer",
+        primaryCTA: "Try",
+        secondaryCTA: "Skip",
+        daxAnimation: nil
+    )
+}
 
 extension OnboardingLandingContent {
     static let mock = OnboardingLandingContent(
@@ -52,11 +63,12 @@ extension OnboardingDownloadReasonContent {
     static let mock = OnboardingDownloadReasonContent(
         title: "Download Reason Title",
         message: "Download Reason Message",
+        layout: .grid,
         options: [
-            .init(reason: .browserPrivately, animation: .search, title: "Search and browse privately"),
-            .init(reason: .privateAIChat, animation: .duckAIChat, title: "Chat with AI privately"),
-            .init(reason: .noAI, animation: .noAI, title: "Remove AI from search results"),
-            .init(reason: .blockAds, animation: .imageSweep, title: "Block ads and pop-ups")
+            .init(reason: .browserPrivately, asset: .animation(.search), title: "Search and browse privately"),
+            .init(reason: .privateAIChat, asset: .animation(.duckAIChat), title: "Chat with AI privately"),
+            .init(reason: .noAI, asset: .animation(.noAI), title: "Remove AI from search results"),
+            .init(reason: .blockAds, asset: .animation(.imageSweep), title: "Block ads and pop-ups")
         ],
         primaryCTA: "Download Reason Primary",
         daxAnimation: .wingBottom
@@ -68,7 +80,7 @@ extension OnboardingPersonalizationContent {
         title: "Personalization Title",
         message: "Personalization Message",
         items: [
-            .init(type: .recentlyVisitedSites, title: "Personalization Item Title", subtitle: "Personalization Item Subtitle")
+            .init(type: .searchAssist, title: "Personalization Item Title", subtitle: "Personalization Item Subtitle")
         ],
         primaryCTA: "Personalization Primary",
         daxAnimation: .wingBottom

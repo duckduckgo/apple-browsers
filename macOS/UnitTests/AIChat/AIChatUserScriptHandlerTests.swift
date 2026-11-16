@@ -172,7 +172,7 @@ struct AIChatUserScriptHandlerTests {
     func testThatAnInvalidExecuteClientToolEchoesTheReadableCallID() async {
         let params: [String: Any] = ["callId": "call-1", "capability": ["name": "listOpenTabs", "version": 1], "input": [:], "extra": true]
 
-        let response = await handler.executeClientTool(params: params, message: WKScriptMessage.mock(), permissionPusher: nil)
+        let response = await handler.executeClientTool(params: params, message: WKScriptMessage.mock(), permissionPrompter: nil)
 
         #expect(response as? ExecuteClientToolResponse == .failure(callId: "call-1", error: .invalidArguments))
     }
@@ -183,7 +183,7 @@ struct AIChatUserScriptHandlerTests {
     func testThatExecuteClientToolWithoutAPermissionSourceIsUnavailable() async {
         let params: [String: Any] = ["callId": "call-1", "capability": ["name": "listOpenTabs", "version": 1], "input": [:]]
 
-        let response = await handler.executeClientTool(params: params, message: WKScriptMessage.mock(), permissionPusher: nil)
+        let response = await handler.executeClientTool(params: params, message: WKScriptMessage.mock(), permissionPrompter: nil)
 
         #expect(response as? ExecuteClientToolResponse == .failure(callId: "call-1", error: .unavailable))
     }

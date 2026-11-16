@@ -46,7 +46,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)
 
-        pixelHandler.fire(.welcome(.shown), source: nil, flow: nil, variant: nil)
+        pixelHandler.fire(.welcome(.shown), source: nil, flow: nil, variants: .init())
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.pixel.name, "onboarding_welcome")
@@ -54,7 +54,8 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.standardParameters, [.pixelSource])
         XCTAssertNil(event.additionalParameters?["source"])
         XCTAssertNil(event.additionalParameters?["flow"])
-        XCTAssertNil(event.additionalParameters?["variant"])
+        XCTAssertNil(event.additionalParameters?["variant_search_experience"])
+        XCTAssertNil(event.additionalParameters?["variant_download_reason"])
     }
 
     func testWhenFiringPixelEventWithAdditionalParametersThenUsesProvidedParameters() throws {
@@ -64,12 +65,33 @@ final class OnboardingSharedPixelTests: XCTestCase {
         pixelHandler.fire(.searchResults(.shown),
                           source: .duckAICustomProductPage,
                           flow: .duckAI,
-                          variant: .duckAISearch)
+                          variants: .init(searchExperience: .duckAISearch))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.additionalParameters?["source"], "duckai_cpp")
         XCTAssertEqual(event.additionalParameters?["flow"], "duckai")
-        XCTAssertEqual(event.additionalParameters?["variant"], "search_plus_duckai-search")
+        XCTAssertEqual(event.additionalParameters?["variant_search_experience"], "search_plus_duckai-search")
+        XCTAssertNil(event.additionalParameters?["variant_download_reason"])
+    }
+
+    func testWhenBothForksHaveAVariantThenEachIsSentUnderItsOwnKey() throws {
+        // GIVEN
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        // WHEN
+        pixelHandler.fire(
+            .searchResults(.shown),
+            source: .default,
+            flow: .tailoredByDownloadReason,
+            variants: .init(searchExperience: .duckAIChat, downloadReason: .downloadReasonAdBlocking)
+        )
+
+        // THEN
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.additionalParameters?["variant_search_experience"], "search_plus_duckai-chat")
+        XCTAssertEqual(event.additionalParameters?["variant_download_reason"], "download_reason_ad-blocking")
+        XCTAssertNil(event.additionalParameters?["variant"])
     }
 
     func testWhenFlowIsTailoredByDownloadReasonThenUsesTailoredByDownloadReasonValue() throws {
@@ -81,7 +103,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
         pixelHandler.fire(.welcome(.shown),
                           source: .default,
                           flow: .tailoredByDownloadReason,
-                          variant: nil)
+                          variants: .init())
 
         // THEN
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
@@ -90,7 +112,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
     func testWhenVariantIsDownloadReasonThenUsesDownloadReasonValue() throws {
         // GIVEN
-        let expectedValues: [OnboardingPixelParameter.Variant: String] = [
+        let expectedValues: [OnboardingPixelParameter.DownloadReasonVariant: String] = [
             .downloadReasonSearch: "download_reason_search",
             .downloadReasonAIChat: "download_reason_ai-chat",
             .downloadReasonNoAI: "download_reason_no-ai",
@@ -105,17 +127,17 @@ final class OnboardingSharedPixelTests: XCTestCase {
             pixelHandler.fire(.welcome(.shown),
                               source: .default,
                               flow: .tailoredByDownloadReason,
-                              variant: variant)
+                              variants: .init(downloadReason: variant))
 
             // THEN
             let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-            XCTAssertEqual(event.additionalParameters?["variant"], expectedValue, "Failed for variant \(variant)")
+            XCTAssertEqual(event.additionalParameters?["variant_download_reason"], expectedValue, "Failed for variant \(variant)")
         }
     }
 
     func testWhenVariantInitFromDownloadReasonThenMapsToExpectedVariant() {
         // GIVEN
-        let expectedMappings: [OnboardingDownloadReason: OnboardingPixelParameter.Variant] = [
+        let expectedMappings: [OnboardingDownloadReason: OnboardingPixelParameter.DownloadReasonVariant] = [
             .browserPrivately: .downloadReasonSearch,
             .privateAIChat: .downloadReasonAIChat,
             .noAI: .downloadReasonNoAI,
@@ -125,7 +147,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
         // WHEN
         for (reason, expectedVariant) in expectedMappings {
             // THEN
-            XCTAssertEqual(OnboardingPixelParameter.Variant(reason), expectedVariant, "Failed for reason \(reason)")
+            XCTAssertEqual(OnboardingPixelParameter.DownloadReasonVariant(reason), expectedVariant, "Failed for reason \(reason)")
         }
     }
 
@@ -137,6 +159,32 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(event.frequency, .uniqueByNameAndParameters)
+    }
+
+    func testTimeLimitPixelUsesExpectedNameReasonAndOncePerInstallFrequency() throws {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        for reason in [OnboardingSharedPixelEvent.TimeLimitReason.days, .appOpens] {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(platform: .iOS,
+                                           installTypeProvider: { .newInstall },
+                                           installDateProvider: { now.addingTimeInterval(-8 * 86_400) },
+                                           currentDateProvider: { now },
+                                           pixelFiring: pixelFiring)
+
+            pixelHandler.fire(.timeLimit(reason), source: .default, flow: .default, variants: .init(searchExperience: .duckAISearch))
+
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.namePrefix, .custom("m_ios_"))
+            XCTAssertEqual(event.pixel.name, "onboarding_time-limit")
+            XCTAssertEqual(event.pixel.parameters, ["event": "reached", "value": reason.rawValue])
+            XCTAssertEqual(event.pixel.platformSuffixPolicy, .legacyOmitted)
+            XCTAssertEqual(event.frequency, .legacyInitial)
+            XCTAssertEqual(event.additionalParameters?["installType"], "new")
+            XCTAssertEqual(event.additionalParameters?["daysSinceInstall"], "4-10")
+            XCTAssertEqual(event.additionalParameters?["source"], "default")
+            XCTAssertEqual(event.additionalParameters?["flow"], "default")
+            XCTAssertEqual(event.additionalParameters?["variant_search_experience"], "search_plus_duckai-search")
+        }
     }
 
     func testWhenEventTypeHasNoValueThenValueParameterIsOmitted() throws {
@@ -374,7 +422,6 @@ final class OnboardingSharedPixelTests: XCTestCase {
         // GIVEN
         let cases: [(OnboardingSharedPixelEvent, String)] = [
             (.downloadChoice(.shown), "onboarding_download-choice"),
-            (.preferencesSerp(.shown), "onboarding_preferences_serp"),
             (.preferencesAIModel(.shown), "onboarding_preferences_ai-model"),
             (.preferencesAIToggleMode(.shown), "onboarding_preferences_ai-toggle-mode"),
             (.preferencesAISearch(.shown), "onboarding_preferences_ai-search"),
@@ -419,23 +466,6 @@ final class OnboardingSharedPixelTests: XCTestCase {
             XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
             XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(value)")
         }
-    }
-
-    func testWhenPreferencesSerpClickedThenSendsToggleParametersAndNoValue() throws {
-        // GIVEN
-        let pixelFiring = PixelKitMock()
-        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
-
-        // WHEN
-        pixelHandler.fire(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: true, safeSearchEnabled: false)))
-
-        // THEN
-        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.pixel.name, "onboarding_preferences_serp")
-        XCTAssertEqual(event.pixel.parameters?["event"], "clicked")
-        XCTAssertNil(event.pixel.parameters?["value"])
-        XCTAssertEqual(event.pixel.parameters?["recently_visited_sites_enabled"], "true")
-        XCTAssertEqual(event.pixel.parameters?["safe_search_enabled"], "false")
     }
 
     func testWhenPreferencesAISearchClickedThenSendsToggleParametersAndNoValue() throws {
@@ -551,7 +581,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
 
 private extension OnboardingSharedPixelHandling {
     func fire(_ event: OnboardingSharedPixelEvent) {
-        fire(event, source: nil, flow: nil, variant: nil)
+        fire(event, source: nil, flow: nil, variants: .init())
     }
 }
 

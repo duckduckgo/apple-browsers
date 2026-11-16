@@ -54,8 +54,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        XCTAssertNotNil(receivedValue)
-        XCTAssertNil(receivedValue!)
+        XCTAssertEqual(receivedValue, .some(nil))
     }
 
     // MARK: - triggerContextCollection
@@ -75,8 +74,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        XCTAssertNotNil(receivedValue)
-        XCTAssertNil(receivedValue!)
+        XCTAssertEqual(receivedValue, .some(nil))
     }
 
     // MARK: - resubscribe
@@ -181,8 +179,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         // Then: Pixel should fire and context should be nil
         XCTAssertEqual(mockPixelHandler.pageContextCollectionEmptyCount, 1)
-        XCTAssertNotNil(receivedContext)
-        XCTAssertNil(receivedContext!)
+        XCTAssertEqual(receivedContext, .some(nil))
     }
 
     func testNilPageContextDoesNotFirePixel() {
@@ -215,8 +212,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         // Then: Pixel should NOT fire (nil means decode failure, not empty content)
         XCTAssertEqual(mockPixelHandler.pageContextCollectionEmptyCount, 0)
-        XCTAssertNotNil(receivedContext)
-        XCTAssertNil(receivedContext!)
+        XCTAssertEqual(receivedContext, .some(nil))
     }
 
     func testValidPageContextDoesNotFirePixel() {
@@ -249,8 +245,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         // Then: Pixel should NOT fire and context should be non-nil
         XCTAssertEqual(mockPixelHandler.pageContextCollectionEmptyCount, 0)
-        XCTAssertNotNil(receivedContext)
-        XCTAssertNotNil(receivedContext!)
+        XCTAssertNotNil(receivedContext ?? nil)
     }
 
     // MARK: - Favicon Enrichment Tests

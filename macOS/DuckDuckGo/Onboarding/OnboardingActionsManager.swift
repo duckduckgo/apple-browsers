@@ -192,15 +192,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     private func buildExcludedSteps() -> [String] {
-        var excludedSteps: [String] = [OnboardingExcludedStep.duckPlayerSingle.rawValue]
-
-        let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
-
-        if !isAIChatOmnibarOnboardingEnabled {
-            excludedSteps.append(OnboardingExcludedStep.addressBarMode.rawValue)
-        }
-
-        return excludedSteps
+        [OnboardingExcludedStep.duckPlayerSingle.rawValue]
     }
 
     private var didRequestDefaultBrowser: Bool = false
@@ -569,12 +561,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
         switch outcome {
         case .completed:
-            let userSawToggleOnboarding = wasToggleOnboardingStepShown()
-            if userSawToggleOnboarding {
-                aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
-            }
+            aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
             if !nonBlockingOnboarding.isNonBlocking || isFirstOutcome {
-                fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+                fireOnboardingFinishedPixels()
             }
         case .skipped:
             // Skipping must not record a final step or suppress a toggle popover the user never saw.
@@ -599,31 +588,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         NotificationCenter.default.post(name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification, object: nil)
     }
 
-    /// Returns true if the toggle onboarding step was shown to the user.
-    /// The step is only shown when the aiChatOmnibarOnboarding flag is enabled.
-    private func wasToggleOnboardingStepShown() -> Bool {
-        return featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
-    }
-
-    private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
+    private func fireOnboardingFinishedPixels() {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
-        fireSharedPixelForFinalStep(userSawToggleOnboarding)
+        fireSharedPixelOnStepCompletion(for: .addressBarMode)
         chromeExtensionExperiment.fireMetric(.onboardingCompleted)
-
-        guard userSawToggleOnboarding else { return }
 
         let togglePixel: AIChatPixel = aiChatPreferencesStorage.showSearchAndDuckAIToggle
             ? .aiChatOnboardingFinishedToggleOn
             : .aiChatOnboardingFinishedToggleOff
         PixelKit.fire(togglePixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-    }
-
-    private func fireSharedPixelForFinalStep(_ userSawToggleOnboarding: Bool) {
-        if userSawToggleOnboarding {
-            fireSharedPixelOnStepCompletion(for: .addressBarMode)
-        } else {
-            fireSharedPixelOnStepCompletion(for: .customize)
-        }
     }
 
 }

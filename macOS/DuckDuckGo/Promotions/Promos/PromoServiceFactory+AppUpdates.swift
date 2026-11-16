@@ -31,7 +31,7 @@ extension PromoServiceFactory {
         dependencies.updateNotificationBridge?.updateAvailableDelegate = delegate
 
         return InternalPromo(id: updateAvailablePromoID,
-                             triggers: [.updateAvailable],
+                             triggers: [.updateAvailable, .appBecameActive],
                              initiated: .app,
                              promoType: PromoType(.featureTip, customTimeoutResult: .ignored(cooldown: .days(7))),
                              context: .global,

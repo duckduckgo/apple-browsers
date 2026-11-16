@@ -47,7 +47,8 @@ final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificat
     }
 
     var isEligible: Bool {
-        featureFlagger.isFeatureOn(.promoQueueUpdateAvailablePromo) && (updateController?.hasPendingUpdate ?? false)
+        guard featureFlagger.isFeatureOn(.promoQueueUpdateAvailablePromo), let updateController else { return false }
+        return updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {

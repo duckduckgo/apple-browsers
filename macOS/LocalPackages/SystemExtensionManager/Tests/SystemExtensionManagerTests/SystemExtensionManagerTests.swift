@@ -72,6 +72,60 @@ final class SystemExtensionManagerTests: XCTestCase {
         XCTAssertEqual(result, .enabled)
     }
 
+    func testShouldOpenSystemSettingsWhenOnlyEntryAwaitsApproval() {
+        XCTAssertTrue(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: [
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false)
+        ]))
+    }
+
+    func testShouldOpenSystemSettingsWhenUninstallingCopyAndNewCopyAwaitsApproval() {
+        let properties: [SystemExtensionPropertiesSnapshot] = [
+            .init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: true),
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false)
+        ]
+
+        XCTAssertEqual(SystemExtensionManager.activationState(from: properties), .uninstalling)
+        XCTAssertTrue(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: properties))
+    }
+
+    func testShouldNotOpenSystemSettingsWhenStaleVersionAwaitsApprovalButAnotherIsEnabled() {
+        XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: [
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false),
+            .init(isEnabled: true, isAwaitingUserApproval: false, isUninstalling: false)
+        ]))
+    }
+
+    func testShouldNotOpenSystemSettingsWhenNoEntryAwaitsApproval() {
+        let cases: [[SystemExtensionPropertiesSnapshot]] = [
+            [],
+            [.init(isEnabled: true, isAwaitingUserApproval: false, isUninstalling: false)],
+            [.init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: false)],
+            [.init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: true)]
+        ]
+
+        for properties in cases {
+            XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: properties), "\(properties)")
+        }
+    }
+
+    func testActivateChecksStateBeforeSubmittingActivationRequest() async {
+        let manager = CapturingSystemExtensionRequestManager()
+        let systemExtensionManager = SystemExtensionManager(
+            extensionBundleID: "com.duckduckgo.test.extension",
+            manager: manager,
+            requestTimeout: 0.01
+        )
+
+        do {
+            _ = try await systemExtensionManager.activate(waitingForUserApproval: {})
+            XCTFail("Expected activation request to time out")
+        } catch {
+            XCTAssertEqual(error as? SystemExtensionRequestError, .requestTimedOut)
+        }
+
+        XCTAssertEqual(manager.submittedRequests.count, 2)
+    }
+
     func testSystemSettingsURLStringTargetsNetworkExtensionOnSequoia() throws {
         guard #available(macOS 15, *) else {
             throw XCTSkip("Specific ExtensionsPreferences URL is only used on macOS 15 and above")

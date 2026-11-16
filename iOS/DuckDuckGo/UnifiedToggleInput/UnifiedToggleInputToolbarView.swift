@@ -31,6 +31,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let topPadding: CGFloat = 4
         static let bottomPadding: CGFloat = 4
         static let horizontalPadding: CGFloat = 8
+        static let generatingTrailingPadding: CGFloat = 5
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24
         static let selectedToolClearButtonSize: CGFloat = 24
@@ -117,6 +118,16 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     private var isFireTab: Bool = false
+    var usesFloatingUI = false {
+        didSet {
+            updateTrailingPadding()
+            stopButton.setColors(
+                foreground: UIColor(designSystemColor: .textPrimary),
+                background: usesFloatingUI ? .clear : UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground)
+            )
+        }
+    }
+    private var outerStackTrailingConstraint: NSLayoutConstraint?
     private var preservesSubmitStyleDuringDismissal = false
     private var preservedTermsOfServiceSendButton: DuckAiTermsOfServiceSendButton?
     private var isImageButtonAvailable = true
@@ -664,9 +675,12 @@ private extension UnifiedToggleInputToolbarView {
         outerStack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(outerStack)
 
+        let trailingConstraint = outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding)
+        outerStackTrailingConstraint = trailingConstraint
+
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
-            outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            trailingConstraint,
             outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
             outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.bottomPadding),
             modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
@@ -870,6 +884,12 @@ private extension UnifiedToggleInputToolbarView {
             stopButton.isHidden = true
             submitButton.isHidden = false
         }
+        updateTrailingPadding()
+    }
+
+    func updateTrailingPadding() {
+        let padding = usesFloatingUI && isGenerating ? Constants.generatingTrailingPadding : Constants.horizontalPadding
+        outerStackTrailingConstraint?.constant = -padding
     }
 
     func updateToolbarControlsEnabledState() {

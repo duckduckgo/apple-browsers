@@ -1588,6 +1588,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             Logger.general.error("Problem when checking for reinstalling user: \(error.localizedDescription)")
         }
+        OnboardingActionsManager.migrateRetiredNonBlockingOnboarding(keyValueStore: keyValueStore)
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 

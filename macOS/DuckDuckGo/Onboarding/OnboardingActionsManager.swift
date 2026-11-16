@@ -27,6 +27,7 @@ import FoundationExtensions
 import Foundation
 import Onboarding
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 
@@ -126,6 +127,18 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
+
+    /// Keys written by the retired non-blocking onboarding experiment.
+    static let retiredNonBlockingOnboardingKeys = ["onboarding-experiment.outcome", "onboarding-experiment.contextual-initialized"]
+
+    /// Users of the retired non-blocking onboarding could browse without finishing onboarding,
+    /// so they're treated as finished instead of being locked into onboarding on their next launch.
+    static func migrateRetiredNonBlockingOnboarding(keyValueStore: ThrowingKeyValueStoring) {
+        let keys = retiredNonBlockingOnboardingKeys
+        guard keys.contains(where: { (try? keyValueStore.object(forKey: $0)) != nil }) else { return }
+        isOnboardingFinished = true
+        keys.forEach { try? keyValueStore.removeObject(forKey: $0) }
+    }
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings

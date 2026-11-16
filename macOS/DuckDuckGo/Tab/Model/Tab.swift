@@ -623,9 +623,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     var contentChangeEnabled = true
 
-    /// Called before an actual tab close, never for moves or internal replacement.
-    var onClose: (@MainActor () -> Void)?
-
     var isLazyLoadingInProgress = false
 
     let burnerMode: BurnerMode

@@ -743,6 +743,31 @@ class OnboardingManagerTests: XCTestCase {
         )
     }
 
+    // MARK: - Retired non-blocking onboarding
+
+    func testMigrateRetiredNonBlockingOnboarding_WhenOldKeysExist_FinishesOnboardingAndClearsKeys() throws {
+        for key in OnboardingActionsManager.retiredNonBlockingOnboardingKeys {
+            OnboardingActionsManager.isOnboardingFinished = false
+            let store = InMemoryThrowingKeyValueStore()
+            try store.set(true, forKey: key)
+
+            OnboardingActionsManager.migrateRetiredNonBlockingOnboarding(keyValueStore: store)
+
+            XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished, key)
+            for oldKey in OnboardingActionsManager.retiredNonBlockingOnboardingKeys {
+                XCTAssertNil(try store.object(forKey: oldKey), oldKey)
+            }
+        }
+    }
+
+    func testMigrateRetiredNonBlockingOnboarding_WhenNoOldKeys_KeepsOnboardingUnfinished() {
+        OnboardingActionsManager.isOnboardingFinished = false
+
+        OnboardingActionsManager.migrateRetiredNonBlockingOnboarding(keyValueStore: InMemoryThrowingKeyValueStore())
+
+        XCTAssertFalse(OnboardingActionsManager.isOnboardingFinished)
+    }
+
     // MARK: - Reset
 
     @MainActor

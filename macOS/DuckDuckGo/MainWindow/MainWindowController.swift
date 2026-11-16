@@ -40,7 +40,6 @@ final class MainWindowController: NSWindowController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
-    private let featureFlagger: FeatureFlagger?
     private weak var windowControllersManager: WindowControllersManager?
 
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
@@ -58,7 +57,6 @@ final class MainWindowController: NSWindowController {
          fireWindowOpenTrigger: FireWindowOpenTrigger? = nil,
          fireViewModel: FireViewModel,
          themeManager: ThemeManaging,
-         featureFlagger: FeatureFlagger? = nil,
          windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
 
         // Compute initial window frame
@@ -80,7 +78,6 @@ final class MainWindowController: NSWindowController {
         fireWindowSession?.addWindow(window)
 
         self.themeManager = themeManager
-        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
 
         super.init(window: window)

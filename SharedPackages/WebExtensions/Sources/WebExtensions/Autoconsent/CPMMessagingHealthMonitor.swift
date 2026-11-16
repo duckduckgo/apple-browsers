@@ -29,24 +29,48 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
     /// The browser's own page shown in place of a failed load. It reports the failed http(s) URL but never
     /// runs content scripts, so CPM cannot answer on it.
     case errorPage = "error_page"
+    /// A main-frame document that is not HTML (a PDF, an image, a video, plain text). The extension's content
+    /// scripts may not initialize there, so CPM cannot answer.
+    case nonHTMLDocument = "non_html_document"
     /// Any other main-frame navigation.
     case other
+
+    /// Whether a response with this MIME type is an HTML document. An unknown type counts as HTML, so a page
+    /// is left out only when the response says it is something else.
+    static func isHTMLDocument(mimeType: String?) -> Bool {
+        guard let type = mimeType?.lowercased(), !type.isEmpty else { return true }
+        return type == "text/html" || type == "application/xhtml+xml"
+    }
+
+    /// The kind once the response is known: only an ordinary navigation can turn out to be a non-HTML document.
+    public func resolved(forMimeType mimeType: String?) -> CPMNavigationKind {
+        guard self == .other, !Self.isHTMLDocument(mimeType: mimeType) else { return self }
+        return .nonHTMLDocument
+    }
+}
+
+/// A tab that the health monitor follows by an identifier. It is the identifier the tab reports navigations with,
+/// so the extension events listener can tell the monitor which tab closed.
+@MainActor
+public protocol CPMMonitoredTab: AnyObject {
+    var cpmTabIdentifier: String { get }
 }
 
 /// Facts supplied by tabs, the native messaging handler, and the extension manager.
 @available(macOS 15.4, iOS 18.4, *)
 public enum CPMMessagingHealthEvent: Sendable {
-    /// A main-frame document committed, with the kind of navigation that loaded it. `extensionIsLoaded` is not used
-    /// yet: the stacked breakage metric waits for the extension only on pages that commit with it loaded.
+    /// A main-frame document committed, with the kind of navigation that loaded it.
     case navigationCommitted(tabIdentifier: String, url: URL, navigationKind: CPMNavigationKind, extensionIsLoaded: Bool)
     case tabClosed(tabIdentifier: String)
     case webContentProcessTerminated(tabIdentifier: String)
-    /// The extension refreshed the dashboard of a page. `url` is not used yet: the stacked breakage metric
-    /// matches it to the pages tabs committed.
-    case dashboardResponse(url: URL, extensionIdentifier: String? = nil)
+    /// The extension refreshed the dashboard of a page. `isAnswer` is false when it said it cannot answer the
+    /// page's init (no configuration, no settings): the extension is running, but the page stays unanswered.
+    case dashboardResponse(url: URL, extensionIdentifier: String? = nil, isAnswer: Bool = true)
     case extensionLifecycle(WebExtensionLifecycleEvent)
-    /// The process may stop running: iOS entered the background, or macOS is going to sleep. Not used yet: the
-    /// stacked breakage metric keeps suspended time out of its waits.
+    /// The embedded extension was uninstalled, or replaced by a newer version: pages waiting for it will never be
+    /// answered, and the extension is gone rather than broken.
+    case embeddedExtensionRemoved
+    /// The process may stop running: iOS entered the background, or macOS is going to sleep.
     case interruptionBegan
     /// The app is running again: iOS returns to the foreground, or macOS woke.
     case interruptionEnded
@@ -58,8 +82,20 @@ public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
     func handle(_ event: CPMMessagingHealthEvent)
 }
 
-/// Reports through `onHealthyResponse` when the current embedded extension answers, and keeps the page each tab
-/// committed for the breakage metric that is stacked on this change.
+/// Reports tabs whose page never heard from the extension.
+///
+/// A committed page that can run the extension must hear from it: the extension sends a message from the
+/// tab while the page initializes. A page with no message for `silenceWindow` seconds of app time makes
+/// its tab silent, reported once. A tab that navigates or closes before the window ends is not reported.
+/// A message that arrives later still counts as an answer.
+///
+/// There is no timer: the check runs when an event arrives.
+///
+/// A second silent tab, with no message from the extension in between, reports the persistent pixel once.
+/// A tab whose page got a refresh saying the extension cannot answer it is reported, but never counts
+/// towards that second tab: the extension is running, so it is not hung.
+///
+/// It also reports through `onHealthyResponse` when the current embedded extension answers.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
@@ -72,11 +108,41 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Debug-only switch that makes dashboard responses invisible to the health algorithm.
     public private(set) var isCPMMessagingBreakageSimulationEnabled = false
 
-    /// The latest eligible page of each app tab. Nothing reads it yet: the stacked breakage metric matches the
-    /// extension's messages to these pages.
+    /// The latest eligible page of each app tab, which a message from the extension can belong to.
     private var committedPages: [String: URL] = [:]
+    /// When each tab's latest eligible page committed, until a message from the tab answers it.
+    private var pendingCommits: [String: Date] = [:]
+    /// Tabs reported silent since the extension last sent any message.
+    private var silentTabs: Set<String> = []
+    /// Waiting tabs whose page got a refresh saying the extension cannot answer it (no configuration or settings).
+    /// The extension is running, so these tabs are reported but never count towards a series.
+    private var cannotBeAnsweredTabs: Set<String> = []
+    private var didReportPersistentBreakage = false
+    private var suspensionStart: Date?
 
-    public init() {}
+    private let pixelFiring: WebExtensionPixelFiring
+    private let isUnmeasuredPage: (URL) -> Bool
+    private let silenceWindow: TimeInterval
+    private let now: () -> Date
+
+    /// - Parameters:
+    ///   - isUnmeasuredPage: Whether the extension's message can never be matched to the page committed at this URL,
+    ///     because the tab reports another URL to the extension (a Duck Player video). Such pages are not measured.
+    ///   - silenceWindow: How long a committed page may stay silent before its tab is reported.
+    public init(pixelFiring: WebExtensionPixelFiring,
+                isUnmeasuredPage: @escaping (URL) -> Bool,
+                silenceWindow: TimeInterval = 30,
+                now: @escaping () -> Date = CPMMessagingHealthMonitor.uptimeDate) {
+        self.pixelFiring = pixelFiring
+        self.isUnmeasuredPage = isUnmeasuredPage
+        self.silenceWindow = silenceWindow
+        self.now = now
+    }
+
+    /// A clock that a wall-clock change cannot move: time since boot.
+    public static func uptimeDate() -> Date {
+        Date(timeIntervalSinceReferenceDate: ProcessInfo.processInfo.systemUptime)
+    }
 
     /// Enables or disables Debug-menu simulation of missing CPM dashboard responses.
     public func setBreakageSimulationEnabled(_ isEnabled: Bool) {
@@ -92,27 +158,133 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             Logger.webExtensions.debug("[CPM Health Monitor] \(event.logDescription, privacy: .public) -> \(state, privacy: .public)")
         }
 
+        if case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event {
+            // The answer is applied before the check, so a slow answer is never counted as silence.
+            receiveResponse(url: url, extensionIdentifier: extensionIdentifier, isAnswer: isAnswer)
+            reportSilentTabs()
+            return
+        }
+        reportSilentTabs()
+
         switch event {
-        case .navigationCommitted(let tabIdentifier, let url, let navigationKind, _):
-            committedPages[tabIdentifier] = isEligible(url: url, navigationKind: navigationKind) ? url : nil
+        case .navigationCommitted(let tabIdentifier, let url, let navigationKind, let extensionIsLoaded):
+            let eligible = isEligible(url: url, navigationKind: navigationKind)
+            committedPages[tabIdentifier] = eligible ? url : nil
+            pendingCommits[tabIdentifier] = nil
+            cannotBeAnsweredTabs.remove(tabIdentifier)
+            if eligible && extensionIsLoaded { pendingCommits[tabIdentifier] = now() }
         case .tabClosed(let tabIdentifier):
             committedPages.removeValue(forKey: tabIdentifier)
+            pendingCommits.removeValue(forKey: tabIdentifier)
+            cannotBeAnsweredTabs.remove(tabIdentifier)
         case .webContentProcessTerminated(let tabIdentifier):
+            // A crashed page is not the extension's silence.
             committedPages.removeValue(forKey: tabIdentifier)
-        case .dashboardResponse(_, let extensionIdentifier):
-            if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
-            guard !isCPMMessagingBreakageSimulationEnabled else { return }
-            onHealthyResponse?()
-        case .extensionLifecycle, .interruptionBegan, .interruptionEnded:
+            pendingCommits.removeValue(forKey: tabIdentifier)
+            cannotBeAnsweredTabs.remove(tabIdentifier)
+        case .dashboardResponse:
             break
+        case .extensionLifecycle(let lifecycleEvent):
+            handle(lifecycleEvent)
+        case .embeddedExtensionRemoved:
+            endWaits()
+        case .interruptionBegan:
+            suspensionStart = suspensionStart ?? now()
+        case .interruptionEnded:
+            resume()
         }
     }
 
     /// Whether the extension can answer on the committed page: http(s), and not the browser's own error page,
-    /// a history restore (WebKit may not rerun content scripts) or a restored session.
+    /// a history restore (WebKit may not rerun content scripts), a restored session, or a page the app says is not
+    /// measured.
     private func isEligible(url: URL, navigationKind: CPMNavigationKind) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return false }
+        guard !isUnmeasuredPage(url) else { return false }
         return navigationKind == .other
+    }
+
+    /// Time spent suspended does not count towards the silence window.
+    private func resume() {
+        guard let start = suspensionStart else { return }
+        suspensionStart = nil
+        let resumedAt = now()
+        let suspended = resumedAt.timeIntervalSince(start)
+        // A page that committed while suspended starts waiting now.
+        pendingCommits = pendingCommits.mapValues { $0 < start ? $0.addingTimeInterval(suspended) : resumedAt }
+    }
+
+    private func receiveResponse(url: URL, extensionIdentifier: String?, isAnswer: Bool) {
+        if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
+        guard !isCPMMessagingBreakageSimulationEnabled else { return }
+        if isAnswer {
+            answerPages(url: url)
+        } else {
+            cannotBeAnsweredTabs.formUnion(waitingTabs(showing: url))
+        }
+        onHealthyResponse?()
+    }
+
+    private func answerPages(url: URL) {
+        // A message that cannot be tied to one tab answers every waiting tab it could belong to.
+        for tabIdentifier in waitingTabs(showing: url) {
+            pendingCommits[tabIdentifier] = nil
+            cannotBeAnsweredTabs.remove(tabIdentifier)
+        }
+        silentTabs.removeAll()
+        didReportPersistentBreakage = false
+    }
+
+    /// The tabs still waiting on the message's page. Two tabs on one page both get the message.
+    private func waitingTabs(showing url: URL) -> [String] {
+        committedPages.filter { pendingCommits[$0.key] != nil && $0.value.matchesCPMDashboardStatePage(url) }.map(\.key)
+    }
+
+    /// Reports the tabs whose page has waited for the extension longer than the window.
+    private func reportSilentTabs() {
+        guard suspensionStart == nil else { return }
+        let deadline = now().addingTimeInterval(-silenceWindow)
+        let silent = pendingCommits.filter { $0.value <= deadline }.sorted { $0.value < $1.value }
+        guard !silent.isEmpty else { return }
+        // Tabs found silent together are not a single-tab breakage.
+        silentTabs.formUnion(silent.map { $0.key }.filter { !cannotBeAnsweredTabs.contains($0) })
+        for (tabIdentifier, _) in silent {
+            pendingCommits[tabIdentifier] = nil
+            if cannotBeAnsweredTabs.remove(tabIdentifier) != nil {
+                pixelFiring.fire(.cpmMessagingBreakage(tabs: .one))
+            } else {
+                reportSilentTab(tabIdentifier)
+            }
+        }
+    }
+
+    private func reportSilentTab(_ tabIdentifier: String) {
+        let otherTabsWereSilent = !silentTabs.subtracting([tabIdentifier]).isEmpty
+        let tabs: CPMSilentTabs = otherTabsWereSilent ? .many : .one
+        pixelFiring.fire(.cpmMessagingBreakage(tabs: tabs))
+        guard silentTabs.count >= 2, !didReportPersistentBreakage else { return }
+        didReportPersistentBreakage = true
+        pixelFiring.fire(.cpmMessagingBreakagePersistent)
+    }
+
+    /// Drops every wait and the silent series: the extension that would have answered is gone or being replaced.
+    private func endWaits() {
+        pendingCommits.removeAll()
+        cannotBeAnsweredTabs.removeAll()
+        silentTabs.removeAll()
+        didReportPersistentBreakage = false
+    }
+
+    /// Updates state from an extension-manager lifecycle event. A reload ends the waits and the silent series.
+    func handle(_ event: WebExtensionLifecycleEvent) {
+        guard event.extensionType == .embedded else { return }
+
+        switch event {
+        case .willReload, .reloaded:
+            endWaits()
+        case .loaded, .reloadFailed:
+            break
+        }
     }
 }
 
@@ -142,6 +314,8 @@ private extension CPMMessagingHealthEvent {
             return "dashboardResponse"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"
+        case .embeddedExtensionRemoved:
+            return "embeddedExtensionRemoved"
         case .interruptionBegan:
             return "interruptionBegan"
         case .interruptionEnded:
@@ -177,5 +351,18 @@ public extension URL {
 
     private var normalizedCPMPath: String {
         path.isEmpty ? "/" : path
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private extension WebExtensionLifecycleEvent {
+    var extensionType: DuckDuckGoWebExtensionType? {
+        switch self {
+        case .loaded(_, let type),
+             .willReload(_, let type, _),
+             .reloaded(_, let type, _),
+             .reloadFailed(_, let type, _):
+            return type
+        }
     }
 }

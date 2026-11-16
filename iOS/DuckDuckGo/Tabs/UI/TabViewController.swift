@@ -2807,8 +2807,10 @@ class TabViewController: UIViewController {
     deinit {
         delegateSessionFindInPage?.done()
         webExtensionNavigationTask?.cancel()
+        // Backstop for a removal path that never reached the extension coordinator's close call: the tab is gone,
+        // so its wait for the extension ends.
         if #available(iOS 18.4, *) {
-            DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
+            DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id = tabModel.uid] in
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
             }
         }
@@ -2923,15 +2925,13 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = webView.url {
             if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
-                // The error page reports the failed URL but never runs content scripts.
-                let isErrorPage = specialErrorPageNavigationHandler.isSpecialErrorPageRequest
-                let event = CPMMessagingHealthEvent.navigationCommitted(
-                    tabIdentifier: tabModel.uid,
-                    url: url,
-                    navigationKind: isErrorPage ? .errorPage : committingNavigationKind,
-                    extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded
-                )
-                webExtensionManager.cpmMessagingHealthMonitor.handle(event)
+                let event = Self.cpmCommitEvent(tabIdentifier: tabModel.uid,
+                                                url: url,
+                                                isLinkPreview: isLinkPreview,
+                                                isErrorPage: specialErrorPageNavigationHandler.isSpecialErrorPageRequest,
+                                                committingNavigationKind: committingNavigationKind,
+                                                extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded)
+                if let event { webExtensionManager.cpmMessagingHealthMonitor.handle(event) }
             }
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -2991,6 +2991,10 @@ extension TabViewController: WKNavigationDelegate {
            let url = navigationResponse.response.url, url.isHttp || url.isHttps {
             // The Network process can change after action policy. Repair before document-start scripts run.
             webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+        }
+        if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame {
+            // The response tells a non-HTML document from a page; the kind is read at commit.
+            committingNavigationKind = committingNavigationKind.resolved(forMimeType: navigationResponse.response.mimeType)
         }
         if webView === self.webView {
             captureSitePermissionsGeolocationPolicy(from: navigationResponse.response,
@@ -3185,6 +3189,22 @@ extension TabViewController: WKNavigationDelegate {
             return .sessionRestoration
         }
         return isBackForward ? .backForward : .other
+    }
+
+    /// The commit the health monitor is told about, or nil when nothing would ever answer the page.
+    /// A link preview has no extension attached; the error page reports the failed URL but never runs content scripts.
+    @available(iOS 18.4, *)
+    static func cpmCommitEvent(tabIdentifier: String,
+                               url: URL,
+                               isLinkPreview: Bool,
+                               isErrorPage: Bool,
+                               committingNavigationKind: CPMNavigationKind,
+                               extensionIsLoaded: Bool) -> CPMMessagingHealthEvent? {
+        guard !isLinkPreview else { return nil }
+        return .navigationCommitted(tabIdentifier: tabIdentifier,
+                                    url: url,
+                                    navigationKind: isErrorPage ? .errorPage : committingNavigationKind,
+                                    extensionIsLoaded: extensionIsLoaded)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

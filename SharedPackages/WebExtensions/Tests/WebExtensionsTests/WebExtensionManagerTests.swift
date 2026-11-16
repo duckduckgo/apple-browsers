@@ -329,7 +329,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testOldContextResponseAfterUpgradeCannotResetRestartLimit() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring(), isUnmeasuredPage: { _ in false })
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
@@ -353,7 +353,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testNewContextResponseAfterUpgradeResetsRestartLimit() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring(), isUnmeasuredPage: { _ in false })
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
@@ -464,7 +464,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testOnlyAVisibleResponseGrantsAFreshRestartBudget() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring(), isUnmeasuredPage: { _ in false })
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
@@ -494,7 +494,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testReloadAloneDoesNotResetTheRestartLimitButAResponseAfterItDoes() async throws {
         var date = Date()
-        let monitor = CPMMessagingHealthMonitor()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring(), isUnmeasuredPage: { _ in false })
         let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
                                   isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
         let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
@@ -1901,6 +1901,46 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenATabClosesThenTheHealthMonitorIsToldItsIdentifier() throws {
+        let monitor = CapturingCPMTabClosedMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
+        let tab = MonitoredStubTab(identifier: "tab-1")
+
+        manager.eventsListener.didCloseTab(tab, windowIsClosing: false)
+        manager.eventsListener.withTabLifecycleEventsSuppressed {
+            manager.eventsListener.didCloseTab(MonitoredStubTab(identifier: "moved"), windowIsClosing: false)
+        }
+
+        XCTAssertEqual(monitor.closedTabs, ["tab-1"], "a tab that only moves between windows is not closed")
+    }
+
+    @MainActor
+    func testWhenATabIsReplacedThenTheHealthMonitorIsToldTheOldTabClosed() throws {
+        let monitor = CapturingCPMTabClosedMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
+
+        manager.eventsListener.didReplaceTab(MonitoredStubTab(identifier: "old"), with: MonitoredStubTab(identifier: "new"))
+
+        XCTAssertEqual(monitor.closedTabs, ["old"], "the replaced tab no longer waits for a message")
+    }
+
+    @MainActor
+    func testWhenTheEmbeddedExtensionIsUninstalledThenTheHealthMonitorIsToldItIsRemoved() throws {
+        let monitor = CapturingCPMRemovalMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "other-id"),
+            makeInstalledWebExtension(uniqueIdentifier: "embedded-id", embeddedType: .embedded)
+        ]
+
+        try manager.uninstallExtension(identifier: "other-id")
+        XCTAssertEqual(monitor.removalCount, 0, "only the embedded extension answers for CPM")
+
+        try manager.uninstallExtension(identifier: "embedded-id")
+        XCTAssertEqual(monitor.removalCount, 1)
+    }
+
+    @MainActor
     func testWhenExtensionsAreUnloadedForDataClearingThenWillReloadIsReportedImmediately() async throws {
         let monitor = CapturingCPMLifecycleMonitor()
         let manager = makeManager(cpmMessagingHealthMonitor: monitor)
@@ -3042,12 +3082,44 @@ private actor LaunchBlockingScriptletFetcher: ScriptletFetching {
 
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
+private final class CapturingCPMTabClosedMonitor: CPMMessagingHealthMonitoring {
+    private(set) var closedTabs: [String] = []
+
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .tabClosed(let tabIdentifier) = event else { return }
+        closedTabs.append(tabIdentifier)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class MonitoredStubTab: NSObject, WKWebExtensionTab, CPMMonitoredTab {
+    let cpmTabIdentifier: String
+
+    init(identifier: String) {
+        cpmTabIdentifier = identifier
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
 private final class CapturingCPMLifecycleMonitor: CPMMessagingHealthMonitoring {
     private(set) var lifecycleEvents: [WebExtensionLifecycleEvent] = []
 
     func handle(_ event: CPMMessagingHealthEvent) {
         guard case .extensionLifecycle(let lifecycleEvent) = event else { return }
         lifecycleEvents.append(lifecycleEvent)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class CapturingCPMRemovalMonitor: CPMMessagingHealthMonitoring {
+    private(set) var removalCount = 0
+
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .embeddedExtensionRemoved = event else { return }
+        removalCount += 1
     }
 }
 

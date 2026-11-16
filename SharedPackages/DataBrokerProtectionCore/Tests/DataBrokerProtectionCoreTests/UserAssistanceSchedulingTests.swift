@@ -189,7 +189,7 @@ struct UserAssistanceSchedulingTests {
             #expect(job.preferredRunDate == preferredDate)
             #expect(database.attemptCount == 0)
         }
-        #expect(failurePixels == 0)
+        #expect(failurePixels == (end == .failed ? 1 : 0))
         #expect(wideEvent.started.count == 2)
         #expect(wideEvent.updates.isEmpty)
         #expect(wideEvent.completions.isEmpty)

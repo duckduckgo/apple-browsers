@@ -151,7 +151,7 @@ struct BrokerProfileOptOutSubJob {
                                                       brokerProfileQueryData: brokerProfileQueryData,
                                                       identifiers: identifiers,
                                                       stageDurationCalculator: stageDurationContext.stageDurationCalculator,
-                                                      wideEvent: dependencies.wideEvent)
+                                                      wideEvent: kind.isRegular ? dependencies.wideEvent : nil)
             } else {
                 try finalizeOptOut(database: dependencies.database,
                                    brokerProfileQueryData: brokerProfileQueryData,
@@ -170,6 +170,16 @@ struct BrokerProfileOptOutSubJob {
                                     identifiers: identifiers,
                                     stageDurationCalculator: stageDurationContext.stageDurationCalculator)
             } else {
+                switch error {
+                case is CancellationError, DataBrokerProtectionError.cancelled, DataBrokerProtectionError.jobTimeout:
+                    break
+                default:
+                    let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database,
+                                                                      brokerId: identifiers.brokerId,
+                                                                      profileQueryId: identifiers.profileQueryId,
+                                                                      extractedProfileId: identifiers.extractedProfileId)
+                    stageDurationContext.stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1, error: error)
+                }
                 try? dependencies.database.add(.init(extractedProfileId: identifiers.extractedProfileId,
                                                       brokerId: identifiers.brokerId,
                                                       profileQueryId: identifiers.profileQueryId,

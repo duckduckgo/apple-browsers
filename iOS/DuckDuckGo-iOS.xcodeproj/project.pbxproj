@@ -11,6 +11,7 @@
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		0238E44F29C0FAA100615E30 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */; };
 		0CEF7424DF47598D800EB920 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3E0D167D2CFCE3C99849696D /* WideEvent */; };
+		1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 028550FF94FC586352ECCAB2 /* UITestingSupport */; };
 		1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B622995143200C96994 /* OHHTTPStubs */; };
 		1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B642995143200C96994 /* OHHTTPStubsSwift */; };
 		1EC8B18A2F29145C00F18679 /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1EC8B1892F29145C00F18679 /* WebExtensions */; };
@@ -203,7 +204,6 @@
 		F143C2EC1E4A4CD400CFDE3A /* Core.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F19B98662EAFA799000FF209 /* AttributedMetric */; };
 		F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */; };
-		1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 028550FF94FC586352ECCAB2 /* UITestingSupport */; };
 		F486D31D2506980E002D07D7 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F486D31C2506980E002D07D7 /* Swifter */; };
 		F486D33425069BBB002D07D7 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F486D33325069BBB002D07D7 /* Kingfisher */; };
 		F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3352506A037002D07D7 /* OHHTTPStubs */; };
@@ -652,8 +652,8 @@
 		FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"UI Tests.xctestplan",
 				"iPad UI Tests.xctestplan",
+				"UI Tests.xctestplan",
 			);
 			target = 23215268B3D7426DA0FAC923 /* UI Tests */;
 		};
@@ -5037,6 +5037,11 @@
 			package = 0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */;
 			productName = FindInPageIOSJSSupport;
 		};
+		028550FF94FC586352ECCAB2 /* UITestingSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */;
+			productName = UITestingSupport;
+		};
 		07CAD3291BFA44269AD3CA0F /* SitePermissions */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SitePermissions;
@@ -5718,11 +5723,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */;
 			productName = BareBonesBrowserKit;
-		};
-		028550FF94FC586352ECCAB2 /* UITestingSupport */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */;
-			productName = UITestingSupport;
 		};
 		F486D31C2506980E002D07D7 /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;

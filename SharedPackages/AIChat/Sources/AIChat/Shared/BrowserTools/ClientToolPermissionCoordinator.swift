@@ -352,3 +352,23 @@ private final class ClientToolCancellationSignal: @unchecked Sendable {
         lock.unlock()
     }
 }
+
+#if os(iOS)
+extension ClientToolPermissionCoordinator {
+    public func cancelPendingRequests(from prompter: any ClientToolPermissionPrompting) {
+        let matching = entries.values.filter { entry in
+            guard entry.prompter === prompter else { return false }
+            if case .executing = entry.state { return false }
+            return true
+        }
+        let wasCancellingPrompter = isCancellingPrompter
+        isCancellingPrompter = true
+        defer {
+            isCancellingPrompter = wasCancellingPrompter
+            processPendingPermissionQueues()
+        }
+        matching.forEach { $0.cancellation.cancel() }
+        matching.forEach { finish($0.requestID, error: .cancelled) }
+    }
+}
+#endif

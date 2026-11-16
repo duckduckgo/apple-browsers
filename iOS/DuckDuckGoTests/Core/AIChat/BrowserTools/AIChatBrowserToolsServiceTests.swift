@@ -88,6 +88,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
             }
             otherScript.browserToolsDocumentDidCommit()
             otherScopeCreations = 0
+            fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
             let unknownContext = BrowserToolCallContext(ownerTabID: fixture.owner.uid, ownerWindowToken: UUID().uuidString, isBurner: false)
 
             let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: unknownContext, permissionPrompter: nil)
@@ -105,7 +106,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         defer { fixture.cleanUp() }
         var scopeCreations = 0
         var createdScope: BrowserToolScope?
-        fixture.script.bindBrowserTools(to: fixture.service, owner: fixture.owner) { [weak fixture] in
+        fixture.script.bindBrowserTools(to: fixture.service, owner: fixture.owner, presenter: fixture.presenter) { [weak fixture] in
             scopeCreations += 1
             createdScope = fixture?.makeScope()
             return createdScope
@@ -115,6 +116,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         fixture.script.browserToolsDocumentDidCommit()
         scopeCreations = 0
 
+        fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
         let rejected = await fixture.service.invoker.invokeClientTool(try request(), context: staleContext, permissionPrompter: nil)
 
         XCTAssertEqual(rejected, .failure(callId: "call", error: .unavailable))
@@ -200,7 +202,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
     }
 
-    func testAutoListingIgnoresStoredDenyAndRechecksDynamicScope() async throws {
+    func testStoredListingPermissionRechecksDynamicScope() async throws {
         let owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://example.com")!), fireTab: false)
         let source = MultiTabAttachmentSource(currentTabID: owner.uid, mode: .normal, tabsProvider: { [owner] })
         let scope = BrowserToolScope(owner: owner, source: source, selectedTabID: { owner.uid })
@@ -214,12 +216,12 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
                                                permissionStorage: storage.keyedStoring(), capabilities: [.listOpenTabs])
         let context = BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: scope.token,
                                              isBurner: false)
-        service.permissions.setState(.deny, forToolNamed: "listOpenTabs")
+        service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
         let allowed = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
         let expected: JSONValue = ["tabs": [["tabId": "owner", "title": "Owner", "url": "https://example.com",
                                              "isCurrentTab": true, "isAttachable": true]]]
         XCTAssertEqual(allowed, .success(callId: "call", value: expected))
-        XCTAssertEqual(service.permissions.state(forToolNamed: "listOpenTabs"), .deny)
+        XCTAssertEqual(service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
         available = false
         let unavailable = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
         XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
@@ -228,13 +230,13 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         XCTAssertEqual(malformed, .failure(callId: "call", error: .invalidArguments))
     }
 
-    func testDefaultCapabilitiesAdvertiseListingAndSwitchAndAllowListingWithoutPrompt() async throws {
+    func testDefaultCapabilitiesAdvertiseListingAndSwitchAndPromptForListing() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags,
                                                permissionStorage: fixture.defaults.keyedStoring())
-        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, makeScope: fixture.makeScope)
+        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: fixture.makeScope)
         XCTAssertEqual(service.configuration(for: fixture.script)?.capabilities, [.listOpenTabs, .switchToTab])
         XCTAssertEqual(service.catalog.enabledTools.map(\.name), ["listOpenTabs", "switchToTab"])
         XCTAssertNotNil(service.catalog.tool(named: "listOpenTabs"))
@@ -271,6 +273,40 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         }
     }
 
+    func testAutomaticSwitchCannotBypassUnavailableNativeSurface() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        let service = AIChatBrowserToolsService(featureFlagger: fixture.flags,
+                                               permissionStorage: fixture.defaults.keyedStoring())
+        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: fixture.makeScope)
+        fixture.presenter.isAvailable = false
+        let result = await service.invoke(try request(name: "switchToTab", input: ["tabId": "owner"]), from: fixture.script)
+        XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
+        XCTAssertTrue(fixture.presenter.prompts.isEmpty)
+    }
+
+    func testExecutingSwitchSurvivesItsOwnSourceDeparture() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        let service = AIChatBrowserToolsService(featureFlagger: fixture.flags,
+                                               permissionStorage: fixture.defaults.keyedStoring())
+        let source = MultiTabAttachmentSource(currentTabID: fixture.owner.uid, mode: .normal,
+                                              tabsProvider: { [fixture.owner] })
+        let scope = BrowserToolScope(owner: fixture.owner, source: source, selectedTabID: { fixture.owner.uid },
+                                     selectTab: { [weak service, weak script = fixture.script] _ in
+            guard let service, let script else { return false }
+            fixture.presenter.isAvailable = false
+            service.sourceWillDisappear(script)
+            return true
+        })
+        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
+        let result = await service.invoke(try request(name: "switchToTab", input: ["tabId": "owner"]), from: fixture.script)
+        XCTAssertEqual(result, .success(callId: "call", value: ["tabId": "owner"]))
+        XCTAssertTrue(fixture.presenter.prompts.isEmpty)
+    }
+
     func testSourceBoundSwitchIgnoresStoredDenyAndNeedsNoPermissionPrompt() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
@@ -284,7 +320,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags,
                                                permissionStorage: fixture.defaults.keyedStoring())
         service.permissions.setState(.deny, forToolNamed: "switchToTab")
-        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, makeScope: { scope })
+        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
         let result = await service.invoke(try request(name: "switchToTab", input: ["tabId": "target"]), from: fixture.script)
         XCTAssertEqual(result, .success(callId: "call", value: ["tabId": "target"]))
         XCTAssertEqual(selections.count, 1)

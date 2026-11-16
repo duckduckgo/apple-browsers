@@ -25,6 +25,7 @@ import AIChatDebugServer
 import os.log
 import DebugServer
 import PrivacyConfig
+import Persistence
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
@@ -60,6 +61,16 @@ struct AIChatDebugView: View {
                 }
             }
 #endif
+
+            Section(header: Text(verbatim: "Browser Tools"),
+                    footer: Text(verbatim: "Clears saved Always/Never decisions.")) {
+                Button {
+                    BrowserToolPermissionStore(storage: UserDefaults.standard.keyedStoring()).clearAll()
+                } label: {
+                    Text(verbatim: "Reset Browser Tool Permissions")
+                }
+                .foregroundColor(.red)
+            }
 
             Section(header: Text(verbatim: "Message Policy Hostname"),
                     footer: Text(verbatim: "Stored Hostname: \(viewModel.enteredHostname)")) {

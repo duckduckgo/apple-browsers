@@ -849,6 +849,14 @@ class TabViewController: UIViewController {
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
     var browserToolsService: AIChatBrowserToolsService?
+    private var browserToolsSurfaceVisible = false
+    private var browserToolsPermissionPresenter: AIChatNativePermissionPresenter?
+
+    func browserToolsWillLeaveScreen() {
+        browserToolsSurfaceVisible = false
+        if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
+    }
+
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -1146,6 +1154,7 @@ class TabViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        browserToolsSurfaceVisible = true
         setSitePermissionsGeolocationActive(true)
         installDuckAISwipeNewChatIfNeeded()
         
@@ -1155,6 +1164,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if browserToolsPermissionPresenter?.isPresentingPermission != true { browserToolsWillLeaveScreen() }
         closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         duckAISwipeNewChat?.cancel()
@@ -2605,6 +2615,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        browserToolsWillLeaveScreen()
         closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
@@ -5352,7 +5363,14 @@ extension TabViewController: UserContentControllerDelegate {
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         if let browserToolsService, let browserToolScopeFactory,
            let webView, webView.configuration.userContentController === userContentController {
-            userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel, makeScope: browserToolScopeFactory)
+            if browserToolsPermissionPresenter == nil {
+                browserToolsPermissionPresenter = AIChatNativePermissionPresenter { [weak self] in
+                    guard let self, self.browserToolsSurfaceVisible, self.isTabCurrentlyPresented() else { return nil }
+                    return self
+                }
+            }
+            userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel,
+                                                        presenter: browserToolsPermissionPresenter, makeScope: browserToolScopeFactory)
         }
         userScripts.aiChatUserScript.connectInitialPromptSession(initialAIChatPromptSession)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()

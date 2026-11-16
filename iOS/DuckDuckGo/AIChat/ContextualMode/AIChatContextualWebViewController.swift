@@ -56,6 +56,14 @@ final class AIChatContextualWebViewController: UIViewController {
 
     weak var browserToolsOwner: Tab?
     var browserToolsService: AIChatBrowserToolsService?
+    var browserToolsPermissionPresenter: (any AIChatNativePermissionPresenting)?
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if browserToolsPermissionPresenter?.isPresentingPermission != true || parent?.isBeingDismissed == true || isMovingFromParent {
+            browserToolsWillLeaveScreen()
+        }
+    }
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     private weak var browserToolsScript: AIChatUserScript?
     weak var delegate: AIChatContextualWebViewControllerDelegate?
@@ -601,7 +609,8 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         browserToolsScript = nil
         if let browserToolsService, let browserToolsOwner, let browserToolScopeFactory {
             browserToolsScript = userScript
-            userScript.bindBrowserTools(to: browserToolsService, owner: browserToolsOwner, makeScope: browserToolScopeFactory)
+            userScript.bindBrowserTools(to: browserToolsService, owner: browserToolsOwner,
+                                       presenter: browserToolsPermissionPresenter, makeScope: browserToolScopeFactory)
         }
         userScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScript)
@@ -610,7 +619,13 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     }
 }
 
+// MARK: - Browser Tools
+
 extension AIChatContextualWebViewController {
+    func browserToolsWillLeaveScreen() {
+        if let browserToolsScript { browserToolsService?.sourceWillDisappear(browserToolsScript) }
+    }
+
     func detachBrowserTools() {
         browserToolScopeFactory = nil
         browserToolsOwner = nil

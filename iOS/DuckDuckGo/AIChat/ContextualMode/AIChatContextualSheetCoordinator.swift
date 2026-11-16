@@ -125,6 +125,15 @@ final class AIChatContextualSheetCoordinator {
     private var sessionEffectCancellable: AnyCancellable?
     weak var browserToolsOwner: Tab?
     var browserToolsService: AIChatBrowserToolsService?
+    private var retiringPermissionPresenters: [any AIChatNativePermissionPresenting] = []
+    private var cancelPendingSurfaceAction: (() -> Void)?
+    private var pendingSurfaceClose: PendingSurfaceClose?
+
+    private final class PendingSurfaceClose {
+        var isCancelled = false
+    }
+
+    var browserToolsPermissionPresenter: (any AIChatNativePermissionPresenting)?
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     private(set) weak var browserToolsWebViewController: AIChatContextualWebViewController?
     private var currentPageURLCancellable: AnyCancellable?
@@ -150,6 +159,7 @@ final class AIChatContextualSheetCoordinator {
     /// The sheet while it is off screen with its chat still open: carried between the sidebar and a sheet by a window
     /// resize, or away with its tab.
     private var parkedSheetViewController: AIChatContextualSheetViewController?
+    private var pendingParkSheetViewController: AIChatContextualSheetViewController?
 
     /// The parked sheet left the screen with its tab rather than for a resize, and comes back when the tab does.
     private var isAwayWithTab = false
@@ -774,6 +784,8 @@ final class AIChatContextualSheetCoordinator {
     /// As on macOS, the sidebar belongs to its tab: it leaves the screen with the tab, its chat still open, and comes
     /// back with it. A sheet over the page closes, as it always has.
     func tabWillLeaveScreen() {
+        cancelPendingSurfaceAction?()
+        browserToolsWebViewController?.browserToolsWillLeaveScreen()
         guard !isAwayWithTab else { return }
         guard let sheetViewController, isSheetInSidebar, let sidebarHost else {
             dismissSheet()
@@ -794,8 +806,14 @@ final class AIChatContextualSheetCoordinator {
     /// The tab is back on screen, and so is the sidebar that left with it, as it was.
     func tabDidReturnToScreen(presentedFrom presentingVC: UIViewController) {
         guard isAwayWithTab else { return }
+        if let pendingParkSheetViewController, pendingParkSheetViewController === sheetViewController {
+            adaptSurface(toPresenter: presentingVC, animated: false, restoringExplicitly: true) { [weak self] in
+                self?.persistentUTIHost?.beginPresentation()
+            }
+            return
+        }
         persistentUTIHost?.beginPresentation()
-        adaptSurface(toPresenter: presentingVC, animated: false)
+        adaptSurface(toPresenter: presentingVC, animated: false, restoringExplicitly: true)
     }
 
     /// Its tab is closing or being unloaded, so a sidebar that left the screen with it closes where it is.
@@ -807,22 +825,69 @@ final class AIChatContextualSheetCoordinator {
     private func park(_ sheetViewController: AIChatContextualSheetViewController,
                       leavingSidebarOf sidebarHost: AIChatContextualSidebarHosting,
                       animated: Bool) {
+        guard parkedSheetViewController !== sheetViewController,
+              pendingParkSheetViewController !== sheetViewController else { return }
+        guard hasActiveBrowserToolsPermission else {
+            finishParking(sheetViewController, leavingSidebarOf: sidebarHost, animated: animated)
+            return
+        }
+        pendingParkSheetViewController = sheetViewController
+        browserToolsWebViewController?.browserToolsWillLeaveScreen()
+        withdrawBrowserToolsPermission { [weak self] in
+            guard let self, self.pendingParkSheetViewController === sheetViewController else { return }
+            self.finishParking(sheetViewController, leavingSidebarOf: sidebarHost, animated: animated)
+        }
+    }
+
+    private func finishParking(_ sheetViewController: AIChatContextualSheetViewController,
+                               leavingSidebarOf sidebarHost: AIChatContextualSidebarHosting,
+                               animated: Bool) {
         // Something the chat presented, like the Fire confirmation, would be left behind by the move.
         sheetViewController.presentedViewController?.dismiss(animated: false)
         sheetViewController.beginSurfaceChange()
-        parkedSheetViewController = sheetViewController
+        if self.sheetViewController === sheetViewController {
+            parkedSheetViewController = sheetViewController
+        } else {
+            sheetViewController.delegate = nil
+        }
+        if pendingParkSheetViewController === sheetViewController {
+            pendingParkSheetViewController = nil
+        }
         sidebarHost.detachContextualSidebar(sheetViewController, animated: animated)
     }
 
-    /// The chat is off screen and still open, waiting for `adaptSurface(toPresenter:)` to place it.
+    /// Includes pending parking so a resize can schedule restoration while the permission alert is closing.
     var hasParkedSurface: Bool {
-        parkedSheetViewController != nil
+        parkedSheetViewController != nil || pendingParkSheetViewController != nil
     }
 
     /// On a resize or the tab's return, puts the open surface where the window's size calls for: the sidebar when
     /// there's room for it, a sheet when there isn't. The chat, its draft and its page context carry over untouched.
     func adaptSurface(toPresenter presentingVC: UIViewController, animated: Bool = true) {
+        adaptSurface(toPresenter: presentingVC, animated: animated, restoringExplicitly: false)
+    }
+
+    private func adaptSurface(toPresenter presentingVC: UIViewController,
+                              animated: Bool,
+                              restoringExplicitly: Bool,
+                              onRestore: (() -> Void)? = nil) {
         guard isSheetPresented, let sheetVC = sheetViewController else { return }
+        if pendingParkSheetViewController === sheetVC {
+            guard restoringExplicitly || !isAwayWithTab else { return }
+            let restore = makePendingSurfaceAction { [weak self, weak presentingVC] in
+                guard let self, let presentingVC,
+                      self.sheetViewController === sheetVC, self.isSheetPresented else { return }
+                onRestore?()
+                self.finishAdaptingSurface(sheetVC, toPresenter: presentingVC, animated: animated)
+            }
+            withdrawBrowserToolsPermission(completion: restore)
+            return
+        }
+        finishAdaptingSurface(sheetVC, toPresenter: presentingVC, animated: animated)
+    }
+
+    private func finishAdaptingSurface(_ sheetVC: AIChatContextualSheetViewController,
+                                       toPresenter presentingVC: UIViewController, animated: Bool) {
         let host = sidebarHost(for: presentingVC)
         if parkedSheetViewController === sheetVC {
             parkedSheetViewController = nil
@@ -875,11 +940,59 @@ final class AIChatContextualSheetCoordinator {
     private func dismissSurface(of sheetViewController: AIChatContextualSheetViewController,
                                 animated: Bool = true,
                                 completion: (() -> Void)? = nil) {
+        let ownsCurrentSurface = self.sheetViewController === sheetViewController || self.sheetViewController == nil
+        if self.sheetViewController === sheetViewController {
+            cancelPendingSurfaceAction?()
+        }
+        let needsWithdrawal = !retiringPermissionPresenters.isEmpty
+            || (ownsCurrentSurface && browserToolsPermissionPresenter?.isPresentingPermission == true)
+        guard needsWithdrawal else {
+            finishDismissingSurface(of: sheetViewController, sidebarHost: sidebarHost, animated: animated, completion: completion)
+            return
+        }
+        let close: PendingSurfaceClose
+        if ownsCurrentSurface {
+            close = pendingSurfaceClose ?? PendingSurfaceClose()
+            pendingSurfaceClose = close
+        } else {
+            close = PendingSurfaceClose()
+        }
+        let host = sidebarHost
+        if self.sheetViewController === sheetViewController {
+            browserToolsWebViewController?.browserToolsWillLeaveScreen()
+        }
+        withdrawBrowserToolsPermission(includingCurrent: ownsCurrentSurface) { [weak self] in
+            guard let self else { completion?(); return }
+            let isOldTarget = self.sheetViewController !== sheetViewController
+            guard !close.isCancelled || isOldTarget else {
+                completion?()
+                return
+            }
+            if self.pendingParkSheetViewController === sheetViewController {
+                self.pendingParkSheetViewController = nil
+            }
+            if isOldTarget {
+                sheetViewController.delegate = nil
+                if sheetViewController.parent == nil, sheetViewController.presentingViewController == nil {
+                    sheetViewController.closeWhileOffScreen()
+                    completion?()
+                    return
+                }
+            }
+            self.finishDismissingSurface(of: sheetViewController, sidebarHost: host, animated: animated, completion: completion)
+        }
+    }
+
+    private func finishDismissingSurface(of sheetViewController: AIChatContextualSheetViewController,
+                                         sidebarHost: AIChatContextualSidebarHosting?,
+                                         animated: Bool, completion: (() -> Void)?) {
         if parkedSheetViewController === sheetViewController {
             // Already off screen, for a resize or with its tab: nothing to animate away, only the chat to close.
             parkedSheetViewController = nil
             sheetViewController.closeWhileOffScreen()
-            isAwayWithTab = false
+            if self.sheetViewController === sheetViewController {
+                isAwayWithTab = false
+            }
             completion?()
             return
         }
@@ -896,9 +1009,52 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
+    private var hasActiveBrowserToolsPermission: Bool {
+        browserToolsPermissionPresenter?.isPresentingPermission == true || !retiringPermissionPresenters.isEmpty
+    }
+
+    private func retainWithdrawingPresenter(_ presenter: any AIChatNativePermissionPresenting) {
+        guard presenter.isPresentingPermission,
+              !retiringPermissionPresenters.contains(where: { $0 === presenter }) else { return }
+        retiringPermissionPresenters.append(presenter)
+        presenter.withdrawActive { [weak self, presenter] in
+            self?.retiringPermissionPresenters.removeAll { $0 === presenter }
+        }
+    }
+
+    private func makePendingSurfaceAction(_ action: @escaping @MainActor () -> Void) -> @MainActor () -> Void {
+        cancelPendingSurfaceAction?()
+        var pendingAction: (@MainActor () -> Void)? = action
+        cancelPendingSurfaceAction = { pendingAction = nil }
+        return {
+            let action = pendingAction
+            pendingAction = nil
+            action?()
+        }
+    }
+
+    private func withdrawBrowserToolsPermission(includingCurrent: Bool = true, completion: @escaping @MainActor () -> Void) {
+        var presenters = retiringPermissionPresenters
+        if includingCurrent, let presenter = browserToolsPermissionPresenter,
+           !presenters.contains(where: { $0 === presenter }) {
+            presenters.append(presenter)
+        }
+        guard !presenters.isEmpty else { completion(); return }
+        var remaining = presenters.count
+        for presenter in presenters {
+            presenter.withdrawActive {
+                withExtendedLifetime(presenter) {
+                    remaining -= 1
+                    if remaining == 0 { completion() }
+                }
+            }
+        }
+    }
+
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false
+        browserToolsWebViewController?.browserToolsWillLeaveScreen()
         // A chat away with its tab reported leaving the screen when the tab left.
         if !isHandingOverToFloatingInput && !isAwayWithTab {
             delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
@@ -922,6 +1078,8 @@ final class AIChatContextualSheetCoordinator {
     // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
     // when adding side effects to handleSheetDismissed.
     func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
+        cancelPendingSurfaceAction?()
+        pendingParkSheetViewController = nil
         browserToolsWebViewController?.detachBrowserTools()
         browserToolsWebViewController = nil
         let sheetInSidebar = isSheetInSidebar ? sheetViewController : nil
@@ -1045,12 +1203,14 @@ private extension AIChatContextualSheetCoordinator {
     func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController,
                               from presentingVC: UIViewController,
                               focusingInput: Bool = false) {
-        guard parkedSheetViewController !== sheetVC else {
-            adaptSurface(toPresenter: presentingVC)
+        guard parkedSheetViewController !== sheetVC, pendingParkSheetViewController !== sheetVC else {
+            beginSurfacePresentation()
+            adaptSurface(toPresenter: presentingVC, animated: true, restoringExplicitly: true)
             return
         }
         if sheetVC.parent != nil {
             // Still in the sidebar, maybe sliding out, in which case the column turns back.
+            beginSurfacePresentation()
             sidebarHost?.presentContextualSidebar(sheetVC, animated: true, coversPage: true)
             return
         }
@@ -1105,6 +1265,10 @@ private extension AIChatContextualSheetCoordinator {
     func show(_ sheetVC: AIChatContextualSheetViewController,
               from presentingVC: UIViewController,
               in sidebarHost: AIChatContextualSidebarHosting?) {
+        beginSurfacePresentation()
+        if pendingParkSheetViewController === sheetVC {
+            pendingParkSheetViewController = nil
+        }
         self.sidebarHost = sidebarHost
         if let sidebarHost {
             sheetVC.prepareForSidebar()
@@ -1114,6 +1278,12 @@ private extension AIChatContextualSheetCoordinator {
             presentingVC.present(sheetVC, animated: true)
         }
         isSheetPresented = true
+    }
+
+    func beginSurfacePresentation() {
+        cancelPendingSurfaceAction?()
+        pendingSurfaceClose?.isCancelled = true
+        pendingSurfaceClose = nil
     }
 
     func sidebarHost(for presentingVC: UIViewController) -> AIChatContextualSidebarHosting? {
@@ -1393,6 +1563,14 @@ private extension AIChatContextualSheetCoordinator {
 
         webVC.browserToolsOwner = browserToolsOwner
         webVC.browserToolsService = browserToolsService
+        let permissionPresenter = makeBrowserToolsPermissionPresenter(for: webVC)
+        cancelPendingSurfaceAction?()
+        if let previousPresenter = browserToolsPermissionPresenter {
+            retainWithdrawingPresenter(previousPresenter)
+        }
+        browserToolsWebViewController?.browserToolsWillLeaveScreen()
+        browserToolsPermissionPresenter = permissionPresenter
+        webVC.browserToolsPermissionPresenter = permissionPresenter
         webVC.browserToolScopeFactory = browserToolScopeFactory
         browserToolsWebViewController = webVC
         webVC.setAttachedSelectionsProvider { [weak self] in
@@ -1406,6 +1584,21 @@ private extension AIChatContextualSheetCoordinator {
         }
 
         return webVC
+    }
+
+    private func makeBrowserToolsPermissionPresenter(for webVC: AIChatContextualWebViewController) -> AIChatNativePermissionPresenter {
+        AIChatNativePermissionPresenter { [weak self, weak webVC] in
+            guard let self, let webVC, self.browserToolsWebViewController === webVC,
+                  self.isSheetPresented, !self.hasParkedSurface, !self.isAwayWithTab,
+                  self.pendingSurfaceClose == nil, self.retiringPermissionPresenters.isEmpty, let sheet = self.sheetViewController else { return nil }
+            guard webVC.parent === sheet else { return nil }
+            if sheet.parent != nil {
+                guard self.sidebarHost?.isContextualSidebarShowing(sheet) == true else { return nil }
+            } else if sheet.presentingViewController == nil {
+                return nil
+            }
+            return sheet
+        }
     }
 
     var duckAiLastUsedModelProvider: DuckAiLastUsedModelProviding? {
@@ -1523,8 +1716,24 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
 extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerDelegate {
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestToLoad url: URL) {
+        guard hasActiveBrowserToolsPermission else {
+            loadURL(url, from: viewController)
+            return
+        }
+        guard sheetViewController === viewController else { return }
+        let load = makePendingSurfaceAction { [weak self, weak viewController] in
+            guard let self, let viewController, self.sheetViewController === viewController else { return }
+            self.loadURL(url, from: viewController)
+        }
+        pendingSurfaceClose = pendingSurfaceClose ?? PendingSurfaceClose()
+        browserToolsWebViewController?.browserToolsWillLeaveScreen()
+        withdrawBrowserToolsPermission(completion: load)
+    }
+
+    private func loadURL(_ url: URL, from viewController: AIChatContextualSheetViewController) {
         // The sheet recedes with the page under the new tab, instead of sliding away before it.
-        if isPresentedAsSheet(viewController), delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoadClosingSheet: url) == true {
+        if isPresentedAsSheet(viewController),
+           delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoadClosingSheet: url) == true {
             return
         }
         dismissSurface(of: viewController)

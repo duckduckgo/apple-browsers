@@ -736,8 +736,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
     case aiChatBrowserToolSearchBookmarks
 
-    /// Gates `requestAccess`: one prompt for the browser tools a Duck.ai chat expects to use. Spike.
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1220527012152895
+    /// Gates `requestAccess`: one prompt for the browser tools a Duck.ai chat expects to use.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolRequestAccess
 
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).

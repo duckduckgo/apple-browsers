@@ -138,7 +138,7 @@ final class AppLaunchUITests: UITestCase {
 
     func testReadinessRejectsMissingAndDisabledControlsWithoutTapping() {
         app.launch()
-        app.dismissAddressBarEditing()
+        app.dismissLaunchKeyboard()
         let missing = app.buttons["Readiness.Test.Missing"]
         XCTAssertFalse(missing.waitForHittableInAppWindow(in: app, timeout: 0.3))
 
@@ -158,6 +158,7 @@ final class AppLaunchUITests: UITestCase {
     func testReadinessInPortraitAndLandscape() {
         app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
         app.launch()
+        app.dismissLaunchKeyboard()
         defer { XCUIDevice.shared.orientation = .portrait }
         for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
             XCUIDevice.shared.orientation = orientation
@@ -368,7 +369,7 @@ final class AppLaunchUITests: UITestCase {
         ]
         app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
         app.launch()
-        app.dismissAddressBarEditing()
+        app.dismissLaunchKeyboard()
         let tabSwitcher = app.buttons["Browser.Toolbar.Button.TabSwitcher"]
         XCTAssertTrue(tabSwitcher.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation))
         tabSwitcher.press(forDuration: 1)

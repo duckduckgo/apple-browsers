@@ -1169,6 +1169,8 @@ final class SitePermissionsXCUITests: XCTestCase {
             "-ff.sitePermissions", String(flagEnabled),
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
+            // These tests don't cover the keyboard; keep the New Tab page's launch keyboard from covering the toolbar.
+            "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {

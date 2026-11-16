@@ -45,6 +45,7 @@ public final class BrowserToolInvoker {
         }
         let targetsOtherTab = request.input["tabId"]?.stringValue.map { $0 != context.ownerTabID } ?? false
         let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, targetsOtherTab: targetsOtherTab,
+                                                                  target: tool.permissionTarget(arguments: request.input, context: context),
                                                                   prompter: permissionPrompter)
         switch authorization {
         case .refused(.cancelled):

@@ -28,6 +28,9 @@ public protocol BrowserTool: AnyObject {
     /// The default when the user hasn't chosen one in the prompt or in settings.
     var permissionMode: BrowserToolPermissionMode { get }
 
+    /// A tool that changes the browser: it prompts on every call and a stored Always is ignored.
+    var asksEveryTime: Bool { get }
+
     var inputSchema: JSONValue { get }
 
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
@@ -37,10 +40,15 @@ public protocol BrowserTool: AnyObject {
     /// Shapes a successful `execute` value into this capability's client-tools result: only the
     /// contract's fields, within its limits.
     func clientToolResult(from value: JSONValue) -> BrowserToolResult
+
+    /// The exact address the call acts on, shown in its prompt.
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String?
 }
 
 public extension BrowserTool {
+    var asksEveryTime: Bool { false }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { nil }
 }
 
 public enum BrowserToolPermissionMode: String, Equatable, Sendable {

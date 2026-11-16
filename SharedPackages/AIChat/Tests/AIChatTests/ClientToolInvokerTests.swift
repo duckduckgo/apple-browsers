@@ -393,7 +393,7 @@ private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoo
         self.outcome = outcome
     }
 
-    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool,
+    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?,
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         calls.append((callID, tool, targetsOtherTab, prompter))
         guard outcome != "denied" else { return .refused(.denied) }

@@ -4465,6 +4465,12 @@ https://duckduckgo.com/mac";
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Delete All";
 
+/* Button to delete all Duck.ai chats in the Fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.chats.button" = "Delete All Chats";
+
+/* Title for the Fire confirmation dialog when only the delete-all-chats action is shown */
+"scoped.fire.confirmation.delete.all.chats.title" = "Delete all chats?";
+
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Delete Chats";
 
@@ -4488,6 +4494,9 @@ https://duckduckgo.com/mac";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
+
+/* Slider to delete all Duck.ai chats in the Fire confirmation dialog */
+"scoped.fire.confirmation.slide.to.delete.all.chats" = "Slide To Delete All Chats";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Search or enter address";

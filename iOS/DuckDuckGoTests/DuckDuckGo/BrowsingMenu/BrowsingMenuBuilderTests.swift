@@ -576,6 +576,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             MediaCaptureUserScript(),
             requestPermissionFor: [.camera],
             requestID: UUID().uuidString.replacingOccurrences(of: "-", with: "") + ":1",
+            topLevelOrigin: SitePermissionSecurityOrigin(URL(string: "https://example.com")!)!,
             in: frame,
             webView: sut.webView
         )

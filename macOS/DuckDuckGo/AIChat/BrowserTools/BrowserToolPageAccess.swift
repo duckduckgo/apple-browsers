@@ -111,48 +111,6 @@ enum BrowserToolTargetTab {
     }
 }
 
-/// Field limits from the client-tools contract, applied at the browser-tools boundary only.
-enum BrowserToolOutputLimits {
-    static let title = 256
-    static let url = 1280
-    static let content = 3000
-    static let snippet = 100
-    static let query = 1000
-
-    /// JSON Schema `maxLength` counts code points, so this cuts by Unicode scalar.
-    static func clip(_ value: String, to limit: Int) -> String {
-        guard value.unicodeScalars.count > limit else { return value }
-        return String(String.UnicodeScalarView(value.unicodeScalars.prefix(limit)))
-    }
-
-    /// Clips a string value and leaves anything else untouched.
-    static func clip(_ value: JSONValue?, to limit: Int) -> JSONValue? {
-        guard case .string(let text)? = value else { return value }
-        return .string(clip(text, to: limit))
-    }
-
-    static func fits(_ value: String, within limit: Int) -> Bool {
-        value.unicodeScalars.count <= limit
-    }
-
-    // Userinfo, query and fragment can hold credentials or tokens.
-    static func redactedURL(_ url: String) -> String {
-        var redacted = String(url[..<(url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex)])
-        if let scheme = redacted.range(of: "://") {
-            let authorityEnd = redacted[scheme.upperBound...].firstIndex(of: "/") ?? redacted.endIndex
-            if let at = redacted[scheme.upperBound..<authorityEnd].lastIndex(of: "@") {
-                redacted.removeSubrange(scheme.upperBound...at)
-            }
-        }
-        return clip(redacted, to: self.url)
-    }
-
-    static func redactedURL(_ value: JSONValue?) -> JSONValue? {
-        guard case .string(let text)? = value else { return value }
-        return .string(redactedURL(text))
-    }
-}
-
 /// Page text for the read and find tools, behind a seam so the tools are testable without a web view.
 @MainActor
 protocol BrowserToolPageContentReading: AnyObject {

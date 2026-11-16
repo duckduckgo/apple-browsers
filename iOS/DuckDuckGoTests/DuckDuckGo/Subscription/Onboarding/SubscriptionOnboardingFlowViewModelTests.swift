@@ -374,6 +374,17 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertTrue(spy.skipped.isEmpty)
     }
 
+    func testWhenAnOverviewOrProgressSectionCompletesThenItIsReportedCompleted() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+
+        sut.sectionDidComplete(.orderConfirmation)
+        sut.sectionDidComplete(.welcome)
+        sut.sectionDidComplete(.progress)
+
+        XCTAssertEqual(spy.completed, [.orderConfirmation, .welcome, .progress])
+    }
+
     /// Re-entering an already-completed activation section (e.g. via a navigation quirk) must not re-fire the
     /// completion pixel.
     func testWhenAnAlreadyCompletedSectionCompletesAgainThenItIsNotReportedTwice() {

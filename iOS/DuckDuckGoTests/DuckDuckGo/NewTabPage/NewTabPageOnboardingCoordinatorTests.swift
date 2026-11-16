@@ -256,6 +256,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         var isAvailable: Bool = false
         var isToggleHiddenOnDuckAITab: Bool { false }
         var isAttachmentPasteEnabled: Bool { false }
+        var isFullTabChatInputAvailable: Bool { false }
     }
 
     private final class DialogFactory: NewTabDaxDialogProviding {

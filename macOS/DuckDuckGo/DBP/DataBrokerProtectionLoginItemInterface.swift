@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
@@ -149,6 +150,9 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
     }
 
     func startAssistedOptOut(id: String) {
+        if #available(macOS 14.0, *) {
+            NSApp.yieldActivation(toApplicationWithBundleIdentifier: Bundle.main.dbpBackgroundAgentBundleId)
+        }
         ipcClient.startAssistedOptOut(id: id)
     }
 }

@@ -33,7 +33,7 @@ struct AssistedOptOutWindowTests {
         advance(session, to: phase)
         let window = makeOffscreenWindow()
         var confirmations = 0
-        let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {},
+        let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {}, activateApplication: {},
                                                        makeWindow: { window }, loadFavicon: { _ in nil },
                                                        confirmStop: { _, _, completion in
             confirmations += 1
@@ -70,7 +70,7 @@ struct AssistedOptOutWindowTests {
         let session = makeSession()
         advance(session, to: .agentInControl)
         let window = makeOffscreenWindow()
-        let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {},
+        let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {}, activateApplication: {},
                                                        makeWindow: { window }, loadFavicon: { _ in nil },
                                                        confirmStop: { _, _, completion in completion(false) })
         defer { presenter.dismiss(session) }
@@ -92,7 +92,7 @@ struct AssistedOptOutWindowTests {
         var windowCount = 0
         var beginCount = 0
         session.onBeginRequested = { _ in beginCount += 1 }
-        let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {}, makeWindow: {
+        let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {}, activateApplication: {}, makeWindow: {
             windowCount += 1
             return window
         }, loadFavicon: { _ in nil })
@@ -126,25 +126,28 @@ struct AssistedOptOutWindowTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func inactiveUserTurnRequestsAttentionWithoutRequestingKeyWindow() {
+    func openingActivatesAgentButInactiveUserTurnOnlyRequestsAttention() {
         let session = makeSession()
         let window = makeOffscreenWindow()
         var active = false
         var attentionRequests = 0
+        var activations = 0
         let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { active }, requestUserAttention: { attentionRequests += 1 },
+                                                       activateApplication: { activations += 1 },
                                                        makeWindow: { window }, loadFavicon: { _ in nil })
         defer { presenter.dismiss(session) }
-        let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
         presenter.present(session)
+        #expect(activations == 1)
+        #expect(window.keyRequests == 1)
         presenter.userTurnStarted(in: session)
+        #expect(activations == 1)
         #expect(attentionRequests == 1)
-        #expect(window.keyRequests == 0)
-        #expect(!window.isKeyWindow)
-        #expect(NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostPID)
+        #expect(window.keyRequests == 1)
         active = true
         presenter.userTurnStarted(in: session)
-        #expect(window.keyRequests == 1)
+        #expect(window.keyRequests == 2)
         #expect(attentionRequests == 1)
+        #expect(activations == 1)
     }
 
     @available(iOS 16, macOS 13, *)

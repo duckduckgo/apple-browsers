@@ -63,7 +63,7 @@ final class KeyboardSettingsUITests: UITestCase {
         let menu = app.descendants(matching: .any)["Browser.Toolbar.Button.Menu"]
         XCTAssertTrue(menu.waitForExistence(timeout: timeout))
         // Launch lands on the New Tab page, which raises the keyboard over the toolbar.
-        app.dismissAddressBarEditing()
+        app.dismissLaunchKeyboard()
         menu.tap()
         let settings = app.buttons["Settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: timeout))

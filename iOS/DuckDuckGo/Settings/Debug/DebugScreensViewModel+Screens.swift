@@ -190,6 +190,9 @@ extension DebugScreensViewModel {
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
+            .view(title: "Translation Models", { d in
+                TranslationModelsDebugView(models: d.translationModels)
+            }),
             .view(title: "Prompt Coordination", { d in
                 PromptCoordinationDebugView(
                     diagnosticsProvider: d.promoCoordinationDiagnosticsProvider,

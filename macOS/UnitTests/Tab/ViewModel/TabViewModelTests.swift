@@ -239,6 +239,23 @@ final class TabViewModelTests: XCTestCase {
         XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
     }
 
+    /// An opaque-origin (sandboxed) frame opens its child Tab with an empty Security Origin, the same
+    /// as a Tab opened from the UI; having a parent Tab is what tells them apart.
+    @MainActor
+    func testWhenOpaqueOriginFrameOpensSubscriptionInChildTabThenTrustedIndicatorIsNotDisplayedUntilSecurityOriginMatches() {
+        let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        let parentTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        let tab = Tab(content: .subscription(subscriptionURL), parentTab: parentTab)
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+        XCTAssertTrue(tab.securityOrigin.isEmpty)
+
+        XCTAssertFalse(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+
+        tabViewModel.simulateLoadingCompletion(subscriptionURL, in: tab.webView)
+
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+    }
+
     // MARK: - Title
 
     @MainActor

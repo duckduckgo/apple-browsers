@@ -1109,8 +1109,6 @@ final class SitePermissionsXCUITests: XCTestCase {
             "-isOnboardingCompleted", "true",
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
-            // The app-open keyboard can cover the toolbar, including the Tab Switcher.
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {

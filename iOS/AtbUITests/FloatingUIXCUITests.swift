@@ -1405,7 +1405,6 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-ff.newTabPageRedesign", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",

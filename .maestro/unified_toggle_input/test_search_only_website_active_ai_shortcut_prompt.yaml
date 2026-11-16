@@ -15,7 +15,6 @@ name: test_search_only_website_active_ai_shortcut_prompt
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.aiChatTabHandoffImprovements: "true"
         ff.contextualDuckAIMode: "true"

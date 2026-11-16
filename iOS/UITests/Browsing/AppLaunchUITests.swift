@@ -361,9 +361,6 @@ final class AppLaunchUITests: UITestCase {
 
         app.launchArguments += [
             "-ff.fireMode", "true",
-            // The launch keyboard covers the tab switcher button, so the tap would race it.
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
-            "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
         ]
         app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
         app.launch()

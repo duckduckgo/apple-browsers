@@ -263,6 +263,18 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "old")
     }
 
+    func testPollingAvailabilityMatchesThePersistedAccountWithoutInitializingSync() throws {
+        let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
+
+        XCTAssertTrue(try service.isAuditLogPollingAvailable(forAccountID: SyncAccount.mock.userId))
+        XCTAssertFalse(try service.isAuditLogPollingAvailable(forAccountID: "another-account"))
+        XCTAssertEqual(service.authState, .initializing)
+        XCTAssertEqual(source.makeDataProvidersCallCount, 0)
+
+        (dependencies.secureStore as! SecureStorageStub).theAccount = nil
+        XCTAssertFalse(try service.isAuditLogPollingAvailable(forAccountID: SyncAccount.mock.userId))
+    }
+
     func testPollingDoesNotRequireEngineInitialization() async throws {
         let service = DDGSync(dataProvidersSource: source, dependencies: dependencies)
         XCTAssertTrue(try service.isAuditLogPollingAvailable())
@@ -316,6 +328,9 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         let secureStore = dependencies.secureStore as! SecureStorageStub
         try store.set("old", forKey: cursorKey)
         secureStore.mockReadError = .failedToReadSecureStore(status: -25308)
+        XCTAssertThrowsError(try service.isAuditLogPollingAvailable(forAccountID: SyncAccount.mock.userId)) { error in
+            guard case SyncError.failedToReadSecureStore = error else { return XCTFail("Unexpected error: \(error)") }
+        }
         do {
             _ = try await service.pollAuditLog()
             XCTFail("Expected the keychain error")

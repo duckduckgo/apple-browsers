@@ -713,8 +713,9 @@ public class DDGSync: DDGSyncing {
         return try await auditLogPoller?.pollIfNeeded(for: account) ?? false
     }
 
-    public func isAuditLogPollingAvailable() throws -> Bool {
-        try accountForAuditLogPolling() != nil
+    public func isAuditLogPollingAvailable(forAccountID accountID: String? = nil) throws -> Bool {
+        guard let account = try accountForAuditLogPolling() else { return false }
+        return accountID == nil || account.userId == accountID
     }
 
     private func accountForAuditLogPolling() throws -> SyncAccount? {

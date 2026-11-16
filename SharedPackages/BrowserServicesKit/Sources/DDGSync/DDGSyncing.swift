@@ -248,8 +248,9 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
 
     /**
      Returns whether persisted account state and current flags allow audit polling, independently of engine readiness.
+     If an account ID is supplied, the stored account must also match it.
      */
-    func isAuditLogPollingAvailable() throws -> Bool
+    func isAuditLogPollingAvailable(forAccountID accountID: String?) throws -> Bool
 
     /**
      Creates a reader bound to the current account for one Device Activity screen visit.

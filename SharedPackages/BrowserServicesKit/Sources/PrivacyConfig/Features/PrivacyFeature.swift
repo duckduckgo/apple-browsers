@@ -227,12 +227,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
-    /// Allows browsing before completing onboarding.
-    case onboardingAsync
-
-    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlockingV2
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 

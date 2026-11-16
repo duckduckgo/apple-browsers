@@ -69,8 +69,7 @@ extension SpecialPagesUserScript {
             pinningManager: NSApp.delegateTyped.pinningManager,
             featureFlagger: NSApp.delegateTyped.featureFlagger,
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: NSApp.delegateTyped.keyValueStore),
-            installDateProvider: { AppDelegate.firstLaunchDate },
-            contextualOnboardingStateUpdater: Application.appDelegate.onboardingContextualDialogsManager
+            installDateProvider: { AppDelegate.firstLaunchDate }
         )
     }
 }

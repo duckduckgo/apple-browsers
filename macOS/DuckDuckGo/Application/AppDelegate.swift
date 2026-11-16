@@ -407,18 +407,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     var isOnboardingReadyForPrompts: Bool {
-        guard onboardingContextualDialogsManager.state == .onboardingCompleted else { return false }
-        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-            let isActiveTabOnboarding = windowControllersManager.lastKeyMainWindowController?.activeTab?.content == .onboarding
-            return !isActiveTabOnboarding
-        }
-        return OnboardingActionsManager.isOnboardingFinished
+        OnboardingActionsManager.isOnboardingFinished && onboardingContextualDialogsManager.state == .onboardingCompleted
     }
 
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
-    private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnService: UserChurnService
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
@@ -1300,8 +1294,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
-            ),
-            isNonBlocking: { [featureFlagger] in NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking }
+            )
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1722,16 +1715,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
         self.subscriptionPromoDelegate = subscriptionPromoDelegate
-        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
         let dependencies = PromoDependencies(
             keyValueStore: keyValueStore,
             isExternallyActivated: urlEventHandlerResult.willOpenWindows,
             isNewUserProvider: { AppDelegate.isNewUser },
-            isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
-                NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
-                ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
-                : OnboardingActionsManager.isOnboardingFinished
-            },
+            isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             userChurnService: userChurnService,
@@ -1958,9 +1946,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
-        if defaultBrowserPreferences.isDefault {
-            onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
-        }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
     }
 
@@ -2076,12 +2061,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
-                isOnboardingFinished: { [weak self, featureFlagger] in
-                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-                        return self?.isOnboardingReadyForPrompts == true
-                    }
-                    return OnboardingActionsManager.isOnboardingFinished
-                }
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
             )
         } else {
             assert(buildType.isSparkleBuild)
@@ -2112,12 +2092,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 },
                 wideEvent: wideEvent,
-                isOnboardingFinished: { [weak self, featureFlagger] in
-                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-                        return self?.isOnboardingReadyForPrompts == true
-                    }
-                    return OnboardingActionsManager.isOnboardingFinished
-                },
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
                 openUpdatesPage: { [windowControllersManager] in
                     windowControllersManager.showTab(with: .releaseNotes)
                 }
@@ -2241,8 +2216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
 
             // 9. Close windows before quitting while waiting for ⌘Q release
-            .perform { [windowControllersManager] in
-                windowControllersManager.setOnboardingTab(nil)
+            .perform {
                 NSApp.visibleWindows.forEach { $0.close() }
             }
         ]

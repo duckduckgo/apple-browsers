@@ -39,9 +39,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
 
-    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlocking
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
@@ -712,9 +709,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolHighlightInPage
 
-    /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
-    case onboardingAsync
-
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
@@ -734,12 +728,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    /// Cohorts for the non-blocking onboarding experiment
-    public enum OnboardingNonBlockingCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -786,8 +774,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
-        case .onboardingNonBlocking:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlockingV2), cohortType: OnboardingNonBlockingCohort.self)
         case .onboardingSearchOrChat:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
         case .onboardingSubscriptionUpsell:
@@ -1175,8 +1161,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatBrowserToolHighlightInPage:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.highlightInPage), category: .duckAI)
 
-        case .onboardingAsync:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         case .aiChatLimitExtensionPromo:

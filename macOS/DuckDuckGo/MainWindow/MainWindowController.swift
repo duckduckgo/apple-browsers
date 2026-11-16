@@ -168,41 +168,14 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
-    /// Automation runs and overridden onboarding would enrol without being real first runs.
-    private var isEligibleForNonBlockingExperiment: Bool {
-        let launchOptions = LaunchOptionsHandler()
-        guard !launchOptions.isAutomationSession,
-              case .notOverridden = launchOptions.onboardingStatus else { return false }
-        return true
-    }
-
     private func startOnboardingIfNeeded() {
         guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
             return
         }
 
-        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
-        if isEligibleForNonBlockingExperiment {
-            experiment?.enroll()
-        }
-        let isNonBlocking = experiment?.isNonBlocking == true
-        if isNonBlocking, windowControllersManager?.hasOnboardingTab == true {
-            return
-        }
-
         selectedTab.startOnboarding()
-        configureOnboardingInteraction(for: selectedTab, isNonBlocking: isNonBlocking)
-    }
-
-    private func configureOnboardingInteraction(for tab: Tab, isNonBlocking: Bool) {
-        if isNonBlocking {
-            // Track the source before selection can change or the page can be closed.
-            windowControllersManager?.setOnboardingTab(tab)
-            tab.onboardingActionsManager?.installNonBlockingHandlers()
-        } else {
-            // Lock immediately to avoid flicker while the onboarding script loads.
-            userInteraction(prevented: true)
-        }
+        // Lock immediately to avoid flicker while the onboarding script loads.
+        userInteraction(prevented: true)
     }
 
     private func subscribeToResolutionChange() {

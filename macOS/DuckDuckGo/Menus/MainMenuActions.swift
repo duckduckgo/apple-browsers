@@ -848,7 +848,6 @@ extension AppDelegate {
 
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        NonBlockingOnboardingPersistor().reset()
     }
 
     @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {
@@ -2176,7 +2175,7 @@ extension AppDelegate: NSMenuItemValidation {
 
     @MainActor
     private var isUserInteractionAllowed: Bool {
-        OnboardingActionsManager.isOnboardingFinished || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
+        OnboardingActionsManager.isOnboardingFinished
     }
 
     private var areTherePasswords: Bool {

@@ -1,5 +1,5 @@
 //
-//  PreferencesVideoSheet.swift
+//  AddToDockVideoSheet.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -24,41 +24,38 @@ import FoundationExtensions
 import os.log
 import SwiftUI
 
-extension Preferences {
+struct AddToDockVideoSheet: View {
 
-    struct PreferencesVideoSheet: View {
+    let videoURL: URL
+    /// Video size used to calculate aspect ratio for the player view.
+    let videoSize: CGSize
 
-        let videoURL: URL
-        /// Video size used to calculate aspect ratio for the player view.
-        let videoSize: CGSize
+    @Binding var isPresented: Bool
+    @StateObject private var coordinator = VideoPlayerCoordinator()
 
-        @Binding var isPresented: Bool
-        @StateObject private var coordinator = VideoPlayerCoordinator()
+    var body: some View {
+        VStack(spacing: 16) {
+            VideoPlayerView(player: coordinator.queuePlayer)
+                .aspectRatio(videoSize.width / videoSize.height, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: Preferences.Const.paneContentWidth)
 
-        var body: some View {
-            VStack(spacing: 16) {
-                VideoPlayerView(player: coordinator.queuePlayer)
-                    .aspectRatio(videoSize.width / videoSize.height, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: Preferences.Const.paneContentWidth)
-
-                HStack {
-                    Spacer()
-                    Button(UserText.doneDialog) {
-                        isPresented = false
-                    }
-                    .keyboardShortcut(.defaultAction)
+            HStack {
+                Spacer()
+                Button(UserText.doneDialog) {
+                    isPresented = false
                 }
+                .keyboardShortcut(.defaultAction)
             }
-            .padding()
-            .frame(maxWidth: Preferences.Const.paneContentWidth)
-            .fixedSize(horizontal: false, vertical: true)
-            .onAppear {
-                coordinator.loadVideoAsset(url: videoURL)
-            }
-            .onDisappear {
-                coordinator.stop()
-            }
+        }
+        .padding()
+        .frame(maxWidth: Preferences.Const.paneContentWidth)
+        .fixedSize(horizontal: false, vertical: true)
+        .onAppear {
+            coordinator.loadVideoAsset(url: videoURL)
+        }
+        .onDisappear {
+            coordinator.stop()
         }
     }
 }

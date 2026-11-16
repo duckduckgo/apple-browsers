@@ -125,4 +125,38 @@ final class SimplifiedSyncSettingsViewTests {
         )
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("New-device activity appears above notification permissions", .timeLimit(.minutes(1)))
+    func testNewDeviceAndPermissionCardsSnapshot() async {
+        let provider = MockSyncNotificationSettingsProvider(status: .provisional)
+        let notificationModel = SyncNotificationSettingsViewModel(provider: provider)
+        await notificationModel.refresh()
+        let activityModel = DeviceActivityViewModel(accountIdentifier: { "snapshot-account" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        })
+        let model = SyncSettingsViewModel.preview(isSyncEnabled: true,
+                                                 devices: [.thisDevice, .desktop, .otherMobile],
+                                                 autoRestoreProvider: .enabled,
+                                                 deviceActivityViewModel: activityModel,
+                                                 notificationSettingsViewModel: notificationModel)
+        model.isDeviceActivityAvailable = true
+        model.areSyncNotificationsAvailable = true
+        model.pendingLoginEvents = [.init(id: "new-device", deviceName: "Dave’s iPhone")]
+        let configurations = SnapshotDevice.defaultIOSDevices.flatMap { device in
+            SnapshotAppearance.allCases.map { appearance in
+                SnapshotImageConfiguration(appearance: appearance, device: device,
+                                           size: CGSize(width: device.size.width, height: 1800))
+            }
+        }
+        assertImageSnapshot(
+            matching: NavigationStack {
+                SimplifiedSyncSettingsView(model: model)
+                    .navigationBarTitleDisplayMode(.inline)
+            },
+            strategy: .custom(configurations),
+            size: .screen,
+            testName: "testNewDeviceAndPermissionCardsSnapshot"
+        )
+    }
+
 }

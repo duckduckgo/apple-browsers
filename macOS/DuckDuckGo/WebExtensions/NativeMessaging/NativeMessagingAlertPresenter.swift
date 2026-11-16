@@ -26,6 +26,9 @@ import WebKit
 @MainActor
 protocol NativeMessagingAlertPresenterProtocol {
     func explain(_ context: WKWebExtensionContext) async
+    /// Only for extensions that require native messaging, such as 1Password. Those that request it at runtime,
+    /// such as Bitwarden, still work without it, so they're told when they ask.
+    func explainOnActionClick(_ context: WKWebExtensionContext) async
 }
 
 @available(macOS 15.4, *)
@@ -59,5 +62,10 @@ final class NativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
         case .confirmed(isChecked: false), .cancelled:
             break
         }
+    }
+
+    func explainOnActionClick(_ context: WKWebExtensionContext) async {
+        guard context.webExtension.requestedPermissions.contains(.nativeMessaging) else { return }
+        await explain(context)
     }
 }

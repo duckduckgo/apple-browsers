@@ -92,27 +92,48 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         XCTAssertTrue(alertPresenter.presentedConfigurations.isEmpty)
     }
 
+    func testWhenTheActionIsClickedThenOnlyExtensionsThatRequireNativeMessagingShowTheAlert() async throws {
+        let onePassword = try await limitedContext(named: "1Password", nativeMessaging: .required)
+        let bitwarden = try await limitedContext(named: "Bitwarden", nativeMessaging: .optional)
+
+        await presenter.explainOnActionClick(onePassword)
+        await presenter.explainOnActionClick(bitwarden)
+
+        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), ["1Password can’t connect to apps on your Mac"])
+    }
+
     private func explain(_ contexts: WKWebExtensionContext...) async {
         for context in contexts {
             await presenter.explain(context)
         }
     }
 
-    private func limitedContext(named name: String) async throws -> WKWebExtensionContext {
-        let context = try await makeContext(named: name)
+    private func limitedContext(named name: String, nativeMessaging: NativeMessagingPermission? = nil) async throws -> WKWebExtensionContext {
+        let context = try await makeContext(named: name, nativeMessaging: nativeMessaging)
         limitation.limited.insert(context.uniqueIdentifier)
         return context
     }
 
-    private func makeContext(named name: String) async throws -> WKWebExtensionContext {
+    private func makeContext(named name: String, nativeMessaging: NativeMessagingPermission? = nil) async throws -> WKWebExtensionContext {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         addTeardownBlock { try FileManager.default.removeItem(at: directory) }
-        try Data("{\"manifest_version\":3,\"name\":\"\(name)\",\"version\":\"1.0\"}".utf8).write(to: directory.appendingPathComponent("manifest.json"))
+        let manifest: [String: Any] = [
+            "manifest_version": 3,
+            "name": name,
+            "version": "1.0",
+            nativeMessaging?.rawValue ?? "permissions": nativeMessaging == nil ? [] : ["nativeMessaging"],
+        ]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: directory.appendingPathComponent("manifest.json"))
         let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
         context.uniqueIdentifier = UUID().uuidString
         return context
     }
+}
+
+private enum NativeMessagingPermission: String {
+    case required = "permissions"
+    case optional = "optional_permissions"
 }
 
 @MainActor

@@ -71,4 +71,6 @@ private final class NativeMessagingAlertPresenterMock: NativeMessagingAlertPrese
     func explain(_ context: WKWebExtensionContext) async {
         explainedIdentifiers.append(context.uniqueIdentifier)
     }
+
+    func explainOnActionClick(_ context: WKWebExtensionContext) async {}
 }

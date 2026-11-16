@@ -325,7 +325,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         context.performAction(for: selectedTab)
         if let nativeMessagingAlertPresenter {
             Task { @MainActor in
-                await nativeMessagingAlertPresenter.explain(context)
+                await nativeMessagingAlertPresenter.explainOnActionClick(context)
             }
         }
     }

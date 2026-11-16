@@ -144,7 +144,7 @@ final class SwipeChromeCrossFade {
     let leavesNewTabPage: Bool
     private weak var outgoingToolbar: BrowserToolbarView?
     private weak var incomingToolbar: BrowserToolbarView?
-    private var capturedInsets: (outgoing: CGFloat, incoming: CGFloat)?
+    private var capturedInsets: (outgoing: UIEdgeInsets, incoming: UIEdgeInsets)?
 
     init(leavesNewTabPage: Bool) {
         self.leavesNewTabPage = leavesNewTabPage
@@ -174,12 +174,13 @@ final class SwipeChromeCrossFade {
 
     private func blendInsets(progress: CGFloat) {
         guard let outgoingToolbar, let incomingToolbar else { return }
-        let insets = capturedInsets ?? (outgoing: outgoingToolbar.restingHorizontalOuterInset,
-                                        incoming: incomingToolbar.restingHorizontalOuterInset)
+        let insets = capturedInsets ?? (outgoing: outgoingToolbar.restingHorizontalOuterInsets,
+                                        incoming: incomingToolbar.restingHorizontalOuterInsets)
         capturedInsets = insets
-        let blendedInset = insets.outgoing + (insets.incoming - insets.outgoing) * progress
-        outgoingToolbar.setHorizontalOuterInsetsOverride((left: blendedInset, right: blendedInset))
-        incomingToolbar.setHorizontalOuterInsetsOverride((left: blendedInset, right: blendedInset))
+        let left = insets.outgoing.left + (insets.incoming.left - insets.outgoing.left) * progress
+        let right = insets.outgoing.right + (insets.incoming.right - insets.outgoing.right) * progress
+        outgoingToolbar.setHorizontalOuterInsetsOverride((left: left, right: right))
+        incomingToolbar.setHorizontalOuterInsetsOverride((left: left, right: right))
     }
 }
 
@@ -932,10 +933,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     private func addNewTabPageToolbarCopy(for tab: Tab?, to container: UIView, isCompact: Bool) -> BrowserToolbarView {
         let toolbar = makeReadOnlyToolbar(for: tab)
         toolbar.usesRedesignedNewTabPageLayout = true
+        toolbar.setCompactStandaloneHeight(isCompact)
         if !isSwipeChromeRefinementsEnabled {
             pinToLiveSideInsets(toolbar)
         }
-        toolbar.setCompactStandaloneHeight(isCompact)
         let height = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: true, isCompact: isCompact)
         toolbar.frame = CGRect(x: 0,
                                y: liveToolbarBottomEdge(in: container) - height,
@@ -997,9 +998,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     private func pinToLiveSideInsets(_ toolbar: BrowserToolbarView) {
         // A copy parked off screen resolves the camera cutout from where it is rather than from where it
         // will land, so its own inset would differ from the live toolbar it hands over to.
-        guard #available(iOS 26.0, *) else { return }
-        let insets = BrowserToolbarView.floatingStandaloneOuterInsets(in: coordinator.superview)
-        toolbar.setHorizontalOuterInsetsOverride((left: insets.left, right: insets.right))
+        let host = coordinator.superview
+        let frame = toolbar.restingCapsuleFrame(in: host)
+        guard !frame.isEmpty else { return }
+        toolbar.setHorizontalOuterInsetsOverride((left: frame.minX - host.bounds.minX, right: host.bounds.maxX - frame.maxX))
     }
 
     private func makeReadOnlyToolbar(for tab: Tab?) -> BrowserToolbarView {
@@ -1011,6 +1013,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         toolbar.setFloatingStyleEnabled(true)
         toolbar.isUserInteractionEnabled = false
         let showsNewTabPage = tab?.link == nil
+        toolbar.centersNewTabPageChrome = showsNewTabPage
         let sourceViews = coordinator.toolbarHandler.toolbarButtonViews(showsNewTabPage: showsNewTabPage)
         let buttons = sourceViews.map { sourceView in
             makeReadOnlyButton(from: sourceView, isEnabled: isToolbarButtonEnabled(sourceView, for: tab))

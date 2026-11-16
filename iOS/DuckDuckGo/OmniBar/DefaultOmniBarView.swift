@@ -77,6 +77,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var searchAreaPreferredHeightConstraint: NSLayoutConstraint?
     private var stackViewLeadingConstraint: NSLayoutConstraint?
     private var stackViewTrailingConstraint: NSLayoutConstraint?
+    private let horizontalContentGuide = UILayoutGuide()
+    private var horizontalContentConstraints: [NSLayoutConstraint] = []
     private var compactSearchAreaAlignmentConstraints: [NSLayoutConstraint] = []
 
     let fieldContainerLayoutGuide = UILayoutGuide()
@@ -201,10 +203,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         set { searchAreaView.dismissButtonView.isHidden = newValue }
     }
 
-    /// When true, `safeAreaInsets` returns `.zero` because the parent container
-    /// (e.g. `OmniBarCell`) already accounts for safe area via its own layout guide constraints.
-    /// This prevents the system-calculated insets from shifting during horizontal scrolling.
-    var safeAreaManagedByContainer = false
+    /// The parent container has already positioned the omnibar clear of system UI.
+    var safeAreaManagedByContainer = false {
+        didSet {
+            guard oldValue != safeAreaManagedByContainer else { return }
+            updateHorizontalContentGuide()
+        }
+    }
 
     override var safeAreaInsets: UIEdgeInsets {
         safeAreaManagedByContainer ? .zero : super.safeAreaInsets
@@ -265,9 +270,24 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
         trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
         stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
-        stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
-        stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
+        updateHorizontalSpacing()
         updateVerticalSpacing()
+    }
+
+    private func updateHorizontalSpacing() {
+        let isExpandedPhone = layoutMode == .expandedPhone
+        var leading = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
+        var trailing = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.trailing : Metrics.textAreaHorizontalPadding
+        if isFloatingUIEnabled && isExpandedPhone {
+            // Keep the floating button groups clear of the window edges without adding to a system inset.
+            let insets = safeAreaManagedByContainer ? (superview?.safeAreaInsets ?? .zero) : safeAreaInsets
+            let isRightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
+            let minimum = Metrics.textAreaHorizontalPadding
+            leading = max(leading, minimum - (isRightToLeft ? insets.right : insets.left))
+            trailing = max(trailing, minimum - (isRightToLeft ? insets.left : insets.right))
+        }
+        if stackViewLeadingConstraint?.constant != leading { stackViewLeadingConstraint?.constant = leading }
+        if stackViewTrailingConstraint?.constant != -trailing { stackViewTrailingConstraint?.constant = -trailing }
     }
 
     var isUsingSmallTopSpacing: Bool = false {
@@ -1153,6 +1173,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func setUpConstraints() {
+        addLayoutGuide(horizontalContentGuide)
+        updateHorizontalContentGuide()
 
         let readableSearchAreaWidth = searchAreaContainerView.widthAnchor.constraint(equalTo: readableContentGuide.widthAnchor)
         readableSearchAreaWidth.priority = .init(999)
@@ -1171,8 +1193,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaContainerView.translatesAutoresizingMaskIntoConstraints = false
 
-        let leadingConstraint = stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding)
-        let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
+        let leadingConstraint = stackView.leadingAnchor.constraint(equalTo: horizontalContentGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding)
+        let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: horizontalContentGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
         stackViewLeadingConstraint = leadingConstraint
         stackViewTrailingConstraint = trailingConstraint
         if isFloatingUIEnabled {
@@ -1211,7 +1233,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaView.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
             searchAreaView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
 
-            searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            searchAreaContainerView.centerXAnchor.constraint(equalTo: horizontalContentGuide.centerXAnchor),
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
             activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth),
@@ -1257,6 +1279,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
 
         setUpExpandedSearchAreaConstraints()
+    }
+
+    private func updateHorizontalContentGuide() {
+        let leading = safeAreaManagedByContainer ? leadingAnchor : safeAreaLayoutGuide.leadingAnchor
+        let trailing = safeAreaManagedByContainer ? trailingAnchor : safeAreaLayoutGuide.trailingAnchor
+        NSLayoutConstraint.deactivate(horizontalContentConstraints)
+        horizontalContentConstraints = [
+            horizontalContentGuide.leadingAnchor.constraint(equalTo: leading),
+            horizontalContentGuide.trailingAnchor.constraint(equalTo: trailing),
+        ]
+        NSLayoutConstraint.activate(horizontalContentConstraints)
     }
 
     private func setUpProperties() {
@@ -1346,6 +1379,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     override func layoutSubviews() {
+        updateHorizontalSpacing()
         super.layoutSubviews()
         applyOmnibarCornerStyle()
         updateMaskLayer()

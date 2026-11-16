@@ -40,6 +40,7 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var escapeHatch: EscapeHatchModel?
     @Published var focusedContent: LegacyFocusedNewTabPageContent?
     @Published var focusedContentTopInset: CGFloat = 0
+    @Published var logoPosition: NewTabPageLogoPosition?
     /// The focused logo's frame behind the escape hatch; the hatch blurs it only where they overlap.
     @Published var focusedLogoFrame: CGRect?
     var onFocusedEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?

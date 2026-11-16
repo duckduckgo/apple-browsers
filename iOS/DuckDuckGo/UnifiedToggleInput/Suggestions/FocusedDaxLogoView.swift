@@ -19,6 +19,7 @@
 
 import Lottie
 import SwiftUI
+import UIKit
 
 /// The focused-omnibar empty-state logo, morphing Dax ↔ Duck.ai via a bound `progress`
 /// (0 = Dax/search, 1 = Duck.ai). Renders through the same Lottie asset as `NewTabPageDaxLogoView`
@@ -81,6 +82,7 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
     var centerY: CGFloat
     var viewport: CGRect
     let hatchFrame: CGRect?
+    private let centerX: CGFloat?
     private let fitsAtDestination: Bool
     private let followsHatch: Bool
     private let destinationCenterY: CGFloat
@@ -89,7 +91,8 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
     var animatesVisibility = true
 
     init(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?, destinationHatchFrame: CGRect?, fitsMargins: Bool = true,
-         followsHatch: Bool = false) {
+         followsHatch: Bool = false, centerX: CGFloat? = nil) {
+        self.centerX = centerX
         self.centerY = centerY
         self.viewport = viewport
         self.hatchFrame = hatchFrame
@@ -97,7 +100,8 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
         self.destinationViewport = viewport
         self.followsHatch = followsHatch
         // A logo squeezed between the hatch and the keyboard/input bar does not fit, even without overlap.
-        fitsAtDestination = fitsMargins && Self.fits(centerY: centerY, viewport: viewport, hatchFrame: destinationHatchFrame)
+        fitsAtDestination = fitsMargins && Self.fits(centerX: centerX ?? viewport.midX, centerY: centerY,
+                                                     viewport: viewport, hatchFrame: destinationHatchFrame)
     }
 
     var animatableData: AnimatablePair<CGFloat, CGRect.AnimatableData> {
@@ -120,12 +124,13 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
     var visibleFrame: CGRect? {
         guard fitsAtDestination else { return nil }
         let size = FocusedDaxLogoView.size
-        return CGRect(x: destinationViewport.midX - size.width / 2, y: destinationCenterY - size.height / 2,
+        return CGRect(x: (centerX ?? destinationViewport.midX) - size.width / 2, y: destinationCenterY - size.height / 2,
                       width: size.width, height: size.height)
     }
 
     var isVisible: Bool {
-        fitsAtDestination && Self.fits(centerY: displayedCenterY, viewport: viewport, hatchFrame: hatchFrame)
+        fitsAtDestination && Self.fits(centerX: centerX ?? viewport.midX, centerY: displayedCenterY,
+                                       viewport: viewport, hatchFrame: hatchFrame)
     }
 
     /// A logo below a hatch it follows never gets ahead of it, as the two animate at different speeds.
@@ -134,31 +139,50 @@ struct EscapeHatchLogoLayout: AnimatableModifier {
         return max(centerY, hatchFrame.maxY + FocusedDaxLogoView.size.height / 2)
     }
 
-    private static func fits(centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?) -> Bool {
+    private static func fits(centerX: CGFloat, centerY: CGFloat, viewport: CGRect, hatchFrame: CGRect?) -> Bool {
         guard let hatchFrame, !viewport.isEmpty else { return false }
         let size = FocusedDaxLogoView.size
         // Half a point absorbs the rounding left when the logo is placed exactly against the hatch.
-        let logoFrame = CGRect(x: viewport.midX - size.width / 2, y: centerY - size.height / 2,
+        let logoFrame = CGRect(x: centerX - size.width / 2, y: centerY - size.height / 2,
                                width: size.width, height: size.height).insetBy(dx: 0, dy: 0.5)
         let overlap = logoFrame.intersection(hatchFrame)
         return viewport.contains(logoFrame) && overlap.isEmpty
     }
 }
 
+struct NewTabPageLogoPosition: Equatable {
+    let centerY: CGFloat
+    let physicalCenterX: CGFloat?
+
+    @MainActor
+    init(window: UIWindow) {
+        centerY = FocusedLogoLayout.restingCenterY(in: window.bounds)
+        let size = FocusedDaxLogoView.size
+        let safeCenterX = window.safeAreaLayoutGuide.layoutFrame.midX
+        let candidate = CGRect(x: safeCenterX - size.width / 2, y: centerY - size.height / 2,
+                               width: size.width, height: size.height)
+        let centered = NewTabPageHorizontalLayout.centeredFrame(candidate, in: window)
+        physicalCenterX = centered == candidate ? nil : centered.midX
+    }
+}
+
 struct FocusedLogoLayout {
-    static let screenCenterOffset: CGFloat = 55
     let centerY: CGFloat
     let hatchLayout: EscapeHatchLogoLayout?
     let frame: CGRect
 
+    static func restingCenterY(in windowBounds: CGRect) -> CGFloat {
+        windowBounds.midY - 55
+    }
+
     init(viewport: CGRect, chromeInsetTop: CGFloat, placement: FocusedContentPlacement,
-         hatchFrame: CGRect?, destinationHatchFrame: CGRect?, restingCenterY: CGFloat) {
+         hatchFrame: CGRect?, destinationHatchFrame: CGRect?, restingCenterY: CGFloat, centerX: CGFloat? = nil) {
         let chromeFrame = CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width, height: chromeInsetTop)
         let clearance = Self.logoTopClearance(chromeBottom: chromeFrame.maxY,
                                              embeddedHatchFrame: placement == .embedded ? destinationHatchFrame : nil)
         centerY = Self.logoCenterY(restingAt: restingCenterY, topChromeBottom: clearance, barTop: viewport.maxY)
         let size = FocusedDaxLogoView.size
-        frame = CGRect(x: viewport.midX - size.width / 2, y: centerY - size.height / 2, width: size.width, height: size.height)
+        frame = CGRect(x: (centerX ?? viewport.midX) - size.width / 2, y: centerY - size.height / 2, width: size.width, height: size.height)
         if placement == .hidden {
             hatchLayout = nil
         } else {
@@ -169,7 +193,7 @@ struct FocusedLogoLayout {
                                                 hatchFrame: isPinned ? chromeFrame : hatchFrame,
                                                 destinationHatchFrame: isPinned ? chromeFrame : destinationHatchFrame,
                                                 fitsMargins: Self.logoFits(topChromeBottom: clearance, barTop: viewport.maxY),
-                                                followsHatch: !isPinned)
+                                                followsHatch: !isPinned, centerX: centerX)
         }
     }
 

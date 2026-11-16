@@ -171,9 +171,9 @@ struct UnifiedSuggestionsView: View {
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
-    /// screen-relative anchor `NewTabPageDaxLogoView` uses, so the focused and NTP logos share one
+    /// window-relative anchor `NewTabPageDaxLogoView` uses, so the focused and NTP logos share one
     /// resting position+size — focus/defocus is a pixel-identical crossfade (no slide), and it's stable
-    /// across Search↔Duck.ai toggles and the keyboard (screen-relative, not bar/keyboard-relative).
+    /// across Search↔Duck.ai toggles and the keyboard.
     private var logoLayer: some View {
         GeometryReader { proxy in
             let frame = proxy.frame(in: .global)
@@ -188,6 +188,7 @@ struct UnifiedSuggestionsView: View {
             let showsLogo = (isPreparingLogo || (viewModel.isShowingLogo && !isFadingLogo)) && !viewModel.isFireTab && !viewModel.isLandscape
             let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
+            let offsetX = viewModel.physicalLogoCenterX.map { (retainedSource?.frame.midX ?? $0) - frame.midX } ?? 0
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
             let hatchLayout = geometry.hatchLayout.map { layout in
                 var layout = layout
@@ -220,6 +221,7 @@ struct UnifiedSuggestionsView: View {
                         .animation(retainedSource == nil ? animation : nil, value: targetCenterY)
                 }
             }
+                .transformEffect(CGAffineTransform(translationX: offsetX, y: 0))
                 // Showing is instant; logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
                 // the unfocused NTP / legacy gate).

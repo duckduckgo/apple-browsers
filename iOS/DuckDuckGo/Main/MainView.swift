@@ -27,6 +27,32 @@ import History
 import Core
 import FeatureFlags_iOS
 
+@MainActor
+enum NewTabPageHorizontalLayout {
+
+    /// The vertical system bar reserves a whole side in the safe area. Center a view in the
+    /// window when its actual frame clears the camera, status bar, and other system occlusions.
+    static func centeredFrame(_ frame: CGRect, in view: UIView) -> CGRect {
+        guard #available(iOS 27.1, *), let window = (view as? UIWindow) ?? view.window, let scene = window.windowScene,
+              window.bounds.height > window.bounds.width,
+              view.traitCollection.horizontalSizeClass == .compact,
+              view.traitCollection.verticalBarEdge != .unspecified,
+              !frame.isEmpty else { return frame }
+
+        let windowBounds = view.convert(window.bounds, from: window)
+        let centered = frame.offsetBy(dx: windowBounds.midX - frame.midX, dy: 0)
+        guard centered.minX >= view.bounds.minX, centered.maxX <= view.bounds.maxX,
+              !view.reservedRegions(kind: .occlusion).contains(where: { $0.frame.intersects(centered) }) else { return frame }
+
+        if let statusFrame = scene.statusBarManager?.statusBarFrame,
+           !statusFrame.isEmpty,
+           scene.coordinateSpace.convert(statusFrame, to: view).intersects(centered) {
+            return frame
+        }
+        return centered
+    }
+}
+
 class MainViewFactory {
 
     private let coordinator: MainViewCoordinator

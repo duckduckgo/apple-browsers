@@ -358,6 +358,11 @@ final class BrowserToolbarView: UIView {
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
     private var toolbarButtonViews: [UIView] = []
+    var centersNewTabPageChrome = false {
+        didSet {
+            if centersNewTabPageChrome != oldValue { setNeedsLayout() }
+        }
+    }
     private var horizontalOuterInsetsOverride: (left: CGFloat, right: CGFloat)?
     private(set) var usesCompactStandaloneHeight = false
     /// Resolves the safe area and corner guides from this view instead of the superview, for copies laid out away from where they'll show.
@@ -386,35 +391,40 @@ final class BrowserToolbarView: UIView {
         return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBarOuterInsets : Self.floatingStandaloneBarOuterInsets
     }
 
-    /// Adds only the inset not already provided by the guide.
     @available(iOS 26.0, *)
     private var floatingRestStateOuterInsets: UIEdgeInsets {
-        if usesEmbeddedBottomChromeMetrics {
-            return UIEdgeInsets(top: 0,
-                                left: Self.floatingEmbeddedHorizontalInset,
-                                bottom: 0,
-                                right: Self.floatingEmbeddedHorizontalInset)
-        }
         guard let host = layoutHost, host.bounds.width > 0 else {
+            if usesEmbeddedBottomChromeMetrics { return Self.floatingEmbeddedBarOuterInsets }
             return UIEdgeInsets(
                 top: 0,
                 left: Self.floatingEmbeddedConcentricInset,
                 bottom: 0,
                 right: Self.floatingEmbeddedConcentricInset)
         }
-        return Self.floatingStandaloneOuterInsets(in: host)
+        let frame = floatingCapsuleFrame(in: host, height: buttonsHeightConstraint.constant)
+        return UIEdgeInsets(top: 0, left: frame.minX - host.bounds.minX, bottom: 0, right: host.bounds.maxX - frame.maxX)
     }
 
-    /// Resting outer insets of a buttons-only floating toolbar laid out in `host`.
     @available(iOS 26.0, *)
-    static func floatingStandaloneOuterInsets(in host: UIView) -> UIEdgeInsets {
+    private static func floatingOuterInsets(in host: UIView, isEmbedded: Bool) -> UIEdgeInsets {
         let guideInsets = horizontalGuideInsets(in: host)
-        let physicalInset = floatingPhysicalInset(guideInsets: guideInsets)
+        let safeArea = host.safeAreaInsets
+        let physicalInset = isEmbedded ? floatingEmbeddedHorizontalInset : floatingPhysicalInset(guideInsets: guideInsets)
+
+        if safeArea.left != safeArea.right {
+            // Center within the usable area and keep equal padding inside both safe area edges.
+            let padding = max(physicalInset, guideInsets.left - safeArea.left, guideInsets.right - safeArea.right)
+            return UIEdgeInsets(top: 0, left: safeArea.left + padding, bottom: 0, right: safeArea.right + padding)
+        }
+        if isEmbedded {
+            let inset = max(safeArea.left, physicalInset)
+            return UIEdgeInsets(top: 0, left: inset, bottom: 0, right: inset)
+        }
         return UIEdgeInsets(
             top: 0,
-            left: max(guideInsets.left, physicalInset),
+            left: guideInsets.left + embeddedRestStateInnerInset(guideInset: guideInsets.left, physicalInset: physicalInset),
             bottom: 0,
-            right: max(guideInsets.right, physicalInset))
+            right: guideInsets.right + embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: physicalInset))
     }
 
     /// Distance from the physical bottom edge to the corner-adapted safe area guide.
@@ -655,6 +665,13 @@ final class BrowserToolbarView: UIView {
         contentStackLeadingConstraint.constant = currentContentStackHorizontalInset
         contentStackTrailingConstraint.constant = -currentContentStackHorizontalInset
         let buttonRowPadding = currentButtonRowHorizontalPadding
+        let managesHorizontalSafeArea = isFloatingStyleEnabled && centersNewTabPageChrome && layoutHost.map { host in
+            insets.left < host.safeAreaInsets.left || insets.right < host.safeAreaInsets.right
+        } == true
+        if buttonStack.insetsLayoutMarginsFromSafeArea == managesHorizontalSafeArea {
+            buttonStack.insetsLayoutMarginsFromSafeArea = !managesHorizontalSafeArea
+        }
+        (hostedOmnibarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = managesHorizontalSafeArea
         let margins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
         if buttonStack.layoutMargins != margins {
             buttonStack.layoutMargins = margins
@@ -701,6 +718,7 @@ final class BrowserToolbarView: UIView {
             ])
         }
         
+        applyHorizontalChromeMetrics()
         updateCornerStyle()
         scheduleHostedOmnibarMaterialRefresh()
         return true
@@ -1037,32 +1055,23 @@ final class BrowserToolbarView: UIView {
         let bounds = view.bounds
         let height = hasEmbeddedOmnibar ? panelHeight : buttonsHeightConstraint.constant
 
-        let left: CGFloat
-        let right: CGFloat
-        let bottom: CGFloat
         if #available(iOS 26.0, *) {
-            if usesEmbeddedBottomChromeMetrics {
-                left = Self.floatingEmbeddedHorizontalInset
-                right = Self.floatingEmbeddedHorizontalInset
-                bottom = bounds.maxY - Self.floatingEmbeddedBottomMargin
-            } else {
-                let guideInsets = Self.horizontalGuideInsets(in: view)
-                let horizontalInset = Self.floatingPhysicalInset(guideInsets: guideInsets)
-                left = guideInsets.left + Self.embeddedRestStateInnerInset(guideInset: guideInsets.left, physicalInset: horizontalInset)
-                right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: horizontalInset)
-                bottom = bounds.maxY - floatingBottomMargin
-            }
-        } else {
-            let insets = currentBarOuterInsets
-            left = insets.left
-            right = insets.right
-            let safeBottom = view.safeAreaInsets.bottom
-            let offset = max(0, safeBottom - floatingBottomMargin)
-            bottom = bounds.maxY - safeBottom + offset
+            return floatingCapsuleFrame(in: view, height: height)
         }
+        let insets = currentBarOuterInsets
+        let safeBottom = view.safeAreaInsets.bottom
+        let offset = max(0, safeBottom - floatingBottomMargin)
+        let bottom = bounds.maxY - safeBottom + offset
+        let width = max(0, bounds.width - insets.left - insets.right)
+        return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
+    }
 
-        let width = max(0, bounds.width - left - right)
-        return CGRect(x: bounds.minX + left, y: bottom - height, width: width, height: height)
+    @available(iOS 26.0, *)
+    private func floatingCapsuleFrame(in view: UIView, height: CGFloat) -> CGRect {
+        let insets = Self.floatingOuterInsets(in: view, isEmbedded: usesEmbeddedBottomChromeMetrics)
+        let frame = CGRect(x: view.bounds.minX + insets.left, y: view.bounds.maxY - floatingBottomMargin - height,
+                           width: max(0, view.bounds.width - insets.left - insets.right), height: height)
+        return centersNewTabPageChrome ? NewTabPageHorizontalLayout.centeredFrame(frame, in: view) : frame
     }
 
     /// The glass panel's height at rest.
@@ -1288,8 +1297,8 @@ final class BrowserToolbarView: UIView {
 extension BrowserToolbarView {
 
     /// Distance between the glass and the toolbar's side edges in its own resting layout.
-    var restingHorizontalOuterInset: CGFloat {
-        currentBarOuterInsets.left
+    var restingHorizontalOuterInsets: UIEdgeInsets {
+        currentBarOuterInsets
     }
 
     /// Overrides the glass's physical left and right insets. Pass nil to return to the resting layout.

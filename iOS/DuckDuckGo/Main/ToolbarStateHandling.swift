@@ -143,17 +143,9 @@ final class ToolbarHandler: ToolbarStateHandling {
 
     private func applyToolbarLayout(for state: ToolbarContentState) {
         guard let toolbar = toolbar else { return }
-
-        let views: [UIView] = {
-            switch state {
-            case .pageLoaded:
-                return toolbarButtonViews(showsNewTabPage: false)
-            case .newTab:
-                return toolbarButtonViews(showsNewTabPage: true)
-            }
-        }()
-
-        toolbar.setToolbarButtons(views)
+        let showsNewTabPage = state == .newTab
+        toolbar.centersNewTabPageChrome = showsNewTabPage
+        toolbar.setToolbarButtons(toolbarButtonViews(showsNewTabPage: showsNewTabPage))
     }
 
     func toolbarButtonViews(showsNewTabPage: Bool) -> [UIView] {

@@ -83,6 +83,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
     @Published var chromeInsetTop: CGFloat = 0 { didSet { updateLogoModeChange() } }
     @Published var contentTopInset: CGFloat = 0 { didSet { updateLogoModeChange() } }
+    @Published var logoPosition: NewTabPageLogoPosition? { didSet { updateLogoModeChange() } }
+    var physicalLogoCenterX: CGFloat? { usesRedesignedNewTabPageLayout ? nil : logoPosition?.physicalCenterX }
     /// Floating chrome clearance comes from UIKit's keyboard-bounded host, independently of
     /// SwiftUI's transient coordinate origins during the omnibar handoff.
     @Published var logoViewportFrame: CGRect? { didSet { updateLogoModeChange() } }
@@ -179,7 +181,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     func logoLayout(in viewport: CGRect) -> FocusedLogoLayout {
         FocusedLogoLayout(viewport: viewport, chromeInsetTop: chromeInsetTop, placement: escapeHatchPlacement,
                           hatchFrame: embeddedEscapeHatchFrame, destinationHatchFrame: embeddedEscapeHatchDestinationFrame,
-                          restingCenterY: UIScreen.main.bounds.midY - FocusedLogoLayout.screenCenterOffset)
+                          restingCenterY: logoPosition?.centerY ?? FocusedLogoLayout.restingCenterY(in: viewport),
+                          centerX: physicalLogoCenterX)
     }
 
     func prepareLogoModeChange(to mode: TextEntryMode) {

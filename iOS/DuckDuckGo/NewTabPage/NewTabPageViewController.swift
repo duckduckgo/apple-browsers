@@ -231,6 +231,10 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        let logoPosition = view.window.map { NewTabPageLogoPosition(window: $0) }
+        if newTabPageViewModel.logoPosition != logoPosition {
+            newTabPageViewModel.logoPosition = logoPosition
+        }
         onboardingCoordinator.refreshContextualOnboardingDialogLayout()
     }
 

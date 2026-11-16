@@ -588,6 +588,12 @@ final class UnifiedToggleInputViewController: UIViewController {
         view = containerView
     }
 
+    func updateNewTabPageHorizontalLayout(_ isNewTabPage: Bool) {
+        guard let containerView else { return }
+        containerView.centersOnNewTabPage = isNewTabPage
+        containerView.updateHorizontalPlacement()
+    }
+
     private func notifyHeightDidChange() {
         guard !inputBarView.isApplyingInputMode else { return }
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
@@ -689,6 +695,8 @@ private final class UnifiedToggleInputContainerView: UIView {
         }
     }
 
+    var centersOnNewTabPage = false
+
     private let unifiedInputView: UnifiedToggleInputView
     private let errorBannerView = UnifiedToggleInputAttachmentErrorBannerView()
 
@@ -696,6 +704,8 @@ private final class UnifiedToggleInputContainerView: UIView {
     private var bannerHeightConstraint: NSLayoutConstraint!
     private var inputTopToContainerConstraint: NSLayoutConstraint!
     private var inputBottomToContainerConstraint: NSLayoutConstraint!
+    private var inputLeadingConstraint: NSLayoutConstraint!
+    private var inputTrailingConstraint: NSLayoutConstraint!
     private var bannerTopToContainerConstraint: NSLayoutConstraint!
     private var bannerBottomToContainerConstraint: NSLayoutConstraint!
     private var bannerTopToInputConstraint: NSLayoutConstraint!
@@ -726,6 +736,24 @@ private final class UnifiedToggleInputContainerView: UIView {
         applyBannerPlacement()
         errorBannerView.isHidden = true
     }
+
+    override func layoutSubviews() {
+        updateHorizontalPlacement()
+        super.layoutSubviews()
+    }
+
+    func updateHorizontalPlacement() {
+        let safeFrame = CGRect(x: bounds.minX + safeAreaInsets.left, y: bounds.minY,
+                               width: max(0, bounds.width - safeAreaInsets.left - safeAreaInsets.right), height: bounds.height)
+        let target = centersOnNewTabPage ? NewTabPageHorizontalLayout.centeredFrame(safeFrame, in: self) : safeFrame
+        let delta = target.midX - safeFrame.midX
+        let offset = effectiveUserInterfaceLayoutDirection == .rightToLeft ? -delta : delta
+        let margin = cardPosition == .top ? Metrics.topBannerHorizontalMargin : Metrics.bottomBannerHorizontalMargin
+        if inputLeadingConstraint.constant != offset { inputLeadingConstraint.constant = offset }
+        if inputTrailingConstraint.constant != offset { inputTrailingConstraint.constant = offset }
+        if bannerLeadingConstraint.constant != margin + offset { bannerLeadingConstraint.constant = margin + offset }
+        if bannerTrailingConstraint.constant != offset - margin { bannerTrailingConstraint.constant = offset - margin }
+    }
 }
 
 private extension UnifiedToggleInputContainerView {
@@ -747,12 +775,14 @@ private extension UnifiedToggleInputContainerView {
         bannerBottomToInputConstraint = errorBannerView.bottomAnchor.constraint(equalTo: unifiedInputView.topAnchor, constant: -Metrics.bannerSpacing)
         bannerLeadingConstraint = errorBannerView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor)
         bannerTrailingConstraint = errorBannerView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor)
+        inputLeadingConstraint = unifiedInputView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor)
+        inputTrailingConstraint = unifiedInputView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor)
 
         // Pin content horizontally to the safe area so the card and its flanking buttons clear the
         // Dynamic Island in landscape; the horizontal safe-area inset is 0 in portrait and on iPad.
         NSLayoutConstraint.activate([
-            unifiedInputView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
-            unifiedInputView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
+            inputLeadingConstraint,
+            inputTrailingConstraint,
             bannerLeadingConstraint,
             bannerTrailingConstraint,
             bannerHeightConstraint,
@@ -772,9 +802,7 @@ private extension UnifiedToggleInputContainerView {
         ])
 
         bannerHeightConstraint.constant = isBannerVisible ? Metrics.bannerHeight : 0
-        let horizontalMargin = cardPosition == .top ? Metrics.topBannerHorizontalMargin : Metrics.bottomBannerHorizontalMargin
-        bannerLeadingConstraint.constant = horizontalMargin
-        bannerTrailingConstraint.constant = -horizontalMargin
+        updateHorizontalPlacement()
 
         if !isBannerVisible {
             NSLayoutConstraint.activate([

@@ -619,6 +619,7 @@ final class UnifiedSuggestionsHost {
         hostingController = nil
         viewModel.logoViewportFrame = nil
         viewModel.logoHostFrame = nil
+        viewModel.logoPosition = nil
         viewModel.setEmbeddedEscapeHatchGeometry(nil)
     }
 
@@ -673,7 +674,11 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        guard view.window != nil, let containerView = view.superview else { return }
+        guard let window = view.window, let containerView = view.superview else { return }
+        let logoPosition = NewTabPageLogoPosition(window: window)
+        if rootView.viewModel.logoPosition != logoPosition {
+            rootView.viewModel.logoPosition = logoPosition
+        }
         if !isFloatingUIEnabled {
             var viewport = view.convert(view.bounds, to: nil)
             viewport.size.height = max(0, viewport.height - view.safeAreaInsets.bottom)

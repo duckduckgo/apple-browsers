@@ -208,23 +208,24 @@ private extension NewTabPageView {
     @ViewBuilder
     private var logoEmptyView: some View {
         GeometryReader { proxy in
+            let viewport = proxy.frame(in: .global)
+            let centerY = viewModel.logoPosition?.centerY ?? FocusedLogoLayout.restingCenterY(in: viewport)
+            let centerX = viewModel.logoPosition?.physicalCenterX
+            let offsetX = (centerX ?? viewport.midX) - viewport.midX
             ZStack {
-                // Anchors the Lottie's geometric center to screen.midY - 55, so the visible duck
-                // lands at screen.midY - 72 — the splash storyboard's resting position. The
-                // dynamic offset compensates for the NTP body's centerY shifting based on top vs
-                // bottom omnibar chrome.
                 Group {
                     if viewModel.escapeHatch != nil {
                         NewTabPageDaxLogoView()
-                            .modifier(EscapeHatchLogoLayout(centerY: UIScreen.main.bounds.midY - 55,
-                                                           viewport: proxy.frame(in: .global), hatchFrame: escapeHatchFrame,
-                                                           destinationHatchFrame: escapeHatchFrame))
-                            .offset(y: -proxy.frame(in: .global).midY)
+                            .modifier(EscapeHatchLogoLayout(centerY: centerY,
+                                                           viewport: viewport, hatchFrame: escapeHatchFrame,
+                                                           destinationHatchFrame: escapeHatchFrame, centerX: centerX))
+                            .offset(y: -viewport.midY)
                     } else {
                         NewTabPageDaxLogoView()
-                            .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
+                            .offset(y: centerY - viewport.midY)
                     }
                 }
+                    .transformEffect(CGAffineTransform(translationX: offsetX, y: 0))
                     .opacity(shouldShowLogoInEmptyState ? 1 : 0)
                     .allowsHitTesting(false)
 

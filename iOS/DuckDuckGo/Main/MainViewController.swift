@@ -4348,6 +4348,7 @@ class MainViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        unifiedToggleInputCoordinator?.viewController.updateNewTabPageHorizontalLayout(isNewTabPageVisible)
         if isFloatingUIEnabled {
             // Guide and selection settle after layout.
             DispatchQueue.main.async { [weak self] in
@@ -4373,6 +4374,11 @@ class MainViewController: UIViewController {
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
         bringFindInPageToFrontIfNeeded()
         updateDelegateFindViewportIfNeeded()
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        viewCoordinator?.toolbar?.setNeedsLayout()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.

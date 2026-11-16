@@ -68,6 +68,17 @@ final class FocusedLogoModelTests: XCTestCase {
         }
     }
 
+    func testEscapeHatchLogoUsesPhysicalCenterForBackdropAndOverlap() {
+        let viewport = CGRect(x: 0, y: 0, width: 360, height: 620)
+        let hatch = CGRect(x: 300, y: 350, width: 40, height: 60)
+        let destinationHatch = hatch.offsetBy(dx: 0, dy: -200)
+        let layout = EscapeHatchLogoLayout(centerY: 400, viewport: viewport, hatchFrame: hatch,
+                                          destinationHatchFrame: destinationHatch, centerX: 220)
+
+        XCTAssertEqual(layout.visibleFrame?.midX, 220)
+        XCTAssertFalse(layout.isVisible)
+    }
+
     func testEscapeHatchLogoStaysHiddenWhenTheDestinationCannotFitIt() {
         let hatch = CGRect(x: 16, y: 72, width: 370, height: 56)
         let start = EscapeHatchLogoLayout(centerY: 379, viewport: CGRect(x: 0, y: 0, width: 402, height: 516), hatchFrame: hatch, destinationHatchFrame: hatch)

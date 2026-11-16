@@ -843,10 +843,7 @@ final class UnifiedToggleInputView: UIView {
     /// Cached at focus — when the container is laid out at its editing-start frame and the pill can
     /// be measured — so the symmetric dismiss can land back on the pill without re-measuring (the
     /// pill has been removed from the toolbar by then).
-    private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
-    /// The insets are point offsets against the container's width, so they only describe the window
-    /// size they were measured at — a rotation between focus and dismiss invalidates them.
-    private var cachedOmnibarMatchedInsetsWindowSize: CGSize?
+    private var cachedOmnibarMatch: (insets: OmnibarMatchedInsets, viewport: OmnibarMatchViewport)?
     private var omnibarMaterialTransitionBackgroundColor: UIColor?
     private var omnibarMaterialBackdropView: UIView?
     /// Opaque editing surface whose alpha crossfades over `omnibarMaterialBackdropView`.
@@ -861,6 +858,20 @@ final class UnifiedToggleInputView: UIView {
         /// Gap from the card's bottom edge to the container's bottom (a stable screen-space offset);
         /// combined with the pinned 44pt height this reproduces the pill at any container height.
         let bottom: CGFloat
+    }
+
+    private struct OmnibarMatchViewport: Equatable {
+        let windowSize: CGSize
+        let minX: CGFloat
+        let width: CGFloat
+        let layoutDirection: UIUserInterfaceLayoutDirection
+    }
+
+    private var omnibarMatchViewport: OmnibarMatchViewport? {
+        guard let window else { return nil }
+        let frame = convert(bounds, to: nil)
+        return OmnibarMatchViewport(windowSize: window.bounds.size, minX: frame.minX, width: frame.width,
+                                    layoutDirection: effectiveUserInterfaceLayoutDirection)
     }
 
     /// The collapsed pill's corner radius. The bottom floating omnibar renders as a capsule
@@ -1632,11 +1643,10 @@ final class UnifiedToggleInputView: UIView {
             cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
             cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
         case .bottom:
-            if let cached = cachedOmnibarMatchedInsets,
-               cachedOmnibarMatchedInsetsWindowSize == window?.bounds.size {
+            if let cached = cachedOmnibarMatch, cached.viewport == omnibarMatchViewport {
                 // Reproduce the measured pill pose (cached at focus) so the dismiss collapse lands
                 // back on the pill without re-measuring — it's no longer in the toolbar by then.
-                applyOmnibarMatchedInsets(cached)
+                applyOmnibarMatchedInsets(cached.insets)
             } else {
                 // Pre-measurement fallback (and if the pill couldn't be measured): omnibar
                 // margins + collapsed vertical insets.
@@ -1662,15 +1672,17 @@ final class UnifiedToggleInputView: UIView {
     func captureOmnibarMatchedInsets() {
         guard cardPosition == .bottom,
               let pill = omnibarPillWindowFrame,
-              window != nil,
+              let viewport = omnibarMatchViewport,
               bounds.width > 0 else { return }
         let pillInSelf = convert(pill, from: nil)
+        let left = pillInSelf.minX - bounds.minX
+        let right = bounds.maxX - pillInSelf.maxX
+        let isRTL = viewport.layoutDirection == .rightToLeft
         let insets = OmnibarMatchedInsets(
-            leading: pillInSelf.minX,
-            trailing: -(bounds.width - pillInSelf.maxX),
-            bottom: -(bounds.height - pillInSelf.maxY))
-        cachedOmnibarMatchedInsets = insets
-        cachedOmnibarMatchedInsetsWindowSize = window?.bounds.size
+            leading: isRTL ? right : left,
+            trailing: -(isRTL ? left : right),
+            bottom: pillInSelf.maxY - bounds.maxY)
+        cachedOmnibarMatch = (insets, viewport)
         applyOmnibarMatchedInsets(insets)
         cardView.layer.cornerRadius = collapsedCornerRadius
         layoutIfNeeded()

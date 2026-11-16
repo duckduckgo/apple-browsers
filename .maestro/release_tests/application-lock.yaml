@@ -29,7 +29,6 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Unlock DuckDuckGo."
@@ -65,7 +64,6 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Privacy Test Pages"

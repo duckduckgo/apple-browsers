@@ -24,10 +24,6 @@ final class KeyboardSettingsUITests: UITestCase {
 
     private let timeout = UITestTimeouts.navigation
 
-    override var additionalLaunchArguments: [String] {
-        super.additionalLaunchArguments + ["-ff.alwaysShowKeyboardOnNewTabPage", "false"]
-    }
-
     func testKeyboardPreferencesPersistAfterReopeningAndRelaunching() {
         openKeyboardSettings()
         assertSwitch("New Tab", isOn: true)
@@ -63,30 +59,11 @@ final class KeyboardSettingsUITests: UITestCase {
         assertSwitch("App Launch", isOn: false)
     }
 
-    func testKeyboardPreferencesSurviveFeatureFlagChange() throws {
-        openKeyboardSettings()
-        keyboardSwitch("New Tab").tap()
-        keyboardSwitch("App Launch").tap()
-        app.terminate()
-        app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
-        let flagIndex = try XCTUnwrap(app.launchArguments.firstIndex(of: "-ff.alwaysShowKeyboardOnNewTabPage"))
-        app.launchArguments[flagIndex + 1] = "true"
-        app.launch()
-
-        openKeyboardSettings()
-        assertSwitch("New Tab", isOn: false)
-        assertSwitch("App Launch", isOn: true)
-    }
-
     private func openKeyboardSettings() {
         let menu = app.descendants(matching: .any)["Browser.Toolbar.Button.Menu"]
         XCTAssertTrue(menu.waitForExistence(timeout: timeout))
-        for identifier in ["UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"] {
-            let dismiss = app.buttons[identifier]
-            if dismiss.isHittable {
-                dismiss.tap()
-            }
-        }
+        // Launch lands on the New Tab page, which raises the keyboard over the toolbar.
+        app.dismissAddressBarEditing()
         menu.tap()
         let settings = app.buttons["Settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: timeout))

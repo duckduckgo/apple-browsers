@@ -759,6 +759,9 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case heuristicHitTest
     case popupMutationObserver
     case cookiePopupOptInDialog
+    /// The extension reports how far each page's init got, and the app puts the last step in the breakage pixel.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1220422645861893?focus=true
+    case cpmInitProgress
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

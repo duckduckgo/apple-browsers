@@ -157,9 +157,11 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     }
 
     /// A best-effort progress mark for one main-frame init. Unknown stages and marks without a page are
-    /// ignored, never an error, so a newer extension cannot make an older app answer with failures.
+    /// ignored, never an error, so a newer extension cannot make an older app answer with failures. Marks are
+    /// ignored too while the `cpmInitProgress` subfeature is off; the extension learns the flag from the settings.
     private func handleCpmInitProgress(_ params: [String: Any]?, extensionIdentifier: String) async -> WebExtensionMessageResult {
-        guard let stageName = params?["stage"] as? String,
+        guard privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AutoconsentSubfeature.cpmInitProgress),
+              let stageName = params?["stage"] as? String,
               let stage = CPMInitStage(rawValue: stageName),
               let urlString = params?["url"] as? String,
               let url = URL(string: urlString),

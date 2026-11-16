@@ -169,8 +169,8 @@ class MainViewCoordinator {
     /// Hiding the navigation container drops the unified toggle input's claim on the content bottom,
     /// so the anchor left over from an AI tab has to be resolved again or the page ends above the toolbar.
     private func applyContentContainerBottomAnchorForRestingNewTabPage() {
-        guard newTabPageInputPresentation.hidesNavigationContainer, !isNavigationChromeHidden else { return }
-        setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
+        guard let restingAnchorMode = restingNewTabPageBottomAnchorMode else { return }
+        setContentContainerBottomAnchorMode(requesting: restingAnchorMode)
     }
 
     private func setNavigationBarContainerHidden(_ hidden: Bool, updatesAlpha: Bool = true) {
@@ -958,8 +958,7 @@ class MainViewCoordinator {
             } else {
                 constraints.navigationBarContainerBottom.constant = 0
             }
-            // A resting New Tab Page hides the container itself, which leaves the toolbar in place.
-            if navigationBarContainer.isHidden, !newTabPageInputPresentation.hidesNavigationContainer {
+            if navigationBarContainer.isHidden {
                 setContentContainerBottomAnchorMode(requesting: .safeArea)
             } else {
                 setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
@@ -1087,8 +1086,16 @@ class MainViewCoordinator {
             && !constraints.navigationBarContainerTop.isActive
     }
 
+    /// While a New Tab Page rests, it hides the navigation container itself, so the page always ends at
+    /// the visible chrome whichever caller asks for another anchor.
+    private var restingNewTabPageBottomAnchorMode: ContentContainerBottomAnchorMode? {
+        guard newTabPageInputPresentation.hidesNavigationContainer, !isNavigationChromeHidden else { return nil }
+        return preferredBottomContentAnchorModeForVisibleChrome()
+    }
+
     private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
-        let resolvedMode: ContentContainerBottomAnchorMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+        let resolvedMode: ContentContainerBottomAnchorMode = restingNewTabPageBottomAnchorMode
+            ?? (shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode)
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea

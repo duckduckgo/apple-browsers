@@ -49,6 +49,7 @@ public final class BrowserToolInvoker {
         }
         let targetsOtherTab = request.input["tabId"]?.stringValue.map { $0 != context.ownerTabID } ?? false
         let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, targetsOtherTab: targetsOtherTab,
+                                                                  target: tool.permissionTarget(arguments: request.input, context: context),
                                                                   chatID: request.chatId, accessToolNames: nil, prompter: permissionPrompter)
         switch authorization {
         case .refused(.cancelled):
@@ -105,7 +106,7 @@ public final class BrowserToolInvoker {
             }
         }
         if !toAsk.isEmpty {
-            let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: requestAccessTool, targetsOtherTab: false,
+            let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: requestAccessTool, targetsOtherTab: false, target: nil,
                                                                       chatID: chatID, accessToolNames: toAsk, prompter: permissionPrompter)
             switch authorization {
             case .refused(let error):

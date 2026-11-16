@@ -54,6 +54,13 @@ final class BookmarkTabBrowserTool: BrowserTool {
         self.bookmarkManager = bookmarkManager
     }
 
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
+        guard case .resolved(let tabID, let collection) = BrowserToolTargetTab.resolve(tabIDArgument: arguments?["tabId"], context: context,
+                                                                                       in: windowControllersManager) else { return nil }
+        return BrowserToolTargetTab.actionableTab(withID: tabID, ownerTabID: context.ownerTabID, in: collection)?
+            .content.userEditableUrl?.absoluteString
+    }
+
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         // One call at a time, so a folder one call creates is found by the next.
         let previous = running

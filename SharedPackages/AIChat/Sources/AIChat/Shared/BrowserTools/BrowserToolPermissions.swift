@@ -38,7 +38,8 @@ public protocol BrowserToolPermissionStoring: AnyObject {
 public extension BrowserToolPermissionStoring {
 
     func effectiveState(for tool: any BrowserTool) -> BrowserToolPermissionState {
-        state(forToolNamed: tool.name) ?? tool.permissionMode.defaultState
+        let state = state(forToolNamed: tool.name) ?? tool.permissionMode.defaultState
+        return tool.asksEveryTime && state == .allow ? .ask : state
     }
 }
 

@@ -42,6 +42,8 @@ public struct ClientToolPermissionPrompt: Equatable, Sendable {
     public let callID: String
     public let toolName: String
     public let targetsOtherTab: Bool
+    public var target: String?
+    public var offersAlways = true
     /// Set for a `requestAccess` prompt: the tools it asks for, in the order requested.
     public var accessToolNames: [String]?
     public var offersAllowForChat = false
@@ -62,7 +64,7 @@ public enum ClientToolPermissionDecision: Equatable, Sendable {
 
 @MainActor
 public protocol ClientToolPermissionCoordinating: AnyObject {
-    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, chatID: String?, accessToolNames: [String]?,
+    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?, chatID: String?, accessToolNames: [String]?,
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization
 
     /// The tool's state for a call in `chatID`: a `requestAccess` grant counts as allowed unless it was set to Never since.
@@ -92,6 +94,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let callID: String
         let tool: any BrowserTool
         let targetsOtherTab: Bool
+        let target: String?
         let chatID: String?
         let accessToolNames: [String]?
         weak var prompter: (any ClientToolPermissionPrompting)?
@@ -104,13 +107,14 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         var executionTask: Task<Void, Never>?
         var timeout: Task<Void, Never>?
 
-        init(requestID: String, callID: String, tool: any BrowserTool, targetsOtherTab: Bool, chatID: String?, accessToolNames: [String]?,
+        init(requestID: String, callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?, chatID: String?, accessToolNames: [String]?,
              prompter: (any ClientToolPermissionPrompting)?, deadline: TimeInterval,
              cancellation: ClientToolCancellationSignal, continuation: CheckedContinuation<ClientToolPermissionAuthorization, Never>) {
             self.requestID = requestID
             self.callID = callID
             self.tool = tool
             self.targetsOtherTab = targetsOtherTab
+            self.target = target
             self.chatID = chatID
             self.accessToolNames = accessToolNames
             self.prompter = prompter
@@ -159,7 +163,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     /// Queue time counts toward the permission timeout.
     /// Task cancellation marks the request immediately, then schedules MainActor cleanup
     /// to remove it and resume any pending wait as `.refused(.cancelled)`.
-    public func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool = false,
+    public func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool = false, target: String? = nil,
                           chatID: String? = nil, accessToolNames: [String]? = nil,
                           prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         let cancellation = ClientToolCancellationSignal()
@@ -168,7 +172,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         return await withTaskCancellationHandler {
             guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled) }
             return await withCheckedContinuation { continuation in
-                let entry = Entry(requestID: requestID, callID: callID, tool: tool, targetsOtherTab: targetsOtherTab,
+                let entry = Entry(requestID: requestID, callID: callID, tool: tool, targetsOtherTab: targetsOtherTab, target: target,
                                   chatID: chatID, accessToolNames: accessToolNames, prompter: prompter,
                                   deadline: deadline, cancellation: cancellation, continuation: continuation)
                 entries[requestID] = entry
@@ -212,7 +216,9 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         }
         switch decision {
         case .always:
-            permissions.setState(.allow, forToolNamed: entry.tool.name)
+            if !entry.tool.asksEveryTime {
+                permissions.setState(.allow, forToolNamed: entry.tool.name)
+            }
             grant(entry)
         case .allowOnce:
             if let chatID = entry.chatID, let toolNames = entry.accessToolNames {
@@ -389,6 +395,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         entry.state = .awaitingDecision
         let shown = prompter.presentClientToolPermissionPrompt(.init(requestID: entry.requestID, callID: entry.callID,
                                                                     toolName: entry.tool.name, targetsOtherTab: entry.targetsOtherTab,
+                                                                    target: entry.target, offersAlways: !entry.tool.asksEveryTime,
                                                                     accessToolNames: entry.accessToolNames,
                                                                     offersAllowForChat: entry.chatID != nil && entry.accessToolNames == nil
                                                                         && !entry.tool.asksEveryTime))

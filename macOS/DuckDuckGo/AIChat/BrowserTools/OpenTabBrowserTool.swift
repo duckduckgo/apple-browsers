@@ -40,6 +40,10 @@ final class OpenTabBrowserTool: BrowserTool {
         self.windowControllersManager = windowControllersManager
     }
 
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
+        arguments?["url"]?.stringValue
+    }
+
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
         guard let url = Self.webURL(from: arguments?["url"]) else { return .failure(.invalidArguments) }

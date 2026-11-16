@@ -121,29 +121,19 @@ struct AssistedOptOutAppearanceRoot<Content: View>: View {
 }
 
 @MainActor
-struct AssistedOptOutTopBar: View {
+struct AssistedOptOutAddress: View {
+    // Toolbar items with a width constraint get a different corner radius, so the address is shortened instead.
+    private static let maxPathLength = 40
+
     @Environment(\.designSystemPalette) private var palette
     @ObservedObject var session: AssistedOptOutSession
     @ObservedObject var page: AssistedOptOutPageModel
 
     var body: some View {
-        HStack(spacing: 12) {
-            address
-            Spacer(minLength: 0)
-            status
-                .fixedSize()
-                .layoutPriority(1)
-        }
-        .font(.system(size: 13))
-        .padding(.horizontal, 18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(designSystemColor: .surfaceSecondary, palette: palette))
-    }
-
-    private var address: some View {
         let url = page.url ?? session.broker.homeURL
         let host = url?.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? session.broker.url
-        let path = url?.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")) ?? ""
+        let fullPath = url?.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")) ?? ""
+        let path = fullPath.count > Self.maxPathLength ? String(fullPath.prefix(Self.maxPathLength - 1)) + "…" : fullPath
         return HStack(spacing: 8) {
             if url?.scheme == "https" {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
@@ -156,26 +146,38 @@ struct AssistedOptOutTopBar: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
+        .font(.system(size: 13))
+        .padding(.horizontal, 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(AssistedOptOutText.pageAddress(url?.absoluteString ?? session.broker.url))
     }
+}
 
-    @ViewBuilder
-    private var status: some View {
-        switch session.phase {
-        case .ready:
-            Text(AssistedOptOutText.notStarted)
-                .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
-        case .queued, .agentInControl:
-            statusLabel(AssistedOptOutText.agentInControl, dot: Color(designSystemColor: .accentFirePrimary, palette: palette))
-        case .userTurn:
-            statusLabel(AssistedOptOutText.waitingForYou, dot: Color(designSystemColor: .statusYellowPrimary, palette: palette))
-        case .submitted:
-            statusLabel(AssistedOptOutText.finished, dot: Color(designSystemColor: .statusGreen, palette: palette))
+@MainActor
+struct AssistedOptOutStatus: View {
+    @Environment(\.designSystemPalette) private var palette
+    @ObservedObject var session: AssistedOptOutSession
+
+    var body: some View {
+        Group {
+            switch session.phase {
+            case .ready:
+                Text(AssistedOptOutText.notStarted)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+            case .queued, .agentInControl:
+                label(AssistedOptOutText.agentInControl, dot: Color(designSystemColor: .accentFirePrimary, palette: palette))
+            case .userTurn:
+                label(AssistedOptOutText.waitingForYou, dot: Color(designSystemColor: .statusYellowPrimary, palette: palette))
+            case .submitted:
+                label(AssistedOptOutText.finished, dot: Color(designSystemColor: .statusGreen, palette: palette))
+            }
         }
+        .font(.system(size: 13))
+        .padding(.horizontal, 12)
+        .fixedSize()
     }
 
-    private func statusLabel(_ title: String, dot: Color) -> some View {
+    private func label(_ title: String, dot: Color) -> some View {
         HStack(spacing: 10) {
             Circle()
                 .fill(dot)
@@ -188,48 +190,34 @@ struct AssistedOptOutTopBar: View {
 }
 
 @MainActor
-final class AssistedOptOutGlowFrameView: NSView {
-    enum Glow {
+final class AssistedOptOutEdgeOverlayView: NSView {
+    enum Edge {
         case none
         case agent
         case user
     }
 
-    private static let cornerRadius: CGFloat = 14
-    private static let borderWidth: CGFloat = 3
-    private static let ringWidth: CGFloat = 4
+    private static let edgeWidth: CGFloat = 3
+    private static let glowRadius: CGFloat = 16
     private static let pulseKey = "pulse"
 
-    let contentView = NSView()
-    private let ringLayer = CALayer()
-    private var glow = Glow.none
+    private let edgeLayer = CALayer()
+    private let innerShadowLayer = CAShapeLayer()
+    private var edge = Edge.none
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.masksToBounds = false
-        layer?.cornerRadius = Self.cornerRadius
-        layer?.borderWidth = Self.borderWidth
-        layer?.borderColor = NSColor.clear.cgColor
-        layer?.shadowOffset = .zero
-        layer?.shadowRadius = 14
-        layer?.shadowOpacity = 0
-        ringLayer.cornerRadius = Self.cornerRadius + Self.ringWidth
-        ringLayer.borderWidth = Self.ringWidth
-        ringLayer.borderColor = NSColor.clear.cgColor
-        layer?.addSublayer(ringLayer)
-
-        contentView.wantsLayer = true
-        contentView.layer?.cornerRadius = Self.cornerRadius - Self.borderWidth
-        contentView.layer?.masksToBounds = true
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(contentView)
-        NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(equalTo: topAnchor, constant: Self.borderWidth),
-            contentView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.borderWidth),
-            contentView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.borderWidth),
-            contentView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.borderWidth)
-        ])
+        layer?.masksToBounds = true
+        innerShadowLayer.fillRule = .evenOdd
+        innerShadowLayer.fillColor = NSColor.clear.cgColor
+        innerShadowLayer.shadowOffset = .zero
+        innerShadowLayer.shadowRadius = Self.glowRadius
+        innerShadowLayer.shadowOpacity = 0
+        edgeLayer.borderWidth = Self.edgeWidth
+        edgeLayer.borderColor = NSColor.clear.cgColor
+        layer?.addSublayer(innerShadowLayer)
+        layer?.addSublayer(edgeLayer)
     }
 
     @available(*, unavailable)
@@ -237,62 +225,70 @@ final class AssistedOptOutGlowFrameView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
     override func layout() {
         super.layout()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        layer?.shadowPath = CGPath(roundedRect: bounds, cornerWidth: Self.cornerRadius, cornerHeight: Self.cornerRadius, transform: nil)
-        ringLayer.frame = bounds.insetBy(dx: -Self.ringWidth, dy: -Self.ringWidth)
+        edgeLayer.frame = bounds
+        innerShadowLayer.frame = bounds
+        innerShadowLayer.path = Self.ringPath(outside: bounds, width: Self.glowRadius * 3)
         CATransaction.commit()
     }
 
-    func setGlow(_ glow: Glow) {
-        guard glow != self.glow else { return }
-        self.glow = glow
-        applyGlow()
+    private static func ringPath(outside rect: CGRect, width: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        path.addRect(rect.insetBy(dx: -width, dy: -width))
+        path.addRect(rect)
+        return path
+    }
+
+    func setEdge(_ edge: Edge) {
+        guard edge != self.edge else { return }
+        self.edge = edge
+        applyEdge()
     }
 
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
-        applyGlow()
+        applyEdge()
     }
 
-    private func applyGlow() {
+    private func applyEdge() {
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            updateGlowColors()
+            updateEdgeColors()
         }
     }
 
-    private func updateGlowColors() {
-        layer?.removeAnimation(forKey: Self.pulseKey)
+    private func updateEdgeColors() {
+        innerShadowLayer.removeAnimation(forKey: Self.pulseKey)
         let color: NSColor
-        switch glow {
+        switch edge {
         case .none:
-            layer?.borderColor = NSColor.clear.cgColor
-            layer?.shadowOpacity = 0
-            ringLayer.borderColor = NSColor.clear.cgColor
+            edgeLayer.borderColor = NSColor.clear.cgColor
+            innerShadowLayer.fillColor = NSColor.clear.cgColor
+            innerShadowLayer.shadowOpacity = 0
             return
         case .agent: color = NSColor(designSystemColor: .accentFirePrimary, palette: .default)
         case .user: color = NSColor(designSystemColor: .statusYellowPrimary, palette: .default)
         }
-        layer?.borderColor = color.cgColor
-        layer?.shadowColor = color.cgColor
-        layer?.shadowRadius = 14
-        layer?.shadowOpacity = 0.35
-        ringLayer.borderColor = color.withAlphaComponent(0.18).cgColor
+        edgeLayer.borderColor = color.cgColor
+        innerShadowLayer.fillColor = color.cgColor
+        innerShadowLayer.shadowColor = color.cgColor
+        innerShadowLayer.shadowOpacity = 0.5
 
         guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
-        let radius = CABasicAnimation(keyPath: "shadowRadius")
-        radius.toValue = glow == .user ? 22 : 20
-        let opacity = CABasicAnimation(keyPath: "shadowOpacity")
-        opacity.toValue = glow == .user ? 0.45 : 0.28
-        let pulse = CAAnimationGroup()
-        pulse.animations = [radius, opacity]
-        pulse.duration = glow == .user ? 0.8 : 1.2
+        let pulse = CABasicAnimation(keyPath: "shadowOpacity")
+        pulse.fromValue = edge == .user ? 0.8 : 0.5
+        pulse.toValue = edge == .user ? 0.3 : 0.25
+        pulse.duration = edge == .user ? 0.8 : 1.2
         pulse.autoreverses = true
         pulse.repeatCount = .infinity
         pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        layer?.add(pulse, forKey: Self.pulseKey)
+        innerShadowLayer.add(pulse, forKey: Self.pulseKey)
     }
 }
 

@@ -64,15 +64,10 @@ struct AssistedOptOutStepsPanel: View {
     let loadFavicon: @MainActor (AssistedOptOut.DataBroker) async -> Data?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            topRow
-                .padding(.top, -4)
-                .padding(.trailing, -4)
-                .padding(.bottom, -8)
+        VStack(alignment: .leading, spacing: 20) {
             header
             if session.phase == .submitted {
                 whatHappensNext
-                    .padding(.top, 8)
             } else {
                 steps
             }
@@ -84,44 +79,20 @@ struct AssistedOptOutStepsPanel: View {
         .background(Color(designSystemColor: .surfaceTertiary, palette: palette))
     }
 
-    private var topRow: some View {
-        HStack(spacing: 8) {
-            Spacer(minLength: 0)
-            if session.isAttemptRunning {
-                Text(AssistedOptOutText.closingStops)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textTertiary, palette: palette))
-            }
-            Button(action: close) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
-                    .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsPrimary, palette: palette))
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary, palette: palette)))
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .help(session.phase == .submitted ? AssistedOptOutText.close : AssistedOptOutText.closeStops)
-            .accessibilityLabel(session.phase == .submitted ? AssistedOptOutText.close : AssistedOptOutText.closeStops)
-        }
-    }
-
     private var header: some View {
-        VStack(spacing: 12) {
-            AssistedOptOutBrokerLogo(broker: session.broker, size: 56, loadFavicon: loadFavicon)
-            Text(session.phase == .submitted ? AssistedOptOutText.submittedTo(session.broker.name) : AssistedOptOutText.removingFrom(session.broker.name))
-                .font(.system(size: 22))
-                .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                .fixedSize(horizontal: false, vertical: true)
-            Text(subtitle)
-                .font(.system(size: 15))
-                .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 12) {
+            AssistedOptOutBrokerLogo(broker: session.broker, size: 32, loadFavicon: loadFavicon)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.phase == .submitted ? AssistedOptOutText.submittedTo(session.broker.name) : AssistedOptOutText.removingFrom(session.broker.name))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                Text(subtitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-        .padding(24)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Color(designSystemColor: .containerFillPrimary, palette: palette)))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var subtitle: String {
@@ -130,7 +101,7 @@ struct AssistedOptOutStepsPanel: View {
         case .submitted: return AssistedOptOutText.submittedSubtitle
         case .userTurn: return AssistedOptOutText.userSubtitle(session.broker.name)
         case .queued: return AssistedOptOutText.openingBroker(session.broker.name)
-        case .agentInControl: return AssistedOptOutText.fillingDetails
+        case .agentInControl: return session.currentStepTitle ?? AssistedOptOutText.fillingDetails
         }
     }
 
@@ -169,7 +140,13 @@ struct AssistedOptOutStepsPanel: View {
     }
 
     private var footer: some View {
-        HStack {
+        HStack(spacing: 12) {
+            if session.isAttemptRunning {
+                Text(AssistedOptOutText.closingStops)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textTertiary, palette: palette))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Spacer(minLength: 0)
             switch session.phase {
             case .ready:
@@ -181,7 +158,7 @@ struct AssistedOptOutStepsPanel: View {
                     .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 12, bottomPadding: 12,
                                                           stateColors: .assistedOptOutAction(palette: palette)))
             case .queued, .agentInControl, .userTurn:
-                Button(action: close) {
+                Button(action: session.requestCancel) {
                     HStack(spacing: 8) {
                         Image(nsImage: DesignSystemImages.Glyphs.Size16.stopSquare)
                             .renderingMode(.template)
@@ -191,7 +168,6 @@ struct AssistedOptOutStepsPanel: View {
                 }
                 .buttonStyle(DismissActionButtonStyle(topPadding: 12, bottomPadding: 12,
                                                      stateColors: .assistedOptOutDismiss(palette: palette)))
-                .help(AssistedOptOutText.closeStops)
             }
         }
     }

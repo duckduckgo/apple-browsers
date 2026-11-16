@@ -1,6 +1,18 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "pir.assisted.keep-going": {
+      "comment": "Dismisses the stop confirmation and continues the removal.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Going"
+          }
+        }
+      }
+    },
     "pir.assisted.status.not-started": {
       "comment": "Status before an assisted removal begins.",
       "extractionState": "manual",
@@ -49,30 +61,6 @@
         }
       }
     },
-    "pir.assisted.close": {
-      "comment": "Closes the completed removal window.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close"
-          }
-        }
-      }
-    },
-    "pir.assisted.close-stops": {
-      "comment": "Help and accessibility label for closing an unfinished removal window.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close and stop removal"
-          }
-        }
-      }
-    },
     "pir.assisted.closing-stops": {
       "comment": "Explains that closing an unfinished removal window cancels it.",
       "extractionState": "manual",
@@ -93,6 +81,30 @@
           "stringUnit": {
             "state": "translated",
             "value": "Removing you from %@"
+          }
+        }
+      }
+    },
+    "pir.assisted.stop-confirmation.detail": {
+      "comment": "Explains what closing an unfinished removal window does.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closing this window stops the request. You can start it again from the dashboard."
+          }
+        }
+      }
+    },
+    "pir.assisted.stop-confirmation.title": {
+      "comment": "Title of the confirmation shown when closing an unfinished removal window. %@ is the data broker name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop removing you from %@?"
           }
         }
       }

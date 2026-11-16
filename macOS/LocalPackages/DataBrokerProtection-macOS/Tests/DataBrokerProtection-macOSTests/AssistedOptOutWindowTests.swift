@@ -32,8 +32,13 @@ struct AssistedOptOutWindowTests {
         let session = makeSession()
         advance(session, to: phase)
         let window = makeOffscreenWindow()
+        var confirmations = 0
         let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {},
-                                                       makeWindow: { window }, loadFavicon: { _ in nil })
+                                                       makeWindow: { window }, loadFavicon: { _ in nil },
+                                                       confirmStop: { _, _, completion in
+            confirmations += 1
+            completion(true)
+        })
         var cancellations = 0
         session.onCancelRequested = { [weak presenter] session in
             cancellations += 1
@@ -46,6 +51,8 @@ struct AssistedOptOutWindowTests {
         if directClose { window.close() } else { window.performClose(nil) }
         window.performClose(nil)
         try await Task.sleep(nanoseconds: 20_000_000)
+        let isRunning = phase == .queued || phase == .agentInControl || phase == .userTurn
+        #expect(confirmations == (isRunning && !directClose ? 1 : 0))
         #expect(cancellations == (phase == .submitted ? 0 : 1))
         #expect(!window.isVisible)
         #expect(!session.isWindowKey)
@@ -55,6 +62,25 @@ struct AssistedOptOutWindowTests {
             session.attemptDidCreate(webView: lateWebView)
             #expect(lateWebView.superview == nil)
         }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func decliningStopConfirmationKeepsAttemptAndWindow() {
+        let session = makeSession()
+        advance(session, to: .agentInControl)
+        let window = makeOffscreenWindow()
+        let presenter = AssistedOptOutWindowPresenter(isApplicationActive: { false }, requestUserAttention: {},
+                                                       makeWindow: { window }, loadFavicon: { _ in nil },
+                                                       confirmStop: { _, _, completion in completion(false) })
+        defer { presenter.dismiss(session) }
+        var cancellations = 0
+        session.onCancelRequested = { _ in cancellations += 1 }
+        presenter.present(session)
+        window.performClose(nil)
+        #expect(cancellations == 0)
+        #expect(window.isVisible)
+        #expect(window.windowController != nil)
     }
 
     @available(iOS 16, macOS 13, *)

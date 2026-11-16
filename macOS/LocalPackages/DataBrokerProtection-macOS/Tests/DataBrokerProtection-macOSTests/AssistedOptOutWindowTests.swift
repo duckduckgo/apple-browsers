@@ -149,6 +149,33 @@ struct AssistedOptOutWindowTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func windowFloatsOnlyDuringUserTurn() {
+        let session = makeSession()
+        let window = makeOffscreenWindow()
+        let controller = AssistedOptOutWindowController(session: session, window: window, loadFavicon: { _ in nil }, onClose: {})
+        defer { controller.close() }
+        session.begin()
+        session.attemptDidCreate(webView: WKWebView())
+        session.attemptWillRun(userAction)
+        #expect(window.level == .normal)
+        session.attemptNeedsUser(actionID: userAction.id)
+        #expect(window.level == .floating)
+        session.attemptWillRun(UserAssistAction(id: "next"))
+        #expect(window.level == .normal)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        ("https://www.beenverified.com/svc/optout/search?q=1", "beenverified.com"),
+        ("https://xn--bcher-kva.example/path", "bücher.example"),
+        ("http://localhost:8080/form", "localhost:8080")
+    ])
+    func addressShowsDomainLikeBrowserAddressBar(url: String, expected: String) throws {
+        #expect(AssistedOptOutAddress.addressBarHost(of: try #require(URL(string: url))) == expected)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func realHiddenWindowRendersPhasesAndLiveAppearanceWithLocalPage() async throws {
         let session = makeSession()
         let window = makeOffscreenWindow()

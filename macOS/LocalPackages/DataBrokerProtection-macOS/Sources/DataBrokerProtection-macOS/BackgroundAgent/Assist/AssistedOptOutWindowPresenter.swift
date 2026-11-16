@@ -67,9 +67,11 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
         }
         if applicationIsActive {
             window.makeKeyAndOrderFront(nil)
+        } else if requestingAttention {
+            window.orderFrontRegardless()
+            requestUserAttention()
         } else {
             window.orderFront(nil)
-            if requestingAttention { requestUserAttention() }
         }
     }
 
@@ -223,6 +225,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     }
 
     private func update(phase: AssistedAttemptPhase, hasLoadedPage: Bool) {
+        window?.level = phase == .userTurn ? .floating : .normal
         if !hasLoadedPage, phase == .userTurn || phase == .submitted {
             page.revealPage()
             return

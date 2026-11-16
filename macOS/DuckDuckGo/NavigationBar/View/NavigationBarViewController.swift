@@ -2345,7 +2345,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         updateController.pendingUpdatePromptStagePublisher
             .combineLatest(updateController.updateProgressPublisher)
             .receive(on: DispatchQueue.main)
-            .map { stage, _ in stage.showsToolbarButton ? updateController.updatePromptButtonTitle : nil }
+            .map { stage, _ in stage.showsToolbarButton ? updateController.addressBarUpdateButtonTitle : nil }
             .removeDuplicates()
             .sink { [weak self] title in
                 self?.addressBarUpdateButton?.removeFromSuperview()

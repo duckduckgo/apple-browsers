@@ -161,8 +161,16 @@ class MainViewCoordinator {
         }
         applyNavigationBarContainerVisibility(updatesInteraction: true)
         applyContentContainerTopAnchorForCurrentState()
+        applyContentContainerBottomAnchorForRestingNewTabPage()
         updateStatusBackgroundAnchors()
         applyResolvedStatusBackgroundColor()
+    }
+
+    /// Hiding the navigation container drops the unified toggle input's claim on the content bottom,
+    /// so the anchor left over from an AI tab has to be resolved again or the page ends above the toolbar.
+    private func applyContentContainerBottomAnchorForRestingNewTabPage() {
+        guard newTabPageInputPresentation.hidesNavigationContainer, !isNavigationChromeHidden else { return }
+        setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
     }
 
     private func setNavigationBarContainerHidden(_ hidden: Bool, updatesAlpha: Bool = true) {
@@ -950,7 +958,8 @@ class MainViewCoordinator {
             } else {
                 constraints.navigationBarContainerBottom.constant = 0
             }
-            if navigationBarContainer.isHidden {
+            // A resting New Tab Page hides the container itself, which leaves the toolbar in place.
+            if navigationBarContainer.isHidden, !newTabPageInputPresentation.hidesNavigationContainer {
                 setContentContainerBottomAnchorMode(requesting: .safeArea)
             } else {
                 setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())

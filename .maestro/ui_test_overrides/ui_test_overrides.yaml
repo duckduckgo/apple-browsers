@@ -19,6 +19,7 @@ tags:
         currentAppVariant: ${APP_VARIANT}
         "ff.uiTestFeatureFlag": "true"
         "experiment.uiTestExperiment": "treatment"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # Open Debug Menu
 - tapOn: Browsing menu

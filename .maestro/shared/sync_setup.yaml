@@ -13,3 +13,4 @@ appId: com.duckduckgo.mobile.ios
         isRunningUITests: true
         "ff.slideToDelete": "false"
         isInternalUser: ${INTERNAL_USER_MODE}
+- runFlow: dismiss_launch_keyboard.yaml

@@ -17,6 +17,7 @@ name: test_enter_chat_from_web
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.aiChatTabHandoffImprovements: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # Dismiss any launch-time modals
 - runFlow:

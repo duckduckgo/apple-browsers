@@ -325,6 +325,45 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(makeController().hasAccessToPrivateData(for: context.uniqueIdentifier), true)
     }
 
+    // MARK: - Unavailable Permissions
+
+    func testWhenOnlyAnUnavailablePermissionIsRequestedThenThePromptExplainsItAndNothingIsGranted() async throws {
+        let controller = makeController()
+        let manager = makeManager(permissionController: controller, unavailablePermissions: [.nativeMessaging])
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        try await controller.prepare(context)
+
+        let granted = await requestPermissions([.nativeMessaging], from: manager, for: context)
+
+        XCTAssertEqual(granted, [])
+        XCTAssertFalse(context.hasPermission(.nativeMessaging))
+        XCTAssertEqual(prompter.permissionRequests.map(\.permissions), [[]])
+        XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
+    }
+
+    func testWhenAnUnavailablePermissionIsRequestedWithOthersThenOnlyTheOthersAreGranted() async throws {
+        let controller = makeController()
+        let manager = makeManager(permissionController: controller, unavailablePermissions: [.nativeMessaging])
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
+        try await controller.prepare(context)
+
+        let granted = await requestPermissions([.nativeMessaging, .clipboardWrite], from: manager, for: context)
+
+        XCTAssertEqual(granted, [.clipboardWrite])
+        XCTAssertFalse(context.hasPermission(.nativeMessaging))
+        XCTAssertEqual(prompter.permissionRequests.map(\.permissions), [[.clipboardWrite]])
+        XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
+    }
+
+    func testWhenPermissionsAreNotEnforcedThenUnavailablePermissionsAreStillNotGranted() async throws {
+        let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging])
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
+
+        let granted = await requestPermissions([.nativeMessaging, .clipboardWrite], from: manager, for: context)
+
+        XCTAssertEqual(granted, [.clipboardWrite])
+    }
+
     func testWhenAdditionalPermissionsAreDeniedThenGrantsDoNotChange() async throws {
         let controller = makeController()
         let context = try await makeContext()
@@ -1127,6 +1166,27 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                             permissionController: makeController(),
                             pixelFiring: pixelFiring,
                             bundledExtensionURL: bundledExtensionURL)
+    }
+
+    private func makeManager(
+        permissionController: WebExtensionPermissionController?,
+        unavailablePermissions: Set<WKWebExtension.Permission>
+    ) -> WebExtensionManager {
+        WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
+                            controllerConfiguration: .nonPersistent(),
+                            windowTabProvider: WebExtensionWindowTabProvidingMock(),
+                            storageProvider: WebExtensionStorageProvider(extensionsDirectory: FileManager.default.temporaryDirectory),
+                            installationStore: installationStore,
+                            permissionController: permissionController,
+                            unavailablePermissions: unavailablePermissions)
+    }
+
+    private func requestPermissions(
+        _ permissions: Set<WKWebExtension.Permission>,
+        from manager: WebExtensionManager,
+        for context: WKWebExtensionContext
+    ) async -> Set<WKWebExtension.Permission> {
+        await manager.webExtensionController(manager.controller, promptForPermissions: permissions, in: nil, for: context).0
     }
 
     private func makeContext(claimsDDGIdentity: Bool = false,

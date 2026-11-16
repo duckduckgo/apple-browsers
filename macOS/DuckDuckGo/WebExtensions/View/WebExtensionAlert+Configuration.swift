@@ -33,7 +33,7 @@ extension WebExtensionAlert.Configuration {
             checkbox: UserText.webExtensionAllowFireWindows,
             checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
             confirmTitle: UserText.webExtensionInstall,
-            cancelTitle: UserText.cancel)
+            leadingButton: .cancel(UserText.cancel))
     }
 
     static func removal(of webExtension: WKWebExtension?, name: String) -> Self {
@@ -41,6 +41,17 @@ extension WebExtensionAlert.Configuration {
             icon: webExtension?.displayIcon(for: iconSize),
             title: String(format: UserText.chromeWebStoreRemoveTitle, name),
             confirmTitle: UserText.webExtensionRemoveButton,
-            cancelTitle: UserText.cancel)
+            leadingButton: .cancel(UserText.cancel))
+    }
+
+    static func nativeMessagingUnavailable(for webExtension: WKWebExtension) -> Self {
+        let name = webExtension.displayName ?? UserText.webExtensionUnnamedExtension
+        return Self(
+            icon: nil,
+            title: String(format: UserText.webExtensionNativeMessagingUnavailableTitle, name),
+            message: String(format: UserText.webExtensionNativeMessagingUnavailableMessage, name),
+            checkbox: UserText.webExtensionNativeMessagingUnavailableDontShowAgain,
+            confirmTitle: UserText.ok,
+            leadingButton: .secondary(UserText.learnMore))
     }
 }

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import WebExtensions
 import WebKit
 
@@ -25,11 +26,23 @@ import WebKit
 final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     private let windowProvider: () -> NSWindow?
     private let themeManager: ThemeManager
+    private let alertPresenter: WebExtensionAlertPresenterProtocol
+    private let nativeMessagingAlertSuppressionStore: NativeMessagingAlertSuppressionStoreProtocol
+    private let windowControllersManager: WindowControllersManagerProtocol
     private var pendingPrompt: Task<Void, Never>?
 
-    init(windowProvider: @escaping () -> NSWindow?, themeManager: ThemeManager) {
+    init(
+        windowProvider: @escaping () -> NSWindow?,
+        themeManager: ThemeManager,
+        alertPresenter: WebExtensionAlertPresenterProtocol? = nil,
+        nativeMessagingAlertSuppressionStore: NativeMessagingAlertSuppressionStoreProtocol = NativeMessagingAlertSuppressionStore(),
+        windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager
+    ) {
         self.windowProvider = windowProvider
         self.themeManager = themeManager
+        self.alertPresenter = alertPresenter ?? WebExtensionAlertPresenter(windowProvider: windowProvider, themeManager: themeManager)
+        self.nativeMessagingAlertSuppressionStore = nativeMessagingAlertSuppressionStore
+        self.windowControllersManager = windowControllersManager
     }
 
     func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
@@ -47,13 +60,43 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        let asksForUnavailablePermissions = !permissions.unavailablePermissions.isEmpty
+
         // Nothing to warn the user about, so nothing to ask: the alert would list no permissions above an Allow button.
         if WebExtensionPermissionFormatter.messages(for: permissions).isEmpty {
+            if asksForUnavailablePermissions {
+                await explainNativeMessagingIsUnavailable(to: context)
+            }
             return .granted
         }
 
         let alert = makeAlert(for: context.webExtension, permissions: permissions)
+        if asksForUnavailablePermissions, let stack = alert.accessoryView as? NSStackView {
+            let note = NSTextField(wrappingLabelWithString: UserText.webExtensionNativeMessagingUnavailablePermission)
+            note.textColor = NSColor(designSystemColor: .textSecondary, palette: themeManager.designColorPalette)
+            note.preferredMaxLayoutWidth = 380
+            stack.addArrangedSubview(note)
+        }
         return await present(alert) == .alertFirstButtonReturn ? .granted : .denied
+    }
+
+    /// Native messaging is the only permission the App Store build can't grant, so the alert explains that one.
+    private func explainNativeMessagingIsUnavailable(to context: WKWebExtensionContext) async {
+        let identifier = context.uniqueIdentifier
+        guard !nativeMessagingAlertSuppressionStore.isSuppressed(for: identifier) else { return }
+
+        let configuration = WebExtensionAlert.Configuration.nativeMessagingUnavailable(for: context.webExtension)
+        let response = await enqueue { [alertPresenter] in
+            await alertPresenter.present(configuration)
+        }
+        switch response {
+        case .confirmed(isChecked: true):
+            nativeMessagingAlertSuppressionStore.suppress(for: identifier)
+        case .secondary:
+            windowControllersManager.show(url: .ddgLearnMore, tabId: nil, source: .ui, newTab: true, selected: true)
+        case .confirmed(isChecked: false), .cancelled:
+            break
+        }
     }
 
     // Several extensions (or several requests from one extension) may prompt concurrently.

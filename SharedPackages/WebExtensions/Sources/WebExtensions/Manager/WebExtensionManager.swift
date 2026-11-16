@@ -117,6 +117,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
     let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
 
+    /// Permissions this build never grants at runtime, such as `nativeMessaging` in the App Store build.
+    let unavailablePermissions: Set<WKWebExtension.Permission>
+
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
 
@@ -258,6 +261,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
+                unavailablePermissions: Set<WKWebExtension.Permission> = [],
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 retentionStore: WebExtensionRetentionStore? = nil,
                 isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
@@ -318,6 +322,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
+        self.unavailablePermissions = unavailablePermissions
         self.storePixelsReporter = retentionStore.map { WebExtensionStorePixelsReporter(store: $0, installationStore: installationStore, pixelFiring: pixelFiring, now: now) }
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
@@ -1708,9 +1713,11 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        promptForPermissions permissions: Set<WKWebExtension.Permission>,
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.Permission>, Date?) {
-        guard let permissionController else { return (permissions, nil) }
-        let granted = await permissionController.request(WebExtensionPermissionRequest(permissions: permissions), for: extensionContext)
-        return (granted ? permissions : [], nil)
+        let unavailable = permissions.intersection(unavailablePermissions)
+        let request = WebExtensionPermissionRequest(permissions: permissions.subtracting(unavailable), unavailablePermissions: unavailable)
+        guard let permissionController else { return (request.permissions, nil) }
+        let granted = await permissionController.request(request, for: extensionContext)
+        return (granted ? request.permissions : [], nil)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,

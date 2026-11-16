@@ -162,6 +162,7 @@ enum WebExtensionManagerFactory {
                 eventHub: eventHub
             ),
             nativeMessagingHandler: nativeMessagingHandler,
+            unavailablePermissions: buildType.isAppStoreBuild ? [.nativeMessaging] : [],
             keyValueStore: keyValueStore,
             retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration

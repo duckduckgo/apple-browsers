@@ -25,6 +25,13 @@ import SwiftUIExtensions
 struct WebExtensionAlert: View {
 
     struct Configuration {
+        enum LeadingButton {
+            /// Closes the alert. Escape presses it.
+            case cancel(String)
+            /// Another action, such as Learn More. Escape doesn't press it.
+            case secondary(String)
+        }
+
         let icon: NSImage?
         let title: String
         var message: String?
@@ -32,11 +39,12 @@ struct WebExtensionAlert: View {
         var checkbox: String?
         var checkboxToolTip: String?
         let confirmTitle: String
-        let cancelTitle: String
+        let leadingButton: LeadingButton
     }
 
     enum Response {
         case cancelled
+        case secondary
         case confirmed(isChecked: Bool)
     }
 
@@ -172,15 +180,7 @@ struct WebExtensionAlert: View {
 
     private var buttons: some View {
         HStack(spacing: Constants.buttonSpacing) {
-            Button {
-                respond(.cancelled)
-            } label: {
-                Text(configuration.cancelTitle)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: Constants.buttonHeight)
-            }
-            .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
-            .keyboardShortcut(.cancelAction)
+            leadingButton
 
             Button {
                 respond(.confirmed(isChecked: isChecked))
@@ -192,6 +192,28 @@ struct WebExtensionAlert: View {
             .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, stateColors: .themedActionButton, pillShape: true))
             .keyboardShortcut(.defaultAction)
         }
+    }
+
+    @ViewBuilder
+    private var leadingButton: some View {
+        switch configuration.leadingButton {
+        case .cancel(let title):
+            dismissStyleButton(title, response: .cancelled)
+                .keyboardShortcut(.cancelAction)
+        case .secondary(let title):
+            dismissStyleButton(title, response: .secondary)
+        }
+    }
+
+    private func dismissStyleButton(_ title: String, response: Response) -> some View {
+        Button {
+            respond(response)
+        } label: {
+            Text(title)
+                .frame(maxWidth: .infinity)
+                .frame(height: Constants.buttonHeight)
+        }
+        .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
     }
 
     private func respond(_ response: Response) {

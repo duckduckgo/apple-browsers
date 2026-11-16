@@ -17,10 +17,12 @@
 //
 
 import AppKit
+import Common
 import ConcurrencyExtensions
 import DataBrokerProtectionCore
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import FoundationExtensions
 import SwiftUI
 import WebKit
 
@@ -122,18 +124,12 @@ struct AssistedOptOutAppearanceRoot<Content: View>: View {
 
 @MainActor
 struct AssistedOptOutAddress: View {
-    // Toolbar items with a width constraint get a different corner radius, so the address is shortened instead.
-    private static let maxPathLength = 40
-
     @Environment(\.designSystemPalette) private var palette
     @ObservedObject var session: AssistedOptOutSession
     @ObservedObject var page: AssistedOptOutPageModel
 
     var body: some View {
         let url = page.url ?? session.broker.homeURL
-        let host = url?.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? session.broker.url
-        let fullPath = url?.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")) ?? ""
-        let path = fullPath.count > Self.maxPathLength ? String(fullPath.prefix(Self.maxPathLength - 1)) + "…" : fullPath
         return HStack(spacing: 8) {
             if url?.scheme == "https" {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
@@ -141,15 +137,21 @@ struct AssistedOptOutAddress: View {
                     .foregroundColor(Color(designSystemColor: .iconsSecondary, palette: palette))
                     .accessibilityHidden(true)
             }
-            (Text(host).fontWeight(.medium).foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-             + Text(path.isEmpty ? "" : " / \(path)").foregroundColor(Color(designSystemColor: .textSecondary, palette: palette)))
+            Text(url.flatMap(Self.addressBarHost(of:)) ?? session.broker.url)
+                .fontWeight(.medium)
+                .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
                 .lineLimit(1)
-                .truncationMode(.tail)
         }
         .font(.system(size: 13))
         .padding(.horizontal, 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(AssistedOptOutText.pageAddress(url?.absoluteString ?? session.broker.url))
+    }
+
+    static func addressBarHost(of url: URL) -> String? {
+        guard let host = url.host, !host.isEmpty else { return nil }
+        let displayHost = (host.punycodeDecodedHostname ?? host).droppingWwwPrefix()
+        return url.port.map { "\(displayHost):\($0)" } ?? displayHost
     }
 }
 

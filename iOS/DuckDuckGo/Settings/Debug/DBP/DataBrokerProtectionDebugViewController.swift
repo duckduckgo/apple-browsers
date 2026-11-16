@@ -22,7 +22,6 @@ import Common
 import FoundationExtensions
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
-import DebugServer
 import Core
 import Subscription
 import PixelKit
@@ -526,8 +525,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 if let port = debuggingDelegate?.debugServerPort {
                     toggle.isOn = true
                     cell.detailTextLabel?.numberOfLines = 0
-                    let host = DebugServerNetworkInterface.wiFiAddress() ?? "127.0.0.1"
-                    cell.detailTextLabel?.text = "http://\(host):\(port)/api"
+                    cell.detailTextLabel?.text = "http://127.0.0.1:\(port)/api\nOn a device, run `iproxy \(port):\(port)` on your Mac first."
                 } else {
                     toggle.isOn = false
                     cell.detailTextLabel?.text = nil
@@ -699,10 +697,13 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private func handleDebugAction(for row: DebugActionRows) {
         switch row {
         case .runPIRDebugMode:
-            let debugModeViewController = RunDBPDebugModeViewController(
-                freemiumPIRDebugSettings: freemiumPIRDebugSettings
-            )
-            self.navigationController?.pushViewController(debugModeViewController, animated: true)
+            do {
+                guard let runner = try debuggingDelegate?.makeDebugModeRunner(contentBlocking: makeContentBlocking()) else { return }
+                let debugModeViewController = RunDBPDebugModeViewController(runner: runner)
+                self.navigationController?.pushViewController(debugModeViewController, animated: true)
+            } catch {
+                presentAlert(title: "PIR Debug Mode", message: "Failed to open the PIR database: \(error.localizedDescription)")
+            }
         case .forceBrokerJSONRefresh:
             Task { @MainActor in
                 try await debuggingDelegate?.refreshRemoteBrokerJSON()
@@ -729,10 +730,14 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         }
     }
 
+    private func makeContentBlocking() -> DBPWebViewContentBlocking {
+        DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+    }
+
     @objc private func debugServerToggled(_ sender: UISwitch) {
         if sender.isOn {
             Task { @MainActor in
-                guard await debuggingDelegate?.startDebugServer() == true else {
+                guard await debuggingDelegate?.startDebugServer(contentBlocking: makeContentBlocking()) == true else {
                     sender.setOn(false, animated: true)
                     presentAlert(title: "Debug Server", message: "Failed to start the debug server.")
                     return

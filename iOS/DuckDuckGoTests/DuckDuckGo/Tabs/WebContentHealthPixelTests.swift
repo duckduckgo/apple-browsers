@@ -79,8 +79,8 @@ final class WebContentHealthPixelTests: XCTestCase {
     // MARK: - Web content freezes
 
     func testTabViewControllerRespondsToWebKitResponsivenessCallbacks() {
-        XCTAssertTrue(TabViewController.instancesRespond(to: Selector(("_webViewWebProcessDidBecomeUnresponsive:"))))
-        XCTAssertTrue(TabViewController.instancesRespond(to: Selector(("_webViewWebProcessDidBecomeResponsive:"))))
+        XCTAssertTrue(TabViewController.instancesRespond(to: NSSelectorFromString("_webViewWebProcessDidBecomeUnresponsive:")))
+        XCTAssertTrue(TabViewController.instancesRespond(to: NSSelectorFromString("_webViewWebProcessDidBecomeResponsive:")))
     }
 
     func testWhenFrozenPageRecoversThenDurationAndAttemptsAreReported() {

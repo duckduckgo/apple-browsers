@@ -34,6 +34,7 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadRe
     private(set) var didCallSelectDownloadReason = false
     private(set) var capturedDownloadReason: OnboardingDownloadReason?
     var currentDownloadReason: OnboardingDownloadReason?
+    var isVPNDownloadReasonAvailable = false
     var stubbedRemainingSteps: [DuckDuckGo.OnboardingIntroStep] = []
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool = false

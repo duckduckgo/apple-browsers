@@ -22,6 +22,7 @@ import DDGNavigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
+import WebExtensions
 import WebKit
 import XCTest
 
@@ -100,16 +101,10 @@ final class TabTests: XCTestCase {
     @available(macOS 15.4, *)
     @MainActor
     func testWhenExtensionOriginCaseChangesThenRegisteredOriginIsUsed() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        try #"{"manifest_version":3,"name":"Navigation Test","version":"1.0"}"#
-            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
-        for page in ["intro.html", "tutorial.html"] {
-            let title = page == "intro.html" ? "Intro" : "Tutorial"
-            try "<html><body>\(title)</body></html>".write(to: directory.appendingPathComponent(page), atomically: true, encoding: .utf8)
-        }
-        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let webExtension = try await makeWebExtension(name: "Navigation Test", pages: [
+            "intro.html": "<html><body>Intro</body></html>",
+            "tutorial.html": "<html><body>Tutorial</body></html>"
+        ])
         let controller = WKWebExtensionController(configuration: .nonPersistent())
         let foreignContext = WKWebExtensionContext(for: webExtension)
         foreignContext.baseURL = URL(string: "webkit-extension://foreign-extension/")!
@@ -316,6 +311,131 @@ final class TabTests: XCTestCase {
 
     @available(macOS 15.4, *)
     @MainActor
+    func testWhenExtensionUpdatesTabURLThenContentMatchesURLType() async throws {
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Tab Update Test"))
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+
+        let extensionURL = URL(string: "webkit-extension://example/app/app.html#/page/ready")!
+        try await tab.loadURL(extensionURL, for: context)
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+
+        try await tab.loadURL(urls.url1, for: context)
+        XCTAssertEqual(tab.content, .url(urls.url1, source: .ui))
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenContentIsExtensionPageThenTabWebViewLoadsStandInWithoutError() async throws {
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Tab Load Test", pages: [
+            "app.html": "<html><body>App</body></html>"
+        ]))
+        context.baseURL = URL(string: "webkit-extension://example/")!
+        try controller.load(context)
+        defer { try? controller.unload(context) }
+        let manager = StubWebExtensionManager(context: context)
+        tab = Tab(content: .none,
+                  webViewConfiguration: try XCTUnwrap(context.webViewConfiguration),
+                  webExtensionManagerProvider: { manager })
+
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
+
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
+
+        XCTAssertEqual(tab.webView.url, extensionURL)
+        XCTAssertNil(tab.error)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenNoLoadedExtensionServesPageThenTabWebViewLoadsIt() async throws {
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Tab Load Test"))
+        context.baseURL = URL(string: "webkit-extension://example/")!
+        try controller.load(context)
+        defer { try? controller.unload(context) }
+        let manager = StubWebExtensionManager(context: nil)
+        tab = Tab(content: .none,
+                  webViewConfiguration: try XCTUnwrap(context.webViewConfiguration),
+                  webExtensionManagerProvider: { manager })
+        let extensionURL = URL(string: "webkit-extension://missing/app.html")!
+
+        tab.setContent(.webExtensionUrl(extensionURL))
+
+        XCTAssertEqual(tab.webView.url, extensionURL)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionPageReplacesPendingNavigationThenContentStaysOnExtensionPage() async throws {
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
+        tab = try await makeTabWithLoadedWebExtension()
+
+        tab.setContent(.url(urls.url1, source: .link))
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
+
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenGoingBackAndForwardAroundExtensionPageThenContentFollowsHistory() async throws {
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
+        tab = try await makeTabWithLoadedWebExtension()
+        try await tab.setContent(.url(urls.url, source: .link))?.result.get()
+        try await tab.setContent(.url(urls.url1, source: .link))?.result.get()
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
+
+        try await tab.goBack()?.result.get()
+        XCTAssertEqual(tab.content, .url(urls.url1, source: .historyEntry))
+
+        try await tab.goForward()?.result.get()
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+        XCTAssertNil(tab.error)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionPageIsReloadedThenTabShowsNoError() async throws {
+        let extensionURL = URL(string: "webkit-extension://example/app.html")!
+        tab = try await makeTabWithLoadedWebExtension()
+        try await tab.setContent(.webExtensionUrl(extensionURL))?.result.get()
+
+        _ = await tab.reload()?.result
+        await waitForNavigationToEnd()
+
+        XCTAssertEqual(tab.content, .webExtensionUrl(extensionURL))
+        XCTAssertNil(tab.error)
+    }
+
+    /// A tab whose web view serves websites, with `webkit-extension://example/` pages served by a loaded extension.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeTabWithLoadedWebExtension() async throws -> Tab {
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Loaded Extension"))
+        context.baseURL = URL(string: "webkit-extension://example/")!
+        try controller.load(context)
+        addTeardownBlock { @MainActor in try? controller.unload(context) }
+        let manager = StubWebExtensionManager(context: context)
+        schemeHandler.middleware = [{ _ in .ok(.html("")) }]
+
+        return Tab(content: .none,
+                   webViewConfiguration: schemeHandler.webViewConfiguration(),
+                   webExtensionManagerProvider: { manager })
+    }
+
+    /// The stand-in that replaces a failed load finishes in a navigation of its own.
+    @MainActor
+    private func waitForNavigationToEnd() async {
+        let eNavigationEnded = expectation(description: "navigation ended")
+        let cancellable = tab.navigationDidEndPublisher.first().sink { _ in eNavigationEnded.fulfill() }
+        await fulfillment(of: [eNavigationEnded], timeout: 5)
+        cancellable.cancel()
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
     func testWhenExtensionSubframeNavigatesThenOwningTabStaysUnchanged() async {
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let frame = WKFrameInfo.mock(for: tab.webView, isMain: false)
@@ -348,12 +468,7 @@ final class TabTests: XCTestCase {
     @available(macOS 15.4, *)
     @MainActor
     func testUnsupportedExtensionAPIsReturnErrorsWithoutTrapping() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        try #"{"manifest_version":3,"name":"Unsupported API Test","version":"1.0"}"#
-            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
-        let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Unsupported API Test"))
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let calls: [String: () async throws -> Void] = [
             "tabs.setZoom": { try await self.tab.setZoomFactor(2, for: context) },
@@ -391,13 +506,7 @@ final class TabTests: XCTestCase {
     @available(macOS 15.4, *)
     @MainActor
     func testWhenExtensionRequestsSnapshotThenExtensionPageIsCaptured() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        try #"{"manifest_version":3,"name":"Snapshot Test","version":"1.0"}"#
-            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
-        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
-        let context = WKWebExtensionContext(for: webExtension)
+        let context = WKWebExtensionContext(for: try await makeWebExtension(name: "Snapshot Test"))
 
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let pageTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
@@ -420,6 +529,21 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(image.size.width, 32)
         XCTAssertEqual(image.size.height, 24)
         withExtendedLifetime((pageTab, window)) {}
+    }
+
+    /// Pages stay on disk until teardown, so tests can load them.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeWebExtension(name: String, pages: [String: String] = [:]) async throws -> WKWebExtension {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        try #"{"manifest_version":3,"name":"\#(name)","version":"1.0"}"#
+            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        for (page, html) in pages {
+            try html.write(to: directory.appendingPathComponent(page), atomically: true, encoding: .utf8)
+        }
+        return try await WKWebExtension(resourceBaseURL: directory)
     }
 
     // MARK: - Equality
@@ -852,4 +976,51 @@ private extension Tab {
             setContent(newValue.map { TabContent.url($0, source: .link) } ?? .newtab)
         }
     }
+}
+
+/// A web extension manager that only resolves extension pages to `context`, which is all these tests ask for.
+@available(macOS 15.4, *)
+private final class StubWebExtensionManager: WebExtensionManaging {
+
+    let context: WKWebExtensionContext?
+    let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring = NoOpCPMMessagingHealthMonitor()
+    let badgeColors = WebExtensionBadgeColorStore()
+    let eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
+    let extensionsDirectory = FileManager.default.temporaryDirectory
+    let loadedExtensions: Set<WKWebExtensionContext> = []
+    let webExtensionIdentifiers: [String] = []
+    let extensionUpdates = AsyncStream<Void>.makeStream().stream
+    let lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent>.makeStream().stream
+
+    init(context: WKWebExtensionContext?) {
+        self.context = context
+    }
+
+    func attachExtensions(to configuration: WKWebViewConfiguration) {}
+    func loadInstalledExtensions() async {}
+    func reloadInstalledExtensions() async {}
+    func installExtension(from sourceURL: URL) async throws {}
+    func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
+    func uninstallExtension(identifier: String) throws {}
+    func uninstallAllExtensions() -> [Result<Void, Error>] { [] }
+    func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {}
+    func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {}
+    func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? { nil }
+    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? { nil }
+    func unloadAllExtensions() {}
+    func reloadExtension(identifier: String) async throws {}
+    func disableExtension(identifier: String) async throws {}
+    func enableExtension(identifier: String) async throws {}
+    func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
+    func isRemotelyDisabled(identifier: String) -> Bool { false }
+    func extensionName(for identifier: String) -> String? { nil }
+    func extensionVersion(for identifier: String) -> String? { nil }
+    func extensionPermissions(for identifier: String) -> [String] { [] }
+    func extensionMatchPatterns(for identifier: String) -> [String] { [] }
+    func hasAccessToPrivateData(for identifier: String) -> Bool? { nil }
+    func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
+    func extensionContext(for url: URL) -> WKWebExtensionContext? { context }
+    func context(for identifier: String) -> WKWebExtensionContext? { nil }
+    func clearCachedScriptlets() {}
+    func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
 }

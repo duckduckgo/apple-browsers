@@ -41,4 +41,4 @@ For reviewing a PR or diff, and for your own self-review before finishing. For e
 23. **Comments** explain why, not what, using `//` and `///`. A doc comment restating the signature, or describing frequency and severity the fields already declare, is a finding.
 24. **Rationalizing comments**: any comment or PR sentence justifying a field by the rule it avoids ("chosen because X would suppress it") is either an unflagged rule break or a wrong field elsewhere. It isn't acceptable just because it's documented.
 25. **Tests** cover each resolution path, retraction, `hide()` twice, a new trigger's notification, and the migration cases — not just field values. `PromoRegistryTests` includes the promo.
-26. **pbxproj**: every new file is in both app targets, with no unrelated re-sorting.
+26. **Project file**: `project.pbxproj` is unchanged; new files sit under `macOS/DuckDuckGo/` or `macOS/UnitTests/`.

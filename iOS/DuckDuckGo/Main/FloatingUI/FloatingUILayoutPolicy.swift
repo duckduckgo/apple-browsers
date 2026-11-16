@@ -64,16 +64,78 @@ enum FloatingUILayoutPolicy {
     }
 
     /// Linear ramp of `percent` from 0 at `start` to 1 at `end`, clamped outside that range. Shared by
-    /// every bar<->pill crossfade (`chromeAlpha`, `pillAlpha`) so both halves of the fade always sum to 1.
+    /// both halves of the top bar's bar<->pill crossfade so they always sum to 1.
     static func rampedProgress(_ percent: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
         guard end > start else { return percent < end ? 0 : 1 }
         return ((percent - start) / (end - start)).clamped(to: 0...1)
     }
 
-    /// The bottom toolbar's button-row collapse progress, ramped over `[collapseStart, 1]`. Pass
-    /// `handoffEnd` so the row has fully collapsed before the single-row pill starts fading in.
-    static func toolbarButtonRowCollapseProgress(barsVisibilityPercent: CGFloat, collapseStart: CGFloat) -> CGFloat {
-        1 - rampedProgress(barsVisibilityPercent, from: collapseStart, to: 1)
+    /// One frame of the bottom bar's collapse into the domain pill.
+    struct BottomMorphPose: Equatable {
+        /// The glass shape. Drawn by the bar at rest and by the pill from the first step on.
+        let frame: CGRect
+        let cornerRadius: CGFloat
+        /// Opacity of the bar's own content (address field and buttons), which rides inside the shape.
+        let barContentAlpha: CGFloat
+        /// True once the pill draws the glass in place of the bar. Exactly one of them does, so the
+        /// glass is never dimmed by a cross-fade.
+        let isGlassOnPill: Bool
+        let domainLabelAlpha: CGFloat
+        /// 1 at rest, 0 once collapsed: the bar floats on a shadow, the pill does not.
+        let shadowAmount: CGFloat
+        /// Maps the bar's resting panel onto `frame`.
+        let barTransform: CGAffineTransform
+    }
+
+    /// The pill takes the glass over just below rest, where its frame is within a point of the bar's.
+    /// Not exactly 1, so a spring settling around rest doesn't flip the glass back and forth.
+    static let bottomMorphGlassHandoff: CGFloat = 0.995
+
+    /// The bar's content has fully faded at and below this visibility.
+    static let bottomMorphContentFadeEnd: CGFloat = 0.6
+
+    /// The pill's domain text fades in across this band, overlapping the end of the bar's URL fade.
+    static let bottomMorphDomainLabelFade: ClosedRange<CGFloat> = 0.5...0.75
+
+    /// How far past the resting bar the shape may travel while the spring settles. The collapsed end
+    /// gets none: a pill narrower than its label truncates the domain for a few frames.
+    static let bottomMorphOvershoot: CGFloat = 0.04
+
+    /// Size, position and corner radius all follow `barsVisibilityPercent` across the whole range, so
+    /// the collapse has no stage where the shape stands still. The bar's content is scaled onto the
+    /// same frame, so it can't be seen at a different size from the glass around it.
+    static func bottomMorphPose(barsVisibilityPercent: CGFloat,
+                                expandedFrame: CGRect,
+                                restFrame: CGRect,
+                                expandedCornerRadius: CGFloat) -> BottomMorphPose {
+        let shapePercent = barsVisibilityPercent.clamped(to: 0...(1 + bottomMorphOvershoot))
+        let collapse = 1 - shapePercent
+        func mix(_ expanded: CGFloat, _ rest: CGFloat) -> CGFloat { expanded + (rest - expanded) * collapse }
+
+        let width = max(0, mix(expandedFrame.width, restFrame.width))
+        let height = max(0, mix(expandedFrame.height, restFrame.height))
+        let frame = CGRect(x: mix(expandedFrame.midX, restFrame.midX) - width / 2,
+                           y: mix(expandedFrame.midY, restFrame.midY) - height / 2,
+                           width: width,
+                           height: height)
+        let cornerRadius = min(height / 2, max(0, mix(expandedCornerRadius, restFrame.height / 2)))
+
+        var barTransform = CGAffineTransform.identity
+        if expandedFrame.width > 0, expandedFrame.height > 0 {
+            barTransform = CGAffineTransform(scaleX: width / expandedFrame.width, y: height / expandedFrame.height)
+                .concatenating(CGAffineTransform(translationX: frame.midX - expandedFrame.midX,
+                                                 y: frame.midY - expandedFrame.midY))
+        }
+        return BottomMorphPose(
+            frame: frame,
+            cornerRadius: cornerRadius,
+            barContentAlpha: rampedProgress(barsVisibilityPercent, from: bottomMorphContentFadeEnd, to: 1),
+            isGlassOnPill: barsVisibilityPercent < bottomMorphGlassHandoff,
+            domainLabelAlpha: 1 - rampedProgress(barsVisibilityPercent,
+                                                 from: bottomMorphDomainLabelFade.lowerBound,
+                                                 to: bottomMorphDomainLabelFade.upperBound),
+            shadowAmount: barsVisibilityPercent.clamped(to: 0...1),
+            barTransform: barTransform)
     }
 
     /// Height obscured by the visible bottom chrome, measured from the web view container's bottom edge

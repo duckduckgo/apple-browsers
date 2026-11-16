@@ -213,7 +213,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         )
 
         _ = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: [
-            "url": "https://example.com/a", "stage": "page_init_sent"
+            "url": "https://example.com/a", "stage": "background_received"
         ]))
 
         XCTAssertEqual(monitor.progress.map(\.extensionIdentifier), ["test-extension-id"])

@@ -58,8 +58,6 @@ public protocol CPMMonitoredTab: AnyObject {
 
 /// The last step of a main-frame init the extension reported, in the order the chain runs.
 public enum CPMInitStage: String, CaseIterable, Sendable {
-    /// The content script is about to send `init`.
-    case pageInitSent = "page_init_sent"
     /// The background received `init`.
     case backgroundReceived = "background_received"
     /// The background read its configuration.

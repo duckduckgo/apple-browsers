@@ -36,7 +36,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
 
     func testReportCarriesTheFurthestStageOfTheSilentTab() {
         commit("a", path: "a")
-        mark(.pageInitSent, path: "a")
+        mark(.backgroundReceived, path: "a")
         mark(.configRead, path: "a")
         silence()
 
@@ -147,8 +147,8 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
     func testStagesAreRankedInTheOrderTheChainRuns() {
         let stages = CPMInitStage.allCases
         XCTAssertEqual(stages.map(\.rank), Array(0..<stages.count))
-        XCTAssertEqual(stages.map(\.rawValue), ["page_init_sent", "background_received", "config_read",
-                                                "settings_checked", "site_checked", "response_sent"])
+        XCTAssertEqual(stages.map(\.rawValue), ["background_received", "config_read", "settings_checked",
+                                                "site_checked", "response_sent"])
     }
 
     // MARK: - Before the commit

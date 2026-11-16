@@ -228,6 +228,24 @@ struct UserAssistanceContractTests {
         feature.pushAction(method: .onActionReceived, webView: webView, params: Params(state: ActionRequest(action: action, data: requestData)))
     }
 
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func debugObserverReportsTheUserTurnWithItsStepAndTheReturnToAutomation() async throws {
+        var userTurns: [String?] = []
+        var agentTurns = 0
+        let observer = DebugAssistanceObserver(showsWebView: false, onUserTurn: { _, step in userTurns.append(step) }, onAgentTurn: { agentTurns += 1 })
+        let action = UserAssistAction(id: "assist", json: Data(#"{"step":"Prove you're human"}"#.utf8))
+        let runner = Self.makeRunner(actions: [action], observer: observer)
+        runner.webViewHandler = WebViewHandlerMock()
+        await runner.runNextAction(action)
+        await runner.userTurnNeeded(actionID: "assist")
+        #expect(userTurns == ["Prove you're human"])
+        #expect(agentTurns == 0)
+        await runner.runNextAction(UserAssistAction(id: "next"))
+        #expect(agentTurns == 1)
+    }
+
     private static func makeRunner(actions: [Action], observer: OptOutAssistanceObserving? = nil) -> BrokerProfileOptOutSubJobWebRunner {
         BrokerProfileOptOutSubJobWebRunner(privacyConfig: PrivacyConfigurationManagingMock(), prefs: .mock,
                                           context: BrokerProfileQueryData.mock(with: [Step(type: .optOut, actions: actions)]),

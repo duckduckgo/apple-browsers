@@ -317,6 +317,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         addOptOutStartedEvent(for: scanResult)
         let optOutTimeout = usesConfiguredTimeouts ? brokerJobExecutionConfig.optOutJobTimeout : nil
         let showWebView = !hidesWebView
+        let assistanceObserver = DebugAssistanceObserver(showsWebView: showWebView, onUserTurn: { [weak self] webView, step in
+            self?.progressText = step.map { "Waiting for you: \($0)" } ?? "Waiting for you"
+            webView?.window?.makeKeyAndOrderFront(nil)
+        }, onAgentTurn: { [weak self] in
+            self?.progressText = "Starting opt-out..."
+        })
         Task {
             do {
                 let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
@@ -332,7 +338,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                                              dataBroker: dataBroker,
                                                                              showWebView: showWebView,
                                                                              timeout: optOutTimeout,
-                                                                             stageCalculator: stageCalculator)
+                                                                             stageCalculator: stageCalculator,
+                                                                             assistanceObserver: assistanceObserver)
 
                 if requiresEmailConfirmation {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)

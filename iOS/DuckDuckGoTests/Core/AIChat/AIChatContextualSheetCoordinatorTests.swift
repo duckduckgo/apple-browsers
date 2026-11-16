@@ -1967,7 +1967,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.presentSheet(from: host)
         let oldSheet = try XCTUnwrap(sut.sheetViewController)
         sut.clearActiveChat()
-        await sut.presentSheet(from: host)
+        await sut.presentSheet(from: host, opensOntoSubmittedChat: true)
         let newSheet = try XCTUnwrap(sut.sheetViewController)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1180, height: 820))
         window.rootViewController = host

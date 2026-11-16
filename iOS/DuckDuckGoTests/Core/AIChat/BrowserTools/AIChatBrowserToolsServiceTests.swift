@@ -147,7 +147,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         XCTAssertTrue(fixture.service.isEnabled)
         XCTAssertNotNil(fixture.service.clientToolsConfiguration)
         XCTAssertNotNil(fixture.service.configuration(for: fixture.script))
-        XCTAssertEqual(fixture.service.catalog.enabledTools.map(\.name), ["listOpenTabs"])
+        XCTAssertEqual(fixture.service.catalog.enabledTools.map(\.name), ["listOpenTabs", "switchToTab"])
 
         let result = await fixture.invoke()
 

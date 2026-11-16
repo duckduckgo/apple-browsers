@@ -454,7 +454,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         commit("a", path: "a")
         mark(.pageInitSent, extensionTab: 1, path: "a")
         mark(.configRead, extensionTab: 1, path: "a")
-        mark(.received, extensionTab: 1, path: "a")
+        mark(.backgroundReceived, extensionTab: 1, path: "a")
         advance(31)
         monitor.handle(.interruptionEnded)
 
@@ -474,22 +474,22 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         commit("b", path: "b")
         mark(.siteChecked, extensionTab: 2, path: "b")
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url("b")))
-        mark(.received, extensionTab: 1, path: "a")
+        mark(.backgroundReceived, extensionTab: 1, path: "a")
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(pixels.breakages, [report(.one, stage: .received)])
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: .backgroundReceived)])
     }
 
     func testBothSilentTabsReportTheirOwnStage() {
         commit("a", path: "a")
         commit("b", path: "b")
-        mark(.received, extensionTab: 1, path: "a")
+        mark(.backgroundReceived, extensionTab: 1, path: "a")
         mark(.responseSent, extensionTab: 2, path: "b")
         advance(31)
         monitor.handle(.interruptionEnded)
 
-        XCTAssertEqual(Set(pixels.breakages.map { $0.lastStage?.rawValue ?? "none" }), ["received", "response_sent"])
+        XCTAssertEqual(Set(pixels.breakages.map { $0.lastStage?.rawValue ?? "none" }), ["background_received", "response_sent"])
         XCTAssertEqual(pixels.persistentCount, 1)
     }
 
@@ -519,11 +519,73 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testMarkThatCannotBeTiedToOneTabIsDropped() {
         commit("a", path: "same")
         commit("b", path: "same")
-        mark(.received, extensionTab: 9, path: "same")
+        mark(.backgroundReceived, extensionTab: 9, path: "same")
         advance(31)
         monitor.handle(.interruptionEnded)
 
         XCTAssertEqual(pixels.breakages, [report(.many, stage: nil), report(.many, stage: nil)])
+    }
+
+    func testMarkThatArrivesBeforeItsPageCommitsCountsForThePage() {
+        mark(.configRead, extensionTab: 1, path: "a")
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: .configRead)])
+    }
+
+    func testMarksBeforeTheCommitKeepTheFurthestStage() {
+        mark(.backgroundReceived, extensionTab: 1, path: "a")
+        mark(.siteChecked, extensionTab: 1, path: "a")
+        mark(.configRead, extensionTab: 1, path: "a")
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: .siteChecked)])
+    }
+
+    func testMarkThatIsOlderThanTheToleranceBeforeTheCommitIsIgnored() {
+        mark(.configRead, extensionTab: 1, path: "a")
+        advance(3)
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)])
+    }
+
+    func testMarkBeforeTheCommitOfAnotherTabsExtensionTabIsNotTaken() {
+        commit("x", path: "x")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url("x")))
+        mark(.siteChecked, extensionTab: 1, path: "a")
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)])
+    }
+
+    func testMarkBeforeTheCommitIsNotTakenWhenAnotherTabShowsThePage() {
+        commit("b1", path: "same")
+        commit("b2", path: "same")
+        mark(.siteChecked, extensionTab: 9, path: "same")
+        commit("c", path: "same")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.many), report(.many), report(.many)])
+    }
+
+    func testReloadForgetsMarksThatWaitForACommit() {
+        mark(.siteChecked, extensionTab: 1, path: "a")
+        monitor.handle(.extensionLifecycle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit)))
+        commit("a", path: "a")
+        advance(31)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(pixels.breakages, [report(.one, stage: nil)])
     }
 
     func testMarkOfThePageBeforeIsNotCountedForTheNewPage() {
@@ -553,7 +615,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testMarksFromAnOldExtensionAreIgnored() {
         monitor.isCurrentEmbeddedExtension = { $0 == "current" }
         commit("a", path: "a")
-        monitor.handle(.initProgress(extensionTabIdentifier: 1, url: url("a"), stage: .received, extensionIdentifier: "old"))
+        monitor.handle(.initProgress(extensionTabIdentifier: 1, url: url("a"), stage: .backgroundReceived, extensionIdentifier: "old"))
         advance(31)
         monitor.handle(.interruptionEnded)
 
@@ -563,7 +625,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testMarksDuringSimulationAreIgnored() {
         monitor.setBreakageSimulationEnabled(true)
         commit("a", path: "a")
-        mark(.received, extensionTab: 1, path: "a")
+        mark(.backgroundReceived, extensionTab: 1, path: "a")
         advance(31)
         monitor.handle(.interruptionEnded)
 
@@ -572,7 +634,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
     func testClosedTabForgetsItsMarks() {
         commit("a", path: "a")
-        mark(.received, extensionTab: 1, path: "a")
+        mark(.backgroundReceived, extensionTab: 1, path: "a")
         monitor.handle(.tabClosed(tabIdentifier: "a"))
         advance(5)
         commit("a", path: "a")
@@ -584,7 +646,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
     func testStagesAreRankedInTheOrderTheChainRuns() {
         let names = CPMInitStage.allCases.map(\.rawValue)
-        XCTAssertEqual(names, ["page_init_sent", "received", "config_read", "settings_checked",
+        XCTAssertEqual(names, ["page_init_sent", "background_received", "config_read", "settings_checked",
                                "site_checked", "response_sent"])
         XCTAssertEqual(CPMInitStage.allCases.map(\.rank), Array(0..<6))
     }

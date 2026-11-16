@@ -254,8 +254,8 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         )
         let incomplete: [[String: Any]] = [
             ["tabId": NSNumber(value: 9), "url": "https://example.com/a"],
-            ["tabId": NSNumber(value: 9), "stage": "received"],
-            ["tabId": NSNumber(value: 9), "stage": "received", "url": "not a page"]
+            ["tabId": NSNumber(value: 9), "stage": "background_received"],
+            ["tabId": NSNumber(value: 9), "stage": "background_received", "url": "not a page"]
         ]
         for params in incomplete {
             let result = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: params))
@@ -275,12 +275,12 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         )
         for tabId: Any in [NSNull(), "9"] {
             let message = createMessage(method: "cpmInitProgress", params: [
-                "tabId": tabId, "url": "https://example.com/a", "stage": "received"
+                "tabId": tabId, "url": "https://example.com/a", "stage": "background_received"
             ])
             _ = await handler.handleMessage(message)
         }
 
-        XCTAssertEqual(monitor.progressStages, [.received, .received])
+        XCTAssertEqual(monitor.progressStages, [.backgroundReceived, .backgroundReceived])
         XCTAssertNil(monitor.progressTabIdentifier)
     }
 
@@ -292,7 +292,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
             autoconsentPreferences: mockAutoconsentPreferences,
             cpmMessagingHealthMonitor: monitor
         )
-        let names = ["page_init_sent", "received", "config_read", "settings_checked",
+        let names = ["page_init_sent", "background_received", "config_read", "settings_checked",
                      "site_checked", "response_sent"]
         for name in names {
             let message = createMessage(method: "cpmInitProgress", params: [

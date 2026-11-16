@@ -604,8 +604,16 @@
             {
                 "key": "last_stage",
                 "type": "string",
-                "enum": ["none", "page_init_sent", "received", "config_read", "settings_checked", "site_checked", "response_sent"],
-                "description": "Furthest init step the extension reported for the silent tab's page: its script is about to send init, the background received init, read its configuration, read the user setting, checked the site, or answered the page's init (response_sent). None means no step was reported or attributable to the tab. Marks travel over the same native channel that can fail, so none cannot distinguish a lost report from an init that never started. A mark is never counted as an answer."
+                "enum": [
+                    "none",
+                    "page_init_sent",
+                    "background_received",
+                    "config_read",
+                    "settings_checked",
+                    "site_checked",
+                    "response_sent"
+                ],
+                "description": "Furthest init step the extension reported for the silent tab's page: its script is about to send init, the background received init, read its configuration, read the user setting, checked the site, or answered the page's init (response_sent). None means no step was reported or attributable to the tab. Marks travel over the same native channel that can fail, so none cannot distinguish a lost report from an init that never started. A mark is never counted as an answer. Temporary: removed when the investigation of failures after the background wakes is closed."
             },
             {
                 "key": "tabs",

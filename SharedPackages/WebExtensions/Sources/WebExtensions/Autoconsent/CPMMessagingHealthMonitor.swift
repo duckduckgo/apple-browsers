@@ -38,7 +38,7 @@ public enum CPMInitStage: String, CaseIterable, Sendable {
     /// The content script is about to send `init`.
     case pageInitSent = "page_init_sent"
     /// The background received `init`.
-    case received
+    case backgroundReceived = "background_received"
     /// The background read its configuration.
     case configRead = "config_read"
     /// The background read the user's setting.
@@ -48,16 +48,9 @@ public enum CPMInitStage: String, CaseIterable, Sendable {
     /// The background answered the page's `init`; the reply itself is not observed.
     case responseSent = "response_sent"
 
-    /// Position in the chain; a later report never lowers the last stage reached.
+    /// Position in the chain, which is the order of the cases; a later report never lowers the last stage reached.
     var rank: Int {
-        switch self {
-        case .pageInitSent: return 0
-        case .received: return 1
-        case .configRead: return 2
-        case .settingsChecked: return 3
-        case .siteChecked: return 4
-        case .responseSent: return 5
-        }
+        Self.allCases.firstIndex(of: self) ?? 0
     }
 }
 
@@ -118,22 +111,36 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private var pendingCommits: [String: Date] = [:]
     /// The furthest init stage reported for each tab's latest page.
     private var lastStages: [String: CPMInitStage] = [:]
+    /// Marks that arrived before their page committed, so no tab could be told for them yet.
+    private var recentMarks: [RecentMark] = []
     /// Tabs reported silent since the extension last answered a page.
     private var silentTabs: Set<String> = []
     private var didReportPersistentBreakage = false
     private var suspensionStart: Date?
 
+    private struct RecentMark {
+        let extensionTabIdentifier: Int?
+        let url: URL
+        let stage: CPMInitStage
+        let date: Date
+    }
+
     private let pixelFiring: WebExtensionPixelFiring
     private let silenceWindow: TimeInterval
+    private let messageTolerance: TimeInterval
     private let now: () -> Date
 
     /// - Parameters:
     ///   - silenceWindow: How long a committed page may stay silent before its tab is reported.
+    ///   - messageTolerance: How long before its page commits a mark still counts for that page: the mark travels
+    ///     through the extension, while the commit is seen by the app directly.
     public init(pixelFiring: WebExtensionPixelFiring,
                 silenceWindow: TimeInterval = 30,
+                messageTolerance: TimeInterval = 2,
                 now: @escaping () -> Date = CPMMessagingHealthMonitor.uptimeDate) {
         self.pixelFiring = pixelFiring
         self.silenceWindow = silenceWindow
+        self.messageTolerance = messageTolerance
         self.now = now
     }
 
@@ -175,7 +182,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             let eligible = isEligible(url: url, navigationKind: navigationKind)
             committedPages[tabIdentifier] = eligible ? url : nil
             pendingCommits[tabIdentifier] = nil
-            lastStages[tabIdentifier] = nil
+            lastStages[tabIdentifier] = eligible ? earlyStage(for: url, tab: tabIdentifier) : nil
             if eligible && extensionIsLoaded { pendingCommits[tabIdentifier] = now() }
         case .tabClosed(let tabIdentifier):
             committedPages.removeValue(forKey: tabIdentifier)
@@ -214,8 +221,34 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
         guard !isCPMMessagingBreakageSimulationEnabled else { return }
         learnTab(forExtensionTab: extensionTabIdentifier, url: url)
-        guard let tabIdentifier = tabForMark(extensionTab: extensionTabIdentifier, url: url) else { return }
+        guard let tabIdentifier = tabForMark(extensionTab: extensionTabIdentifier, url: url) else {
+            keepForCommit(RecentMark(extensionTabIdentifier: extensionTabIdentifier, url: url, stage: stage, date: now()))
+            return
+        }
         raiseStage(of: tabIdentifier, to: stage)
+    }
+
+    private func keepForCommit(_ mark: RecentMark) {
+        recentMarks.removeAll { $0.date < mark.date.addingTimeInterval(-messageTolerance) }
+        recentMarks.append(mark)
+    }
+
+    /// The furthest stage of the marks that arrived just before a page committed. Marks of an extension tab that
+    /// belongs to another app tab are left out, and so are all marks when another tab shows the same page.
+    private func earlyStage(for url: URL, tab tabIdentifier: String) -> CPMInitStage? {
+        let isPageShownElsewhere = committedPages.contains { $0.key != tabIdentifier && $0.value.matchesCPMDashboardStatePage(url) }
+        guard !isPageShownElsewhere else { return nil }
+        let earliest = now().addingTimeInterval(-messageTolerance)
+        let early = recentMarks.filter {
+            $0.date >= earliest && $0.url.matchesCPMDashboardStatePage(url)
+                && belongs(extensionTab: $0.extensionTabIdentifier, to: tabIdentifier)
+        }
+        return early.map(\.stage).max { $0.rank < $1.rank }
+    }
+
+    private func belongs(extensionTab extensionTabIdentifier: Int?, to tabIdentifier: String) -> Bool {
+        guard let extensionTabIdentifier, let mappedTab = extensionTabMappings[extensionTabIdentifier] else { return true }
+        return mappedTab == tabIdentifier
     }
 
     /// The one tab a mark of its current page belongs to, if it can be told. A mark about any other page of
@@ -318,6 +351,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             extensionTabMappings.removeAll()
             pendingCommits.removeAll()
             lastStages.removeAll()
+            recentMarks.removeAll()
             silentTabs.removeAll()
             didReportPersistentBreakage = false
         case .loaded, .reloadFailed:

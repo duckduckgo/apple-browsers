@@ -60,7 +60,8 @@ extension Preferences {
             if let entry = model.detailsEntry {
                 ExtensionDetailsView(entry: entry,
                                      onBack: model.hideDetails,
-                                     onRemove: { model.remove(entry) })
+                                     onRemove: { model.remove(entry) },
+                                     onNativeMessagingLearnMore: model.openNativeMessagingLearnMore)
             } else {
                 overview
             }
@@ -144,8 +145,7 @@ extension Preferences {
                                   onPublisher: { model.openPublisherPage(for: entry.listing) },
                                   onRemove: { model.remove(entry) },
                                   onRemoteDisableLearnMore: model.openRemoteDisableLearnMore,
-                                  showsNativeMessagingNote: entry.hasHitNativeMessagingLimitation,
-                                  onNativeMessagingLearnMore: model.openNativeMessagingLearnMore)
+                                  showsNativeMessagingBadge: entry.hasHitNativeMessagingLimitation)
         }
 
         private var moreExtensionsHeader: some View {
@@ -270,8 +270,6 @@ extension Preferences {
             static let footerVerticalPadding: CGFloat = 12
             static let footerIconToTextSpacing: CGFloat = 8
             static let footerTextToLinkMinSpacing: CGFloat = 16
-            static let noteCornerRadius: CGFloat = 8
-            static let notePadding: CGFloat = 12
         }
 
         let item: ChromeWebStoreListing
@@ -283,8 +281,7 @@ extension Preferences {
         let onPublisher: () -> Void
         let onRemove: () -> Void
         let onRemoteDisableLearnMore: () -> Void
-        let showsNativeMessagingNote: Bool
-        let onNativeMessagingLearnMore: () -> Void
+        let showsNativeMessagingBadge: Bool
 
         @Environment(\.designSystemPalette) private var palette
 
@@ -301,26 +298,11 @@ extension Preferences {
         }
 
         private var card: some View {
-            VStack(alignment: .leading, spacing: 0) {
-                cardHeader
-                if showsNativeMessagingNote {
-                    nativeMessagingNote
-                        .padding(.horizontal, Const.leadingPadding)
-                        .padding(.bottom, Const.leadingPadding)
-                }
-            }
-            .frame(maxWidth: Const.maxWidth)
-            .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
-            .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
-            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
-            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
-        }
-
-        private var cardHeader: some View {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
                                  mode: .installed,
+                                 showsWarningBadge: showsNativeMessagingBadge,
                                  onPublisher: onPublisher)
 
                 Spacer(minLength: 0)
@@ -354,30 +336,13 @@ extension Preferences {
             }
             .padding(.leading, Const.leadingPadding)
             .padding(.trailing, Const.trailingPadding)
+            .frame(maxWidth: Const.maxWidth)
             .frame(height: Const.height)
-        }
-
-        private var nativeMessagingNote: some View {
-            Text(nativeMessagingNoteText)
-                .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                .tint(Color.rebrandableLink(palette: palette))
-                .environment(\.openURL, OpenURLAction { _ in
-                    onNativeMessagingLearnMore()
-                    return .handled
-                })
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Const.notePadding)
-                .background(Color(designSystemColor: .accentGlowSecondary, palette: palette))
-                .overlay(RoundedRectangle(cornerRadius: Const.noteCornerRadius, style: .continuous)
-                    .strokeBorder(Color(designSystemColor: .accentPrimary, palette: palette)))
-                .clipShape(RoundedRectangle(cornerRadius: Const.noteCornerRadius, style: .continuous))
-                .accessibilityIdentifier("Preferences.Extensions.\(item.id).NativeMessagingNote")
-        }
-
-        private var nativeMessagingNoteText: AttributedString {
-            let markdown = "\(UserText.extensionsSettingsNativeMessagingNote) [\(UserText.extensionsSettingsLearnMore)](\(URL.ddgLearnMore))"
-            return (try? AttributedString(markdown: markdown)) ?? AttributedString(UserText.extensionsSettingsNativeMessagingNote)
+            .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
+            // The card fill is translucent; an opaque backing keeps the footer's pink from tinting it.
+            .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
+            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
         }
 
         private var remoteDisableFooter: some View {
@@ -420,11 +385,18 @@ extension Preferences {
             static let removeButtonTopPadding: CGFloat = 56
             static let removeButtonHeight: CGFloat = 24
             static let removeButtonHorizontalPadding: CGFloat = 8
+            static let noteVerticalPadding: CGFloat = 14
+            static let noteSpacing: CGFloat = 8
+            static let noteIconFrameSize: CGFloat = 24
+            static let noteIconSize: CGFloat = 16
+            static let noteTextSpacing: CGFloat = 8
+            static let noteMessageLineSpacing: CGFloat = 1
         }
 
         let entry: ExtensionsManagementPreferences.InstalledExtensionEntry
         let onBack: () -> Void
         let onRemove: () -> Void
+        let onNativeMessagingLearnMore: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
 
@@ -476,6 +448,10 @@ extension Preferences {
                     }
                     detailRow(title: row.0, details: row.1)
                 }
+                if entry.hasHitNativeMessagingLimitation {
+                    Divider()
+                    nativeMessagingRow
+                }
             }
             .padding(.horizontal, Const.rowHorizontalPadding)
             .frame(maxWidth: Const.cardWidth)
@@ -497,6 +473,35 @@ extension Preferences {
             }
             .padding(.vertical, Const.rowVerticalPadding)
             .frame(maxWidth: .infinity, minHeight: Const.rowHeight, alignment: .leading)
+        }
+
+        private var nativeMessagingRow: some View {
+            HStack(spacing: Const.noteSpacing) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
+                    .resizable()
+                    .frame(width: Const.noteIconSize, height: Const.noteIconSize)
+                    .frame(width: Const.noteIconFrameSize, height: Const.noteIconFrameSize)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: Const.noteTextSpacing) {
+                    Text(UserText.extensionsSettingsNativeMessagingTitle)
+                        .font(.system(size: Const.titleFontSize, weight: .regular))
+                        .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    Text(String(format: UserText.extensionsSettingsNativeMessagingMessage, entry.listing.name))
+                        .font(.system(size: Const.detailsFontSize, weight: .regular))
+                        .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                        .lineSpacing(Const.noteMessageLineSpacing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button(UserText.learnMore, action: onNativeMessagingLearnMore)
+                    .buttonStyle(.plain)
+                    .foregroundColor(Color.rebrandableLink(palette: palette))
+                    .fixedSize()
+            }
+            .padding(.vertical, Const.noteVerticalPadding)
+            .accessibilityIdentifier("Preferences.Extensions.Details.\(entry.listing.id).NativeMessagingNote")
         }
 
         private var removeButton: some View {
@@ -549,9 +554,15 @@ extension Preferences {
             )
         }
 
+        private enum Const {
+            static let warningBadgeSize: CGFloat = 16
+            static let warningBadgeOverhang: CGFloat = 4
+        }
+
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
         let mode: Mode
+        var showsWarningBadge = false
         let onPublisher: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
@@ -579,6 +590,11 @@ extension Preferences {
                     guard let iconURL = item.iconURL else { return }
                     remoteIcon = try? await imageLoader.loadImage(from: iconURL)
                 }
+                .overlay(alignment: .topTrailing) {
+                    if showsWarningBadge {
+                        warningBadge
+                    }
+                }
 
                 VStack(alignment: .leading, spacing: mode.titleSpacing) {
                     Text(item.name)
@@ -597,6 +613,15 @@ extension Preferences {
                 .lineLimit(1)
                 .truncationMode(.tail)
             }
+        }
+
+        private var warningBadge: some View {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
+                .resizable()
+                .frame(width: Const.warningBadgeSize, height: Const.warningBadgeSize)
+                .offset(x: Const.warningBadgeOverhang, y: -Const.warningBadgeOverhang)
+                .accessibilityLabel(UserText.extensionsSettingsNativeMessagingTitle)
+                .accessibilityIdentifier("Preferences.Extensions.\(item.id).NativeMessagingBadge")
         }
     }
 }

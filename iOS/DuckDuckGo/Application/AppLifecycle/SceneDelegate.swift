@@ -108,7 +108,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         connectionTask?.cancel()
         connectingWindow = false
         pendingEvents.removeAll()
-        ((UIApplication.shared.delegate as? AppDelegate)?.appStateMachine.windowManager)?.disconnect(scene.session.persistentIdentifier)
+        let windowManager = (UIApplication.shared.delegate as? AppDelegate)?.appStateMachine.windowManager
+        windowManager?.disconnect(scene.session.persistentIdentifier)
         /// This should never be triggered in our single window configuration unless the user explicitly terminates the app.
         /// To support recovery in such cases, we temporarily allow transitions from `Foreground` and `Background`
         /// back to `Connected`, where:
@@ -121,6 +122,12 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         /// However, on iOS 16 and below, we've confirmed that a connected scene *can* unexpectedly disconnect and later reconnect.
         /// Because of this, the recovery path must remain in place for older OS versions.
         lifecycleInstrumentation.sceneDidDisconnect(in: appStateMachine.currentState)
+        if windowManager != nil {
+            window?.isHidden = true
+            window?.rootViewController = nil
+            window = nil
+            windowStateMachine = nil
+        }
     }
 
     /// See: `Foreground.swift` -> `onTransition()`

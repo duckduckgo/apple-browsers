@@ -118,6 +118,7 @@ class FireButtonAnimator {
     private let appSettings: AppSettings
     private var preLoadedComposition: LottieAnimation?
     private let preBurnSnapshots = NSHashTable<UIView>.weakObjects()
+    private var animationCompletion: Task<Void, Never>?
 
     init(appSettings: AppSettings, notificationCenter: NotificationCenter = .default) {
         self.appSettings = appSettings
@@ -139,6 +140,7 @@ class FireButtonAnimator {
                  onTransitionCompleted: @escaping () async -> Void,
                  completion: @escaping () async -> Void) {
         removePreBurnSnapshot()
+        animationCompletion = nil
 
         var seen: Set<ObjectIdentifier> = []
         let windows = (windows ?? [UIApplication.shared.firstKeyWindow].compactMap { $0 })
@@ -187,6 +189,11 @@ class FireButtonAnimator {
         }
 
         let duration = Double(composition.duration) / speed
+        animationCompletion = Task { @MainActor in
+            await withCheckedContinuation { continuation in
+                animations.notify(queue: .main) { continuation.resume() }
+            }
+        }
         let delay = duration * currentAnimation.transition
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             snapshots.forEach { $0.1.removeFromSuperview() }
@@ -209,6 +216,10 @@ class FireButtonAnimator {
                 await onAnimationStart()
             }
         }
+    }
+
+    func waitForAnimation() async {
+        await animationCompletion?.value
     }
 
     private func removePreBurnSnapshot() {

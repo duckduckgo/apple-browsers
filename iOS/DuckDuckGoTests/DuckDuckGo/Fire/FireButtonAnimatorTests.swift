@@ -63,6 +63,7 @@ final class FireButtonAnimatorTests: XCTestCase {
 
         animator.animate(instrumentation: instrumentation) {
             instrumentation.burnDidStart()
+            await animator.waitForAnimation()
             instrumentation.burnDidFinish()
         } onTransitionCompleted: {
         } completion: {
@@ -72,6 +73,34 @@ final class FireButtonAnimatorTests: XCTestCase {
         await fulfillment(of: [completed], timeout: 1)
 
         XCTAssertTrue(pixels.actualFireCalls.isEmpty)
+    }
+
+    func testWaitingForAnimationKeepsWindowsUntilEveryOverlayIsRemoved() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.firstKeyWindow?.windowScene)
+        let first = FireAnimationWindow(windowScene: scene)
+        let second = FireAnimationWindow(windowScene: scene)
+        for window in [first, second] {
+            window.frame = CGRect(x: 0, y: 0, width: 400, height: 700)
+            window.rootViewController = UIViewController()
+            window.isHidden = false
+        }
+        defer {
+            first.isHidden = true
+            second.isHidden = true
+        }
+        let animator = FireButtonAnimator(appSettings: AppSettingsMock())
+        let burned = expectation(description: "Burn finished after animation")
+        animator.animate(in: [first, second]) {
+            await animator.waitForAnimation()
+            XCTAssertFalse(first.subviews.contains { $0.accessibilityIdentifier == FireButtonAnimator.overlayIdentifier })
+            XCTAssertFalse(second.subviews.contains { $0.accessibilityIdentifier == FireButtonAnimator.overlayIdentifier })
+            burned.fulfill()
+        } onTransitionCompleted: {
+        } completion: {
+        }
+        XCTAssertTrue(first.subviews.contains { $0.accessibilityIdentifier == FireButtonAnimator.overlayIdentifier })
+        XCTAssertTrue(second.subviews.contains { $0.accessibilityIdentifier == FireButtonAnimator.overlayIdentifier })
+        await fulfillment(of: [burned], timeout: 5)
     }
 
     func testWhenApplicationWillResignActiveThenRetainedPreBurnSnapshotIsRemoved() throws {

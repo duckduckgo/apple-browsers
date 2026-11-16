@@ -158,7 +158,7 @@ final class BrowserWindowManager {
         let machine = AppStateMachine(initialState: .connected(connected))
         if let action { machine.handle(action) }
         stateMachines[identifier] = machine
-        if fireCoordinator.isBurning { cover(window) }
+        if fireCoordinator.isBurningAllWindows { cover(window) }
         return machine
     }
 
@@ -306,6 +306,7 @@ final class BrowserWindowManager {
 
     private func burn(request: FireRequest, state: DataStoreWarmup.ApplicationState, origin: MainCoordinator) async {
         guard let executor = origin.controller.fireExecutor as? FireExecutor else { return }
+        let originIdentifier = coordinators.first(where: { $0.value === origin })?.key
         do {
             try await fireCoordinator.burn(request: request, state: state, origin: executor, allWindows: {
                 try self.restoreStoredWindows()
@@ -319,12 +320,35 @@ final class BrowserWindowManager {
             }, didBurnAll: {
                 self.clearingOverlays.forEach { $0.removeFromSuperview() }
                 self.clearingOverlays.removeAll()
+            }, afterBurn: {
+                let sessions = UIApplication.shared.openSessions.filter { $0.role == .windowApplication }
+                let identifiers = Self.sessionIdentifiersToClose(for: request, originIdentifier: originIdentifier,
+                                                               sessionIdentifiers: Set(sessions.map(\.persistentIdentifier)),
+                                                               allowsMultipleWindows: self.allowsMultipleWindows)
+                guard !identifiers.isEmpty else { return }
+                let animator = origin.controller.fireButtonAnimator
+                Task { @MainActor in
+                    await animator.waitForAnimation()
+                    guard UIApplication.shared.openSessions.contains(where: { $0.persistentIdentifier == originIdentifier }) else { return }
+                    for session in sessions where identifiers.contains(session.persistentIdentifier) {
+                        UIApplication.shared.requestSceneSessionDestruction(session, options: nil) { error in
+                            Logger.general.error("Could not close an emptied browser window: \(error.localizedDescription, privacy: .public)")
+                        }
+                    }
+                }
             })
         } catch {
             if let window = origin.controller.view.window {
                 Terminating(error: error).alertAndTerminate(window: window)
             }
         }
+    }
+
+    static func sessionIdentifiersToClose(for request: FireRequest, originIdentifier: String?,
+                                          sessionIdentifiers: Set<String>, allowsMultipleWindows: Bool) -> Set<String> {
+        guard allowsMultipleWindows, case .all = request.scope, request.trigger == .manualFire,
+              request.options.contains(.tabs), let originIdentifier, sessionIdentifiers.contains(originIdentifier) else { return [] }
+        return sessionIdentifiers.subtracting([originIdentifier])
     }
 
     private func cover(_ window: UIWindow) {
@@ -371,6 +395,7 @@ extension FireExecutor: BrowserWindowFireExecuting {}
 final class BrowserWindowFireCoordinator {
     private var burnTask: Task<Void, Error>?
     var isBurning: Bool { burnTask != nil }
+    private(set) var isBurningAllWindows = false
 
     func waitForBurn() async {
         try? await burnTask?.value
@@ -386,8 +411,12 @@ final class BrowserWindowFireCoordinator {
             if case .all = request.scope {
                 var seen: Set<ObjectIdentifier> = []
                 let targets = try ([origin] + allWindows()).filter { seen.insert(ObjectIdentifier($0)).inserted }
+                isBurningAllWindows = true
                 willBurnAll()
-                defer { didBurnAll() }
+                defer {
+                    isBurningAllWindows = false
+                    didBurnAll()
+                }
                 targets.forEach { $0.prepare(for: request) }
                 for target in targets {
                     await target.burnInWindow(request: request, applicationState: state)

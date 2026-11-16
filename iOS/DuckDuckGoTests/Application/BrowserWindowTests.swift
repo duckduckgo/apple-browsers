@@ -57,6 +57,7 @@ final class BrowserWindowTests: XCTestCase {
         var covered = false
         first.onBurn = {
             XCTAssertTrue(covered)
+            XCTAssertTrue(coordinator.isBurningAllWindows)
             XCTAssertEqual(first.prepareCount, 1)
             XCTAssertEqual(second.prepareCount, 1)
         }
@@ -69,6 +70,7 @@ final class BrowserWindowTests: XCTestCase {
         XCTAssertEqual(second.lastOptions, [.tabs, .data])
         XCTAssertFalse(covered)
         XCTAssertFalse(coordinator.isBurning)
+        XCTAssertFalse(coordinator.isBurningAllWindows)
     }
 
     func testClearAllDoesNotReportSuccessWhenAStoredWindowCannotBeLoaded() async {
@@ -77,7 +79,9 @@ final class BrowserWindowTests: XCTestCase {
         let first = WindowFireMock()
         do {
             try await coordinator.burn(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings),
-                                       state: .active, origin: first, allWindows: { throw Failure.storage })
+                                       state: .active, origin: first, allWindows: { throw Failure.storage }, afterBurn: {
+                XCTFail("A failed burn must not close windows")
+            })
             XCTFail("Expected the storage failure")
         } catch {
             XCTAssertEqual(first.burnCount, 0)
@@ -85,11 +89,68 @@ final class BrowserWindowTests: XCTestCase {
         }
     }
 
+    func testManualGlobalTabClearKeepsTheOriginEvenWhenItIsNotThePrimaryWindow() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .browsing)
+        XCTAssertEqual(BrowserWindowManager.sessionIdentifiersToClose(for: request, originIdentifier: "secondary",
+                                                                     sessionIdentifiers: ["primary", "secondary", "archived"],
+                                                                     allowsMultipleWindows: true), ["primary", "archived"])
+    }
+
+    func testWindowClosingRequiresAnEnabledFlagAndAKnownOrigin() {
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .browsing)
+        for origin in [nil, "missing", "primary"] as [String?] {
+            for enabled in [false, true] where !enabled || origin != "primary" {
+                XCTAssertTrue(BrowserWindowManager.sessionIdentifiersToClose(for: request, originIdentifier: origin,
+                                                                            sessionIdentifiers: ["primary", "secondary"],
+                                                                            allowsMultipleWindows: enabled).isEmpty)
+            }
+        }
+    }
+
+    func testLocalAndAutomaticBurnsKeepOtherWindows() {
+        let tab = Tab(link: nil)
+        let viewModel = TabViewModel(tab: tab, historyManager: MockHistoryManager())
+        let scopes: [FireRequest.Scope] = [.fireMode, .normalMode, .tab(viewModel: viewModel)]
+        var requests = scopes.map { FireRequest(options: .all, trigger: .manualFire, scope: $0, source: .browsing) }
+        requests += [FireRequest.Trigger.autoClearOnLaunch, .autoClearOnForeground, .fireModeAutoClear].map {
+            FireRequest(options: .all, trigger: $0, scope: .all, source: .autoClear)
+        }
+        for request in requests {
+            XCTAssertTrue(BrowserWindowManager.sessionIdentifiersToClose(for: request, originIdentifier: "primary",
+                                                                        sessionIdentifiers: ["primary", "secondary"],
+                                                                        allowsMultipleWindows: true).isEmpty)
+        }
+    }
+
+    func testClearingDataOrChatsWithoutTabsKeepsOtherWindows() {
+        for options: FireRequest.Options in [.data, .aiChats, [.data, .aiChats], []] {
+            let request = FireRequest(options: options, trigger: .manualFire, scope: .all, source: .settings)
+            XCTAssertTrue(BrowserWindowManager.sessionIdentifiersToClose(for: request, originIdentifier: "primary",
+                                                                        sessionIdentifiers: ["primary", "secondary"],
+                                                                        allowsMultipleWindows: true).isEmpty)
+        }
+    }
+
+    func testWindowClosingRunsAfterEveryWindowHasBurnedAndTheCoversAreRemoved() async throws {
+        let coordinator = BrowserWindowFireCoordinator()
+        let origin = WindowFireMock()
+        let peer = WindowFireMock()
+        var events: [String] = []
+        origin.onBurn = { events.append("origin burned") }
+        peer.onBurn = { events.append("peer burned") }
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .browsing)
+        try await coordinator.burn(request: request, state: .active, origin: origin, allWindows: { [peer] },
+                                   didBurnAll: { events.append("covers removed") },
+                                   afterBurn: { events.append("close windows") })
+        XCTAssertEqual(events, ["origin burned", "peer burned", "covers removed", "close windows"])
+    }
+
     func testFireModeClearOnlyBurnsItsWindow() async throws {
         let coordinator = BrowserWindowFireCoordinator()
         let first = WindowFireMock()
         let second = WindowFireMock()
         let request = FireRequest(options: .all, trigger: .fireModeAutoClear, scope: .fireMode, source: .browsing)
+        first.onBurn = { XCTAssertFalse(coordinator.isBurningAllWindows) }
         try await coordinator.burn(request: request, state: .active, origin: first, allWindows: {
             XCTFail("Local burns must not ask for other windows")
             return [second]

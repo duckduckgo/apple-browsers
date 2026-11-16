@@ -1081,10 +1081,6 @@ extension XCUIApplication {
         menuItems["\(AccessibilityIdentifiers.recentlyVisitedMenuItemPrefix).\(index)"]
     }
 
-    var populateFakeHistory10MenuItem: XCUIElement {
-        menuItems[AccessibilityIdentifiers.populateFakeHistory10MenuItem]
-    }
-
     var populateFakeHistory100MenuItem: XCUIElement {
         menuItems[AccessibilityIdentifiers.populateFakeHistory100MenuItem]
     }
@@ -1115,6 +1111,29 @@ extension XCUIApplication {
 
     var debugMenu: XCUIElement {
         menuBarItems[Utilities.AccessibilityIdentifiers.debugMenu]
+    }
+
+    func revealDebugMenuItem(_ identifier: String, in submenu: String? = nil) -> XCUIElement {
+        let debugMenu = self.debugMenu
+        debugMenu.clickAfterExistenceTestSucceeds()
+
+        var items = debugMenu.children(matching: .menu).children(matching: .menuItem)
+        if let submenu {
+            let submenuItem = items[submenu]
+            submenuItem.hoverAfterExistenceTestSucceeds()
+            items = submenuItem.children(matching: .menu).children(matching: .menuItem)
+        }
+
+        // The custom row can expose the same label as the native menu item.
+        return items.matching(NSPredicate(format: "identifier == %@", identifier)).element
+    }
+
+    func resetPinnedTabs() {
+        revealDebugMenuItem("resetPinnedTabs:", in: "MainMenu.resetData").clickAfterExistenceTestSucceeds()
+    }
+
+    func simulateCriticalMemoryPressure() {
+        revealDebugMenuItem("simulateMemoryPressureCritical:", in: "Memory Usage Reporting").clickAfterExistenceTestSucceeds()
     }
 
     var homeButton: XCUIElement {

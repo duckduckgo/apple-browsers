@@ -20,8 +20,10 @@ import AppKit
 import AVFoundation
 import AVKit
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import os.log
+import PrivacyConfig
 import SwiftUI
 
 struct AddToDockVideoSheet: View {
@@ -29,9 +31,29 @@ struct AddToDockVideoSheet: View {
     let videoURL: URL
     /// Video size used to calculate aspect ratio for the player view.
     let videoSize: CGSize
+    let primaryAction: AddToDockVideoAction.Primary
+    let showsInstructions: Bool
+    let onAction: (AddToDockVideoAction) -> Void
+    private let featureFlagger: FeatureFlagger
 
     @Binding var isPresented: Bool
     @StateObject private var coordinator = VideoPlayerCoordinator()
+
+    init(videoURL: URL,
+         videoSize: CGSize,
+         primaryAction: AddToDockVideoAction.Primary = .done,
+         showsInstructions: Bool = false,
+         isPresented: Binding<Bool>,
+         onAction: @escaping (AddToDockVideoAction) -> Void = { _ in },
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+        self.videoURL = videoURL
+        self.videoSize = videoSize
+        self.primaryAction = primaryAction
+        self.showsInstructions = showsInstructions
+        self.onAction = onAction
+        self.featureFlagger = featureFlagger
+        self._isPresented = isPresented
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -40,10 +62,22 @@ struct AddToDockVideoSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: Preferences.Const.paneContentWidth)
 
+            if showsInstructions {
+                Text(.init(UserText.addToDockInstructionsCaption))
+                    .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             HStack {
                 Spacer()
-                Button(UserText.doneDialog) {
-                    isPresented = false
+                if showsCancelButton {
+                    Button(UserText.cancel) {
+                        select(.cancel)
+                    }
+                    .keyboardShortcut(.cancelAction)
+                }
+                Button(primaryButtonTitle) {
+                    select(primaryAction.action)
                 }
                 .keyboardShortcut(.defaultAction)
             }
@@ -57,6 +91,22 @@ struct AddToDockVideoSheet: View {
         .onDisappear {
             coordinator.stop()
         }
+    }
+
+    private var showsCancelButton: Bool {
+        primaryAction == .next || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA)
+    }
+
+    private var primaryButtonTitle: String {
+        switch primaryAction {
+        case .done: return UserText.doneDialog
+        case .next: return UserText.next
+        }
+    }
+
+    private func select(_ action: AddToDockVideoAction) {
+        onAction(action)
+        isPresented = false
     }
 }
 

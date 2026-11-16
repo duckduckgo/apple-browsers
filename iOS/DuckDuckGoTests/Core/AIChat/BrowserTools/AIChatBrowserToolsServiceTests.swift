@@ -410,7 +410,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         XCTAssertTrue(fixture.presenter.prompts.isEmpty)
     }
 
-    func testSourceBoundSwitchIgnoresStoredDenyAndNeedsNoPermissionPrompt() async throws {
+    func testSourceBoundSwitchIgnoresStoredDenyAndActivePermissionPrompt() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
@@ -424,11 +424,17 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
                                                permissionStorage: fixture.defaults.keyedStoring())
         service.permissions.setState(.deny, forToolNamed: "switchToTab")
         fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
+        fixture.presenter.autoAnswer = nil
+        let prompt = ClientToolPermissionPrompt(requestID: "pending", callID: "pending-call", toolName: "listOpenTabs")
+        XCTAssertTrue(fixture.presenter.present(prompt, message: "Permission") { _ in XCTFail("No decision selected") })
+        defer { fixture.presenter.withdrawActive {} }
         let result = await service.invoke(try request(name: "switchToTab", input: ["tabId": "target"]), from: fixture.script)
         XCTAssertEqual(result, .success(callId: "call", value: ["tabId": "target"]))
         XCTAssertEqual(selections.count, 1)
         XCTAssertTrue(selections.first === target)
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+        XCTAssertEqual(fixture.presenter.prompts.count, 1)
+        XCTAssertTrue(fixture.presenter.isPresentingPermission)
         XCTAssertEqual(service.permissions.state(forToolNamed: "switchToTab"), .deny)
     }
 

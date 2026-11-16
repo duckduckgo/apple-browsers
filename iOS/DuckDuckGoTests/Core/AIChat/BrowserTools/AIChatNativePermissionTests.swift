@@ -188,7 +188,7 @@ final class AIChatNativePermissionTests: XCTestCase {
         }
     }
 
-    func testBusyPresenterCancelsNextRequestBeforePreviousAlertFinishesDismissing() async {
+    func testStoredAllowRunsWhilePreviousPromptIsDismissingOnAvailableSurface() async {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         fixture.presenter.autoAnswer = nil
@@ -203,10 +203,43 @@ final class AIChatNativePermissionTests: XCTestCase {
         XCTAssertEqual(cancelled, .failure(callId: "call", error: .cancelled))
         fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
         let next = await fixture.invoke()
-        XCTAssertEqual(next, .failure(callId: "call", error: .cancelled))
-        XCTAssertEqual(fixture.listings, 0)
+        XCTAssertEqual(next, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
         XCTAssertEqual(fixture.presenter.prompts.count, 1)
         fixture.presenter.completeDismissal()
+    }
+
+    func testQueuedRequestDoesNotCancelAllowOnceWhileNextPromptIsVisible() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        fixture.presenter.autoAnswer = nil
+        let firstShown = expectation(description: "First native prompt shown")
+        fixture.presenter.onPresent = { firstShown.fulfill() }
+        let first = Task { await fixture.invoke() }
+        await fulfillment(of: [firstShown], timeout: 1)
+
+        let secondStarted = expectation(description: "Second request submitted")
+        let second = Task {
+            secondStarted.fulfill()
+            return await fixture.invoke()
+        }
+        await fulfillment(of: [secondStarted], timeout: 1)
+        XCTAssertEqual(fixture.presenter.prompts.count, 1)
+
+        let secondShown = expectation(description: "Queued native prompt shown")
+        fixture.presenter.onPresent = { secondShown.fulfill() }
+        fixture.presenter.select(.allowOnce)
+        await fulfillment(of: [secondShown], timeout: 1)
+        let firstResult = await first.value
+        XCTAssertEqual(firstResult, fixture.success)
+        XCTAssertTrue(fixture.presenter.isPresentingPermission)
+        XCTAssertEqual(fixture.listings, 1)
+
+        fixture.presenter.select(.allowOnce)
+        let secondResult = await second.value
+        XCTAssertEqual(secondResult, fixture.success)
+        XCTAssertEqual(fixture.listings, 2)
+        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
     }
 
     func testRebindingSameScriptRejectsDelayedOldDecision() async {
@@ -249,9 +282,9 @@ final class AIChatNativePermissionTests: XCTestCase {
         })
         let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs")
         XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("No action selected") })
-        XCTAssertTrue(presenter.isAvailable(for: "first"))
-        XCTAssertFalse(presenter.isAvailable(for: "another-request"))
-        XCTAssertFalse(presenter.isAvailable(for: nil))
+        XCTAssertTrue(presenter.isSurfaceAvailable)
+        let anotherPrompt = ClientToolPermissionPrompt(requestID: "second", callID: "another-call", toolName: "listOpenTabs")
+        XCTAssertFalse(presenter.present(anotherPrompt, message: "Permission") { _ in XCTFail("Another prompt must wait") })
         var completions = 0
         presenter.withdraw(requestID: "first") { completions += 1 }
         presenter.withdraw(requestID: "first") { completions += 1 }
@@ -284,9 +317,11 @@ final class AIChatNativePermissionTests: XCTestCase {
         let presenter = AIChatNativePermissionPresenter(surface: { owner }, show: { _, _, _ in attempts += 1; return false })
         let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs")
         parent.modal = UIViewController()
+        XCTAssertFalse(presenter.isSurfaceAvailable)
         XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
         XCTAssertEqual(attempts, 0)
         parent.modal = nil
+        XCTAssertTrue(presenter.isSurfaceAvailable)
         XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
         XCTAssertEqual(attempts, 1)
         XCTAssertFalse(presenter.isPresentingPermission)

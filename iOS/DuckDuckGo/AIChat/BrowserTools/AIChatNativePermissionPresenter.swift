@@ -22,7 +22,7 @@ import UIKit
 
 @MainActor
 protocol AIChatNativePermissionPresenting: AnyObject {
-    func isAvailable(for requestID: String?) -> Bool
+    var isSurfaceAvailable: Bool { get }
     var isPresentingPermission: Bool { get }
     func present(_ prompt: ClientToolPermissionPrompt, message: String, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool
     func withdraw(requestID: String, completion: @escaping @MainActor () -> Void)
@@ -72,8 +72,7 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
 
     var isPresentingPermission: Bool { active != nil }
 
-    func isAvailable(for requestID: String?) -> Bool {
-        if let active, active.requestID != requestID { return false }
+    var isSurfaceAvailable: Bool {
         guard let owner = surface(), owner.viewIfLoaded?.window != nil,
               !owner.isBeingDismissed, !owner.isBeingPresented else { return false }
         var branch: UIViewController? = owner
@@ -88,7 +87,7 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
     }
 
     func present(_ prompt: ClientToolPermissionPrompt, message: String, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
-        guard active == nil, isAvailable(for: prompt.requestID), let owner = surface() else { return false }
+        guard active == nil, isSurfaceAvailable, let owner = surface() else { return false }
         let alert = UIAlertController(title: "Duck.ai", message: message, preferredStyle: .alert)
         let presentation = Presentation(requestID: prompt.requestID, alert: alert)
         let choices: [(String, ClientToolPermissionDecision, UIAlertAction.Style)] = [

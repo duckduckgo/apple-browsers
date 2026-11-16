@@ -32,9 +32,7 @@ final class MockAIChatNativePermissionPresenter: AIChatNativePermissionPresentin
     private var completions: [@MainActor () -> Void] = []
     var isPresentingPermission: Bool { active != nil }
 
-    func isAvailable(for requestID: String?) -> Bool {
-        isAvailable && (active == nil || active?.0.requestID == requestID)
-    }
+    var isSurfaceAvailable: Bool { isAvailable }
 
     func present(_ prompt: ClientToolPermissionPrompt, message: String, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
         guard isAvailable, active == nil else { return false }

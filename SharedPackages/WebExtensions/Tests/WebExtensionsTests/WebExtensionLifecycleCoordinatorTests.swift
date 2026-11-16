@@ -743,6 +743,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func extensionPermissions(for identifier: String) -> [String] { [] }
     func extensionMatchPatterns(for identifier: String) -> [String] { [] }
     @MainActor func hasAccessToPrivateData(for identifier: String) -> Bool? { nil }
+    @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { false }
     @MainActor func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }

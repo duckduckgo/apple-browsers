@@ -187,6 +187,7 @@ extension WebExtensionManager {
                                   for extensionContext: WKWebExtensionContext) async throws -> Any? {
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the message fails")
+            recordNativeMessagingLimitation(for: extensionContext)
             throw WKWebExtension.MessagePort.Error(.notConnected)
         }
 
@@ -245,6 +246,7 @@ extension WebExtensionManager {
 
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the port of \(displayName) stays silent")
+            recordNativeMessagingLimitation(for: extensionContext)
             completionHandler(WKWebExtension.MessagePort.Error(.notConnected))
             return
         }

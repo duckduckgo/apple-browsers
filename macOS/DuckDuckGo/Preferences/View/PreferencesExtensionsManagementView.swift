@@ -143,7 +143,9 @@ extension Preferences {
                                   onDetails: { model.showDetails(for: entry) },
                                   onPublisher: { model.openPublisherPage(for: entry.listing) },
                                   onRemove: { model.remove(entry) },
-                                  onRemoteDisableLearnMore: model.openRemoteDisableLearnMore)
+                                  onRemoteDisableLearnMore: model.openRemoteDisableLearnMore,
+                                  showsNativeMessagingNote: entry.hasHitNativeMessagingLimitation,
+                                  onNativeMessagingLearnMore: model.openNativeMessagingLearnMore)
         }
 
         private var moreExtensionsHeader: some View {
@@ -268,6 +270,8 @@ extension Preferences {
             static let footerVerticalPadding: CGFloat = 12
             static let footerIconToTextSpacing: CGFloat = 8
             static let footerTextToLinkMinSpacing: CGFloat = 16
+            static let noteCornerRadius: CGFloat = 8
+            static let notePadding: CGFloat = 12
         }
 
         let item: ChromeWebStoreListing
@@ -279,6 +283,8 @@ extension Preferences {
         let onPublisher: () -> Void
         let onRemove: () -> Void
         let onRemoteDisableLearnMore: () -> Void
+        let showsNativeMessagingNote: Bool
+        let onNativeMessagingLearnMore: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
 
@@ -295,6 +301,23 @@ extension Preferences {
         }
 
         private var card: some View {
+            VStack(alignment: .leading, spacing: 0) {
+                cardHeader
+                if showsNativeMessagingNote {
+                    nativeMessagingNote
+                        .padding(.horizontal, Const.leadingPadding)
+                        .padding(.bottom, Const.leadingPadding)
+                }
+            }
+            .frame(maxWidth: Const.maxWidth)
+            .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
+            // The card fill is translucent; an opaque backing keeps the footer's pink from tinting it.
+            .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
+            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+
+        private var cardHeader: some View {
             HStack(spacing: 16) {
                 ExtensionSummary(item: item,
                                  imageLoader: imageLoader,
@@ -332,13 +355,30 @@ extension Preferences {
             }
             .padding(.leading, Const.leadingPadding)
             .padding(.trailing, Const.trailingPadding)
-            .frame(maxWidth: Const.maxWidth)
             .frame(height: Const.height)
-            .background(Color(designSystemColor: .containerFillSecondary, palette: palette))
-            // The card fill is translucent; an opaque backing keeps the footer's pink from tinting it.
-            .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
-            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
-            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+
+        private var nativeMessagingNote: some View {
+            Text(nativeMessagingNoteText)
+                .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                .tint(Color.rebrandableLink(palette: palette))
+                .environment(\.openURL, OpenURLAction { _ in
+                    onNativeMessagingLearnMore()
+                    return .handled
+                })
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Const.notePadding)
+                .background(Color(designSystemColor: .accentGlowSecondary, palette: palette))
+                .overlay(RoundedRectangle(cornerRadius: Const.noteCornerRadius, style: .continuous)
+                    .strokeBorder(Color(designSystemColor: .accentPrimary, palette: palette)))
+                .clipShape(RoundedRectangle(cornerRadius: Const.noteCornerRadius, style: .continuous))
+                .accessibilityIdentifier("Preferences.Extensions.\(item.id).NativeMessagingNote")
+        }
+
+        private var nativeMessagingNoteText: AttributedString {
+            let markdown = "\(UserText.extensionsSettingsNativeMessagingNote) [\(UserText.extensionsSettingsLearnMore)](\(URL.ddgLearnMore))"
+            return (try? AttributedString(markdown: markdown)) ?? AttributedString(UserText.extensionsSettingsNativeMessagingNote)
         }
 
         private var remoteDisableFooter: some View {

@@ -364,6 +364,31 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(granted, [.clipboardWrite])
     }
 
+    func testWhenAnUnavailablePermissionIsRefusedThenTheLimitationIsSavedForTheStoreExtension() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        recordStoreInstallation(of: context)
+        let manager = makeManager(permissionController: nil,
+                                  unavailablePermissions: [.nativeMessaging],
+                                  nativeMessagingLimitationStore: NativeMessagingLimitationStore(keyValueStore: keyValueStore))
+
+        _ = await requestPermissions([.nativeMessaging], from: manager, for: context)
+
+        XCTAssertTrue(manager.hasHitNativeMessagingLimitation(identifier: context.uniqueIdentifier))
+        XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).hasHitLimitation(storeIdentifier: limitedStoreID))
+    }
+
+    func testWhenAnExtensionThatHitTheLimitationIsUninstalledThenTheLimitationIsForgotten() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        recordStoreInstallation(of: context)
+        let limitationStore = NativeMessagingLimitationStore(keyValueStore: keyValueStore)
+        limitationStore.recordLimitation(storeIdentifier: limitedStoreID)
+        let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging], nativeMessagingLimitationStore: limitationStore)
+
+        try? manager.uninstallExtension(identifier: context.uniqueIdentifier)
+
+        XCTAssertFalse(limitationStore.hasHitLimitation(storeIdentifier: limitedStoreID))
+    }
+
     func testWhenAdditionalPermissionsAreDeniedThenGrantsDoNotChange() async throws {
         let controller = makeController()
         let context = try await makeContext()
@@ -1168,17 +1193,30 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                             bundledExtensionURL: bundledExtensionURL)
     }
 
+    private let limitedStoreID = "nngceckbapebfimnlniiiahkandclblb"
+
     private func makeManager(
         permissionController: WebExtensionPermissionController?,
-        unavailablePermissions: Set<WKWebExtension.Permission>
+        unavailablePermissions: Set<WKWebExtension.Permission>,
+        nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil
     ) -> WebExtensionManager {
-        WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
-                            controllerConfiguration: .nonPersistent(),
-                            windowTabProvider: WebExtensionWindowTabProvidingMock(),
-                            storageProvider: WebExtensionStorageProvider(extensionsDirectory: FileManager.default.temporaryDirectory),
-                            installationStore: installationStore,
-                            permissionController: permissionController,
-                            unavailablePermissions: unavailablePermissions)
+        let extensionsDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
+                                   controllerConfiguration: .nonPersistent(),
+                                   windowTabProvider: WebExtensionWindowTabProvidingMock(),
+                                   storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
+                                   installationStore: installationStore,
+                                   permissionController: permissionController,
+                                   unavailablePermissions: unavailablePermissions,
+                                   nativeMessagingLimitationStore: nativeMessagingLimitationStore)
+    }
+
+    private func recordStoreInstallation(of context: WKWebExtensionContext) {
+        installationStore.installedExtensions.append(InstalledWebExtension(uniqueIdentifier: context.uniqueIdentifier,
+                                                                           filename: context.uniqueIdentifier,
+                                                                           name: nil,
+                                                                           version: "1.0",
+                                                                           storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: limitedStoreID)))
     }
 
     private func requestPermissions(

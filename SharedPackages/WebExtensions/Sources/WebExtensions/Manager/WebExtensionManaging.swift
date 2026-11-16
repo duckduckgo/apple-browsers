@@ -201,6 +201,11 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func extensionMatchPatterns(for identifier: String) -> [String]
 
+    /// Whether the extension tried to talk to an app on the Mac in a build that can't allow it, such as the App Store build.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func hasHitNativeMessagingLimitation(identifier: String) -> Bool
+
     /// Returns whether the extension runs in private windows, or nil when permissions aren't managed.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor

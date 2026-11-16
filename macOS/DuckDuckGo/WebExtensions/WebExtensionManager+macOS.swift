@@ -163,6 +163,7 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             unavailablePermissions: buildType.isAppStoreBuild ? [.nativeMessaging] : [],
+            nativeMessagingLimitationStore: buildType.isAppStoreBuild ? NativeMessagingLimitationStore(keyValueStore: keyValueStore) : nil,
             keyValueStore: keyValueStore,
             retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration

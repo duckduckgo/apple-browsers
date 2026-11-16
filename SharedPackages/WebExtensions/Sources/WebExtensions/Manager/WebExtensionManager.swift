@@ -120,6 +120,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Permissions this build never grants at runtime, such as `nativeMessaging` in the App Store build.
     let unavailablePermissions: Set<WKWebExtension.Permission>
 
+    /// Records extensions that tried native messaging where it's unavailable. `nil` where nothing should be recorded.
+    let nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol?
+
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
 
@@ -262,6 +265,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 unavailablePermissions: Set<WKWebExtension.Permission> = [],
+                nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil,
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 retentionStore: WebExtensionRetentionStore? = nil,
                 isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
@@ -323,6 +327,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
         self.unavailablePermissions = unavailablePermissions
+        self.nativeMessagingLimitationStore = nativeMessagingLimitationStore
         self.storePixelsReporter = retentionStore.map { WebExtensionStorePixelsReporter(store: $0, installationStore: installationStore, pixelFiring: pixelFiring, now: now) }
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
@@ -677,6 +682,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacySettings?.removeSettings(for: identifier)
 #endif
         installationStore.remove(uniqueIdentifier: identifier)
+        forgetNativeMessagingLimitation(of: installedExtension)
         unloadedExtensionsCache.removeValue(forKey: identifier)
         dataClearingReloadIdentifiers.remove(identifier)
         unregisterHandlers(for: identifier)
@@ -1441,6 +1447,30 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    public func hasHitNativeMessagingLimitation(identifier: String) -> Bool {
+        guard let nativeMessagingLimitationStore, let storeIdentity = installedExtension(identifier: identifier)?.storeIdentity else { return false }
+        return nativeMessagingLimitationStore.hasHitLimitation(storeIdentifier: storeIdentity.id)
+    }
+
+    @MainActor
+    func recordNativeMessagingLimitation(for extensionContext: WKWebExtensionContext) {
+        guard let nativeMessagingLimitationStore,
+              let storeIdentity = installedExtension(identifier: extensionContext.uniqueIdentifier)?.storeIdentity,
+              !nativeMessagingLimitationStore.hasHitLimitation(storeIdentifier: storeIdentity.id) else { return }
+        nativeMessagingLimitationStore.recordLimitation(storeIdentifier: storeIdentity.id)
+        NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
+    }
+
+    /// Updates install the new version before removing the old one, so the note stays while any version is installed.
+    @MainActor
+    private func forgetNativeMessagingLimitation(of installedExtension: InstalledWebExtension?) {
+        guard let nativeMessagingLimitationStore,
+              let storeIdentity = installedExtension?.storeIdentity,
+              installationStore.installedExtensions(withStoreIdentity: storeIdentity).isEmpty else { return }
+        nativeMessagingLimitationStore.forget(storeIdentifier: storeIdentity.id)
+    }
+
+    @MainActor
     public func hasAccessToPrivateData(for identifier: String) -> Bool? {
         permissionController?.hasAccessToPrivateData(for: identifier)
     }
@@ -1625,6 +1655,9 @@ public extension Notification.Name {
     /// browser window keeps its own set of extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
 
+    /// Posted by `WebExtensionManager` when an extension first tries native messaging where it's unavailable.
+    static let webExtensionNativeMessagingLimitationDidChange = Notification.Name("webExtensionNativeMessagingLimitationDidChange")
+
     /// Posted by `WebExtensionManager` when an extension changes its toolbar action, such as its icon,
     /// from JavaScript. The object is the extension's `WKWebExtensionContext`.
     static let webExtensionActionDidChange = Notification.Name("webExtensionActionDidChange")
@@ -1714,6 +1747,9 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.Permission>, Date?) {
         let unavailable = permissions.intersection(unavailablePermissions)
+        if !unavailable.isEmpty {
+            recordNativeMessagingLimitation(for: extensionContext)
+        }
         let request = WebExtensionPermissionRequest(permissions: permissions.subtracting(unavailable), unavailablePermissions: unavailable)
         guard let permissionController else { return (request.permissions, nil) }
         let granted = await permissionController.request(request, for: extensionContext)

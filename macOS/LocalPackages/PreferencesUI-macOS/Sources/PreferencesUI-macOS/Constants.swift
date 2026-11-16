@@ -32,6 +32,6 @@ public enum Const {
         public static let sideBarItem: Font = .body
         public static let preferencePaneTitle: Font = .title2.weight(.semibold)
         public static let preferencePaneSectionHeader: Font = .title3.weight(.semibold)
-        public static let preferencePaneDisclaimer: Font = .subheadline
+        public static let preferencePaneDisclaimer: Font = .system(size: 10, weight: .regular)
     }
 }

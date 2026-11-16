@@ -18,6 +18,7 @@
 //
 
 import Combine
+import SwiftUI
 import XCTest
 @testable import DuckDuckGo
 
@@ -82,13 +83,35 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.showsSearchModules)
     }
 
+    func testWhenContentRefreshesDuringPresentationChangeThenHostUsesEmittedModuleVisibilityInBothFlagStates() throws {
+        for usesScrollableEscapeHatch in [false, true] {
+            let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher(), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
+            let parent = UIViewController()
+            host.setUsesRedesignedNewTabPageLayout(true)
+            host.start(in: parent.view, parentViewController: parent, textPublisher: Just(""))
+            defer { host.tearDown() }
+            host.onContentChanged = {
+                host.setFocusedContent(mode: .search, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: nil)
+            }
+            let hostingController = try XCTUnwrap(parent.children.compactMap { $0 as? UIHostingController<UnifiedSuggestionsView> }.first)
+            XCTAssertEqual(hostingController.rootView.usesScrollableEscapeHatch, usesScrollableEscapeHatch)
+            XCTAssertTrue(hostingController.rootView.showsRedesignedSearchModules)
+
+            inputs.send(.init(mode: .search, isTyping: true, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+            XCTAssertFalse(hostingController.rootView.showsRedesignedSearchModules)
+
+            inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+            XCTAssertTrue(hostingController.rootView.showsRedesignedSearchModules)
+        }
+    }
+
     func testWhenPresentationIsReleasedThenInputSubscriptionIsCancelled() {
         var cancellations = 0
         var presentation: RedesignedFocusedSearchPresentation? = RedesignedFocusedSearchPresentation(
             inputsPublisher: inputs.handleEvents(receiveCancel: { cancellations += 1 }).eraseToAnyPublisher(),
             dismissPublisher: dismissal.eraseToAnyPublisher(),
             fireTabPublisher: fireTab.eraseToAnyPublisher())
-        weak var weakPresentation = presentation
+        weak let weakPresentation = presentation
         XCTAssertNotNil(weakPresentation)
         presentation = nil
         XCTAssertNil(weakPresentation)
@@ -126,7 +149,8 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertEqual(activeSubscriptions, 0)
     }
 
-    private func makeHost(inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>) -> UnifiedSuggestionsHost {
+    private func makeHost(inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>,
+                          usesScrollableEscapeHatch: Bool = true) -> UnifiedSuggestionsHost {
         UnifiedSuggestionsHost(config: UnifiedSuggestionsHostConfig(
             source: EmptySuggestionsSource(),
             inputsPublisher: inputsPublisher,
@@ -134,7 +158,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
             favoritesProvider: { nil },
             onSelectRow: { _ in },
             onDeleteRow: { _ in },
-            onTapAheadRow: { _ in }))
+            onTapAheadRow: { _ in }), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
     }
 
     private func makePresentation() -> RedesignedFocusedSearchPresentation {

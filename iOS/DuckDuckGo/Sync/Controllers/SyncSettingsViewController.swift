@@ -42,8 +42,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         static let bookmarksPromotion = "promotion_bookmarks"
         static let passwordsPromotion = "promotion_passwords"
         static let aiChatPromotion = "promotion_ai_chat"
-        static let bookmarksAnotherDevicePromotion = "promotion_bookmarks_another_device"
-        static let passwordsAnotherDevicePromotion = "promotion_passwords_another_device"
+        static let bookmarksAnotherDevicePromotion = "promotion_bookmarks_multi_device"
+        static let passwordsAnotherDevicePromotion = "promotion_passwords_multi_device"
     }
 
     enum AutoRestorePromptSource: String {
@@ -465,12 +465,16 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         guard let source, syncService.authState == .inactive else {
             return
         }
-        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
-        let autoStartSetupSources = [SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion]
-        if autoStartPairingSources.contains(source) {
+        switch source {
+        case SourceConstants.startSyncFlow:
             viewModel.beginPairingFlow()
-        } else if autoStartSetupSources.contains(source), featureFlagger.isFeatureOn(.syncPromotionRedesign) {
+        case SourceConstants.aiChatPromotion:
             viewModel.enableSyncToggleTapped()
+        case SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion:
+            guard featureFlagger.isFeatureOn(.syncPromotionRedesign) else { return }
+            viewModel.enableSyncToggleTapped()
+        default:
+            break
         }
     }
 

@@ -22,6 +22,8 @@ import Foundation
 import Testing
 @_spi(Testing) import PixelKit
 import Networking
+@testable import Subscription
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
 @Suite("Subscription cancellation flow feature info mapping")
@@ -193,14 +195,42 @@ struct SubscriptionCancellationInstrumentationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A cancellation detected after the App Store screen fires the cancelled pixel", .timeLimit(.minutes(1)))
-    func appStoreSubscriptionCancelledFiresPixel() {
+    @Test("A cancellation detected after the App Store screen fires the cancelled pixel with entry, trial and days since purchase", .timeLimit(.minutes(1)), arguments: [
+        (SubscriptionCancellationEntry.cancellation, true, 0, SubscriptionDaysSincePurchaseBucket.d1),
+        (.manage, false, 45, .d31Plus)
+    ])
+    func appStoreSubscriptionCancelledFiresPixel(entry: SubscriptionCancellationEntry, isTrial: Bool, daysSincePurchase: Int, expectedBucket: SubscriptionDaysSincePurchaseBucket) {
         let pixelKit = PixelKitMock()
+        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable,
+                                                                activeOffers: isTrial ? [DuckDuckGoSubscription.Offer(type: .trial)] : [])
+        let now = Calendar.current.date(byAdding: .day, value: daysSincePurchase, to: subscription.startedAt)!
+        let expectedPixel = SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: entry, isTrial: isTrial, daysSincePurchase: expectedBucket)
 
-        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).appStoreSubscriptionCancelled()
+        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit, now: { now }).appStoreSubscriptionCancelled(entry: entry, subscription: subscription)
 
-        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationAppStoreCancelled, frequency: .standard)])
-        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled.parameters == nil)
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: expectedPixel, frequency: .standard)])
+        #expect(pixelKit.actualFireCalls.first?.pixel.parameters == ["entry": entry.rawValue,
+                                                                    "free_trial": String(isTrial),
+                                                                    "days_since_purchase": expectedBucket.rawValue])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Days since purchase are bucketed at the d1, d2_7, d8_30 and d31_plus boundaries", .timeLimit(.minutes(1)), arguments: [
+        (-1, SubscriptionDaysSincePurchaseBucket.d1),
+        (0, .d1),
+        (1, .d1),
+        (2, .d2To7),
+        (7, .d2To7),
+        (8, .d8To30),
+        (30, .d8To30),
+        (31, .d31Plus),
+        (365, .d31Plus)
+    ])
+    func daysSincePurchaseBuckets(days: Int, expectedBucket: SubscriptionDaysSincePurchaseBucket) {
+        let startedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let now = Calendar.current.date(byAdding: .day, value: days, to: startedAt)!
+
+        #expect(SubscriptionDaysSincePurchaseBucket(startedAt: startedAt, now: now) == expectedBucket)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -233,7 +263,7 @@ struct SubscriptionCancellationInstrumentationTests {
     @Test("Pixel names match their definitions", .timeLimit(.minutes(1)))
     func pixelNames() {
         #expect(SubscriptionPixel.subscriptionCancellationCancelClick.name == "subscription_cancellation_cancel_click")
-        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled.name == "subscription_cancellation_app_store_cancelled")
+        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: .cancellation, isTrial: false, daysSincePurchase: .d1).name == "subscription_cancellation_app_store_cancelled")
         #expect(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(TestError()).name == "subscription_cancellation_flow_load_failure")
         #expect(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure(entitlement: .unknown).name == "subscription_cancellation_feature-info_failure")
     }
@@ -242,7 +272,7 @@ struct SubscriptionCancellationInstrumentationTests {
     @Test("Cancellation pixels use the standard platform suffix their definitions declare", .timeLimit(.minutes(1)))
     func cancellationPixelsUseStandardPlatformSuffix() {
         #expect(SubscriptionPixel.subscriptionCancellationCancelClick.platformSuffixPolicy == .standard)
-        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled.platformSuffixPolicy == .standard)
+        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled(entry: .cancellation, isTrial: false, daysSincePurchase: .d1).platformSuffixPolicy == .standard)
         #expect(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(TestError()).platformSuffixPolicy == .standard)
         #expect(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure(entitlement: .unknown).platformSuffixPolicy == .standard)
         #expect(SubscriptionPixel.subscriptionActive.platformSuffixPolicy == .legacyOmitted)

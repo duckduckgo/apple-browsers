@@ -34,11 +34,16 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
     private let subscriptionEnvironmentPlatform: SubscriptionEnvironment.PurchasePlatform
     private let storePurchaseManager: StorePurchaseManager?
     private let subscriptionEndpointService: SubscriptionEndpointService
+    private let isStripeProductsByPlanCountryEnabled: () -> Bool
 
-    init(subscriptionEnvironmentPlatform: SubscriptionEnvironment.PurchasePlatform, storePurchaseManager: StorePurchaseManager?, subscriptionEndpointService: SubscriptionEndpointService) {
+    init(subscriptionEnvironmentPlatform: SubscriptionEnvironment.PurchasePlatform,
+         storePurchaseManager: StorePurchaseManager?,
+         subscriptionEndpointService: SubscriptionEndpointService,
+         isStripeProductsByPlanCountryEnabled: @escaping () -> Bool = { true }) {
         self.subscriptionEnvironmentPlatform = subscriptionEnvironmentPlatform
         self.storePurchaseManager = storePurchaseManager
         self.subscriptionEndpointService = subscriptionEndpointService
+        self.isStripeProductsByPlanCountryEnabled = isStripeProductsByPlanCountryEnabled
     }
 
     public func subscriptionTierOptions(includeProTier: Bool, currentSubscription: DuckDuckGoSubscription?) async -> Result<SubscriptionTierOptions, Error> {
@@ -52,7 +57,7 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
         switch effectivePlatform {
         case .subscription(.stripe), .app(.stripe):
-            return await fetchStripeTierOptions(includeProTier: includeProTier)
+            return await fetchStripeTierOptions(includeProTier: includeProTier, planCountry: currentSubscription?.planCountry)
         case .subscription(.apple):
             // Apple subscription on non–App Store app (e.g. Sparkle): we cannot show tier options;
             // the app has no StoreKit. UI should redirect user to App Store / subscription settings.
@@ -88,13 +93,20 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
     // MARK: - Stripe path
 
-    private func fetchStripeTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
+    private func countryParameter(planCountry: String?) -> String {
+        guard let planCountry, planCountry.count == 2 else { return "us" }
+        return planCountry.lowercased()
+    }
+
+    private func fetchStripeTierOptions(includeProTier: Bool, planCountry: String?) async -> Result<SubscriptionTierOptions, Error> {
         Logger.subscriptionStripePurchaseFlow.log("Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
-        let regionParameter = "us"
+        let location: TierProductsLocation = isStripeProductsByPlanCountryEnabled()
+            ? .country(countryParameter(planCountry: planCountry))
+            : .legacyUSRegion
         let productsResponse: GetTierProductsResponse
         do {
             productsResponse = try await subscriptionEndpointService.getTierProducts(
-                region: regionParameter,
+                location: location,
                 platform: SubscriptionPlatformName.stripe.rawValue
             )
         } catch {

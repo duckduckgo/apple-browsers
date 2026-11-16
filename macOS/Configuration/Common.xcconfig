@@ -28,7 +28,8 @@ PRODUCT_MODULE_NAME = $(TARGET_NAME:c99extidentifier)
 
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*][sdk=*] = $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=CI][arch=*][sdk=*] = DEBUG $(FEATURE_FLAGS)
-SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug][arch=*][sdk=*] = DEBUG $(FEATURE_FLAGS)
+// The manual extension tools exist only in Debug package builds; CI packages omit them.
+SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug][arch=*][sdk=*] = DEBUG WEB_EXTENSION_UPDATE_TESTING $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Review][arch=*][sdk=*] = REVIEW $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Alpha][arch=*][sdk=*] = $(FEATURE_FLAGS)
 

@@ -61,6 +61,42 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
         XCTAssertEqual(menuItem.title, UserText.updateReadyMenuItem)
     }
 
+    // MARK: - Update Prompt Button Title Tests
+
+    func testUpdatePromptButtonTitle_WhenAutomaticUpdatesOnButNotDownloaded_ShowsUpdateNow() {
+        mockController.areAutomaticUpdatesEnabled = true
+        mockController.isAtRestartCheckpoint = false
+
+        XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptUpdateButton)
+        XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptUpdateButton)
+    }
+
+    func testUpdatePromptButtonTitle_WhenAtRestartCheckpoint_ShowsRestartNow() {
+        mockController.areAutomaticUpdatesEnabled = false
+        mockController.isAtRestartCheckpoint = true
+
+        XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptRestartButton)
+        XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptRestartButton)
+    }
+
+    // MARK: - Update Prompt Action Tests
+
+    func testRunUpdateFromPrompt_WhenUpdateStillHasToDownload_OpensReleaseNotesAndRunsUpdate() {
+        mockController.isAtRestartCheckpoint = false
+
+        mockController.runUpdateFromPrompt()
+
+        XCTAssertEqual(mockController.updateCalls, [.fromMenuItem])
+    }
+
+    func testRunUpdateFromPrompt_WhenAtRestartCheckpoint_RunsUpdateWithoutOpeningReleaseNotes() {
+        mockController.isAtRestartCheckpoint = true
+
+        mockController.runUpdateFromPrompt()
+
+        XCTAssertEqual(mockController.updateCalls, [.direct])
+    }
+
     // MARK: - Target & Action Tests
 
     func testMenuItemTarget_IsThePassedInController() {
@@ -88,7 +124,10 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
 private final class MockSparkleUpdateController: NSObject, SparkleUpdateControlling {
 
+    enum UpdateCall { case direct, fromMenuItem }
+
     var isAtRestartCheckpoint = false
+    var updateCalls: [UpdateCall] = []
     var shouldAutoCheckOnReleaseNotesLoad = true
 
     // MARK: - SparkleUpdateControlling
@@ -118,7 +157,7 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
 
     // MARK: - SparkleUpdateControllerObjC
 
-    func runUpdateFromMenuItem() { fatalError("Not expected") }
+    func runUpdateFromMenuItem() { updateCalls.append(.fromMenuItem) }
 
     // MARK: - UpdateController
 
@@ -140,7 +179,7 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
     var areAutomaticUpdatesEnabled = false
     var notificationPresenter: any UpdateNotificationPresenting = MockUpdateNotificationPresenter()
 
-    func runUpdate() { fatalError("Not expected") }
+    func runUpdate() { updateCalls.append(.direct) }
     func checkForUpdateSkippingRollout() { fatalError("Not expected") }
 
     // MARK: - UpdateControllerObjC

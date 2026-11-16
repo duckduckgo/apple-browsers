@@ -39,6 +39,10 @@ class FakeSmartlingClient:
                  failing_downloads=None,
                  awaiting_jobs=None,
                  awaiting_jobs_error=None,
+                 file_hashcodes=None,
+                 job_uids_by_string=None,
+                 in_progress_jobs=None,
+                 job_search_error=None,
                  file_status_error=None,
                  upload_code='SUCCESS',
                  polls_until_processed=0,
@@ -57,6 +61,11 @@ class FakeSmartlingClient:
         self.failing_downloads = failing_downloads or set()
         self.awaiting_jobs = awaiting_jobs or []
         self.awaiting_jobs_error = awaiting_jobs_error
+        self.file_hashcodes = file_hashcodes or {}
+        self.job_uids_by_string = job_uids_by_string or {}
+        self.in_progress_jobs = in_progress_jobs or []
+        self.job_search_error = job_search_error
+        self.job_searches = []
         self.file_status_error = file_status_error
         self.awaiting_jobs_calls = 0
         self.upload_code = upload_code
@@ -146,6 +155,22 @@ class FakeSmartlingClient:
         if self.awaiting_jobs_error:
             raise self.awaiting_jobs_error
         return self.awaiting_jobs
+
+    async def list_source_hashcodes(self, file_uri):
+        return self.file_hashcodes.get(file_uri, [])
+
+    async def find_job_uids_by_strings(self, hashcodes, locale_ids):
+        if self.job_search_error:
+            raise self.job_search_error
+        self.job_searches.append((hashcodes, locale_ids))
+        return {
+            uid
+            for hashcode in hashcodes for locale in locale_ids
+            for uid in self.job_uids_by_string.get((hashcode, locale), [])
+        }
+
+    async def list_jobs_in_status(self, status):
+        return self.in_progress_jobs if status == 'IN_PROGRESS' else []
 
     async def download_file(self, file_uri, locale):
         if (file_uri, locale) in self.failing_downloads:
@@ -658,6 +683,108 @@ class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCa
         self.assertEqual(result.outcome, 'not_ready')
         self.assertEqual(result.strings_left, 7)
         self.assertEqual(result.jobs_awaiting_authorization, [])
+
+
+def source_strings_page(first, count):
+    return {'response': {'data': {'items': [{'hashcode': f'hash-{index}'} for index in range(first, first + count)]}}}
+
+
+class SourceHashcodesTests(unittest.IsolatedAsyncioTestCase):
+
+    async def testWhenAFileHasMoreStringsThanFitOnAPageThenEveryPageIsRead(self):
+        client = LOCALIZATION_TOOL.SmartlingClient(LOCALIZATION_TOOL.Credentials('user', 'secret', 'project'))
+        client._request = unittest.mock.AsyncMock(side_effect=[source_strings_page(0, 500), source_strings_page(500, 1)])
+
+        hashcodes = await client.list_source_hashcodes(XLIFF_URI)
+
+        self.assertEqual(len(hashcodes), 501)
+        self.assertEqual(
+            [call.kwargs['params']['offset'] for call in client._request.await_args_list],
+            ['0', '500']
+        )
+
+
+def jobs_by_strings_page(*job_uids):
+    return {'response': {'data': {'items': [{'translationJobUid': uid, 'jobName': uid} for uid in job_uids]}}}
+
+
+class FindJobsByStringsTests(unittest.IsolatedAsyncioTestCase):
+
+    async def testWhenThereAreMoreStringLocalePairsThanOneRequestTakesThenTheStringsAreSplitAcrossRequests(self):
+        client = LOCALIZATION_TOOL.SmartlingClient(LOCALIZATION_TOOL.Credentials('user', 'secret', 'project'))
+        client._request = unittest.mock.AsyncMock(side_effect=[jobs_by_strings_page('a', 'b'), jobs_by_strings_page('b')])
+        hashcodes = [f'hash-{index}' for index in range(5001)]
+
+        job_uids = await client.find_job_uids_by_strings(hashcodes, ['de-DE', 'el-GR', 'ro-RO', 'tr-TR'])
+
+        self.assertEqual(job_uids, {'a', 'b'})
+        calls = client._request.await_args_list
+        self.assertTrue(all(call.args[1].endswith('/jobs/find-jobs-by-strings') for call in calls))
+        self.assertEqual([len(call.kwargs['json']['hashcodes']) for call in calls], [5000, 1])
+        self.assertEqual(calls[0].kwargs['json']['localeIds'], ['de-DE', 'el-GR', 'ro-RO', 'tr-TR'])
+
+
+def in_progress_job(uid, created='2026-11-06T12:02:00Z'):
+    return {'translationJobUid': uid, 'jobName': f'Merge iOS - {uid}', 'createdDate': created}
+
+
+class ReleaseStatusJobsInProgressTests(unittest.IsolatedAsyncioTestCase):
+
+    async def release_status(self, client):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return await LOCALIZATION_TOOL.run_release_status(
+                client=client,
+                job_name='Release iOS 7.200.0',
+                file_uris=[XLIFF_URI, STRINGSDICT_URI]
+            )
+
+    async def testWhenNotReadyThenOnlyTheJobsInProgressWithTheIncompleteStringsAndLocalesAreListed(self):
+        client = FakeSmartlingClient(
+            locales=['de-DE', 'tr-TR'],
+            file_statuses={
+                XLIFF_URI: file_status(10, de_DE=(10, 0), tr_TR=(9, 0)),
+                STRINGSDICT_URI: file_status(5, de_DE=(5, 0), tr_TR=(5, 0)),
+            },
+            file_hashcodes={XLIFF_URI: ['hash-1', 'hash-2'], STRINGSDICT_URI: ['hash-3']},
+            job_uids_by_string={
+                ('hash-1', 'tr-TR'): ['merge', 'old'],
+                ('hash-2', 'tr-TR'): ['merge'],
+                ('hash-2', 'de-DE'): ['german'],
+                ('hash-3', 'tr-TR'): ['other'],
+            },
+            in_progress_jobs=[in_progress_job('merge'), in_progress_job('german'), in_progress_job('other')]
+        )
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.jobs_in_progress, [{
+            'name': 'Merge iOS - merge',
+            'created': '2026-11-06',
+            'url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:merge',
+        }])
+        self.assertEqual(client.job_searches, [(['hash-1', 'hash-2'], ['tr-TR'])])
+
+    async def testWhenReadyThenNoJobsAreSearched(self):
+        client = FakeSmartlingClient(
+            file_statuses={XLIFF_URI: file_status(10, de_DE=(10, 0)), STRINGSDICT_URI: file_status(5, de_DE=(5, 0))}
+        )
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.outcome, 'ready')
+        self.assertEqual(client.job_searches, [])
+
+    async def testWhenSearchingJobsFailsThenTheStatusIsStillReported(self):
+        client = FakeSmartlingClient(
+            file_statuses={XLIFF_URI: file_status(10, de_DE=(3, 0)), STRINGSDICT_URI: file_status(5, de_DE=(5, 0))},
+            job_search_error=RuntimeError('HTTP 500: Server error')
+        )
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.outcome, 'not_ready')
+        self.assertEqual(result.strings_left, 7)
+        self.assertEqual(result.jobs_in_progress, [])
 
 
 class RefreshTests(unittest.IsolatedAsyncioTestCase):

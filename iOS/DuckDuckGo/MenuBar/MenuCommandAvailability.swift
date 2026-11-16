@@ -33,6 +33,8 @@ struct MenuCommandAvailability {
         var fireModeEnabled = false
         var voiceSearchEnabled = false
         var aiChatEnabled = false
+        var duckAIShortcutAvailable = false
+        var duckAIButtonVisible = true
         var passwordsEnabled = false
         var canHideTabs = true
         var tabCount = 0
@@ -41,6 +43,7 @@ struct MenuCommandAvailability {
     }
 
     let state: State
+    var nextStepsItems: NextStepsItemsVisibility?
 
     func isEnabled(_ command: MainMenuCommand) -> Bool {
         guard state.shortcutsEnabled, state.presentation != .blockingModal else { return false }
@@ -49,12 +52,14 @@ struct MenuCommandAvailability {
             return state.presentation != .tabSwitcher || state.canHideTabs
         case .openDuckAI, .newChat, .newVoiceChat, .newImageChat, .openRecentChat, .deleteAllChats:
             return state.aiChatEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
+        case .toggleDuckAIButton:
+            return state.duckAIShortcutAvailable && (state.presentation == .browser || (state.presentation == .tabSwitcher && state.canHideTabs))
         case .showPasswords:
             return state.passwordsEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
         case .about:
             guard state.presentation != .tabSwitcher || state.canHideTabs else { return false }
             return state.presentation == .browser || state.presentation == .tabSwitcher || state.presentation == .settings
-        case .settings, .feedback:
+        case .settings, .feedback, .importData, .setDefaultBrowser, .addToDock, .addWidget:
             guard state.presentation != .tabSwitcher || state.canHideTabs else { return false }
             return state.presentation == .browser || state.presentation == .tabSwitcher
         case .newTab, .fire:
@@ -84,11 +89,22 @@ struct MenuCommandAvailability {
         }
     }
 
+    func isHidden(_ command: MainMenuCommand) -> Bool {
+        guard let nextStepsItems else { return false }
+        switch command {
+        case .setDefaultBrowser: return !nextStepsItems.isSetAsDefaultVisibleAfterCheck()
+        case .addToDock: return !nextStepsItems.isAddToDockVisible
+        case .addWidget: return !nextStepsItems.isAddWidgetVisible
+        default: return false
+        }
+    }
+
     func title(for command: MainMenuCommand) -> String? {
         switch command {
         case .showTabs: return state.presentation == .tabSwitcher ? UserText.menuHideTabs : UserText.menuShowTabs
         case .showPasswords: return state.presentation == .passwords ? UserText.menuHidePasswords : UserText.menuShowPasswords
         case .showDownloads: return state.presentation == .downloads ? UserText.menuHideDownloads : UserText.menuShowDownloads
+        case .toggleDuckAIButton: return state.duckAIButtonVisible ? UserText.menuHideDuckAIButton : UserText.menuShowDuckAIButton
         case .showBookmarks: return state.presentation == .bookmarks ? UserText.menuHideBookmarks : UserText.menuShowBookmarks
         default: return nil
         }

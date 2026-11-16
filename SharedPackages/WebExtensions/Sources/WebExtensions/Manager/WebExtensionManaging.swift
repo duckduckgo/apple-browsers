@@ -69,6 +69,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { get }
 
+    /// The badge colors extensions set, which WebKit doesn't pass to the app.
+    @available(macOS 15.4, iOS 18.4, *)
+    var badgeColors: WebExtensionBadgeColorStore { get }
+
     /// CPM launch policy captured at manager creation. Disabling restores load-before-sync and fresh upgrade origins.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
@@ -192,6 +196,20 @@ public protocol WebExtensionManaging: AnyObject {
     /// Returns the manifest permissions for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionPermissions(for identifier: String) -> [String]
+
+    /// Returns the website patterns the manifest requests for the given identifier.
+    @available(macOS 15.4, iOS 18.4, *)
+    func extensionMatchPatterns(for identifier: String) -> [String]
+
+    /// Returns whether the extension runs in private windows, or nil when permissions aren't managed.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func hasAccessToPrivateData(for identifier: String) -> Bool?
+
+    /// Allows or denies the extension in private windows.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws
 
     /// Returns the extension context for the given URL.
     @available(macOS 15.4, iOS 18.4, *)

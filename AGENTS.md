@@ -17,6 +17,8 @@ something wrong and nothing catches it during the task. Procedures live in
   state explicitly and assert the app's behavior in that state, including
   flags changing while the app runs. They never assert what the live
   configuration currently contains.
+- Before reviewing any change, read `REVIEW.md` first (and `REVIEW-pixels.md` for
+  pixel or wide event changes).
 - Pull requests: fill in `.github/PULL_REQUEST_TEMPLATE.md`. If the
   `SnapshotReferences` submodule changed, run
   `./scripts/open-snapshot-submodule-pr.sh` first and add the PR link it

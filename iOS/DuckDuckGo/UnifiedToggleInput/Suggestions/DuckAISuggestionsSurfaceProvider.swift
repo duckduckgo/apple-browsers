@@ -144,7 +144,7 @@ final class DuckAISuggestionsSurfaceProvider {
         ) { request, completion in
             requestRunner.run(request, completion: completion)
         }
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource, featureFlagger: dependencies.featureFlagger)
 
         let source = DuckAISuggestionsSource(
             chatViewModel: chatViewModel,

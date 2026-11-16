@@ -59,4 +59,28 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
         XCTAssertFalse(feature.isToggleHiddenOnDuckAITab)
         XCTAssertFalse(feature.isAttachmentPasteEnabled)
     }
+
+    func testWhenOnIPhoneThenFullTabChatInputIsAvailableRegardlessOfTheIPadFlag() {
+        MockDevicePlatform.isIphone = true
+        UnifiedToggleInputFeature.resolve(using: MockFeatureFlagger(enabledFeatureFlags: []))
+        let feature = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
+
+        XCTAssertTrue(feature.isFullTabChatInputAvailable)
+    }
+
+    @available(iOS 16, *)
+    func testWhenOnIPadThenFullTabChatInputFollowsTheLaunchSnapshotOfTheIPadFlag() {
+        MockDevicePlatform.isIphone = false
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeInputIPad])
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        let feature = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
+        XCTAssertTrue(feature.isFullTabChatInputAvailable)
+        XCTAssertFalse(feature.isAvailable)
+
+        flagger.enabledFeatureFlags = []
+        XCTAssertTrue(feature.isFullTabChatInputAvailable)
+
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        XCTAssertFalse(feature.isFullTabChatInputAvailable)
+    }
 }

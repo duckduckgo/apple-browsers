@@ -42,6 +42,10 @@ public protocol AIChatInputBoxHandling {
     /// recovery card is active for the current chat.
     var isSubmitBlockedByRecoveryCard: Bool { get set }
 
+    /// Set from the handoff until the page next loads without one: the page holds the handed-off prompt
+    /// behind its own Terms of Service card, which a native disclaimer would only repeat.
+    var isTermsOfServiceShownOnPage: Bool { get set }
+
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
     var attachmentUsage: AIChatAttachmentUsage? { get set }
 

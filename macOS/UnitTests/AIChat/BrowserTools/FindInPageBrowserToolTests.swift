@@ -71,6 +71,28 @@ final class FindInPageBrowserToolTests: XCTestCase {
         XCTAssertEqual(short.matches[0].snippet, "a b needle")
     }
 
+    func testWhenMatchIsLongThenSnippetKeepsTheWholeMatchWithinTheScalarLimit() throws {
+        let context = String(repeating: "é", count: 40)
+        let query = String(repeating: "needle", count: 12)
+        let content = context + " " + query + " " + context
+
+        let result = FindInPageBrowserTool.search(content: content, query: query, caseSensitive: true, maxMatches: 1)
+        let match = try XCTUnwrap(result.matches.first)
+
+        XCTAssertTrue(match.snippet.contains(query))
+        XCTAssertLessThanOrEqual(match.snippet.unicodeScalars.count, BrowserToolOutputLimits.snippet)
+        XCTAssertTrue(match.snippet.hasPrefix("é"))
+        XCTAssertTrue(match.snippet.hasSuffix("é"))
+    }
+
+    func testWhenMatchExceedsTheSnippetLimitThenTheMatchItselfIsClipped() throws {
+        let query = String(repeating: "x", count: BrowserToolOutputLimits.snippet + 20)
+        let result = FindInPageBrowserTool.search(content: "before \(query) after", query: query, caseSensitive: true, maxMatches: 1)
+        let match = try XCTUnwrap(result.matches.first)
+
+        XCTAssertEqual(match.snippet, String(repeating: "x", count: BrowserToolOutputLimits.snippet))
+    }
+
     func testWhenContentOrQueryIsEmptyThenNothingIsFound() {
         XCTAssertEqual(FindInPageBrowserTool.search(content: "", query: "a", caseSensitive: false, maxMatches: 5).matchCount, 0)
         XCTAssertEqual(FindInPageBrowserTool.search(content: "abc", query: "", caseSensitive: false, maxMatches: 5).matchCount, 0)
@@ -149,8 +171,7 @@ final class FindInPageBrowserToolTests: XCTestCase {
         let (tool, ownerContext) = make()
         let context = BrowserToolCallContext(ownerTabID: ownerContext.ownerTabID,
                                              ownerWindowToken: ownerContext.ownerWindowToken,
-                                             isBurner: true,
-                                             supportsElicitationForm: true)
+                                             isBurner: true)
 
         let result = await tool.execute(arguments: ["query": "a"], context: context)
 
@@ -170,8 +191,7 @@ final class FindInPageBrowserToolTests: XCTestCase {
         let tool = FindInPageBrowserTool(windowControllersManager: manager, reader: reader)
         let context = BrowserToolCallContext(ownerTabID: tab.uuid,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
-                                             isBurner: false,
-                                             supportsElicitationForm: true)
+                                             isBurner: false)
         return (tool, context)
     }
 }

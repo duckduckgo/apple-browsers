@@ -10,7 +10,7 @@
                 "key": "source",
                 "type": "string",
                 "description": "The surface where the Sync promotion was displayed.",
-                "enum": ["bookmarks", "passwords", "data_import", "ai_chat"]
+                "enum": ["bookmarks", "passwords", "data_import", "ai_chat", "bookmarks_multi_device", "passwords_multi_device"]
             }
         ]
     },
@@ -25,7 +25,7 @@
                 "key": "source",
                 "type": "string",
                 "description": "The surface where the Sync promotion was confirmed.",
-                "enum": ["bookmarks", "passwords", "data_import", "ai_chat"]
+                "enum": ["bookmarks", "passwords", "data_import", "ai_chat", "bookmarks_multi_device", "passwords_multi_device"]
             }
         ]
     },
@@ -40,7 +40,7 @@
                 "key": "source",
                 "type": "string",
                 "description": "The surface where the Sync promotion was dismissed.",
-                "enum": ["bookmarks", "passwords", "data_import", "ai_chat"]
+                "enum": ["bookmarks", "passwords", "data_import", "ai_chat", "bookmarks_multi_device", "passwords_multi_device"]
             },
             {
                 "key": "reason",

@@ -40,6 +40,14 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         case none
         case syncSetup
         case syncAnotherDevice
+
+        var touchpoint: SyncPromoManager.Touchpoint? {
+            switch self {
+            case .none: nil
+            case .syncSetup: .bookmarks
+            case .syncAnotherDevice: .bookmarksAnotherDevice
+            }
+        }
     }
 
     private struct InstalledHeaderPromo {
@@ -149,10 +157,10 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         searchBar.bottomAnchor.constraint(equalTo: headerView.bottomAnchor)
     }()
 
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService)
+    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService, pixelFiring: pixelFiring)
 
     private var installedHeaderPromo: InstalledHeaderPromo?
-    private var hasFiredSyncSetupPromoDisplayedPixel = false
+    private var headerPromosWithDisplayedPixelFired: Set<HeaderPromo> = []
 
     weak var delegate: BookmarksDelegate?
 
@@ -258,6 +266,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         configureBars()
 
         decorate()
+        configureAccessibilityIdentifiers()
 
         navigationItem.title = isNested ? viewModel.currentFolder?.title : UserText.sectionTitleBookmarks
 
@@ -394,6 +403,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         if tableView.dataSource is BookmarksDataSource {
             return viewModel.bookmark(at: indexPath.row)
         } else if let dataSource = tableView.dataSource as? SearchBookmarksDataSource {
+            guard dataSource.results.indices.contains(indexPath.row) else { return nil }
             return viewModel.bookmark(with: dataSource.results[indexPath.row].objectID)
         }
         return nil
@@ -448,11 +458,15 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                           _ indexPath: IndexPath,
                                           _ completion: @escaping (Bool) -> Void) {
         func delete() {
-            let oldCount = viewModel.bookmarks.count
+            let oldCount = tableView.numberOfRows(inSection: indexPath.section)
             viewModel.softDeleteBookmark(bookmark)
-            let newCount = viewModel.bookmarks.count
 
-            // Make sure we are animating only single removal
+            if let dataSource = tableView.dataSource as? SearchBookmarksDataSource {
+                dataSource.results.remove(at: indexPath.row)
+            }
+            let newCount = tableView.dataSource?.tableView(tableView, numberOfRowsInSection: indexPath.section) ?? 0
+
+            // The last search result is replaced by the No Results row, so its row count does not change.
             if newCount > 0 && newCount + 1 == oldCount {
                 tableView.deleteRows(at: [indexPath], with: .fade)
             } else {
@@ -473,9 +487,9 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             delete()
         }
 
-        if let dataSource = tableView.dataSource as? SearchBookmarksDataSource {
-            dataSource.results.remove(at: indexPath.row)
+        if tableView.dataSource is SearchBookmarksDataSource {
             delete()
+            completion(true)
             return
         }
 
@@ -484,10 +498,12 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             let count = countAllChildrenInFolder(bookmark)
             let message = UserText.deleteBookmarkFolderAlertMessage(numberOfChildren: count)
             let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
-            alertController.addAction(title: UserText.deleteBookmarkFolderAlertDeleteButton, style: .destructive) {
+            let deleteAction = UIAlertAction(title: UserText.deleteBookmarkFolderAlertDeleteButton, style: .destructive) { _ in
                 deleteFolder()
                 completion(true)
             }
+            deleteAction.accessibilityIdentifier = "Bookmarks.Folder.ConfirmDelete"
+            alertController.addAction(deleteAction)
             alertController.addAction(title: UserText.actionCancel, style: .cancel) {
                 completion(true)
             }
@@ -551,6 +567,13 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             self.title = title
         }
         refreshEditButton()
+    }
+
+    private func configureAccessibilityIdentifiers() {
+        tableView.accessibilityIdentifier = "Bookmarks.List"
+        editButton.accessibilityIdentifier = "Bookmarks.Edit"
+        doneButton.accessibilityIdentifier = "Bookmarks.Done"
+        addFolderButton.accessibilityIdentifier = "Bookmarks.AddFolder"
     }
 
     private func refreshEditButton() {
@@ -949,9 +972,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         tableView.tableHeaderView = headerView
         installedHeaderPromo = InstalledHeaderPromo(promo: promo, hostingController: hostingController)
 
-        if promo == .syncSetup, !hasFiredSyncSetupPromoDisplayedPixel {
-            hasFiredSyncSetupPromoDisplayedPixel = true
-            pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
+        if let touchpoint = promo.touchpoint, headerPromosWithDisplayedPixelFired.insert(promo).inserted {
+            pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpoint.rawValue]))
         }
     }
 
@@ -974,7 +996,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             case .redesigned:
                 self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
             }
-            self?.pixelFiring?.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
             self?.syncPromoManager.recordPromoConfirmedFor(.bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
@@ -985,13 +1006,13 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     private func makeSyncAnotherDevicePromoHostingController() -> UIViewController {
         let promoView = SyncAnotherDevicePromoView(title: UserText.syncPromoBookmarksAnotherDeviceTitle,
-                                                   syncActionTitle: UserText.syncPromoBookmarksAnotherDeviceSyncAction,
                                                    syncAction: { [weak self] in
             self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion)
+            self?.syncPromoManager.recordPromoConfirmedFor(.bookmarksAnotherDevice)
         }, getDesktopAppAction: { [weak self] in
             self?.pushPlatformLinks()
         }, dismissAction: { [weak self] in
-            self?.syncPromoManager.markPromoHandledFor(.bookmarksAnotherDevice)
+            self?.syncPromoManager.dismissPromoFor(.bookmarksAnotherDevice, reason: .userTapped)
             self?.refreshTableHeaderView()
         })
         return UIHostingController(rootView: promoView)

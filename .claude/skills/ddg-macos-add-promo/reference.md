@@ -28,9 +28,10 @@ A promo migrated from shipping UI carries its own flag — `promoQueue<Name>Prom
 | `coexistingPromoIDs` | `Set<String>` | IDs allowed to be visible at the same time as this one. Must be mutual (both promos list each other) or it's a no-op. Default empty — use only with design/product sign-off (e.g. a PFR). External promos can always coexist with *each other* with no listing needed; an external promo can only coexist with an *internal* one by both listing each other here — same mutuality rule as internal-vs-internal. | yes |
 | `respectsGlobalCooldown` | `Bool` | If false, can show even during another same-`initiated`-type promo's cooldown. Default `true`. | **No — hardcoded to `false`.** |
 | `setsGlobalCooldown` | `Bool` | If false, dismissing this promo doesn't start the cooldown for others of the same `initiated` type. Default `true`. | yes |
+| `showsOverVisiblePromos` | `Bool` | If true, can show while other medium+ promos are visible in conflicting contexts, and is never retracted when an external promo appears. It still blocks promos that try to show after it, and the promos it shows over stay up. Default `false`. Rare: use only with design/product sign-off (e.g. a PFR), like `coexistingPromoIDs`. | **No — hardcoded to `false`.** |
 | `delegate` | `(any PromoDelegate)?` | See delegate protocols below. | yes |
 
-`InternalPromo.init` accepts `delegate: InternalPromoDelegate? = nil`; `ExternalPromo.init` accepts `delegate: ExternalPromoDelegate? = nil` — the compiler enforces the matching protocol at construction time. There is no `triggers`/`respectsGlobalCooldown` parameter on `ExternalPromo.init` at all.
+`InternalPromo.init` accepts `delegate: InternalPromoDelegate? = nil`; `ExternalPromo.init` accepts `delegate: ExternalPromoDelegate? = nil` — the compiler enforces the matching protocol at construction time. There is no `triggers`/`respectsGlobalCooldown`/`showsOverVisiblePromos` parameter on `ExternalPromo.init` at all.
 
 ## `PromoType` / `DefaultPromoType`
 
@@ -89,10 +90,13 @@ Before `checkRules` is even reached, `evaluateTriggers` opens with `guard isOnbo
 3. **Context/coexistence conflict**: for every other currently-visible promo **of medium+ severity** (low-severity others are skipped, per step 1), conflict = `context == .global || other.context == .global || context == other.context`, **unless** both promos mutually list each other in `coexistingPromoIDs` (mutual coexistence overrides even a `.global`-vs-anything conflict). Any conflict → fail.
 
    The rule is **one medium+ promo per context** — so two medium promos in *different* non-global contexts (e.g. `.newTabPage` and `.webPage`) coexist for free, with no `coexistingPromoIDs` listing. Only `.global` is exclusive with everything. In particular a visible `.newTabPage` promo such as Next Steps does **not** block a `.webPage` promo.
+
+   **This whole step is skipped for a promo with `showsOverVisiblePromos: true`.** It's one-directional: a later promo evaluating `checkRules` still sees the flagged promo as visible and is blocked by it as usual.
 4. **Global cooldown**: if `respectsGlobalCooldown` and severity ≥ medium, fail if **any** promo with the same `initiated` type, `setsGlobalCooldown == true`, **and severity ≥ medium** was last dismissed less than `initiated.cooldown` ago. Two easily-missed details:
    - **The filter does not exclude the promo itself** (`$0.initiated == promo.initiated && $0.setsGlobalCooldown && $0.promoType.severity >= .medium` — no `$0.id != promo.id`). A promo's own last dismissal therefore gates its own re-show.
    - **This silently overrides a shorter `customTimeoutResult` cooldown.** If your promo is medium+ severity with both `respectsGlobalCooldown` and `setsGlobalCooldown` true, a `customTimeoutResult: .ignored(cooldown: .hours(2))` has no practical effect: `record.isEligible` passes after 2h, then this check fails until `initiated.cooldown` elapses (1 day for `.app`, 1 hour for `.user`). To actually get a sub-cooldown re-show you must also set `setsGlobalCooldown: false` — which needs design/product sign-off.
    - Low-severity promos neither respect *nor* contribute to this cooldown (they return at step 1, and they're filtered out of the set).
+   - `showsOverVisiblePromos` does **not** bypass this step; only `respectsGlobalCooldown: false` does.
 
 ### The restore path bypasses every rule above
 
@@ -102,7 +106,11 @@ Timeouts are measured from the original `lastShown`, across the restart: if `tim
 
 So: two restored promos can be visible together in conflicting contexts, and a permanently-dismissed promo *can* reappear this way. If the app is killed while your promo is on screen and its timeout hasn't run out (or it has none), it comes back at next launch regardless of severity, context, or cooldown. If your promo must not survive a restart, make sure every early resolution clears `lastShown` — `.noChange` and `.retired` do.
 
-External-promo visibility changes are **not** gated by `checkRules` at all — an external promo becoming visible can never be blocked. But when it becomes visible, `PromoService` retracts (`hide`s) any currently-visible *internal* promo that would now fail `checkRules` given the external promo's presence (`hideInternalPromosConflictingWithCurrentVisibility`). That retraction check is a normal `checkRules(for: internalPromo)` call, so it **does** consult `coexistingPromoIDs` mutuality against the external promo just like it would against another internal one — a mutual listing is the correct (and only) way to stop a medium/high-severity internal promo from being evicted when an external promo appears in a conflicting context. (A low-severity internal promo never needs this — it already can't be evicted, per the severity bypass above.)
+External-promo visibility changes are **not** gated by `checkRules` at all — an external promo becoming visible can never be blocked. But when it becomes visible, `PromoService` retracts (`hide`s) any currently-visible *internal* promo that would now fail `checkRules` given the external promo's presence (`hideInternalPromosConflictingWithCurrentVisibility`). That retraction check is a normal `checkRules(for: internalPromo)` call, so it **does** consult `coexistingPromoIDs` mutuality against the external promo just like it would against another internal one — a mutual listing (or `showsOverVisiblePromos`, below) is the way to stop a medium/high-severity internal promo from being evicted when an external promo appears in a conflicting context. (A low-severity internal promo never needs this — it already can't be evicted, per the severity bypass above.)
+
+The retraction pass calls `checkRules(for:ignoring:)` with the IDs of every promo that has `showsOverVisiblePromos: true`, and never retracts those promos themselves. A promo left on screen underneath one of them is retracted exactly as it would be if the flagged promos weren't there: neither their visibility nor the cooldown started by dismissing them counts against it. The trigger path always passes an empty set.
+
+Two flagged promos can stack: the second skips the visible-promo check entirely, so it shows over the first, and neither is retracted when an external promo appears.
 
 ## Delegate protocols (`PromoDelegate.swift`)
 

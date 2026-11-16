@@ -42,4 +42,7 @@ public enum OnboardingDownloadReason: String, Equatable, CaseIterable {
 
     /// The user downloaded the app to block ads and trackers.
     case blockAds
+
+    /// The user downloaded the app for a VPN. Offered only in the VPN download-reason experiment.
+    case vpn
 }

@@ -21,8 +21,6 @@ import Foundation
 import Onboarding
 
 final class MockOnboardingPersonalizationManager: OnboardingPersonalizationManaging {
-    var isRecentlyVisitedSitesEnabled = false
-    var isSafeSearchEnabled = false
     var doesNewTabOpenWithAIChat = false
     var isSearchAssistEnabled = false
     var areAIGeneratedImagesHidden = false
@@ -36,8 +34,6 @@ final class MockOnboardingPersonalizationManager: OnboardingPersonalizationManag
 
     var selectedAIChatModelID: String?
 
-    func setRecentlyVisitedSites(_ enabled: Bool) { isRecentlyVisitedSitesEnabled = enabled }
-    func setSafeSearch(_ enabled: Bool) { isSafeSearchEnabled = enabled }
     func setAIChatModel(_ model: OnboardingAIModel) { selectedAIChatModelID = model.id }
     func setNewTabOpensWithAIChat(_ opensWithAIChat: Bool) { doesNewTabOpenWithAIChat = opensWithAIChat }
     func setSearchAssist(_ enabled: Bool) { isSearchAssistEnabled = enabled }

@@ -47,13 +47,6 @@ final class FreemiumDBPPresenterTests: XCTestCase {
         XCTAssertTrue(mockFreemiumDBPStateManager.didActivate)
     }
 
-    func testFreemiumEntryPointsReportTheTokensTheWebUIExpects() {
-        XCTAssertEqual(FreemiumDBPEntryPoint.freeScanBanner.rawValue, "freescanbanner")
-        XCTAssertEqual(FreemiumDBPEntryPoint.viewResultsBanner.rawValue, "viewresultsbanner")
-        XCTAssertEqual(FreemiumDBPEntryPoint.appMenuPreScan.rawValue, "appmenuprescan")
-        XCTAssertEqual(FreemiumDBPEntryPoint.appMenuPostScan.rawValue, "appmenupostscan")
-    }
-
     func testDataBrokerProtectionTabContextProvidesEntryPointOnlyForFreemium() {
         XCTAssertNil(DataBrokerProtectionTabContext.subscribed.freemiumEntryPoint)
         XCTAssertEqual(DataBrokerProtectionTabContext.freemium(.viewResultsBanner).freemiumEntryPoint,

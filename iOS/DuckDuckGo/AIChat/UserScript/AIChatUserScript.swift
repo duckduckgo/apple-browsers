@@ -25,6 +25,113 @@ import AIChat
 import WebKit
 import Combine
 
+@MainActor
+enum DuckAIChatScrollInsetStyler {
+
+    /// `keepsEndInView` scrolls a conversation at its end back there when the inset spacer changes height.
+    static func apply(_ insets: UIEdgeInsets, keepsEndInView: Bool = false, to webView: WKWebView) {
+        let top = max(0, insets.top)
+        let bottom = max(0, insets.bottom)
+        let script = """
+        (() => {
+            if (location.hostname !== 'duck.ai' && !location.hostname.endsWith('.duck.ai')) return;
+            const key = '__ddgNativeScrollInsets';
+            let state = window[key];
+            if (!state) {
+                state = { top: 0, bottom: 0, target: null, scheduled: false };
+                state.find = () => \(DuckAIChatScroller.expression);
+                state.apply = () => {
+                    if (!state.target?.isConnected) {
+                        state.target = state.find();
+                        if (state.target) {
+                            state.lastMessage = null;
+                            const style = state.target.style;
+                            state.original = {
+                                scrollTop: style.scrollPaddingTop,
+                                scrollBottom: style.scrollPaddingBottom,
+                                overscroll: style.overscrollBehaviorY
+                            };
+                        }
+                    }
+                    if (!state.target) return;
+                    const style = state.target.style;
+                    const scrollTop = state.top ? `${state.top}px` : state.original.scrollTop;
+                    const scrollBottom = state.bottom ? `${state.bottom}px` : state.original.scrollBottom;
+                    if (state.bottom > 0) {
+                        const wasAtBottom = state.target.scrollTop + state.target.clientHeight >= state.target.scrollHeight - 4;
+                        if (state.spacer?.parentElement !== state.target) {
+                            state.spacer = document.createElement('div');
+                            state.spacer.setAttribute('aria-hidden', 'true');
+                            state.spacer.style.cssText = 'flex: 0 0 auto; width: 100%; pointer-events: none;';
+                            state.target.appendChild(state.spacer);
+                        }
+                        if (state.target.lastElementChild !== state.spacer) {
+                            state.target.appendChild(state.spacer);
+                        }
+                        const lastMessage = state.spacer.previousElementSibling;
+                        const content = lastMessage?.lastElementChild || lastMessage;
+                        if (state.lastMessage !== lastMessage || state.content !== content) {
+                            state.resizeObserver.disconnect();
+                            state.resizeObserver.observe(state.target);
+                            if (content) state.resizeObserver.observe(content);
+                            state.lastMessage = lastMessage;
+                            state.content = content;
+                        }
+                        state.spacer.style.marginTop = `${-(parseFloat(getComputedStyle(state.target).rowGap) || 0)}px`;
+                        const targetRect = state.target.getBoundingClientRect();
+                        const contentEnd = content
+                            ? content.getBoundingClientRect().bottom - targetRect.top - state.target.clientTop + state.target.scrollTop
+                            : 0;
+                        const targetStyle = getComputedStyle(state.target);
+                        const after = getComputedStyle(state.target, '::after');
+                        const afterClearance = after.display !== 'none' && !['none', 'normal'].includes(after.content)
+                            ? (parseFloat(after.height) || 0) + (parseFloat(after.marginTop) || 0)
+                                + (parseFloat(after.marginBottom) || 0) + (parseFloat(targetStyle.rowGap) || 0)
+                            : 0;
+                        const spacerTop = state.spacer.getBoundingClientRect().top - targetRect.top
+                            - state.target.clientTop + state.target.scrollTop;
+                        const existingClearance = Math.max(0, spacerTop - contentEnd
+                            + (parseFloat(targetStyle.paddingBottom) || 0) + afterClearance);
+                        const overlap = Math.max(state.bottom, targetRect.bottom + scrollY - innerHeight);
+                        const height = Math.max(0, overlap - existingClearance);
+                        const previousHeight = state.spacer.getBoundingClientRect().height;
+                        state.spacer.style.height = `${height}px`;
+                        if (Math.abs(height - previousHeight) > 0.5) {
+                            if (wasAtBottom && state.keepsEndInView) state.target.scrollTop = state.target.scrollHeight;
+                            // Auto margins move without resizing content.
+                            state.schedule();
+                        }
+                    } else if (state.spacer?.parentElement === state.target) {
+                        state.spacer.remove();
+                    }
+                    if (style.scrollPaddingTop !== scrollTop) style.scrollPaddingTop = scrollTop;
+                    if (style.scrollPaddingBottom !== scrollBottom) style.scrollPaddingBottom = scrollBottom;
+                    style.overscrollBehaviorY = state.top || state.bottom ? 'contain' : state.original.overscroll;
+                };
+                state.schedule = () => {
+                    if (state.scheduled) return;
+                    state.scheduled = true;
+                    requestAnimationFrame(() => {
+                        state.scheduled = false;
+                        state.apply();
+                    });
+                };
+                state.resizeObserver = new ResizeObserver(state.schedule);
+                window.addEventListener('resize', state.schedule);
+                window.visualViewport?.addEventListener('resize', state.schedule);
+                new MutationObserver(state.schedule).observe(document.documentElement, { childList: true, subtree: true });
+                window[key] = state;
+            }
+            state.top = \(top);
+            state.bottom = \(bottom);
+            state.keepsEndInView = \(keepsEndInView);
+            state.apply();
+        })();
+        """
+        webView.evaluateJavaScript(script)
+    }
+}
+
 // MARK: - Delegate Protocol
 
 protocol AIChatUserScriptDelegate: AnyObject {
@@ -125,6 +232,8 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
 
+    @MainActor weak var browserToolsService: AIChatBrowserToolsService?
+    private let debugSettings: AIChatDebugSettingsHandling
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private let bonusMessageLog: AIChatBonusMessageLogging?
@@ -164,6 +273,7 @@ final class AIChatUserScript: NSObject, Subfeature {
          debugSettings: AIChatDebugSettingsHandling,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          bonusMessageLog: AIChatBonusMessageLogging? = nil) {
+        self.debugSettings = debugSettings
         self.devicePlatform = devicePlatform
         self.handler = handler
         self.bonusMessageLog = bonusMessageLog
@@ -243,10 +353,29 @@ final class AIChatUserScript: NSObject, Subfeature {
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
         switch message {
+        case .executeClientTool:
+            return { @MainActor [weak self, handler = self.handler] params, message in
+                let source = self.flatMap { $0.isBrowserToolsMessage(message) ? $0 : nil }
+                return await handler.executeClientTool(params: params, source: source)
+            }
         case .responseState:
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
-            return handler.getAIChatNativeConfigValues
+            return { @MainActor [weak self, handler = self.handler] params, message in
+                let response = handler.getAIChatNativeConfigValues(params: params, message: message)
+
+                guard let self, self.browserToolsService?.isEnabled == true else {
+                    return response
+                }
+                guard var config = response as? AIChatNativeConfigValues else { return response }
+
+                if self.isBrowserToolsMessage(message) {
+                    config.clientTools = self.browserToolsService?.configuration(for: self)
+                } else {
+                    config.clientTools = nil
+                }
+                return config
+            }
         case .getAIChats:
             return handler.getAIChats
         case .getAIChatNativePrompt:
@@ -352,6 +481,17 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.setPayloadHandler(payloadHandler)
     }
 
+    @MainActor
+    func willHandOff(_ payload: AIChatPayload) {
+        handler.willHandOff(payload)
+    }
+
+    @MainActor
+    var isTermsOfServiceShownOnPage: Bool {
+        get { handler.isTermsOfServiceShownOnPage }
+        set { handler.isTermsOfServiceShownOnPage = newValue }
+    }
+
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         handler.setOpenLinkHandler(openLinkHandler)
     }
@@ -431,6 +571,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     @MainActor
     func cleanUpForReplacement() {
+        detachBrowserTools()
         handler.disconnectInitialPromptSession()
         cancelQueuedTabContextSubmissions()
         inputBoxHandler = nil
@@ -716,5 +857,101 @@ final class AIChatUserScript: NSObject, Subfeature {
 extension AIChatUserScript: AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric) {
         delegate?.aiChatUserScript(self, didReceiveMetric: metric)
+    }
+}
+
+extension AIChatUserScript: ClientToolPermissionPrompting {
+    @MainActor
+    func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
+        detachBrowserTools()
+        service.attach(self, owner: owner, makeScope: makeScope)
+        browserToolsService = service
+    }
+
+    @MainActor
+    func detachBrowserTools() {
+        let service = browserToolsService
+        browserToolsService = nil
+        service?.detach(self)
+    }
+
+    @MainActor
+    func browserToolsDocumentDidCommit() {
+        browserToolsService?.documentDidCommit(self)
+    }
+
+    @MainActor
+    func browserToolsDocumentProcessDidTerminate() {
+        browserToolsService?.documentProcessDidTerminate(self)
+    }
+
+    @MainActor
+    var browserToolsDocumentURL: URL? {
+        guard let url = webView?.url, url.isDuckAIURL || debugSettings.matchesCustomURL(url),
+              let host = url.host else { return nil }
+        let policyHost = url.port.map { "\(host):\($0)" } ?? host
+        guard messageOriginPolicy.isAllowed(policyHost) else { return nil }
+        return url
+    }
+
+    @MainActor
+    func invokeBrowserTool(_ request: ExecuteClientToolRequest) async -> ExecuteClientToolResponse {
+        guard let browserToolsService else { return .failure(callId: request.callId, error: .unavailable) }
+        return await browserToolsService.invoke(request, from: self)
+    }
+
+    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
+    @MainActor
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        false
+    }
+
+    @MainActor
+    func withdrawClientToolPermissionPrompt(requestID: String) {}
+
+    @MainActor
+    func pushClientToolsChanged(_ data: ClientToolsChangedData) -> Bool {
+        guard browserToolsService?.canPushConfiguration(from: self) == true, let broker, let webView else { return false }
+        broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
+        return true
+    }
+
+    @MainActor
+    func pushBrowserToolsTabChanged(_ data: AIChatTabChangedData) {
+        guard handler.displayMode == .contextual, browserToolsService?.canPushMetadata(from: self) == true, browserToolsDocumentURL != nil, let broker, let webView else { return }
+        let metadata = AIChatTabChangedData(tabId: data.tabId, url: data.url, isAttachable: data.url.flatMap(URL.init(string:)).map {
+            !AIChatTabMetadata.shouldExcludeFromTabPicker($0) && !debugSettings.matchesCustomURL($0)
+        })
+        broker.push(method: AIChatUserScriptMessages.aiChatTabChanged.rawValue, params: metadata, for: self, into: webView)
+    }
+
+    @MainActor
+    private func isBrowserToolsMessage(_ message: UserScriptMessage) -> Bool {
+        guard let message = message as? WKScriptMessage, let webView, message.webView === webView else { return false }
+        let origin = message.frameInfo.securityOrigin
+        return acceptsBrowserToolsMessage(message, senderScheme: origin.protocol, senderHost: origin.host, senderPort: origin.port)
+    }
+
+    @MainActor
+    func acceptsBrowserToolsMessage(_ message: UserScriptMessage, senderScheme: String, senderHost: String, senderPort: Int) -> Bool {
+        guard let webView, message.messageWebView === webView, message.isMainFrame,
+              let document = browserToolsDocumentURL,
+              messageOriginPolicy.isAllowed(message.messageHost) else { return false }
+        return Self.browserToolsOriginMatches(scheme: senderScheme, host: senderHost, port: senderPort, document: document)
+    }
+
+    static func browserToolsOriginMatches(scheme: String, host: String, port: Int, document: URL) -> Bool {
+        func effectivePort(_ port: Int?, scheme: String) -> Int? {
+            if let port, port != 0 { return port }
+            switch scheme.lowercased() {
+            case "https": return 443
+            case "http": return 80
+            default: return nil
+            }
+        }
+        guard let documentScheme = document.scheme, let documentHost = document.host else { return false }
+        return scheme.lowercased() == documentScheme.lowercased() &&
+            host.lowercased() == documentHost.lowercased() &&
+            effectivePort(port, scheme: scheme) == effectivePort(document.port, scheme: documentScheme)
     }
 }

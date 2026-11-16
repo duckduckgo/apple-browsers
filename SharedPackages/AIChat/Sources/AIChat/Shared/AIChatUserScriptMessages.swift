@@ -133,31 +133,16 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     // MARK: - Browser tools
 
-    /// MCP `initialize` — negotiates protocol version and capabilities for browser tools.
-    /// Opens the session that `toolsList` and `toolsCall` require.
-    case initialize
-
-    /// MCP `notifications/initialized` — the FE is ready for tools traffic. Sent without an
-    /// envelope `id`, so it is answered only when the FE asks for a reply.
-    case notificationsInitialized = "notifications/initialized"
-
-    /// MCP `tools/list` — the browser tools this FE may discover, after remote-config gating.
-    case toolsList = "tools/list"
-
-    /// MCP `tools/call` — invoke a registered browser tool.
-    case toolsCall = "tools/call"
-
-    /// MCP `elicitation/create` — pushed (native→FE) to ask the user for tool permission mid-call.
-    case elicitationCreate = "elicitation/create"
-
-    /// MCP `elicitation/response` — the FE's answer to a pending `elicitationCreate`.
-    case elicitationResponse = "elicitation/response"
-
-    /// MCP `notifications/tools/list_changed` — pushed (native→FE) when the tool catalogue changes.
-    case toolsListChanged = "notifications/tools/list_changed"
-
     /// Pushed (native→FE) when the chat's owner tab navigates, so the FE can refresh its view of the page.
     case aiChatTabChanged
+
+    // MARK: - Client tools
+
+    /// FE→native: runs one advertised `clientTools` capability. The reply carries the tool result.
+    case executeClientTool
+
+    /// Pushed (native→FE) when feature flags change the advertised client-tool capabilities.
+    case clientToolsChanged
 
     // MARK: - Bonus offer
 
@@ -178,5 +163,24 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// Pushed (native→FE) to every Duck.ai tab after the bonus record changes.
     case submitAIChatBonusRecord
+
+    // MARK: - Local models
+
+    /// Requested (FE→native) to run a task such as `summarize` on the local model. Native replies with the
+    /// model right away and streams the text with `submitAIChatLocalRunChunk`.
+    case startAIChatLocalRun
+
+    /// Pushed (native→FE) with the next part of a local run. The last chunk has `done`, `status` and `metrics`.
+    case submitAIChatLocalRunChunk
+
+    /// Posted (FE→native) to stop a local run.
+    case cancelAIChatLocalRun
+
+    /// Requested (FE→native) when the user asks for a summary before turning on the local model.
+    /// Native asks the user and replies with their answer.
+    case requestAIChatLocalModelAccess
+
+    /// Pushed (native→FE) to every Duck.ai page when the local model's state changes.
+    case submitAIChatLocalModelState
 }
 // swiftlint:enable inclusive_language

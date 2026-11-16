@@ -82,9 +82,11 @@ public class DBPIOSInterface {
         func resetAllNotificationStatesForDebug()
 
         @discardableResult
-        func startDebugServer() async -> Bool
+        func startDebugServer(contentBlocking: DBPWebViewContentBlocking?) async -> Bool
         func stopDebugServer()
         var debugServerPort: UInt16? { get }
+
+        func makeDebugModeRunner(contentBlocking: DBPWebViewContentBlocking?) throws -> DebugModeRunner
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -158,8 +160,9 @@ public class DBPIOSInterface {
 public enum FreemiumDBPEntryPoint: String, Equatable {
     case freeScanBanner = "freescanbanner"
     case viewResultsBanner = "viewresultsbanner"
-    case appMenuPreScan = "appmenuprescan"
-    case appMenuPostScan = "appmenupostscan"
+    case appSettingsPreScan = "appsettingsprescan"
+    case appSettingsPostScan = "appsettingspostscan"
+    case scanCompleteNotification = "scancompletenotification"
 }
 
 extension BGTask: DBPIOSInterface.BGTaskHandling {}
@@ -858,7 +861,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     }
 
     @discardableResult
-    public func startDebugServer() async -> Bool {
+    public func startDebugServer(contentBlocking: DBPWebViewContentBlocking?) async -> Bool {
         guard canStartDebugServer else {
             Logger.dataBrokerProtection.error("Blocked PIR debug server start outside debug/internal-user context.")
             return false
@@ -872,8 +875,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             self.debugServer = nil
         }
 
-        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionIOSLogReader())
         do {
+            let server = DataBrokerProtectionDebugHTTPServer(provider: self,
+                                                             logReader: DataBrokerProtectionIOSLogReader(),
+                                                             runManager: DebugModeRunManager(runner: try makeDebugModeRunner(contentBlocking: contentBlocking)))
             try server.start()
             debugServer = server
             return true
@@ -881,6 +886,19 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    public func makeDebugModeRunner(contentBlocking: DBPWebViewContentBlocking?) throws -> DebugModeRunner {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        return DebugModeRunner(authenticationManager: authenticationManager,
+                               featureFlagger: featureFlagger,
+                               privacyConfigManager: privacyConfigManager,
+                               pixelHandler: sharedPixelsHandler,
+                               vault: try vaultFactory.makeVault(reporter: reporter),
+                               settings: settings,
+                               contentBlocking: contentBlocking)
     }
 
     public func stopDebugServer() {
@@ -1105,8 +1123,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
 #if targetEnvironment(simulator)
             Logger.dataBrokerProtection.log("Background task not supported in simulator")
-            return
-#endif
+#else
 
             let isAuthenticatedUser = await refreshFreeScanState()
 
@@ -1138,6 +1155,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
                 self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error))
             }
+#endif
         }
     }
 

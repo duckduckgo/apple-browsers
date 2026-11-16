@@ -1,7 +1,7 @@
 """Where things live for this worktree: state dir, ports, token, locks, and process identity.
 
 Everything is keyed to the git worktree the caller runs from, so two worktrees never share simulators, ports,
-build products, recorded pids or evidence.
+build products, recorded pids or evidence. Build products live inside the worktree; the rest lives under HOME.
 """
 import contextlib, fcntl, hashlib, json, os, secrets, socket, subprocess
 
@@ -51,8 +51,11 @@ ROOT = git_root()
 KEY = os.path.basename(ROOT) + "-" + hashlib.sha1(ROOT.encode()).hexdigest()[:6]
 HOME = os.path.join(os.path.expanduser(os.environ.get("VERIFY_IOS_HOME", "~/.ddg-verify-ios")), KEY)
 STATE = f"{HOME}/state.json"
-APP_DD = f"{HOME}/build/app"
-RUNNER_DD = f"{HOME}/build/runner"
+# Builds live in the worktree (gitignored), so removing the worktree removes them. HOME keeps state, logs and evidence,
+# which must outlive it: pull requests link to the evidence.
+BUILD = f"{ROOT}/DerivedData/verify-ios"
+APP_DD = f"{BUILD}/app"
+RUNNER_DD = f"{BUILD}/runner"
 APP = f"{APP_DD}/Build/Products/Debug-iphonesimulator/DuckDuckGo.app"
 EVIDENCE = f"{HOME}/evidence"
 BASE_PORT = 20000 + int(hashlib.sha1(ROOT.encode()).hexdigest(), 16) % 1000 * 8

@@ -32,6 +32,8 @@ final class AuthenticationService {
     private let privacyStore: PrivacyStore
     /// Whether the app has been unlocked, or needed no unlock, since launch.
     private(set) var hasCompletedAuthentication = false
+    /// Whether the app is unlocked right now, or needs no unlock. Cleared each time the app locks.
+    private(set) var isUnlocked = false
 
     init(authenticator: Authenticating = Authenticator(),
          overlayWindowManager: OverlayWindowManaging,
@@ -45,6 +47,7 @@ final class AuthenticationService {
 
     func suspend() {
         if privacyStore.authenticationEnabled {
+            isUnlocked = false
             overlayWindowManager.displayBlankSnapshotWindow(for: .authentication)
         }
     }
@@ -58,9 +61,9 @@ extension AuthenticationService: AuthenticationServiceProtocol {
         guard shouldAuthenticate else {
             overlayWindowManager.removeBlankSnapshotWindow(for: .authentication)
             hasCompletedAuthentication = true
+            isUnlocked = true
             return
         }
-        overlayWindowManager.removeAnyOverlay()
         let authenticationViewController = showAuthenticationScreen()
         await authenticate(with: authenticationViewController)
     }
@@ -74,6 +77,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
         let didAuthenticate = await authenticator.authenticate(reason: UserText.appUnlock)
         if didAuthenticate {
             hasCompletedAuthentication = true
+            isUnlocked = true
             overlayWindowManager.removeAnyOverlay()
             authenticationViewController.dismiss(animated: true)
         } else {

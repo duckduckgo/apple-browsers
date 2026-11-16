@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import DuckUI
 import Onboarding
 import SwiftUI
@@ -75,6 +76,10 @@ extension OnboardingView {
                         availableFeatureAnimation: .animated(startAnimation: showContent)
                     )
 
+                    if let footer = content.footer {
+                        SubscriptionNote(text: footer)
+                    }
+
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: primaryAction) {
                             Text(content.primaryCTA)
@@ -120,4 +125,35 @@ extension OnboardingView {
 
     }
 
+}
+
+private enum SubscriptionNoteMetrics {
+    static let spacing: CGFloat = 12
+    static let padding: CGFloat = 12
+    static let cornerRadius: CGFloat = 16
+    static let iconSize: CGFloat = 24
+}
+
+/// A highlighted note pointing out that some features need a paid subscription.
+private struct SubscriptionNote: View {
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
+    let text: String
+
+    var body: some View {
+        HStack(spacing: SubscriptionNoteMetrics.spacing) {
+            Image(uiImage: DesignSystemImages.Color.Size24.subscription)
+                .resizable()
+                .frame(width: SubscriptionNoteMetrics.iconSize, height: SubscriptionNoteMetrics.iconSize)
+
+            Text(text)
+                .font(onboardingTheme.typography.rowDetails)
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(SubscriptionNoteMetrics.padding)
+        .background(OnboardingRebrandColor.subscriptionNoteBackground, in: RoundedRectangle(cornerRadius: SubscriptionNoteMetrics.cornerRadius))
+    }
 }

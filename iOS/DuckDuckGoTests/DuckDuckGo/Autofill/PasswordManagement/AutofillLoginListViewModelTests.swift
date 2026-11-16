@@ -630,7 +630,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
         XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
     }
 
-    func testDismissSyncAnotherDevicePromo_MarksPasswordsAnotherDevicePromoHandled() {
+    func testDismissSyncAnotherDevicePromo_DismissesPasswordsAnotherDevicePromoWithUserTappedReason() {
         let syncPromoManager = MockSyncPromoManager()
         let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                    tld: tld,
@@ -641,8 +641,36 @@ class AutofillLoginListViewModelTests: XCTestCase {
 
         model.dismissSyncAnotherDevicePromo()
 
-        XCTAssertEqual(syncPromoManager.handledTouchpoint, .passwordsAnotherDevice)
-        XCTAssertNil(syncPromoManager.dismissedTouchpoint)
+        XCTAssertEqual(syncPromoManager.dismissedTouchpoint, .passwordsAnotherDevice)
+        XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
+    }
+
+    func testRecordSyncAnotherDevicePromoConfirmed_RecordsPasswordsAnotherDeviceConfirmation() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   syncPromoManager: syncPromoManager)
+
+        model.recordSyncAnotherDevicePromoConfirmed()
+
+        XCTAssertEqual(syncPromoManager.confirmedTouchpoint, .passwordsAnotherDevice)
+    }
+
+    func testRecordSyncPromoConfirmed_RecordsPasswordsConfirmation() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   syncPromoManager: syncPromoManager)
+
+        model.recordSyncPromoConfirmed()
+
+        XCTAssertEqual(syncPromoManager.confirmedTouchpoint, .passwords)
     }
 
     func testWhenAllConditionsAreMetThenSurveyIsReturnedAndWhenDismissedNotSurveyIsReturned() {
@@ -1010,19 +1038,19 @@ class MockAutofillLoginListViewModel: AutofillLoginListViewModel {
 private final class MockSyncPromoManager: SyncPromoManaging {
     private(set) var dismissedTouchpoint: SyncPromoManager.Touchpoint?
     private(set) var dismissalReason: SyncPromoManager.DismissalReason?
-    private(set) var handledTouchpoint: SyncPromoManager.Touchpoint?
+    private(set) var confirmedTouchpoint: SyncPromoManager.Touchpoint?
 
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
         false
     }
 
-    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {
-        handledTouchpoint = touchpoint
-    }
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
 
     func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
 
-    func recordPromoConfirmedFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+    func recordPromoConfirmedFor(_ touchpoint: SyncPromoManager.Touchpoint) {
+        confirmedTouchpoint = touchpoint
+    }
 
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
         dismissedTouchpoint = touchpoint

@@ -941,6 +941,10 @@ extension DataImportViewModel {
             guard summary.values.filter({ !$0.isSuccess }).isEmpty else {
                 return .submit
             }
+            // History isn't synced, so there's nothing to offer when it's all that was imported.
+            guard summary.keys.contains(where: { $0 != .history }) else {
+                return nil
+            }
             switch syncFeatureVisibility {
             case .hide:
                 return nil
@@ -973,6 +977,10 @@ extension DataImportViewModel {
         } else {
             return .cancel
         }
+    }
+
+    var isHistoryImportEnabled: Bool {
+        featureFlagger.isFeatureOn(.dataImportHistory)
     }
 
     var shouldShowSyncFooterButton: Bool {

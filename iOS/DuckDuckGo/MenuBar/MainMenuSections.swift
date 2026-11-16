@@ -59,9 +59,14 @@ private extension MainMenuSection {
 struct SettingsMenuSection: MainMenuSection {
     let title: String
     var image: UIImage?
+    var includesAppItems = false
 
     func menu(in context: MainMenuSpec.Context) -> MainMenuSpec.Menu? {
-        Menu(identifier: .preferences, items: [item(.settings, title, ",", .command, image: image)])
+        let appItems = [item(.setDefaultBrowser, UserText.menuSetDefaultBrowser),
+                        item(.addToDock, UserText.menuAddToDock),
+                        item(.addWidget, UserText.menuAddWidget)]
+        return Menu(identifier: .preferences, items: [item(.settings, title, ",", .command, image: image)],
+                    submenus: includesAppItems ? [group("app.setup", appItems)] : [])
     }
 }
 
@@ -75,6 +80,7 @@ struct FileMenuSection: MainMenuSection {
                 item(.voiceSearch, UserText.menuVoiceSearch, ".", [.shift, .command], requires: \.voiceSearchEnabled,
                      image: Glyphs.permissionMicrophone)
             ]),
+            group("file.import", [item(.importData, UserText.menuImportBookmarksAndPasswords)]),
             group("file.location", [item(.location, UserText.menuOpenLocation, "l", .command)]),
             group("file.close", [item(.closeTab, UserText.keyCommandCloseTab, "w", .command)]),
             group("file.share", [item(.share, UserText.actionShare, image: Glyphs.shareApple)]),
@@ -119,6 +125,7 @@ struct ViewMenuSection: MainMenuSection {
             group("view.panels", [item(.showTabs, UserText.menuShowTabs, "\\", [.shift, .command]),
                                   item(.showPasswords, UserText.menuShowPasswords, "a", [.shift, .command]),
                                   item(.showDownloads, UserText.menuShowDownloads, "j", [.shift, .command])]),
+            group("view.duckai", [item(.toggleDuckAIButton, UserText.menuHideDuckAIButton, "y", [.shift, .command])]),
             group("view.zoom", [item(.zoomIn, UserText.keyCommandZoomIn, "+", .command),
                                 item(.zoomOut, UserText.keyCommandZoomOut, "-", .command),
                                 item(.actualSize, UserText.menuActualSize, "0", .command)])

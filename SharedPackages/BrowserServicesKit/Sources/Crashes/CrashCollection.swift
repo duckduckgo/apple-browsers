@@ -46,6 +46,10 @@ public enum CrashReportPixelParameter: String {
     case first
     case bundle
     case terminationReason
+    case watchdogEvent
+    case watchdogLimit
+    case processVisibility
+    case watchdogVisibility
 }
 
 @available(iOSApplicationExtension, unavailable)
@@ -102,8 +106,8 @@ public final class CrashCollection {
                         .code: "\(diagnostic.exceptionCode ?? -1)",
                         .type: "\(diagnostic.exceptionType ?? -1)",
                         .signal: "\(diagnostic.signal ?? -1)",
-                        .terminationReason: Self.pixelTerminationReason(from: diagnostic.terminationReason),
                     ]
+                    params.merge(Self.terminationReasonPixelParameters(from: diagnostic.terminationReason)) { current, _ in current }
                     if first {
                         params[.first] = "1"
                     }
@@ -255,24 +259,107 @@ public final class CrashCollection {
     private static let terminationReasonRegex = try? NSRegularExpression(
         pattern: #"Namespace\s+([A-Za-z0-9_]{1,32}),\s*Code\s+(0x[0-9A-Fa-f]{1,16}|[0-9]{1,20})"#
     )
+    private static let runningBoardTerminationReasonRegex = try? NSRegularExpression(
+        pattern: #"RBSTerminateContext\|\s*domain:([0-9]{1,10})\s+code:(0x[0-9A-Fa-f]{1,16}|[0-9]{1,20})"#
+    )
+    private static let watchdogLimitRegex = try? NSRegularExpression(pattern: #"exhausted (.{1,40}?) time allowance"#)
+    private static let watchdogEventRegex = lineValueRegex(for: "WatchdogEvent")
+    private static let processVisibilityRegex = lineValueRegex(for: "ProcessVisibility")
+    private static let watchdogVisibilityRegex = lineValueRegex(for: "WatchdogVisibility")
 
-    /// Reduces an `MXCrashDiagnostic.terminationReason` to its namespace and code, e.g.
-    /// "Namespace SPRINGBOARD, Code 0x8badf00d, scene-update watchdog transgression" becomes
-    /// "springboard_0x8badf00d". Only the namespace and code are kept, so free text from the OS
-    /// never reaches the pixel.
+    private static let watchdogEventCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz-")
+    private static let visibilityCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz")
+
+    /// Builds the termination reason pixel parameters from an `MXCrashDiagnostic.terminationReason`.
+    ///
+    /// Only short, validated tokens are kept, so free text from the OS (bundle identifiers,
+    /// scene identifiers, PIDs) never reaches the pixel. Each parameter is "-1" when the
+    /// termination reason doesn't contain it, and "unknown" when it's present but can't be parsed.
+    static func terminationReasonPixelParameters(from terminationReason: String?) -> [CrashReportPixelParameter: String] {
+        guard let terminationReason, !terminationReason.isEmpty else {
+            return [
+                .terminationReason: "-1",
+                .watchdogEvent: "-1",
+                .watchdogLimit: "-1",
+                .processVisibility: "-1",
+                .watchdogVisibility: "-1"
+            ]
+        }
+
+        return [
+            .terminationReason: pixelTerminationReason(from: terminationReason),
+            .watchdogEvent: validatedToken(firstCapture(of: watchdogEventRegex, in: terminationReason),
+                                           allowedCharacters: watchdogEventCharacters),
+            .watchdogLimit: pixelWatchdogLimit(from: terminationReason),
+            .processVisibility: validatedToken(firstCapture(of: processVisibilityRegex, in: terminationReason),
+                                               allowedCharacters: visibilityCharacters),
+            .watchdogVisibility: validatedToken(firstCapture(of: watchdogVisibilityRegex, in: terminationReason),
+                                                allowedCharacters: visibilityCharacters)
+        ]
+    }
+
+    /// Reduces an `MXCrashDiagnostic.terminationReason` to its namespace and code. Two formats are supported:
+    /// - "Namespace SPRINGBOARD, Code 0x8badf00d, scene-update watchdog transgression" becomes "springboard_0x8badf00d".
+    /// - "<RBSTerminateContext| domain:10 code:0x8BADF00D explanation:…>" becomes "domain10_0x8badf00d".
+    ///
+    /// Only the namespace (or domain) and code are kept, so free text from the OS never reaches the pixel.
     ///
     /// - Returns: "-1" when the crash has no termination reason, "unknown" when it can't be parsed.
     static func pixelTerminationReason(from terminationReason: String?) -> String {
         guard let terminationReason, !terminationReason.isEmpty else { return "-1" }
 
-        guard let regex = terminationReasonRegex,
-              let match = regex.firstMatch(in: terminationReason, range: NSRange(terminationReason.startIndex..., in: terminationReason)),
-              let namespaceRange = Range(match.range(at: 1), in: terminationReason),
-              let codeRange = Range(match.range(at: 2), in: terminationReason) else {
+        if case let (namespace, code)? = firstTwoCaptures(of: terminationReasonRegex, in: terminationReason) {
+            return "\(namespace)_\(code)".lowercased()
+        }
+        if case let (domain, code)? = firstTwoCaptures(of: runningBoardTerminationReasonRegex, in: terminationReason) {
+            return "domain\(domain)_\(code)".lowercased()
+        }
+        return "unknown"
+    }
+
+    /// - Returns: "wall" when the watchdog's wall clock allowance ran out, "cpu" when its CPU time allowance ran out,
+    ///   "-1" when the termination reason has no allowance, and "unknown" for any other allowance.
+    private static func pixelWatchdogLimit(from terminationReason: String) -> String {
+        switch firstCapture(of: watchdogLimitRegex, in: terminationReason) {
+        case nil: return "-1"
+        case "real (wall clock)": return "wall"
+        case "CPU": return "cpu"
+        default: return "unknown"
+        }
+    }
+
+    private static func lineValueRegex(for key: String) -> NSRegularExpression? {
+        try? NSRegularExpression(pattern: "^\(key):[ \\t]*([^\\n]*)$", options: .anchorsMatchLines)
+    }
+
+    /// - Returns: The lowercased value when it's 1–32 allowed characters, "-1" when there's no value, "unknown" otherwise.
+    private static func validatedToken(_ value: String?, allowedCharacters: CharacterSet) -> String {
+        guard let value else { return "-1" }
+
+        let token = value.trimmingCharacters(in: .whitespaces).lowercased()
+        guard (1...32).contains(token.count), token.unicodeScalars.allSatisfy(allowedCharacters.contains) else {
             return "unknown"
         }
+        return token
+    }
 
-        return "\(terminationReason[namespaceRange])_\(terminationReason[codeRange])".lowercased()
+    private static func firstCapture(of regex: NSRegularExpression?, in string: String) -> String? {
+        guard let regex,
+              let match = regex.firstMatch(in: string, range: NSRange(string.startIndex..., in: string)),
+              let range = Range(match.range(at: 1), in: string) else {
+            return nil
+        }
+        return String(string[range])
+    }
+
+    private static func firstTwoCaptures(of regex: NSRegularExpression?, in string: String) -> (String, String)? {
+        guard let regex,
+              let match = regex.firstMatch(in: string, range: NSRange(string.startIndex..., in: string)),
+              let firstRange = Range(match.range(at: 1), in: string),
+              let secondRange = Range(match.range(at: 2), in: string) else {
+            return nil
+        }
+        return (String(string[firstRange]), String(string[secondRange]))
     }
 
     // MARK: - Call Stack Tree Depth Limiting

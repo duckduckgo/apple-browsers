@@ -52,6 +52,7 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
     func testWhenFeatureFlagOffThenNotEligible() {
         featureFlagger.featuresStub = [FeatureFlag.promoQueueUpdateAvailablePromo.rawValue: false]
         updateController.hasPendingUpdate = true
+        updateController.mustShowUpdateIndicators = true
 
         XCTAssertFalse(sut.isEligible)
     }
@@ -62,10 +63,33 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testWhenFeatureFlagOnAndPendingUpdateThenEligible() {
+    func testWhenFeatureFlagOnAndPendingUpdateIndicatorsDueThenEligible() {
         updateController.hasPendingUpdate = true
+        updateController.mustShowUpdateIndicators = true
 
         XCTAssertTrue(sut.isEligible)
+    }
+
+    func testWhenPendingUpdateButIndicatorsNotDueThenNotEligible() {
+        updateController.hasPendingUpdate = true
+        updateController.mustShowUpdateIndicators = false
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
+    func testWhenIndicatorsDueButNoPendingUpdateThenNotEligible() {
+        updateController.hasPendingUpdate = false
+        updateController.mustShowUpdateIndicators = true
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
+    func testWhenNoUpdateControllerThenNotEligible() {
+        sut = UpdateAvailablePromoDelegate(updateController: nil,
+                                           windowControllersManager: windowControllersManager,
+                                           featureFlagger: featureFlagger)
+
+        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenThereIsNoKeyWindowThenShowReturnsNoChange() async {
@@ -89,7 +113,7 @@ private final class MockUpdateAvailabilityController: UpdateController {
     var latestUpdatePublisher: Published<Update?>.Publisher { $latestUpdate }
     @Published var hasPendingUpdate = false
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
-    var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    var mustShowUpdateIndicators = false
     var needsNotificationDot = false
     var notificationDotPublisher: AnyPublisher<Bool, Never> { Just(needsNotificationDot).eraseToAnyPublisher() }
     var clearsNotificationDotOnMenuOpen = false

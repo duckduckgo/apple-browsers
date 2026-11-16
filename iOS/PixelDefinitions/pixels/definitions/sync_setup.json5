@@ -19,8 +19,8 @@
                     "promotion_bookmarks",
                     "promotion_passwords",
                     "promotion_ai_chat",
-                    "promotion_bookmarks_another_device",
-                    "promotion_passwords_another_device"
+                    "promotion_bookmarks_multi_device",
+                    "promotion_passwords_multi_device"
                 ]
             }
         ]
@@ -45,8 +45,8 @@
                     "promotion_bookmarks",
                     "promotion_passwords",
                     "promotion_ai_chat",
-                    "promotion_bookmarks_another_device",
-                    "promotion_passwords_another_device",
+                    "promotion_bookmarks_multi_device",
+                    "promotion_passwords_multi_device",
                     "recovery",
                     "exchange",
                     "connect",
@@ -87,8 +87,8 @@
                     "promotion_bookmarks",
                     "promotion_passwords",
                     "promotion_ai_chat",
-                    "promotion_bookmarks_another_device",
-                    "promotion_passwords_another_device",
+                    "promotion_bookmarks_multi_device",
+                    "promotion_passwords_multi_device",
                     "recovery",
                     "exchange",
                     "connect",
@@ -485,7 +485,7 @@
         ]
     },
     "sync_setup_ended_successful": {
-        "description": "Fired when Sync setup completes successfully.",
+        "description": "Fired when Sync setup completes successfully by pairing with another device or recovering with a code. Not fired when the app creates a Sync account for this device only, which m_sync_signup_direct reports.",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],

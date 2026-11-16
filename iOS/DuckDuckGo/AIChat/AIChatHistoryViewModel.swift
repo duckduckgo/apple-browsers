@@ -198,6 +198,10 @@ final class AIChatHistoryViewModel: ObservableObject {
         instrumentation.fireAllTapped()
     }
 
+    func screenWillClose() {
+        delegate?.viewModelWillClose()
+    }
+
     func newChatTapped() {
         instrumentation.newChatTapped()
         delegate?.viewModelDidRequestOpenNewChat()
@@ -426,4 +430,7 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// An export produced no files — a single download failed, or every selected chat failed.
     /// Present a "download failed" error toast. (Not called when nothing was selected.)
     func viewModelDidFailExport()
+
+    /// The sheet is closing, whether or not it opened anything.
+    func viewModelWillClose()
 }

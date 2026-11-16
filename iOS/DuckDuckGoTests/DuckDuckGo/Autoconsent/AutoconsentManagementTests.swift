@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import UIKit
 import XCTest
 import WebExtensions
 @testable import DuckDuckGo
@@ -40,7 +41,7 @@ final class AutoconsentManagementTests: XCTestCase {
         }
         defer { PixelKit.tearDown() }
 
-        let management = AutoconsentManagement()
+        let management = AutoconsentManagement(eventHub: StubEventHub())
         let parameters = ["consentHeuristicEnabled": "tier1"]
         management.firePixel(pixel: .acInit, siteRank: .top10k, additionalParameters: parameters)
         management.firePixel(pixel: .acInit, siteRank: .other, additionalParameters: parameters)
@@ -57,5 +58,65 @@ final class AutoconsentManagementTests: XCTestCase {
         XCTAssertEqual(other?["popup-found"], "1")
         XCTAssertEqual(other?["consentHeuristicEnabled"], "tier1")
         XCTAssertTrue(firedPixels.filter { !$0.name.contains("autoconsent_summary") }.allSatisfy { $0.parameters["siteRank"] == nil })
+    }
+
+    @MainActor
+    func testWhenSummaryPixelFiresThenCPMCoverageIsReportedToEventHub() {
+        let eventHub = StubEventHub()
+        let management = AutoconsentManagement(eventHub: eventHub)
+        management.firePixel(pixel: .acInit, siteRank: .top10k)
+        management.firePixel(pixel: .detectedByPatterns, siteRank: .top10k)
+        management.firePixel(pixel: .acInit, siteRank: .other)
+        management.firePixel(pixel: .acInit, siteRank: .other)
+        management.firePixel(pixel: .detectedByPatterns, siteRank: .other)
+        management.firePixel(pixel: .detectedByBoth, siteRank: .other)
+        management.firePixel(pixel: .detectedByBoth, siteRank: .other)
+
+        management.fireSummaryPixel()
+        management.fireSummaryPixel()
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_pages": 3, "autoconsent_pages_top10k": 1,
+            "autoconsent_unhandled": 1, "autoconsent_unhandled_top10k": 1,
+        ])
+    }
+
+    @MainActor
+    func testWhenAppEntersBackgroundThenEventHubIsFlushedAfterTheSummaryIsReported() {
+        let eventHub = StubEventHub()
+        let management = AutoconsentManagement(eventHub: eventHub)
+        management.firePixel(pixel: .acInit, siteRank: .other)
+
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(eventHub.nativeEventCounts, ["autoconsent_pages": 1])
+        XCTAssertEqual(eventHub.nativeEventsWhenAppBackgrounded, 1)
+        withExtendedLifetime(management) {}
+    }
+
+    func testWhenEmbeddedExtensionReportsCoverageThenItIsCountedInEventHub() throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Embedded extension requires iOS 18.4") }
+        let eventHub = StubEventHub()
+        let delegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 3, pages: 4), siteRank: .top10k)
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 1, pages: 1), siteRank: nil)
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_pages": 5, "autoconsent_pages_top10k": 4,
+            "autoconsent_unhandled": 4, "autoconsent_unhandled_top10k": 3,
+        ])
+    }
+
+    func testWhenEmbeddedExtensionSendsSummaryPixelThenNothingIsCountedInEventHub() throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Embedded extension requires iOS 18.4") }
+        let eventHub = StubEventHub()
+        let delegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+
+        delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: [
+            "init": "4", "detected-by-patterns": 3, "detected-by-both": "1", "siteRank": "top10k",
+        ]))
+
+        XCTAssertTrue(eventHub.nativeEventCounts.isEmpty)
     }
 }

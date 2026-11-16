@@ -31,7 +31,6 @@ import DesignResourcesKitIcons
 import Freemium
 import History
 import os.log
-import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -191,7 +190,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func setupMenuItems() {
-        if !addMoreProminentUpdatesDebugPromptItem() {
+        if !addUpdatePromptItem() {
             addUpdateItem()
         }
 
@@ -524,30 +523,31 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(releaseNotes)
     }
 
-    /// Adds the prominent update prompt selected in `Debug → Updates → More Prominent Updates`, in place of the regular update item,
-    /// while `moreProminentUpdates` is on.
+    /// Adds the prominent update prompt, a row at the first prompt stage and a card at the second, in place of the regular update item.
     /// - Returns: Whether a prompt was added.
     @MainActor
-    private func addMoreProminentUpdatesDebugPromptItem() -> Bool {
-        guard featureFlagger.isFeatureOn(.moreProminentUpdates) else { return false }
-
-        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
-        let style: UpdateBannerView.Style
-        switch debugSettings.menuPromptStyle {
-        case .none:
+    private func addUpdatePromptItem() -> Bool {
+        guard AppVersion.runType != .uiTests,
+              let updateController = Application.appDelegate.updateController,
+              let update = updateController.latestUpdate else {
             return false
-        case .row:
+        }
+
+        let style: UpdateBannerView.Style
+        switch updateController.pendingUpdatePromptStage {
+        case .none, .available:
+            return false
+        case .firstPrompt:
             style = .row
-        case .card:
+        case .secondPrompt:
             style = .card
         }
 
-        let updateController = Application.appDelegate.updateController
         let banner = UpdateBannerView(style: style,
-                                      version: updateController?.latestUpdate?.version ?? AppVersion.shared.versionNumber,
-                                      buttonTitle: UserText.updateBannerOpenAppStoreButton) { [weak self] in
+                                      version: update.version,
+                                      buttonTitle: updateController.updateBannerButtonTitle) { [weak self] in
             self?.cancelTracking()
-            updateController?.runUpdate()
+            updateController.runUpdateFromPrompt()
         }
 
         let item = NSMenuItem()

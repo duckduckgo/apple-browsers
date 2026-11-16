@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import ContentBlocking
 import Persistence
 import PrivacyConfig
@@ -30,6 +31,7 @@ final class ContentBlockingService {
     public let common: ContentBlocking
     public let updating: ContentBlockingUpdating
     public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    public let sponsorBlockPreferences: SponsorBlockPreferences
     public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     public let fireModeStorageController: FireModeNativeStorageController?
     public let adBlockingAvailability: AdBlockingAvailabilityProviding
@@ -65,7 +67,9 @@ final class ContentBlockingService {
                                                                            webExtensionAvailability: webExtensionAvailability,
                                                                            aiChatBonusOffer: aiChatBonusOffer)
 
+        sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
-                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                           sponsorBlockPreferences: sponsorBlockPreferences)
     }
 }

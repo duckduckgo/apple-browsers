@@ -86,6 +86,6 @@ enum MoreProminentUpdatesTypography {
 }
 
 #Preview {
-    AddressBarUpdateButton(title: UserText.addressBarUpdateButton) {}
+    AddressBarUpdateButton(title: UserText.updatePromptUpdateButton) {}
         .padding()
 }

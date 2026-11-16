@@ -22,8 +22,10 @@ import Combine
 import SwiftUI
 import UIKit
 import WebKit
+import BrowserServicesKit
 import Core
 import PrivacyConfig
+@_spi(Testing) import Persistence
 
 @testable import DuckDuckGo
 
@@ -80,6 +82,7 @@ class MockDuckPlayerPixelHandler: DuckPlayerPixelFiring {
 private struct MockFloatingUIManager: FloatingUIManaging {
     let isFloatingUIEnabled: Bool
     let isFloatingTabSwitcherEnabled = false
+    let isDuckAIAndInputLiquidGlassEnabled = false
 }
 
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {
@@ -174,7 +177,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig)
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())
         )
 
         // Subscribe to constraint updates
@@ -204,6 +208,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self,
             floatingUIManager: MockFloatingUIManager(isFloatingUIEnabled: true)
         )
@@ -471,7 +476,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }
         
         // Verify the content controller is a hosting controller with DuckPlayerView
-        guard let hostingController = roundedSheetController.contentViewController as? UIHostingController<DuckPlayerView> else {
+        guard roundedSheetController.contentViewController is UIHostingController<DuckPlayerView> else {
             XCTFail("Content controller should be UIHostingController<DuckPlayerView>")
             return
         }
@@ -1055,6 +1060,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1087,6 +1093,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1118,6 +1125,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1322,11 +1330,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())
         )
         
         // Store weak reference
-        weak var weakPresenter = presenter
+        weak let weakPresenter = presenter
         
         // When
         presenter = nil
@@ -1343,7 +1352,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())
         )
         
         // Verify observer is working
@@ -1374,6 +1384,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1396,6 +1407,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1418,6 +1430,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1446,6 +1459,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1471,6 +1485,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1496,6 +1511,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -2044,10 +2060,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let source: DuckPlayer.VideoNavigationSource = .youtube
         mockDuckPlayerSettings.welcomeMessageShown = false
         mockDuckPlayerSettings.primingMessagePresented = true
-        
-        // Store initial state values
-        let initialTimestamp = sut.state.timestamp
-        let initialWelcomeShown = mockDuckPlayerSettings.welcomeMessageShown
         
         // Present the DuckPlayer
         _ = sut.presentDuckPlayer(

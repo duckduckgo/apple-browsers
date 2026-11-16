@@ -1835,7 +1835,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.aiChatContextualSheetViewController(sheet, didRequestToLoad: url)
         XCTAssertTrue(mockDelegate.didRequestToLoadURLs.isEmpty)
 
-        sut.show(sheet, from: host, in: host)
+        await sut.presentSheet(from: host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
         presenter.completeDismissal()
 
         XCTAssertTrue(mockDelegate.didRequestToLoadURLs.isEmpty)

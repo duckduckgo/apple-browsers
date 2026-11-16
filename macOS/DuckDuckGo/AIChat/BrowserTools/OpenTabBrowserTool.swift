@@ -24,6 +24,7 @@ final class OpenTabBrowserTool: BrowserTool {
 
     let name = "openTab"
     let permissionMode = BrowserToolPermissionMode.ask
+    let asksEveryTime = true
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -37,6 +38,10 @@ final class OpenTabBrowserTool: BrowserTool {
 
     init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
+    }
+
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
+        arguments?["url"]?.stringValue
     }
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {

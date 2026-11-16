@@ -29,6 +29,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
 
     let name = "bookmarkTab"
     let permissionMode = BrowserToolPermissionMode.ask
+    let asksEveryTime = true
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -51,6 +52,13 @@ final class BookmarkTabBrowserTool: BrowserTool {
     init(windowControllersManager: WindowControllersManagerProtocol, bookmarkManager: BookmarkManager) {
         self.windowControllersManager = windowControllersManager
         self.bookmarkManager = bookmarkManager
+    }
+
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
+        guard case .resolved(let tabID, let collection) = BrowserToolTargetTab.resolve(tabIDArgument: arguments?["tabId"], context: context,
+                                                                                       in: windowControllersManager) else { return nil }
+        return BrowserToolTargetTab.actionableTab(withID: tabID, ownerTabID: context.ownerTabID, in: collection)?
+            .content.userEditableUrl?.absoluteString
     }
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {

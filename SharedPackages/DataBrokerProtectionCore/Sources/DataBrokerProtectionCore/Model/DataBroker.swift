@@ -402,6 +402,11 @@ extension DataBroker {
         return false
     }
 
+    public func assistedOptOutSteps() -> AssistedOptOutSteps? {
+        guard let actions = optOutStep()?.actions, actions.contains(where: { $0 is UserAssistAction }) else { return nil }
+        return AssistedOptOutSteps(actions: actions)
+    }
+
     public func requiresEmailConfirmationDuringOptOut() -> Bool {
         guard let optOutStep = optOutStep() else { return false }
         return optOutStep.actions.contains { $0 is EmailConfirmationAction }

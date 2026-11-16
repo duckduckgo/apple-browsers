@@ -207,6 +207,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                        timeout: TimeInterval?,
                        stageCalculator: FakeStageDurationCalculator,
                        assistanceObserver: OptOutAssistanceObserving? = nil,
+                       shouldRunNextStep: @escaping () -> Bool = { true },
                        onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws -> Bool {
         let runner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: privacyConfigManager,
@@ -221,13 +222,14 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             actionsHandlerMode: .optOut,
             contentBlocking: contentBlocking,
             assistanceObserver: assistanceObserver,
-            shouldRunNextStep: { true }
+            shouldRunNextStep: shouldRunNextStep
         )
         onWebRunnerStarted?(runner)
 
         try await withOptionalTimeout(timeout) {
             try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                    showWebView: showWebView) { true }
+                                    showWebView: showWebView,
+                                    shouldRunNextStep: shouldRunNextStep)
         }
 
         return scanResult.dataBroker.requiresEmailConfirmationDuringOptOut()
@@ -348,10 +350,8 @@ extension DebugModeRunner {
 public final class DebugAssistanceObserver: OptOutAssistanceObserving {
     private let showsWebView: Bool
     private let onUserTurn: @MainActor (WKWebView?, String?) -> Void
-    private let onAgentTurn: @MainActor () -> Void
     private weak var webView: WKWebView?
     private var step: String?
-    private var isUserTurn = false
 #if os(macOS)
     private var window: NSWindow?
     private var windowCloseObservation: NSObjectProtocol?
@@ -359,11 +359,9 @@ public final class DebugAssistanceObserver: OptOutAssistanceObserving {
 #endif
 
     public init(showsWebView: Bool,
-                onUserTurn: @escaping @MainActor (WKWebView?, String?) -> Void,
-                onAgentTurn: @escaping @MainActor () -> Void = {}) {
+                onUserTurn: @escaping @MainActor (WKWebView?, String?) -> Void) {
         self.showsWebView = showsWebView
         self.onUserTurn = onUserTurn
-        self.onAgentTurn = onAgentTurn
     }
 
     // Runners with an observer leave the web view without a window, so debug runs show it here.
@@ -398,14 +396,9 @@ public final class DebugAssistanceObserver: OptOutAssistanceObserving {
 
     public func attemptWillRun(_ action: Action) {
         step = action.step
-        if isUserTurn {
-            isUserTurn = false
-            onAgentTurn()
-        }
     }
 
     public func attemptNeedsUser(actionID: String) {
-        isUserTurn = true
         onUserTurn(webView, step)
     }
 }

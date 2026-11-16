@@ -106,9 +106,12 @@ final class UserScripts: UserScriptsProvider {
         do {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue])
+                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue,
+                                                                                                   PrivacyFeature.aiChatBrowserTools.rawValue])
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
+                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                                                                                        excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures
+                                                                                            + [PrivacyFeature.aiChatBrowserTools.rawValue])
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),

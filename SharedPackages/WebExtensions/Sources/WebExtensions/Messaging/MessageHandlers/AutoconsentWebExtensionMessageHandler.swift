@@ -143,9 +143,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
         Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.shortDescription), consentManaged: \(consentStatus.consentManaged)")
 
-        let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
-        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url,
-                                                                 extensionIdentifier: extensionIdentifier))
+        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(url: url, extensionIdentifier: extensionIdentifier))
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
         return .success(Self.successResponse)

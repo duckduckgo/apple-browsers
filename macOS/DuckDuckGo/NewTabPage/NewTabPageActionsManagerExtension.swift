@@ -134,6 +134,7 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
+            privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
             searchPreferences: NSApp.delegateTyped.searchPreferences,
             windowControllersManager: windowControllersManager,

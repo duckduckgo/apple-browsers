@@ -61,7 +61,7 @@ final class AIChatUserScriptLocalModelTests: XCTestCase {
     }
 
     func testLocalModelIsOfferedOnlyToPagesThatGetItsPushes() async throws {
-        handler.nativeConfigValues = AIChatNativeConfigValues.defaultValues
+        handler.nativeConfigResponse = AIChatNativeConfigValues.defaultValues
         service.configToReturn = AIChatLocalModelConfig(state: .ready, tasks: [.summarize], model: service.model)
         let script = makeScript()
         let configHandler = try XCTUnwrap(script.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))

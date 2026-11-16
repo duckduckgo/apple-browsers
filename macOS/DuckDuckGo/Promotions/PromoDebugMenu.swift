@@ -263,5 +263,6 @@ final class PromoDebugMenu: NSMenu {
         debugSimulatedDateStore.reset()
         NSApp.delegateTyped.promoService?.resetDebugState()
         NSApp.delegateTyped.defaultBrowserAndDockPromptService.resetDebugState()
+        NSApp.delegateTyped.defaultBrowserWinBackConfirmationMonitor.cancel()
     }
 }

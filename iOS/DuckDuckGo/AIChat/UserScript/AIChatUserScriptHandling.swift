@@ -156,6 +156,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
+    @MainActor func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession)
@@ -225,6 +226,15 @@ protocol AIChatUserScriptHandling: AnyObject {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            return .invalidRequest(rawParams: params)
+        }
+        guard let source else { return .failure(callId: request.callId, error: .unavailable) }
+        return await source.invokeBrowserTool(request).limitedToResultBytes()
+    }
+
 
     @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?
 
@@ -525,13 +535,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && isNativeChatInputAvailable
+        // Full mode also hands the chat header to native, which iPad doesn't have: its full-tab chat takes only the input.
+        let ownsIPadFullTabInput = displayMode == .fullTab && !devicePlatform.isIphone
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode || ownsIPadFullTabInput) && isNativeChatInputAvailable
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
     }
 
-    /// iPad keeps the web input on a full-tab chat, but its contextual sheet and sidebar use the native input like iPhone.
+    /// iPad's contextual sheet and sidebar always use the native input; its full-tab chat does once the iPad flag is on.
     private var isNativeChatInputAvailable: Bool {
-        unifiedToggleInputFeature.isAvailable || displayMode == .contextual
+        unifiedToggleInputFeature.isFullTabChatInputAvailable || displayMode == .contextual
     }
 
     private var supportsBrowserTabContexts: Bool {
@@ -552,7 +564,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         termsOfServicePageLoadState = readTermsOfServicePageLoadState()
 
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
-            && devicePlatform.isIphone
+            && (devicePlatform.isIphone || displayMode == .fullTab)
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable
         var config = AIChatNativeConfigValues(

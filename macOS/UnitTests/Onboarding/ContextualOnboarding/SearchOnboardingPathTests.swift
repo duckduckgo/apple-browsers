@@ -36,7 +36,7 @@ struct SearchOnboardingPathTests {
         progress = ContextualOnboardingProgress(storage: storage, settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
         sut = SearchOnboardingPath(progress: progress,
                                    storage: storage,
-                                   ending: OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: experiment),
+                                   subscriptionUpsellExperiment: experiment,
                                    trackerMessageProvider: trackerProvider)
     }
 

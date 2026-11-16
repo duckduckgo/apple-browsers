@@ -26,24 +26,24 @@ protocol BlockedTrackerStoring: AnyObject {
 
 /// Today's contextual onboarding: Try a search → search done / Try a site → trackers → Fire → the shared ending.
 final class SearchOnboardingPath: ContextualOnboardingPath {
-    
+
     private let progress: ContextualOnboardingProgressReading
     private let storage: BlockedTrackerStoring
     private let ending: OnboardingEndingSteps
     private let trackerMessageProvider: TrackerMessageProviding
-    
+
     init(progress: ContextualOnboardingProgressReading,
          storage: BlockedTrackerStoring,
-         ending: OnboardingEndingSteps,
+         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
          trackerMessageProvider: TrackerMessageProviding) {
         self.progress = progress
         self.storage = storage
-        self.ending = ending
+        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
         self.trackerMessageProvider = trackerMessageProvider
     }
-    
+
     let isUILocked = false
-    
+
     func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision {
         // 1. Once the final dialog was seen, the ending decides (upsell or completed).
         if let decision = ending.decisionForNextDialog() { return decision }
@@ -70,7 +70,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
         case nil: return .none
         }
     }
-    
+
     func gotItPressed(lastDialog: ContextualDialogType) -> ContextualOnboardingDecision {
         switch lastDialog {
         case .searchDone(shouldFollowUp: true):
@@ -109,7 +109,7 @@ extension SearchOnboardingPath {
         }
         return nil
     }
-    
+
     // Determines the dialog for a DuckDuckGo search URL.
     private func dialogForDuckDuckGoSearch() -> ContextualDialogType? {
         // Ensure "tryASearch" has been seen.
@@ -130,7 +130,7 @@ extension SearchOnboardingPath {
         }
         return nil
     }
-    
+
     // Determines the dialog for a website visit based on tracker type and privacy info.
     private func dialogForRegularUrl(trackerType: OnboardingTrackersType?, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
         // If "tryASearch" hasn't been seen, show it.
@@ -161,7 +161,7 @@ extension SearchOnboardingPath {
         }
         return nil
     }
-    
+
     private func trackerDialog(for privacyInfo: PrivacyInfo?, shouldFollowUp: Bool) -> ContextualDialogType? {
         guard let message = trackerMessageProvider.trackerMessage(privacyInfo: privacyInfo) else { return nil }
         return .trackers(message: message, shouldFollowUp: shouldFollowUp)

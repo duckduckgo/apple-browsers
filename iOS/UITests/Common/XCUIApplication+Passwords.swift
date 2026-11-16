@@ -189,7 +189,10 @@ extension XCUIApplication {
         XCTAssertTrue(
             authenticationReason.waitForExistence(timeout: UITestTimeouts.navigation),
             "Password access did not request device authentication.", file: file, line: line)
+        let passcodeField = springboard.secureTextFields.firstMatch
         springboard.enterSimulatorPasscode(file: file, line: line)
+        springboard.waitForSystemAuthenticationToDismiss(
+            reason: authenticationReason, passcodeField: passcodeField, file: file, line: line)
 
         XCTAssertTrue(
             passwordList.wait(
@@ -207,12 +210,10 @@ extension XCUIApplication {
         XCTAssertTrue(
             authenticationReason.waitForExistence(timeout: UITestTimeouts.navigation),
             "Saved-password fill did not request device authentication.", file: file, line: line)
+        let passcodeField = springboard.secureTextFields.firstMatch
         springboard.enterSimulatorPasscode(file: file, line: line)
-        XCTAssertTrue(
-            authenticationReason.wait(
-                for: NSPredicate(format: "exists == false"),
-                timeout: UITestTimeouts.navigation),
-            "Saved-password authentication did not finish.", file: file, line: line)
+        springboard.waitForSystemAuthenticationToDismiss(
+            reason: authenticationReason, passcodeField: passcodeField, file: file, line: line)
     }
 
     func passwordItem(named name: String) -> XCUIElement {

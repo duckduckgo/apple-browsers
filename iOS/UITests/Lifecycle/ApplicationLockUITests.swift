@@ -78,7 +78,7 @@ final class ApplicationLockUITests: UITestCase {
                 }
             }
 
-            let passcodeField = springboard.secureTextFields["Passcode field"]
+            let passcodeField = springboard.secureTextFields.firstMatch
             springboard.enterSimulatorPasscode()
 
             springboard.waitForSystemAuthenticationToDismiss(reason: authenticationReason, passcodeField: passcodeField)

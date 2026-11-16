@@ -30,10 +30,10 @@ final class KeyboardSettingsUITests: UITestCase {
         assertSwitch("App Launch", isOn: false)
         attachScreenshot(named: "Keyboard defaults")
 
-        keyboardSwitch("New Tab").tap()
+        tapSwitch("New Tab")
         assertSwitch("New Tab", isOn: false)
         assertSwitch("App Launch", isOn: false)
-        keyboardSwitch("App Launch").tap()
+        tapSwitch("App Launch")
         assertSwitch("New Tab", isOn: false)
         assertSwitch("App Launch", isOn: true)
         attachScreenshot(named: "Keyboard preferences changed")
@@ -51,10 +51,10 @@ final class KeyboardSettingsUITests: UITestCase {
         assertSwitch("App Launch", isOn: true)
         attachScreenshot(named: "Keyboard preferences after relaunch")
 
-        keyboardSwitch("App Launch").tap()
+        tapSwitch("App Launch")
         assertSwitch("New Tab", isOn: false)
         assertSwitch("App Launch", isOn: false)
-        keyboardSwitch("New Tab").tap()
+        tapSwitch("New Tab")
         assertSwitch("New Tab", isOn: true)
         assertSwitch("App Launch", isOn: false)
     }
@@ -92,10 +92,18 @@ final class KeyboardSettingsUITests: UITestCase {
         app.cells.containing(.staticText, identifier: label).switches.firstMatch
     }
 
+    /// SwiftUI exposes the whole row as the switch, so tap its trailing edge where the toggle is drawn.
+    private func tapSwitch(_ label: String) {
+        keyboardSwitch(label).coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+    }
+
     private func assertSwitch(_ label: String, isOn: Bool, file: StaticString = #filePath, line: UInt = #line) {
         let toggle = keyboardSwitch(label)
         XCTAssertTrue(toggle.waitForExistence(timeout: timeout), file: file, line: line)
-        XCTAssertEqual(toggle.value as? String, isOn ? "1" : "0", file: file, line: line)
+        // SwiftUI updates the switch's value asynchronously after a tap.
+        let expected = isOn ? "1" : "0"
+        XCTAssertTrue(toggle.wait(for: NSPredicate(format: "value == %@", expected), timeout: UITestTimeouts.elementExistence),
+                      "\(label) switch value: \(String(describing: toggle.value)), expected \(expected)", file: file, line: line)
     }
 
     private func attachScreenshot(named name: String) {

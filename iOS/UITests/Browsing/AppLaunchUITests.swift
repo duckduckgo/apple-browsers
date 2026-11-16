@@ -181,6 +181,10 @@ final class AppLaunchUITests: UITestCase {
         for index in app.launchArguments.indices where ["-ff.floatingUIiOS26", "-ff.floatingUIiOS27"].contains(app.launchArguments[index]) {
             app.launchArguments[index + 1] = String(floating)
         }
+        if !editing {
+            // The New Tab page raises the keyboard at launch unless the New Tab keyboard setting is off.
+            app.launchArguments += ["-com.duckduckgo.ios.keyboard.newtab", "<false/>"]
+        }
         app.launch()
         XCTAssertTrue(app.searchEntry.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
         if editing {

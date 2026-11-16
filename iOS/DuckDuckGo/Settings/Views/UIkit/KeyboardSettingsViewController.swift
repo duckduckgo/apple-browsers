@@ -108,19 +108,32 @@ final class KeyboardSettingsViewController: UITableViewController {
 }
 
 struct KeyboardSettingsView: View {
-    @State private var settings = KeyboardSettings()
+    // KeyboardSettings keeps its values in UserDefaults, so writing through it leaves a @State copy
+    // unchanged and SwiftUI never redraws: the switch animates but its accessibility value goes stale.
+    @State private var onNewTab = KeyboardSettings().onNewTab
+    @State private var onAppLaunch = KeyboardSettings().onAppLaunch
 
     var body: some View {
         List {
             Section(header: Text(UserText.settingsKeyboardShowOn)) {
                 SettingsCellView(label: UserText.settingsKeyboardNewTab,
-                                 accessory: .toggle(isOn: $settings.onNewTab))
+                                 accessory: .toggle(isOn: saving($onNewTab, to: \.onNewTab)))
                 SettingsCellView(label: UserText.settingsKeyboardAppLaunch,
-                                 accessory: .toggle(isOn: $settings.onAppLaunch))
+                                 accessory: .toggle(isOn: saving($onAppLaunch, to: \.onAppLaunch)))
             }
         }
         .applyInsetGroupedListStyle()
         .navigationBarTitle(UserText.settingsKeyboard, displayMode: .inline)
         .accentColor(Color(designSystemColor: .textPrimary))
+    }
+
+    private func saving(_ value: Binding<Bool>, to keyPath: WritableKeyPath<KeyboardSettings, Bool>) -> Binding<Bool> {
+        Binding {
+            value.wrappedValue
+        } set: { newValue in
+            value.wrappedValue = newValue
+            var settings = KeyboardSettings()
+            settings[keyPath: keyPath] = newValue
+        }
     }
 }

@@ -206,6 +206,7 @@ final class AssistedOptOutEdgeOverlayView: NSView {
     private let edgeLayer = CALayer()
     private let innerShadowLayer = CAShapeLayer()
     private var edge = Edge.none
+    private var reduceMotionObservation: NSObjectProtocol?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -220,6 +221,15 @@ final class AssistedOptOutEdgeOverlayView: NSView {
         edgeLayer.borderColor = NSColor.clear.cgColor
         layer?.addSublayer(innerShadowLayer)
         layer?.addSublayer(edgeLayer)
+        reduceMotionObservation = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.applyEdge() }
+        }
+    }
+
+    deinit {
+        reduceMotionObservation.map(NSWorkspace.shared.notificationCenter.removeObserver)
     }
 
     @available(*, unavailable)
@@ -282,11 +292,11 @@ final class AssistedOptOutEdgeOverlayView: NSView {
         innerShadowLayer.shadowColor = color.cgColor
         innerShadowLayer.shadowOpacity = 0.5
 
-        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+        guard edge == .user, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
         let pulse = CABasicAnimation(keyPath: "shadowOpacity")
-        pulse.fromValue = edge == .user ? 0.8 : 0.5
-        pulse.toValue = edge == .user ? 0.3 : 0.25
-        pulse.duration = edge == .user ? 0.8 : 1.2
+        pulse.fromValue = 0.8
+        pulse.toValue = 0.3
+        pulse.duration = 0.8
         pulse.autoreverses = true
         pulse.repeatCount = .infinity
         pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)

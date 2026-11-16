@@ -270,7 +270,7 @@ public final class AssistedOptOutQueue {
     private func loadSnapshot() async throws -> LoadedSnapshot {
         let requestedConfig = config
         guard requestedConfig.isEnabled else { return LoadedSnapshot(candidates: [], generation: generation, config: requestedConfig) }
-        if snapshotConfig != requestedConfig { invalidate() }
+        if let snapshotConfig, snapshotConfig != requestedConfig { invalidate() }
         if let snapshot { return LoadedSnapshot(candidates: snapshot, generation: generation, config: requestedConfig) }
         let requestedGeneration = generation
         let task: Task<[Candidate], Error>

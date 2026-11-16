@@ -183,11 +183,21 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
     func testSuspendedSchedulerDoesNotPollUntilResumed() async throws {
         let service = makeService()
         service.scheduler.cancelSyncAndSuspendSyncQueue()
+        let unwantedRequest = expectation(description: "Foreground request while suspended")
+        unwantedRequest.isInverted = true
+        accountManager.fetchAuditLogHandler = { _, _, _ in
+            unwantedRequest.fulfill()
+            throw CancellationError()
+        }
+        // Simulate a queued scheduler event arriving after suspension.
         service.scheduler.requestSyncImmediately()
+        await fulfillment(of: [unwantedRequest], timeout: 0.2)
         XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
 
+        accountManager.fetchAuditLogHandler = nil
         service.scheduler.resumeSyncQueue()
         try await requestSync(service, expectingCursor: "cursor")
+        XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
     }
 
     func testLogoutClearsPollingCursorAndReviewState() async throws {
@@ -269,7 +279,14 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         let completed = try await service.pollAuditLog()
         XCTAssertTrue(completed)
         XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "cursor")
+        let unwantedRequest = expectation(description: "Foreground request after independent poll while suspended")
+        unwantedRequest.isInverted = true
+        accountManager.fetchAuditLogHandler = { _, _, _ in
+            unwantedRequest.fulfill()
+            throw CancellationError()
+        }
         service.scheduler.requestSyncImmediately()
+        await fulfillment(of: [unwantedRequest], timeout: 0.2)
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
     }
 

@@ -1642,6 +1642,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
+    private func synchronizeAddToDockNotificationIfOffered() {
+        guard dockCustomization.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) else { return }
+        dockCustomization.synchronizeNotificationVisibilityWithFirstLaunchDate()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
@@ -1691,7 +1696,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? store.set(build, for: \.installBuild)
             }
         }
-        dockCustomization.synchronizeNotificationVisibilityWithFirstLaunchDate()
+        synchronizeAddToDockNotificationIfOffered()
 
         setupWebExtensions()
 

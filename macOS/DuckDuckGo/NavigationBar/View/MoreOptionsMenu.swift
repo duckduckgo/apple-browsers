@@ -89,6 +89,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let freemiumDBPPresenter: FreemiumDBPPresenter
     private let appearancePreferences: AppearancePreferences
     private let dockCustomizer: DockCustomization
+    private let addToDockMenuAction: AddToDockMenuAction
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let featureFlagger: FeatureFlagger
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
@@ -144,7 +145,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard),
-         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager) {
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+         addToDockMenuAction: AddToDockMenuAction? = nil) {
+
+        self.addToDockMenuAction = addToDockMenuAction ?? AddToDockMenuAction(dockCustomization: dockCustomizer, featureFlagger: featureFlagger)
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -210,7 +214,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-        if dockCustomizer.supportsAddingToDock,
+        if dockCustomizer.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA),
            dockCustomizer.isAddedToDock == false {
 
             if dockCustomizer.shouldShowNotification {
@@ -297,8 +301,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: NSMenuItem) {
-        guard dockCustomizer.supportsAddingToDock, dockCustomizer.addToDock() else { return }
-        PixelKit.fire(GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)
+        addToDockMenuAction.perform(from: .moreOptionsMenu)
     }
 
     @MainActor

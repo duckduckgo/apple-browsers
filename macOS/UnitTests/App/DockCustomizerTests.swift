@@ -84,29 +84,29 @@ final class DockCustomizerTests: XCTestCase {
         XCTAssertTrue(sut.supportsAddingToDock)
     }
 
-    func testWhenAppStoreBuildThenNotificationTimerIsNotStarted() {
+    func testWhenAppStoreBuildIsSynchronizedThenNotificationPublisherFollowsEligibility() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(Date().addingTimeInterval(.days(-3)), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+
         let buildType = ApplicationBuildTypeMock()
         buildType.isAppStoreBuild = true
-
         let sut = DockCustomizer(
             applicationBuildType: buildType,
             keyValueStore: keyValueStore,
             dockMembershipProvider: dockMembershipProvider
         )
+        var receivedValues: [Bool] = []
+        let cancellable = sut.shouldShowNotificationPublisher.sink { receivedValues.append($0) }
 
-        let expectation = expectation(description: "Publisher emits")
-        var receivedValue: Bool?
-        let cancellable = sut.shouldShowNotificationPublisher
-            .first()
-            .sink { value in
-                receivedValue = value
-                expectation.fulfill()
-            }
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
 
-        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedValues.last, true)
         cancellable.cancel()
-
-        XCTAssertEqual(receivedValue, false)
     }
 
     /// Without a stored `firstLaunchDate`, `AppDelegate` falls back to a default “old” date so computed dock notification eligibility is `true`,

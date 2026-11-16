@@ -642,7 +642,8 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-        addToDockMenuItem.isHidden = !dockCustomizer.supportsAddingToDock || dockCustomizer.isAddedToDock
+        let canOfferAddToDock = dockCustomizer.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA)
+        addToDockMenuItem.isHidden = !canOfferAddToDock || dockCustomizer.isAddedToDock
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.

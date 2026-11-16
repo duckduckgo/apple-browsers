@@ -110,7 +110,6 @@ final class DockCustomizer: DockCustomization {
     }
 
     func synchronizeNotificationVisibilityWithFirstLaunchDate() {
-        guard !applicationBuildType.isAppStoreBuild else { return }
         shouldShowNotificationPrivate = shouldShowNotification
         startTimer()
     }

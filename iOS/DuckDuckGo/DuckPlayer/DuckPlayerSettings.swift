@@ -165,8 +165,9 @@ enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterabl
 }
 
 // Custom Error privacy config settings
-struct CustomErrorSettings: Codable {
-    let signInRequiredSelector: String
+struct CustomErrorSettings: Codable, Equatable {
+    let signInRequiredSelector: String?
+    let youtubeErrorSelector: String?
 }
 
 /// Protocol defining the settings for Duck Player.

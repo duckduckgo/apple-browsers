@@ -205,6 +205,12 @@ private struct FeatureRow: View {
                 shouldAnimate: startAnimation,
                 staggerDelay: staggeredDelay * Double(index + 1)
             )
+        case let .animated(startAnimation, staggeredDelay) where feature.ddgAvailability == .subscription:
+            BouncingAvailabilityIcon(
+                image: feature.ddgAvailability.image,
+                shouldAnimate: startAnimation,
+                staggerDelay: staggeredDelay * Double(index + 1)
+            )
         default:
             feature.ddgAvailability.image
                 .resizable()
@@ -212,6 +218,42 @@ private struct FeatureRow: View {
         }
     }
 
+}
+
+/// Springs an availability icon in with the same timing as `CircleCheckView`'s circle.
+private struct BouncingAvailabilityIcon: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var scale: CGFloat = 0
+
+    let image: Image
+    let shouldAnimate: Bool
+    let staggerDelay: TimeInterval
+
+    var body: some View {
+        image
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .scaleEffect(scale)
+            .onAppear { [reduceMotion] in
+                if shouldAnimate { bounceIn(reduceMotion: reduceMotion) }
+            }
+            .onChange(of: shouldAnimate) { [reduceMotion] newValue in
+                if newValue { bounceIn(reduceMotion: reduceMotion) }
+            }
+    }
+
+    private func bounceIn(reduceMotion: Bool) {
+        guard !reduceMotion else {
+            scale = 1
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
+            withAnimation(CircleCheckViewAnimation.springAnimation) {
+                scale = 1
+            }
+        }
+    }
 }
 
 /// Checkmark shape approximating the [Figma design](https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=16525-79061&m=dev)

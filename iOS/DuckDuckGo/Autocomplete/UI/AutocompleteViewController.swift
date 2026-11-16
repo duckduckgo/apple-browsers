@@ -64,6 +64,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private var queryDebounceCancellable: AnyCancellable?
 
     private var lastResults: SuggestionResult?
+    private var fetchID = UUID()
     private var loader: SuggestionLoader?
     private var featureFlagger: FeatureFlagger
     private let historyManager: HistoryManaging
@@ -140,8 +141,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
         queryDebounceCancellable = $query
             .debounceSuggestions(using: featureFlagger, scheduler: RunLoop.main)
-            .sink { [weak self] query in
-                self?.requestSuggestions(query: query)
+            .sink { [weak self] request in
+                self?.requestSuggestions(query: request.query, includeRemoteSuggestions: request.includeRemoteSuggestions)
             }
     }
 
@@ -169,9 +170,11 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             reapplyFilterIfNeeded()
             return
         }
-        cancelInFlightRequests()
-        self.query = query
+        if !featureFlagger.isFeatureOn(.suggestionDebounce200ms) {
+            cancelInFlightRequests()
+        }
         model.query = query
+        self.query = query
     }
 
     func refreshSuggestions() {
@@ -240,10 +243,15 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         task = nil
     }
 
-    private func requestSuggestions(query: String) {
+    private func requestSuggestions(query: String, includeRemoteSuggestions: Bool = true) {
+        let usesSeparateDebounce = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
         model.selection = nil
+        if usesSeparateDebounce { cancelInFlightRequests() }
+        let fetchID = UUID()
+        self.fetchID = fetchID
 
         loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { [weak self] phrase in
+            guard includeRemoteSuggestions else { return false }
             // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
             // We define this as a URL with a path equal to a single slash (root URL).
             // Skip suggestions when all of the following are true:
@@ -266,6 +274,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self, error == nil else { return }
+            if usesSeparateDebounce {
+                guard self.fetchID == fetchID,
+                      query.isEmpty || self.query == query || (self.isEmpty && self.query.hasPrefix(query)) else { return }
+            }
             var updatedResults = result ?? .empty
             if self.suggestionFilter == .urlsOnly {
                 updatedResults = updatedResults.filteringToURLsOnly()

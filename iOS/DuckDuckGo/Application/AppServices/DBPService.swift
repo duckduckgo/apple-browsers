@@ -162,6 +162,24 @@ final class DBPService: NSObject {
             Logger.dataBrokerProtection.error("Failed to initialize PIR Secure Vault resources: \(error.localizedDescription, privacy: .public)")
         }
     }
+
+#if DEBUG
+    func startDebugServerIfRequestedAtLaunch(arguments: [String] = ProcessInfo.processInfo.arguments,
+                                             environment: [String: String] = ProcessInfo.processInfo.environment) async {
+        let value: String?
+        if let index = arguments.lastIndex(of: "-pirDebugServer") {
+            value = arguments.indices.contains(index + 1) ? arguments[index + 1] : ""
+        } else {
+            value = environment["PIR_DEBUG_SERVER"]
+        }
+        guard value == "true", let dbpIOSManager else { return }
+
+        let contentBlocking = DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+        if await dbpIOSManager.startDebugServer(contentBlocking: contentBlocking) {
+            Logger.dataBrokerProtection.log("PIR debug server started from launch option on port \(dbpIOSManager.debugServerPort ?? 0, privacy: .public)")
+        }
+    }
+#endif
 }
 
 extension NSNotification.Name {

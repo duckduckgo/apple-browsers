@@ -31,8 +31,9 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     public let tier: TierName?
     public let availableChanges: AvailableChanges?
     public let pendingPlans: [PendingPlan]?
+    public let planCountry: String?
 
-    /// Not parsed from 
+    /// Not parsed from
     public var features: [SubscriptionEntitlement]?
 
     /// Represents available subscription tier changes
@@ -258,6 +259,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         lhs.tier == rhs.tier &&
         lhs.availableChanges == rhs.availableChanges &&
         lhs.pendingPlans == rhs.pendingPlans &&
+        lhs.planCountry == rhs.planCountry &&
         Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
         Set(lhs.features ?? []) == Set(rhs.features ?? [])
     }

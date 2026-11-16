@@ -19,6 +19,7 @@
 
 import Core
 import Persistence
+import PrivacyConfig
 import SwiftUI
 import FeatureFlags_iOS
 

@@ -20,6 +20,7 @@ import DataBrokerProtectionCore
 import DataBrokerProtectionDebugServer
 import Foundation
 import os.log
+import WebKit
 
 public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecked Sendable {
 
@@ -170,12 +171,21 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
     private func optOut(_ scanResult: DebugScanResult, resultId: String, showWebView: Bool, runId: String) async {
         let label = DebugModeRunner.profileQueryText(for: scanResult.profileQuery)
         addHistoryEvent(.optOutStarted, runId: runId, profileQuery: label)
+        let assistanceObserver = await MainActor.run {
+            DebugAssistanceObserver(showsWebView: showWebView, onUserTurn: { [weak self] webView, step in
+                self?.addEvent(runId, kind: .history, profileQuery: label, summary: "Waiting for the user", details: step ?? "")
+                #if os(macOS)
+                webView?.window?.orderFrontRegardless()
+                #endif
+            })
+        }
         do {
             let requiresEmailConfirmation = try await runner.optOut(scanResult,
                                                                     dataBroker: scanResult.dataBroker,
                                                                     showWebView: showWebView,
                                                                     timeout: optOutTimeout,
-                                                                    stageCalculator: stageCalculator(runId: runId, stepType: .optOut, broker: scanResult.dataBroker, profileQuery: label))
+                                                                    stageCalculator: stageCalculator(runId: runId, stepType: .optOut, broker: scanResult.dataBroker, profileQuery: label),
+                                                                    assistanceObserver: assistanceObserver)
             if requiresEmailConfirmation {
                 setOptOutStatus(.awaitingEmailConfirmation, resultId: resultId, runId: runId)
                 addHistoryEvent(.optOutSubmittedAndAwaitingEmailConfirmation, runId: runId, profileQuery: label)

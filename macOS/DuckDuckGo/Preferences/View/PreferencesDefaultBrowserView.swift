@@ -134,7 +134,8 @@ extension Preferences {
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {
                 AddToDockVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
                                     videoSize: DockPreferencesModel.demoVideoSize,
-                                    isPresented: isPresentingAddToDockDemoVideo)
+                                    isPresented: isPresentingAddToDockDemoVideo,
+                                    onAction: dockModel.videoSheetButtonClicked)
             }
         }
     }

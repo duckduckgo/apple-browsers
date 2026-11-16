@@ -210,7 +210,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         let result = await task.value
 
         XCTAssertEqual(result, .actioned())
-        XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 1)
+        XCTAssertEqual(actionPerformer.performPendingActionsEntryPoints, [.winBackModal])
         XCTAssertEqual(confirmationMonitor.startClickDates, [now])
         XCTAssertEqual(promptStore.inactiveUserModalShownDate, now.timeIntervalSince1970)
         XCTAssertEqual(modal.dismissCallCount, 0)

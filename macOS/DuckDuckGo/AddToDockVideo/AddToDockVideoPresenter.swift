@@ -17,7 +17,19 @@
 //
 
 import AppKit
+import PixelKit
 import SwiftUI
+
+enum AddToDockVideoEntryPoint: String {
+    case settings
+    case newTabPageCard = "new_tab_page_card"
+    case mainMenu = "main_menu"
+    case moreOptionsMenu = "more_options_menu"
+    case popover
+    case banner
+    case inactiveModal = "inactive_modal"
+    case winBackModal = "win_back_modal"
+}
 
 enum AddToDockVideoAction: String {
     case done
@@ -40,14 +52,16 @@ enum AddToDockVideoAction: String {
 @MainActor
 protocol AddToDockVideoPresenting {
     @discardableResult
-    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) -> Bool
+    func present(from entryPoint: AddToDockVideoEntryPoint,
+                 primaryAction: AddToDockVideoAction.Primary,
+                 completion: @escaping (AddToDockVideoAction) -> Void) -> Bool
 }
 
 @MainActor
 extension AddToDockVideoPresenting {
     @discardableResult
-    func present(primaryAction: AddToDockVideoAction.Primary) -> Bool {
-        present(primaryAction: primaryAction) { _ in }
+    func present(from entryPoint: AddToDockVideoEntryPoint, primaryAction: AddToDockVideoAction.Primary) -> Bool {
+        present(from: entryPoint, primaryAction: primaryAction) { _ in }
     }
 }
 
@@ -57,21 +71,27 @@ final class AddToDockVideoPresenter: AddToDockVideoPresenting {
     private struct PresentedSheet {
         weak var parentWindow: NSWindow?
         let sheetWindow: NSWindow
+        let entryPoint: AddToDockVideoEntryPoint
         let completion: (AddToDockVideoAction) -> Void
     }
 
     private let windowProvider: () -> NSWindow?
     private let newWindowProvider: @MainActor () -> NSWindow?
+    private let pixelFiring: PixelFiring?
     private var presentedSheet: PresentedSheet?
 
     init(windowProvider: @escaping () -> NSWindow? = { NSApp.mainWindow ?? NSApp.keyWindow },
-         newWindowProvider: @escaping @MainActor () -> NSWindow? = { WindowsManager.openNewWindow() }) {
+         newWindowProvider: @escaping @MainActor () -> NSWindow? = { WindowsManager.openNewWindow() },
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.windowProvider = windowProvider
         self.newWindowProvider = newWindowProvider
+        self.pixelFiring = pixelFiring
     }
 
     @discardableResult
-    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) -> Bool {
+    func present(from entryPoint: AddToDockVideoEntryPoint,
+                 primaryAction: AddToDockVideoAction.Primary,
+                 completion: @escaping (AddToDockVideoAction) -> Void) -> Bool {
         guard presentedSheet?.parentWindow == nil, let parentWindow = windowProvider() ?? newWindowProvider() else { return false }
 
         let sheetView = AddToDockVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
@@ -84,6 +104,7 @@ final class AddToDockVideoPresenter: AddToDockVideoPresenting {
 
         presentedSheet = PresentedSheet(parentWindow: parentWindow,
                                         sheetWindow: sheetWindow,
+                                        entryPoint: entryPoint,
                                         completion: completion)
         parentWindow.beginSheet(sheetWindow) { [weak self, weak sheetWindow] _ in
             guard let self, let sheetWindow, presentedSheet?.sheetWindow === sheetWindow else { return }
@@ -96,6 +117,7 @@ final class AddToDockVideoPresenter: AddToDockVideoPresenting {
         guard let presentedSheet else { return }
         self.presentedSheet = nil
 
+        pixelFiring?.fire(AddToDockVideoPixel.buttonClicked(action: action, entryPoint: presentedSheet.entryPoint), frequency: .standard)
         presentedSheet.parentWindow?.endSheet(presentedSheet.sheetWindow)
         presentedSheet.completion(action)
     }

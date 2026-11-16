@@ -131,7 +131,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         guard showContinuation != nil else { return }
         pixelFiring?.fire(DefaultBrowserWinBackPixel.confirmButtonClicked(type: type))
         markInactiveUserModalSeen(isForceShow: isForceShow)
-        actionPerformer.performPendingActions { [weak self] in
+        actionPerformer.performPendingActions(from: .winBackModal) { [weak self] in
             guard let self else { return }
             confirmationMonitor.start(clickDate: dateProvider())
         }

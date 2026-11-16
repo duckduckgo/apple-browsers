@@ -108,7 +108,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         dockCustomizer.dockStatus = false
         defaultBrowserProvider.isDefault = false
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertTrue(dockCustomizer.wasAddToDockCalled)
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -121,7 +121,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         dockCustomizer.dockStatus = false
         defaultBrowserProvider.isDefault = true
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertTrue(dockCustomizer.wasAddToDockCalled)
         XCTAssertFalse(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -135,7 +135,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         defaultBrowserProvider.isDefault = false
         defaultBrowserProvider.throwError = true
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
         XCTAssertTrue(defaultBrowserProvider.openSystemPreferencesCalled)
@@ -147,7 +147,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         dockCustomizer.dockStatus = true
         defaultBrowserProvider.isDefault = true
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertFalse(dockCustomizer.wasAddToDockCalled)
         XCTAssertFalse(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -234,7 +234,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         XCTAssertEqual(sut.pendingPromptType, .bothDefaultBrowserAndDockPrompt)
         featureFlagger.featuresStub[FeatureFlag.appStoreBothDefaultBrowserAndDockCTA.rawValue] = false
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertTrue(videoPresenter.presentations.isEmpty)
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -245,7 +245,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         setAppStoreBuild(addToDockOnlyCTA: true, isDefault: true, isInDock: false)
         featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertTrue(videoPresenter.presentations.isEmpty)
         XCTAssertFalse(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -255,9 +255,9 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
     func testWhenAppStoreAddToDockPendingThenPerformPresentsVideoWithCancelAndDone() {
         setAppStoreBuild(addToDockOnlyCTA: true, bothDefaultBrowserAndDockCTA: true, isDefault: true, isInDock: false)
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
-        XCTAssertEqual(videoPresenter.presentations, [.done])
+        XCTAssertEqual(videoPresenter.presentations, [.init(entryPoint: .popover, primaryAction: .done)])
         XCTAssertFalse(dockCustomizer.wasAddToDockCalled)
         XCTAssertFalse(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
 
@@ -270,9 +270,9 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
     func testWhenAppStoreBothPendingThenPerformPresentsVideoBeforeDefaultBrowserPrompt() {
         setAppStoreBuild(addToDockOnlyCTA: true, bothDefaultBrowserAndDockCTA: true, isDefault: false, isInDock: false)
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .inactiveModal)
 
-        XCTAssertEqual(videoPresenter.presentations, [.next])
+        XCTAssertEqual(videoPresenter.presentations, [.init(entryPoint: .inactiveModal, primaryAction: .next)])
         XCTAssertFalse(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
         XCTAssertFalse(dockCustomizer.wasAddToDockCalled)
     }
@@ -281,7 +281,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
     func testWhenAppStoreBothPendingAndNextClickedThenDefaultBrowserPromptIsPresented() {
         setAppStoreBuild(addToDockOnlyCTA: true, bothDefaultBrowserAndDockCTA: true, isDefault: false, isInDock: false)
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .banner)
         videoPresenter.complete(with: .next)
 
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -292,7 +292,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
     func testWhenAppStoreBothPendingAndCancelClickedThenDefaultBrowserPromptIsNotPresented() {
         setAppStoreBuild(addToDockOnlyCTA: true, bothDefaultBrowserAndDockCTA: true, isDefault: false, isInDock: false)
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .banner)
         videoPresenter.complete(with: .cancel)
 
         XCTAssertFalse(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -304,7 +304,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         setAppStoreBuild(addToDockOnlyCTA: true, bothDefaultBrowserAndDockCTA: true, isDefault: false, isInDock: false)
         defaultBrowserProvider.throwError = true
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
         videoPresenter.complete(with: .next)
 
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -315,7 +315,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
     func testWhenAppStoreSetAsDefaultPendingThenPerformPresentsDefaultBrowserPromptWithoutVideo() {
         setAppStoreBuild(addToDockOnlyCTA: true, bothDefaultBrowserAndDockCTA: true, isDefault: false, isInDock: true)
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertTrue(videoPresenter.presentations.isEmpty)
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
@@ -327,9 +327,9 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         videoPresenter.presentResult = false
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
 
-        XCTAssertEqual(videoPresenter.presentations, [.next])
+        XCTAssertEqual(videoPresenter.presentations, [.init(entryPoint: .popover, primaryAction: .next)])
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
         XCTAssertEqual(requestCount, 1)
     }
@@ -339,7 +339,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         setAppStoreBuild(bothDefaultBrowserAndDockCTA: true, isDefault: false, isInDock: false)
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
         XCTAssertEqual(requestCount, 0)
 
         videoPresenter.complete(with: .next)
@@ -351,7 +351,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         setAppStoreBuild(bothDefaultBrowserAndDockCTA: true, isDefault: false, isInDock: false)
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
         videoPresenter.complete(with: .cancel)
 
         XCTAssertEqual(requestCount, 0)
@@ -362,7 +362,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         setAppStoreBuild(addToDockOnlyCTA: true, isDefault: true, isInDock: false)
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
         videoPresenter.complete(with: .done)
 
         XCTAssertEqual(requestCount, 0)
@@ -373,7 +373,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         setAppStoreBuild(isDefault: false, isInDock: true)
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
 
         XCTAssertEqual(requestCount, 1)
     }
@@ -385,7 +385,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         defaultBrowserProvider.isDefault = false
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
 
         XCTAssertEqual(requestCount, 1)
     }
@@ -397,7 +397,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         defaultBrowserProvider.isDefault = true
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
 
         XCTAssertEqual(requestCount, 0)
     }
@@ -410,7 +410,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         defaultBrowserProvider.throwError = true
         var requestCount = 0
 
-        sut.performPendingActions { requestCount += 1 }
+        sut.performPendingActions(from: .popover) { requestCount += 1 }
 
         XCTAssertTrue(defaultBrowserProvider.openSystemPreferencesCalled)
         XCTAssertEqual(requestCount, 1)
@@ -422,7 +422,7 @@ final class DefaultBrowserAndDockActionPerformerTests: XCTestCase {
         dockCustomizer.dockStatus = false
         defaultBrowserProvider.isDefault = false
 
-        sut.performPendingActions()
+        sut.performPendingActions(from: .popover)
 
         XCTAssertTrue(videoPresenter.presentations.isEmpty)
         XCTAssertTrue(dockCustomizer.wasAddToDockCalled)

@@ -62,7 +62,8 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     }
 
     func makeSUT(
-        expectedFireCalls: [ExpectedFireCall] = []
+        expectedFireCalls: [ExpectedFireCall] = [],
+        actionPerformer: DefaultBrowserAndDockActionPerforming? = nil
     ) -> DefaultBrowserAndDockPromptCoordinator  {
         pixelKitMock = PixelKitMock(expecting: expectedFireCalls)
 
@@ -72,10 +73,10 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
             notificationPresenter: notificationPresenterMock,
             featureFlagger: MockDefaultBrowserAndDockPromptFeatureFlagger(),
             isOnboardingCompleted: { self.isOnboardingCompleted },
-            actionPerformer: DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomizerMock,
-                                                                  defaultBrowserProvider: defaultBrowserProviderMock,
-                                                                  featureFlagger: MockFeatureFlagger(),
-                                                                  videoPresenter: MainActor.assumeIsolated { CapturingAddToDockVideoPresenter() }),
+            actionPerformer: actionPerformer ?? DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomizerMock,
+                                                                                     defaultBrowserProvider: defaultBrowserProviderMock,
+                                                                                     featureFlagger: MockFeatureFlagger(),
+                                                                                     videoPresenter: MainActor.assumeIsolated { CapturingAddToDockVideoPresenter() }),
             pixelFiring: pixelKitMock,
             dateProvider: timeTraveller.getDate
         )
@@ -283,6 +284,23 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // THEN
         XCTAssertFalse(dockCustomizerMock.wasAddToDockCalled)
         XCTAssertTrue(defaultBrowserProviderMock.wasPresentDefaultBrowserPromptCalled)
+    }
+
+    func testConfirmActionPassesPromptEntryPointToActionPerformer() {
+        let expected: [(DefaultBrowserAndDockPromptPresentationType, AddToDockVideoEntryPoint)] = [
+            (.active(.popover), .popover),
+            (.active(.banner), .banner),
+            (.inactive, .inactiveModal)
+        ]
+        for (prompt, entryPoint) in expected {
+            let actionPerformer = MockDefaultBrowserAndDockActionPerformer()
+            actionPerformer.pendingPromptType = .bothDefaultBrowserAndDockPrompt
+            let sut = makeSUT(actionPerformer: actionPerformer)
+
+            sut.confirmAction(for: prompt)
+
+            XCTAssertEqual(actionPerformer.performPendingActionsEntryPoints, [entryPoint], "prompt: \(prompt)")
+        }
     }
 
     func testConfirmActionDoesNothingWhenEvaluatePromptEligibilityIsNil() {

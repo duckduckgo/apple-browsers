@@ -143,7 +143,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
                 completion?()
             }
         } else if featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) {
-            videoPresenter.present(primaryAction: .done) { _ in completion?() }
+            videoPresenter.present(from: .newTabPageCard, primaryAction: .done) { _ in completion?() }
         }
     }
 

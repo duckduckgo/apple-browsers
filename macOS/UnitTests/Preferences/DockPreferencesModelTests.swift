@@ -171,6 +171,19 @@ final class DockPreferencesModelTests: XCTestCase {
         mockPixelFiring.verifyExpectations()
         XCTAssertTrue(model.isPresentingAddToDockDemoVideo)
     }
+
+    func testVideoSheetButtonClickedFiresPixelWithSettingsEntryPoint() {
+        let model = DockPreferencesModel(
+            dockCustomizer: mockDockCustomizer,
+            pixelFiring: mockPixelFiring
+        )
+
+        model.videoSheetButtonClicked(.done)
+
+        XCTAssertEqual(mockPixelFiring.actualFireCalls, [
+            ExpectedFireCall(pixel: AddToDockVideoPixel.buttonClicked(action: .done, entryPoint: .settings), frequency: .standard)
+        ])
+    }
 }
 
 // MARK: - MockDockCustomization

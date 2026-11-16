@@ -26,6 +26,13 @@ final class AddToDockMenuAction {
     enum Menu {
         case mainMenu
         case moreOptionsMenu
+
+        var entryPoint: AddToDockVideoEntryPoint {
+            switch self {
+            case .mainMenu: return .mainMenu
+            case .moreOptionsMenu: return .moreOptionsMenu
+            }
+        }
     }
 
     private let dockCustomization: DockCustomization
@@ -53,7 +60,7 @@ final class AddToDockMenuAction {
             guard dockCustomization.addToDock() else { return }
             fireClickPixel(for: menu)
         } else if featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) {
-            guard videoPresenter.present(primaryAction: .done) else { return }
+            guard videoPresenter.present(from: menu.entryPoint, primaryAction: .done) else { return }
             fireClickPixel(for: menu)
         }
     }

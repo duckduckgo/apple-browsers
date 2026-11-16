@@ -23,13 +23,13 @@ import PrivacyConfig
 protocol DefaultBrowserAndDockActionPerforming {
     var pendingPromptType: DefaultBrowserAndDockPromptType? { get }
     @MainActor
-    func performPendingActions(onSetAsDefaultRequested: (() -> Void)?)
+    func performPendingActions(from entryPoint: AddToDockVideoEntryPoint, onSetAsDefaultRequested: (() -> Void)?)
 }
 
 extension DefaultBrowserAndDockActionPerforming {
     @MainActor
-    func performPendingActions() {
-        performPendingActions(onSetAsDefaultRequested: nil)
+    func performPendingActions(from entryPoint: AddToDockVideoEntryPoint) {
+        performPendingActions(from: entryPoint, onSetAsDefaultRequested: nil)
     }
 }
 
@@ -76,11 +76,11 @@ final class DefaultBrowserAndDockActionPerformer: DefaultBrowserAndDockActionPer
     }
 
     @MainActor
-    func performPendingActions(onSetAsDefaultRequested: (() -> Void)?) {
+    func performPendingActions(from entryPoint: AddToDockVideoEntryPoint, onSetAsDefaultRequested: (() -> Void)?) {
         guard let type = pendingPromptType else { return }
 
         guard dockCustomization.supportsAddingToDock else {
-            performPendingActionsWithVideo(type, onSetAsDefaultRequested: onSetAsDefaultRequested)
+            performPendingActionsWithVideo(type, from: entryPoint, onSetAsDefaultRequested: onSetAsDefaultRequested)
             return
         }
 
@@ -97,10 +97,12 @@ final class DefaultBrowserAndDockActionPerformer: DefaultBrowserAndDockActionPer
     }
 
     @MainActor
-    private func performPendingActionsWithVideo(_ type: DefaultBrowserAndDockPromptType, onSetAsDefaultRequested: (() -> Void)?) {
+    private func performPendingActionsWithVideo(_ type: DefaultBrowserAndDockPromptType,
+                                                from entryPoint: AddToDockVideoEntryPoint,
+                                                onSetAsDefaultRequested: (() -> Void)?) {
         switch type {
         case .bothDefaultBrowserAndDockPrompt:
-            let isPresented = videoPresenter.present(primaryAction: .next) { [weak self] action in
+            let isPresented = videoPresenter.present(from: entryPoint, primaryAction: .next) { [weak self] action in
                 guard action == .next else { return }
                 self?.setAsDefaultBrowserAction(onRequested: onSetAsDefaultRequested)
             }
@@ -108,7 +110,7 @@ final class DefaultBrowserAndDockActionPerformer: DefaultBrowserAndDockActionPer
                 setAsDefaultBrowserAction(onRequested: onSetAsDefaultRequested)
             }
         case .addToDockPrompt:
-            videoPresenter.present(primaryAction: .done)
+            videoPresenter.present(from: entryPoint, primaryAction: .done)
         case .setAsDefaultPrompt:
             setAsDefaultBrowserAction(onRequested: onSetAsDefaultRequested)
         }

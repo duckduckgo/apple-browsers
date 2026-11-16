@@ -320,7 +320,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         setPromptSeen()
         fireConfirmActionPixel()
         MainActor.assumeMainThread {
-            actionPerformer.performPendingActions()
+            actionPerformer.performPendingActions(from: prompt.addToDockVideoEntryPoint)
         }
         promptDismissedSubject.send((prompt, .actioned()))
         activePrompt = nil
@@ -435,4 +435,14 @@ private extension DefaultBrowserAndDockPromptCoordinator {
         return value > 10 ? "10+" : String(value)
     }
 
+}
+
+private extension DefaultBrowserAndDockPromptPresentationType {
+    var addToDockVideoEntryPoint: AddToDockVideoEntryPoint {
+        switch self {
+        case .active(.popover): return .popover
+        case .active(.banner): return .banner
+        case .inactive: return .inactiveModal
+        }
+    }
 }

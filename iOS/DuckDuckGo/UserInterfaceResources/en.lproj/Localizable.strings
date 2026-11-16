@@ -376,6 +376,9 @@
 /* Title shown when the user has no Duck.ai chat history yet. */
 "aiChat.history.emptyState.title" = "No recent chats";
 
+/* Accessibility label for the fire button that deletes every Duck.ai chat from the chats list. */
+"aiChat.history.fireAll.a11y" = "Delete All Chats";
+
 /* Message of the alert shown when Duck.ai chat history fails to load. */
 "aiChat.history.loadError.message" = "Something went wrong loading your Duck.ai chats. Please try again later.";
 
@@ -390,6 +393,9 @@
 
 /* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
 "aiChat.history.menu.selectChats" = "Select Chats";
+
+/* Menu item in the iPad Duck.ai chats sidebar that opens the app's feedback form. */
+"aiChat.history.menu.sendFeedback" = "Send Feedback";
 
 /* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
 "aiChat.history.noSearchResults.title" = "No matches found";
@@ -423,6 +429,12 @@
 
 /* Multi-select toolbar button that deletes all chats when none are individually selected. */
 "aiChat.history.selection.deleteAll" = "Delete All";
+
+/* Accessibility label for the close button of the iPad Duck.ai chats sidebar. */
+"aiChat.history.sidebar.hide.a11y" = "Hide Chats";
+
+/* Accessibility label for the iPad Duck.ai button that opens the chats sidebar. */
+"aiChat.history.sidebar.show.a11y" = "Show Chats";
 
 /* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
 "aiChat.history.swipe.delete.a11y" = "Delete chat";

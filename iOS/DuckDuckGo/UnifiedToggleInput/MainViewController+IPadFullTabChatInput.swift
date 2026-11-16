@@ -47,6 +47,9 @@ extension MainViewController {
         case .refreshAITab(let behavior):
             prepareAITabInput(tab: tab, coordinator: coordinator)
             tab.installFullTabChatInput(coordinator.viewController)
+            // The input sits flush under the chat; narrow windows would otherwise draw the toolbar's hairline between them.
+            tab.borderView.isBottomVisible = false
+            installIPadChatListSidebar(in: tab)
             reconcileAIChatInputChromeForCurrentTab()
             applyAITabRefreshBehavior(behavior, coordinator: coordinator)
             applyIPadFullTabChatInputPose(coordinator: coordinator, animationStyle: .snap)
@@ -56,6 +59,8 @@ extension MainViewController {
                 coordinator.unbind()
             }
             detachIPadFullTabChatInput(coordinator)
+            detachIPadChatListSidebar()
+            tab.borderView.isBottomVisible = true
         }
     }
 
@@ -108,7 +113,7 @@ extension MainViewController {
 
 // MARK: - Tab hosting
 
-/// Spans the tab's width under the chat, painted and separated like the iPhone Duck.ai tab footer.
+/// Spans the chat column under the chat, painted like the page so the two read as one surface.
 final class FullTabChatInputContainerView: UIView {
 
     /// Matches the Duck.ai web chat column so the input lines up with the transcript above it.
@@ -117,25 +122,9 @@ final class FullTabChatInputContainerView: UIView {
     /// Pins the web view container's bottom to this container's top while the input is visible.
     var webViewContainerBottomConstraint: NSLayoutConstraint?
 
-    /// Matches the hairline iPhone draws above its collapsed footer.
-    let topSeparator: UIView = {
-        let separator = UIView()
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.backgroundColor = UIColor(designSystemColor: .lines)
-        separator.isUserInteractionEnabled = false
-        return separator
-    }()
-
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
-        addSubview(topSeparator)
-        NSLayoutConstraint.activate([
-            topSeparator.topAnchor.constraint(equalTo: topAnchor),
-            topSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
-            topSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
-            topSeparator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
-        ])
+        backgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
     }
 
     required init?(coder: NSCoder) {
@@ -156,18 +145,19 @@ extension TabViewController {
         addChild(inputViewController)
         let inputView: UIView = inputViewController.view
         inputView.translatesAutoresizingMaskIntoConstraints = false
-        container.insertSubview(inputView, belowSubview: container.topSeparator)
+        container.addSubview(inputView)
 
         let preferredWidth = inputView.widthAnchor.constraint(equalToConstant: FullTabChatInputContainerView.maximumInputWidth)
         preferredWidth.priority = .defaultHigh
+        // Follows the chat column, which the chats sidebar narrows.
         var constraints = [
-            container.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            container.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor),
             container.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             inputView.topAnchor.constraint(equalTo: container.topAnchor),
-            inputView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
-            inputView.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor),
-            inputView.trailingAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.trailingAnchor),
+            inputView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            inputView.leadingAnchor.constraint(greaterThanOrEqualTo: container.safeAreaLayoutGuide.leadingAnchor),
+            inputView.trailingAnchor.constraint(lessThanOrEqualTo: container.safeAreaLayoutGuide.trailingAnchor),
             preferredWidth,
         ]
         let webViewAboveInput = webViewContainer.bottomAnchor.constraint(equalTo: container.topAnchor)
@@ -196,10 +186,6 @@ extension TabViewController {
         container.removeFromSuperview()
         fullTabChatInputContainer = nil
         webViewContainerBottomConstraint?.isActive = true
-    }
-
-    func setFullTabChatInputSeparatorVisible(_ visible: Bool) {
-        fullTabChatInputContainer?.topSeparator.isHidden = !visible
     }
 
     /// Voice mode and the FE's `hideChatInput` give the chat the whole tab.

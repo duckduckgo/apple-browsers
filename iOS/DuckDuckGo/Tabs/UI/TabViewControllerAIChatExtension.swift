@@ -93,6 +93,11 @@ extension TabViewController: AITabController {
 
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction() {
+        // On iPad the native chats sidebar stands in for the page's own.
+        if let chatListSidebarContainer {
+            chatListSidebarContainer.requestToggle()
+            return
+        }
         aiChatContentHandler.submitToggleSidebarAction()
     }
     

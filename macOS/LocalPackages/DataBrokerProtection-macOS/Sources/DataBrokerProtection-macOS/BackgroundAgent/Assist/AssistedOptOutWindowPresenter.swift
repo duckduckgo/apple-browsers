@@ -107,6 +107,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     private let onClose: @MainActor () -> Void
     private let pageView = NSView()
     private let edgeView = AssistedOptOutEdgeOverlayView()
+    private let inputBlocker = AssistedOptOutInputBlocker()
     private let coverView: NSView
     private var cancellables = Set<AnyCancellable>()
     private var isClosed = false
@@ -174,7 +175,8 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         let divider = NSBox(frame: NSRect(x: 0, y: 0, width: 1, height: 100))
         divider.boxType = .separator
 
-        for (view, superview) in [(coverView, pageView), (pageView, content), (edgeView, content),
+        inputBlocker.isHidden = true
+        for (view, superview) in [(coverView, pageView), (inputBlocker, pageView), (pageView, content), (edgeView, content),
                                   (divider, content), (panel, content)] as [(NSView, NSView)] {
             view.translatesAutoresizingMaskIntoConstraints = false
             superview.addSubview(view)
@@ -192,7 +194,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
             panel.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             panel.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             panel.widthAnchor.constraint(equalToConstant: 320)
-        ] + pinned(coverView, to: pageView) + pinned(edgeView, to: pageView))
+        ] + pinned(coverView, to: pageView) + pinned(inputBlocker, to: pageView) + pinned(edgeView, to: pageView))
         return content
     }
 
@@ -236,15 +238,21 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
 
     private func update(phase: AssistedAttemptPhase, hasLoadedPage: Bool) {
         window?.level = phase == .userTurn ? .floating : .normal
-        if !hasLoadedPage, phase == .userTurn || phase == .submitted {
-            page.revealPage()
-            return
-        }
-        coverView.isHidden = phase != .ready && hasLoadedPage
+        let showsPage = hasLoadedPage || phase == .userTurn || phase == .submitted
+        if showsPage, !hasLoadedPage { page.revealPage() }
+        coverView.isHidden = phase != .ready && showsPage
         switch phase {
-        case .ready, .submitted: edgeView.setEdge(.none)
-        case .queued, .agentInControl: edgeView.setEdge(.agent)
-        case .userTurn: edgeView.setEdge(.user)
+        case .ready, .submitted:
+            edgeView.setEdge(.none)
+            inputBlocker.isHidden = true
+        case .queued, .agentInControl:
+            edgeView.setEdge(.agent)
+            inputBlocker.isHidden = false
+            window?.makeFirstResponder(inputBlocker)
+        case .userTurn:
+            edgeView.setEdge(.user)
+            inputBlocker.isHidden = true
+            if let webView = session.webView { window?.makeFirstResponder(webView) }
         }
     }
 

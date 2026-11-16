@@ -400,6 +400,7 @@ class ToWebViewTransition: WebViewTransition {
                                  mainViewController: mainViewController,
                                  webView: webView,
                                  preview: preview,
+                                 cellSnapshot: cellSnapshot,
                                  isFloating: isFloating,
                                  usesFloatingTopBackdrop: usesFloatingTopBackdrop)
             return
@@ -463,6 +464,7 @@ class ToWebViewTransition: WebViewTransition {
                                       mainViewController: MainViewController,
                                       webView: WKWebView,
                                       preview: UIImage?,
+                                      cellSnapshot: UIView?,
                                       isFloating: Bool,
                                       usesFloatingTopBackdrop: Bool) {
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating), delay: 0, options: .calculationModeLinear, animations: {

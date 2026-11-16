@@ -805,7 +805,13 @@ final class NavigationBarViewController: NSViewController {
                                                            themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
-                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab },
+                                                           nativeMessagingAlertPresenter: NativeMessagingAlertPresenter(
+                                                               limitationProvider: { NSApp.delegateTyped.webExtensionManager },
+                                                               alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window },
+                                                                                                          themeManager: appThemeManager),
+                                                               windowControllersManager: Application.appDelegate.windowControllersManager
+                                                           ))
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
             subscribeToWebExtensionInstalls(updater: updater)

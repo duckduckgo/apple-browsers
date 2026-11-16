@@ -25,89 +25,50 @@ import XCTest
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionPermissionPromptTests: XCTestCase {
-    private var alertPresenter: WebExtensionAlertPresenterMock!
-    private var windowControllersManager: WindowControllersManagerMock!
+    private var nativeMessagingAlertPresenter: NativeMessagingAlertPresenterMock!
     private var prompt: WebExtensionPermissionPrompt!
 
     override func setUp() {
         super.setUp()
-        alertPresenter = WebExtensionAlertPresenterMock()
-        windowControllersManager = WindowControllersManagerMock()
+        nativeMessagingAlertPresenter = NativeMessagingAlertPresenterMock()
         prompt = WebExtensionPermissionPrompt(
             windowProvider: { nil },
             themeManager: ThemeManager(appearancePreferences: .mock),
-            alertPresenter: alertPresenter,
-            nativeMessagingAlertSuppressionStore: NativeMessagingAlertSuppressionStore(),
-            windowControllersManager: windowControllersManager
+            nativeMessagingAlertPresenter: nativeMessagingAlertPresenter
         )
     }
 
     override func tearDown() {
         prompt = nil
-        windowControllersManager = nil
-        alertPresenter = nil
+        nativeMessagingAlertPresenter = nil
         super.tearDown()
     }
 
-    func testWhenOKIsPressedWithoutTheCheckboxThenThePlainAlertIsShownAgainOnTheNextRequest() async throws {
-        alertPresenter.response = .confirmed(isChecked: false)
-        let bitwarden = try await makeContext(named: "Bitwarden")
+    func testWhenOnlyNativeMessagingIsRequestedThenTheNativeMessagingAlertExplainsIt() async throws {
+        let context = try await makeContext()
 
-        await requestNativeMessaging(from: [bitwarden, bitwarden])
+        _ = await prompt.confirmPermissions(WebExtensionPermissionRequest(unavailablePermissions: [.nativeMessaging]), for: context)
 
-        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), Array(repeating: "Bitwarden can’t connect to apps on your Mac", count: 2))
-        XCTAssertNil(alertPresenter.presentedConfigurations.first?.icon)
-        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.confirmTitle, UserText.ok)
-        XCTAssertNotNil(alertPresenter.presentedConfigurations.first?.checkbox)
+        XCTAssertEqual(nativeMessagingAlertPresenter.explainedIdentifiers, [context.uniqueIdentifier])
     }
 
-    func testWhenOKIsPressedWithTheCheckboxThenOnlyThatExtensionStopsShowingTheAlert() async throws {
-        alertPresenter.response = .confirmed(isChecked: true)
-        let bitwarden = try await makeContext(named: "Bitwarden")
-        let otherExtension = try await makeContext(named: "Other")
-
-        await requestNativeMessaging(from: [bitwarden, bitwarden, otherExtension])
-
-        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), [
-            "Bitwarden can’t connect to apps on your Mac",
-            "Other can’t connect to apps on your Mac"
-        ])
-    }
-
-    func testWhenLearnMoreIsPressedThenTheHelpPageOpensInANewTab() async throws {
-        alertPresenter.response = .secondary
-        let bitwarden = try await makeContext(named: "Bitwarden")
-
-        await requestNativeMessaging(from: [bitwarden])
-
-        XCTAssertEqual(windowControllersManager.showCalled?.url, .ddgLearnMore)
-        XCTAssertEqual(windowControllersManager.showCalled?.newTab, true)
-    }
-
-    private func requestNativeMessaging(from contexts: [WKWebExtensionContext]) async {
-        for context in contexts {
-            _ = await prompt.confirmPermissions(WebExtensionPermissionRequest(unavailablePermissions: [.nativeMessaging]), for: context)
-        }
-    }
-
-    private func makeContext(named name: String) async throws -> WKWebExtensionContext {
+    private func makeContext() async throws -> WKWebExtensionContext {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         addTeardownBlock { try FileManager.default.removeItem(at: directory) }
-        try Data("{\"manifest_version\":3,\"name\":\"\(name)\",\"version\":\"1.0\"}".utf8).write(to: directory.appendingPathComponent("manifest.json"))
+        try Data("{\"manifest_version\":3,\"name\":\"Bitwarden\",\"version\":\"1.0\"}".utf8).write(to: directory.appendingPathComponent("manifest.json"))
         let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
         context.uniqueIdentifier = UUID().uuidString
         return context
     }
 }
 
+@available(macOS 15.4, *)
 @MainActor
-private final class WebExtensionAlertPresenterMock: WebExtensionAlertPresenterProtocol {
-    var response: WebExtensionAlert.Response = .cancelled
-    private(set) var presentedConfigurations: [WebExtensionAlert.Configuration] = []
+private final class NativeMessagingAlertPresenterMock: NativeMessagingAlertPresenterProtocol {
+    private(set) var explainedIdentifiers: [String] = []
 
-    func present(_ configuration: WebExtensionAlert.Configuration) async -> WebExtensionAlert.Response {
-        presentedConfigurations.append(configuration)
-        return response
+    func explain(_ context: WKWebExtensionContext) async {
+        explainedIdentifiers.append(context.uniqueIdentifier)
     }
 }

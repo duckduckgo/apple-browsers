@@ -374,19 +374,36 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         _ = await requestPermissions([.nativeMessaging], from: manager, for: context)
 
         XCTAssertTrue(manager.hasHitNativeMessagingLimitation(identifier: context.uniqueIdentifier))
-        XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).hasHitLimitation(storeIdentifier: limitedStoreID))
+        XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).hasHitLimitation(extensionKey: limitedStoreID))
     }
 
-    func testWhenAnExtensionThatHitTheLimitationIsUninstalledThenTheLimitationIsForgotten() async throws {
+    func testWhenAnExtensionThatHitTheLimitationIsUninstalledThenItsStateIsForgotten() async throws {
         let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
         recordStoreInstallation(of: context)
         let limitationStore = NativeMessagingLimitationStore(keyValueStore: keyValueStore)
-        limitationStore.recordLimitation(storeIdentifier: limitedStoreID)
+        limitationStore.recordLimitation(extensionKey: limitedStoreID)
+        limitationStore.suppressAlert(extensionKey: limitedStoreID)
         let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging], nativeMessagingLimitationStore: limitationStore)
 
         try? manager.uninstallExtension(identifier: context.uniqueIdentifier)
 
-        XCTAssertFalse(limitationStore.hasHitLimitation(storeIdentifier: limitedStoreID))
+        XCTAssertFalse(limitationStore.hasHitLimitation(extensionKey: limitedStoreID))
+        XCTAssertFalse(limitationStore.isAlertSuppressed(extensionKey: limitedStoreID))
+    }
+
+    func testWhenTheAlertIsSuppressedThenItStaysSuppressedForThatExtensionOnly() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        let otherContext = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        recordStoreInstallation(of: context)
+        recordStoreInstallation(of: otherContext, storeID: "aeblfdkhhhdcdjpifhhbdiojplfjncoa")
+        let manager = makeManager(permissionController: nil,
+                                  unavailablePermissions: [.nativeMessaging],
+                                  nativeMessagingLimitationStore: NativeMessagingLimitationStore(keyValueStore: keyValueStore))
+
+        manager.suppressNativeMessagingAlert(identifier: context.uniqueIdentifier)
+
+        XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).isAlertSuppressed(extensionKey: limitedStoreID))
+        XCTAssertFalse(manager.isNativeMessagingAlertSuppressed(identifier: otherContext.uniqueIdentifier))
     }
 
     func testWhenAdditionalPermissionsAreDeniedThenGrantsDoNotChange() async throws {
@@ -1211,12 +1228,12 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                                    nativeMessagingLimitationStore: nativeMessagingLimitationStore)
     }
 
-    private func recordStoreInstallation(of context: WKWebExtensionContext) {
+    private func recordStoreInstallation(of context: WKWebExtensionContext, storeID: String? = nil) {
         installationStore.installedExtensions.append(InstalledWebExtension(uniqueIdentifier: context.uniqueIdentifier,
                                                                            filename: context.uniqueIdentifier,
                                                                            name: nil,
                                                                            version: "1.0",
-                                                                           storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: limitedStoreID)))
+                                                                           storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID ?? limitedStoreID)))
     }
 
     private func requestPermissions(

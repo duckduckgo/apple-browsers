@@ -20,49 +20,64 @@ import Foundation
 import os.log
 import Persistence
 
-/// Remembers which extensions tried to talk to an app on the Mac in a build that can't allow it,
-/// such as the App Store build, so Settings can tell the user that some of their features won't work.
-/// Keyed by store ID, so the note survives extension updates.
+/// Remembers, across launches, which extensions tried to talk to an app on the Mac in a build that can't allow it,
+/// such as the App Store build, and which of them the user asked not to be warned about again.
+/// Keyed by store ID where there is one, so the state survives extension updates.
 @MainActor
 public protocol NativeMessagingLimitationStoreProtocol: AnyObject {
-    func hasHitLimitation(storeIdentifier: String) -> Bool
-    func recordLimitation(storeIdentifier: String)
-    func forget(storeIdentifier: String)
+    func hasHitLimitation(extensionKey: String) -> Bool
+    func recordLimitation(extensionKey: String)
+    func isAlertSuppressed(extensionKey: String) -> Bool
+    func suppressAlert(extensionKey: String)
+    func forget(extensionKey: String)
 }
 
 @MainActor
 public final class NativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol {
-    private let key = "web-extension-native-messaging-limitation"
+    private enum Key: String {
+        case limited = "web-extension-native-messaging-limitation"
+        case alertSuppressed = "web-extension-native-messaging-alert-suppressed"
+    }
+
     private let keyValueStore: any ThrowingKeyValueStoring
 
     nonisolated public init(keyValueStore: any ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
     }
 
-    public func hasHitLimitation(storeIdentifier: String) -> Bool {
-        storeIdentifiers.contains(storeIdentifier)
+    public func hasHitLimitation(extensionKey: String) -> Bool {
+        keys(for: .limited).contains(extensionKey)
     }
 
-    public func recordLimitation(storeIdentifier: String) {
-        save(storeIdentifiers.union([storeIdentifier]))
+    public func recordLimitation(extensionKey: String) {
+        save(keys(for: .limited).union([extensionKey]), for: .limited)
     }
 
-    public func forget(storeIdentifier: String) {
-        save(storeIdentifiers.subtracting([storeIdentifier]))
+    public func isAlertSuppressed(extensionKey: String) -> Bool {
+        keys(for: .alertSuppressed).contains(extensionKey)
     }
 
-    private var storeIdentifiers: Set<String> {
+    public func suppressAlert(extensionKey: String) {
+        save(keys(for: .alertSuppressed).union([extensionKey]), for: .alertSuppressed)
+    }
+
+    public func forget(extensionKey: String) {
+        save(keys(for: .limited).subtracting([extensionKey]), for: .limited)
+        save(keys(for: .alertSuppressed).subtracting([extensionKey]), for: .alertSuppressed)
+    }
+
+    private func keys(for key: Key) -> Set<String> {
         do {
-            return Set(try keyValueStore.object(forKey: key) as? [String] ?? [])
+            return Set(try keyValueStore.object(forKey: key.rawValue) as? [String] ?? [])
         } catch {
             Logger.webExtensions.error("Could not read the native messaging limitation: \(error.localizedDescription)")
             return []
         }
     }
 
-    private func save(_ identifiers: Set<String>) {
+    private func save(_ extensionKeys: Set<String>, for key: Key) {
         do {
-            try keyValueStore.set(identifiers.sorted(), forKey: key)
+            try keyValueStore.set(extensionKeys.sorted(), forKey: key.rawValue)
         } catch {
             Logger.webExtensions.error("Could not save the native messaging limitation: \(error.localizedDescription)")
         }

@@ -1448,26 +1448,48 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func hasHitNativeMessagingLimitation(identifier: String) -> Bool {
-        guard let nativeMessagingLimitationStore, let storeIdentity = installedExtension(identifier: identifier)?.storeIdentity else { return false }
-        return nativeMessagingLimitationStore.hasHitLimitation(storeIdentifier: storeIdentity.id)
+        guard let nativeMessagingLimitationStore, let key = nativeMessagingLimitationKey(for: identifier) else { return false }
+        return nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key)
+    }
+
+    @MainActor
+    public func isNativeMessagingAlertSuppressed(identifier: String) -> Bool {
+        guard let nativeMessagingLimitationStore, let key = nativeMessagingLimitationKey(for: identifier) else { return false }
+        return nativeMessagingLimitationStore.isAlertSuppressed(extensionKey: key)
+    }
+
+    @MainActor
+    public func suppressNativeMessagingAlert(identifier: String) {
+        guard let nativeMessagingLimitationStore, let key = nativeMessagingLimitationKey(for: identifier) else { return }
+        nativeMessagingLimitationStore.suppressAlert(extensionKey: key)
     }
 
     @MainActor
     func recordNativeMessagingLimitation(for extensionContext: WKWebExtensionContext) {
         guard let nativeMessagingLimitationStore,
-              let storeIdentity = installedExtension(identifier: extensionContext.uniqueIdentifier)?.storeIdentity,
-              !nativeMessagingLimitationStore.hasHitLimitation(storeIdentifier: storeIdentity.id) else { return }
-        nativeMessagingLimitationStore.recordLimitation(storeIdentifier: storeIdentity.id)
+              let key = nativeMessagingLimitationKey(for: extensionContext.uniqueIdentifier),
+              !nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key) else { return }
+        nativeMessagingLimitationStore.recordLimitation(extensionKey: key)
         NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
     }
 
-    /// Updates install the new version before removing the old one, so the note stays while any version is installed.
+    /// The store ID, so the state survives updates, or the installation ID for extensions from elsewhere.
+    @MainActor
+    private func nativeMessagingLimitationKey(for identifier: String) -> String? {
+        guard let installed = installedExtension(identifier: identifier) else { return nil }
+        return installed.storeIdentity?.id ?? installed.uniqueIdentifier
+    }
+
+    /// Updates install the new version before removing the old one, so the state stays while any version is installed.
     @MainActor
     private func forgetNativeMessagingLimitation(of installedExtension: InstalledWebExtension?) {
-        guard let nativeMessagingLimitationStore,
-              let storeIdentity = installedExtension?.storeIdentity,
-              installationStore.installedExtensions(withStoreIdentity: storeIdentity).isEmpty else { return }
-        nativeMessagingLimitationStore.forget(storeIdentifier: storeIdentity.id)
+        guard let nativeMessagingLimitationStore, let installedExtension else { return }
+        guard let storeIdentity = installedExtension.storeIdentity else {
+            nativeMessagingLimitationStore.forget(extensionKey: installedExtension.uniqueIdentifier)
+            return
+        }
+        guard installationStore.installedExtensions(withStoreIdentity: storeIdentity).isEmpty else { return }
+        nativeMessagingLimitationStore.forget(extensionKey: storeIdentity.id)
     }
 
     @MainActor

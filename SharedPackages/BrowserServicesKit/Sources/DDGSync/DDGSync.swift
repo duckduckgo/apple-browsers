@@ -736,6 +736,8 @@ public class DDGSync: DDGSyncing {
     }
 
     private func startForegroundAuditLogPolling() {
+        // Scheduler-triggered polls follow normal Sync suspension; explicit audit polls remain independent.
+        guard syncQueue?.isSuspended == false else { return }
         do {
             guard let account = try accountForAuditLogPolling(),
                   let task = auditLogPoller?.startPolling(for: account) else { return }

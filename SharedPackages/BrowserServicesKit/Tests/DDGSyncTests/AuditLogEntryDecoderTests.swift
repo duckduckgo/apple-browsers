@@ -671,6 +671,10 @@ struct AuditLogEntryDecoderTests {
         ]])
         return HTTPResult(data: body, response: HTTPURLResponse(url: URL(string: "https://dev.null")!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
     }
+
+    private func makeAuditLogRequest(_ entries: [AuditLogEntry]) throws -> HTTPRequestingMock {
+        HTTPRequestingMock(result: try makeAuditLogResponse(entries))
+    }
 }
 
 private struct RegisteredDeviceMappingTestDouble: RegisteredDeviceMapping {

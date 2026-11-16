@@ -138,6 +138,8 @@ final class SyncQueue {
         operationQueue.addOperation(operation)
     }
 
+    var isSuspended: Bool { operationQueue.isSuspended }
+
     func cancelOngoingSyncAndSuspendQueue() {
         Logger.sync.debug("Cancelling sync and suspending sync queue")
         operationQueue.cancelAllOperations()

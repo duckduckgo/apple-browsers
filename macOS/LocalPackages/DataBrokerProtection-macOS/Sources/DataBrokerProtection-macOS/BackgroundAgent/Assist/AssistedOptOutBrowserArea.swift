@@ -295,6 +295,19 @@ final class AssistedOptOutEdgeOverlayView: NSView {
 }
 
 @MainActor
+final class AssistedOptOutInputBlocker: NSView {
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {}
+
+    override func scrollWheel(with event: NSEvent) {}
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
+    }
+}
+
+@MainActor
 struct AssistedOptOutPageCover: View {
     @Environment(\.designSystemPalette) private var palette
     @ObservedObject var session: AssistedOptOutSession

@@ -51,14 +51,14 @@ public struct AssistedOptOut: Codable, Equatable, Sendable {
 
     public let id: String
     public let dataBroker: DataBroker
-    public let recordCount: Int
+    public let extractedProfileId: Int64
     public let state: State
     public let step: Step?
 
-    public init(id: String, dataBroker: DataBroker, recordCount: Int = 1, state: State, step: Step? = nil) {
+    public init(id: String, dataBroker: DataBroker, extractedProfileId: Int64, state: State, step: Step? = nil) {
         self.id = id
         self.dataBroker = dataBroker
-        self.recordCount = recordCount
+        self.extractedProfileId = extractedProfileId
         self.state = state
         self.step = step
     }

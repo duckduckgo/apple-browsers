@@ -24,7 +24,6 @@ import WebKit
 public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObserving, Identifiable {
     public let id: AssistedOptOutID
     public let broker: AssistedOptOut.DataBroker
-    public let recordCount: Int
     public let steps: AssistedOptOutSteps
 
     @Published public private(set) var phase: AssistedAttemptPhase = .ready
@@ -47,11 +46,10 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
     private var userTurnActionID: String?
     private(set) var isCancelled = false
 
-    public init(id: AssistedOptOutID, broker: AssistedOptOut.DataBroker, recordCount: Int, steps: AssistedOptOutSteps,
+    public init(id: AssistedOptOutID, broker: AssistedOptOut.DataBroker, steps: AssistedOptOutSteps,
                 instrumentation: AssistedOptOutInstrumentation? = nil, now: @escaping () -> Date = Date.init) {
         self.id = id
         self.broker = broker
-        self.recordCount = recordCount
         self.steps = steps
         self.instrumentation = instrumentation
         self.now = now
@@ -68,7 +66,7 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
         }
         return AssistedOptOut(id: id.description,
                               dataBroker: broker,
-                              recordCount: recordCount,
+                              extractedProfileId: id.extractedProfileId,
                               state: AssistedOptOut.State(phase: phase, isWindowKey: isWindowKey),
                               step: step)
     }

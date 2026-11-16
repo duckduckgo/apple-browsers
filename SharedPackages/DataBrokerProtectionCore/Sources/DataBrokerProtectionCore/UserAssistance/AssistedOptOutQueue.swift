@@ -138,17 +138,11 @@ public final class AssistedOptOutQueue {
         }
         let config = loaded.config
         guard config.isEnabled else { return [] }
-        let candidates = loaded.candidates
         let live = activeSessions.filter { config.isEnabled(forBrokerURL: $0.broker.url) }.map(\.dashboardItem)
-        let openBrokerIDs = Set(sessions.keys.map(\.brokerId))
-        let groups = Dictionary(grouping: candidates.filter {
-            isAwaiting($0) && !openBrokerIDs.contains($0.id.brokerId)
-        }, by: { $0.id.brokerId })
-        let waiting = groups.keys.sorted().compactMap { brokerID -> AssistedOptOut? in
-            guard let group = groups[brokerID], let first = group.first else { return nil }
-            return AssistedOptOut(id: first.id.description,
-                                  dataBroker: .init(name: first.data.dataBroker.name, url: first.data.dataBroker.url),
-                                  recordCount: group.count, state: .waiting)
+        let waiting = loaded.candidates.filter { sessions[$0.id] == nil && isAwaiting($0) }.map {
+            AssistedOptOut(id: $0.id.description,
+                           dataBroker: .init(name: $0.data.dataBroker.name, url: $0.data.dataBroker.url),
+                           extractedProfileId: $0.id.extractedProfileId, state: .waiting)
         }
         return live + waiting
     }
@@ -169,10 +163,9 @@ public final class AssistedOptOutQueue {
               runningID == nil, !sessions.values.contains(where: { $0.phase != .submitted }),
               let candidate = loaded.candidates.first(where: { $0.id == id && isAwaiting($0) }),
               let actions = candidate.data.dataBroker.optOutStep()?.actions else { return }
-        let recordCount = loaded.candidates.filter { $0.id.brokerId == id.brokerId && isAwaiting($0) }.count
         let session = AssistedOptOutSession(id: id,
                                             broker: .init(name: candidate.data.dataBroker.name, url: candidate.data.dataBroker.url),
-                                            recordCount: recordCount, steps: AssistedOptOutSteps(actions: actions),
+                                            steps: AssistedOptOutSteps(actions: actions),
                                             instrumentation: instrumentation, now: now)
         session.onBeginRequested = { [weak self] in self?.begin($0, candidate: candidate) }
         session.onUserTurnStarted = { [weak self] in self?.presenter?.userTurnStarted(in: $0) }

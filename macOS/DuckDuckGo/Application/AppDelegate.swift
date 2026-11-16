@@ -1309,7 +1309,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 notificationPresenter: notificationPresenter,
                                                                                 uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
-                                                                                dockCustomization: dockCustomization)
+                                                                                dockCustomization: dockCustomization,
+                                                                                addToDockVideoFeatureFlagger: featureFlagger,
+                                                                                addToDockVideoPresenter: addToDockVideoPresenter)
         // Dedicated store: EventHub flushes often and `KeyValueFileStore.set` rewrites the whole file.
         // `try?` — telemetry runs in memory rather than failing launch.
         eventHubIntegration = MacOSEventHubIntegration(

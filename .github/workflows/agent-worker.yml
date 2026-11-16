@@ -85,6 +85,12 @@ jobs:
           sparse-checkout: scripts/agent-worker
           persist-credentials: false
 
+      # Bitrise images don't ship the Azure CLI that azure/login and blobs.sh need
+      - name: Install Azure CLI
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: command -v az > /dev/null || brew install azure-cli > /dev/null
+
       - name: Azure login (GitHub OIDC)
         uses: azure/login@v3
         with:
@@ -249,6 +255,12 @@ jobs:
           path: worker
           sparse-checkout: scripts/agent-worker
           persist-credentials: false
+
+      # Bitrise images don't ship the Azure CLI that azure/login and blobs.sh need
+      - name: Install Azure CLI
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: command -v az > /dev/null || brew install azure-cli > /dev/null
 
       - name: Azure login (GitHub OIDC)
         uses: azure/login@v3

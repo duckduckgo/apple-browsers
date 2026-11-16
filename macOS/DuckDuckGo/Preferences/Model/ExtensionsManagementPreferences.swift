@@ -115,10 +115,6 @@ final class ExtensionsManagementPreferences: ObservableObject {
         windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
     }
 
-    func openNativeMessagingLearnMore() {
-        windowControllersManager.show(url: .ddgLearnMore, source: .ui, newTab: true, selected: true)
-    }
-
     func openRemoteDisableLearnMore() {
         let configuredURL = configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrlRemoteDisable"] as? String
         let url = configuredURL.flatMap(URL.init(string:)) ?? Self.remoteDisableLearnMoreFallbackURL
@@ -138,7 +134,6 @@ extension ExtensionsManagementPreferences {
         let permissions: [String]
         let matchPatterns: [String]
         let hasAccessToPrivateData: Bool?
-        let hasHitNativeMessagingLimitation: Bool
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
@@ -164,7 +159,6 @@ private extension ExtensionsManagementPreferences {
             .publisher(for: .chromeWebStoreExtensionChanged)
             .merge(with: NotificationCenter.default.publisher(for: .webExtensionsDidChangeLoadedExtensions))
             .merge(with: NotificationCenter.default.publisher(for: .webExtensionPrivateAccessDidChange))
-            .merge(with: NotificationCenter.default.publisher(for: .webExtensionNativeMessagingLimitationDidChange))
             .asVoid()
 
         configurationManager.updatesPublisher
@@ -221,8 +215,7 @@ private extension ExtensionsManagementPreferences {
                                                 isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
                                                 permissions: manager.extensionPermissions(for: identifier),
                                                 matchPatterns: manager.extensionMatchPatterns(for: identifier),
-                                                hasAccessToPrivateData: manager.hasAccessToPrivateData(for: identifier),
-                                                hasHitNativeMessagingLimitation: manager.hasHitNativeMessagingLimitation(identifier: identifier))
+                                                hasAccessToPrivateData: manager.hasAccessToPrivateData(for: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

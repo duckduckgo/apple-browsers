@@ -78,7 +78,7 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
                                            storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID))
         let entry = ExtensionsManagementPreferences.InstalledExtensionEntry(record: record, listing: try listing(),
                                                                             isRemotelyDisabled: false, permissions: [], matchPatterns: [],
-                                                                            hasAccessToPrivateData: nil, hasHitNativeMessagingLimitation: false)
+                                                                            hasAccessToPrivateData: nil)
 
         model.showDetails(for: entry)
 

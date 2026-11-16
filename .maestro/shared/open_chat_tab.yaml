@@ -15,6 +15,7 @@ appId: com.duckduckgo.mobile.ios
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.aiChatTabHandoffImprovements: "true"
+- runFlow: dismiss_launch_keyboard.yaml
 
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"

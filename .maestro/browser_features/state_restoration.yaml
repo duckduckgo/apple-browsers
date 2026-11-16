@@ -53,6 +53,7 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 - tapOn:
     text: "Tab Switcher"

@@ -16,6 +16,7 @@ tags:
         "autoclear-ui-test": true
         isRunningUITests: true
         isInternalUser: ${INTERNAL_USER_MODE}
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # Enable autoclear
 

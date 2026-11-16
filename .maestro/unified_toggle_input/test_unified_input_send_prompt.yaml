@@ -20,6 +20,7 @@ name: test_unified_input_send_prompt
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # Dismiss any launch-time modal BEFORE navigating the Browsing Menu.
 - runFlow:

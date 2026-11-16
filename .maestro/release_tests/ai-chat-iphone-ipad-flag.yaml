@@ -17,6 +17,7 @@ tags:
         isRunningUITests: true
         isInternalUser: ${INTERNAL_USER_MODE}
         ff.iPadAIToggle: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # iPhone address bar shows Duck.ai button; iPad ModeToggle controls never appear on iPhone
 - assertVisible:

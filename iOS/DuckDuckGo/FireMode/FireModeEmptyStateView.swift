@@ -46,7 +46,7 @@ struct FireModeEmptyStateView: View {
             switch self {
             case .tab:
                 return false
-            case .tabSwitcher(let onNewFireTab):
+            case .tabSwitcher:
                 return true
             }
         }

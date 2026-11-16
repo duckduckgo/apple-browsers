@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 extension Color {
 

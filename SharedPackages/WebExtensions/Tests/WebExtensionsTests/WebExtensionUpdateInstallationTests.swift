@@ -29,7 +29,8 @@ final class WebExtensionUpdateInstallationTests: XCTestCase {
     private let identifier = UUID().uuidString
     private let storeID = ChromeWebStoreID.bitwarden.rawValue
     private let installationStore = InstalledWebExtensionStoringMock()
-    private let permissionStore = WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore())
+    private let permissionValues = InMemoryThrowingKeyValueStore()
+    private lazy var permissionStore = WebExtensionPermissionStore(keyValueStore: permissionValues)
     private var directory: URL!
 
     override func setUpWithError() throws {
@@ -42,6 +43,133 @@ final class WebExtensionUpdateInstallationTests: XCTestCase {
 
     private var original: InstalledWebExtension {
         .init(uniqueIdentifier: identifier, filename: identifier, name: "Fixture", version: "1.0", storeIdentity: .init(store: .chromeWebStore, id: storeID))
+    }
+
+    func testRuntimeUpdateReplacesTheLoadedContextWithoutChangingIdentity() async throws {
+        let manager = makeManager()
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: identifier))
+
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, application: .whileInactive, isEligible: { true })
+
+        let replacement = try XCTUnwrap(manager.context(for: identifier))
+        XCTAssertFalse(replacement === incumbent)
+        XCTAssertEqual(replacement.uniqueIdentifier, incumbent.uniqueIdentifier)
+        XCTAssertEqual(replacement.baseURL, incumbent.baseURL)
+        XCTAssertEqual(replacement.webExtension.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, false)
+        manager.unloadAllExtensions()
+    }
+
+    func testRuntimeUpdatePreservesTheIncumbentsCurrentGrantsAndPrivateAccess() async throws {
+        try writePackage(version: "1.0", at: directory.appendingPathComponent(identifier), permissions: ["storage"])
+        var approved = WebExtensionPermissionSettings()
+        approved.grantedPermissions = ["storage": .distantFuture]
+        try permissionStore.save(approved, for: identifier)
+        let manager = makeManager(enforcePermissions: true)
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: identifier))
+        let expiration = Date(timeIntervalSince1970: 2_000_000_000)
+        incumbent.grantedPermissions[.storage] = expiration
+        incumbent.hasAccessToPrivateData = true
+
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(permissions: ["storage"]), replacing: original, application: .whileInactive, isEligible: { true })
+
+        let replacement = try XCTUnwrap(manager.context(for: identifier))
+        XCTAssertEqual(replacement.grantedPermissions[.storage], expiration)
+        XCTAssertTrue(replacement.hasAccessToPrivateData)
+        XCTAssertEqual(try permissionStore.settings(for: identifier)?.grantedPermissions["storage"], expiration)
+        manager.unloadAllExtensions()
+    }
+
+    func testRuntimeConsentSnapshotFailurePreservesTheLoadedIncumbent() async throws {
+        try permissionStore.save(WebExtensionPermissionSettings(), for: identifier)
+        let manager = makeManager(enforcePermissions: true)
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: identifier))
+        incumbent.hasAccessToPrivateData = true
+        permissionValues.shouldThrowOnSet = true
+
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, application: .whileInactive, isEligible: { true })
+            XCTFail("A failed consent snapshot must not unload the active extension")
+        } catch { }
+
+        XCTAssertTrue(manager.context(for: identifier) === incumbent)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        permissionValues.shouldThrowOnSet = false
+        manager.unloadAllExtensions()
+    }
+
+    func testRuntimeActivityChangeDuringDNRSettlePreservesTheLoadedIncumbent() async throws {
+        try writePackage(version: "1.0", at: directory.appendingPathComponent(identifier), permissions: ["declarativeNetRequest"])
+        let manager = makeManager()
+        var allowed = true
+        var didSettle = false
+        manager.unloadGuard = WebExtensionUnloadGuard(now: { Date(timeIntervalSinceReferenceDate: 0) }, sleeper: { _ in
+            didSettle = true
+            allowed = false
+        })
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: identifier))
+
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, application: .whileInactive, isEligible: { allowed })
+            XCTFail("Reactivation during the unload settle window must defer the update")
+        } catch WebExtensionManager.UpdateInstallationError.installationChanged { }
+
+        XCTAssertTrue(didSettle)
+        XCTAssertTrue(manager.context(for: identifier) === incumbent)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        manager.unloadAllExtensions()
+    }
+
+    func testRuntimeUnloadFailurePreservesTheIncumbentAndItsSelection() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        await manager.loadInstalledExtensions()
+        let incumbent = try XCTUnwrap(manager.context(for: identifier))
+        loader.rejectUnload = true
+
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, application: .whileInactive, isEligible: { true })
+            XCTFail("A failed native unload must prevent publication")
+        } catch UpdateTestLoader.LoadError.injectedUnload { }
+
+        XCTAssertTrue(manager.context(for: identifier) === incumbent)
+        XCTAssertEqual(installationStore.installedExtensions, [original])
+        loader.rejectUnload = false
+        manager.unloadAllExtensions()
+    }
+
+    func testRuntimeActivationFailureDoesNotDiscardTheSelectedPackage() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        await manager.loadInstalledExtensions()
+        loader.rejectLoad = true
+
+        do {
+            _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, application: .whileInactive, isEligible: { true })
+            XCTFail("The injected native activation must fail")
+        } catch UpdateTestLoader.LoadError.injected { }
+
+        let selected = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertEqual(selected.version, "2.0")
+        XCTAssertTrue(selected.needsInitialUpdateActivationValidation)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.appendingPathComponent(selected.resourceIdentifier).appendingPathComponent("manifest.json").path))
+        XCTAssertNil(manager.context(for: identifier))
+    }
+
+    func testRuntimeActivationCompletesAfterActivityChangesFollowingPublication() async throws {
+        let (manager, loader) = makeInterceptedManager()
+        await manager.loadInstalledExtensions()
+        var allowed = true
+        loader.beforeLoad = { allowed = false }
+
+        _ = try await manager.applyVerifiedUpdate(makeUpdate(), replacing: original, application: .whileInactive, isEligible: { allowed })
+
+        XCTAssertFalse(allowed)
+        XCTAssertEqual(manager.context(for: identifier)?.webExtension.version, "2.0")
+        XCTAssertEqual(installationStore.installedExtensions.first?.needsInitialUpdateActivationValidation, false)
+        manager.unloadAllExtensions()
     }
 
     func testFreshStoreInstallUsesVersionedPackageAndPreservesIdentityOnReload() async throws {
@@ -266,7 +394,7 @@ final class WebExtensionUpdateInstallationTests: XCTestCase {
         let manager = makeManager()
         let installer = ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: ChromeWebStorePendingUpdateStore(),
                                                      isEnabled: { true }, isCatalogExtension: { _ in true })
-        manager.startupUpdateInstaller = installer
+        manager.updateInstaller = installer
         defer { installer.cancelStartup() }
         await installer.runOnce()
         try await manager.enableExtension(identifier: identifier)

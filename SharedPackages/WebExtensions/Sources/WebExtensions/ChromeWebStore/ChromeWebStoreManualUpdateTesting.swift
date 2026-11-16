@@ -17,6 +17,7 @@
 //
 
 #if DEBUG && os(macOS)
+import Combine
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -85,7 +86,9 @@ public struct ChromeWebStoreManualUpdateTesting {
                             enforcesPermissions: Bool,
                             presenter: ChromeWebStorePresenting,
                             internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
-                            isUpdateDiscoveryEnabled: @escaping @MainActor @Sendable () -> Bool = { true }) -> WebExtensionManager {
+                            isUpdateDiscoveryEnabled: @escaping @MainActor @Sendable () -> Bool = { true },
+                            updateApplicationPolicy: ((WebExtensionManager) -> (@MainActor (String) -> Bool))? = nil,
+                            updateApplicationActivityUpdates: AnyPublisher<Void, Never>? = nil) -> WebExtensionManager {
         let installed = InstalledWebExtensionStore(storage: defaults.keyedStoring())
         let permissions = enforcesPermissions
             ? WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: defaults),
@@ -100,12 +103,13 @@ public struct ChromeWebStoreManualUpdateTesting {
         let catalog = ManualUpdateCatalog()
         let pending = ChromeWebStorePendingUpdateStore(persistentDirectory: extensionsDirectory.appendingPathComponent(".pending-updates"))
         let installer = ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: pending,
-                                                     isEnabled: isUpdateDiscoveryEnabled, isCatalogExtension: { catalog.contains($0) })
+                                                     isEnabled: isUpdateDiscoveryEnabled, isCatalogExtension: { catalog.contains($0) },
+                                                     canApplyWhileInactive: updateApplicationPolicy?(manager))
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager, catalog: catalog, downloader: ChromeWebStoreDownloader(), presenter: presenter,
             verifier: ChromeWebStorePackageVerifier(allowUnsignedManualTestFixture: true),
-            isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled, keyValueStore: defaults,
-            pendingUpdates: pending, startupInstaller: installer,
+            isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled, updateApplicationActivityUpdates: updateApplicationActivityUpdates,
+            keyValueStore: defaults, pendingUpdates: pending, updateInstaller: installer,
             updateDownload: { try await ChromeWebStoreUpdateDownloader(configuration: Self.sessionConfiguration()).download($0) },
             updateCheck: { await ChromeWebStoreUpdateChecker(configuration: Self.sessionConfiguration()).check(extensionID: $0, installedVersion: $1) })
         return manager

@@ -120,7 +120,7 @@ public class FavoritesListViewModel: FavoritesListInteracting, ObservableObject 
     }
 
     public func removeFavorite(_ favorite: BookmarkEntity) {
-        guard let favoriteFolder else {
+        guard favoriteFolder != nil else {
             errorEvents?.fire(.fetchingRootItemFailed(.favorites))
             return
         }

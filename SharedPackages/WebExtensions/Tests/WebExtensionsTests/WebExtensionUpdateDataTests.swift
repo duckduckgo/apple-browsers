@@ -20,6 +20,7 @@
 @_spi(Testing) import Persistence
 import WebKit
 import XCTest
+import ZIPFoundation
 @testable import WebExtensions
 
 /// Exercises WebKit's actual persistent stores through the production loader and worker patcher.
@@ -114,10 +115,57 @@ final class WebExtensionUpdateDataTests: XCTestCase {
         try loader.unloadExtension(identifier: installationID, from: controller)
     }
 
+    func testRuntimeManagerUpdatePreservesDataAndPermissionsThroughCleanupAndRelaunch() async throws {
+        let store = WebExtensionPermissionStore(keyValueStore: keyValueStore)
+        var approved = WebExtensionPermissionSettings()
+        approved.grantedPermissions = ["storage": .distantFuture]
+        approved.hasAccessToPrivateData = true
+        try store.save(approved, for: installationID)
+        let original = InstalledWebExtension(uniqueIdentifier: installationID, filename: installationID, name: "Runtime data fixture", version: "1.0",
+                                             storeIdentity: .init(store: .chromeWebStore, id: ChromeWebStoreID.bitwarden.rawValue))
+        installationStore.add(original)
+        try writeFixture(version: "1.0")
+        var manager: WebExtensionManager? = makeDataManager(store: store)
+        await manager?.loadInstalledExtensions()
+        let before = try await readGeneration(controller: try XCTUnwrap(manager?.controller), loader: try XCTUnwrap(manager?.loader), version: "1.0", seed: true)
+        let candidate = "runtime-candidate"
+        try writeFixture(version: "2.0", resourceIdentifier: candidate)
+        let archive = directory.appendingPathComponent(candidate).appendingPathExtension("zip")
+        try FileManager.default.zipItem(at: directory.appendingPathComponent(candidate), to: archive, shouldKeepParent: false)
+
+        _ = try await manager?.applyVerifiedUpdate(.init(extensionID: ChromeWebStoreID.bitwarden.rawValue, version: "2.0", fileURL: archive),
+                                                  replacing: original, application: .whileInactive, isEligible: { true })
+
+        assertPreserved(before, try await readGeneration(controller: try XCTUnwrap(manager?.controller), loader: try XCTUnwrap(manager?.loader), version: "2.0"))
+        manager?.unloadAllExtensions()
+        weak var previousController = manager?.controller
+        manager = nil
+        XCTAssertNil(previousController)
+        manager = makeDataManager(store: store)
+        await manager?.cleanupUnselectedUpdatePackages()
+        await manager?.loadInstalledExtensions()
+
+        assertPreserved(before, try await readGeneration(controller: try XCTUnwrap(manager?.controller), loader: try XCTUnwrap(manager?.loader), version: "2.0"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(installationID).appendingPathComponent("manifest.json").path))
+        XCTAssertEqual(try store.settings(for: installationID), approved)
+        manager?.unloadAllExtensions()
+    }
+
+    private func makeDataManager(store: WebExtensionPermissionStore) -> WebExtensionManager {
+        let permissions = WebExtensionPermissionController(store: store, installationStore: installationStore, prompter: UnexpectedPrompt())
+        return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(), controllerConfiguration: makeControllerConfiguration(),
+                                   windowTabProvider: WebExtensionWindowTabProvidingMock(), storageProvider: WebExtensionStorageProvider(extensionsDirectory: directory),
+                                   installationStore: installationStore, permissionController: permissions)
+    }
+
     private func makeController() -> WKWebExtensionController {
+        WKWebExtensionController(configuration: makeControllerConfiguration())
+    }
+
+    private func makeControllerConfiguration() -> WKWebExtensionController.Configuration {
         let configuration = WKWebExtensionController.Configuration(identifier: configurationID)
         configuration.defaultWebsiteDataStore = WKWebsiteDataStore(forIdentifier: websiteDataID)
-        return WKWebExtensionController(configuration: configuration)
+        return configuration
     }
 
     private func makeLoader(store: WebExtensionPermissionStore) -> WebExtensionLoader {
@@ -136,7 +184,7 @@ final class WebExtensionUpdateDataTests: XCTestCase {
         try "// Intentionally empty background worker.".write(to: folder.appendingPathComponent("worker.js"), atomically: true, encoding: .utf8)
     }
 
-    private func loadPage(controller: WKWebExtensionController, loader: WebExtensionLoader) async throws -> WKWebView {
+    private func loadPage(controller: WKWebExtensionController, loader: any WebExtensionLoading) async throws -> WKWebView {
         try await loader.loadWebExtension(identifier: installationID, into: controller)
         let context = try XCTUnwrap(controller.extensionContexts.first)
         try await context.loadBackgroundContent()
@@ -150,7 +198,7 @@ final class WebExtensionUpdateDataTests: XCTestCase {
         return page
     }
 
-    private func readGeneration(controller: WKWebExtensionController, loader: WebExtensionLoader, version: String, seed: Bool = false) async throws -> [String: String] {
+    private func readGeneration(controller: WKWebExtensionController, loader: any WebExtensionLoading, version: String, seed: Bool = false) async throws -> [String: String] {
         let page = try await loadPage(controller: controller, loader: loader)
         let context = try XCTUnwrap(controller.extensionContexts.first)
         XCTAssertEqual(context.grantedPermissions[.storage], .distantFuture)

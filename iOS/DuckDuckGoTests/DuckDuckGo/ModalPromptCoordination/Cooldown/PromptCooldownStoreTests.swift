@@ -29,7 +29,7 @@ final class PromptCooldownStoreTests {
     private let keyValueStoreMock: MockKeyValueFileStore
 
     init() throws {
-        keyValueStoreMock = try MockKeyValueFileStore()
+        keyValueStoreMock = MockKeyValueFileStore()
     }
 
     @Test("Check Last Presentation Timestamp Is Nil When Nothing Is Stored")

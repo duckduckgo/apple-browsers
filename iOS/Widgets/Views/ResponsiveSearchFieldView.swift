@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import WidgetKit
 
 struct ResponsiveSearchFieldView: View {
 

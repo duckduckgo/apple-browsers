@@ -21,7 +21,7 @@ import DataBrokerProtectionDebugServer
 import Foundation
 import os.log
 
-final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecked Sendable {
+public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecked Sendable {
 
     /// Queries that differ only by middle name share a stable ID, so results are told apart by query position.
     private struct RunResult {
@@ -55,7 +55,7 @@ final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecke
     private var scanTimeout: TimeInterval { runner.brokerJobExecutionConfig.scanJobTimeout }
     private var optOutTimeout: TimeInterval { runner.brokerJobExecutionConfig.optOutJobTimeout }
 
-    init(runner: DebugModeRunner) {
+    public init(runner: DebugModeRunner) {
         self.runner = runner
         runner.emailConfirmationEventHandler = { [weak self] message in
             self?.addEventToActiveRun(summary: "Email confirmation", details: message)
@@ -64,7 +64,7 @@ final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecke
 
     // MARK: - DataBrokerProtectionDebugModeRunning
 
-    func startScan(_ request: DebugModeScanRequest) throws -> DebugModeRun {
+    public func startScan(_ request: DebugModeScanRequest) throws -> DebugModeRun {
         let broker = try resolveBroker(request.broker)
         let queries = runner.brokerProfileQueryData(for: broker, profile: request.profile)
         let runId = UUID().uuidString.lowercased()
@@ -88,11 +88,11 @@ final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecke
         return run
     }
 
-    func run(id: String) -> DebugModeRun? {
+    public func run(id: String) -> DebugModeRun? {
         locked { runs[id].map(snapshot(of:)) }
     }
 
-    func startOptOut(runId: String, resultId: String) throws -> DebugModeRun {
+    public func startOptOut(runId: String, resultId: String) throws -> DebugModeRun {
         let (run, (scanResult, showWebView)) = try beginActivity(.optOut, runId: runId) { state in
             let result = try Self.result(resultId, in: state)
             state.optOuts[resultId] = OptOut(status: .running)
@@ -105,7 +105,7 @@ final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecke
         return run
     }
 
-    func checkForEmailConfirmation(runId: String) throws -> DebugModeRun {
+    public func checkForEmailConfirmation(runId: String) throws -> DebugModeRun {
         let (run, _) = try beginActivity(.emailConfirmationCheck, runId: runId) { _ in }
 
         launch(runId) {
@@ -118,7 +118,7 @@ final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecke
         return run
     }
 
-    func continueOptOut(runId: String, resultId: String) throws -> DebugModeRun {
+    public func continueOptOut(runId: String, resultId: String) throws -> DebugModeRun {
         let (run, (scanResult, confirmationURL, showWebView)) = try beginActivity(.continueOptOut, runId: runId) { state in
             let result = try Self.result(resultId, in: state)
             guard let url = runner.confirmationURL(for: result) else {

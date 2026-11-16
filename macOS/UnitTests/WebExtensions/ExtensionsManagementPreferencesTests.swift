@@ -77,7 +77,8 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         let record = InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
                                            storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID))
         let entry = ExtensionsManagementPreferences.InstalledExtensionEntry(record: record, listing: try listing(),
-                                                                            isRemotelyDisabled: false, permissions: [], matchPatterns: [])
+                                                                            isRemotelyDisabled: false, permissions: [], matchPatterns: [],
+                                                                            hasAccessToPrivateData: nil)
 
         model.showDetails(for: entry)
 

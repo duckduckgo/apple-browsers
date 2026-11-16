@@ -61,7 +61,8 @@ private struct WebExtensionUpdateVersionsView: View {
                 .background(.background, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(.quaternary))
             if let errorMessage { Text(errorMessage).font(.caption).foregroundStyle(.red) }
-            Text(verbatim: "Available shows the local server offer, or a verified download. Updates apply at the next launch.")
+            Text(verbatim: "Available shows the local server offer, or a verified download. "
+                 + "Updates apply when the browser is inactive and the extension has no open pages, or at the next launch.")
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
 #if DEBUG && WEB_EXTENSION_UPDATE_TESTING
@@ -110,7 +111,7 @@ private struct WebExtensionUpdateVersionsView: View {
                 let available = isLocalProfile && extensionInfo.storeIdentity?.id == localFixtureIdentifier
                     ? offeredVersion : update?.version
                 versionRow(name: extensionInfo.name ?? "Unnamed extension", installedVersion: extensionInfo.version,
-                           availableVersion: available, status: update != nil ? "Ready after restart" : (extensionInfo.isDisabled ? "Disabled" : "Installed"),
+                           availableVersion: available, status: update != nil ? "Ready to apply" : (extensionInfo.isDisabled ? "Disabled" : "Installed"),
                            isPending: update != nil)
             }
             if let localFixtureIdentifier, !installed.contains(where: { $0.storeIdentity?.id == localFixtureIdentifier }) {

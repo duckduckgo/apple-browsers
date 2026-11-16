@@ -19,29 +19,12 @@
 import AppKit
 import AppKitExtensions
 import Combine
+import DuckPlayer
 import EventHub
 import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
 import WebExtensions
-
-@available(macOS 15.4, *)
-@MainActor
-private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
-    private let featureFlagger: FeatureFlagger
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var isBackgroundDelegateProxyEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
-    }
-
-    var updatesPublisher: AnyPublisher<Void, Never> {
-        featureFlagger.updatesPublisher
-    }
-}
 
 // MARK: - macOS-specific WebExtensionManager Extensions
 
@@ -110,36 +93,37 @@ enum WebExtensionManagerFactory {
         eventHub: EventHubManaging
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
+        let windowTabProvider = WebExtensionWindowTabProvider()
+        func updateApplicationPolicy(for manager: WebExtensionManager) -> (@MainActor (String) -> Bool) {
+            { [weak manager, weak windowTabProvider] identifier in
+                guard !NSApp.isActive, let manager, let windowTabProvider else { return false }
+                guard let context = manager.context(for: identifier) else { return true }
+                return !windowTabProvider.hasOpenUpdateUI(for: context)
+            }
+        }
+        let updateActivity = Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
+            windowTabProvider.updateActivityPublisher
+        ).eraseToAnyPublisher()
 #if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         if buildType.isDebugBuild, buildType.isSparkleBuild, ChromeWebStoreManualUpdateTesting.isEnabled {
             let manager = ChromeWebStoreManualUpdateTesting().makeManager(
-                configuration: WebExtensionConfigurationProvider(), windowTabProvider: WebExtensionWindowTabProvider(),
+                configuration: WebExtensionConfigurationProvider(), windowTabProvider: windowTabProvider,
                 permissionPrompter: WebExtensionPermissionPrompt(
                     windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
                 enforcesPermissions: featureFlagger.isFeatureOn(.webExtensionsPermissions),
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
                 internalSiteHandler: internalSiteHandler,
-                isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) })
+                isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+                updateApplicationPolicy: updateApplicationPolicy,
+                updateApplicationActivityUpdates: updateActivity)
             internalSiteHandler.dataSource = manager
             return manager
         }
 #endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
-            tabResolver: { tabIdentifier in
-                for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
-                    let viewModel = windowController.mainViewController.tabCollectionViewModel
-                    if let tab = (viewModel.loadedPinnedTabs + viewModel.loadedTabs).first(where: { $0.uuid == tabIdentifier }) {
-                        return (webView: tab.webView, extensionTab: tab)
-                    }
-                }
-                return nil
-            },
-            featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
-            appSession: Application.appDelegate.cpmAppSessionDiagnostics
-        ) : nil
-
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
         let installationStore = InstalledWebExtensionStore()
         let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
@@ -152,14 +136,13 @@ enum WebExtensionManagerFactory {
             : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
-            windowTabProvider: WebExtensionWindowTabProvider(),
+            windowTabProvider: windowTabProvider,
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             installationStore: installationStore,
             permissionController: permissionController,
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             isCPMNetworkProcessRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
@@ -187,11 +170,13 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),
+            updateApplicationActivityUpdates: updateActivity,
             keyValueStore: keyValueStore,
             pixelFiring: pixelFiring
         )

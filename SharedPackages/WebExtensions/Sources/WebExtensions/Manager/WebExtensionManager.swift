@@ -137,7 +137,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var extensionUpdateGenerations: [String: UUID] = [:]
     private lazy var extensionUpdatePackages = WebExtensionUpdatePackageStore(extensionsDirectory: storageProvider.extensionsDirectory,
                                                                                    fileManager: storageProvider.fileManager)
-    weak var startupUpdateInstaller: ChromeWebStoreUpdateInstaller?
+    weak var updateInstaller: ChromeWebStoreUpdateInstaller?
     /// A failed debug-state write retains the transaction for retry without failing an already committed update.
     var didCommitStoreUpdate: (InstalledWebExtension, UUID?) -> Bool = { _, _ in true }
     /// Distinguishes the next full load as restoration after data clearing rather than initial startup.
@@ -189,13 +189,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
-    /// Passive state recorder used to attribute CPM failures without changing recovery behavior.
-    public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Captured at manager creation so one startup cannot mix the enabled and disabled upgrade paths.
     public let isCPMUpgradeBeforeLoadEnabled: Bool
     /// Independent kill switch for restarting the context when a failed background view is still retained.
     private let isCPMBackgroundLoadRestartEnabled: @MainActor () -> Bool
-    /// Platform lifecycle state must remain available when diagnostics are disabled.
+    /// Whether the app is suspended; background-load recovery waits for the foreground.
     private let isApplicationInBackground: @MainActor () -> Bool
 
     /// Concurrent navigations share one wake; a replacement context must start its own preparation.
@@ -216,8 +214,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var backgroundLoadErrorObserver: NSObjectProtocol?
     /// WebKit can retain historical errors after recovery. Weak keys keep generations independent.
     private let observedBackgroundLoadErrors = NSMapTable<WKWebExtensionContext, NSArray>.weakToStrongObjects()
-    private weak var backgroundLoadRestartContext: WKWebExtensionContext?
-    /// Three restarts without an attributed response; four means the exhausted budget was reported.
+    /// Restarts since the current embedded extension last sent a message; the budget is three.
     private var backgroundLoadRestartAttempts = 0
     private let now: () -> Date
     /// Keeps the health monitor informed of app suspension for as long as the manager lives.
@@ -251,7 +248,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
-                cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                 isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
@@ -310,13 +306,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
         self.now = now
-        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
+        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { _ in false })
         self.isCPMUpgradeBeforeLoadEnabled = isCPMUpgradeBeforeLoadEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
             isEnabled: isCPMNetworkProcessRecoveryEnabled,
-            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates,
-            pixelFiring: pixelFiring
+            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates
         )
         self.isCPMBackgroundLoadRestartEnabled = isCPMBackgroundLoadRestartEnabled
         self.backgroundLoadRecoveryCooldown = backgroundLoadRecoveryCooldown
@@ -333,6 +327,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        // A closed tab stops waiting for the extension; the tab itself says which identifier the monitor knows it by.
+        listener.onTabClosed = { [weak monitor = self.cpmMessagingHealthMonitor] tab in
+            MainActor.assumeMainThread {
+                guard let identifier = (tab as? CPMMonitoredTab)?.cpmTabIdentifier else {
+                    Logger.webExtensions.error("[CPM Health Monitor] A closed tab has no CPM identifier, so its wait is not dropped")
+                    return
+                }
+                monitor?.handle(.tabClosed(tabIdentifier: identifier))
+            }
+        }
 
         badgeColorHandler.store = badgeColors
         badgeColorHandler.extensionContext = { [weak self] url in
@@ -368,6 +373,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             privacySettings.notifyControlMayHaveChanged()
         }
         launchDate = now()
+        listener.onUpdateActivity = { [weak self] force in
+            MainActor.assumeIsolated { self?.updateInstaller?.activityDidChange(force: force) }
+        }
         listener.onBrowsingActivity = { [weak self] in
             MainActor.assumeIsolated {
                 self?.fireBitwardenDailyActiveIfLoaded()
@@ -417,13 +425,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     private func configureCPMMonitoring() {
-        if let cpmDiagnosticsRecorder {
-            (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.diagnosticsProvider = cpmDiagnosticsRecorder
-            cpmDiagnosticsRecorder.nativeMessageHandlerCheck = { [weak self] context in
-                self?.messageRouter.hasHandler(for: context.uniqueIdentifier, featureName: "autoconsent") ?? false
-            }
-        }
-
         if let healthMonitor = self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
             healthMonitor.isCurrentEmbeddedExtension = { [weak self] identifier in
                 guard let self, !self.isCPMMessagingRecoveryInProgress else { return false }
@@ -511,7 +512,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         if let oldIdentifier {
             extensionUpdateGenerations.removeValue(forKey: oldIdentifier)
-            await startupUpdateInstaller?.cancelAndWait()
+            await updateInstaller?.cancelAndWait()
             guard let storeIdentity,
                   let installed = installationStore.installedExtension(withUniqueIdentifier: oldIdentifier),
                   installed.storeIdentity == storeIdentity else {
@@ -562,7 +563,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 try loader.unloadExtension(identifier: oldIdentifier, from: controller)
                 replacedContext = oldContext
                 cpmNetworkProcessRecovery.stopWatching(identifier: oldIdentifier)
-                cpmDiagnosticsRecorder?.contextDidUnload(identifier: oldIdentifier)
                 unregisterHandlers(for: oldIdentifier)
             }
             installingStoreIdentities[identifier] = storeIdentity
@@ -643,7 +643,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func uninstallExtension(identifier: String) throws {
         extensionUpdateGenerations.removeValue(forKey: identifier)
-        startupUpdateInstaller?.uninstalling(identifier)
+        updateInstaller?.uninstalling(identifier)
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
         let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
@@ -652,14 +652,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
             cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
-            cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
             Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
             if context(for: identifier) != nil {
                 throw WebExtensionError.failedToUnloadWebExtension(error)
             }
             Logger.webExtensions.debug("⚠️ Extension '\(identifier)' was not loaded in memory: \(error.localizedDescription)")
-            cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
         clearEmbeddedBackgroundStartup(identifier: identifier)
@@ -685,12 +683,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             try storageProvider.removeExtension(identifier: identifier)
         } catch {
             Logger.webExtensions.error("❌ Failed to remove extension files for '\(identifier)': \(error.localizedDescription)")
-            cpmDiagnosticsRecorder?.extensionFilesRemoveFailed(identifier: identifier, error: error)
             pixelFiring.fire(.uninstallError(error: error))
             throw WebExtensionError.failedToRemoveWebExtension(error)
         }
 
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
+        if embeddedType == .embedded { cpmMessagingHealthMonitor.handle(.embeddedExtensionRemoved) }
         reportUninstalled(installedExtension)
         notifyUpdate()
         if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {
@@ -737,7 +735,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func unloadAllExtensions() {
         extensionUpdateGenerations.removeAll()
-        startupUpdateInstaller?.cancelStartup()
+        updateInstaller?.cancelStartup()
         isDataClearingReloadPending = true
         let contexts = controller.extensionContexts
         Logger.webExtensions.debug("🔄 Unloading all extensions from memory (count: \(contexts.count))")
@@ -754,7 +752,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmBaseURLPolicy.prepareForDataClearingReload(of: context)
                 permissionController?.didUnload(identifier)
                 cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
-                cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
                 // holds an extension still loaded in the controller. reloadInstalledExtensions()
                 // uses it to re-create the context without re-reading and re-parsing from disk.
@@ -764,7 +761,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
-                cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
                 pixelFiring.fire(.reloadError(type: type,
                                               trigger: .dataClearing,
                                               phase: .unload,
@@ -820,7 +816,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     func reloadExtension(identifier: String, trigger: WebExtensionReloadTrigger) async throws {
         extensionUpdateGenerations.removeValue(forKey: identifier)
-        await startupUpdateInstaller?.cancelAndWait()
+        await updateInstaller?.cancelAndWait()
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 
         let type = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
@@ -835,10 +831,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmBaseURLPolicy.recordBackgroundLoadFailure(in: previousContext, errors: previousErrors)
             }
             cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
-            cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {
             // The extension and its native handlers are still active when unload fails.
-            cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
             pixelFiring.fire(.reloadError(type: type,
                                           trigger: trigger,
                                           phase: .unload,
@@ -876,8 +870,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func disableExtension(identifier: String) async throws {
         extensionUpdateGenerations.removeValue(forKey: identifier)
-        await startupUpdateInstaller?.cancelAndWait()
-        if isRemotelyDisabled(identifier: identifier) { startupUpdateInstaller?.uninstalling(identifier) }
+        await updateInstaller?.cancelAndWait()
+        if isRemotelyDisabled(identifier: identifier) { updateInstaller?.uninstalling(identifier) }
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
             throw WebExtensionError.extensionNotInstalled
         }
@@ -946,7 +940,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func enableExtension(identifier: String) async throws {
         let generation = beginStoreExtensionEnable(identifier: identifier)
         defer { endStoreExtensionEnable(identifier: identifier, generation: generation) }
-        await startupUpdateInstaller?.cancelAndWait()
+        await updateInstaller?.cancelAndWait()
         try await validateStoreExtensionEnable(identifier: identifier, generation: generation, installed: nil)
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
             throw WebExtensionError.extensionNotInstalled
@@ -989,8 +983,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func loadInstalledExtensions() async {
-        if let startupUpdateInstaller {
-            await startupUpdateInstaller.runOnce()
+        if let updateInstaller {
+            await updateInstaller.runOnce()
         }
         let lifecycle: InstalledExtensionsLoadLifecycle = isDataClearingReloadPending
             ? .reloadAll(trigger: .dataClearing, identifiers: dataClearingReloadIdentifiers)
@@ -1063,19 +1057,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let identifier = context.uniqueIdentifier
         Logger.webExtensions.debug("[CPM Background] Starting background wait for \(identifier, privacy: .public)")
         // Copies WebKit's error on the main thread, as the other background-load paths do.
-        context.loadBackgroundContentCopyingErrors { [weak self, weak context] error in
+        context.loadBackgroundContentCopyingErrors { [weak self] error in
             let elapsed = Date().timeIntervalSince(started)
             if elapsed >= 1 {
                 Logger.webExtensions.info("[CPM Background] Background callback for \(identifier, privacy: .public) after \(elapsed, privacy: .public)s")
             }
             if let error {
                 Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
-            }
-            if let self, let context, self.embeddedBackgroundContextForNavigation === context {
-                if self.backgroundLoadRestartContext === context {
-                    self.backgroundLoadRestartContext = nil
-                    if error == nil { self.pixelFiring.fire(.cpmBackgroundLoadRestart(.backgroundReady)) }
-                }
             }
             if self?.embeddedBackgroundStartup == startup {
                 self?.clearEmbeddedBackgroundStartup()
@@ -1189,13 +1177,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     private func restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(_ context: WKWebExtensionContext) async {
         guard !isCPMMessagingRecoveryInProgress, self.context(for: context.uniqueIdentifier) === context else { return }
-        guard backgroundLoadRestartAttempts < 3 else {
-            if backgroundLoadRestartAttempts == 3 {
-                backgroundLoadRestartAttempts += 1
-                pixelFiring.fire(.cpmBackgroundLoadRestart(.restartLimitReached))
-            }
-            return
-        }
+        guard backgroundLoadRestartAttempts < 3 else { return }
         backgroundLoadRestartAttempts += 1
         lastBackgroundLoadRecoveryAt = now()
         await reloadEmbeddedContext(identifier: context.uniqueIdentifier, trigger: .cpmBackgroundLoadFailure)
@@ -1208,10 +1190,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         defer { isCPMMessagingRecoveryInProgress = false }
         do {
             try await reloadExtension(identifier: identifier, trigger: trigger)
-            if trigger == .cpmBackgroundLoadFailure {
-                // Set this before scheduling the background load so even an immediate callback is attributed.
-                backgroundLoadRestartContext = context(for: identifier)
-            }
             // A missing WebKit completion must not hold the recovery guard forever.
             Task { @MainActor [weak self] in await self?.loadEmbeddedExtensionBackgroundContent() }
         } catch {
@@ -1223,7 +1201,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private func loadInstalledExtensions(lifecycle: InstalledExtensionsLoadLifecycle) async {
 
         isLoadingInstalledExtensions = true
-        defer { isLoadingInstalledExtensions = false }
+        defer {
+            isLoadingInstalledExtensions = false
+            updateInstaller?.activityDidChange(force: true)
+        }
 
         listener.controller = controller
 
@@ -1339,7 +1320,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func reloadInstalledExtensions() async {
         extensionUpdateGenerations.removeAll()
-        await startupUpdateInstaller?.cancelAndWait()
+        await updateInstaller?.cancelAndWait()
         guard !unloadedExtensionsCache.isEmpty else {
             await loadInstalledExtensions()
             return
@@ -1452,6 +1433,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         installationStore.installedExtension(withUniqueIdentifier: identifier)?.matchPatterns
             ?? context(for: identifier)?.webExtension.allRequestedMatchPatterns.map(\.string)
             ?? []
+    }
+
+    @MainActor
+    public func hasAccessToPrivateData(for identifier: String) -> Bool? {
+        permissionController?.hasAccessToPrivateData(for: identifier)
+    }
+
+    @MainActor
+    public func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {
+        try permissionController?.setHasAccessToPrivateData(allowed, for: identifier)
     }
 
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
@@ -1603,6 +1594,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #endif
 
     func notifyUpdate() {
+        if let installer = updateInstaller {
+            Task { @MainActor [weak installer] in installer?.activityDidChange() }
+        }
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
@@ -1656,7 +1650,6 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                       controller?.extensionContexts.contains(extensionContext) == true else { return false }
                 return self?.backgroundWebView(in: extensionContext) === webView
             }
-            cpmDiagnosticsRecorder?.didCreateBackgroundWebView(webView, for: extensionContext)
         }
     }
 
@@ -1746,12 +1739,14 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
 extension WebExtensionManager {
     enum UpdateInstallationResult { case applied, installedDisabled }
     enum UpdateInstallationError: Error { case installationChanged, alreadyUpdating, invalidPackage }
+    enum UpdateApplication { case startup, whileInactive }
 
     /// Prepare aside, then publish one complete record. Loading never restores an older package.
     func applyVerifiedUpdate(_ update: ChromeWebStoreVerifiedUpdate,
                              replacing installed: InstalledWebExtension,
                              reportedInstalledVersion: String? = nil,
                              versionOverrideIdentifier: UUID? = nil,
+                             application: UpdateApplication = .startup,
                              isEligible: () -> Bool) async throws -> UpdateInstallationResult {
         let identifier = installed.uniqueIdentifier
         guard !installed.isEmbedded, installed.storeIdentity == .init(store: .chromeWebStore, id: update.extensionID),
@@ -1759,7 +1754,9 @@ extension WebExtensionManager {
                                               reportedInstalledVersion: reportedInstalledVersion) else {
             throw UpdateInstallationError.invalidPackage
         }
-        guard extensionUpdateGenerations[identifier] == nil, context(for: identifier) == nil else { throw UpdateInstallationError.alreadyUpdating }
+        let incumbent = context(for: identifier)
+        guard extensionUpdateGenerations[identifier] == nil,
+              application == .whileInactive || incumbent == nil else { throw UpdateInstallationError.alreadyUpdating }
         let generation = UUID()
         extensionUpdateGenerations[identifier] = generation
         defer { endStoreExtensionEnable(identifier: identifier, generation: generation) }
@@ -1767,7 +1764,10 @@ extension WebExtensionManager {
             try Task.checkCancellation()
             guard extensionUpdateGenerations[identifier] == generation,
                   installationStore.installedExtension(withUniqueIdentifier: identifier) == installed,
-                  context(for: identifier) == nil, isEligible() else { throw UpdateInstallationError.installationChanged }
+                  context(for: identifier) === incumbent, isEligible(),
+                  application == .startup || (!isLoadingInstalledExtensions && !isDataClearingReloadPending) else {
+                throw UpdateInstallationError.installationChanged
+            }
         }
 
         try checkEligibility()
@@ -1776,18 +1776,30 @@ extension WebExtensionManager {
             reportUpdateInstallationFailureIfNeeded(error, outcome: .storageFailure, storeIdentity: installed.storeIdentity)
             throw error
         }
+        let replacement: InstalledWebExtension
+        var failure: WebExtensionUpdateInstallFailure = .invalidPackage
         do {
             let candidate = try await WKWebExtension.makeCopyingErrors(at: prepared.validationURL)
             guard candidate.version == update.version else { throw UpdateInstallationError.invalidPackage }
+            if application == .whileInactive {
+                await unloadGuard.awaitSettled(incumbent)
+            }
             try checkEligibility()
+            if application == .whileInactive {
+                // Save effective grants before unload; a failed save must leave the incumbent running.
+                failure = .storageFailure
+                try permissionController?.snapshotForUpdate(for: identifier)
+            }
             let disabled = updateRequiresDisabling(candidate, installed: installed)
-            let replacement = InstalledWebExtension(uniqueIdentifier: identifier, filename: prepared.bundleURL.lastPathComponent,
+            replacement = InstalledWebExtension(uniqueIdentifier: identifier, filename: prepared.bundleURL.lastPathComponent,
                                                     name: candidate.displayName, version: candidate.version, storeIdentity: installed.storeIdentity,
                                                     permissions: candidate.requiredPermissionNames,
                                                     matchPatterns: candidate.allRequestedMatchPatterns.map(\.string), isDisabled: disabled,
                                                     cpmOriginIdentifier: installed.cpmOriginIdentifier, packageIdentifier: prepared.identifier,
                                                     consumedVersionOverrideIdentifier: versionOverrideIdentifier,
                                                     needsInitialUpdateActivationValidation: true)
+            failure = .loadFailure
+            try unloadForStoreUpdate(incumbent, installed: installed, generation: generation)
             // This is the sole publication point. No suspension or payload deletion separates the final check and update.
             installationStore.update(replacement)
             _ = didCommitStoreUpdate(replacement, versionOverrideIdentifier)
@@ -1797,11 +1809,31 @@ extension WebExtensionManager {
             if let identity = replacement.storeIdentity {
                 NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self, userInfo: ["extensionId": identity.id])
             }
-            return disabled ? .installedDisabled : .applied
         } catch {
             await extensionUpdatePackages.discard(prepared)
-            reportUpdateInstallationFailureIfNeeded(error, outcome: .invalidPackage, storeIdentity: installed.storeIdentity)
+            reportUpdateInstallationFailureIfNeeded(error, outcome: failure, storeIdentity: installed.storeIdentity)
             throw error
+        }
+        // The selected package is durable now. An activation error must never discard it or restore an older version.
+        if application == .whileInactive, !replacement.isDisabled {
+            _ = try await loadInitialExtensionUpdate(replacement, ownedGeneration: generation)
+            notifyUpdate()
+        }
+        return replacement.isDisabled ? .installedDisabled : .applied
+    }
+
+    private func unloadForStoreUpdate(_ incumbent: WKWebExtensionContext?, installed: InstalledWebExtension, generation: UUID) throws {
+        guard let incumbent else { return }
+        let identifier = installed.uniqueIdentifier
+        guard context(for: identifier) === incumbent else { throw UpdateInstallationError.installationChanged }
+        try loader.unloadExtension(identifier: identifier, from: controller)
+        cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
+        unregisterHandlers(for: identifier)
+        // Unload starts the commit. Activity changes now must not leave the replacement unloaded.
+        guard extensionUpdateGenerations[identifier] == generation,
+              installationStore.installedExtension(withUniqueIdentifier: identifier) == installed,
+              context(for: identifier) == nil, !isRemotelyDisabled(identifier: identifier) else {
+            throw UpdateInstallationError.installationChanged
         }
     }
 
@@ -1834,15 +1866,20 @@ extension WebExtensionManager {
         return results
     }
 
-    private func loadInitialExtensionUpdate(_ installed: InstalledWebExtension) async throws -> WebExtensionLoadResult {
+    private func loadInitialExtensionUpdate(_ installed: InstalledWebExtension, ownedGeneration: UUID? = nil) async throws -> WebExtensionLoadResult {
         let identifier = installed.uniqueIdentifier
         // The batch snapshot may predate a manual enable; validate it before claiming this installation.
         try Task.checkCancellation()
         try requireCurrentStoreActivation(installed, generation: nil, allowsDisabled: false)
-        guard extensionUpdateGenerations[identifier] == nil, context(for: identifier) == nil else {
+        guard context(for: identifier) == nil else {
             throw UpdateInstallationError.installationChanged
         }
-        let generation = UUID()
+        if let ownedGeneration {
+            guard extensionUpdateGenerations[identifier] == ownedGeneration else { throw UpdateInstallationError.installationChanged }
+        } else {
+            guard extensionUpdateGenerations[identifier] == nil else { throw UpdateInstallationError.installationChanged }
+        }
+        let generation = ownedGeneration ?? UUID()
         extensionUpdateGenerations[identifier] = generation
         permissionController?.beginUpdate(for: identifier)
         defer {
@@ -1965,7 +2002,7 @@ extension WebExtensionManager {
         extensionUpdateGenerations.removeValue(forKey: identifier)
         guard let installed = installationStore.installedExtension(withUniqueIdentifier: identifier),
               installed.storeIdentity?.store == .chromeWebStore,
-              startupUpdateInstaller != nil || installed.needsInitialUpdateActivationValidation else { return nil }
+              updateInstaller != nil || installed.needsInitialUpdateActivationValidation else { return nil }
         let generation = UUID()
         extensionUpdateGenerations[identifier] = generation
         return generation

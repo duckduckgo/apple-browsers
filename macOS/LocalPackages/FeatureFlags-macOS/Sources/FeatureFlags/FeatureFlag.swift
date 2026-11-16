@@ -42,6 +42,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
     case onboardingNonBlocking
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
+    case onboardingSearchOrChat
+
     /// Subscription upsell screen at the end of contextual onboarding
     /// https://app.asana.com/1/137249556945/task/1210565180535541
     case onboardingSubscriptionUpsell
@@ -104,11 +107,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
     case webExtensionStateRestorationGate
 
-    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
-    /// background-load readiness observation.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
-    case cpmBackgroundDelegateProxy
-
     /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
     case webExtensionNativeMessaging
 
@@ -129,10 +127,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Follows iCloud Passwords' extensions catalog entry, which also controls installing iCloud Passwords.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219792476428276?focus=true
     case webExtensionICloudPasswords
-
-    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
-    case cpmDiagnosticsRecorder
 
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
@@ -172,6 +166,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Gates the `debug://` custom URL scheme handler and Debug menu entries for UI test / debug pages.
     case debugURLScheme
+
+    /// Keeps the hovered-link tooltip window in the accessibility tree for UI tests that explicitly opt in.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220477819387307
+    case hoveredLinkTooltipAccessibility
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
@@ -480,6 +478,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
     case aiChatNtpPasteImages
 
+    /// Duck.ai: turning long pastes in the New Tab Page omnibar into pasted-text attachments.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1219223530508187
+    case aiChatNtpPastedText
+
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
     case aiChatNtpSuggestionsDeletion
@@ -676,6 +678,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
     case aiChatDragPromptBar
 
+    /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
+    /// Internal-only for the first version.
+    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    case aiChatLocalModels
+
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
@@ -711,6 +718,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220338615600254?focus=true
+    case aiChatLimitExtensionPromo
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -777,6 +788,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingNonBlocking:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlockingV2), cohortType: OnboardingNonBlockingCohort.self)
+        case .onboardingSearchOrChat:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
@@ -814,10 +827,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
         case .webExtensionStateRestorationGate:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate), category: .webExtensions)
-        case .cpmBackgroundDelegateProxy:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
-        case .cpmDiagnosticsRecorder:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
         case .cpmBackgroundLoadRestart:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRestart), category: .webExtensions)
         case .cpmNetworkProcessRecovery:
@@ -849,6 +858,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashDebugging:
             Config(source: .disabled)
         case .debugURLScheme:
+            Config(source: .disabled)
+        case .hoveredLinkTooltipAccessibility:
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))
@@ -1030,6 +1041,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
         case .aiChatNtpPasteImages:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
+        case .aiChatNtpPastedText:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpPastedText), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatNtpSuggestedPrompts:
@@ -1075,7 +1088,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .promoQueueAutofillEmptyStatePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .defaultBrowserWinBackPromo:
-            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -1143,6 +1156,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
         case .aiChatDragPromptBar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.dragPromptBar), category: .duckAI)
+        case .aiChatLocalModels:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:
@@ -1164,6 +1179,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
+        case .aiChatLimitExtensionPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), category: .duckAI)
         }
     }
 

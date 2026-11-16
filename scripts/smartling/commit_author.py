@@ -1,12 +1,18 @@
 """
 Finds who to ask about a commit on main: the author of the pull request it was squash-merged from, and their Asana user.
+Run on its own, it writes that author of a merge job's commit to GITHUB_OUTPUT, for the job's review task.
 
 Copyright © 2026 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
 """
 
+import os
 import re
+import sys
 import json
+import argparse
+from dataclasses import dataclass
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Iterator, List, Optional
 from urllib.parse import urlencode
@@ -19,6 +25,13 @@ REPOSITORY = "duckduckgo/apple-browsers"
 
 # Accounts that merge on someone's behalf, such as translation imports. They can't answer for the strings.
 BOT_LOGINS = {'daxmobile'}
+
+
+@dataclass(frozen=True)
+class Author:
+    login: str
+    asana_gid: Optional[str]
+    pull_url: str
 
 
 class GitHubClient:
@@ -90,3 +103,43 @@ def parse_user_map(text: str) -> Dict[str, str]:
 
 def asana_user(user_map: Dict[str, str], login: Optional[str]) -> Optional[str]:
     return user_map.get(login.lower()) if login else None
+
+
+def merge_author(github: GitHubClient, user_map: Dict[str, str], sha: str) -> Optional[Author]:
+    """The person behind a commit on main: the author of its pull request, unless that's a bot."""
+    pull = pull_request(github, sha)
+    user = (pull or {}).get('user') or {}
+    if not user.get('login') or is_bot(user):
+        return None
+    return Author(login=user['login'], asana_gid=asana_user(user_map, user['login']), pull_url=pull.get('html_url', ''))
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Write the Asana user of a commit's pull request author to GITHUB_OUTPUT")
+    parser.add_argument('--sha', required=True)
+    parser.add_argument('--user-map', required=True, help='Path to the GitHub to Asana user_map.yml')
+    args = parser.parse_args()
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print("❌ Missing GITHUB_TOKEN", file=sys.stderr)
+        sys.exit(1)
+    user_map_path = Path(args.user_map)
+    user_map = parse_user_map(user_map_path.read_text(encoding='utf-8') if user_map_path.exists() else '')
+    try:
+        author = merge_author(GitHubClient(token), user_map, args.sha)
+    except RuntimeError as error:
+        print(f"❌ {error}", file=sys.stderr)
+        sys.exit(1)
+    if not author:
+        print(f"⚠️ {args.sha[:7]} has no pull request by a person")
+    elif not author.asana_gid:
+        print(f"⚠️ @{author.login} isn't in the GitHub to Asana user map")
+    else:
+        print(f"👤 @{author.login} ({author.pull_url})")
+    if os.environ.get('GITHUB_OUTPUT') and author:
+        with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+            output.write(f"login={author.login}\nasana_gid={author.asana_gid or ''}\npull_url={author.pull_url}\n")
+
+
+if __name__ == '__main__':
+    main()

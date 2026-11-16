@@ -113,6 +113,10 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case bookmarksBarSyncPromoFirstPresentedDate = "com.duckduckgo.bookmarkFirstPresentedCount"
     case bookmarkAddedSyncPromoDismissed = "com.duckduckgo.bookmarkAddedSyncPromoDismissed"
     case bookmarkAddedSyncPromoPresentedCount = "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount"
+
+    // MARK: - Contextual Onboarding
+
+    case contextualOnboardingPathKind = "contextual-onboarding_path-kind"
 }
 
 // MARK: - StorageKey Extensions

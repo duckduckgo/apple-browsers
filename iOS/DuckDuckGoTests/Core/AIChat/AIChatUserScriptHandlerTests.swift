@@ -1091,8 +1091,37 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         XCTAssertEqual(configValues?.supportsNativeChatInput, true)
         XCTAssertEqual(configValues?.supportsPromoCards, true)
-        // iPad has no native chat header, so the FE keeps its own.
-        XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, true)
+    }
+
+    func testWhenIPadNativeInputIsOnThenEveryDisplayModeSupportsFullMode() {
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual, nil] {
+            aiChatUserScriptHandler.displayMode = displayMode
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsAIChatFullMode, true, "\(String(describing: displayMode))")
+        }
+    }
+
+    func testWhenIPadNativeInputIsOffThenNoDisplayModeSupportsFullMode() {
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = false
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
+            aiChatUserScriptHandler.displayMode = displayMode
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsAIChatFullMode, false, "\(displayMode)")
+        }
     }
 
     func testWhenFullTabOnIPadWithNativeInputThenUsageWarningsMoveToTheNativeInput() {

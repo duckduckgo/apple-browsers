@@ -19,7 +19,6 @@
 import AppKit
 import Testing
 import WebKit
-import XCTest
 @testable import DataBrokerProtectionCore
 @testable import DataBrokerProtection_macOS
 
@@ -152,6 +151,27 @@ struct AssistedOptOutWindowTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func pageTakesInputOnlyOutsideDuckDuckGosTurn() throws {
+        let session = makeSession()
+        let window = makeOffscreenWindow()
+        let controller = AssistedOptOutWindowController(session: session, window: window, loadFavicon: { _ in nil }, onClose: {})
+        defer { controller.close() }
+        let webView = WKWebView()
+        session.begin()
+        session.attemptDidCreate(webView: webView)
+        session.attemptWillRun(userAction)
+        let content = try #require(window.contentView)
+        content.layoutSubtreeIfNeeded()
+        let pagePoint = NSPoint(x: 100, y: 100)
+        #expect(content.hitTest(pagePoint) is AssistedOptOutInputBlocker)
+        #expect(window.firstResponder is AssistedOptOutInputBlocker)
+        session.attemptNeedsUser(actionID: userAction.id)
+        #expect(!(content.hitTest(pagePoint) is AssistedOptOutInputBlocker))
+        #expect(window.firstResponder === webView)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func windowFloatsOnlyDuringUserTurn() {
         let session = makeSession()
         let window = makeOffscreenWindow()
@@ -177,65 +197,16 @@ struct AssistedOptOutWindowTests {
         #expect(AssistedOptOutAddress.addressBarHost(of: try #require(URL(string: url))) == expected)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func realHiddenWindowRendersPhasesAndLiveAppearanceWithLocalPage() async throws {
-        let session = makeSession()
-        let window = makeOffscreenWindow()
-        let controller = AssistedOptOutWindowController(session: session, window: window, loadFavicon: { _ in nil }, onClose: {})
-        defer { controller.close() }
-        let directory = URL(fileURLWithPath: "/tmp/pir-user-assist-stack/pr4-proof", isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try await captureBothAppearances(window, phase: "ready", directory: directory)
-        session.begin()
-        let webView = try await loadFixture(in: session)
-        let pageTitle: String? = try await webView.evaluateJavaScript("document.querySelector('h1').textContent")
-        #expect(pageTitle == "Removal request")
-        session.attemptWillRun(userAction)
-        session.attemptNeedsUser(actionID: userAction.id)
-        #expect(session.currentStepTitle == Self.userStep)
-        try await captureBothAppearances(window, phase: "user-turn", directory: directory)
-        window.setFrame(NSRect(origin: window.frame.origin, size: window.minSize), display: false)
-        try await capture(window, name: "user-turn-minimum-dark", appearance: .darkAqua, directory: directory)
-        window.setContentSize(NSSize(width: 1280, height: 820))
-        session.markSubmitted()
-        try await captureBothAppearances(window, phase: "submitted", directory: directory)
-        #expect(!window.isVisible)
-        let fallbackSession = makeSession(titles: [])
-        let fallbackWindow = makeOffscreenWindow()
-        let fallbackController = AssistedOptOutWindowController(session: fallbackSession, window: fallbackWindow, loadFavicon: { _ in nil }, onClose: {})
-        defer { fallbackController.close() }
-        fallbackSession.begin()
-        _ = try await loadFixture(in: fallbackSession)
-        fallbackSession.attemptNeedsUser(actionID: "unlabeled")
-        try await capture(fallbackWindow, name: "user-turn-no-step-dark", appearance: .darkAqua, directory: directory)
-        #expect(fallbackSession.currentStepTitle == nil)
-        #expect(!fallbackWindow.isVisible)
-    }
-
     private static let userStep = "Review your contact information and confirm this removal request before submitting"
-    private static let fixtureHTML = """
-    <!doctype html><html><head><meta name="color-scheme" content="light dark"><style>
-    body { font: 17px system-ui; padding: 40px; } main { max-width: 540px; }
-    label { display: block; margin: 24px 0; } input { display: block; padding: 10px; width: 90%; }
-    section { border: 3px solid #d7a62b; border-radius: 8px; padding: 20px; margin-top: 24px; }
-    button { font: inherit; padding: 10px 20px; } p { line-height: 1.5; }
-    </style></head><body><main><h1>Removal request</h1><p>This local fixture represents the broker form.</p>
-    <label>Name<input value="Example Person" readonly></label>
-    <label>Email<input value="person@example.com" readonly></label>
-    <section><h2>Review and confirm</h2><p>Check your contact information, then submit this removal request.</p>
-    <button>Submit request</button></section></main></body></html>
-    """
-
     private var userAction: UserAssistAction {
         let json = Data("{\"step\":\"\(Self.userStep)\"}".utf8)
         return UserAssistAction(id: "review", json: json)
     }
 
-    private func makeSession(titles: [String]? = nil) -> AssistedOptOutSession {
+    private func makeSession() -> AssistedOptOutSession {
         AssistedOptOutSession(id: .init(brokerId: 1, profileQueryId: 2, extractedProfileId: 3),
                               broker: .init(name: "Example Broker", url: "broker.example"),
-                              steps: .init(titles: titles ?? ["Open the opt-out form", Self.userStep, "Submit request"]))
+                              steps: .init(titles: ["Open the opt-out form", Self.userStep, "Submit request"]))
     }
 
     private func advance(_ session: AssistedOptOutSession, to phase: AssistedAttemptPhase) {
@@ -250,42 +221,8 @@ struct AssistedOptOutWindowTests {
                                    styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
     }
 
-    private func loadFixture(in session: AssistedOptOutSession) async throws -> WKWebView {
-        let webView = WKWebView()
-        let navigation = FixtureNavigation()
-        webView.navigationDelegate = navigation
-        session.attemptDidCreate(webView: webView)
-        webView.loadHTMLString(Self.fixtureHTML, baseURL: URL(string: "https://broker.example/opt-out"))
-        let result = await XCTWaiter.fulfillment(of: [navigation.finished], timeout: 10)
-        #expect(result == .completed)
-        return webView
-    }
-
     private func descendants(of view: NSView) -> [NSView] {
         view.subviews.flatMap { [$0] + descendants(of: $0) }
-    }
-
-    private func captureBothAppearances(_ window: NSWindow, phase: String, directory: URL) async throws {
-        let light = try await capture(window, name: "\(phase)-light", appearance: .aqua, directory: directory)
-        let dark = try await capture(window, name: "\(phase)-dark", appearance: .darkAqua, directory: directory)
-        #expect(light != dark)
-    }
-
-    @discardableResult
-    private func capture(_ window: NSWindow, name: String, appearance: NSAppearance.Name, directory: URL) async throws -> Data {
-        window.appearance = NSAppearance(named: appearance)
-        let content = try #require(window.contentView)
-        content.layoutSubtreeIfNeeded()
-        try await Task.sleep(nanoseconds: 150_000_000)
-        content.displayIfNeeded()
-        let bitmap = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
-        content.cacheDisplay(in: content.bounds, to: bitmap)
-        let data = try #require(bitmap.representation(using: .png, properties: [:]))
-        #expect(bitmap.pixelsWide >= Int(content.bounds.width))
-        #expect(bitmap.pixelsHigh >= Int(content.bounds.height))
-        #expect(data.count > 5000)
-        try data.write(to: directory.appendingPathComponent("\(name).png"))
-        return data
     }
 }
 
@@ -302,13 +239,4 @@ private final class NonActivatingAssistedWindow: NSWindow {
 @MainActor
 private final class NonKeyAssistedWindow: NSWindow {
     override var canBecomeKey: Bool { false }
-}
-
-@MainActor
-private final class FixtureNavigation: NSObject, WKNavigationDelegate {
-    let finished = XCTestExpectation(description: "Local HTML navigation finished")
-
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        finished.fulfill()
-    }
 }

@@ -93918,6 +93918,42 @@
         }
       }
     },
+    "preferences.about.appstore-updates.button" : {
+      "comment" : "Button on the About screen for App Store builds that opens DuckDuckGo in the Mac App Store",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open App Store"
+          }
+        }
+      }
+    },
+    "preferences.about.appstore-updates.message" : {
+      "comment" : "Message on the About screen for App Store builds explaining how to turn on automatic updates in the App Store app",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get the latest fixes and improvements as soon as they're ready. In the App Store, choose App Store › Settings in the menu bar, then turn on Automatic Updates."
+          }
+        }
+      }
+    },
+    "preferences.about.appstore-updates.title" : {
+      "comment" : "Title of the card on the About screen for App Store builds that explains how to turn on automatic updates",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn on automatic updates"
+          }
+        }
+      }
+    },
     "preferences.about.duckduckgo-tagline-new" : {
       "comment" : "About screen",
       "extractionState" : "extracted_with_value",
@@ -119288,6 +119324,54 @@
         }
       }
     },
+    "update.banner.card.title" : {
+      "comment" : "Title of the illustrated card at the top of the browser menu that tells the user a new version of the browser is available",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New version available"
+          }
+        }
+      }
+    },
+    "update.banner.open-app-store.button" : {
+      "comment" : "Button in the update banner at the top of the browser menu that opens DuckDuckGo in the App Store",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open App Store"
+          }
+        }
+      }
+    },
+    "update.banner.row.available.title" : {
+      "comment" : "Title of the compact banner at the top of the browser menu in App Store builds that tells the user a new version is available in the App Store",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update available"
+          }
+        }
+      }
+    },
+    "update.banner.row.title" : {
+      "comment" : "Title of the compact banner at the top of the browser menu that tells the user an update is ready to install",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update ready"
+          }
+        }
+      }
+    },
     "update.new.version.available.menu.item" : {
       "comment" : "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update",
       "extractionState" : "extracted_with_value",
@@ -119348,6 +119432,30 @@
         }
       }
     },
+    "update.prompt.restart.button" : {
+      "comment" : "Button in the update prompts in the browser menu. It restarts the browser to install an update that has already downloaded",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart Now"
+          }
+        }
+      }
+    },
+    "update.prompt.update.button" : {
+      "comment" : "Button in the update prompts in the browser menu. It downloads and installs the update",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update Now"
+          }
+        }
+      }
+    },
     "update.ready.menu.item" : {
       "comment" : "Title of the menu item that informs user that a new update has been downloaded and the user should restart the app to update. Clicking on the menu item restarts the app",
       "extractionState" : "extracted_with_value",
@@ -119404,6 +119512,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Обновление готово: перезапустите приложение"
+          }
+        }
+      }
+    },
+    "update.toolbar.available.button" : {
+      "comment" : "Button next to the browser menu button that tells the user an update is available. It opens the App Store, or downloads and installs the update",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update Available"
+          }
+        }
+      }
+    },
+    "update.toolbar.restart.button" : {
+      "comment" : "Button next to the browser menu button. It restarts the browser to install an update that has already downloaded",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart To Update"
           }
         }
       }

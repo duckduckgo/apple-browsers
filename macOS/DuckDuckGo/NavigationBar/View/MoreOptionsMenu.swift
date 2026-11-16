@@ -523,24 +523,20 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(releaseNotes)
     }
 
-    /// Adds the prominent update prompt, a row at the first prompt stage and a card at the second, in place of the regular update item.
+    /// Adds the prominent update row or card in place of the regular update item at the stages that call for it.
     /// - Returns: Whether a prompt was added.
     @MainActor
     private func addUpdatePromptItem() -> Bool {
         guard AppVersion.runType != .uiTests,
               let updateController = Application.appDelegate.updateController,
-              let update = updateController.latestUpdate else {
+              let update = updateController.latestUpdate,
+              let menuPrompt = updateController.pendingUpdatePromptStage.prominentMenuPrompt else {
             return false
         }
 
-        let style: UpdateBannerView.Style
-        switch updateController.pendingUpdatePromptStage {
-        case .none, .available:
-            return false
-        case .firstPrompt:
-            style = .row
-        case .secondPrompt:
-            style = .card
+        let style: UpdateBannerView.Style = switch menuPrompt {
+        case .row: .row(title: updateController.updateBannerRowTitle)
+        case .card: .card
         }
 
         let banner = UpdateBannerView(style: style,

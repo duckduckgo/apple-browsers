@@ -29,6 +29,7 @@ let package = Package(
         .library(name: "WebPageTranslation", targets: ["WebPageTranslation"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/DDGError"),
         .package(path: "../../../SharedPackages/LocalModels"),
         .package(path: "../../../SharedPackages/Persistence"),
         .package(url: "https://github.com/duckduckgo/translate-kit", exact: "0.4.0"),
@@ -37,6 +38,7 @@ let package = Package(
         .target(
             name: "WebPageTranslation",
             dependencies: [
+                "DDGError",
                 "LocalModels",
                 "Persistence",
                 .product(name: "TranslateKit", package: "translate-kit"),

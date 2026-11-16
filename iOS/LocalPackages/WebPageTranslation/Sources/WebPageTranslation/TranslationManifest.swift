@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 import LocalModels
 
@@ -79,6 +80,20 @@ public struct TranslationManifest: Decodable, Equatable, Sendable {
     }
 }
 
-public enum TranslationManifestError: Error, Equatable {
+public enum TranslationManifestError: DDGError {
     case unsupportedSchemaVersion(Int)
+
+    public static var errorDomain: String { "com.duckduckgo.webPageTranslation.TranslationManifestError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .unsupportedSchemaVersion: return 1
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .unsupportedSchemaVersion(let version): return "Manifest schema version \(version) isn't supported"
+        }
+    }
 }

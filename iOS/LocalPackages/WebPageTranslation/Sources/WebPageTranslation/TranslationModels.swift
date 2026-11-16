@@ -18,17 +18,38 @@
 //
 
 
+import DDGError
 import Foundation
 import LocalModels
 import os.log
 import Persistence
 import TranslateKit
 
-public enum TranslationModelsError: Error, Equatable {
+public enum TranslationModelsError: DDGError {
     case unknownPair(String)
     case unknownFile(String)
     case decompressedSizeMismatch(file: String)
     case decompressedHashMismatch(file: String)
+
+    public static var errorDomain: String { "com.duckduckgo.webPageTranslation.TranslationModelsError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .unknownPair: return 1
+        case .unknownFile: return 2
+        case .decompressedSizeMismatch: return 3
+        case .decompressedHashMismatch: return 4
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .unknownPair(let pairID): return "The manifest doesn't list \(pairID)"
+        case .unknownFile(let name): return "The manifest has no entry for \(name)"
+        case .decompressedSizeMismatch(let file): return "Decompressed \(file) has the wrong size"
+        case .decompressedHashMismatch(let file): return "Decompressed \(file) doesn't match its sha256"
+        }
+    }
 }
 
 /// The translation models on this device: which pairs the server offers, and installing and removing them.

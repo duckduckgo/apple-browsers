@@ -125885,6 +125885,18 @@
         }
       }
     },
+    "webExtensions.settings.nativeMessagingNote" : {
+      "comment" : "Note in an extension's row in Settings > Extensions after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow. A Learn More link follows it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some features that connect to apps on your Mac aren’t available in this version."
+          }
+        }
+      }
+    },
     "webExtensions.settings.permission.accessibility-features-modify" : {
       "comment" : "Item in the list of an extension's permissions: changing accessibility settings",
       "extractionState" : "extracted_with_value",

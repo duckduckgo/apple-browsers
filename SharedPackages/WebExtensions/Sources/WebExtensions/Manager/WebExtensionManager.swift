@@ -1470,6 +1470,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
               let key = nativeMessagingLimitationKey(for: extensionContext.uniqueIdentifier),
               !nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key) else { return }
         nativeMessagingLimitationStore.recordLimitation(extensionKey: key)
+        NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
     }
 
     /// The store ID, so the state survives updates, or the installation ID for extensions from elsewhere.
@@ -1675,6 +1676,9 @@ public extension Notification.Name {
     /// this notification reaches every observer. Per-window UI needs that, because each
     /// browser window keeps its own set of extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
+
+    /// Posted by `WebExtensionManager` when an extension first tries native messaging where it's unavailable.
+    static let webExtensionNativeMessagingLimitationDidChange = Notification.Name("webExtensionNativeMessagingLimitationDidChange")
 
     /// Posted by `WebExtensionManager` when an extension changes its toolbar action, such as its icon,
     /// from JavaScript. The object is the extension's `WKWebExtensionContext`.

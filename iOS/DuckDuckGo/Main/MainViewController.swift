@@ -318,6 +318,8 @@ class MainViewController: UIViewController {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    /// The iPad Duck.ai chats sidebar, shared by every Duck.ai tab.
+    let iPadChatListSidebarState = IPadChatListSidebarState()
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     private let tutorialSettings: TutorialSettings
@@ -8760,13 +8762,23 @@ extension MainViewController: TabDelegate {
         // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
         // and this guard ensures the sheet can never be presented there.
         guard UIDevice.current.userInterfaceIdiom != .pad else { return }
+        let viewModel = makeAIChatHistoryViewModel(source: source, isFireMode: isCurrentTabFireTab())
+        viewModel.delegate = self
+        let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
+        let navigationController = UINavigationController(rootViewController: content)
+        navigationController.modalPresentationStyle = .automatic
+        duckAIInputFocus.setAside()
+        present(navigationController, animated: true)
+    }
+
+    /// Shared by the iPhone Chats sheet and the iPad Duck.ai chats sidebar.
+    func makeAIChatHistoryViewModel(source: AIChatHistorySource, isFireMode: Bool) -> AIChatHistoryViewModel {
         // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
         // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
         // configure at launch the cast yields `nil`, and the reader surfaces a
         // `.storageUnavailable` failure so the screen shows an error rather than a
         // misleading empty list. Fire mode uses isolated storage so persistent chats
         // cannot leak into a fire session.
-        let isFireMode = isCurrentTabFireTab()
         let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
         let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
         // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
@@ -8783,7 +8795,7 @@ extension MainViewController: TabDelegate {
         let pinner: ChatPinning? = storageHandler.map { storage in
             ChatPinner(storageHandler: storage, syncCleaner: isFireMode ? nil : aiChatSyncCleaner)
         }
-        let viewModel = AIChatHistoryViewModel(
+        return AIChatHistoryViewModel(
             reader: reader,
             featureFlagger: featureFlagger,
             fireExecutor: fireExecutor,
@@ -8792,12 +8804,6 @@ extension MainViewController: TabDelegate {
             source: source,
             isFireMode: isFireMode
         )
-        viewModel.delegate = self
-        let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
-        let navigationController = UINavigationController(rootViewController: content)
-        navigationController.modalPresentationStyle = .automatic
-        duckAIInputFocus.setAside()
-        present(navigationController, animated: true)
     }
 
     func tabDidRequestBookmarks(tab: TabViewController) {

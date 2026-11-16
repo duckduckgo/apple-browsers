@@ -589,6 +589,9 @@ class MainViewController: UIViewController {
 
     // Refresh glass when page colors change.
     private var pageBackgroundColorObservation: NSKeyValueObservation?
+    /// Results-page colour per appearance, so a search from any page can hand off to it.
+    let searchPageColorMemory = SearchPageColorMemory()
+    let searchPageHeaderMemory = SearchPageHeaderMemory()
     private var siteThemeColorObservation: NSKeyValueObservation?
     private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
@@ -6111,13 +6114,12 @@ extension MainViewController: BrowserChromeDelegate {
         return height
     }
 
-    /// Full toolbar slot height at the bottom, measured from the screen bottom: the toolbar height (its
-    /// bottom is pinned to the safe area) plus the safe area itself. In floating bottom-address-bar mode
-    /// the omnibar is hosted inside the toolbar (so `toolbarHeight` already includes it) and the nav bar
-    /// container is hidden, so it must not be added here. A footer resized against this lands exactly on
-    /// the toolbar's top edge.
+    /// Include glass that floats above the toolbar slot.
     private var floatingToolbarSlotHeight: CGFloat {
-        toolbarHeight + view.safeAreaInsets.bottom
+        let slotHeight = toolbarHeight + view.safeAreaInsets.bottom
+        let capsuleFrame = viewCoordinator.toolbar.restingCapsuleFrame(in: view)
+        guard !capsuleFrame.isEmpty else { return slotHeight }
+        return max(slotHeight, view.bounds.maxY - capsuleFrame.minY)
     }
 
     private func floatingChromeOnScreenFraction(for percent: CGFloat) -> CGFloat {
@@ -6411,12 +6413,7 @@ extension MainViewController: BrowserChromeDelegate {
                                      fromExternalLink: Bool = false,
                                      via: DuckAINavigationVia? = nil,
                                      completion: ((Tab) -> Void)? = nil) {
-        let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
-            currentIsAI: currentTab?.isAITab == true,
-            currentHasContent: currentTab?.tabModel.link != nil,
-            targetIsAI: url.isDuckAIURL,
-            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
-        )
+        let decision = aiBoundaryDecision(for: url)
         let directEntrySource = via.flatMap { reportDuckAIDirectNavigation(to: url, via: $0, opensNewTab: decision == .openInNewTab) }
         let completion = stampingDuckAIEntrySource(directEntrySource, then: completion)
         switch decision {
@@ -6436,6 +6433,15 @@ extension MainViewController: BrowserChromeDelegate {
         }
     }
 
+
+    func aiBoundaryDecision(for url: URL) -> AIBoundaryNavigationDecision {
+        AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab?.isAITab == true,
+            currentHasContent: currentTab?.tabModel.link != nil,
+            targetIsAI: url.isDuckAIURL,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
+    }
 
     private func stampingDuckAIEntrySource(_ source: AIChatEntryPointSource?, then completion: ((Tab) -> Void)?) -> ((Tab) -> Void)? {
         guard let source else { return completion }
@@ -6465,6 +6471,7 @@ extension MainViewController: BrowserChromeDelegate {
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: suggestion), promptOrigin: promptOrigin)
         endNewTabPageSessionWithSuggestion(suggestion)
         newTabPageViewController?.chromeDelegate = nil
+        prepareFirstPaintCover(forSuggestion: suggestion)
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
         switch suggestion {
@@ -6661,6 +6668,8 @@ extension MainViewController: OmniBarDelegate {
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
+        // Before the suggestions hide, so the previous page never shows through.
+        prepareFirstPaintCover(forQuery: query)
         // Hide suggestion tray before kicking off navigation. refreshOmniBar()
         // queues an async swipe-tabs collection reload via applyWidth(); that
         // reload re-parents the OmniBar cell and fires textFieldDidEndEditing
@@ -7908,6 +7917,9 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didCloseTab(tab)
+        }
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
         refreshTabBar()
@@ -8350,6 +8362,8 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage) {
         previewsSource.update(preview: preview, forTab: tab.tabModel)
+        learnSearchPageColorIfNeeded(from: tab, preview: preview)
+        learnSearchPageHeader(from: tab)
     }
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags? {
@@ -9689,6 +9703,7 @@ extension MainViewController: TabManagerFireModeDelegate {
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {
+        searchPageHeaderMemory.clear()
         switch fireRequest.trigger {
         case .manualFire:
             showBurningOverlay()

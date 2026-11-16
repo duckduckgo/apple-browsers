@@ -233,6 +233,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
     case onboardingNonBlockingV2
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
+    case onboardingSearchOrChat
+
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.
@@ -492,6 +495,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables pasting images and copied files into the New Tab Page omnibar (`enablePastedAttachments`).
     /// https://app.asana.com/1/137249556945/task/1215994572643392
     case ntpPasteImages
+
+    /// Turns long pastes in the New Tab Page omnibar into pasted-text attachments (`enablePastedText`).
+    /// Settings: `pasteConversionThreshold` and `maxCharacters` override `AIChatPromptLimits.current`.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1219223530508187?focus=true
+    case ntpPastedText
 
     /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
     case tabAttachmentLimit
@@ -952,11 +960,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case protectedDataLoadGate
     /// Failsafe for waiting on embedded background content before restoring web pages.
     case stateRestorationGate
-    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health, and for the
-    /// background-load readiness observation, which asks the context to join the load already in progress to learn how it ended.
-    case cpmBackgroundDelegateProxy
-    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
-    case cpmDiagnosticsRecorder
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
     case cpmBackgroundLoadRestart

@@ -45,6 +45,7 @@ final class DuckAIURLSuggestionsLoader {
     /// Out-of-order guard: `SuggestionLoader` has no cancellation, so a slow callback for a stale query would otherwise win.
     private var latestQuery: String?
     private var fetchID = UUID()
+    private var cachedRemoteResult: SuggestionResult = .appEmpty
     /// Settle marker: callers compare against current text to detect "fetcher hasn't caught up yet" and gate Dax visibility.
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
@@ -90,6 +91,7 @@ final class DuckAIURLSuggestionsLoader {
         let fetchID = UUID()
         self.fetchID = fetchID
         guard !query.isEmpty else {
+            cachedRemoteResult = .appEmpty
             // Skip re-emitting an already-empty list — @Published emits unconditionally and would trigger a needless reload.
             if !topURLs.isEmpty { topURLs = [] }
             lastCompletedFetchQuery = query
@@ -97,24 +99,28 @@ final class DuckAIURLSuggestionsLoader {
         }
 
         let loader = includeRemoteSuggestions ? self.loader : localLoader
-        loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
+        loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self else { return }
             guard !usesSeparateDebounce || self.fetchID == fetchID,
                   self.latestQuery == query || (usesSeparateDebounce && self.topURLs.isEmpty && self.latestQuery?.hasPrefix(query) == true) else { return }
             // Always settle, even on error — otherwise `hasSettled` stays false forever and Dax suppression never clears.
             if includeRemoteSuggestions { self.lastCompletedFetchQuery = query }
-            // Local matches (bookmarks/history/open tabs) come back even when the remote API errors — keep them.
-            if let result {
-                self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
-            } else if !self.topURLs.isEmpty {
-                self.topURLs = []
+            let result = result ?? .appEmpty
+            let displayedResult: SuggestionResult
+            if includeRemoteSuggestions, error == nil {
+                self.cachedRemoteResult = result
+                displayedResult = result
+            } else {
+                displayedResult = result.retainingRemoteSuggestions(from: self.cachedRemoteResult)
             }
+            self.topURLs = Self.urlOnlyTopHits(from: displayedResult, max: self.maxResults)
         }
     }
 
     func tearDown() {
         cancellables.removeAll()
         fetchID = UUID()
+        cachedRemoteResult = .appEmpty
         latestQuery = nil
         lastCompletedFetchQuery = nil
         topURLs = []

@@ -180,6 +180,86 @@ final class SuggestionLoaderDebounceTests: XCTestCase {
         XCTAssertFalse(loader.topURLs.isEmpty)
     }
 
+    func testRemoteSuggestionsStayUntilReplacementIncludingEmptyResponse() async {
+        for duckAI in [false, true] {
+            let harness = Harness(duckAI: duckAI, enabled: true)
+            defer { harness.tearDown() }
+            harness.dataSource.hasBookmarks = false
+            await expectUpdate(harness) { harness.fetch("weather", false) }
+            harness.fetch("weather", true)
+            await expectUpdate(harness) {
+                harness.dataSource.completions[0](Data(#"[{"phrase":"weather.example","isNav":true},{"phrase":"weather today"}]"#.utf8), nil)
+            }
+            let first = harness.suggestions()
+            XCTAssertFalse(first.isEmpty)
+
+            await expectUpdate(harness) { harness.fetch("weather forecast", false) }
+            XCTAssertEqual(harness.suggestions(), first)
+            harness.fetch("weather forecast", true)
+            XCTAssertEqual(harness.suggestions(), first)
+            await expectUpdate(harness) {
+                harness.dataSource.completions[1](Data(#"[{"phrase":"forecast.example","isNav":true}]"#.utf8), nil)
+            }
+            XCTAssertNotEqual(harness.suggestions(), first)
+            XCTAssertEqual(harness.suggestions().compactMap(\.url).first?.host, "forecast.example")
+
+            await expectUpdate(harness) { harness.fetch("forecast", false) }
+            harness.fetch("forecast", true)
+            await expectUpdate(harness) { harness.dataSource.completions[2](Data("[]".utf8), nil) }
+            XCTAssertTrue(harness.suggestions().isEmpty)
+            await expectUpdate(harness) { harness.fetch("forecast tomorrow", false) }
+            XCTAssertTrue(harness.suggestions().isEmpty)
+        }
+    }
+
+    func testRemoteCacheSurvivesErrorsAndClearsWithQueryAndSession() async {
+        for duckAI in [false, true] {
+            for clearSession in [false, true] {
+                let harness = Harness(duckAI: duckAI, enabled: true)
+                defer { harness.tearDown() }
+                harness.dataSource.hasBookmarks = false
+                harness.fetch("weather", true)
+                await expectUpdate(harness) {
+                    harness.dataSource.completions[0](Data(#"[{"phrase":"weather.example","isNav":true}]"#.utf8), nil)
+                }
+                let first = harness.suggestions()
+                harness.fetch("forecast", true)
+                await expectUpdate(harness) {
+                    harness.dataSource.completions[1](nil, URLError(.notConnectedToInternet))
+                }
+                XCTAssertEqual(harness.suggestions(), first)
+                if clearSession {
+                    harness.reset()
+                } else {
+                    harness.fetch("", true)
+                }
+                XCTAssertTrue(harness.suggestions().isEmpty)
+                await expectUpdate(harness) { harness.fetch("weather", false) }
+                XCTAssertTrue(harness.suggestions().isEmpty)
+            }
+        }
+    }
+
+    func testLocalMatchesRefreshWhileRemoteSuggestionsAreRetained() {
+        let remote = Suggestion.website(url: URL(string: "https://remote.example")!)
+        let oldLocal = Suggestion.historyEntry(title: "Old", url: URL(string: "https://old.example")!, score: 1)
+        let newLocal = Suggestion.historyEntry(title: "New", url: URL(string: "https://new.example")!, score: 1)
+        let previous = SuggestionResult(topHits: [oldLocal, remote], duckduckgoSuggestions: [.phrase(phrase: "weather")], localSuggestions: [])
+        let local = SuggestionResult(topHits: [newLocal], duckduckgoSuggestions: [], localSuggestions: [])
+        let merged = local.retainingRemoteSuggestions(from: previous)
+        XCTAssertEqual(merged.topHits, [newLocal, remote])
+        XCTAssertEqual(merged.duckduckgoSuggestions, [.phrase(phrase: "weather")])
+        XCTAssertFalse(merged.all.contains(oldLocal))
+    }
+
+    private func expectUpdate(_ harness: Harness, action: () -> Void) async {
+        let update = expectation(description: "Suggestions publish")
+        let subscription = harness.results.dropFirst().prefix(1).sink { _ in update.fulfill() }
+        action()
+        await fulfillment(of: [update], timeout: 2)
+        subscription.cancel()
+    }
+
     @MainActor
     private final class Harness {
         let scheduler = DispatchQueue.test
@@ -188,6 +268,9 @@ final class SuggestionLoaderDebounceTests: XCTestCase {
         let results: AnyPublisher<Int, Never>
         let lastCompletedQuery: () -> String?
         let tearDown: () -> Void
+        let fetch: (String, Bool) -> Void
+        let suggestions: () -> [Suggestion]
+        let reset: () -> Void
 
         init(duckAI: Bool, enabled: Bool) {
             let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
@@ -197,12 +280,18 @@ final class SuggestionLoaderDebounceTests: XCTestCase {
                 results = loader.$topURLs.map(\.count).eraseToAnyPublisher()
                 lastCompletedQuery = { loader.lastCompletedFetchQuery }
                 tearDown = { loader.tearDown() }
+                fetch = { loader.fetch(query: $0, includeRemoteSuggestions: $1) }
+                suggestions = { loader.topURLs }
+                reset = { loader.tearDown() }
             } else {
                 let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: false, featureFlagger: featureFlagger)
                 loader.subscribeToTextChanges(text, scheduler: scheduler)
                 results = loader.$result.map { $0.all.count }.eraseToAnyPublisher()
                 lastCompletedQuery = { loader.lastCompletedFetchQuery }
                 tearDown = { loader.tearDown() }
+                fetch = { loader.fetch(query: $0, includeRemoteSuggestions: $1) }
+                suggestions = { loader.result.all }
+                reset = { loader.reset() }
             }
         }
     }

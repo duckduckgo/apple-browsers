@@ -108,7 +108,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRefreshCpmDashboardStateThenForwardsTabIdentifierAndURLToHealthMonitor() async {
+    func testWhenRefreshCpmDashboardStateThenForwardsURLAndExtensionToHealthMonitor() async {
         let monitor = RecordingCPMMessagingHealthMonitor()
         let handler = AutoconsentWebExtensionMessageHandler(
             privacyConfigurationManager: mockPrivacyConfigurationManager,
@@ -132,9 +132,50 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
         _ = await handler.handleMessage(message)
 
-        XCTAssertEqual(monitor.extensionTabIdentifier, 42)
         XCTAssertEqual(monitor.extensionIdentifier, message.extensionIdentifier)
         XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
+    }
+
+    @MainActor
+    func testWhenCpmStageMeansNoAnswerWillComeThenTheRefreshIsNotAnAnswer() async {
+        for stage in ["config_unavailable", "settings_missing"] {
+            let monitor = RecordingCPMMessagingHealthMonitor()
+            let handler = AutoconsentWebExtensionMessageHandler(
+                privacyConfigurationManager: mockPrivacyConfigurationManager,
+                autoconsentPreferences: mockAutoconsentPreferences,
+                cpmMessagingHealthMonitor: monitor
+            )
+            let message = createMessage(method: "refreshCpmDashboardState", params: [
+                "tabId": NSNumber(value: 7),
+                "url": "https://example.com/article",
+                "consentStatus": ["consentManaged": false, "cpmStage": stage]
+            ])
+
+            _ = await handler.handleMessage(message)
+
+            XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
+            XCTAssertEqual(monitor.isAnswer, false, "\(stage) must not count as the page's answer")
+        }
+    }
+
+    @MainActor
+    func testWhenCpmStageIsOrdinaryThenTheRefreshIsAResponse() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let message = createMessage(method: "refreshCpmDashboardState", params: [
+            "tabId": NSNumber(value: 7),
+            "url": "https://example.com/article",
+            "consentStatus": ["consentManaged": false, "cpmStage": "site_disabled"]
+        ])
+
+        _ = await handler.handleMessage(message)
+
+        XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
+        XCTAssertEqual(monitor.isAnswer, true)
     }
 
     // MARK: - showCpmAnimation
@@ -848,15 +889,15 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
-    private(set) var extensionTabIdentifier: Int?
     private(set) var extensionIdentifier: String?
     private(set) var url: URL?
+    private(set) var isAnswer: Bool?
 
     func handle(_ event: CPMMessagingHealthEvent) {
-        guard case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier) = event else { return }
-        self.extensionTabIdentifier = extensionTabIdentifier
+        guard case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event else { return }
         self.extensionIdentifier = extensionIdentifier
         self.url = url
+        self.isAnswer = isAnswer
     }
 }
 

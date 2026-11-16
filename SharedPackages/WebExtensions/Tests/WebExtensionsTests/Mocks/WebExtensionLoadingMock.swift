@@ -28,6 +28,7 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     var loadWebExtensionCalled = false
     var loadWebExtensionsCalled = false
     var unloadExtensionCalled = false
+    private(set) var unloadCallCount = 0
     var reloadWebExtensionCalled = false
     var loadedIdentifiers: [String] = []
     var unloadedIdentifier: String?
@@ -82,6 +83,7 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
 
     func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
         unloadExtensionCalled = true
+        unloadCallCount += 1
         unloadedIdentifier = identifier
 
         if let mockUnloadError = mockUnloadError {

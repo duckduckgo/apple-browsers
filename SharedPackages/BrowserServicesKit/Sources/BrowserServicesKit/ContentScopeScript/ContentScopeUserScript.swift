@@ -342,9 +342,10 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             throw EncodingError.invalidValue(string, EncodingError.Context(codingPath: [], debugDescription: "Failed to encode a string literal"))
         }
         // A JSON string is a valid JavaScript string literal, except that engines before ES2019 reject raw U+2028 and U+2029
+        // `.literal` matches code units: without it the search compares whole character clusters, which is slow on a config this size
         return literal
-            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
-            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028", options: .literal)
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029", options: .literal)
     }
 
     private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {

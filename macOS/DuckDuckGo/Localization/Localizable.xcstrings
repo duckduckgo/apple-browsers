@@ -125885,6 +125885,30 @@
         }
       }
     },
+    "webExtensions.settings.nativeMessaging.message" : {
+      "comment" : "Explanation in an extension's details in Settings > Extensions after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow. A Learn More link follows it. %@ is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ tried to connect to an app on your Mac. The App Store version of DuckDuckGo doesn’t allow this, so features that rely on that app won’t work here."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.title" : {
+      "comment" : "Title of a row in an extension's details in Settings > Extensions, and the accessibility label of the warning badge on its icon, after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can’t connect to apps on your Mac"
+          }
+        }
+      }
+    },
     "webExtensions.settings.permission.accessibility-features-modify" : {
       "comment" : "Item in the list of an extension's permissions: changing accessibility settings",
       "extractionState" : "extracted_with_value",

@@ -90,7 +90,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
 
-    /// Controls permission prompts and persistence when the extension manager is created.
+    /// Controls permission prompts and persistence; extensions loaded before a change keep their grants until relaunch.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219054712997074?focus=true
     case webExtensionsPermissions
 

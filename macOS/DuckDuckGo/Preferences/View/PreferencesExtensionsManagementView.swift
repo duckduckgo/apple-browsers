@@ -342,6 +342,8 @@ extension Preferences {
             // The card fill is translucent; an opaque backing keeps the footer's pink from tinting it.
             .background(Color(designSystemColor: .surfaceCanvas, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+            .onTapGesture(perform: onDetails)
             .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
         }
 

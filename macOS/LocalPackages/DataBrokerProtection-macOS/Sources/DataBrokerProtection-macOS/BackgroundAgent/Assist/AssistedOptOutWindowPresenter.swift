@@ -65,7 +65,7 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
     private func show(_ controller: AssistedOptOutWindowController, requestingAttention: Bool) {
         guard let window = controller.window else { return }
         let applicationIsActive = isApplicationActive()
-        if window.isMiniaturized, !requestingAttention || applicationIsActive {
+        if window.isMiniaturized {
             window.deminiaturize(nil)
         }
         if requestingAttention, !applicationIsActive {

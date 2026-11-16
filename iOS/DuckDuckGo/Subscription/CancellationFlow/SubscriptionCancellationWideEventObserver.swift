@@ -62,6 +62,7 @@ final class SubscriptionCancellationWideEventObserver: SubscriptionCancellationW
         }
     }
 
+    @MainActor
     func handleSubscriptionChange(_ notification: Notification) async {
         let pendingFlows = wideEvent.getAllFlowData(CancellationData.self)
         guard !pendingFlows.isEmpty else { return }

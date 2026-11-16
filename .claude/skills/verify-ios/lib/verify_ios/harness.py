@@ -1,8 +1,9 @@
 """The proof harness: the `ios` handle a proof receives, and `prove`, which runs a proof file and writes its evidence.
 
 A proof is a short Python file written for one change, saved with its evidence, never committed. It defines `run(ios)`
-and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services it depends on) and
-`FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS).
+and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services it depends on),
+`FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS) and
+`LANGUAGE = {"language": "fr", "locale": "fr_FR"}` (only to test localization: the default, env.LANGUAGE, is en-US).
 
 A run passes only when the proof returned, recorded at least one passing check and no failing one, and the app was
 still in the foreground at the end. Anything that goes wrong before the proof's own steps is an error, not a failure.
@@ -40,12 +41,13 @@ ABSENT = {"NOT_FOUND", "TIMEOUT"}
 class Ios:
     """The handle a proof receives: user actions, reads, waiting assertions, telemetry and evidence for one device."""
 
-    def __init__(self, device, evidence, flags=None, device_obj=None):
+    def __init__(self, device, evidence, flags=None, device_obj=None, language=None):
         self.device = device                     # "iphone" | "ipad"
         self.form_factor = "phone" if device == "iphone" else "tablet"   # pixel names end in _ios_<form_factor>
         self.d = device_obj or Device(device)
         self.evidence = evidence
         self.flags = dict(flags or {})
+        self.language = dict(language or env.LANGUAGE)
         self.checks, self.unverified_items, self.notes, self.warnings = [], [], [], []
         self.hosts = set()                       # non-local hosts the proof saw, to check LIVE
         self.cleanups = []                       # (what, fn) undo steps, run in reverse after the proof
@@ -76,15 +78,15 @@ class Ios:
     # session ---------------------------------------------------------------------
     def reset(self):
         """Reinstall and launch: no app data, one blank tab, per-site permissions and daily pixel state cleared."""
-        return self._session("reset", lambda: self.d.reset(flags=self.flags))
+        return self._session("reset", lambda: self.d.reset(flags=self.flags, language=self.language))
 
     def launch(self):
-        return self._session("launch", lambda: self.d.launch(flags=self.flags))
+        return self._session("launch", lambda: self.d.launch(flags=self.flags, language=self.language))
 
     def _session(self, action, fn):
         """A launch that fails is setup trouble (build identity, readiness, runner), not the behavior under proof."""
         try:
-            self.launched = self._log(action, [self.flags], fn)
+            self.launched = self._log(action, [self.flags, self.language], fn)
         except Failed as e:
             raise SetupFailed(f"{action}: {e}", **e.extra) from e
         return self.launched
@@ -422,6 +424,10 @@ def load(path):
     live = getattr(mod, "LIVE", [])
     if not isinstance(live, list) or not all(isinstance(s, str) for s in live):
         problems.append("LIVE must be a list of service names")
+    language = getattr(mod, "LANGUAGE", env.LANGUAGE)
+    if not isinstance(language, dict) or set(language) != {"language", "locale"} or not all(
+            isinstance(v, str) and v for v in language.values()):
+        problems.append('LANGUAGE must be {"language": "fr", "locale": "fr_FR"}')
     flags = getattr(mod, "FLAGS", {})
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map feature flag names to True/False")
@@ -506,7 +512,7 @@ def prove(path, devices=None, keep=False, decision_log=None):
         return 2, dict(proof=path, ok=False, preflight=problems)
     devices = check_devices(devices or getattr(mod, "DEVICES", list(env.PORT_OFFSET)))
     attempt, proof_path = attempt_dir(path, evidence_root(decision_log))
-    live, flags = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {})
+    live, flags, language = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {}), getattr(mod, "LANGUAGE", env.LANGUAGE)
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     results, build = [], None
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
@@ -517,7 +523,7 @@ def prove(path, devices=None, keep=False, decision_log=None):
             results = [dict(device=d, status="error", reason=f"setup: {e}", checks=[], problems=[], evidence=None) for d in devices]
         else:
             for dev in devices:
-                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags))
+                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags, language=language))
                 if results[-1]["status"] == "cancelled":
                     break
     except _Stop as e:   # between devices, or before the first one started
@@ -537,7 +543,7 @@ def prove(path, devices=None, keep=False, decision_log=None):
                       results=[{k: r[k] for k in ("device", "status", "reason", "problems") if r.get(k)} for r in results])
 
 
-def _run_device(mod, device, evidence, keep, flags, device_obj=None):
+def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=None):
     lock = DeviceLock(device)
     try:
         lock.acquire(f"prove {os.path.basename(os.path.dirname(evidence))}")
@@ -548,7 +554,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
     status, reason, ios, phase = "error", None, None, "setup"
     try:
         try:
-            ios = Ios(device, evidence, flags, device_obj)
+            ios = Ios(device, evidence, flags, device_obj, language)
             ios.launch()
             ios.capture = ios.d.capture_conditions()   # the defaults this run starts from; setters update it
             fixture(user=device)
@@ -577,7 +583,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
         problems = []
         try:
             if ios:
-                problems += _collect(ios)          # the final state first, before anything is undone
+                problems += _collect(ios, since=t0)   # the final state first, before anything is undone
                 problems += ios._run_cleanups()
         finally:
             try:
@@ -592,7 +598,8 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None):
                       checks=ios.checks if ios else [], unverified=ios.unverified_items if ios else [],
                       notes=ios.notes if ios else [], warnings=ios.warnings if ios else [], problems=problems,
                       liveHostsSeen=sorted(ios.hosts) if ios else [], launched=ios.launched if ios else None,
-                      capture=ios.capture if ios else {}, evidence=evidence)
+                      capture=ios.capture if ios else {}, evidence=evidence,
+                      appLog=os.path.exists(f"{evidence}/app.log"))
         with open(f"{evidence}/result.json", "w") as f:
             json.dump(result, f, indent=1, default=str)
     return result
@@ -620,11 +627,13 @@ def exit_code(statuses, problems=False):
     return 2 if problems else 0
 
 
-def _collect(ios):
-    """Final state, whatever happened: screenshot, native tree, decoded pixels, wide events. Returns problems."""
+def _collect(ios, since):
+    """Final state, whatever happened: screenshot, native tree, the app's log since `since` (epoch seconds), decoded
+    pixels, wide events. Returns problems."""
     problems = []
     steps = [("final screenshot", lambda: ios.d.screenshot(f"{ios.evidence}/final.png")),
-             ("final UI tree", lambda: _write(f"{ios.evidence}/final-snapshot.txt", ios.d.snapshot()["tree"]))]
+             ("final UI tree", lambda: _write(f"{ios.evidence}/final-snapshot.txt", ios.d.snapshot()["tree"])),
+             ("app log", lambda: ios.d.app_logs(f"{ios.evidence}/app.log", start=since))]
     if ios.pixels:
         steps.append(("pixels", lambda: _write(f"{ios.evidence}/pixels.json", json.dumps(ios.pixels.all(), indent=1))))
     if ios.wide_events:
@@ -688,6 +697,7 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         launched={r["device"]: ((r.get("launched") or {}).get("build") or {}).get("runningSha") for r in results if r.get("device") != "-"},
         flags={**env.PINNED_FLAGS, **flags},
         capture={r["device"]: r.get("capture") for r in results if r.get("device") != "-"},
+        appLogs={r["device"]: f"{r['device']}/app.log" if r.get("appLog") else None for r in results if r.get("device") != "-"},
         skillSha256=_skill_hash(), xcode=" ".join(xcode[:4]),
         simulators={r["device"]: dict(udid=(r.get("launched") or {}).get("udid"), type=env.DEVICE_TYPES[r["device"]], runtime=env.RUNTIME)
                     for r in results if r.get("device") in env.DEVICE_TYPES},
@@ -727,7 +737,8 @@ def _report(mod, m, results):
         if r.get("notes"):
             lines += ["", "Notes:"] + [f"- {n}" for n in r["notes"]]
         if r.get("evidence"):
-            lines += ["", f"Evidence: `{r['evidence']}` (transcript.jsonl, screenshots, final-snapshot.txt, pixels.json, wide-events.json)"]
+            lines += ["", f"Evidence: `{r['evidence']}` (transcript.jsonl, screenshots, final-snapshot.txt, "
+                          f"{'app.log, ' if r.get('appLog') else ''}pixels.json, wide-events.json)"]
         lines.append("")
     return "\n".join(lines)
 

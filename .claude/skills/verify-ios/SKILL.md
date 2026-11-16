@@ -81,6 +81,7 @@ from verify_ios import steps
 DEVICES = ["iphone", "ipad"]   # default: both
 LIVE = []                      # live services it depends on, e.g. ["duck.ai"]; empty = local fixture / app only
 FLAGS = {}                     # remote feature flags to pin for this proof (env.PINNED_FLAGS are always pinned)
+# LANGUAGE = {"language": "fr", "locale": "fr_FR"}   # only to test localization; default en-US (env.LANGUAGE)
 
 def run(ios):
     steps.fresh_start(ios)                         # reinstall + launch: one blank tab, address bar not focused
@@ -118,6 +119,9 @@ What `ios` gives you (`lib/verify_ios/harness.py`):
 - **Capture conditions:** `appearance("dark")`, `text_size("accessibility-large")` (see `Ios.TEXT_SIZES`; `large` is
   the iOS default), `rotate("landscapeLeft")` (fails if the app's window didn't follow), `fixed_status_bar()` (9:41,
   full battery and signal). Each is undone after the proof and recorded per device in the manifest and report.
+  The app always launches in en-US (`-AppleLanguages (en) -AppleLocale en_US`), because locators match English
+  text; a proof that tests localization sets `LANGUAGE`, and the language and locale are recorded with the other
+  conditions. They are launch arguments for the app; the simulator's own system language is left as it is.
   `fresh_start` always begins from light mode, default text size, portrait and a live status bar, even if an earlier
   run was killed before its undo ran. Text size reaches web pages on their next load. Use these so screenshots compare
   (visual-parity needs the same conditions on both sides).
@@ -161,9 +165,14 @@ plus `nth=<n>` when several match (otherwise the action fails with AMBIGUOUS; it
 
 `prove` writes, per attempt, `<state dir>/evidence/<stamp>-<name>-<id>/` (`$V info` prints the state dir):
 `proof.py`, `manifest.json` (git revision and dirty flag, the build's source fingerprint and sha256, the running
-binary's sha256 per device as verified at launch, pinned flags, skill sha256, Xcode, simulators, live services and
-live hosts seen, rerun command), `report.md`, and per device `transcript.jsonl`, your screenshots, `final.png`,
-`final-snapshot.txt`, `pixels.json`, `pixels.ndjson` (raw), `wide-events.json`, `result.json`.
+binary's sha256 per device as verified at launch, pinned flags, capture conditions including language and locale,
+each device's `app.log`, skill sha256, Xcode, simulators, live services and live hosts seen, rerun command),
+`report.md`, and per device `transcript.jsonl`, your screenshots, `final.png`, `final-snapshot.txt`, `app.log`,
+`pixels.json`, `pixels.ndjson` (raw), `wide-events.json`, `result.json`.
+
+`app.log` is the app's own log (`log show`, process DuckDuckGo) from the start of that device's run, kept on pass,
+fail and cancel, so a failed proof can be diagnosed without running it again (about 1 MB a minute; the UI-test
+runner's own lines are left out). A log over 5 MB keeps its end and says so on its first line.
 
 An attempt folder is used once: a proof inside a folder that holds anything else is copied to a new folder.
 

@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import AIChat
+@testable import AIChat
 import Core
 import FeatureFlags_iOS
 import Persistence

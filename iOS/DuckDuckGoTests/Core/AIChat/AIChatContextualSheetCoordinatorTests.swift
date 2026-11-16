@@ -1975,7 +1975,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         defer { window.isHidden = true }
         host.view.addSubview(newSheet.view)
         let presenter = try XCTUnwrap(sut.browserToolsPermissionPresenter)
-        XCTAssertTrue(presenter.isAvailable(for: nil))
+        XCTAssertTrue(presenter.isSurfaceAvailable)
         let url = URL(string: "https://example.com/old")!
 
         sut.aiChatContextualSheetViewController(oldSheet, didRequestToLoad: url)
@@ -1983,7 +1983,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags.append(.aiChatBrowserTools)
 
         XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
-        XCTAssertTrue(presenter.isAvailable(for: nil))
+        XCTAssertTrue(presenter.isSurfaceAvailable)
         XCTAssertTrue(sut.sheetViewController === newSheet)
         XCTAssertTrue(sut.isSheetPresented)
     }

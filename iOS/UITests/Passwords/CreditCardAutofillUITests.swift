@@ -84,8 +84,9 @@ final class CreditCardAutofillUITests: UITestCase {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let authentication = springboard.staticTexts["Authenticate to fill credit card information"]
         XCTAssertTrue(authentication.waitForExistence(timeout: UITestTimeouts.navigation))
+        let passcodeField = springboard.secureTextFields.firstMatch
         springboard.enterSimulatorPasscode()
-        XCTAssertTrue(authentication.waitForNonExistence(timeout: UITestTimeouts.navigation))
+        springboard.waitForSystemAuthenticationToDismiss(reason: authentication, passcodeField: passcodeField)
         XCTAssertTrue(
             cardNumber.wait(for: \.value, equals: "5555555555554444", timeout: UITestTimeouts.elementExistence),
             "Selecting the seeded card did not fill the web card-number field.")

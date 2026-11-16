@@ -25,20 +25,22 @@ import AIChatDebugServer
 import os.log
 import DebugServer
 import PrivacyConfig
-import Persistence
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let aiChatBonusMessageLog: AIChatBonusMessageLog?
     private let featureFlagger: FeatureFlagger?
+    private let tabManager: TabManager?
 
     init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
-         featureFlagger: FeatureFlagger? = nil) {
+         featureFlagger: FeatureFlagger? = nil,
+         tabManager: TabManager? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.aiChatBonusMessageLog = aiChatBonusMessageLog
         self.featureFlagger = featureFlagger
+        self.tabManager = tabManager
     }
 
     var body: some View {
@@ -60,17 +62,14 @@ struct AIChatDebugView: View {
                     Text(verbatim: "Duck.ai Boost Offer")
                 }
             }
-#endif
-
-            Section(header: Text(verbatim: "Browser Tools"),
-                    footer: Text(verbatim: "Clears saved Always/Never decisions.")) {
-                Button {
-                    BrowserToolPermissionStore(storage: UserDefaults.standard.keyedStoring()).clearAll()
-                } label: {
-                    Text(verbatim: "Reset Browser Tool Permissions")
+            if let tabManager {
+                Section(header: Text(verbatim: "Browser Tools")) {
+                    NavigationLink(destination: BrowserToolsDebugView(tabManager: tabManager)) {
+                        Text(verbatim: "Browser Tools")
+                    }
                 }
-                .foregroundColor(.red)
             }
+#endif
 
             Section(header: Text(verbatim: "Message Policy Hostname"),
                     footer: Text(verbatim: "Stored Hostname: \(viewModel.enteredHostname)")) {

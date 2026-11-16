@@ -30,6 +30,9 @@ final class AIChatBrowserToolsService {
     private var featureFlagChanges: AnyCancellable?
     private var bindings: [ObjectIdentifier: AIChatBrowserToolsBinding] = [:]
     private var clearing: [UUID: AIChatBrowserToolsClearing] = [:]
+#if DEBUG || ALPHA
+    private var debugSessions: [ObjectIdentifier: BrowserToolsDebugSession] = [:]
+#endif
     private let injectedScopeProvider: BrowserToolScopeProvider?
     private(set) lazy var catalog = BrowserToolCatalog(
         tools: makeTools(),
@@ -37,6 +40,12 @@ final class AIChatBrowserToolsService {
     private(set) lazy var invoker = BrowserToolInvoker(
         catalog: catalog,
         clientToolPermissions: AIChatNativePermissionCoordinator(base: clientToolPermissions) { [weak self] toolName, prompter in
+#if DEBUG || ALPHA
+            if let source = prompter as? BrowserToolsDebugSession {
+                guard let self else { return .unavailable }
+                return self.debugAdmissionFailure(toolName: toolName, from: source)
+            }
+#endif
             guard let source = prompter as? AIChatUserScript else { return nil }
             guard let self else { return .unavailable }
             return self.permissionAdmissionFailure(toolName: toolName, from: source)
@@ -148,6 +157,9 @@ extension AIChatBrowserToolsService {
     }
 
     func detachSources(ownerTabID: String) {
+#if DEBUG || ALPHA
+        for session in debugSessions.values.filter({ $0.scope.ownerTabID == ownerTabID }) { session.close() }
+#endif
         guard !bindings.isEmpty else { return }
         let sources = bindings.values.filter { $0.ownerTabID == ownerTabID }.compactMap(\.source)
         for source in sources { detach(source) }
@@ -218,6 +230,9 @@ extension AIChatBrowserToolsService {
             return AIChatBrowserToolsClearingSnapshot(binding: binding, scope: scope, chatID: source.browserToolsDocumentURL?.duckAIChatID)
         }
         clearing[token.id] = AIChatBrowserToolsClearing(target: target, snapshots: snapshots)
+#if DEBUG || ALPHA
+        for session in Array(debugSessions.values) { session.close() }
+#endif
         for snapshot in snapshots { revoke(snapshot.binding, document: renewedDocument(snapshot.binding)) }
         for snapshot in snapshots {
             if let source = snapshot.binding.source { clientToolPermissions.cancelRequests(from: source) }
@@ -317,9 +332,88 @@ private extension AIChatBrowserToolsService {
                   let scope = admittedScope(for: source), scope.accepts(context) else { continue }
             return scope
         }
+#if DEBUG || ALPHA
+        for session in debugSessions.values where session.scope.accepts(context) {
+            guard debugAdmissionFailure(from: session) == nil else { continue }
+            return session.scope
+        }
+#endif
         return injectedScopeProvider?(context)
     }
 }
+
+#if DEBUG || ALPHA
+extension AIChatBrowserToolsService {
+    func registerDebugSession(_ session: BrowserToolsDebugSession) {
+        debugSessions[ObjectIdentifier(session)] = session
+    }
+
+    func closeDebugSession(_ session: BrowserToolsDebugSession) {
+        debugSessions.removeValue(forKey: ObjectIdentifier(session))
+        session.scope.revoke()
+        clientToolPermissions.cancelRequests(from: session)
+        let presenter = session.presenter
+        presenter.withdrawActive { _ = presenter }
+    }
+
+    private func debugAdmissionFailure(toolName: String? = nil, requestID: String? = nil,
+                                       from session: BrowserToolsDebugSession) -> AIChatNativePermissionFailure? {
+        guard debugSessions[ObjectIdentifier(session)] === session,
+              isEnabled, clearing.isEmpty, session.scope.isValid, session.isNormalMode(),
+              toolName.map({ catalog.tool(named: $0) != nil }) ?? true else { return .unavailable }
+        return session.presenter.isAvailable(for: requestID) ? nil : .cancelled
+    }
+
+    func invoke(_ request: ExecuteClientToolRequest, from session: BrowserToolsDebugSession) async -> ExecuteClientToolResponse {
+        guard debugAdmissionFailure(toolName: request.capability.name, from: session) == nil else {
+            return .failure(callId: request.callId, error: .unavailable)
+        }
+        let scope = session.scope
+        let context = BrowserToolCallContext(ownerTabID: scope.ownerTabID, ownerWindowToken: scope.token, isBurner: scope.isBurner)
+        return await invoker.invokeClientTool(request, context: context, permissionPrompter: session)
+    }
+
+    func presentPermissionPrompt(_ prompt: ClientToolPermissionPrompt, from session: BrowserToolsDebugSession) -> Bool {
+        guard debugAdmissionFailure(toolName: prompt.toolName, requestID: prompt.requestID, from: session) == nil,
+              let tool = catalog.tool(named: prompt.toolName) else { return false }
+        return session.presenter.present(prompt, message: tool.permissionReason) { [weak self, weak session] decision in
+            guard let self, let session else { return }
+            let admitted = self.debugAdmissionFailure(toolName: prompt.toolName, requestID: prompt.requestID, from: session) == nil
+            self.clientToolPermissions.respond(to: prompt, decision: admitted ? decision : .dismiss, from: session)
+        }
+    }
+}
+
+@MainActor
+final class BrowserToolsDebugSession: ClientToolPermissionPrompting {
+    let scope: BrowserToolScope
+    let presenter: any AIChatNativePermissionPresenting
+    let isNormalMode: @MainActor () -> Bool
+    private weak var service: AIChatBrowserToolsService?
+
+    init(service: AIChatBrowserToolsService, scope: BrowserToolScope, presenter: any AIChatNativePermissionPresenting,
+         isNormalMode: @escaping @MainActor () -> Bool) {
+        self.service = service
+        self.scope = scope
+        self.presenter = presenter
+        self.isNormalMode = isNormalMode
+        service.registerDebugSession(self)
+    }
+
+    func close() {
+        service?.closeDebugSession(self)
+    }
+
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        service?.presentPermissionPrompt(prompt, from: self) ?? false
+    }
+
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        let presenter = presenter
+        presenter.withdraw(requestID: requestID) { _ = presenter }
+    }
+}
+#endif
 
 @MainActor
 private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {

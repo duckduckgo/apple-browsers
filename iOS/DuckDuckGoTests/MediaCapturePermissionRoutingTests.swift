@@ -1444,6 +1444,97 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         ])
     }
 
+    func testVisibleDialogRemovedWithoutChoiceReportsReasonVisibleTimeAndFrame() async throws {
+        func navigate(to url: String) -> (TabViewController) -> Void {
+            return { sut in
+                (sut.webView as? SitePermissionURLWebView)?.fixedURL = URL(string: url)!
+                sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+            }
+        }
+        let cases: [(name: String,
+                     isMainFrame: Bool,
+                     remove: (TabViewController) -> Void,
+                     reason: SitePermissionsEvent.DialogCloseReason)] = [
+            ("reload", true, navigate(to: "https://top-level.example/path"), .navigationReload),
+            ("same site", false, navigate(to: "https://www.top-level.example/other"), .navigationSameSite),
+            ("cross site", true, navigate(to: "https://other.example/"), .navigationCrossSite),
+            ("process", false, { $0.sitePermissionsWebContentProcessDidTerminate($0.webView) }, .processTerminated),
+            ("data clearing", true, { $0.prepareSitePermissionsForDataClearing() }, .dataCleared),
+            ("tab close", false, { $0.closeSitePermissions() }, .tabClosed)
+        ]
+
+        for testCase in cases {
+            var events = [SitePermissionsEvent]()
+            var uptime: TimeInterval = 100
+            let impression = expectation(description: "Impression: \(testCase.name)")
+            let sut = makeSUT(eventHandler: { event in
+                events.append(event)
+                if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+            })
+            sut.sitePermissionsUptimeProvider = { uptime }
+
+            let request = makeBridgeRequestTask(on: sut,
+                                                originHost: "top-level.example",
+                                                captureType: .camera,
+                                                isMainFrame: testCase.isMainFrame)
+            await fulfillment(of: [impression], timeout: 1)
+            uptime += 7
+            testCase.remove(sut)
+            _ = await request.value
+            sut.closeSitePermissions()
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .camera),
+                .permissionDialogClosedWithoutChoice(type: .camera,
+                                                     reason: testCase.reason,
+                                                     visibleFor: .fiveToThirtySeconds,
+                                                     frame: testCase.isMainFrame ? .main : .iframe)
+            ], testCase.name)
+        }
+    }
+
+    func testGeolocationDialogRemovedWithoutChoiceReportsRequestingFrame() async throws {
+        for isMainFrame in [true, false] {
+            var events = [SitePermissionsEvent]()
+            let impression = expectation(description: "Impression; isMainFrame: \(isMainFrame)")
+            let systemPermissionClient = SystemPermissionClient(
+                locationManager: MockLocationManager(),
+                avAuthorizationStatus: { _ in .authorized },
+                avRequestAccess: { _, completion in completion(true) },
+                notificationCenter: NotificationCenter()
+            )
+            let sut = makeSUT(systemPermissionClient: systemPermissionClient,
+                              committedURL: URL(string: "https://www.example.com/page")!,
+                              eventHandler: { event in
+                                  events.append(event)
+                                  if event == .permissionDialogImpression(type: .geolocation) { impression.fulfill() }
+                              })
+            let userScript = GeolocationUserScript(installImmediately: true)
+            sut.configureSitePermissionsGeolocation(with: userScript)
+            let delegate = try XCTUnwrap(userScript.delegate)
+            let frame = geolocationFrame(on: sut.webView,
+                                         originURL: URL(string: "https://www.example.com/frame")!,
+                                         isMainFrame: isMainFrame)
+            let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
+            let request = Task { @MainActor in
+                await delegate.geolocationUserScript(userScript, getCurrentPositionWith: .init(), constraints: constraints, in: frame)
+            }
+            await fulfillment(of: [impression], timeout: 1)
+
+            sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+            _ = await request.value
+            sut.closeSitePermissions()
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .geolocation),
+                .permissionDialogClosedWithoutChoice(type: .geolocation,
+                                                     reason: .navigationReload,
+                                                     visibleFor: .lessThanOneSecond,
+                                                     frame: isMainFrame ? .main : .iframe)
+            ], "isMainFrame: \(isMainFrame)")
+        }
+    }
+
     func testPermissionDialogImpressionWaitsUntilTabIsVisibleAndSkipsDialogsRemovedWhileHidden() async throws {
         var events = [SitePermissionsEvent]()
         var isVisible = false
@@ -2283,7 +2374,7 @@ private extension AVCaptureDevice {
 }
 
 private final class SitePermissionURLWebView: WKWebView {
-    private let fixedURL: URL
+    var fixedURL: URL
     private var cameraCaptureStateValue = WKMediaCaptureState.none
     private(set) var requestedCameraCaptureStates = [WKMediaCaptureState]()
 

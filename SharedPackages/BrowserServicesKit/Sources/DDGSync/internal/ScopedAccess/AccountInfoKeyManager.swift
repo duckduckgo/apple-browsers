@@ -93,7 +93,7 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
 
         if let protectedKeys = cachedProtectedKeys() {
             do {
-                let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
+                let key = try await loadAccountInfoKey(from: protectedKeys, account: account)
                 cache(key, for: accountIdentity)
                 Logger.sync.debug("Sync-UnifiedDevices: loaded account_info key from secure storage")
                 return key
@@ -114,35 +114,29 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         if let data = try secureStore.protectedKeys(),
            let protectedKeys = try? JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: data),
            let keys = try? validatedAccountInfoKeys(from: protectedKeys.removingDuplicateWrappingIdentities()),
-           let key = try await auditLogKey(from: keys, account: account, passwordRecovery: &passwordRecovery) {
+           let key = try await loadAuditLogKey(from: keys, account: account, passwordRecovery: &passwordRecovery) {
             return AuditLogKeyMaterial(key: key, passwordRecovery: passwordRecovery)
         }
         try Task.checkCancellation()
         let protectedKeys = try await scopedAccess.fetchProtectedKeys(account).removingDuplicateWrappingIdentities()
         try Task.checkCancellation()
         let keys = try validatedAccountInfoKeys(from: protectedKeys)
-        guard let key = try await auditLogKey(from: keys, account: account, passwordRecovery: &passwordRecovery) else {
+        guard !keys.isEmpty else { throw AccountInfoKeyManagerError.unavailableWrappingKey }
+        guard let key = try await loadAuditLogKey(from: keys, account: account, passwordRecovery: &passwordRecovery) else {
             throw AccountInfoKeyManagerError.unableToUnwrapPrivateKey
         }
         return AuditLogKeyMaterial(key: key, passwordRecovery: passwordRecovery)
     }
 
-    private func auditLogKey(from keys: [ProtectedKey],
-                             account: SyncAccount,
-                             passwordRecovery: inout ThirdPartyPasswordRecoveryState) async throws -> AccountInfoKey? {
-        // Default wrappers need no password reads or network recovery.
-        for protectedKey in keys where protectedKey.encryptedWith == SyncCredentialID.defaultCredential {
-            do {
-                let privateKey = try await unwrapPrivateKey(protectedKey, account: account, providedAccessCredentials: nil)
-                return try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKey)
-            } catch {
-                // A bad wrapper may still have a readable third-party alternative.
-            }
-        }
+    private func loadAuditLogKey(from keys: [ProtectedKey],
+                                 account: SyncAccount,
+                                 passwordRecovery: inout ThirdPartyPasswordRecoveryState) async throws -> AccountInfoKey? {
+        let defaultCredentialKeys = keys.filter { $0.encryptedWith == SyncCredentialID.defaultCredential }
+        if let key = decryptAccountInfoKey(from: defaultCredentialKeys, account: account) { return key }
         let thirdPartyKeys = keys.filter { $0.encryptedWith == SyncCredentialID.thirdParty }
         guard !thirdPartyKeys.isEmpty else { return nil }
         if let password = try secureStore.scopedPassword(), !password.isEmpty,
-           let key = auditLogKey(from: thirdPartyKeys, password: password, account: account) {
+           let key = decryptAccountInfoKey(from: thirdPartyKeys, account: account, scopedPassword: password) {
             return key
         }
         try Task.checkCancellation()
@@ -160,26 +154,20 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         guard let password else {
             return nil
         }
-        return auditLogKey(from: thirdPartyKeys, password: password, account: account)
+        return decryptAccountInfoKey(from: thirdPartyKeys, account: account, scopedPassword: password)
     }
 
-    private func auditLogKey(from keys: [ProtectedKey], password: Data, account: SyncAccount) -> AccountInfoKey? {
-        let mainKey = ScopedAccessKeyDerivation.mainKey(from: password, userID: account.userId)
+    private func decryptAccountInfoKey(from keys: [ProtectedKey], account: SyncAccount, scopedPassword: Data? = nil) -> AccountInfoKey? {
         for protectedKey in keys {
-            do {
-                let privateKey = try jweCompactCodec.decryptDirect(token: protectedKey.encryptedPrivateKey,
-                                                                  contentEncryptionKey: mainKey,
-                                                                  expectedKid: SyncCredentialID.thirdParty)
-                return try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKey)
-            } catch {
-                // Try another wrapper without changing shared storage.
+            if let key = try? decryptAccountInfoKey(protectedKey, account: account, scopedPassword: scopedPassword) {
+                return key
             }
         }
         return nil
     }
 
     func preloadKey(from protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], for account: SyncAccount) async throws {
-        let key = try await makeAccountInfoKey(
+        let key = try await loadAccountInfoKey(
             from: protectedKeys.removingDuplicateWrappingIdentities(),
             account: account,
             providedAccessCredentials: accessCredentials)
@@ -191,7 +179,7 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         Logger.sync.debug("Sync-UnifiedDevices: fetching account_info key from server")
         let protectedKeys = try await scopedAccess.fetchProtectedKeys(account)
             .removingDuplicateWrappingIdentities()
-        let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
+        let key = try await loadAccountInfoKey(from: protectedKeys, account: account)
         cache(protectedKeys)
         cache(key, for: AccountIdentity(account: account))
         return key
@@ -227,26 +215,24 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         cachedAccountInfoKey = CachedAccountInfoKey(accountIdentity: accountIdentity, key: key)
     }
 
-    private func makeAccountInfoKey(from protectedKeys: [ProtectedKey],
+    private func loadAccountInfoKey(from protectedKeys: [ProtectedKey],
                                     account: SyncAccount,
                                     providedAccessCredentials: [AccessCredential]? = nil) async throws -> AccountInfoKey {
         let accountInfoKeys = try validatedAccountInfoKeys(from: protectedKeys)
 
-        let defaultCredentialKeys = accountInfoKeys.filter { $0.encryptedWith == SyncCredentialID.defaultCredential }
-        let otherKeys = accountInfoKeys.filter { $0.encryptedWith != SyncCredentialID.defaultCredential }
-        let orderedKeys = defaultCredentialKeys + otherKeys
-        var hasSupportedWrapper = false
+        guard !accountInfoKeys.isEmpty else {
+            throw AccountInfoKeyManagerError.unavailableWrappingKey
+        }
         var lastError: Error?
-        for protectedKey in orderedKeys {
-            guard [SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty].contains(protectedKey.encryptedWith) else {
-                continue
-            }
-            hasSupportedWrapper = true
+        for protectedKey in accountInfoKeys {
             do {
-                let privateKeyPKCS8 = try await unwrapPrivateKey(protectedKey,
-                                                                 account: account,
-                                                                 providedAccessCredentials: providedAccessCredentials)
-                let key = try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKeyPKCS8)
+                let password: Data?
+                if protectedKey.encryptedWith == SyncCredentialID.thirdParty {
+                    password = try await loadScopedPassword(for: account, providedAccessCredentials: providedAccessCredentials)
+                } else {
+                    password = nil
+                }
+                let key = try decryptAccountInfoKey(protectedKey, account: account, scopedPassword: password)
                 if protectedKey.encryptedWith == SyncCredentialID.defaultCredential {
                     Logger.sync.debug("Sync-UnifiedDevices: unwrapped account_info key with ddg credential")
                 } else {
@@ -258,9 +244,6 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             }
         }
 
-        guard hasSupportedWrapper else {
-            throw AccountInfoKeyManagerError.unavailableWrappingKey
-        }
         if let lastError {
             throw lastError
         }
@@ -277,32 +260,37 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             throw AccountInfoKeyManagerError.invalidProtectedKeySet
         }
 
-        return accountInfoKeys
+        let defaultCredentialKeys = accountInfoKeys.filter { $0.encryptedWith == SyncCredentialID.defaultCredential }
+        let thirdPartyKeys = accountInfoKeys.filter { $0.encryptedWith == SyncCredentialID.thirdParty }
+        return defaultCredentialKeys + thirdPartyKeys
     }
 
-    private func unwrapPrivateKey(_ protectedKey: ProtectedKey,
-                                  account: SyncAccount,
-                                  providedAccessCredentials: [AccessCredential]?) async throws -> Data {
+    private func decryptAccountInfoKey(_ protectedKey: ProtectedKey,
+                                       account: SyncAccount,
+                                       scopedPassword: Data?) throws -> AccountInfoKey {
+        let privateKeyPKCS8: Data
         switch protectedKey.encryptedWith {
         case SyncCredentialID.defaultCredential:
             guard let encryptedPrivateKey = Base64URL.decode(protectedKey.encryptedPrivateKey) else {
                 throw AccountInfoKeyManagerError.unableToUnwrapPrivateKey
             }
-            return try crypter.decryptData(encryptedPrivateKey, using: account.secretKey)
+            privateKeyPKCS8 = try crypter.decryptData(encryptedPrivateKey, using: account.secretKey)
         case SyncCredentialID.thirdParty:
-            let scopedPassword = try await scopedPassword(for: account,
-                                                          providedAccessCredentials: providedAccessCredentials)
-            let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
-            return try jweCompactCodec.decryptDirect(token: protectedKey.encryptedPrivateKey,
-                                                     contentEncryptionKey: thirdPartyMainKey,
-                                                     expectedKid: SyncCredentialID.thirdParty)
+            guard let scopedPassword else {
+                throw AccountInfoKeyManagerError.unavailableWrappingKey
+            }
+            let mainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+            privateKeyPKCS8 = try jweCompactCodec.decryptDirect(token: protectedKey.encryptedPrivateKey,
+                                                               contentEncryptionKey: mainKey,
+                                                               expectedKid: SyncCredentialID.thirdParty)
         default:
             throw AccountInfoKeyManagerError.unavailableWrappingKey
         }
+        return try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKeyPKCS8)
     }
 
-    private func scopedPassword(for account: SyncAccount,
-                                providedAccessCredentials: [AccessCredential]?) async throws -> Data {
+    private func loadScopedPassword(for account: SyncAccount,
+                                    providedAccessCredentials: [AccessCredential]?) async throws -> Data {
         if let providedAccessCredentials {
             guard let scopedPassword = try scopedAccess.recoverScopedPassword(from: providedAccessCredentials,
                                                                               primaryKey: account.primaryKey,

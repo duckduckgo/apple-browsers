@@ -320,8 +320,8 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A failed default wrapper falls back to the third-party wrapper", .timeLimit(.minutes(1)))
-    func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper() async throws {
+    @Test("A failed default wrapper falls back to the third-party wrapper", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper(useAuditLoader: Bool) async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
         let malformedDefaultWrapper = ProtectedKey(kid: protectedKeys.defaultCredential.kid,
@@ -340,7 +340,12 @@ struct AccountInfoKeyManagerTests {
                                             scopedAccess: scopedAccess,
                                             crypter: crypter)
 
-        let key = try await manager.loadKey(for: account)
+        let key: AccountInfoKey
+        if useAuditLoader {
+            key = try await manager.loadKeyForAuditLog(for: account).key
+        } else {
+            key = try await manager.loadKey(for: account)
+        }
 
         #expect(key.kid == protectedKeys.thirdParty.kid)
         #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
@@ -348,8 +353,8 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The default wrapper is preferred without recovering a scoped password", .timeLimit(.minutes(1)))
-    func testWhenBothWrappersAreCachedThenPrefersDefaultWithoutRecoveringScopedPassword() async throws {
+    @Test("The default wrapper is preferred without recovering a scoped password", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testWhenBothWrappersAreCachedThenPrefersDefaultWithoutRecoveringScopedPassword(useAuditLoader: Bool) async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
         let secureStore = SecureStorageStub()
@@ -362,7 +367,12 @@ struct AccountInfoKeyManagerTests {
                                             scopedAccess: scopedAccess,
                                             crypter: crypter)
 
-        let key = try await manager.loadKey(for: account)
+        let key: AccountInfoKey
+        if useAuditLoader {
+            key = try await manager.loadKeyForAuditLog(for: account).key
+        } else {
+            key = try await manager.loadKey(for: account)
+        }
 
         #expect(key.kid == protectedKeys.defaultCredential.kid)
         #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
@@ -463,15 +473,28 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Unsupported wrappers are rejected", .timeLimit(.minutes(1)))
-    func testWhenAccountInfoKeyHasUnsupportedWrapperThenThrowsUnavailableWrappingKey() async {
+    @Test("Unsupported wrappers are rejected", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testWhenAccountInfoKeyHasUnsupportedWrapperThenThrowsUnavailableWrappingKey(useAuditLoader: Bool) async {
         let protectedKey = ProtectedKey(kid: "account-info-key",
                                         encryptedPrivateKey: "unused",
                                         publicKey: .mock,
                                         encryptedWith: "unsupported",
                                         purpose: ProtectedKeyPurpose.accountInfo)
 
-        await assertRefreshing([protectedKey], expectedError: .unavailableWrappingKey)
+        if useAuditLoader {
+            let secureStore = SecureStorageStub()
+            let scopedAccess = ScopedAccessCredentialManagingMock()
+            scopedAccess.fetchProtectedKeysStub = [protectedKey]
+            let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+
+            await #expect(throws: AccountInfoKeyManagerError.unavailableWrappingKey) {
+                try await manager.loadKeyForAuditLog(for: account)
+            }
+            #expect(secureStore.theProtectedKeysData == nil)
+            #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        } else {
+            await assertRefreshing([protectedKey], expectedError: .unavailableWrappingKey)
+        }
     }
 
     @available(iOS 16, macOS 13, *)

@@ -541,7 +541,7 @@ private final class AssistedDashboardFixture {
 }
 
 private final class AssistedAgentInterface: DataBrokerProtectionAppToAgentInterface {
-    var list: AssistedOptOutList? = .init(optOuts: [.init(id: "1-1-1", dataBroker: .init(name: "Broker", url: "testbroker.com"), state: .waiting)])
+    var list: AssistedOptOutList? = .init(optOuts: [.init(id: "1-1-1", dataBroker: .init(name: "Broker", url: "testbroker.com"), extractedProfileId: 1, state: .waiting)])
     var requests: [Bool] = []
     var startedIDs: [String] = []
     var invalidations = 0

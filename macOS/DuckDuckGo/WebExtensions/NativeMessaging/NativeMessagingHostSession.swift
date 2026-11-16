@@ -49,7 +49,7 @@ final class NativeMessagingHostSession {
     private var queuedMessageCount = 0
     private var receivedMessageCount = 0
 
-    private let process = Process()
+    private let process: NativeMessagingHostProcess
     private let inputPipe = Pipe()
     private let outputPipe = Pipe()
     private let errorPipe = Pipe()
@@ -82,11 +82,7 @@ final class NativeMessagingHostSession {
     init(hostName: String, extensionIdentifier: String, executable: URL, callerOrigin: String) {
         self.hostName = hostName
         self.extensionIdentifier = extensionIdentifier
-        process.executableURL = executable
-        process.arguments = [callerOrigin]
-        process.standardInput = inputPipe
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
+        process = NativeMessagingHostProcess(executable: executable, arguments: [callerOrigin])
         // A host that dies before reading would otherwise kill the browser with SIGPIPE on our next write.
         inputPipe.fileHandleForWriting.disableSIGPIPE()
     }
@@ -95,8 +91,7 @@ final class NativeMessagingHostSession {
 
     @MainActor
     func start() throws {
-        process.terminationHandler = { [weak self] process in
-            let status = process.terminationStatus
+        process.terminationHandler = { [weak self] status in
             DispatchQueue.main.async { [weak self] in
                 MainActor.assumeMainThread {
                     guard let self else { return }
@@ -118,7 +113,7 @@ final class NativeMessagingHostSession {
         }
 
         do {
-            try process.run()
+            try process.run(standardInput: inputPipe, standardOutput: outputPipe, standardError: errorPipe)
         } catch {
             Logger.webExtensions.error("""
             [NativeMessaging] launch-failed session=\(self.diagnosticIdentifier, privacy: .public) \
@@ -322,7 +317,7 @@ final class NativeMessagingHostSession {
 
         // The termination handler may not have run yet. The process still carries the status,
         // and without it a host that failed looks like one that ended well.
-        if exitStatus == nil, !process.isRunning {
+        if exitStatus == nil {
             exitStatus = process.terminationStatus
         }
 

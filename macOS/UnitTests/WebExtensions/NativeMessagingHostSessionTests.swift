@@ -196,6 +196,24 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         }
     }
 
+    /// Writing to a host that no longer reads raises SIGPIPE, which would end the browser. If that
+    /// regresses, this test ends the test runner instead of failing.
+    func testWhenHostStopsReadingThenSendingDoesNotEndTheBrowser() throws {
+        let executable = try makeHost(named: "deaf-host", script: Self.deafHostScript)
+        let session = makeSession(executable: executable)
+
+        let received = expectation(description: "host closed its input")
+        session.messageHandler = { _ in received.fulfill() }
+
+        try session.start()
+        wait(for: [received], timeout: 10)
+        try session.send(["command": "ping"])
+        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+
+        session.stop()
+        XCTAssertTrue(waitForNoRunningHosts(), "The host process outlived stop()")
+    }
+
     func testWhenHostExitsButLeavesOutputOpenThenTheStallBackstopFinishesTheSession() throws {
         let executable = try makeHost(named: "leaky-host", script: Self.leakyHostScript)
         let session = makeSession(executable: executable)
@@ -419,6 +437,14 @@ final class NativeMessagingHostSessionTests: XCTestCase {
     /// Fails without a word.
     private static let failingHostScript = NativeMessagingHostSessionTests.framingPreamble + """
     sys.exit(1)
+    """
+
+    /// Closes its input, says so, and stays up.
+    private static let deafHostScript = NativeMessagingHostSessionTests.framingPreamble + """
+    import os, time
+    os.close(0)
+    write_frame(b'{"type":"deaf"}')
+    time.sleep(5)
     """
 
     /// Exits while a child of its own holds the output pipe open, so the pipe never reaches

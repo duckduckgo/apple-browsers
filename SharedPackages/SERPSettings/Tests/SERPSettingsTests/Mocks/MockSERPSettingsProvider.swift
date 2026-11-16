@@ -178,6 +178,11 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var lastUsedSidebarWidth: Double?
     var hasAcceptedTermsAndConditions: Bool = false
 
+    var pageSummariesModel: AIChatPageSummariesModel = .duckAI
+    var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
+        Empty().eraseToAnyPublisher()
+    }
+
     func reset() {
         isAIFeaturesEnabled = false
         showShortcutOnNewTabPage = false
@@ -190,6 +195,7 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
         hasAcceptedTermsAndConditions = false
+        pageSummariesModel = .duckAI
     }
 }
 #endif

@@ -179,7 +179,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUI: Bool = false
     var autoplay: Bool = false
     var customError: Bool = false
-    var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "")
+    var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "", youtubeErrorSelector: nil)
     var nativeUISERPEnabled: Bool = true
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var variant: DuckDuckGo.DuckPlayerVariant = .classicWeb

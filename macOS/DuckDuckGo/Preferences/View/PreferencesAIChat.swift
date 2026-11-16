@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+import DesignResourcesKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -27,6 +29,10 @@ extension Preferences {
 
     struct AIChatView: View {
         @ObservedObject var model: AIChatPreferences
+
+        private var isLocalModelAccessShown: Bool {
+            model.shouldShowAIFeatures && model.shouldShowLocalModelAccess
+        }
 
         var body: some View {
             PreferencePane {
@@ -198,10 +204,29 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
+                if isLocalModelAccessShown {
+                    PreferencePaneSection(UserText.localModelAccessSettingsTitle, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            TextMenuItemCaption(UserText.localModelAccessSettingsCaption)
+                            TextButton(UserText.learnMore) {
+                                model.openLocalModelLearnMore()
+                            }
+                            .accessibilityIdentifier("Preferences.AIChat.localModelAccessLearnMore")
+                        }
+                        LocalModelAccessRow(modelName: model.localModelName,
+                                            isOn: model.isLocalModelOn,
+                                            turnOn: { Task { await model.turnOnLocalModel() } },
+                                            turnOff: model.turnOffLocalModel)
+                    }
+                }
+
                 // Always shown: the button disables all AI while any is on, then greys out
                 // once everything is disabled, with the caption reinforcing the no-AI state.
-                Divider()
-                    .padding(.bottom, 8)
+                // The local model design has no divider between its section and the button.
+                if !isLocalModelAccessShown {
+                    Divider()
+                        .padding(.bottom, 8)
+                }
 
                 PreferencePaneSection {
                     VStack(alignment: .leading) {
@@ -214,7 +239,46 @@ extension Preferences {
                     }
                 }
             }
+            .onAppear {
+                model.observeLocalModelAvailability()
+            }
         }
+    }
+}
+
+private struct LocalModelAccessRow: View {
+
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    let modelName: String
+    let isOn: Bool
+    let turnOn: () -> Void
+    let turnOff: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AppleIntelligenceGlyph(size: 20)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(modelName)
+                    .font(.system(size: 13))
+                    .foregroundColor(color(.textPrimary))
+                Text(UserText.localModelAccessSettingsAppleIntelligenceCaption)
+                    .font(.system(size: 11))
+                    .foregroundColor(color(.textSecondary))
+            }
+            Spacer()
+            Button(isOn ? UserText.localModelAccessTurnOff : UserText.localModelAccessTurnOn) {
+                isOn ? turnOff() : turnOn()
+            }
+            .accessibilityIdentifier("Preferences.AIChat.localModelAccessButton")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color(.surfaceSecondary)))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(color(.containerBorderPrimary), lineWidth: 1))
+    }
+
+    private func color(_ color: DesignSystemColor) -> Color {
+        Color(designSystemColor: color, palette: themeManager.designColorPalette)
     }
 }
 

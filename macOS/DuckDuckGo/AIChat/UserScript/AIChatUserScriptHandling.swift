@@ -210,6 +210,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
     private let browserTools: AIChatBrowserToolsService
+    private let localModelService: AIChatLocalModelServing?
     private let fireNewAIChatExperimentPixels: () -> Void
     private let featureDiscovery: FeatureDiscovery
     private let termsOfServiceStore: DuckAiTermsOfServiceStore
@@ -266,9 +267,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels,
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
-        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        localModelService: AIChatLocalModelServing? = nil
     ) {
         self.storage = storage
+        self.localModelService = localModelService
         self.termsOfServiceStore = termsOfServiceStore
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
@@ -333,7 +336,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
         let isFireWindow = isFireWindowProvider?() ?? false
-        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+        var config = messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+        config.localModel = localModelService?.config()
+        return config
     }
 
     @MainActor

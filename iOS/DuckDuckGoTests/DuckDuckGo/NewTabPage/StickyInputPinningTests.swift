@@ -21,27 +21,30 @@ import Testing
 import CoreGraphics
 @testable import DuckDuckGo
 
-@available(iOS 16, macOS 13, *)
 struct StickyInputPinningTests {
 
     private let pinning = StickyInputPinning(restingMinY: 100, height: 60, containerHeight: 1000)
 
+    @available(iOS 16, *)
     @Test("Input stays at rest while its resting position is below the pinned edge", .timeLimit(.minutes(1)))
     func restsWhileBelowPinnedEdge() {
         #expect(pinning.translation(pinnedMinY: 0) == 0)
         #expect(pinning.translation(pinnedMinY: 100) == 0)
     }
 
+    @available(iOS 16, *)
     @Test("Input follows the pinned edge once scrolling would carry it offscreen", .timeLimit(.minutes(1)))
     func followsPinnedEdge() {
         #expect(pinning.translation(pinnedMinY: 250) == 150)
     }
 
+    @available(iOS 16, *)
     @Test("Input stops at the bottom of its container", .timeLimit(.minutes(1)))
     func stopsAtContainerBottom() {
         #expect(pinning.translation(pinnedMinY: 5000) == 840)
     }
 
+    @available(iOS 16, *)
     @Test("Input does not move when the container is shorter than the input's resting bottom edge", .timeLimit(.minutes(1)))
     func shortContainerDoesNotMoveInput() {
         let shortContainer = StickyInputPinning(restingMinY: 100, height: 60, containerHeight: 120)

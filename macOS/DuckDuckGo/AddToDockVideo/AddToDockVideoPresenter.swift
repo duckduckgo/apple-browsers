@@ -53,7 +53,7 @@ extension AddToDockVideoPresenting {
 final class AddToDockVideoPresenter: AddToDockVideoPresenting {
 
     private struct PresentedSheet {
-        let parentWindow: NSWindow
+        weak var parentWindow: NSWindow?
         let sheetWindow: NSWindow
         let completion: (AddToDockVideoAction) -> Void
     }
@@ -66,7 +66,7 @@ final class AddToDockVideoPresenter: AddToDockVideoPresenting {
     }
 
     func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) {
-        guard presentedSheet == nil, let parentWindow = windowProvider() else { return }
+        guard presentedSheet?.parentWindow == nil, let parentWindow = windowProvider() else { return }
 
         let sheetView = AddToDockVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
                                             videoSize: DockPreferencesModel.demoVideoSize,
@@ -79,14 +79,17 @@ final class AddToDockVideoPresenter: AddToDockVideoPresenting {
         presentedSheet = PresentedSheet(parentWindow: parentWindow,
                                         sheetWindow: sheetWindow,
                                         completion: completion)
-        parentWindow.beginSheet(sheetWindow)
+        parentWindow.beginSheet(sheetWindow) { [weak self, weak sheetWindow] _ in
+            guard let self, let sheetWindow, presentedSheet?.sheetWindow === sheetWindow else { return }
+            presentedSheet = nil
+        }
     }
 
     func handle(_ action: AddToDockVideoAction) {
         guard let presentedSheet else { return }
         self.presentedSheet = nil
 
-        presentedSheet.parentWindow.endSheet(presentedSheet.sheetWindow)
+        presentedSheet.parentWindow?.endSheet(presentedSheet.sheetWindow)
         presentedSheet.completion(action)
     }
 }

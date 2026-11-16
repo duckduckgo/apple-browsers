@@ -38,7 +38,10 @@ extension FireDialogUITests {
         app.enforceSingleWindow()
 
         // Reset fireproof sites
-        app.revealDebugMenuItem("resetFireproofSites:", in: "MainMenu.resetData").clickAfterExistenceTestSucceeds()
+        app.revealDebugMenuItem(
+            XCUIApplication.AccessibilityIdentifiers.debugMenuResetFireproofSites,
+            in: XCUIApplication.AccessibilityIdentifiers.debugMenuResetData
+        ).clickAfterExistenceTestSucceeds()
 
         // Clear state
         app.fireButton.click()
@@ -60,7 +63,10 @@ extension FireDialogUITests {
     // MARK: - Helper Methods
 
     func populateFakeHistoryFromDebugMenu(file: StaticString = #file, line: UInt = #line) {
-        let populateHistory = app.revealDebugMenuItem(XCUIApplication.AccessibilityIdentifiers.populateFakeHistory10MenuItem, in: "History")
+        let populateHistory = app.revealDebugMenuItem(
+            XCUIApplication.AccessibilityIdentifiers.populateFakeHistory10MenuItem,
+            in: XCUIApplication.AccessibilityIdentifiers.debugMenuHistory
+        )
         XCTAssertTrue(populateHistory.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Populate fake history menu item should exist", file: file, line: line)
         populateHistory.click()

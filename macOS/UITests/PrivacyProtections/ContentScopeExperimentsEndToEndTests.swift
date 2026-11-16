@@ -20,11 +20,14 @@ import XCTest
 
 final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
+    private typealias Identifiers = XCUIApplication.AccessibilityIdentifiers
+
     private var didSetCustomConfiguration = false
 
     override func tearDownWithError() throws {
         if didSetCustomConfiguration, let app {
-            app.revealDebugMenuItem("resetPrivacyConfigurationToDefault:", in: "Remote Configuration").clickAfterExistenceTestSucceeds()
+            app.revealDebugMenuItem(Identifiers.debugMenuResetPrivacyConfigurationToDefault, in: Identifiers.debugMenuRemoteConfiguration)
+                .clickAfterExistenceTestSucceeds()
 
             let configUpdateComplete = app.staticTexts["Configuration Update Complete"]
             XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.navigation), "Default configuration was not restored")
@@ -39,7 +42,7 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         app.openNewTab()
 
         // Step 1: Enable internal user if needed
-        let internalUserMenuItem = app.revealDebugMenuItem("internalUserState:")
+        let internalUserMenuItem = app.revealDebugMenuItem(Identifiers.debugMenuInternalUserState)
         guard internalUserMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
             XCTFail("Internal user menu item did not appear")
             return
@@ -51,7 +54,8 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         }
 
         // Step 2: Load custom remote config
-        app.revealDebugMenuItem("setCustomPrivacyConfigurationURL:", in: "Remote Configuration").clickAfterExistenceTestSucceeds()
+        app.revealDebugMenuItem(Identifiers.debugMenuSetCustomPrivacyConfigurationURL, in: Identifiers.debugMenuRemoteConfiguration)
+            .clickAfterExistenceTestSucceeds()
 
         let configURL = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
         let textField = app.dialogs["alert"].children(matching: .textField).element

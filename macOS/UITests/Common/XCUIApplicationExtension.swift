@@ -78,6 +78,17 @@ extension XCUIApplication {
         static let helpMenuItem = "Help"
         static let releaseNotesMenuItem = "Release Notes"
 
+        static let debugMenuResetData = "MainMenu.resetData"
+        static let debugMenuResetFireproofSites = "resetFireproofSites:"
+        static let debugMenuResetPinnedTabs = "resetPinnedTabs:"
+        static let debugMenuHistory = "History"
+        static let debugMenuMemoryUsageReporting = "Memory Usage Reporting"
+        static let debugMenuSimulateCriticalMemoryPressure = "simulateMemoryPressureCritical:"
+        static let debugMenuInternalUserState = "internalUserState:"
+        static let debugMenuRemoteConfiguration = "Remote Configuration"
+        static let debugMenuSetCustomPrivacyConfigurationURL = "setCustomPrivacyConfigurationURL:"
+        static let debugMenuResetPrivacyConfigurationToDefault = "resetPrivacyConfigurationToDefault:"
+
         static let settingsScrollView = "Settings.ScrollView"
         static let preferencesSidebarScrollView = "PreferencesSidebar.scrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
@@ -1129,11 +1140,13 @@ extension XCUIApplication {
     }
 
     func resetPinnedTabs() {
-        revealDebugMenuItem("resetPinnedTabs:", in: "MainMenu.resetData").clickAfterExistenceTestSucceeds()
+        revealDebugMenuItem(AccessibilityIdentifiers.debugMenuResetPinnedTabs, in: AccessibilityIdentifiers.debugMenuResetData)
+            .clickAfterExistenceTestSucceeds()
     }
 
     func simulateCriticalMemoryPressure() {
-        revealDebugMenuItem("simulateMemoryPressureCritical:", in: "Memory Usage Reporting").clickAfterExistenceTestSucceeds()
+        revealDebugMenuItem(AccessibilityIdentifiers.debugMenuSimulateCriticalMemoryPressure, in: AccessibilityIdentifiers.debugMenuMemoryUsageReporting)
+            .clickAfterExistenceTestSucceeds()
     }
 
     var homeButton: XCUIElement {

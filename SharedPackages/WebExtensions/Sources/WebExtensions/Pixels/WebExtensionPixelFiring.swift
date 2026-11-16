@@ -130,8 +130,9 @@ public enum WebExtensionPixelEvent {
     case scriptletInstalled(type: DuckDuckGoWebExtensionType, version: String)
     case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 
-    /// One report for each tab that stayed silent after a page loaded.
-    case cpmMessagingBreakage(tabs: CPMSilentTabs)
+    /// One report for each tab that stayed silent after a page loaded, with the furthest init step the extension
+    /// reported for the page (nil when it reported none).
+    case cpmMessagingBreakage(lastStage: CPMInitStage?, tabs: CPMSilentTabs)
     /// Sent once when a second tab goes silent without any answer from the extension in between.
     case cpmMessagingBreakagePersistent
 

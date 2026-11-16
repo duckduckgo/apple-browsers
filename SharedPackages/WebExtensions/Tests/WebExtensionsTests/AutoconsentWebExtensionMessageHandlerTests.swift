@@ -159,6 +159,64 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenCpmInitProgressArrivesThenItReachesTheMonitorAsAMarkAndNeverAsAResponse() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+
+        let result = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: [
+            "tabId": NSNumber(value: 9), "url": "https://example.com/a", "stage": "config_read"
+        ]))
+
+        guard case .success = result else { return XCTFail("a mark is always acknowledged") }
+        XCTAssertEqual(monitor.progress.map(\.stage), [.configRead])
+        XCTAssertEqual(monitor.progress.map(\.url), [URL(string: "https://example.com/a")])
+        XCTAssertNil(monitor.url, "a mark is not a dashboard response")
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressIsMalformedThenItIsIgnoredWithoutAnError() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let malformed: [[String: Any]] = [
+            ["url": "https://example.com/a"],
+            ["url": "https://example.com/a", "stage": "from_a_newer_extension"],
+            ["stage": "background_received"],
+            ["url": "no host", "stage": "background_received"]
+        ]
+
+        for params in malformed {
+            let result = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: params))
+            guard case .success = result else { return XCTFail("\(params) must not be an error") }
+        }
+
+        XCTAssertTrue(monitor.progress.isEmpty)
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressComesFromAnExtensionThenItsIdentifierIsPassedOn() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+
+        _ = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: [
+            "url": "https://example.com/a", "stage": "page_init_sent"
+        ]))
+
+        XCTAssertEqual(monitor.progress.map(\.extensionIdentifier), ["test-extension-id"])
+    }
+
+    @MainActor
     func testWhenCpmStageIsOrdinaryThenTheRefreshIsAResponse() async {
         let monitor = RecordingCPMMessagingHealthMonitor()
         let handler = AutoconsentWebExtensionMessageHandler(
@@ -892,8 +950,12 @@ private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonito
     private(set) var extensionIdentifier: String?
     private(set) var url: URL?
     private(set) var isAnswer: Bool?
+    private(set) var progress: [(url: URL, stage: CPMInitStage, extensionIdentifier: String?)] = []
 
     func handle(_ event: CPMMessagingHealthEvent) {
+        if case .initProgress(let url, let stage, let extensionIdentifier) = event {
+            progress.append((url, stage, extensionIdentifier))
+        }
         guard case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event else { return }
         self.extensionIdentifier = extensionIdentifier
         self.url = url

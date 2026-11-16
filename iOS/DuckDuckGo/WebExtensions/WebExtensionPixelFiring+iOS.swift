@@ -170,8 +170,8 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmMessagingBreakage(let tabs):
-            fireCPMPixel(name: "web_extension_cpm_breakage", parameters: ["tabs": tabs.rawValue])
+        case .cpmMessagingBreakage(let lastStage, let tabs):
+            fireCPMPixel(name: "web_extension_cpm_breakage", parameters: ["last_stage": lastStage.pixelValue, "tabs": tabs.rawValue])
         case .cpmMessagingBreakagePersistent:
             fireCPMPixel(name: "web_extension_cpm_breakage_persistent", parameters: [:])
         case .enabled, .disabled, .remotelyDisabled:

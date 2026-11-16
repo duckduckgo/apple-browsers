@@ -58,7 +58,8 @@ public struct BrowserToolPermissionStorageKeys: StoringKeys {
     public init() {}
 }
 
-/// `[toolName: "allow" | "deny"]` under one key, the layout Windows persists.
+/// `[toolName: "allow" | "deny"]` under one key, the layout Windows persists. iOS stores decisions here;
+/// macOS keeps them in its site permissions.
 @MainActor
 public final class BrowserToolPermissionStore: BrowserToolPermissionStoring {
 
@@ -68,24 +69,18 @@ public final class BrowserToolPermissionStore: BrowserToolPermissionStoring {
         self.storage = storage
     }
 
-    public func state(forToolNamed name: String) -> BrowserToolPermissionState {
+    public func state(forToolNamed name: String) -> BrowserToolPermissionState? {
         Self.parse(decisions[name])
     }
 
-    public func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {
+    public func setState(_ state: BrowserToolPermissionState?, forToolNamed name: String) {
         var decisions = decisions
-        switch state {
-        case .ask: decisions.removeValue(forKey: name)
-        case .allow, .deny: decisions[name] = state.rawValue
-        }
+        decisions[name] = state.flatMap { $0 == .ask ? nil : $0.rawValue }
         self.decisions = decisions
     }
 
     public var storedDecisions: [String: BrowserToolPermissionState] {
-        decisions.reduce(into: [:]) { result, entry in
-            let state = Self.parse(entry.value)
-            if state != .ask { result[entry.key] = state }
-        }
+        decisions.compactMapValues(Self.parse)
     }
 
     public func clearAll() {
@@ -97,12 +92,12 @@ public final class BrowserToolPermissionStore: BrowserToolPermissionStoring {
         set { storage.decisions = newValue.isEmpty ? nil : newValue }
     }
 
-    /// Anything unrecognised reads as `ask`, so a bad value can only ever cause an extra prompt.
-    private static func parse(_ value: String?) -> BrowserToolPermissionState {
+    /// Anything unrecognised reads as no decision, so a bad value can only ever cause an extra prompt.
+    private static func parse(_ value: String?) -> BrowserToolPermissionState? {
         switch value {
         case BrowserToolPermissionState.allow.rawValue: .allow
         case BrowserToolPermissionState.deny.rawValue: .deny
-        default: .ask
+        default: nil
         }
     }
 }

@@ -55,7 +55,7 @@ struct AssistedOptOutQueueTests {
         let presenter = Presenter()
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         queue.presenter = presenter
-        #expect(try await queue.assistedOptOuts().map(\.recordCount) == [2])
+        #expect(try await queue.assistedOptOuts().map(\.extractedProfileId) == [1, 2])
         try await queue.start(id: fixture.id)
         let session = try #require(queue.activeSessions.first)
         try await queue.start(id: fixture.id)
@@ -361,7 +361,7 @@ struct AssistedOptOutQueueTests {
         let metrics = Metrics()
         var now = Date(timeIntervalSince1970: 100)
         let session = AssistedOptOutSession(id: fixture.id, broker: .init(name: "Broker", url: "broker.com"),
-                                            recordCount: 1, steps: .init(titles: []), instrumentation: metrics, now: { now })
+                                            steps: .init(titles: []), instrumentation: metrics, now: { now })
         session.begin()
         now.addTimeInterval(3)
         session.attemptNeedsUser(actionID: "a")

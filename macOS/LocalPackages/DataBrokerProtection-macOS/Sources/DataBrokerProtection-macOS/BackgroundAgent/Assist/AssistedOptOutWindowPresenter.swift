@@ -31,17 +31,20 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
     private var controllers: [AssistedOptOutID: AssistedOptOutWindowController] = [:]
     private let isApplicationActive: @MainActor () -> Bool
     private let requestUserAttention: @MainActor () -> Void
+    private let activateApplication: @MainActor () -> Void
     private let makeWindow: @MainActor () -> NSWindow
     private let loadFavicon: @MainActor (AssistedOptOut.DataBroker) async -> Data?
     private let confirmStop: AssistedOptOutStopConfirmation
 
     init(isApplicationActive: @escaping @MainActor () -> Bool = { NSApp.isActive },
          requestUserAttention: @escaping @MainActor () -> Void = { NSApp.requestUserAttention(.criticalRequest) },
+         activateApplication: @escaping @MainActor () -> Void = AssistedOptOutWindowPresenter.activateAgent,
          makeWindow: @escaping @MainActor () -> NSWindow = AssistedOptOutWindowController.makeWindow,
          loadFavicon: @escaping @MainActor (AssistedOptOut.DataBroker) async -> Data? = AssistedOptOutBrokerLogo.faviconData,
          confirmStop: @escaping AssistedOptOutStopConfirmation = AssistedOptOutWindowController.presentStopConfirmation) {
         self.isApplicationActive = isApplicationActive
         self.requestUserAttention = requestUserAttention
+        self.activateApplication = activateApplication
         self.makeWindow = makeWindow
         self.loadFavicon = loadFavicon
         self.confirmStop = confirmStop
@@ -65,13 +68,20 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
         if window.isMiniaturized, !requestingAttention || applicationIsActive {
             window.deminiaturize(nil)
         }
-        if applicationIsActive {
-            window.makeKeyAndOrderFront(nil)
-        } else if requestingAttention {
+        if requestingAttention, !applicationIsActive {
             window.orderFrontRegardless()
             requestUserAttention()
         } else {
-            window.orderFront(nil)
+            if !applicationIsActive { activateApplication() }
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    static func activateAgent() {
+        if #available(macOS 14.0, *) {
+            NSApp.activate()
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 

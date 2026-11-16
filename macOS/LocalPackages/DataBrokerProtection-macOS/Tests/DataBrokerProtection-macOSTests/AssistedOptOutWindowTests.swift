@@ -234,7 +234,7 @@ struct AssistedOptOutWindowTests {
 
     private func makeSession(titles: [String]? = nil) -> AssistedOptOutSession {
         AssistedOptOutSession(id: .init(brokerId: 1, profileQueryId: 2, extractedProfileId: 3),
-                              broker: .init(name: "Example Broker", url: "broker.example"), recordCount: 1,
+                              broker: .init(name: "Example Broker", url: "broker.example"),
                               steps: .init(titles: titles ?? ["Open the opt-out form", Self.userStep, "Submit request"]))
     }
 

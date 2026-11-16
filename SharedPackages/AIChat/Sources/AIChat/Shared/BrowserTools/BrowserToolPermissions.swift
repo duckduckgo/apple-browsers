@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Persistence
 
 public enum BrowserToolPermissionState: String, Equatable, Sendable {
     case ask
@@ -44,5 +45,64 @@ public extension BrowserToolPermissionStoring {
 public extension BrowserToolPermissionMode {
     var defaultState: BrowserToolPermissionState {
         self == .auto ? .allow : .ask
+    }
+}
+
+enum BrowserToolPermissionStorageKey: String, StorageKeyDescribing {
+    // Dot-free on purpose: dots break UserDefaults KVO, and `StorageKey` asserts on them.
+    case decisions = "ai-chat_browser-tool-permissions"
+}
+
+public struct BrowserToolPermissionStorageKeys: StoringKeys {
+    public let decisions = StorageKey<[String: String]>(BrowserToolPermissionStorageKey.decisions)
+    public init() {}
+}
+
+/// `[toolName: "allow" | "deny"]` under one key, the layout Windows persists.
+@MainActor
+public final class BrowserToolPermissionStore: BrowserToolPermissionStoring {
+
+    private let storage: any KeyedStoring<BrowserToolPermissionStorageKeys>
+
+    public init(storage: any KeyedStoring<BrowserToolPermissionStorageKeys>) {
+        self.storage = storage
+    }
+
+    public func state(forToolNamed name: String) -> BrowserToolPermissionState {
+        Self.parse(decisions[name])
+    }
+
+    public func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {
+        var decisions = decisions
+        switch state {
+        case .ask: decisions.removeValue(forKey: name)
+        case .allow, .deny: decisions[name] = state.rawValue
+        }
+        self.decisions = decisions
+    }
+
+    public var storedDecisions: [String: BrowserToolPermissionState] {
+        decisions.reduce(into: [:]) { result, entry in
+            let state = Self.parse(entry.value)
+            if state != .ask { result[entry.key] = state }
+        }
+    }
+
+    public func clearAll() {
+        storage.decisions = nil
+    }
+
+    private var decisions: [String: String] {
+        get { storage.decisions ?? [:] }
+        set { storage.decisions = newValue.isEmpty ? nil : newValue }
+    }
+
+    /// Anything unrecognised reads as `ask`, so a bad value can only ever cause an extra prompt.
+    private static func parse(_ value: String?) -> BrowserToolPermissionState {
+        switch value {
+        case BrowserToolPermissionState.allow.rawValue: .allow
+        case BrowserToolPermissionState.deny.rawValue: .deny
+        default: .ask
+        }
     }
 }

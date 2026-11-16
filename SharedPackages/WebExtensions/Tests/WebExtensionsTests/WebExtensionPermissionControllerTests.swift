@@ -355,6 +355,22 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
     }
 
+    func testWhenAnExtensionLoadsThenEarlierGrantsOfOptionalUnavailablePermissionsAreDropped() async throws {
+        let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging])
+        let optional = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
+        optional.setPermissionStatus(.grantedExplicitly, for: .nativeMessaging)
+        optional.setPermissionStatus(.grantedExplicitly, for: .clipboardWrite)
+        let required = try await makeContext(permissions: ["nativeMessaging"])
+        required.setPermissionStatus(.grantedExplicitly, for: .nativeMessaging)
+
+        manager.webExtensionLoader(manager.loader, willLoad: optional, identifier: optional.uniqueIdentifier)
+        manager.webExtensionLoader(manager.loader, willLoad: required, identifier: required.uniqueIdentifier)
+
+        XCTAssertFalse(optional.hasPermission(.nativeMessaging))
+        XCTAssertTrue(optional.hasPermission(.clipboardWrite))
+        XCTAssertTrue(required.hasPermission(.nativeMessaging))
+    }
+
     func testWhenPermissionsAreNotEnforcedThenUnavailablePermissionsAreStillNotGranted() async throws {
         let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging])
         let context = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])

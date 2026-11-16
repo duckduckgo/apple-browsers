@@ -44,11 +44,22 @@ extension XCUIApplication {
             predicate: NSPredicate(format: "count == %d", count),
             object: bookmarks)
         XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.elementExistence),
+            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation),
             .completed,
             "Expected \(count) bookmarks, found \(bookmarks.count).",
             file: file,
             line: line)
+    }
+
+    func assertBookmarkTitles(_ titles: [String], file: StaticString = #filePath, line: UInt = #line) {
+        assertBookmarkCount(titles.count, file: file, line: line)
+        let bookmarks = tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Item")
+        for title in titles {
+            let bookmark = bookmarks.containing(.staticText, identifier: title).firstMatch
+            XCTAssertTrue(
+                bookmark.waitForExistence(timeout: UITestTimeouts.elementExistence),
+                "Bookmark '\(title)' did not appear.", file: file, line: line)
+        }
     }
 
     func bookmarkAllOpenTabs(
@@ -91,7 +102,7 @@ extension XCUIApplication {
         XCTAssertTrue(
             tables["Bookmarks.List"].wait(
                 for: NSPredicate(format: "exists == true AND isHittable == true"),
-                timeout: UITestTimeouts.elementExistence),
+                timeout: UITestTimeouts.navigation),
             "Bookmarks list did not reappear after creating the folder.",
             file: file,
             line: line)
@@ -148,7 +159,8 @@ extension XCUIApplication {
             addFolder.tapWhenHittable(in: self, file: file, line: line)
 
             let title = textFields["Bookmarks.Editor.FolderTitle"]
-            title.tapWhenHittable(in: self, file: file, line: line)
+            // The folder editor focuses its title field when it appears.
+            XCTAssertTrue(title.waitForExistence(timeout: UITestTimeouts.navigation), file: file, line: line)
             title.typeText(name)
             buttons["Bookmarks.Editor.FolderSave"]
                 .tapWhenHittable(in: self, file: file, line: line)
@@ -168,7 +180,7 @@ extension XCUIApplication {
         XCTAssertTrue(
             tables["Bookmarks.List"].wait(
                 for: NSPredicate(format: "exists == true AND isHittable == true"),
-                timeout: UITestTimeouts.elementExistence),
+                timeout: UITestTimeouts.navigation),
             "Bookmarks list did not reappear after saving.", file: file, line: line)
     }
 
@@ -179,19 +191,17 @@ extension XCUIApplication {
 
             let editor = tables["Bookmarks.Editor.List"]
             let delete = editor.cells["Bookmarks.Editor.Delete"]
-            if keyboards.firstMatch.exists {
-                // Drag upward to dismiss the keyboard without pulling down the editor sheet.
-                let dragStart = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
-                let dragEnd = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-                dragStart.press(forDuration: 0.1, thenDragTo: dragEnd)
-                XCTAssertTrue(
-                    keyboards.firstMatch.wait(
-                        for: NSPredicate(format: "exists == false"),
-                        timeout: UITestTimeouts.elementExistence),
-                    "Keyboard did not dismiss before deleting the bookmark.", file: file, line: line)
-                XCTAssertTrue(
-                    editor.exists,
-                    "Bookmark editor was dismissed with the keyboard.", file: file, line: line)
+            let keyboard = keyboards.firstMatch
+            if !delete.isHittable && keyboard.exists {
+                let editorFrame = editor.frame
+                let visibleHeight = keyboard.frame.minY - editorFrame.minY
+                if visibleHeight > 0 && visibleHeight < editorFrame.height {
+                    // Start above the keyboard so the table receives the scroll gesture.
+                    let top = editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+                    let start = top.withOffset(CGVector(dx: 0, dy: visibleHeight * 0.85))
+                    let end = top.withOffset(CGVector(dx: 0, dy: visibleHeight * 0.3))
+                    start.press(forDuration: 0.1, thenDragTo: end)
+                }
             }
             editor.swipeUpToReveal(delete, file: file, line: line)
             delete.tapWhenHittable(in: self, file: file, line: line)

@@ -52,6 +52,8 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     weak var controller: WKWebExtensionController?
     public private(set) var droppedCallbacksCount = 0
     public var onBrowsingActivity: (() -> Void)?
+    /// Called when a tab closes, not when it only moves between windows.
+    public var onTabClosed: ((WKWebExtensionTab) -> Void)?
     var onUpdateActivity: ((Bool) -> Void)?
 
     private var isSuppressingTabLifecycleEvents = false
@@ -77,6 +79,7 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {
         guard !isSuppressingTabLifecycleEvents else { return }
+        onTabClosed?(tab)
         notifyController({ $0.didCloseTab(tab, windowIsClosing: windowIsClosing) }, forceUpdateActivity: true)
     }
 
@@ -98,6 +101,8 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
     public func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
+        // A replaced tab is gone: whatever the health monitor waited on for it ends here.
+        if !isSuppressingTabLifecycleEvents { onTabClosed?(oldTab) }
         notifyController({ $0.didReplaceTab(oldTab, with: tab) }, forceUpdateActivity: true)
     }
 

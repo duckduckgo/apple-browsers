@@ -19,6 +19,7 @@
 import AppKit
 import AppKitExtensions
 import Combine
+import DuckPlayer
 import EventHub
 import FeatureFlags_macOS
 import Persistence
@@ -122,7 +123,7 @@ enum WebExtensionManagerFactory {
         }
 #endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor()
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
         let installationStore = InstalledWebExtensionStore()
         let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
@@ -169,7 +170,7 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

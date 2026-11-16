@@ -3548,3 +3548,100 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         return (sut, collection)
     }
 }
+
+@MainActor
+final class SwipeTabsFullScreenSnapshotTests: XCTestCase {
+
+    // The coordinator holds these weakly.
+    private var mainViewCoordinator: MainViewCoordinator!
+    private var tabsModel: TabsModel!
+    private var previewsSource: MockTabPreviewsSource!
+    private var window: UIWindow?
+
+    override func tearDown() {
+        window?.isHidden = true
+        window = nil
+        mainViewCoordinator = nil
+        tabsModel = nil
+        previewsSource = nil
+        super.tearDown()
+    }
+
+    func testWhenViewIsInWindowThenSnapshotMatchesViewSize() throws {
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let window = UIWindow(frame: parent.view.frame)
+        window.addSubview(parent.view)
+        window.isHidden = false
+        self.window = window
+        let sut = makeSUT(parent: parent)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        let snapshot = try XCTUnwrap(previewsSource.updatedFullScreenSnapshots.first)
+        XCTAssertEqual(previewsSource.updatedFullScreenSnapshots.count, 1)
+        XCTAssertEqual(snapshot.size, parent.view.bounds.size)
+        XCTAssertEqual(snapshot.scale, UIGraphicsImageRendererFormat.default().scale)
+    }
+
+    func testWhenViewIsNotInWindowThenNoSnapshotIsStored() {
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let sut = makeSUT(parent: parent)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    func testWhenViewHasEmptyBoundsThenNoSnapshotIsStored() {
+        let parent = UIViewController()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        parent.view.frame = .zero
+        window.addSubview(parent.view)
+        window.isHidden = false
+        self.window = window
+        let sut = makeSUT(parent: parent)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    private func makeSUT(parent: UIViewController) -> SwipeTabsCoordinator {
+        let coordinator = MainViewCoordinator(parentController: parent)
+        mainViewCoordinator = coordinator
+        coordinator.navigationBarCollectionView = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        let previewsSource = MockTabPreviewsSource()
+        self.previewsSource = previewsSource
+        let sut = SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: previewsSource,
+            appSettings: AppSettingsMock(),
+            omnibarDependencies: MockOmnibarDependency(featureFlagger: MockFeatureFlagger()),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: false,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { _ in nil },
+            inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+        tabsModel = TabsModel(tabs: [Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))], desktop: false)
+        sut.tabsModel = tabsModel
+        return sut
+    }
+}

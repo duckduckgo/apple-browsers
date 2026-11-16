@@ -589,9 +589,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     func updateFullScreenSnapshot(forTab tab: Tab) {
         guard !floatingUIManager.isFloatingUIEnabled else { return }
         // Tab-switcher entry can dismiss editing synchronously in the same run loop.
-        // Capture the restored layout rather than the last rendered focused frame.
+        // Settle the layout before capturing the last composited frame.
         coordinator.superview.layoutIfNeeded()
-        guard let snapshot = makeFullScreenSnapshot(afterScreenUpdates: true) else { return }
+        // The overlay holds earlier snapshots; capturing while it's showing would draw them back in.
+        guard !overlayActive, let snapshot = makeFullScreenSnapshot() else { return }
         tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
     }
 
@@ -600,17 +601,24 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
     /// snapshot. The alpha flip happens entirely within a single synchronous block, so UIKit
     /// only paints once — no visible flash.
-    private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
+    ///
+    /// Uses the last composited frame (`afterScreenUpdates: false`): forcing a commit while a
+    /// tab change is mutating the hierarchy can leave surface-backed contents (web tiles,
+    /// earlier snapshots) purged while the renderer is still reading them.
+    private func makeFullScreenSnapshot() -> UIImage? {
         let superview = coordinator.superview
-        guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
+        guard superview.window != nil, superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
 
         let priorAlpha = swipeOverlayView?.alpha ?? 0
         swipeOverlayView?.alpha = 0
         defer { swipeOverlayView?.alpha = priorAlpha }
 
-        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
+        // Standard range keeps the render off the extended-range surface conversion path.
+        let format = UIGraphicsImageRendererFormat.default()
+        format.preferredRange = .standard
+        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size, format: format)
         return renderer.image { _ in
-            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
+            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: false)
         }
     }
 

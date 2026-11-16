@@ -16,12 +16,16 @@
 //  limitations under the License.
 //
 
+#if os(macOS)
+import AppKit
+#endif
 import BrowserServicesKit
 import Common
 import ConcurrencyExtensions
 import Foundation
 import os.log
 import PrivacyConfig
+import WebKit
 
 /// Nothing it runs is saved to the PIR database.
 public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
@@ -202,6 +206,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                        showWebView: Bool,
                        timeout: TimeInterval?,
                        stageCalculator: FakeStageDurationCalculator,
+                       assistanceObserver: OptOutAssistanceObserving? = nil,
                        onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws -> Bool {
         let runner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: privacyConfigManager,
@@ -215,6 +220,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             executionConfig: brokerJobExecutionConfig,
             actionsHandlerMode: .optOut,
             contentBlocking: contentBlocking,
+            assistanceObserver: assistanceObserver,
             shouldRunNextStep: { true }
         )
         onWebRunnerStarted?(runner)
@@ -335,5 +341,71 @@ extension DebugModeRunner {
 
     public static func historyError(_ error: Error) -> HistoryEvent.EventType {
         .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))
+    }
+}
+
+@MainActor
+public final class DebugAssistanceObserver: OptOutAssistanceObserving {
+    private let showsWebView: Bool
+    private let onUserTurn: @MainActor (WKWebView?, String?) -> Void
+    private let onAgentTurn: @MainActor () -> Void
+    private weak var webView: WKWebView?
+    private var step: String?
+    private var isUserTurn = false
+#if os(macOS)
+    private var window: NSWindow?
+    private var windowCloseObservation: NSObjectProtocol?
+    private var keepAliveUntilWindowCloses: DebugAssistanceObserver?
+#endif
+
+    public init(showsWebView: Bool,
+                onUserTurn: @escaping @MainActor (WKWebView?, String?) -> Void,
+                onAgentTurn: @escaping @MainActor () -> Void = {}) {
+        self.showsWebView = showsWebView
+        self.onUserTurn = onUserTurn
+        self.onAgentTurn = onAgentTurn
+    }
+
+    // Runners with an observer leave the web view without a window, so debug runs show it here.
+    public func attemptDidCreate(webView: WKWebView) {
+        self.webView = webView
+#if os(macOS)
+        guard showsWebView else { return }
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                              backing: .buffered, defer: false)
+        window.title = "Data Broker Protection"
+        window.isReleasedWhenClosed = false
+        window.contentView = webView
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        windowCloseObservation = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification,
+                                                                        object: window, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.windowDidClose() }
+        }
+        self.window = window
+        keepAliveUntilWindowCloses = self
+#endif
+    }
+
+#if os(macOS)
+    private func windowDidClose() {
+        windowCloseObservation.map(NotificationCenter.default.removeObserver)
+        windowCloseObservation = nil
+        keepAliveUntilWindowCloses = nil
+    }
+#endif
+
+    public func attemptWillRun(_ action: Action) {
+        step = action.step
+        if isUserTurn {
+            isUserTurn = false
+            onAgentTurn()
+        }
+    }
+
+    public func attemptNeedsUser(actionID: String) {
+        isUserTurn = true
+        onUserTurn(webView, step)
     }
 }

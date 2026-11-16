@@ -968,14 +968,7 @@ final class AIChatModelsServiceTests: XCTestCase {
 
     // MARK: - Service Error Tests
 
-    func testWhenHTTPErrorOccurs_ThenServiceThrowsHTTPError() async {
-        // Given
-        let mockCookieProvider = MockCookieProvider()
-        let (_, url) = makeStubSession(statusCode: 500, data: Data())
-        let service = AIChatModelsService(baseURL: url, session: .shared, cookieProvider: mockCookieProvider)
-
-        // When/Then — verify the service calls the URL correctly (integration would need URLProtocol stubbing)
-        // For unit-level, we test the error type exists and has correct description
+    func testWhenHTTPErrorOccurs_ThenDescriptionIsCorrect() {
         let error = AIChatModelsService.ServiceError.httpError(statusCode: 500)
         XCTAssertEqual(error.errorDescription, "HTTP error 500 from models endpoint")
     }

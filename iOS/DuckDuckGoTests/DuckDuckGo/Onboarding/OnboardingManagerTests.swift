@@ -1027,6 +1027,47 @@ struct OnboardingDownloadReasonFlowTests {
         #expect(featureFlagger.didCallResolveCohort == false)
     }
 
+    // MARK: - VPN download reason
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "Only the treatment cohort is offered the VPN download reason",
+        .timeLimit(.minutes(1)),
+        arguments: [(Cohort.treatment, true), (Cohort.control, false)]
+    )
+    func vpnReasonAvailabilityPerCohort(_ cohort: Cohort, expectedAvailability: Bool) {
+        // GIVEN
+        let sut = makeManager(featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort))
+
+        // THEN
+        #expect(sut.isVPNDownloadReasonAvailable == expectedAvailability)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Users not enrolled in the VPN experiment aren't offered the VPN download reason", .timeLimit(.minutes(1)))
+    func vpnReasonUnavailableWhenNotEnrolled() {
+        // GIVEN
+        let sut = makeManager(featureFlagger: makeUnassignedFeatureFlagger())
+
+        // THEN
+        #expect(!sut.isVPNDownloadReasonAvailable)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The VPN download reason offers the VPN trial right after the comparison", .timeLimit(.minutes(1)))
+    func vpnReasonOffersTrialAfterComparison() {
+        // GIVEN
+        let sut = makeManager()
+
+        // WHEN
+        let result = sut.selectDownloadReason(.vpn)
+
+        // THEN
+        #expect(result == [.setDefaultBrowser, .tryVPN, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection])
+        #expect(OnboardingIntroStep.tryVPN.resumeStep == .tryVPN)
+        #expect(OnboardingIntroStep.tryVPN.countsTowardProgress(flow: .default))
+    }
+
     // MARK: - Helpers
 
     private func makeVariantManager(isReturningUser: Bool) -> VariantManager {

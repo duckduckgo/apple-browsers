@@ -34,6 +34,7 @@ struct PromoDependencies {
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let userChurnService: UserChurnStateProviding
+    let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitoring
     let sessionRestoreCoordinator: SessionRestorePromptCoordinating
     let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate
     let featureFlagger: FeatureFlagger

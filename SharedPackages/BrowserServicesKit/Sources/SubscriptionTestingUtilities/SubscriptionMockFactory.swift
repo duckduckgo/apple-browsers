@@ -33,7 +33,8 @@ public struct SubscriptionMockFactory {
                                                   activeOffers: [],
                                                   tier: nil,
                                                   availableChanges: nil,
-                                                  pendingPlans: nil)
+                                                  pendingPlans: nil,
+                                                  planCountry: nil)
     public static let expiredSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
                                                          billingPeriod: .monthly,
@@ -44,7 +45,8 @@ public struct SubscriptionMockFactory {
                                                          activeOffers: [],
                                                          tier: nil,
                                                          availableChanges: nil,
-                                                         pendingPlans: nil)
+                                                         pendingPlans: nil,
+                                                         planCountry: nil)
 
     public static let expiredStripeSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
@@ -56,7 +58,8 @@ public struct SubscriptionMockFactory {
                                                          activeOffers: [],
                                                          tier: nil,
                                                          availableChanges: nil,
-                                                         pendingPlans: nil)
+                                                         pendingPlans: nil,
+                                                         planCountry: nil)
 
     public static let tierProductsResponse = GetTierProductsResponse(products: [
         TierProduct(
@@ -82,7 +85,8 @@ public struct SubscriptionMockFactory {
         activeOffers: [DuckDuckGoSubscription.Offer] = [],
         tier: TierName? = nil,
         availableChanges: DuckDuckGoSubscription.AvailableChanges? = nil,
-        pendingPlans: [DuckDuckGoSubscription.PendingPlan]? = nil
+        pendingPlans: [DuckDuckGoSubscription.PendingPlan]? = nil,
+        planCountry: String? = nil
     ) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(
             productId: UUID().uuidString,
@@ -95,7 +99,8 @@ public struct SubscriptionMockFactory {
             activeOffers: activeOffers,
             tier: tier,
             availableChanges: availableChanges,
-            pendingPlans: pendingPlans
+            pendingPlans: pendingPlans,
+            planCountry: planCountry
         )
     }
 }

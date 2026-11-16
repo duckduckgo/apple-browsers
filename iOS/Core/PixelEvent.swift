@@ -4179,14 +4179,17 @@ public extension Pixel.Event {
                 self = .settingToggled(to: enabled)
             case .matchesApiTimeout:
                 self = .matchesApiTimeout
-            case .matchesApiFailure:
-                // Only logged.
+            case .matchesApiFailure,
+                 .dataSetUpdateTime,
+                 .dataSetSize,
+                 .dataSetLoadTime,
+                 .dataSetAggregateUpdateTime,
+                 .dataSetAggregateSize:
+                // `matchesApiFailure` is only logged.
+                // The dataset events are fired as `MaliciousSiteProtectionDebugPixel`.
                 return nil
             case .failedToDownloadInitialDataSets(category: let category, type: let type):
                 self = .failedToDownloadInitialDataSets(category: category, type: type)
-            default:
-                // The other events are fired as `MaliciousSiteProtectionDebugPixel`.
-                return nil
             }
         }
 

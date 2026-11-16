@@ -34,7 +34,8 @@ struct MaliciousSiteProtectionEventMapperTests {
         MaliciousSiteProtectionEventMapper.debugEvents(pixelFiring: { [pixelKit] in pixelKit })
     }
 
-    @Test("Update time fires a daily and count pixel with the bucket in its name")
+    @available(iOS 16, *)
+    @Test("Update time fires a daily and count pixel with the bucket in its name", .timeLimit(.minutes(1)))
     func updateTime() {
         mapping.fire(.dataSetUpdateTime(category: .phishing, type: .hashPrefixSet, bucket: .upTo250ms))
 
@@ -44,7 +45,8 @@ struct MaliciousSiteProtectionEventMapperTests {
         #expect(pixelKit.actualFireCalls.first?.pixel.name == "m_debug_malicious-site-protection_update-time_phishing_hash-prefix_250ms")
     }
 
-    @Test("Dataset size fires a daily and count pixel with the bucket in its name")
+    @available(iOS 16, *)
+    @Test("Dataset size fires a daily and count pixel with the bucket in its name", .timeLimit(.minutes(1)))
     func datasetSize() {
         mapping.fire(.dataSetSize(category: .scam, type: .filterSet, bucket: .upTo30mb))
 
@@ -54,7 +56,8 @@ struct MaliciousSiteProtectionEventMapperTests {
         #expect(pixelKit.actualFireCalls.first?.pixel.name == "m_debug_malicious-site-protection_dataset-size_scam_filter-set_30mb")
     }
 
-    @Test("Load time fires a daily and count pixel with the bucket in its name")
+    @available(iOS 16, *)
+    @Test("Load time fires a daily and count pixel with the bucket in its name", .timeLimit(.minutes(1)))
     func loadTime() {
         mapping.fire(.dataSetLoadTime(category: .malware, type: .hashPrefixSet, bucket: .upTo1s))
 
@@ -64,7 +67,8 @@ struct MaliciousSiteProtectionEventMapperTests {
         #expect(pixelKit.actualFireCalls.first?.pixel.name == "m_debug_malicious-site-protection_load-time_malware_hash-prefix_1s")
     }
 
-    @Test("Aggregate update time fires a daily and count pixel with aggregate in place of the category")
+    @available(iOS 16, *)
+    @Test("Aggregate update time fires a daily and count pixel with aggregate in place of the category", .timeLimit(.minutes(1)))
     func aggregateUpdateTime() {
         mapping.fire(.dataSetAggregateUpdateTime(type: .filterSet, bucket: .upTo4s))
 
@@ -74,7 +78,8 @@ struct MaliciousSiteProtectionEventMapperTests {
         #expect(pixelKit.actualFireCalls.first?.pixel.name == "m_debug_malicious-site-protection_update-time_aggregate_filter-set_4s")
     }
 
-    @Test("Aggregate dataset size fires a daily and count pixel with aggregate in place of the category")
+    @available(iOS 16, *)
+    @Test("Aggregate dataset size fires a daily and count pixel with aggregate in place of the category", .timeLimit(.minutes(1)))
     func aggregateDatasetSize() {
         mapping.fire(.dataSetAggregateSize(type: .hashPrefixSet, bucket: .upTo15mb))
 
@@ -84,7 +89,8 @@ struct MaliciousSiteProtectionEventMapperTests {
         #expect(pixelKit.actualFireCalls.first?.pixel.name == "m_debug_malicious-site-protection_dataset-size_aggregate_hash-prefix_15mb")
     }
 
-    @Test("Debug pixels carry no parameters of their own")
+    @available(iOS 16, *)
+    @Test("Debug pixels carry no parameters of their own", .timeLimit(.minutes(1)))
     func noParameters() {
         let pixel = MaliciousSiteProtectionDebugPixel.updateTime(category: .malware, type: .filterSet, bucket: .more)
 

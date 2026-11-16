@@ -25,6 +25,9 @@ protocol NewTabPageRedesignFeatureProviding {
 
     /// Whether the redesigned New Tab Page can be shown on this device.
     var isAvailable: Bool { get }
+
+    /// Whether the redesigned page pins its input to the top while scrolling.
+    var isStickyInputEnabled: Bool { get }
 }
 
 struct NewTabPageRedesignFeature: NewTabPageRedesignFeatureProviding {
@@ -44,5 +47,9 @@ struct NewTabPageRedesignFeature: NewTabPageRedesignFeatureProviding {
         guard devicePlatform.isIphone else { return false }
 
         return featureFlagger.isFeatureOn(.newTabPageRedesign)
+    }
+
+    var isStickyInputEnabled: Bool {
+        isAvailable && featureFlagger.isFeatureOn(.newTabPageStickyInput)
     }
 }

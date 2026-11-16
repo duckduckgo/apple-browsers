@@ -30,6 +30,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let customizeButtonTrailingMargin: CGFloat = 20
         static let customizeButtonSize: CGFloat = 44
         static let portraitContentTopInset: CGFloat = 96
+        static let stickySearchInputTopMargin: CGFloat = 8
         static let entranceTranslation: CGFloat = 12
         static let entranceDuration: TimeInterval = 0.25
         static let focusedModulesHideDuration: TimeInterval = 0.1
@@ -58,6 +59,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
     private let searchInputModel: NewTabPageSearchInputModel?
+    private let isStickyInputEnabled: Bool
     private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
@@ -74,6 +76,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private lazy var focusedModeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] mode in
         self?.onFocusedModeSwitchSwipe?(mode)
     }
+    private var stickySearchInputTranslation: CGFloat = 0
 
     private struct InputEditingLayout {
         let contentOffset: CGPoint
@@ -127,6 +130,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          pageModel: NewTabPageViewModel? = nil,
          messagesModel: NewTabPageMessagesModel? = nil,
          searchInputModel: NewTabPageSearchInputModel? = nil,
+         isStickyInputEnabled: Bool = false,
          onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
         self.onboardingCoordinator = onboardingCoordinator
         self.blocks = blocks
@@ -134,6 +138,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         self.pageModel = pageModel
         self.messagesModel = messagesModel
         self.searchInputModel = searchInputModel
+        self.isStickyInputEnabled = isStickyInputEnabled
         super.init(nibName: nil, bundle: nil)
         onboardingCoordinator?.page = self
         messagesModel?.onMessageVisibilityChanged = { [weak self] in
@@ -155,6 +160,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         installBlocks()
         focusedModeSwitchSwipeController.install(on: view)
         focusedModeSwitchSwipeController.isEnabled = false
+        scrollView.delegate = self
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -188,6 +194,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
            scrollView.contentOffset != preservedOffset {
             scrollView.setContentOffset(preservedOffset, animated: false)
         }
+        updateStickySearchInput()
     }
 
     @objc private func customizeButtonTapped() {
@@ -286,7 +293,15 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
-        contentContainerView.addSubview(customizeButton)
+        // With the sticky input the button scrolls away with the content instead of floating above it.
+        let customizeButtonHost: UIView = isStickyInputEnabled ? scrollView : contentContainerView
+        let customizeButtonTopAnchor = isStickyInputEnabled
+            ? scrollView.contentLayoutGuide.topAnchor
+            : contentContainerView.safeAreaLayoutGuide.topAnchor
+        let customizeButtonTrailingAnchor = isStickyInputEnabled
+            ? scrollView.frameLayoutGuide.trailingAnchor
+            : contentContainerView.safeAreaLayoutGuide.trailingAnchor
+        customizeButtonHost.addSubview(customizeButton)
 
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -313,9 +328,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             // thing that can make the page scroll.
             blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
 
-            customizeButton.topAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.topAnchor,
+            customizeButton.topAnchor.constraint(equalTo: customizeButtonTopAnchor,
                                                  constant: Metrics.customizeButtonTopMargin),
-            customizeButton.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor,
+            customizeButton.trailingAnchor.constraint(equalTo: customizeButtonTrailingAnchor,
                                                       constant: -Metrics.customizeButtonTrailingMargin),
             customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
             customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)
@@ -330,6 +345,30 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
+        // The pinned input must draw above the blocks that scroll beneath it.
+        if isStickyInputEnabled, let searchInputView {
+            blocksStackView.bringSubviewToFront(searchInputView)
+        }
+    }
+
+    /// Keeps the search input just below the top of the visible page once scrolling would carry it offscreen.
+    /// The pinned position is held while the input is focused, because the focused pose is measured from it.
+    private func updateStickySearchInput() {
+        guard isStickyInputEnabled, inputEditingLayout == nil, focusedPose == nil, let searchInputView else { return }
+        // Center and bounds ignore the pinning transform, so they give the resting position.
+        let pinning = StickyInputPinning(restingMinY: searchInputView.center.y - searchInputView.bounds.height / 2,
+                                         height: searchInputView.bounds.height,
+                                         containerHeight: blocksStackView.bounds.height)
+        let visibleTopInStack = blocksStackView.convert(CGPoint(x: 0, y: scrollView.bounds.minY + scrollView.adjustedContentInset.top),
+                                                        from: scrollView).y
+        stickySearchInputTranslation = pinning.translation(pinnedMinY: visibleTopInStack + Metrics.stickySearchInputTopMargin)
+        applySearchInputTransform()
+    }
+
+    /// Combines the sticky pinning with the focused pose's offset, which is measured from the pinned position.
+    private func applySearchInputTransform() {
+        let focusedOffset = focusedPose?.inputOffset ?? 0
+        searchInputView?.transform = CGAffineTransform(translationX: 0, y: stickySearchInputTranslation + focusedOffset)
     }
 
     func refreshSearchInputSettings() {
@@ -477,7 +516,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     private func visibleSearchInputFrameInWindow(scrolledBy scrollDistance: CGFloat = 0) -> CGRect? {
         guard let window = view.window, let searchInputView else { return nil }
         let frame = searchInputView.untransformedFrame(of: searchInputView.bounds, in: window)
-            .offsetBy(dx: 0, dy: scrollDistance)
+            .offsetBy(dx: 0, dy: scrollDistance + stickySearchInputTranslation)
         let viewport = scrollView.convert(scrollView.bounds, to: window).intersection(window.bounds)
         // An offscreen resting card should not pull the editor beyond the visible page.
         return frame.intersects(viewport) ? frame : nil
@@ -558,7 +597,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
     private func applyFocusedPose() {
         let isFocused = focusedPose != nil
-        searchInputView?.transform = CGAffineTransform(translationX: 0, y: focusedPose?.inputOffset ?? 0)
+        applySearchInputTransform()
         let greetingTransform = CGAffineTransform(translationX: 0, y: focusedPose?.greetingOffset ?? 0)
         let welcomeView = blocks.first { $0.id == .welcome }?.viewController.view
         welcomeView?.alpha = isFocused ? 0 : 1
@@ -626,6 +665,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
+        updateStickySearchInput()
     }
 }
 
@@ -652,5 +692,12 @@ private final class TransformedBlocksStackView: UIStackView {
         super.point(inside: point, with: event) || arrangedSubviews.contains { blockView in
             !blockView.isHidden && blockView.alpha > 0 && blockView.bounds.contains(blockView.convert(point, from: self))
         }
+    }
+}
+
+extension RedesignedNewTabPageViewController: UIScrollViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateStickySearchInput()
     }
 }

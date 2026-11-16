@@ -171,6 +171,21 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         progress.fireButtonUsedOnce = true
     }
 
+    /// Whether the active path keeps the browser UI locked. Always false on the search path.
+    var isUILocked: Bool {
+        activePath.isUILocked
+    }
+
+    /// Called from the junction with the path the user picked.
+    func startPath(_ kind: ContextualOnboardingPathKind) {
+        progress.pathKind = kind
+        switch kind {
+        case .search:
+            // The user has just searched from the junction, so Try a search is skipped.
+            progress.markSeen(.tryASearch)
+        }
+    }
+
     // Called to turn off the contextual onboarding.
     func turnOffFeature() {
         state = .onboardingCompleted

@@ -1710,7 +1710,6 @@ struct UserText {
 
     static let browserToolInUse = NotLocalizedString("browser-tool.in-use", value: "Duck.ai is using a browser tool", comment: "Tooltip on the tab bar icon shown while Duck.ai runs a browser tool")
     static let browserToolPermissionAllowOnce = NotLocalizedString("browser-tool.permission.allow-once", value: "Allow once", comment: "Duck.ai browser tool permission prompt button that lets one tool call run")
-    static let browserToolPermissionAllowForChat = NotLocalizedString("browser-tool.permission.allow-for-chat", value: "Allow for this chat", comment: "Duck.ai browser tool permission prompt button that lets the tool run without asking again for the rest of this chat")
     static let browserToolPermissionTitleListOpenTabs = NotLocalizedString("browser-tool.permission.title.list-open-tabs", value: "Allow Duck.ai to see your open tabs?", comment: "Duck.ai browser tool permission prompt title")
     static let browserToolPermissionTitleSearchHistory = NotLocalizedString("browser-tool.permission.title.search-history", value: "Allow Duck.ai to search your browsing history?", comment: "Duck.ai browser tool permission prompt title")
     static let browserToolPermissionTitleReadTabContent = NotLocalizedString("browser-tool.permission.title.read-tab-content", value: "Allow Duck.ai to read the content of this tab?", comment: "Duck.ai browser tool permission prompt title")

@@ -32,7 +32,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         return try JSONDecoder().decode(ExecuteClientToolRequest.self, from: JSONEncoder().encode(value))
     }
 
-    func testExternalUserCannotDiscoverOrInvokeToolsEvenWhenAllFlagsAreEnabled() async {
+    func testExternalUserCanDiscoverAndInvokeToolsWhenAllFlagsAreEnabled() async {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         fixture.flags.internalUserDecider = MockInternalUserDecider(isInternalUser: false)
@@ -40,16 +40,16 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         fixture.service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
 
         XCTAssertTrue(fixture.flags.isFeatureOn(.aiChatBrowserTools))
-        XCTAssertFalse(ChatToBrowserToolCallingFeature(featureFlagger: fixture.flags).isAvailable)
-        XCTAssertFalse(fixture.service.isEnabled)
-        XCTAssertNil(fixture.service.clientToolsConfiguration)
-        XCTAssertNil(fixture.service.configuration(for: fixture.script))
-        XCTAssertTrue(fixture.service.catalog.enabledTools.isEmpty)
+        XCTAssertTrue(ChatToBrowserToolCallingFeature(featureFlagger: fixture.flags).isAvailable)
+        XCTAssertTrue(fixture.service.isEnabled)
+        XCTAssertNotNil(fixture.service.clientToolsConfiguration)
+        XCTAssertNotNil(fixture.service.configuration(for: fixture.script))
+        XCTAssertEqual(fixture.service.catalog.enabledTools.map(\.name), ["listOpenTabs"])
 
         let result = await fixture.invoke()
 
-        XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
-        XCTAssertEqual(fixture.listings, 0)
+        XCTAssertEqual(result, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
     }
 
@@ -128,7 +128,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     }
 
     func testBothGatesAreDynamicForSameServiceAndParentFeature() throws {
-        let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true), enabledFeatureFlags: [])
+        let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: false), enabledFeatureFlags: [])
         let feature = ChatToBrowserToolCallingFeature(featureFlagger: flags)
         let suiteName = UUID().uuidString
         let storage = UserDefaults(suiteName: suiteName)!

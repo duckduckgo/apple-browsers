@@ -32,12 +32,26 @@ struct WebExtensionAlert: View {
             case secondary(String)
         }
 
-        let icon: NSImage?
+        enum Icon {
+            /// The extension's own icon, inset from the corner.
+            case extensionIcon(NSImage)
+            /// A full-size illustration.
+            case illustration(NSImage)
+        }
+
+        enum Checkbox: Equatable {
+            /// An option for the action, above the buttons.
+            case option(String, toolTip: String?)
+            /// Stops the alert coming back, in small print below the message.
+            case suppression(String)
+        }
+
+        let icon: Icon?
         let title: String
         var message: String?
+        var messageColor: DesignSystemColor = .textSecondary
         var details: [String] = []
-        var checkbox: String?
-        var checkboxToolTip: String?
+        var checkbox: Checkbox?
         let confirmTitle: String
         let leadingButton: LeadingButton
     }
@@ -58,6 +72,9 @@ struct WebExtensionAlert: View {
         static let contentHorizontalPadding: CGFloat = 12
         static let contentBottomPadding: CGFloat = 16
         static let iconSize: CGFloat = 48
+        static let illustrationSize: CGFloat = 72
+        static let contentHorizontalPaddingWithIllustration: CGFloat = 4
+        static let suppressionCheckboxTopPadding: CGFloat = 4
         static let iconInset: CGFloat = 28
         static let iconTitleSpacing: CGFloat = 28
         static let titleLeadingOffset: CGFloat = 8
@@ -84,22 +101,24 @@ struct WebExtensionAlert: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.sectionSpacing) {
-            if let icon = configuration.icon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: Constants.iconSize, height: Constants.iconSize)
+            switch configuration.icon {
+            case .extensionIcon(let icon):
+                iconImage(icon, size: Constants.iconSize)
                     .padding([.top, .leading], Constants.iconInset - Constants.padding)
                     .padding(.bottom, Constants.iconTitleSpacing - Constants.sectionSpacing)
+            case .illustration(let image):
+                iconImage(image, size: Constants.illustrationSize)
+            case nil:
+                EmptyView()
             }
 
             content
 
-            if let checkbox = configuration.checkbox {
-                Toggle(checkbox, isOn: $isChecked)
+            if case .option(let title, let toolTip) = configuration.checkbox {
+                Toggle(title, isOn: $isChecked)
                     .toggleStyle(.checkbox)
                     .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                    .help(configuration.checkboxToolTip ?? "")
+                    .help(toolTip ?? "")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -149,17 +168,48 @@ struct WebExtensionAlert: View {
             if !configuration.details.isEmpty {
                 detailsList
             }
+
+            if case .suppression(let title) = configuration.checkbox {
+                Toggle(isOn: $isChecked) {
+                    Text(title)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                }
+                .toggleStyle(.checkbox)
+                .padding(.top, Constants.suppressionCheckboxTopPadding)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, Constants.contentHorizontalPadding - Constants.titleLeadingOffset)
-        .padding(.trailing, Constants.contentHorizontalPadding)
+        .padding(.leading, contentLeadingPadding)
+        .padding(.trailing, contentTrailingPadding)
         .padding(.bottom, Constants.contentBottomPadding)
+    }
+
+    private var contentLeadingPadding: CGFloat {
+        if case .illustration = configuration.icon {
+            return Constants.contentHorizontalPaddingWithIllustration
+        }
+        return Constants.contentHorizontalPadding - Constants.titleLeadingOffset
+    }
+
+    private var contentTrailingPadding: CGFloat {
+        if case .illustration = configuration.icon {
+            return Constants.contentHorizontalPaddingWithIllustration
+        }
+        return Constants.contentHorizontalPadding
+    }
+
+    private func iconImage(_ image: NSImage, size: CGFloat) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size, height: size)
     }
 
     private func messageText(_ message: String) -> some View {
         Text(message)
             .font(.system(size: 13))
-            .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+            .foregroundColor(Color(designSystemColor: configuration.messageColor, palette: palette))
             .multilineTextAlignment(.leading)
             .fixMultilineScrollableText()
             .frame(maxWidth: .infinity, alignment: .leading)

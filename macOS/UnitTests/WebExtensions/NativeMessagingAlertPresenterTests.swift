@@ -57,8 +57,7 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         await explain(bitwarden, bitwarden)
 
         XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), Array(repeating: "Bitwarden can’t connect to apps on your Mac", count: 2))
-        XCTAssertNil(alertPresenter.presentedConfigurations.first?.icon)
-        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, "Don’t show for this extension again")
+        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show this again for Bitwarden"))
     }
 
     func testWhenOKIsPressedWithTheCheckboxThenOnlyThatExtensionStopsShowingTheAlert() async throws {

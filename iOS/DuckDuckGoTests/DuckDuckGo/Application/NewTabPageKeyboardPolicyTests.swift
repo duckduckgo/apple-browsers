@@ -91,8 +91,8 @@ struct NewTabPageKeyboardPolicyTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Swiping back restores only the focus remembered before leaving the page", .timeLimit(.minutes(1)),
-          arguments: [false, true], [false, true])
-    func whenSwipingBackThenOnlyPreviouslyFocusedPageRestoresFocus(isEnabled: Bool, isInputFocused: Bool) throws {
+          arguments: [false, true])
+    func whenSwipingBackThenOnlyPreviouslyFocusedPageRestoresFocus(isInputFocused: Bool) throws {
         let policy = NewTabPageKeyboardPolicy(onNewTab: true, onAppLaunch: false)
         let newTab = Tab(fireTab: false)
         let otherNewTab = Tab(fireTab: false)
@@ -103,9 +103,9 @@ struct NewTabPageKeyboardPolicyTests {
         // The tab switcher's programmatic dismissal is separate from the captured user focus.
         policy.rememberInputFocusForTabSwitch(on: website, isInputFocused: false)
 
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: website, isEnabled: isEnabled) == false)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: otherNewTab, isEnabled: isEnabled) == false)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: newTab, isEnabled: isEnabled) == (isEnabled && isInputFocused))
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: website) == false)
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: otherNewTab) == false)
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: newTab) == isInputFocused)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -114,13 +114,13 @@ struct NewTabPageKeyboardPolicyTests {
         let policy = NewTabPageKeyboardPolicy(onNewTab: true, onAppLaunch: false)
         let tab = Tab(fireTab: false)
         policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true))
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab))
 
         // An inactive unified-input session has no first responder, even while its editor exists.
         policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: false)
 
         #expect(tab.wasInputFocusedBeforeTabSwitch == false)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true) == false)
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab) == false)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -131,7 +131,7 @@ struct NewTabPageKeyboardPolicyTests {
         let tab = Tab(fireTab: false)
         policy.rememberInputFocusForTabSwitch(on: tab, isInputFocused: true)
 
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true))
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -146,7 +146,7 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(tab.wasInputFocusedBeforeTabSwitch == false)
         tab.link = nil
 
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab, isEnabled: true) == false)
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: tab) == false)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -160,7 +160,7 @@ struct NewTabPageKeyboardPolicyTests {
         let restoredTab = try #require(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
 
         #expect(restoredTab.wasInputFocusedBeforeTabSwitch == false)
-        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: restoredTab, isEnabled: true) == false)
+        #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: restoredTab) == false)
     }
 
 }

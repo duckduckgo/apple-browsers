@@ -61,6 +61,18 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         newTabPageViewModel.isFavoritesHidden = hidden
     }
 
+    func setScrollContentBottomInset(_ inset: CGFloat) {
+        guard newTabPageViewModel.scrollContentBottomInset != inset else { return }
+        newTabPageViewModel.scrollContentBottomInset = inset
+    }
+
+    var scrollContentBottomInset: CGFloat { newTabPageViewModel.scrollContentBottomInset }
+
+    func setKeyboardContentInset(_ inset: CGFloat, restingBottomInset: CGFloat) {
+        additionalSafeAreaInsets.bottom = restingBottomInset
+        setScrollContentBottomInset(max(0, inset - restingBottomInset))
+    }
+
     private let onboardingCoordinator: NewTabPageOnboardingCoordinator
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -369,6 +381,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     weak var delegate: NewTabPageControllerDelegate?
 
     func dismiss() {
+        setScrollContentBottomInset(0)
         onboardingCoordinator.detach()
         delegate = nil
         chromeDelegate = nil

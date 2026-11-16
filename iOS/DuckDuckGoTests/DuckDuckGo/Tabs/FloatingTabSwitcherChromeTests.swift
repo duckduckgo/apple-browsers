@@ -262,6 +262,46 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(firePage.contentInsetAdjustmentBehavior, .never)
     }
 
+    func testWhenCollectionInsetsAreUnchangedThenLayoutDoesNotRewriteInsetsOrOffset() {
+        let chrome = FloatingTabSwitcherChrome()
+        let collectionView = InsetTrackingCollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+        chrome.applyCollectionContentInset(to: collectionView)
+        collectionView.contentOffset.y = 200
+        collectionView.verticalScrollIndicatorInsets = .zero
+        collectionView.contentInsetWriteCount = 0
+        collectionView.contentOffsetWriteCount = 0
+
+        chrome.applyCollectionContentInset(to: collectionView)
+
+        XCTAssertEqual(collectionView.contentInsetWriteCount, 0)
+        XCTAssertEqual(collectionView.contentOffsetWriteCount, 0)
+        XCTAssertEqual(collectionView.contentOffset.y, 200)
+        XCTAssertEqual(collectionView.verticalScrollIndicatorInsets, collectionView.contentInset)
+    }
+
+    func testWhenTopBarHeightChangesThenCollectionKeepsItsVisibleContentPosition() {
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+        chrome.install(in: host, contentView: content)
+        chrome.layout(addressBarPosition: .bottom, interfaceMode: .regularSize)
+        chrome.applyCollectionContentInset(to: collectionView)
+        collectionView.contentOffset = CGPoint(x: 23, y: 200)
+        let initialTopInset = collectionView.contentInset.top
+        guard let navigationBar = host.subviews.first(where: { $0 is UINavigationBar }) else {
+            XCTFail("Missing navigation bar")
+            return
+        }
+        navigationBar.frame = CGRect(x: 0, y: 20, width: 390, height: 50)
+
+        chrome.applyCollectionContentInset(to: collectionView)
+
+        XCTAssertEqual(collectionView.contentInset.top, 70)
+        XCTAssertEqual(collectionView.contentOffset, CGPoint(x: 23, y: 200 + initialTopInset - 70))
+        XCTAssertEqual(collectionView.verticalScrollIndicatorInsets, collectionView.contentInset)
+    }
+
     func testWhenEmptyStateClearanceIsAppliedThenItSitsBelowNavbarAndAbovePictogram() {
         XCTAssertEqual(TabSwitcherPageViewController.FireModeEmptyStateMetrics.spacingBelowNavbar, 10)
         XCTAssertEqual(TabSwitcherPageViewController.FireModeEmptyStateMetrics.estimatedFloatingTopClearance, 68)
@@ -338,7 +378,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertTrue(actions.contains { $0.title == UserText.tabSwitcherListViewMenuTitle && $0.state == .off })
     }
 
-    func testWhenLayoutIsAppliedMultipleTimesThenPreviousConstraintsAreDeactivated() {
+    func testWhenLayoutIsAppliedMultipleTimesThenConstraintsArePreserved() {
         let chrome = FloatingTabSwitcherChrome()
         let host = UIView()
         let content = UIScrollView()
@@ -355,8 +395,90 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(firstHostConstraintCount, secondHostConstraintCount)
         XCTAssertEqual(firstContentConstraints.count, 4)
         XCTAssertEqual(secondContentConstraints.count, 4)
-        XCTAssertTrue(firstContentConstraints.allSatisfy { !$0.isActive })
+        XCTAssertEqual(firstContentConstraints, secondContentConstraints)
+        XCTAssertTrue(firstContentConstraints.allSatisfy(\.isActive))
         XCTAssertTrue(secondContentConstraints.allSatisfy(\.isActive))
+    }
+
+    func testWhenPreviewIsPresentedThenHeaderButtonsKeepTheirHorizontalPositions() async throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+        let root = UIViewController()
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        for style in [TabSwitcherViewController.TabsStyle.list, .grid] {
+            let preview = UIView(frame: window.bounds)
+            window.addSubview(preview)
+            let destination = UIViewController()
+            destination.modalPresentationStyle = .overCurrentContext
+            let originalMargins = destination.view.directionalLayoutMargins
+            destination.view.directionalLayoutMargins = root.systemMinimumLayoutMargins
+            destination.view.frame = preview.bounds
+            preview.addSubview(destination.view)
+            let chrome = FloatingTabSwitcherChrome()
+            let content = UIScrollView()
+            chrome.install(in: destination.view, contentView: content)
+            chrome.update(state: .regularSize(selectedCount: 0, totalCount: 8, containsWebPages: true, showAIChat: false, canDismissOnEmpty: true),
+                          tabsStyle: style,
+                          canShowSelectionMenu: false,
+                          isEditing: false)
+            chrome.layout(addressBarPosition: .bottom, interfaceMode: .regularSize)
+            destination.view.layoutIfNeeded()
+            let navigationBar = try XCTUnwrap(destination.view.subviews.first { $0 is UINavigationBar })
+            func buttonFrames(in view: UIView) -> [CGRect] {
+                if view is UIButton { return [view.convert(view.bounds, to: window)] }
+                return view.subviews.flatMap { buttonFrames(in: $0) }
+            }
+            let previewFrames = buttonFrames(in: navigationBar)
+            XCTAssertEqual(previewFrames.count, 2)
+
+            await withCheckedContinuation { continuation in
+                root.present(destination, animated: false) { continuation.resume() }
+            }
+            destination.view.directionalLayoutMargins = originalMargins
+            destination.view.layoutIfNeeded()
+
+            XCTAssertEqual(buttonFrames(in: navigationBar).map(\.minX), previewFrames.map(\.minX), style.rawValue)
+            XCTAssertEqual(buttonFrames(in: navigationBar).map(\.width), previewFrames.map(\.width), style.rawValue)
+            await withCheckedContinuation { continuation in
+                root.dismiss(animated: false) { continuation.resume() }
+            }
+            preview.removeFromSuperview()
+        }
+    }
+
+    func testWhenLayoutInterfaceModeChangesThenToolbarVisibilityUpdates() {
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
+        chrome.install(in: host, contentView: content)
+
+        chrome.layout(addressBarPosition: .bottom, interfaceMode: .regularSize)
+        XCTAssertFalse(chrome.toolbar.isHidden)
+
+        chrome.layout(addressBarPosition: .bottom, interfaceMode: .largeSize)
+        XCTAssertTrue(chrome.toolbar.isHidden)
+
+        chrome.layout(addressBarPosition: .bottom, interfaceMode: .regularSize)
+        XCTAssertFalse(chrome.toolbar.isHidden)
+    }
+
+    func testWhenChromeIsReinstalledThenLayoutConstraintsAreRecreated() {
+        let chrome = FloatingTabSwitcherChrome()
+        let originalHost = UIView()
+        let host = UIView()
+        let content = UIScrollView()
+        chrome.install(in: originalHost, contentView: content)
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+        let originalConstraints = originalHost.constraints.filter { $0.firstItem === content || $0.secondItem === content }
+
+        chrome.install(in: host, contentView: content)
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+
+        XCTAssertTrue(originalConstraints.allSatisfy { !$0.isActive })
+        XCTAssertTrue(content.superview === host)
+        XCTAssertEqual(host.constraints.filter { $0.firstItem === content || $0.secondItem === content }.count, 4)
     }
 
     func testWhenLayoutIsAppliedThenNavigationBarUsesPlatformTopMargin() {
@@ -432,5 +554,18 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
             XCTAssertEqual(backgroundConstraints.count, 4)
             XCTAssertTrue(backgroundConstraints.allSatisfy(\.isActive))
         }
+    }
+}
+
+private final class InsetTrackingCollectionView: UICollectionView {
+    var contentInsetWriteCount = 0
+    var contentOffsetWriteCount = 0
+
+    override var contentInset: UIEdgeInsets {
+        didSet { contentInsetWriteCount += 1 }
+    }
+
+    override var contentOffset: CGPoint {
+        didSet { contentOffsetWriteCount += 1 }
     }
 }

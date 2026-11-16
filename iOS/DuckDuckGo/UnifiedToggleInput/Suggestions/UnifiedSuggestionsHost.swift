@@ -36,7 +36,11 @@ final class UnifiedSuggestionsHost {
     /// Tap-ahead arrow direction follows the UTI's live position, so it's mutable (not just the
     /// config's install-time value, which is stale once the bar position is finalized).
     private var isAddressBarAtBottom: Bool
-    private var hostingController: UIHostingController<UnifiedSuggestionsView>?
+    private var hostingController: UnifiedSuggestionsHostingController?
+    private var keyboardBottomConstraint: NSLayoutConstraint?
+    private var fullHeightBottomConstraint: NSLayoutConstraint?
+    private var usesFullHeightFavorites = false
+    private var isFloatingUIEnabled = false
     private var escapeHatchTopInset: CGFloat = 0
     private var escapeHatch: EscapeHatchModel?
     private var focusedMode: TextEntryMode = .search
@@ -126,6 +130,7 @@ final class UnifiedSuggestionsHost {
                              isFloatingUIEnabled: Bool = false,
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
+        self.isFloatingUIEnabled = isFloatingUIEnabled
 
         config.source.start(textPublisher: textPublisher.eraseToAnyPublisher())
 
@@ -135,6 +140,7 @@ final class UnifiedSuggestionsHost {
 
         viewModel.$content
             .removeDuplicates()
+            .handleEvents(receiveOutput: { [weak self] content in self?.updateFavoritesViewport(for: content) })
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.onContentChanged?() }
             .store(in: &cancellables)
@@ -152,8 +158,9 @@ final class UnifiedSuggestionsHost {
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.isFloatingUIEnabled = isFloatingUIEnabled
         hosting.onKeyboardLowering = { [weak self] in self?.deferLogoRevealUntilKeyboardSettles() }
+        hosting.onViewportLayout = { [weak self] in self?.updateFavoritesContentInset() }
         if #available(iOS 16.4, *) {
-            // UIKit already bounds this host with the keyboard guide. Keep only container insets.
+            // Native bounds or favorites content padding handle the keyboard; avoid a second adjustment.
             hosting.safeAreaRegions = [.container]
         }
         hosting.view.backgroundColor = .clear
@@ -163,14 +170,19 @@ final class UnifiedSuggestionsHost {
         containerView.addSubview(hosting.view)
         // The SwiftUI List needs a definite height or it collapses; pin the bottom to the
         // keyboard guide (mirrors the legacy DuckAISuggestionsViewController table pinning).
+        let keyboardBottom = hosting.view.bottomAnchor.constraint(equalTo: containerView.keyboardLayoutGuide.topAnchor)
+        keyboardBottomConstraint = keyboardBottom
+        fullHeightBottomConstraint = hosting.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         NSLayoutConstraint.activate([
             hosting.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             hosting.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             hosting.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            hosting.view.bottomAnchor.constraint(equalTo: containerView.keyboardLayoutGuide.topAnchor)
+            keyboardBottom
         ])
         hosting.didMove(toParent: parentViewController)
         hostingController = hosting
+        updateFavoritesViewport(for: viewModel.content)
+        applyCombinedInsets()
         // The legacy focused hatch lives in the NTP hierarchy and blurs only what it covers.
         viewModel.$backdropLogoFrame
             .removeDuplicates()
@@ -259,6 +271,7 @@ final class UnifiedSuggestionsHost {
             showsRedesignedSearchModules = false
             rebuildRootView()
         }
+        updateFavoritesViewport(for: viewModel.content)
     }
 
     var isShowingLogo: Bool { viewModel.isShowingLogo }
@@ -521,10 +534,11 @@ final class UnifiedSuggestionsHost {
             hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
                 top: usesScrollableEscapeHatch ? 0 : top,
                 left: contentInsets.left,
-                bottom: contentInsets.bottom,
+                bottom: usesFullHeightFavorites ? 0 : contentInsets.bottom,
                 right: contentInsets.right
             )
             hostingController?.view.layoutIfNeeded()
+            updateFavoritesContentInset()
             if let coreAnimatedContentView {
                 coreAnimatedContentView.layoutIfNeeded()
             }
@@ -568,6 +582,27 @@ final class UnifiedSuggestionsHost {
         animation.duration = duration
         animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         layer.add(animation, forKey: nil)
+    }
+
+    private func updateFavoritesViewport(for content: UnifiedSuggestionsContentKind) {
+        let fillsViewport = isFloatingUIEnabled && content == .favorites && redesignedSearchPresentation == nil
+        guard let keyboardBottomConstraint, let fullHeightBottomConstraint else {
+            usesFullHeightFavorites = fillsViewport
+            return
+        }
+        guard usesFullHeightFavorites != fillsViewport || fullHeightBottomConstraint.isActive != fillsViewport else { return }
+        usesFullHeightFavorites = fillsViewport
+        keyboardBottomConstraint.isActive = false
+        fullHeightBottomConstraint.isActive = fillsViewport
+        keyboardBottomConstraint.isActive = !fillsViewport
+        applyCombinedInsets()
+    }
+
+    private func updateFavoritesContentInset() {
+        guard let hosting = hostingController, let container = hosting.view.superview else { return }
+        // Keep the grid painted behind the moving keyboard; clearance changes scroll content, not its viewport.
+        let keyboardOverlap = max(0, container.bounds.maxY - container.keyboardLayoutGuide.layoutFrame.minY)
+        favoritesPresentation.viewController?.setScrollContentBottomInset(usesFullHeightFavorites ? keyboardOverlap + contentInsets.bottom : 0)
     }
 
     // MARK: - Duck.ai surface (single-host path)
@@ -645,6 +680,7 @@ final class UnifiedSuggestionsHost {
 private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
 
     var isFloatingUIEnabled = false
+    var onViewportLayout: (() -> Void)?
     /// Fires when the keyboard starts lowering, which can precede its notifications during an interactive dismiss.
     var onKeyboardLowering: (() -> Void)?
     private var keyboardOverlap: CGFloat?
@@ -673,6 +709,7 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        onViewportLayout?()
         guard view.window != nil, let containerView = view.superview else { return }
         if !isFloatingUIEnabled {
             var viewport = view.convert(view.bounds, to: nil)

@@ -176,8 +176,14 @@ class MainViewCoordinator {
         }
         applyNavigationBarContainerVisibility(updatesInteraction: true)
         applyContentContainerTopAnchorForCurrentState()
+        applyContentContainerBottomAnchorForRestingNewTabPage()
         updateStatusBackgroundAnchors()
         applyResolvedStatusBackgroundColor()
+    }
+
+    private func applyContentContainerBottomAnchorForRestingNewTabPage() {
+        guard let restingAnchorMode = restingNewTabPageBottomAnchorMode else { return }
+        setContentContainerBottomAnchorMode(requesting: restingAnchorMode)
     }
 
     private func setNavigationBarContainerHidden(_ hidden: Bool, updatesAlpha: Bool = true) {
@@ -917,8 +923,11 @@ class MainViewCoordinator {
         contentContainer.layer.removeAllAnimations()
         navigationBarContainer.layer.removeAllAnimations()
         statusBackground.layer.removeAllAnimations()
-        superview.layer.removeAllAnimations()
+        // The superview also carries the new-tab transition (transform, corners, fade), so only its layout stops.
+        Self.layoutAnimationKeys.forEach(superview.layer.removeAnimation(forKey:))
     }
+
+    private static let layoutAnimationKeys = ["position", "bounds.origin", "bounds.size"]
 
     func hideAITabChrome() {
         cancelInFlightLayoutAnimations()
@@ -1124,13 +1133,23 @@ class MainViewCoordinator {
             && !constraints.navigationBarContainerTop.isActive
     }
 
-    private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
-        let resolvedMode: ContentContainerBottomAnchorMode
+    private var restingNewTabPageBottomAnchorMode: ContentContainerBottomAnchorMode? {
+        guard newTabPageInputPresentation.hidesNavigationContainer, !isNavigationChromeHidden else { return nil }
+        return preferredBottomContentAnchorModeForVisibleChrome()
+    }
+
+    private func resolvedContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) -> ContentContainerBottomAnchorMode {
         if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, isNavigationChromeHidden {
-            resolvedMode = .safeArea
-        } else {
-            resolvedMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+            return .safeArea
         }
+        if let restingMode = restingNewTabPageBottomAnchorMode {
+            return restingMode
+        }
+        return shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+    }
+
+    private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
+        let resolvedMode = resolvedContentContainerBottomAnchorMode(requesting: requestedMode)
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea

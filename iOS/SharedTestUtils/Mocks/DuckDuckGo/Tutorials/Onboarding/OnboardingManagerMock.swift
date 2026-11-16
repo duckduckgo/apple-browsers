@@ -34,6 +34,7 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadRe
     private(set) var didCallSelectDownloadReason = false
     private(set) var capturedDownloadReason: OnboardingDownloadReason?
     var currentDownloadReason: OnboardingDownloadReason?
+    var isVPNDownloadReasonAvailable = false
     var stubbedRemainingSteps: [DuckDuckGo.OnboardingIntroStep] = []
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool = false
@@ -43,6 +44,12 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadRe
     func configureOnboardingFlow(from url: URL?) {
         didCallConfigureOnboardingFlow = true
         capturedURL = url
+    }
+
+    private(set) var enrollInDownloadReasonVPNExperimentCallCount = 0
+
+    func enrollInDownloadReasonVPNExperimentIfNeeded() {
+        enrollInDownloadReasonVPNExperimentCallCount += 1
     }
 
     func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [DuckDuckGo.OnboardingIntroStep] {

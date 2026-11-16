@@ -1,0 +1,88 @@
+{
+    "default-browser-win-back_shown_macos": {
+        "description": "Fired when the default browser win-back promo is shown, asking users who switched away from DuckDuckGo as their default browser to set it as default again (and add it to the Dock if it isn't there).",
+        "owners": ["rachelmcr"],
+        "triggers": ["impression"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "contentType",
+                "description": "Indicates the type of prompt shown",
+                "enum": ["set-as-default", "set-as-default-and-add-to-dock"]
+            }
+        ]
+    },
+    "default-browser-win-back_confirm-action_macos": {
+        "description": "Fired when the primary action button on the default browser win-back promo is clicked.",
+        "owners": ["rachelmcr"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "contentType",
+                "description": "Indicates the type of prompt shown",
+                "enum": ["set-as-default", "set-as-default-and-add-to-dock"]
+            }
+        ]
+    },
+    "default-browser-win-back_cancel-action_macos": {
+        "description": "Fired when the default browser win-back promo is dismissed by clicking its dismiss button.",
+        "owners": ["rachelmcr"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "contentType",
+                "description": "Indicates the type of prompt shown",
+                "enum": ["set-as-default", "set-as-default-and-add-to-dock"]
+            }
+        ]
+    },
+    "default-browser-win-back_default-set-without-promo-action_macos": {
+        "description": "Fired when DuckDuckGo became the default browser while the win-back promo was visible and neither of its buttons was clicked; the modal was closed.",
+        "owners": ["rachelmcr"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "default-browser-win-back_default-confirmed_macos": {
+        "description": "Fired when DuckDuckGo is found to be the default browser after the primary action button on the win-back promo was clicked.",
+        "owners": ["rachelmcr"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "check",
+                "description": "The check that found DuckDuckGo to be the default browser. 'after-click' is measured about 5 seconds after the click; 'next-activation' is the next time the app becomes active; '24h' is 24 hours after the click, or the first launch or activation after that.",
+                "enum": ["after-click", "next-activation", "24h"]
+            }
+        ]
+    },
+    "default-browser-win-back_default-not-confirmed_macos": {
+        "description": "Fired when DuckDuckGo is still not the default browser 24 hours after the primary action button on the win-back promo was clicked, or at the first launch or activation after that.",
+        "owners": ["rachelmcr"],
+        "triggers": ["scheduled"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "default-browser-win-back_pending-confirmation_read-failed_macos": {
+        "description": "Fired when we fail to read or decode the stored win-back click used to confirm that DuckDuckGo became the default browser.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "default-browser-win-back_pending-confirmation_write-failed_macos": {
+        "description": "Fired when we fail to save the win-back click used to confirm that DuckDuckGo became the default browser.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    }
+}

@@ -2347,6 +2347,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Is this worth watching? Give me a spoiler-free take.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "New Chat";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Text selection";
 
@@ -2922,6 +2925,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Which website has issues?";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Clear search";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d of %2$d";

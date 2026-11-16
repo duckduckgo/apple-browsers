@@ -25,7 +25,7 @@ import WebKit
 
 /// Debug and Review builds' stand-in for the Duck.ai front end.
 /// Reads configuration through the real chat's user script and invokes its native tool handlers.
-/// Displays permission requests and sends decisions without exercising the web messaging transport.
+/// Shows permission prompts in its log and answers them the way the browser's native prompt does.
 ///
 /// Shown in place of the chat inside a sidebar; `ownerTabProvider` resolves that sidebar's host tab.
 @MainActor
@@ -48,7 +48,6 @@ final class BrowserToolsDebugViewController: NSViewController {
     private(set) var configurationTask: Task<Void, Never>?
     private(set) var operationTask: Task<Void, Never>?
     private var activeCallID: String?
-    private var activeRequest: ConfigurationRequest?
     private var permissionSource: PermissionSource!
 
     private let targetLabel = NSTextField(labelWithString: "")
@@ -61,7 +60,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     private let logScroll = NSScrollView()
     private let permissionsStack = NSStackView()
     private struct PromptEntry {
-        let callID: String
+        let prompt: ClientToolPermissionPrompt
         let view: LogEntryView
     }
     private var promptEntries: [String: PromptEntry] = [:]
@@ -129,7 +128,6 @@ final class BrowserToolsDebugViewController: NSViewController {
             finishCall(callID)
             return
         }
-        activeRequest = request
         let source = permissionSource!
         operationTask = Task { @MainActor [weak self] in
             let response = await request.script.getAIChatNativeConfigValues(params: [:], message: request.message)
@@ -146,7 +144,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             ]
             request.script.registerClientToolPermissionCancellation(source)
             self?.appendToLog(summary: "→ executeClientTool", detail: self?.prettyPrinted(params))
-            let result = await request.script.handler.executeClientTool(params: params, message: request.message, permissionPusher: source)
+            let result = await request.script.handler.executeClientTool(params: params, message: request.message, permissionPrompter: source)
             self?.logResponse(result, method: "executeClientTool")
             self?.finishCall(callID)
         }
@@ -221,12 +219,11 @@ final class BrowserToolsDebugViewController: NSViewController {
     }
 
     private func finishCall(_ callID: String) {
-        for (id, entry) in promptEntries where entry.callID == callID {
+        for (id, entry) in promptEntries where entry.prompt.callID == callID {
             resolvePromptEntry(id: id, outcome: "settled")
         }
         guard activeCallID == callID else { return }
         activeCallID = nil
-        activeRequest = nil
         operationTask = nil
         refreshPermissions()
         updateCallAvailability()
@@ -397,47 +394,31 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     // MARK: - Prompts
 
-    private func addPromptEntry(for prompt: ClientToolPermissionRequested) -> Bool {
-        guard prompt.callId == activeCallID else { return false }
-        let answers = prompt.choices.map { choice -> (String, String) in
-            let title = switch choice {
-            case .allow: "Allow once"
-            case .always: "Always"
-            case .never: "Never"
-            }
-            return (title, choice.rawValue)
-        } + [("Decline", "decline"), ("Cancel", "cancel")]
+    /// Stands in for the browser's native prompt: the panel answers it directly, as the browser does.
+    private func addPromptEntry(for prompt: ClientToolPermissionPrompt) -> Bool {
+        guard prompt.callID == activeCallID else { return false }
+        let answers: [(String, ClientToolPermissionDecision)] = [("Allow once", .allowOnce), ("Always", .always), ("Never", .never), ("Dismiss", .dismiss)]
         let buttons = answers.map { title, decision -> NSView in
             let button = PromptButton(title: title, target: self, action: #selector(answerPrompt(_:)))
             button.bezelStyle = .rounded
             button.controlSize = .small
-            button.promptID = prompt.requestId
-            button.callID = prompt.callId
+            button.requestID = prompt.requestID
             button.decision = decision
             return button
         }
-        let entry = appendToLog(summary: "⇠ clientToolPermissionRequested  \(prompt.message)",
-                                detail: prettyPrinted(prompt), accessories: buttons, highlighted: true)
-        promptEntries[prompt.requestId] = PromptEntry(callID: prompt.callId, view: entry)
+        let reason = service.catalog.enabledTools.first { $0.name == prompt.toolName }?.permissionReason ?? prompt.toolName
+        let entry = appendToLog(summary: "⇠ permission prompt  \(reason)",
+                                detail: "{\"requestID\": \"\(prompt.requestID)\", \"callID\": \"\(prompt.callID)\", \"tool\": \"\(prompt.toolName)\"}",
+                                accessories: buttons, highlighted: true)
+        promptEntries[prompt.requestID] = PromptEntry(prompt: prompt, view: entry)
         return true
     }
 
     @objc private func answerPrompt(_ sender: PromptButton) {
-        guard promptEntries[sender.promptID]?.callID == sender.callID,
-              let request = activeRequest, let context = chatContextProvider(),
-              context.script === request.script, context.webView === request.message.webView,
-              context.webView.url == request.url,
-              context.script.isClientToolsDocumentReady(context.webView) else { return }
-        resolvePromptEntry(id: sender.promptID, outcome: sender.title)
-        let params: [String: Any] = ["requestId": sender.promptID, "callId": sender.callID, "decision": sender.decision]
-        let message = SyntheticUserScriptMessage(name: "respondToClientToolPermission", body: params, webView: context.webView)
-        let source = permissionSource!
-        let script = context.script
-        appendToLog(summary: "→ respondToClientToolPermission", detail: prettyPrinted(params))
-        Task { @MainActor [weak self] in
-            let result = await script.handler.respondToClientToolPermission(params: params, message: message, source: source)
-            self?.logResponse(result, method: "respondToClientToolPermission")
-        }
+        guard let entry = promptEntries[sender.requestID] else { return }
+        resolvePromptEntry(id: sender.requestID, outcome: sender.title)
+        appendToLog(summary: "→ \(sender.title)", detail: nil)
+        service.clientToolPermissions.respond(to: entry.prompt, decision: sender.decision, from: permissionSource)
     }
 
     private func resolvePromptEntry(id: String, outcome: String) {
@@ -452,7 +433,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         appendToLog(summary: "← \(method)  \(Self.summary(of: json))", detail: prettyPrinted(json))
     }
 
-    private final class PermissionSource: ClientToolPermissionPushing, AIChatClientToolPermissionCancellation {
+    private final class PermissionSource: ClientToolPermissionPrompting, AIChatClientToolPermissionCancellation {
         private weak var panel: BrowserToolsDebugViewController?
         private let coordinator: ClientToolPermissionCoordinator
 
@@ -461,8 +442,12 @@ final class BrowserToolsDebugViewController: NSViewController {
             self.coordinator = coordinator
         }
 
-        func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
+        func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
             panel?.addPromptEntry(for: prompt) ?? false
+        }
+
+        func withdrawClientToolPermissionPrompt(requestID: String) {
+            panel?.resolvePromptEntry(id: requestID, outcome: "withdrawn")
         }
 
         func cancelClientToolPermissionRequests() {
@@ -807,9 +792,8 @@ private final class LogDocumentView: NSView {
 }
 
 private final class PromptButton: NSButton {
-    var promptID = ""
-    var callID = ""
-    var decision = "cancel"
+    var requestID = ""
+    var decision = ClientToolPermissionDecision.dismiss
 }
 
 private final class PermissionButton: NSButton {

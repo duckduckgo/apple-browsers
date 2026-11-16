@@ -143,9 +143,11 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
         Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.shortDescription), consentManaged: \(consentStatus.consentManaged)")
 
-        let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
-        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url,
-                                                                 extensionIdentifier: extensionIdentifier))
+        // The extension is running but will never answer the page's init: the page stays unanswered and its tab is reported.
+        let event = CPMMessagingHealthEvent.dashboardResponse(url: url,
+                                                              extensionIdentifier: extensionIdentifier,
+                                                              isAnswer: !consentStatus.cpmCannotAnswerPage)
+        await cpmMessagingHealthMonitor?.handle(event)
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
         return .success(Self.successResponse)

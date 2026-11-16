@@ -38,7 +38,7 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatViewModel = AIChatSuggestionsViewModel()
         chatViewModel.setChats(pinned: [], recent: chats)
 
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger())
         urlLoader.publishURLsForTesting(urls)
 
         let chatManager = AIChatHistoryManager(
@@ -87,7 +87,7 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
     // MARK: - Search Suggestions gating
 
     func test_urlHits_areSuppressed_whenSearchSuggestionsDisabled() async {
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger())
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
@@ -114,7 +114,7 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
     }
 
     func test_urlHits_fetch_whenSearchSuggestionsEnabled() async {
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger())
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
@@ -142,7 +142,7 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
     // MARK: - Chat Suggestions gating
 
     func test_chatHistory_isSuppressed_whenChatSuggestionsDisabled() async {
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger())
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
@@ -168,7 +168,7 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
     }
 
     func test_chatHistory_fetches_whenChatSuggestionsEnabled() async {
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger())
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),

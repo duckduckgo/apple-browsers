@@ -71,7 +71,7 @@ enum VPNConnectionError: Equatable {
         switch errorCode {
         case .startingTunnelWithoutAuthToken:
             self = .authenticationFailed
-        case .couldNotGenerateTunnelConfiguration:
+        case .couldNotGenerateTunnelConfiguration, .reconnectBlocked:
             self = .connectionFailed
         case .vpnAccessRevoked, .vpnAccessRevokedDetectedByMonitorCheck:
             self = .subscriptionExpired

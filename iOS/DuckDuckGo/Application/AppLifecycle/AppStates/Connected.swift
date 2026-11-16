@@ -160,6 +160,7 @@ struct Connected: ConnectedHandling {
         mainCoordinator.start(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
+        window.accessibilityIdentifier = "Browser.Window.Main"
     }
 
 }

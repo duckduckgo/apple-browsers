@@ -17,7 +17,11 @@ MERGE_COMMIT = 'c' * 40
 
 
 def pull(login, user_type='User', merge_commit_sha=MERGE_COMMIT):
-    return {'user': {'login': login, 'type': user_type}, 'merge_commit_sha': merge_commit_sha}
+    return {
+        'user': {'login': login, 'type': user_type},
+        'merge_commit_sha': merge_commit_sha,
+        'html_url': f'https://github.com/duckduckgo/apple-browsers/pull/{len(login)}',
+    }
 
 
 class FakeGitHub:
@@ -84,6 +88,26 @@ class UserMapTests(unittest.TestCase):
         found = [COMMIT_AUTHOR.asana_user(user_map, login) for login in ('brindy', 'Frosty', 'unknown', None)]
 
         self.assertEqual(found, ['1201', '1202', None, None])
+
+
+class MergeAuthorTests(unittest.TestCase):
+
+    def testWhenTheAuthorIsAPersonThenTheirAsanaUserAndPullRequestAreReturned(self):
+        github = FakeGitHub([pull('Brindy')])
+
+        found = [COMMIT_AUTHOR.merge_author(github, user_map, MERGE_COMMIT) for user_map in ({'brindy': '1201'}, {})]
+
+        self.assertEqual(found, [
+            COMMIT_AUTHOR.Author('Brindy', '1201', 'https://github.com/duckduckgo/apple-browsers/pull/6'),
+            COMMIT_AUTHOR.Author('Brindy', None, 'https://github.com/duckduckgo/apple-browsers/pull/6'),
+        ])
+
+    def testWhenTheCommitHasNoPullRequestByAPersonThenNoAuthorIsReturned(self):
+        githubs = [FakeGitHub([]), FakeGitHub([pull('daxmobile')])]
+
+        found = [COMMIT_AUTHOR.merge_author(github, {'daxmobile': '1201'}, MERGE_COMMIT) for github in githubs]
+
+        self.assertEqual(found, [None, None])
 
 
 if __name__ == '__main__':

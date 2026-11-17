@@ -18,7 +18,7 @@
 //
 
 import AIChat
-import Core
+@testable import Core
 import FeatureFlags_iOS
 @testable import History
 import XCTest

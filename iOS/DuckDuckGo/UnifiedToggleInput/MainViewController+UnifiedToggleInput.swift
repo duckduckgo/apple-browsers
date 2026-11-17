@@ -1625,6 +1625,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
                    termsAccepted: termsAccepted, tabAttachmentRequest: tabAttachmentRequest)
     }
 
+    func unifiedToggleInputWillSubmitQuery(_ query: String) {
+        prepareFirstPaintCover(forQuery: query)
+    }
+
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
         handleUnifiedToggleInputSearchSubmission(query)
     }
@@ -1719,6 +1723,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {
+        prepareFirstPaintCover(forQuery: query)
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.query)
         handleUnifiedToggleInputSearchSubmission(query)

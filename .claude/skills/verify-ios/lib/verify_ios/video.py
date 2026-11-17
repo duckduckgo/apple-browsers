@@ -18,18 +18,25 @@ class Video:
         self.proc, self.ok = None, False
 
     def start(self):
-        """Start recording and wait until simctl says it is recording, so the first actions are on the video."""
+        """Start recording and wait until simctl says it is recording, so the first actions are on the video.
+
+        On any failure, a Ctrl-C included, the recorder is stopped before raising (the caller may not get the object).
+        """
         with open(self.log, "w") as log:
             self.proc = subprocess.Popen(["xcrun", "simctl", "io", self.udid, "recordVideo", "--codec=h264", "--force",
                                           self.path], stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        deadline = time.time() + self.START_TIMEOUT
-        while time.time() < deadline:
-            if self.proc.poll() is not None:
-                raise RuntimeError(f"recordVideo exited {self.proc.returncode}: {self._said()}")
-            if "Recording started" in self._said():
-                return self
-            time.sleep(0.2)
-        return self   # still running without saying so: keep it, stop() checks the file
+        try:
+            deadline = time.time() + self.START_TIMEOUT
+            while time.time() < deadline:
+                if self.proc.poll() is not None:
+                    raise RuntimeError(f"recordVideo exited {self.proc.returncode}: {self._said()}")
+                if "Recording started" in self._said():
+                    return self
+                time.sleep(0.2)
+            return self   # still running without saying so: keep it, stop() checks the file
+        except BaseException:
+            self.stop()
+            raise
 
     def stop(self):
         """Stop with SIGINT so the movie is finalized; return problems (never raises)."""
@@ -38,7 +45,9 @@ class Video:
             if self.proc.poll() is None:
                 self.proc.send_signal(signal.SIGINT)
                 try:
-                    self.proc.wait(self.STOP_TIMEOUT)
+                    if self.proc.wait(self.STOP_TIMEOUT) != 0:   # simctl exits 0 once the movie is written
+                        problems.append(f"screen recording failed to finish (exit {self.proc.returncode}); "
+                                        f"{self.FILE} may be unplayable: {self._said()}")
                 except subprocess.TimeoutExpired:
                     self.proc.kill()
                     self.proc.wait()

@@ -39,9 +39,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
 
-    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlocking
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
@@ -106,9 +103,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Failsafe for waiting on embedded background content before restoring web pages.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
     case webExtensionStateRestorationGate
-
-    /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
-    case webExtensionNativeMessaging
 
     /// Turns Bitwarden on or off. While off, an installed Bitwarden is disabled but kept with its data, and the
     /// Debug menu hides Install Bitwarden. Turning the flag back on doesn't re-enable Bitwarden; the user does.
@@ -319,6 +313,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203544?focus=true
     case allowProTierPurchase
+
+    /// Withdraw from contract in Subscription Settings for international Stripe subscribers
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220034712739320?focus=true
+    case stripeInternationalSubscriptionWithdrawal
 
     /// New popup blocking heuristics based on user interaction timing (internal only)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017698257925?focus=true
@@ -712,9 +710,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolHighlightInPage
 
-    /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
-    case onboardingAsync
-
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
@@ -734,12 +729,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    /// Cohorts for the non-blocking onboarding experiment
-    public enum OnboardingNonBlockingCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -786,8 +775,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
-        case .onboardingNonBlocking:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlockingV2), cohortType: OnboardingNonBlockingCohort.self)
         case .onboardingSearchOrChat:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
         case .onboardingSubscriptionUpsell:
@@ -835,8 +822,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
         case .cpmUpgradeBeforeLoad:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad), category: .webExtensions)
-        case .webExtensionNativeMessaging:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
         case .webExtensionBitwarden:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
         case .webExtensionOnePassword:
@@ -951,6 +936,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration), category: .duckAI)
         case .allowProTierPurchase:
             Config(source: .remoteReleasable(PrivacyProSubfeature.allowProTierPurchase), category: .subscription)
+        case .stripeInternationalSubscriptionWithdrawal:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.stripeInternationalSubscriptionWithdrawal), category: .subscription)
         case .popupBlocking:
             Config(defaultValue: .enabled, source: .remoteReleasable(PopupBlockingSubfeature.featureEnabled), category: .popupBlocking)
         case .webNotifications:
@@ -1175,8 +1162,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatBrowserToolHighlightInPage:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.highlightInPage), category: .duckAI)
 
-        case .onboardingAsync:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         case .aiChatLimitExtensionPromo:

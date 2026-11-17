@@ -27,9 +27,9 @@ import FoundationExtensions
 import Foundation
 import Onboarding
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
-import WebKit
 
 enum OnboardingSteps: String, CaseIterable {
     case welcome
@@ -57,13 +57,13 @@ protocol OnboardingActionsManaging {
     var configuration: OnboardingConfiguration { get }
 
     /// Used for any setup necessary for during the onboarding
-    func onboardingStarted(from webView: WKWebView?)
+    func onboardingStarted()
 
     /// At the end of the onboarding the user will be taken to the DuckDuckGo search page
-    func goToAddressBar(from webView: WKWebView?)
+    func goToAddressBar()
 
     /// At the end of the onboarding the user can be taken to the Settings page
-    func goToSettings(from webView: WKWebView?)
+    func goToSettings()
 
     /// At user imput adds the app to the dock
     func addToDock()
@@ -104,13 +104,9 @@ protocol OnboardingActionsManaging {
 
 protocol OnboardingNavigating: AnyObject {
     func replaceTabWith(_ tab: Tab)
-    func onboardingTab(for webView: WKWebView?) -> Tab?
-    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
-    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
-                               onSkipInPlace: @escaping @MainActor () -> Void)
 }
 
 final class OnboardingActionsManager: OnboardingActionsManaging {
@@ -125,25 +121,24 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
-    private let nonBlockingOnboarding: NonBlockingOnboarding
-    private let nonBlockingExperiment: OnboardingNonBlockingExperiment
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
-    private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
-    private var hasInstalledHandlers = false
-    private let onboardingPersistor: NonBlockingOnboardingPersistor
-
-    /// Early and fully installed scripts can have different managers for the same first-run flow.
-    private var canEndOnboarding: Bool {
-        if nonBlockingOnboarding.isNonBlocking {
-            return !Self.isOnboardingFinished && onboardingPersistor.outcome == nil
-        }
-        return !Self.isOnboardingFinished
-    }
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
+
+    /// Keys written by the retired non-blocking onboarding experiment.
+    static let retiredNonBlockingOnboardingKeys = ["onboarding-experiment.outcome", "onboarding-experiment.contextual-initialized"]
+
+    /// Users of the retired non-blocking onboarding could browse without finishing onboarding,
+    /// so they're treated as finished instead of being locked into onboarding on their next launch.
+    static func migrateRetiredNonBlockingOnboarding(keyValueStore: ThrowingKeyValueStoring) {
+        let keys = retiredNonBlockingOnboardingKeys
+        guard keys.contains(where: { (try? keyValueStore.object(forKey: $0)) != nil }) else { return }
+        isOnboardingFinished = true
+        keys.forEach { try? keyValueStore.removeObject(forKey: $0) }
+    }
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings
@@ -224,8 +219,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         pinningManager: PinningManager,
         featureFlagger: FeatureFlagger,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date,
-        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil
+        installDateProvider: @escaping () -> Date
     ) {
         let chromeExtensionInstaller = ChromeExtensionInstaller(
             buildType: StandardApplicationBuildType(),
@@ -250,8 +244,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 },
                 installDateProvider: installDateProvider
              ),
-            chromeExtensionInstaller: chromeExtensionInstaller,
-            contextualOnboardingStateUpdater: contextualOnboardingStateUpdater
+            chromeExtensionInstaller: chromeExtensionInstaller
         )
     }
 
@@ -266,11 +259,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
-        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling,
-        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil,
-        onboardingPersistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()
+        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     ) {
-        self.onboardingPersistor = onboardingPersistor
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
@@ -281,30 +271,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
-        self.nonBlockingOnboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
-        self.nonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
-        self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
     }
 
-    /// Installed when the tab is established, before the page can receive user input.
-    func installNonBlockingHandlers() {
-        guard nonBlockingOnboarding.isNonBlocking, !hasInstalledHandlers, canEndOnboarding else { return }
-        hasInstalledHandlers = true
-        navigation.setOnboardingHandlers(
-            onClose: { [weak self] tab in self?.skipOnboarding(from: tab.webView) },
-            onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
-        )
-    }
-
-    func onboardingStarted(from webView: WKWebView?) {
-        if nonBlockingOnboarding.isNonBlocking {
-            guard canEndOnboarding,
-                  navigation.onboardingTab(for: webView) != nil else { return }
-        } else {
-            navigation.updatePreventUserInteraction(prevent: true)
-        }
+    func onboardingStarted() {
+        navigation.updatePreventUserInteraction(prevent: true)
 
         stepShown(step: .welcome)
         if isEligibleForChromeExtensionInstall {
@@ -313,8 +285,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     @MainActor
-    func goToAddressBar(from webView: WKWebView?) {
-        guard let tab = leaveOnboarding(from: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return }
+    func goToAddressBar() {
+        let tab = leaveOnboarding(content: .url(URL.duckDuckGo, source: .ui))
         tab.navigationDidEndPublisher
             .first()
             .sink { [weak self] _ in
@@ -324,52 +296,27 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     @MainActor
-    func goToSettings(from webView: WKWebView?) {
-        _ = leaveOnboarding(from: webView, content: .settings(pane: nil))
-    }
-
-    /// Records a skip before the caller performs normal tab removal.
-    @MainActor
-    func skipOnboarding(from webView: WKWebView?) {
-        if nonBlockingOnboarding.isNonBlocking {
-            guard navigation.onboardingTab(for: webView) != nil else { return }
-        }
-        _ = finishOnboarding(.skipped)
+    func goToSettings() {
+        _ = leaveOnboarding(content: .settings(pane: nil))
     }
 
     @MainActor
-    private func leaveOnboarding(from webView: WKWebView?, content: TabContent) -> Tab? {
-        if nonBlockingOnboarding.isNonBlocking {
-            // Validate before recording anything. A late message from a page that is no longer
-            // onboarding must neither finish a new session nor replace its browsing tab.
-            guard let source = navigation.onboardingTab(for: webView) else { return nil }
-            _ = finishOnboarding(.completed)
-            let tab = Tab(content: content)
-            return navigation.replaceOnboardingTab(source, with: tab) ? tab : nil
-        }
-        _ = finishOnboarding(.completed)
+    private func leaveOnboarding(content: TabContent) -> Tab {
+        finishOnboarding()
         navigation.updatePreventUserInteraction(prevent: false)
         let tab = Tab(content: content)
         navigation.replaceTabWith(tab)
         return tab
     }
 
-    @MainActor
-    private func recordSkipInPlace() {
-        guard !Self.isOnboardingFinished else { return }
-        _ = finishOnboarding(.skipped)
-    }
-
     func addToDock() {
         dockCustomization.addToDock()
         onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
-        nonBlockingExperiment.fireMetric(.addToDockRequested)
     }
 
     @MainActor
     func importData() async -> Bool {
         onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
-        nonBlockingExperiment.fireMetric(.importRequested)
         return await withCheckedContinuation { continuation in
             dataImportProvider.showImportWindow(completion: { [weak self] in
                 guard let self else {
@@ -558,37 +505,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
-    /// Accepts an outcome once, before callers replace tabs or perform other navigation.
-    private func finishOnboarding(_ outcome: NonBlockingOnboardingPersistor.Outcome) -> Bool {
-        guard canEndOnboarding else { return false }
+    /// Early and fully installed scripts can have different managers for the same first-run flow,
+    /// so only the first completion is recorded.
+    private func finishOnboarding() {
+        guard !Self.isOnboardingFinished else { return }
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
         Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
-
-        recordOnboardingOutcome(outcome)
-        return true
-    }
-
-    private func recordOnboardingOutcome(_ outcome: NonBlockingOnboardingPersistor.Outcome) {
-        let isFirstOutcome = onboardingPersistor.outcome == nil
-        if nonBlockingOnboarding.isNonBlocking {
-            onboardingPersistor.record(outcome)
-        }
-        switch outcome {
-        case .completed:
-            aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
-            if !nonBlockingOnboarding.isNonBlocking || isFirstOutcome {
-                fireOnboardingFinishedPixels()
-            }
-        case .skipped:
-            // Skipping must not record a final step or suppress a toggle popover the user never saw.
-            if !nonBlockingOnboarding.isNonBlocking {
-                contextualOnboardingStateUpdater?.state = .onboardingCompleted
-            }
-            if isFirstOutcome {
-                PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
-            }
-        }
+        aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
+        fireOnboardingFinishedPixels()
     }
 
     /// Applies the Duck Player default dictated by the ad-blocking defaults rollout for a

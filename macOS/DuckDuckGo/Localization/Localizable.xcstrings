@@ -112512,6 +112512,66 @@
         }
       }
     },
+    "subscription.progress.view.withdrawing.subscription" : {
+      "comment" : "Progress view title while withdrawing from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widerruf wird bearbeitet …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdrawal in progress…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelación en curso…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rétractation en cours…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recesso in corso…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opzegging wordt verwerkt…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trwa odstępowanie od umowy…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desistência em curso…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполняется отказ от подписки…"
+          }
+        }
+      }
+    },
     "subscription.settings.menu.item" : {
       "comment" : "Title for Subscription Settings item in the options menu",
       "extractionState" : "extracted_with_value",

@@ -155,12 +155,12 @@ final class AIChatUserScriptTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? AIChatLocalModelRequestError, .unavailable)
         }
-        XCTAssertEqual(prompt.askedModelNames, [])
+        XCTAssertEqual(prompt.askedRequests, [])
 
         webView.documentURL = URL(string: "https://duck.ai/chat")
         let reply = try await handler([String: String](), WKScriptMessage.mock(webView: webView)) as? AIChatLocalModelAccessReply
         XCTAssertEqual(reply, AIChatLocalModelAccessReply(result: .allowed))
-        XCTAssertEqual(prompt.askedModelNames, ["M"])
+        XCTAssertEqual(prompt.askedRequests, [.connect(AIChatLocalModelInfo(id: "m", name: "M"))])
     }
 
     @MainActor func testNativeConfigIncludesClientToolsForCustomChatHost() async throws {
@@ -987,22 +987,22 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
     func cancelRuns(ownerID: ObjectIdentifier) {}
 
-    func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
-        await ask()
+    func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
+        await ask(.connect(model))
     }
 }
 
 @MainActor
 private final class StubLocalModelAccessPrompt: LocalModelAccessAsking {
     let answer: AIChatLocalModelAccessReply.Result
-    private(set) var askedModelNames: [String] = []
+    private(set) var askedRequests: [AIChatLocalModelAccessRequest] = []
 
     init(answer: AIChatLocalModelAccessReply.Result) {
         self.answer = answer
     }
 
-    func ask(from webView: WKWebView?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
-        askedModelNames.append(modelName)
+    func ask(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result {
+        askedRequests.append(request)
         return answer
     }
 }

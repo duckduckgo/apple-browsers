@@ -121,6 +121,54 @@
         }
       }
     },
+    "duckai.local-model-install.install" : {
+      "comment" : "Button that downloads the on-device model for Duck.ai page summaries. %@ is the download size, such as 975 MB",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Install %@"
+          }
+        }
+      }
+    },
+    "duckai.local-model-install.prompt.chip" : {
+      "comment" : "Badge in the title of the pop-up that offers to download an on-device model for Duck.ai page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On-Device Model"
+          }
+        }
+      }
+    },
+    "duckai.local-model-install.prompt.message" : {
+      "comment" : "Explanation in the pop-up that offers to download an on-device model for Duck.ai page summaries. %@ is the model's name, such as Granite 4.0 1B. 'Plan usage' is the user's Duck.ai usage allowance",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Uses %@ for certain tasks like page content summaries. Chat never leaves your device and saves on your Duck.ai plan usage.\n\nOnce you install, the on-device model will be used for future page summaries."
+          }
+        }
+      }
+    },
+    "duckai.local-model-install.prompt.title" : {
+      "comment" : "Title of the pop-up that offers to download an on-device model when the user asks Duck.ai to summarize a page. %@ is a badge reading On-Device Model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai wants to use %@ for added privacy."
+          }
+        }
+      }
+    },
     "duckai.settings.local-model-access.apple-intelligence.caption" : {
       "comment" : "Caption under Apple Intelligence in the Local Model Access section of Settings > AI Features, saying what Duck.ai uses it for",
       "extractionState" : "extracted_with_value",
@@ -129,30 +177,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Used for page summaries"
-          }
-        }
-      }
-    },
-    "duckai.settings.local-model-access.caption" : {
-      "comment" : "Explanation under the Local Model Access title in Settings > AI Features",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Local models add additional privacy and reduce Duck.ai plan usage."
-          }
-        }
-      }
-    },
-    "duckai.settings.local-model-access.title" : {
-      "comment" : "Title of the section in Settings > AI Features where the user turns the local model on or off",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Local Model Access"
           }
         }
       }
@@ -177,6 +201,138 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Turn On Apple Intelligence?"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.cancel-download" : {
+      "comment" : "Accessibility label of the button in Settings > AI Features that stops downloading the on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel Download"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.disk-full" : {
+      "comment" : "Shown in Settings > AI Features when there isn't enough disk space to download the on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "There isn't enough space on your Mac for the model."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.download-failed" : {
+      "comment" : "Shown in Settings > AI Features when downloading the on-device model failed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't download the model. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.install" : {
+      "comment" : "Button in Settings > AI Features that downloads the on-device model for Duck.ai page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Install"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.model.caption" : {
+      "comment" : "Caption under the on-device model in Settings > AI Features. %@ is the model's name, such as Granite 4.0 1B",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Uses %@ for tasks like page summaries."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.progress" : {
+      "comment" : "Download progress next to the on-device model's name in Settings > AI Features. %1$@ is how much has downloaded and %2$@ the total, such as (400 MB/975 MB)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(%1$@/%2$@)"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.section.caption" : {
+      "comment" : "Explanation under the On-Device Models title in Settings > AI Features. 'Plan usage' is the user's Duck.ai usage allowance",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On-device models help keep page content on your device and reduce your plan usage."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.section.title" : {
+      "comment" : "Title of the section in Settings > AI Features for on-device models that Duck.ai uses for page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On-Device Models"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.size" : {
+      "comment" : "The on-device model's download size next to its name in Settings > AI Features, such as (975 MB)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(%@)"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.try-again" : {
+      "comment" : "Button in Settings > AI Features that retries downloading the on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Again"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.uninstall" : {
+      "comment" : "Button in Settings > AI Features that deletes the downloaded on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Uninstall"
           }
         }
       }

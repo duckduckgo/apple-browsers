@@ -41,47 +41,111 @@ public protocol AIChatLocalModelServing: AnyObject {
     func startRun(_ request: AIChatLocalRunRequest, for pusher: AIChatLocalModelPushing) throws -> AIChatLocalRunStartReply
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing)
     func cancelRuns(ownerID: ObjectIdentifier)
-    func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result
+    func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result
+}
+
+/// What the access prompt asks the user for.
+public enum AIChatLocalModelAccessRequest: Equatable, Sendable {
+    /// A model that's already on the device, like Apple Intelligence.
+    case connect(AIChatLocalModelInfo)
+    /// A model that has to be downloaded first.
+    case install(AIChatLocalModelInfo, bytes: Int64)
+}
+
+/// The engines that can run local summaries.
+public enum AIChatLocalModelEngineKind: String, CaseIterable, Sendable {
+    case appleIntelligence
+    case llama
+}
+
+/// A llama.cpp engine can free its model before the file is deleted.
+public protocol AIChatLocalModelUnloading: AnyObject {
+    func unloadModel()
+}
+
+extension AIChatLlamaEngine: AIChatLocalModelUnloading {}
+
+/// The third-party model: its engine and the downloader that puts its file on disk.
+public struct AIChatDownloadableLocalModel {
+    public let engine: AIChatLocalModelEngine & AIChatLocalModelUnloading
+    public let installer: AIChatLocalModelInstalling
+
+    public init(engine: AIChatLocalModelEngine & AIChatLocalModelUnloading, installer: AIChatLocalModelInstalling) {
+        self.engine = engine
+        self.installer = installer
+    }
 }
 
 /// Owns the local-model opt-in state and the runs. App-wide rather than per web view, because only
 /// one run may use the model at a time and every Duck.ai page must see the same state.
+///
+/// Two engines can run summaries: Apple Intelligence, and a downloadable model on llama.cpp for
+/// devices without it. Once the downloadable model is installed it stays in use until it's
+/// uninstalled, even if Apple Intelligence becomes available later.
 @MainActor
 public final class AIChatLocalModelService: AIChatLocalModelServing {
 
     public static let supportedTasks = AIChatLocalModelTask.allCases
 
+    /// Apple Intelligence's availability.
     @Published public private(set) var availability: AIChatLocalModelAvailability
+    /// Whether llama.cpp can run here.
+    @Published public private(set) var downloadableModelAvailability: AIChatLocalModelAvailability
 
     private let isFeatureFlagOn: () -> Bool
     private let featureFlagUpdates: AnyPublisher<Void, Never>
     private let storage: AIChatPageSummariesModelStoring
     private let engine: AIChatLocalModelEngine
+    private let downloadableModel: AIChatDownloadableLocalModel?
+    private let engineOverride: () -> AIChatLocalModelEngineKind?
+    private let engineOverrideUpdates: AnyPublisher<Void, Never>
     private let runQueue: AIChatLocalRunQueue
     private let pushers = NSHashTable<AnyObject>.weakObjects()
-    private var lastPushedState: AIChatLocalModelState?
+    private var lastPushed: PushedState?
     private var cancellables = Set<AnyCancellable>()
 
+    private struct PushedState: Equatable {
+        let update: AIChatLocalModelStateUpdate?
+        let engine: AIChatLocalModelEngineKind
+    }
+
+    /// - Parameters:
+    ///   - engine: Apple Intelligence.
+    ///   - downloadableModel: The model for devices without Apple Intelligence, or nil to offer none.
+    ///   - engineOverride: Forces an engine, from the debug menu. Nil picks one as described above.
     public init(isFeatureFlagOn: @escaping () -> Bool,
                 featureFlagUpdates: AnyPublisher<Void, Never>,
                 storage: AIChatPageSummariesModelStoring,
                 engine: AIChatLocalModelEngine = AppleFoundationModelEngine(),
+                downloadableModel: AIChatDownloadableLocalModel? = nil,
+                engineOverride: @escaping () -> AIChatLocalModelEngineKind? = { nil },
+                engineOverrideUpdates: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher(),
                 runQueue: AIChatLocalRunQueue? = nil,
                 notificationCenter: NotificationCenter = .default) {
         self.isFeatureFlagOn = isFeatureFlagOn
         self.featureFlagUpdates = featureFlagUpdates
         self.storage = storage
         self.engine = engine
-        self.runQueue = runQueue ?? AIChatLocalRunQueue(engine: engine)
+        self.downloadableModel = downloadableModel
+        self.engineOverride = engineOverride
+        self.engineOverrideUpdates = engineOverrideUpdates
+        let routingEngine = RoutingEngine()
+        self.runQueue = runQueue ?? AIChatLocalRunQueue(engine: routingEngine)
         self.availability = Self.uncheckedAvailability
-        self.lastPushedState = currentState
+        self.downloadableModelAvailability = Self.uncheckedAvailability
+        self.lastPushed = pushedState
+        routingEngine.activeEngine = { [weak self] in self?.activeEngine }
 
         storage.pageSummariesModelPublisher
             .removeDuplicates()
             .sink { [weak self] _ in self?.pushStateIfChanged() }
             .store(in: &cancellables)
 
-        featureFlagUpdates
+        downloadableModel?.installer.statePublisher
+            .sink { [weak self] _ in self?.pushStateIfChanged() }
+            .store(in: &cancellables)
+
+        Publishers.Merge(featureFlagUpdates, engineOverrideUpdates)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refreshAvailability() }
             .store(in: &cancellables)
@@ -94,7 +158,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         refreshAvailability()
     }
 
-    /// Stands in while the flag is off, so launch doesn't touch Foundation Models for everyone else.
+    /// Stands in while the flag is off, so launch doesn't touch Foundation Models or llama.cpp for everyone else.
     private static let uncheckedAvailability = AIChatLocalModelAvailability.unsupportedOS
 
     private static var didBecomeActiveNotification: Notification.Name {
@@ -109,49 +173,138 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         isFeatureFlagOn()
     }
 
+    /// The engine Duck.ai gets.
+    public var activeEngineKind: AIChatLocalModelEngineKind {
+        guard let downloadableModel else { return .appleIntelligence }
+        if let forced = engineOverride() {
+            return forced
+        }
+        let installState = downloadableModel.installer.state
+        if installState.isInstalled || installState.isDownloading {
+            return .llama
+        }
+        // While Apple's own model downloads, Duck.ai is told it's unsupported rather than offered
+        // a second download.
+        if availability.isAvailable || availability == .modelNotReady {
+            return .appleIntelligence
+        }
+        return downloadableModelAvailability.isAvailable ? .llama : .appleIntelligence
+    }
+
+    private var activeEngine: AIChatLocalModelEngine {
+        switch activeEngineKind {
+        case .appleIntelligence: return engine
+        case .llama: return downloadableModel?.engine ?? engine
+        }
+    }
+
+    /// The downloadable model's installer, for Settings.
+    public var installer: AIChatLocalModelInstalling? {
+        downloadableModel?.installer
+    }
+
+    /// The active engine is on: Apple Intelligence is turned on, or the downloadable model is installed.
     public var isOptedIn: Bool {
-        storage.pageSummariesModel == .appleIntelligence
+        switch activeEngineKind {
+        case .appleIntelligence: return storage.pageSummariesModel == .appleIntelligence
+        case .llama: return downloadableModel?.installer.state.isInstalled ?? false
+        }
     }
 
     public var model: AIChatLocalModelInfo {
-        engine.model
+        activeEngine.model
     }
 
     /// The state Duck.ai sees, or nil when the feature flag is off.
     public var currentState: AIChatLocalModelState? {
         guard isFeatureEnabled else { return nil }
-        guard availability.isAvailable else { return .unsupported }
-        return isOptedIn ? .ready : .notSetUp
+        switch activeEngineKind {
+        case .appleIntelligence:
+            guard availability.isAvailable else { return .unsupported }
+            return storage.pageSummariesModel == .appleIntelligence ? .ready : .notSetUp
+        case .llama:
+            guard let downloadableModel, downloadableModelAvailability.isAvailable else { return .unsupported }
+            switch downloadableModel.installer.state {
+            case .installed: return .ready
+            case .downloading: return .downloading
+            case .notInstalled, .failed: return .notSetUp
+            }
+        }
+    }
+
+    /// Why setting up the downloadable model failed, while Duck.ai sees `not_set_up` because of it.
+    public var setupError: AIChatLocalModelSetupError? {
+        guard currentState == .notSetUp, activeEngineKind == .llama,
+              case .failed(let error) = downloadableModel?.installer.state else { return nil }
+        return error
     }
 
     public var availabilityPublisher: AnyPublisher<AIChatLocalModelAvailability, Never> {
         $availability.removeDuplicates().eraseToAnyPublisher()
     }
 
-    /// Fires when the flag, the opt-in or availability may have changed.
+    /// Fires when the flag, the opt-in, availability, the engine or the download may have changed.
     public var changesPublisher: AnyPublisher<Void, Never> {
-        Publishers.Merge3(
+        let installerChanges = downloadableModel?.installer.statePublisher.map { _ in () }.eraseToAnyPublisher()
+            ?? Empty().eraseToAnyPublisher()
+        return Publishers.Merge6(
             availabilityPublisher.map { _ in () },
+            $downloadableModelAvailability.removeDuplicates().map { _ in () },
             storage.pageSummariesModelPublisher.map { _ in () },
-            featureFlagUpdates
+            featureFlagUpdates,
+            engineOverrideUpdates,
+            installerChanges
         )
         .eraseToAnyPublisher()
     }
 
     public func refreshAvailability() {
-        let latest = isFeatureEnabled ? engine.availability : Self.uncheckedAvailability
+        let isEnabled = isFeatureEnabled
+        let latest = isEnabled ? engine.availability : Self.uncheckedAvailability
         if latest != availability {
             availability = latest
+        }
+        let latestDownloadable = isEnabled ? (downloadableModel?.engine.availability ?? .deviceNotEligible) : Self.uncheckedAvailability
+        if latestDownloadable != downloadableModelAvailability {
+            downloadableModelAvailability = latestDownloadable
+        }
+        // The flag decides downloads too: one in progress waits while it's off.
+        if isEnabled, downloadableModelAvailability.isAvailable {
+            downloadableModel?.installer.resumeIfNeeded()
+        } else {
+            downloadableModel?.installer.pause()
         }
         pushStateIfChanged()
     }
 
+    /// Turns on Apple Intelligence.
     public func optIn() {
         setPageSummariesModel(.appleIntelligence)
     }
 
+    /// Turns off Apple Intelligence.
     public func optOut() {
         setPageSummariesModel(.duckAI)
+    }
+
+    /// Starts or retries the downloadable model's download.
+    public func installDownloadableModel() {
+        downloadableModel?.installer.install()
+    }
+
+    /// Stops a download in progress and deletes what was downloaded.
+    public func cancelDownloadableModelInstall() {
+        downloadableModel?.installer.cancel()
+    }
+
+    /// Ends runs, frees the model's memory, then deletes it.
+    public func uninstallDownloadableModel() {
+        guard let downloadableModel else { return }
+        if activeEngineKind == .llama {
+            runQueue.cancelEveryRun()
+        }
+        downloadableModel.engine.unloadModel()
+        downloadableModel.installer.uninstall()
     }
 
     private func setPageSummariesModel(_ model: AIChatPageSummariesModel) {
@@ -167,7 +320,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
     public func config() -> AIChatLocalModelConfig? {
         refreshAvailability()
         guard let state = currentState else { return nil }
-        return AIChatLocalModelConfig(state: state, tasks: Self.supportedTasks, model: engine.model)
+        return AIChatLocalModelConfig(state: state, tasks: Self.supportedTasks, model: model)
     }
 
     public func register(_ pusher: AIChatLocalModelPushing) {
@@ -185,7 +338,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         runQueue.enqueue(request, ownerID: ObjectIdentifier(pusher)) { [weak pusher] chunk in
             pusher?.pushLocalRunChunk(chunk)
         }
-        return AIChatLocalRunStartReply(model: engine.model)
+        return AIChatLocalRunStartReply(model: model)
     }
 
     public func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {
@@ -196,35 +349,78 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         runQueue.cancelAll(ownerID: ownerID)
     }
 
-    /// `ask` shows the platform's prompt. It isn't called when the user already turned the model on.
-    public func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
+    /// `ask` shows the platform's prompt. It isn't called when the model is already on, or downloading.
+    /// For a downloadable model, Install answers `installing`: this summary uses the cloud, and the
+    /// state pushes tell Duck.ai when the model is ready.
+    public func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
         refreshAvailability()
-        guard isFeatureEnabled, availability.isAvailable else {
+        guard let state = currentState, state != .unsupported else {
             throw AIChatLocalModelRequestError.unavailable
         }
-        if isOptedIn { return .allowed }
 
-        let result = await ask()
-        if result == .allowed {
-            optIn()
+        switch activeEngineKind {
+        case .appleIntelligence:
+            if state == .ready { return .allowed }
+            let result = await ask(.connect(model))
+            if result == .allowed {
+                optIn()
+            }
+            return result
+        case .llama:
+            switch state {
+            case .ready: return .allowed
+            case .downloading: return .installing
+            case .notSetUp, .unsupported: break
+            }
+            guard let downloadableModel else { throw AIChatLocalModelRequestError.unavailable }
+            let result = await ask(.install(model, bytes: downloadableModel.installer.spec.bytes))
+            guard result == .allowed else { return result }
+            downloadableModel.installer.install()
+            return .installing
         }
-        return result
     }
 
     // MARK: - Pushes
 
+    private var pushedState: PushedState {
+        PushedState(update: currentState.map { AIChatLocalModelStateUpdate(state: $0, errorCode: setupError) }, engine: activeEngineKind)
+    }
+
     private func pushStateIfChanged() {
-        let state = currentState
-        guard state != lastPushedState else { return }
-        lastPushedState = state
-        // Turn Off, the flag and Apple Intelligence decide every run, including ones already started.
-        if state != .ready {
+        let state = pushedState
+        guard state != lastPushed else { return }
+        let engineChanged = state.engine != lastPushed?.engine
+        lastPushed = state
+        // Turn Off, the flag, Apple Intelligence and a switch of engine decide every run,
+        // including ones already started.
+        if state.update?.state != .ready || engineChanged {
             runQueue.cancelEveryRun()
         }
         // With the flag off Duck.ai treats the model as unsupported, so tell open pages exactly that.
-        let update = AIChatLocalModelStateUpdate(state: state ?? .unsupported)
+        let update = state.update ?? AIChatLocalModelStateUpdate(state: .unsupported)
         for case let pusher as AIChatLocalModelPushing in pushers.allObjects {
             pusher.pushLocalModelState(update)
         }
+    }
+}
+
+/// Lets the run queue use whichever engine is active when a run starts.
+private final class RoutingEngine: AIChatLocalModelEngine {
+
+    var activeEngine: () -> AIChatLocalModelEngine? = { nil }
+
+    var model: AIChatLocalModelInfo {
+        activeEngine()?.model ?? AppleFoundationModelEngine.modelInfo
+    }
+
+    var availability: AIChatLocalModelAvailability {
+        activeEngine()?.availability ?? .unsupportedOS
+    }
+
+    func run(_ request: AIChatLocalRunRequest) -> AsyncThrowingStream<AIChatLocalModelEngineEvent, Error> {
+        guard let engine = activeEngine() else {
+            return AsyncThrowingStream { $0.finish(throwing: AIChatLocalModelEngineError(code: .modelUnavailable)) }
+        }
+        return engine.run(request)
     }
 }

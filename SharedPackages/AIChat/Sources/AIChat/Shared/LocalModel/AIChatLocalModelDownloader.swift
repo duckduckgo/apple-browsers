@@ -40,7 +40,15 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     static let installRequestKey = "aichat.localModel.installRequested"
 
     public let spec: AIChatLocalModelSpec
-    @Published public private(set) var state: AIChatLocalModelInstallState
+    public private(set) var state: AIChatLocalModelInstallState {
+        didSet {
+            if state != oldValue {
+                stateSubject.send(state)
+            }
+        }
+    }
+    /// Sends after the state changes, unlike `@Published`, so a subscriber reading `state` sees the new one.
+    private let stateSubject: CurrentValueSubject<AIChatLocalModelInstallState, Never>
 
     private let directory: URL
     private let session: URLSession
@@ -50,7 +58,11 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     private var download: ModelFileDownload?
     private var retry: Task<Void, Never>?
     private var failedAttempts = 0
-    private var cancellables = Set<AnyCancellable>()
+    /// Hashing a finished download takes a second or two. Starting another download meanwhile would
+    /// ask for bytes past the end, and the server's 416 would delete the file being checked.
+    private var isVerifying = false
+    private let networkAvailable: AnyPublisher<Void, Never>
+    private var networkSubscription: AnyCancellable?
 
     /// - Parameters:
     ///   - networkAvailable: Fires when the network comes back, to retry without waiting.
@@ -67,6 +79,7 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         self.defaults = defaults
         self.availableCapacity = availableCapacity
         self.retryDelays = retryDelays
+        self.networkAvailable = networkAvailable
 
         if let installed = Self.installedFileURL(in: directory, spec: spec) {
             state = .installed(installed)
@@ -77,15 +90,11 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
             defaults.removeObject(forKey: Self.installRequestKey)
             state = .notInstalled
         }
-
-        networkAvailable
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.retryNowIfWaiting() }
-            .store(in: &cancellables)
+        stateSubject = CurrentValueSubject(state)
     }
 
     public var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> {
-        $state.removeDuplicates().eraseToAnyPublisher()
+        stateSubject.eraseToAnyPublisher()
     }
 
     /// The verified model file, or nil when it isn't installed. Safe to call from any thread.
@@ -101,7 +110,7 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     // MARK: - AIChatLocalModelInstalling
 
     public func install() {
-        guard !state.isInstalled, download == nil, !isWaitingToRetry else { return }
+        guard !state.isInstalled, download == nil, !isWaitingToRetry, !isVerifying else { return }
         defaults.set(spec.sha256, forKey: Self.installRequestKey)
         failedAttempts = 0
         removeOtherModelFiles()
@@ -129,7 +138,7 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     }
 
     public func resumeIfNeeded() {
-        guard isRequested, !state.isInstalled, download == nil, !isWaitingToRetry else { return }
+        guard isRequested, !state.isInstalled, download == nil, !isWaitingToRetry, !isVerifying else { return }
         failedAttempts = 0
         startDownload()
     }
@@ -208,6 +217,12 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         }
         let delay = retryDelays[failedAttempts]
         failedAttempts += 1
+        // Watching the network only while a retry waits keeps the monitor off for everyone else.
+        if networkSubscription == nil {
+            networkSubscription = networkAvailable
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] in self?.retryNowIfWaiting() }
+        }
         retry = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard !Task.isCancelled, let self, self.isWaitingToRetry else { return }
@@ -225,11 +240,14 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         let partURL = partURL
         let destination = directory.appendingPathComponent(spec.fileName)
         let spec = spec
+        isVerifying = true
         Task { [weak self] in
             let verified = await Task.detached(priority: .utility) {
                 Self.fileSize(at: partURL) == spec.bytes && Self.sha256(of: partURL) == spec.sha256
             }.value
-            guard let self, self.isRequested else { return }
+            guard let self else { return }
+            self.isVerifying = false
+            guard self.isRequested else { return }
             guard verified else {
                 Logger.aiChat.error("[LocalModel] The downloaded model doesn't match its SHA-256")
                 try? FileManager.default.removeItem(at: partURL)
@@ -240,6 +258,7 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
                 try? FileManager.default.removeItem(at: destination)
                 try FileManager.default.moveItem(at: partURL, to: destination)
                 self.defaults.removeObject(forKey: Self.installRequestKey)
+                self.networkSubscription = nil
                 self.state = .installed(destination)
             } catch {
                 Logger.aiChat.error("[LocalModel] Can't move the model into place: \(error.localizedDescription, privacy: .public)")
@@ -252,6 +271,7 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     /// next launch doesn't retry on its own.
     private func fail(_ error: AIChatLocalModelSetupError) {
         stopDownload()
+        networkSubscription = nil
         defaults.removeObject(forKey: Self.installRequestKey)
         state = .failed(error)
     }
@@ -294,20 +314,30 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         return (try? existing.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]))?.volumeAvailableCapacityForImportantUsage
     }
 
-    /// Fires each time the network becomes usable again.
+    /// Fires when the network comes back after being down. The monitor starts on subscription and
+    /// stops when it's cancelled. Its first report is only the current state, so it doesn't fire.
     public nonisolated static func networkAvailablePublisher() -> AnyPublisher<Void, Never> {
-        let subject = PassthroughSubject<Void, Never>()
-        let monitor = NWPathMonitor()
-        monitor.pathUpdateHandler = { path in
-            if path.status == .satisfied {
-                subject.send()
+        Deferred {
+            let subject = PassthroughSubject<Void, Never>()
+            let monitor = NWPathMonitor()
+            let lastStatus = PathStatusBox()
+            monitor.pathUpdateHandler = { path in
+                let isSatisfied = path.status == .satisfied
+                if isSatisfied, lastStatus.wasSatisfied == false {
+                    subject.send()
+                }
+                lastStatus.wasSatisfied = isSatisfied
             }
+            monitor.start(queue: DispatchQueue(label: "com.duckduckgo.aiChat.localModel.network"))
+            return subject.handleEvents(receiveCancel: { monitor.cancel() })
         }
-        monitor.start(queue: DispatchQueue(label: "com.duckduckgo.aiChat.localModel.network"))
-        return subject
-            .handleEvents(receiveCancel: { monitor.cancel() })
-            .eraseToAnyPublisher()
+        .eraseToAnyPublisher()
     }
+}
+
+/// Only touched on the monitor's queue.
+private final class PathStatusBox: @unchecked Sendable {
+    var wasSatisfied: Bool?
 }
 
 public extension URLSession {

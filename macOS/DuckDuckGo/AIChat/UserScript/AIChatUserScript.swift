@@ -358,9 +358,8 @@ extension AIChatUserScript: AIChatLocalModelPushing {
         }
         let localModelAccessPrompt = localModelAccessPrompt ?? Application.appDelegate.localModelAccessPrompt
         let webView = message.messageWebView
-        let modelName = localModelService.model.name
-        let result = try await localModelService.requestAccess {
-            await localModelAccessPrompt.ask(from: webView, modelName: modelName)
+        let result = try await localModelService.requestAccess { request in
+            await localModelAccessPrompt.ask(from: webView, request: request)
         }
         return AIChatLocalModelAccessReply(result: result)
     }

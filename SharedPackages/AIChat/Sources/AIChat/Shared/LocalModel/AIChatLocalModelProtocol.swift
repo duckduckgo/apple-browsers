@@ -59,9 +59,12 @@ public struct AIChatLocalModelConfig: Codable, Equatable, Sendable {
 /// Params of the `submitAIChatLocalModelState` push.
 public struct AIChatLocalModelStateUpdate: Codable, Equatable, Sendable {
     public let state: AIChatLocalModelState
+    /// Why the download failed, sent with `not_set_up` right after a failure. Left out otherwise.
+    public let errorCode: AIChatLocalModelSetupError?
 
-    public init(state: AIChatLocalModelState) {
+    public init(state: AIChatLocalModelState, errorCode: AIChatLocalModelSetupError? = nil) {
         self.state = state
+        self.errorCode = errorCode
     }
 }
 
@@ -105,7 +108,7 @@ public struct AIChatLocalModelAccessReply: Codable, Equatable, Sendable {
         /// Turned on, now or earlier: run this summary locally.
         case allowed
         /// Install on a model that needs a download. This page uses the cloud, and native pushes
-        /// `downloading`, then `ready`. macOS offers no such model yet, so it never sends this.
+        /// `downloading`, then `ready`.
         case installing
         /// No Thanks, or closed without an answer: use the cloud.
         case declined

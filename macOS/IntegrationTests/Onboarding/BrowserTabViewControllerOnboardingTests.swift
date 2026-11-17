@@ -545,8 +545,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenNonBlockingIsDisabledThenDismissingUpsellClearsLastDialog() {
-        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.control
+    func testWhenDismissingUpsellThenLastDialogIsCleared() {
         presentDialog(.subscriptionUpsell)
         let presentationsBefore = factory.makeViewCallCount
 
@@ -554,29 +553,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
         XCTAssertNil(dialogProvider.lastDialog)
         XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
-        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .subscriptionUpsell)
-        XCTAssertEqual(pixelReporter.dismissedDialog, .subscriptionUpsell)
-    }
-
-    @MainActor
-    func testWhenUpsellXCompletesFirstThenNonBlockingDismissalStillRuns() {
-        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
-        dialogProvider.state = .ongoing
-        dialogProvider.isContextualOnboardingCompleted = false
-        presentDialog(.subscriptionUpsell)
-
-        factory.performOnGotItPressed()
-        dialogProvider.state = .onboardingCompleted
-        dialogProvider.isContextualOnboardingCompleted = true
-        let turnedOff = self.expectation(description: "X turns off contextual onboarding even after completion")
-        turnedOff.expectedFulfillmentCount = 2
-        dialogProvider.turnOffFeatureCalledExpectation = turnedOff
-
-        factory.performOnManualDismiss()
-        factory.performOnManualDismiss()
-
-        wait(for: [turnedOff], timeout: 1)
-        XCTAssertEqual(pixelReporter.gotItPressedDialog, .subscriptionUpsell)
         XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .subscriptionUpsell)
         XCTAssertEqual(pixelReporter.dismissedDialog, .subscriptionUpsell)
     }

@@ -31,7 +31,7 @@ class TabSuspensionTests: UITestCase {
             "aiChatSidebarFloating": true, // are required for testing AI Chat sidebar suspension
             "aiChatChromeMenuButton": false // keep the split sidebar button; this test clicks it directly
         ])
-        app.openNewWindow()
+        app.enforceSingleWindow()
     }
 
     // MARK: - Tests
@@ -47,7 +47,7 @@ class TabSuspensionTests: UITestCase {
         Thread.sleep(forTimeInterval: 6)
 
         // Simulate critical memory pressure via the debug menu
-        simulateCriticalMemoryPressure()
+        app.simulateCriticalMemoryPressure()
 
         // Verify the background tab is suspended by checking its context menu
         let suspendedTab = app.tabGroups.matching(identifier: "Tabs").radioButtons[pageTitle]
@@ -81,7 +81,7 @@ class TabSuspensionTests: UITestCase {
         app.openNewTab()
 
         Thread.sleep(forTimeInterval: 6)
-        simulateCriticalMemoryPressure()
+        app.simulateCriticalMemoryPressure()
 
         let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons[inputPageTitle]
         XCTAssertTrue(
@@ -109,7 +109,7 @@ class TabSuspensionTests: UITestCase {
         app.typeKey("2", modifierFlags: [.command])
 
         Thread.sleep(forTimeInterval: 6)
-        simulateCriticalMemoryPressure()
+        app.simulateCriticalMemoryPressure()
 
         let tabAfterFocus = app.tabGroups.matching(identifier: "Tabs").radioButtons[inputPageTitle]
         XCTAssertTrue(
@@ -151,7 +151,7 @@ class TabSuspensionTests: UITestCase {
         app.openNewTab()
 
         Thread.sleep(forTimeInterval: 6)
-        simulateCriticalMemoryPressure()
+        app.simulateCriticalMemoryPressure()
 
         // Verify none of the internal tabs were suspended
         for (name, tab) in [
@@ -165,8 +165,10 @@ class TabSuspensionTests: UITestCase {
     }
 
     func testThatTabsWithAIChatAreNotSuspended() {
-        let tabs = app.tabGroups.matching(identifier: "Tabs")
-        let sidebarButton = app.buttons["TabBarViewController.duckAIChromeSidebarButton"]
+        let sidebarButtonIdentifier = "TabBarViewController.duckAIChromeSidebarButton"
+        let browserWindow = app.windows.containing(.button, identifier: sidebarButtonIdentifier).element
+        let tabs = browserWindow.tabs
+        let sidebarButton = browserWindow.buttons[sidebarButtonIdentifier]
 
         // Tab 1: plain page (no AI Chat)
         let tab1Title = "Plain Page"
@@ -206,7 +208,7 @@ class TabSuspensionTests: UITestCase {
             waitForButtonTitle(sidebarButton, expectedTitle: "Close Duck.ai sidebar"),
             "AI Chat sidebar should open before detaching"
         )
-        let detachButton = app.buttons["AIChatViewController.detachButton"]
+        let detachButton = browserWindow.buttons["AIChatViewController.detachButton"]
         XCTAssertTrue(
             detachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Detach button should exist in the sidebar"
@@ -218,31 +220,31 @@ class TabSuspensionTests: UITestCase {
         )
 
         // Re-focus the main window after detaching (floating panel takes focus)
-        tabs.radioButtons[tab4Title].click()
+        tabs[tab4Title].click()
 
         // Tab 5: new empty tab to push others to background
         app.openNewTab()
 
         Thread.sleep(forTimeInterval: 6)
-        simulateCriticalMemoryPressure()
+        app.simulateCriticalMemoryPressure()
 
         // Tab 1 should be suspended (no AI Chat session)
-        let tab1 = tabs.radioButtons[tab1Title]
+        let tab1 = tabs[tab1Title]
         XCTAssertTrue(tab1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 1 should exist")
         assertIsSuspended(tab1, expected: true, "Tab without AI Chat should be suspended")
 
         // Tab 2 should NOT be suspended (docked sidebar session)
-        let tab2 = tabs.radioButtons[tab2Title]
+        let tab2 = tabs[tab2Title]
         XCTAssertTrue(tab2.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 2 should exist")
         assertIsSuspended(tab2, expected: false, "Tab with docked AI Chat sidebar should not be suspended")
 
         // Tab 3 should NOT be suspended (closed sidebar still has a session)
-        let tab3 = tabs.radioButtons[tab3Title]
+        let tab3 = tabs[tab3Title]
         XCTAssertTrue(tab3.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 3 should exist")
         assertIsSuspended(tab3, expected: false, "Tab with closed AI Chat sidebar should not be suspended")
 
         // Tab 4 should NOT be suspended (detached/floating sidebar session)
-        let tab4 = tabs.radioButtons[tab4Title]
+        let tab4 = tabs[tab4Title]
         XCTAssertTrue(tab4.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab 4 should exist")
         assertIsSuspended(tab4, expected: false, "Tab with floating AI Chat sidebar should not be suspended")
     }
@@ -271,7 +273,7 @@ class TabSuspensionTests: UITestCase {
         app.openNewTab()
 
         Thread.sleep(forTimeInterval: 6)
-        simulateCriticalMemoryPressure()
+        app.simulateCriticalMemoryPressure()
 
         // Verify neither pinned tab was suspended
         // Close each tab after verifying to clean up after the test
@@ -300,7 +302,7 @@ class TabSuspensionTests: UITestCase {
         app.openNewTab()
 
         Thread.sleep(forTimeInterval: 6)
-        simulateCriticalMemoryPressure()
+        app.simulateCriticalMemoryPressure()
 
         let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons[firePageTitle]
         XCTAssertTrue(
@@ -328,23 +330,5 @@ class TabSuspensionTests: UITestCase {
         let predicate = NSPredicate(format: "title == %@", expectedTitle)
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: button)
         return XCTWaiter.wait(for: [expectation], timeout: UITests.Timeouts.elementExistence) == .completed
-    }
-
-    private func simulateCriticalMemoryPressure() {
-        app.debugMenu.click()
-
-        let searchField = app.searchFields["Search debug menu..."]
-        XCTAssertTrue(
-            searchField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Debug menu search field didn't appear"
-        )
-        searchField.typeText("Simulate Memory Pressure")
-
-        let simulateMenuItem = app.menuItems["Simulate Memory Pressure (Critical)"]
-        XCTAssertTrue(
-            simulateMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Simulate Memory Pressure menu item didn't appear"
-        )
-        simulateMenuItem.click()
     }
 }

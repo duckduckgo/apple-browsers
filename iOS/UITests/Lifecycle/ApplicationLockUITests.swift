@@ -62,6 +62,7 @@ final class ApplicationLockUITests: UITestCase {
     }
 
     func testWhenApplicationLockIsEnabledThenRelaunchRequiresAuthenticationUntilLockIsDisabled() throws {
+        let site = try localWebsite()
         enableApplicationLock()
 
         try XCTContext.runActivity(named: "Authenticate after relaunch") { _ in
@@ -91,7 +92,7 @@ final class ApplicationLockUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Disable Application Lock") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openSettings()
             app.openGeneralSettings()
 
@@ -108,7 +109,7 @@ final class ApplicationLockUITests: UITestCase {
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
                 "Browser did not become interactive after disabling Application Lock and relaunching.")
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
             XCTAssertFalse(
                 springboard.staticTexts["Unlock DuckDuckGo."].exists,
                 "Application Lock appeared after it was disabled.")

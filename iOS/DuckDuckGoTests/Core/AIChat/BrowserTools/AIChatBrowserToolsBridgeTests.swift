@@ -421,6 +421,21 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
     }
 
+    func testActualScriptRouteExecutesToolFromTrustedWebKitMessage() async throws {
+        let fixture = makeFixture()
+        let documentURL = try XCTUnwrap(fixture.webView.url)
+        let message = BrowserToolsTrustedScriptMessage(
+            webView: fixture.webView,
+            frameInfo: .mock(isMainFrame: true, securityOrigin: MockWKSecurityOrigin.new(url: documentURL)))
+        let route = try XCTUnwrap(fixture.script.handler(forMethodNamed: "executeClientTool"))
+
+        let result = try await route(fixture.params(), message) as? ExecuteClientToolResponse
+
+        XCTAssertEqual(result, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
+        XCTAssertEqual(fixture.presenter.prompts.count, 1)
+    }
+
     func testActualScriptRoutesRejectUntrustedWebKitMessageBeforePermission() async throws {
         let fixture = makeFixture()
         let route = try XCTUnwrap(fixture.script.handler(forMethodNamed: "executeClientTool"))
@@ -669,6 +684,38 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
     }
 
+    func testOwnerNavigationNotifiesOnlyItsContextualClient() async throws {
+        let contextual = makeFixture()
+        let otherContextual = makeFixture()
+        let fullTab = makeFixture()
+        let otherOwner = Tab(uid: "other-owner", link: Link(title: "Other", url: URL(string: "https://other.example")!), fireTab: false)
+        contextual.script.setDisplayMode(.contextual)
+        otherContextual.script.setDisplayMode(.contextual)
+        fullTab.script.setDisplayMode(.fullTab)
+        otherContextual.script.bindBrowserTools(to: contextual.service, owner: otherOwner) {
+            let source = MultiTabAttachmentSource(currentTabID: otherOwner.uid, mode: .normal, tabsProvider: { [otherOwner] })
+            return BrowserToolScope(owner: otherOwner, source: source, selectedTabID: { otherOwner.uid })
+        }
+        fullTab.script.bindBrowserTools(to: contextual.service, owner: contextual.owner) { [weak contextual] in
+            contextual?.makeScope()
+        }
+        for client in [contextual, otherContextual, fullTab] {
+            XCTAssertNotNil(contextual.service.configuration(for: client.script))
+        }
+
+        contextual.service.ownerDidNavigate(tabID: contextual.owner.uid, url: URL(string: "https://next.example"))
+        await drainBridge()
+
+        XCTAssertEqual(contextual.webView.metadataPayloads.count, 1)
+        let payload = try XCTUnwrap(contextual.webView.metadataPayloads.first)
+        XCTAssertEqual(payload["tabId"] as? String, contextual.owner.uid)
+        XCTAssertEqual(payload["change"] as? String, "navigated")
+        XCTAssertEqual(payload["url"] as? String, "https://next.example")
+        XCTAssertEqual(payload["isAttachable"] as? Bool, true)
+        XCTAssertTrue(otherContextual.webView.metadataPayloads.isEmpty)
+        XCTAssertTrue(fullTab.webView.metadataPayloads.isEmpty)
+    }
+
     func testContextualMetadataUsesOnlyMainFlagAndOwnerNavigationPreservesToolAvailability() async {
         let fixture = makeFixture()
         fixture.script.setDisplayMode(.contextual)
@@ -832,6 +879,20 @@ final class BrowserToolsBridgeWebView: WKWebView {
             configurationPayloads.append(params)
         }
         completionHandler?(nil, nil)
+    }
+}
+
+private final class BrowserToolsTrustedScriptMessage: WKScriptMessage {
+    private let sourceWebView: WKWebView
+    private let sourceFrameInfo: WKFrameInfo
+
+    override var webView: WKWebView? { sourceWebView }
+    override var frameInfo: WKFrameInfo { sourceFrameInfo }
+
+    init(webView: WKWebView, frameInfo: WKFrameInfo) {
+        sourceWebView = webView
+        sourceFrameInfo = frameInfo
+        super.init()
     }
 }
 

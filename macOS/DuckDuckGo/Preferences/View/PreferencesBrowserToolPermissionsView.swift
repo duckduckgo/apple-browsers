@@ -50,6 +50,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
         self.permissions = permissions
         // Every write, removal and burn, not only prompt answers.
         permissionChanges = permissionManager.persistedPermissionsPublisher
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.reload() }
         reload()

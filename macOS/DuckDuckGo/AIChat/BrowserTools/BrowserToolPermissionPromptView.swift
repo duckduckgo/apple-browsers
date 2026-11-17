@@ -135,8 +135,8 @@ struct BrowserToolPermissionPromptView: View {
                 accessTools(accessToolNames)
 
                 HStack(spacing: 12) {
-                    decisionButton(UserText.browserToolAccessAllow, .allowAccess(excluding: Set(selection.removed)), id: "allowInChat", shortcutHint: "⌘↵")
                     decisionButton(UserText.browserToolAccessDontAllow, .dontAllow, id: "dontAllow")
+                    decisionButton(UserText.browserToolAccessAllow, .allowAccess(excluding: Set(selection.removed)), id: "allowInChat", shortcutHint: "⌘↵")
                 }
             } else {
                 VStack(spacing: 8) {
@@ -171,7 +171,7 @@ struct BrowserToolPermissionPromptView: View {
                     .padding(boxed ? 12 : 0)
             }
         }
-        .overlay(boxed ? RoundedRectangle(cornerRadius: 6).stroke(Color(designSystemColor: .containerBorderPrimary)) : nil)
+        .background(boxed ? RoundedRectangle(cornerRadius: 8).fill(Color(designSystemColor: .controlsFillPrimary, palette: themeManager.designColorPalette)) : nil)
         .accessibilityIdentifier("BrowserToolPermissionPrompt.accessTools")
 
         if !selection.removed.isEmpty {
@@ -195,6 +195,8 @@ struct BrowserToolPermissionPromptView: View {
         return HStack(spacing: 8) {
             HStack(alignment: .top, spacing: 10) {
                 Image(nsImage: BrowserToolPermissionPromptText.icon(toolName: toolName))
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary, palette: themeManager.designColorPalette))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 13))

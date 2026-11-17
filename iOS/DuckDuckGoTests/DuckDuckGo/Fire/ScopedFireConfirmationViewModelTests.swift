@@ -607,17 +607,18 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     func testSlideToDeleteFlagChangesOnNextPresentation() {
         let tab = createTabViewModel()
         let disabled = makeSUT(tabViewModel: tab)
-        XCTAssertFalse(disabled.buttons.contains { $0.style == .slide })
+        XCTAssertFalse(disabled.buttons.contains { $0.style.isSlide })
 
         mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
         let enabled = makeSUT(tabViewModel: tab)
-        let slider = enabled.buttons.first { $0.style == .slide }
+        let slider = enabled.buttons.first { $0.style.isSlide }
         XCTAssertEqual(slider?.title, UserText.scopedFireConfirmationSlideToDeleteAll)
+        XCTAssertEqual(slider?.style, .slide(completionTitle: UserText.scopedFireConfirmationDeleteAllButton))
         XCTAssertEqual(slider?.accessibilityIdentifier, "alert.forget-data.confirm")
-        XCTAssertFalse(disabled.buttons.contains { $0.style == .slide })
+        XCTAssertFalse(disabled.buttons.contains { $0.style.isSlide })
 
         mockFeatureFlagger.enabledFeatureFlags = []
-        XCTAssertFalse(makeSUT(tabViewModel: tab).buttons.contains { $0.style == .slide })
+        XCTAssertFalse(makeSUT(tabViewModel: tab).buttons.contains { $0.style.isSlide })
     }
 
     func testSliderPreservesDeleteAllScopeInBothBrowsingModes() {
@@ -625,7 +626,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         for mode: BrowsingMode in [.normal, .fire] {
             var request: FireRequest?
             let sut = makeSUT(tabViewModel: nil, isSingleTab: true, browsingMode: mode, onConfirm: { request = $0 })
-            let slider = sut.buttons.first { $0.style == .slide }
+            let slider = sut.buttons.first { $0.style.isSlide }
             XCTAssertNotNil(slider)
             slider?.action()
             XCTAssertEqual(request?.options, .all)
@@ -646,7 +647,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         ]
         for context in contexts {
             let sut = makeSUT(tabViewModel: createAITabViewModel(), fireContext: context)
-            XCTAssertFalse(sut.buttons.contains { $0.style == .slide })
+            XCTAssertFalse(sut.buttons.contains { $0.style.isSlide })
         }
     }
 
@@ -767,11 +768,11 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
         mockFeatureFlagger.enabledFeatureFlags = [.fireButtonDeleteAllChats]
 
-        let fallback = [("Delete This Chat", ScopedFireConfirmationViewModel.FireConfirmationButton.Style.primary, "Fire.Confirmation.Button.ThisTab")]
+        let fallback = [(UserText.scopedFireConfirmationDeleteThisChatButton, ScopedFireConfirmationViewModel.FireConfirmationButton.Style.primary, "Fire.Confirmation.Button.ThisTab")]
         for count in [nil, 0] as [Int?] {
             let sut = makeSUT(tabViewModel: createAITabViewModel(), chatCount: count, onDeleteAllChats: {})
             assertChatButtons(sut, fallback)
-            XCTAssertEqual(sut.headerTitle, "Delete this chat?")
+            XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
             XCTAssertNil(sut.subtitle)
         }
 
@@ -794,8 +795,8 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
 
         for count in [nil, 0] as [Int?] {
             let sut = makeSUT(tabViewModel: nil, fireContext: context, chatCount: count, onDeleteAllChats: {})
-            assertChatButtons(sut, [("Delete Chat", .primary, "alert.forget-data.confirm")])
-            XCTAssertEqual(sut.headerTitle, "Delete this chat?")
+            assertChatButtons(sut, [(UserText.contextualChatDeleteConfirmationButton, .primary, "alert.forget-data.confirm")])
+            XCTAssertEqual(sut.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
             XCTAssertNil(sut.subtitle)
         }
 
@@ -806,7 +807,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
 
         let several = makeSUT(tabViewModel: nil, fireContext: context, chatCount: 2, onDeleteAllChats: {})
         assertChatButtons(several, [
-            ("Delete This Chat", .primary, "Fire.Confirmation.Button.ThisTab"),
+            (UserText.scopedFireConfirmationDeleteThisChatButton, .primary, "Fire.Confirmation.Button.ThisTab"),
             ("Delete All Chats", .secondary, "Fire.Confirmation.Button.DeleteAllChats")
         ])
         XCTAssertEqual(several.headerTitle, "Delete chats?")
@@ -820,42 +821,45 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
             .singleTab, .deleteChats(count: 3, onDelete: {}), .duckAIOnboarding,
             .custom(title: "History", subtitle: "Entries", action: "Delete")
         ]
+        let tab = createAITabViewModel()
         for context in contexts {
-            let sut = makeSUT(tabViewModel: createAITabViewModel(), fireContext: context,
-                              chatCount: 2, onDeleteAllChats: {})
-            XCTAssertFalse(sut.buttons.contains { $0.accessibilityIdentifier == "Fire.Confirmation.Button.DeleteAllChats" })
+            let existing = makeSUT(tabViewModel: tab, fireContext: context)
+            let sut = makeSUT(tabViewModel: tab, fireContext: context, chatCount: 2, onDeleteAllChats: {})
+            assertSameConfirmation(sut, existing)
         }
     }
 
     func testDeleteAllChatsIsUnavailableForWebTabAndNoTab() {
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
         mockFeatureFlagger.enabledFeatureFlags = [.fireButtonDeleteAllChats]
-        for tab in [createTabViewModel(), nil] {
+        let website = Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))
+        let websiteViewModel = TabViewModel(tab: website, historyManager: mockHistoryManager)
+        for tab in [websiteViewModel, nil] {
+            let existing = makeSUT(tabViewModel: tab)
             let sut = makeSUT(tabViewModel: tab, chatCount: 2, onDeleteAllChats: {})
-            XCTAssertFalse(sut.buttons.contains { $0.accessibilityIdentifier == "Fire.Confirmation.Button.DeleteAllChats" })
+            assertSameConfirmation(sut, existing)
         }
     }
 
     func testDuckAITabDeleteAllChatsRequiresRefinements() {
         mockDataClearingCapability.isFireButtonRefinementsEnabled = false
         mockFeatureFlagger.enabledFeatureFlags = [.fireButtonDeleteAllChats]
-        let sut = makeSUT(tabViewModel: createAITabViewModel(), chatCount: 2, onDeleteAllChats: {})
-        assertChatButtons(sut, [
-            ("Delete All", .primary, "alert.forget-data.confirm"),
-            ("Delete This Tab", .secondary, "Fire.Confirmation.Button.ThisTab")
-        ])
+        let tab = createAITabViewModel()
+        let existing = makeSUT(tabViewModel: tab)
+        let sut = makeSUT(tabViewModel: tab, chatCount: 2, onDeleteAllChats: {})
+        assertSameConfirmation(sut, existing)
     }
 
     func testDeleteAllChatsRequiresAnAction() {
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
         mockFeatureFlagger.enabledFeatureFlags = [.fireButtonDeleteAllChats]
         let tab = makeSUT(tabViewModel: createAITabViewModel(), chatCount: 2)
-        assertChatButtons(tab, [("Delete This Chat", .primary, "Fire.Confirmation.Button.ThisTab")])
-        XCTAssertEqual(tab.headerTitle, "Delete this chat?")
+        assertChatButtons(tab, [(UserText.scopedFireConfirmationDeleteThisChatButton, .primary, "Fire.Confirmation.Button.ThisTab")])
+        XCTAssertEqual(tab.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
 
         let contextual = makeSUT(tabViewModel: nil, fireContext: .contextualChat(onDelete: {}), chatCount: 2)
-        assertChatButtons(contextual, [("Delete Chat", .primary, "alert.forget-data.confirm")])
-        XCTAssertEqual(contextual.headerTitle, "Delete this chat?")
+        assertChatButtons(contextual, [(UserText.contextualChatDeleteConfirmationButton, .primary, "alert.forget-data.confirm")])
+        XCTAssertEqual(contextual.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
     }
 
     func testDuckAITabDeleteAllChatsCallsOnlyDeleteAllChatsAction() throws {
@@ -880,8 +884,8 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                           onConfirm: { _ in XCTFail("Unexpected tab deletion") })
 
         assertChatButtons(sut, [
-            ("Delete This Chat", .primary, "Fire.Confirmation.Button.ThisTab"),
-            ("Slide to Delete All Chats", .slide, "Fire.Confirmation.Button.DeleteAllChats")
+            (UserText.scopedFireConfirmationDeleteThisChatButton, .primary, "Fire.Confirmation.Button.ThisTab"),
+            ("Slide to Delete All Chats", .slide(completionTitle: "Delete All Chats"), "Fire.Confirmation.Button.DeleteAllChats")
         ])
         try XCTUnwrap(sut.buttons.first).action()
         XCTAssertEqual(deleteThisChatCalls, 1)
@@ -900,8 +904,8 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                           onDeleteAllChats: { XCTFail("Unexpected delete-all action") }, onConfirm: { request = $0 })
 
         assertChatButtons(sut, [
-            ("Delete This Chat", .primary, "Fire.Confirmation.Button.ThisTab"),
-            ("Slide to Delete All Chats", .slide, "Fire.Confirmation.Button.DeleteAllChats")
+            (UserText.scopedFireConfirmationDeleteThisChatButton, .primary, "Fire.Confirmation.Button.ThisTab"),
+            ("Slide to Delete All Chats", .slide(completionTitle: "Delete All Chats"), "Fire.Confirmation.Button.DeleteAllChats")
         ])
         try XCTUnwrap(sut.buttons.first).action()
         if case .tab(let viewModel) = request?.scope {
@@ -926,7 +930,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
             let fire = makeSUT(tabViewModel: tab, fireContext: context, chatCount: 2,
                                browsingMode: .fire, isChatSyncEnabled: true, onDeleteAllChats: {})
             assertChatButtons(fire, [
-                ("Delete This Chat", .primary, "Fire.Confirmation.Button.ThisTab"),
+                (UserText.scopedFireConfirmationDeleteThisChatButton, .primary, "Fire.Confirmation.Button.ThisTab"),
                 ("Delete All Chats", .secondary, "Fire.Confirmation.Button.DeleteAllChats")
             ])
             XCTAssertEqual(fire.subtitle, "Deleting all chats won't affect chats outside Fire Tabs.")
@@ -936,24 +940,32 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     func testDeleteAllChatsFlagChangesOnNextPresentation() {
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
         let presentations: [(TabViewModel?, ScopedFireConfirmationViewModel.FireContext, String)] = [
-            (createAITabViewModel(), .default(daxDialogsManager: MockDaxDialogsManager()), "Delete This Chat"),
-            (nil, .contextualChat(onDelete: {}), "Delete Chat")
+            (createAITabViewModel(), .default(daxDialogsManager: MockDaxDialogsManager()), UserText.scopedFireConfirmationDeleteThisChatButton),
+            (nil, .contextualChat(onDelete: {}), UserText.contextualChatDeleteConfirmationButton)
         ]
         for (tab, context, fallbackTitle) in presentations {
             mockFeatureFlagger.enabledFeatureFlags = [.fireButtonDeleteAllChats, .slideToDelete]
             let enabled = makeSUT(tabViewModel: tab, fireContext: context, chatCount: 1, onDeleteAllChats: {})
-            assertChatButtons(enabled, [("Slide to Delete All Chats", .slide, "Fire.Confirmation.Button.DeleteAllChats")])
+            assertChatButtons(enabled, [("Slide to Delete All Chats", .slide(completionTitle: "Delete All Chats"), "Fire.Confirmation.Button.DeleteAllChats")])
 
             mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
             let disabled = makeSUT(tabViewModel: tab, fireContext: context, chatCount: 1, onDeleteAllChats: {})
             XCTAssertEqual(disabled.buttons.map(\.title), [fallbackTitle])
             XCTAssertEqual(disabled.buttons.map(\.style), [.primary])
-            XCTAssertEqual(disabled.headerTitle, "Delete this chat?")
+            XCTAssertEqual(disabled.headerTitle, UserText.contextualChatDeleteConfirmationTitle)
             XCTAssertNil(disabled.subtitle)
         }
     }
 
     // MARK: - Helpers
+
+    private func assertSameConfirmation(_ sut: ScopedFireConfirmationViewModel,
+                                        _ existing: ScopedFireConfirmationViewModel,
+                                        file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(sut.headerTitle, existing.headerTitle, file: file, line: line)
+        XCTAssertEqual(sut.subtitle, existing.subtitle, file: file, line: line)
+        assertChatButtons(sut, existing.buttons.map { ($0.title, $0.style, $0.accessibilityIdentifier) }, file: file, line: line)
+    }
 
     private func assertChatButtons(_ sut: ScopedFireConfirmationViewModel,
                                    _ expected: [(String, ScopedFireConfirmationViewModel.FireConfirmationButton.Style, String)],

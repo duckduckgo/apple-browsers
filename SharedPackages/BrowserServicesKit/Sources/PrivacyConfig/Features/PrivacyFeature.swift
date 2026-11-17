@@ -1014,9 +1014,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
     case bookmarkToolbarPromo
 
-    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
-    case syncFaviconsPromo
-
     /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
     case autofillToolbarPinningPromo
 

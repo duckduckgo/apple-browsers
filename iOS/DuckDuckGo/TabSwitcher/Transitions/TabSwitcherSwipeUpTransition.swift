@@ -107,7 +107,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
 
     private var screenBounds: CGRect = .zero
     private var isCommitted = false
-    private var commitSpring = TabSwitcherTransition.Spring.swipeCommit
+    private let commitSpring = TabSwitcherTransition.Spring.swipeCommit
     private var cardTarget: CGRect?
 
     private var transitionContext: UIViewControllerContextTransitioning?
@@ -139,7 +139,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
             if gesture.state == .ended, offset != 0 {
                 cancel(velocity: velocity, returningTo: neighboringTab(atOffset: offset))
             } else if gesture.state == .ended, TabSwitcherSwipeUpGeometry.shouldCommit(travel: gesture.upwardTravel, velocity: velocity) {
-                commit(with: .swipeCommit)
+                commit()
                 requestTabSwitcherAfterFirstFrame()
             } else {
                 cancel(velocity: velocity)
@@ -399,7 +399,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
 
     // MARK: - Commit
 
-    private func commit(with spring: TabSwitcherTransition.Spring) {
+    private func commit() {
         guard let mainViewController,
               let tab = mainViewController.tabManager.currentTabsModel.currentTab,
               let row = mainViewController.tabManager.currentTabsModel.indexOf(tab: tab) else {
@@ -408,7 +408,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         }
 
         isCommitted = true
-        commitSpring = spring
         // A quick flick can release while the covered overview still has its strongest blur.
         blurAnimator?.fractionComplete = TabSwitcherSwipeUpGeometry.blurProgress(forRevealProgress: revealProgress, isCommitted: true)
         revealProgress = 1
@@ -418,7 +417,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         }
         springCard(to: TabSwitcherCellFrameCache.frame(forRow: row, in: screenBounds, isGrid: cardView?.cellStyle != .list))
         if cardView?.cellStyle == .list {
-            UIView.animate(withDuration: spring.response * 0.45, delay: spring.response * 0.1, options: [.curveEaseIn]) {
+            UIView.animate(withDuration: commitSpring.response * 0.45, delay: commitSpring.response * 0.1, options: [.curveEaseIn]) {
                 self.cardView?.setPage(visible: false)
             }
         }

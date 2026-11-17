@@ -69,6 +69,8 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let utiDismiss = "UnifiedToggleInput.Button.Dismiss"
         static let tabSwitcher = "Browser.Toolbar.Button.TabSwitcher"
         static let tabSwitcherDone = "TabSwitcher.Button.Done"
+        static let tabSwitcherViewStyle = "TabSwitcher.Button.ViewStyle"
+        static let tabSwitcherEdit = "TabSwitcher.Button.Edit"
         static let toolbarBack = "Browser.Toolbar.Button.Back"
         static let toolbarForward = "Browser.Toolbar.Button.Forward"
         static let toolbarFire = "Browser.Toolbar.Button.Fire"
@@ -204,21 +206,55 @@ class FloatingUIXCUITestCase: XCTestCase {
     }
 
     func verifyTabSwitcherSwipeUpGesture(isEnabled: Bool) {
-        if !isEnabled {
-            app.terminate()
-            launchApp(additionalArguments: ["-ff.tabSwitcherSwipeUpGesture", "false"])
-        }
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.tabSwitcherSwipeUpGesture", String(isEnabled)], disableAnimations: true)
         openPage(path: "/page-one", heading: Page.oneHeading)
-
-        let start = searchField.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
-        start.press(forDuration: 0.05, thenDragTo: end)
 
         let doneButton = element(withIdentifier: AccessibilityID.tabSwitcherDone)
         if isEnabled {
-            XCTAssertTrue(doneButton.waitForHittable(timeout: timeout))
-            doneButton.tap()
+            let viewStyleButton = element(withIdentifier: AccessibilityID.tabSwitcherViewStyle)
+            for style in ["Grid", "List"] {
+                tabSwitcherButton.tap()
+                XCTAssertTrue(viewStyleButton.waitForHittable(timeout: timeout))
+                viewStyleButton.tap()
+                let styleMenuButton = app.buttons.matching(NSPredicate(
+                    format: "label == %@ AND identifier != %@", style, AccessibilityID.tabSwitcherViewStyle)).firstMatch
+                XCTAssertTrue(styleMenuButton.waitForHittable(timeout: timeout))
+                styleMenuButton.tap()
+                XCTAssertTrue(doneButton.waitForHittable(timeout: timeout))
+                let chromeButtons = [
+                    viewStyleButton,
+                    doneButton,
+                    element(withIdentifier: AccessibilityID.tabSwitcherEdit),
+                ]
+                for button in chromeButtons {
+                    XCTAssertTrue(button.waitForHittable(timeout: timeout))
+                }
+                let buttonEntryFrames = chromeButtons.map { $0.frame }
+                doneButton.tap()
+                XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+
+                let start = searchField.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+                start.press(forDuration: 0.05, thenDragTo: end)
+
+                for (button, expectedFrame) in zip(chromeButtons, buttonEntryFrames) {
+                    XCTAssertTrue(button.waitForHittable(timeout: timeout))
+                    XCTAssertEqual(button.frame.minX, expectedFrame.minX, accuracy: 1,
+                                   "\(style) \(button.identifier) moved horizontally on swipe entry.")
+                    XCTAssertEqual(button.frame.width, expectedFrame.width, accuracy: 1,
+                                   "\(style) \(button.identifier) changed width on swipe entry.")
+                }
+                doneButton.tap()
+                XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+                XCTAssertTrue(app.staticTexts[Page.oneHeading].isHittable)
+                assertConfiguredBarPosition()
+            }
         } else {
+            let start = searchField.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+            start.press(forDuration: 0.05, thenDragTo: end)
+
             XCTAssertFalse(doneButton.exists)
             XCTAssertTrue(app.staticTexts[Page.oneHeading].isHittable)
         }
@@ -1446,7 +1482,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         app.webViews.firstMatch
     }
 
-    private func launchApp(toggleEnabled: Bool? = nil, additionalArguments: [String] = []) {
+    private func launchApp(toggleEnabled: Bool? = nil, additionalArguments: [String] = [], disableAnimations: Bool = false) {
         app.launchArguments = [
             "-clearAllDefaults",
             "isRunningUITests",
@@ -1476,6 +1512,9 @@ class FloatingUIXCUITestCase: XCTestCase {
             "BASE_URL": serverBaseURL,
             "PIXEL_BASE_URL": serverBaseURL,
         ]
+        if disableAnimations {
+            app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
+        }
         app.launch()
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout), "Browser chrome did not become ready.")

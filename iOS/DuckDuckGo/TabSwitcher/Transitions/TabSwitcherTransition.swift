@@ -38,7 +38,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         let response: TimeInterval
         let dampingRatio: CGFloat
 
-        static let present = Spring(response: 0.38, dampingRatio: 0.9)
         static let dismiss = Spring(response: Constants.floatingDuration / 1.25, dampingRatio: 0.9)
         static let swipeCommit = Spring(response: 0.51, dampingRatio: 0.825)
         static let swipeCancel = Spring(response: 0.42, dampingRatio: 0.86)
@@ -66,10 +65,10 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         }
     }
 
-    /// A web view that was just attached for a different tab can take a few hundred milliseconds to paint.
-    /// Revealing it before then flashes the background (black in dark mode), so callers wait for this.
-    /// A one-pixel snapshot completes only once the web content has rendered; the timeout covers stalls.
-    /// Waiting is invisible: by then the card already fills the screen.
+    /// Reduces background flashes when revealing a web view just attached for a different tab.
+    /// This bounded, best-effort wait ends after a one-pixel snapshot callback plus a short grace period,
+    /// or when the timeout fires. Snapshot failure follows the same grace period; neither path guarantees painting.
+    /// The card already fills the screen while callers wait.
     static func whenRendered(_ webView: WKWebView, timeout: TimeInterval = 0.6, _ completion: @escaping () -> Void) {
         var hasCompleted = false
         let complete = {
@@ -81,8 +80,7 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         configuration.rect = CGRect(x: 0, y: 0, width: 1, height: 1)
         configuration.snapshotWidth = 1
         webView.takeSnapshot(with: configuration) { _, _ in
-            // The snapshot reports the web content has painted, but compositing it on screen can lag
-            // a few frames behind.
+            // Allow a few frames for compositing after the snapshot callback, even if the snapshot failed.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: complete)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: complete)

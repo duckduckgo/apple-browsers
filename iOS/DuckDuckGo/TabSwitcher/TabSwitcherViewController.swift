@@ -501,6 +501,8 @@ class TabSwitcherViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
+        view.layoutIfNeeded()
         productSurfaceTelemetry.tabManagerUsed()
         showFireButtonPulseIfNeeded()
         // Prepare offscreen Fire content after presentation so it doesn't block the drag.

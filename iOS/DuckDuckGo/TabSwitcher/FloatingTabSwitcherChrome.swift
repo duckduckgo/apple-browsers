@@ -447,6 +447,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         self.interfaceMode = interfaceMode
         contentView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.isHidden = interfaceMode.isLarge
+        navigationBar.setNeedsLayout()
+        toolbar.setNeedsLayout()
 
         guard layoutConstraints.isEmpty else { return }
 

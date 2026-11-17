@@ -400,22 +400,24 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertTrue(secondContentConstraints.allSatisfy(\.isActive))
     }
 
-    func testWhenPreviewIsPresentedThenHeaderButtonsKeepTheirHorizontalPositions() async throws {
+    func testWhenPreviewIsPresentedThenHeaderButtonsMatchOrdinaryPresentation() async throws {
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
         let root = UIViewController()
         window.rootViewController = root
         window.makeKeyAndVisible()
         defer { window.isHidden = true }
 
-        for style in [TabSwitcherViewController.TabsStyle.list, .grid] {
-            let preview = UIView(frame: window.bounds)
-            window.addSubview(preview)
+        func presentedButtonFrames(style: TabSwitcherViewController.TabsStyle, fromPreview: Bool) async throws -> [CGRect] {
             let destination = UIViewController()
             destination.modalPresentationStyle = .overCurrentContext
             let originalMargins = destination.view.directionalLayoutMargins
-            destination.view.directionalLayoutMargins = root.systemMinimumLayoutMargins
-            destination.view.frame = preview.bounds
-            preview.addSubview(destination.view)
+            let preview = fromPreview ? UIView(frame: window.bounds) : nil
+            if let preview {
+                window.addSubview(preview)
+                destination.view.directionalLayoutMargins = root.systemMinimumLayoutMargins
+                destination.view.frame = preview.bounds
+                preview.addSubview(destination.view)
+            }
             let chrome = FloatingTabSwitcherChrome()
             let content = UIScrollView()
             chrome.install(in: destination.view, contentView: content)
@@ -430,21 +432,30 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                 if view is UIButton { return [view.convert(view.bounds, to: window)] }
                 return view.subviews.flatMap { buttonFrames(in: $0) }
             }
-            let previewFrames = buttonFrames(in: navigationBar)
-            XCTAssertEqual(previewFrames.count, 2)
-
             await withCheckedContinuation { continuation in
                 root.present(destination, animated: false) { continuation.resume() }
             }
-            destination.view.directionalLayoutMargins = originalMargins
+            if fromPreview {
+                destination.view.directionalLayoutMargins = originalMargins
+            }
+            chrome.layout(addressBarPosition: .bottom, interfaceMode: .regularSize)
             destination.view.layoutIfNeeded()
+            let frames = buttonFrames(in: navigationBar)
 
-            XCTAssertEqual(buttonFrames(in: navigationBar).map(\.minX), previewFrames.map(\.minX), style.rawValue)
-            XCTAssertEqual(buttonFrames(in: navigationBar).map(\.width), previewFrames.map(\.width), style.rawValue)
             await withCheckedContinuation { continuation in
                 root.dismiss(animated: false) { continuation.resume() }
             }
-            preview.removeFromSuperview()
+            preview?.removeFromSuperview()
+            return frames
+        }
+
+        for style in [TabSwitcherViewController.TabsStyle.list, .grid] {
+            let ordinaryFrames = try await presentedButtonFrames(style: style, fromPreview: false)
+            let previewFrames = try await presentedButtonFrames(style: style, fromPreview: true)
+            XCTAssertEqual(ordinaryFrames.count, 2)
+            XCTAssertEqual(previewFrames.count, 2)
+            XCTAssertEqual(previewFrames.map(\.minX), ordinaryFrames.map(\.minX), style.rawValue)
+            XCTAssertEqual(previewFrames.map(\.width), ordinaryFrames.map(\.width), style.rawValue)
         }
     }
 

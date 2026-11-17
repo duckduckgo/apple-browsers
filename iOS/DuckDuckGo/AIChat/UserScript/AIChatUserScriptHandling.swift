@@ -546,6 +546,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         !devicePlatform.isIphone && unifiedToggleInputFeature.isFullTabChatInputAvailable
     }
 
+    /// The iPad native chat list reads chats from native storage, so it needs that flag as well as the native input.
+    private var isIPadNativeChatListOn: Bool {
+        isIPadNativeChatInputOn && featureFlagger.isFeatureOn(.aiChatNativeStorage)
+    }
+
     /// iPad's contextual sheet and sidebar always use the native input; its full-tab chat does once the iPad flag is on.
     private var isNativeChatInputAvailable: Bool {
         unifiedToggleInputFeature.isFullTabChatInputAvailable || displayMode == .contextual
@@ -603,6 +608,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsCanonicalChatFormat: true
         )
         config.supportsResponseStateReporting = true
+        config.supportsiPadNativeChatList = isIPadNativeChatListOn
         return config
     }
 

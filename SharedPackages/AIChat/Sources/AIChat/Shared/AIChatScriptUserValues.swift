@@ -107,6 +107,8 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsNativeChatInput: Bool
     /// `true` when native wants `responseState` updates even while Duck.ai keeps its own web input.
     public var supportsResponseStateReporting = false
+    /// `true` when iPad shows its own native chat list beside the full-tab chat, so Duck.ai can leave its list out.
+    public var supportsiPadNativeChatList = false
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool

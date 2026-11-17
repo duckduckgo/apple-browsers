@@ -1124,6 +1124,56 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         }
     }
 
+    func testWhenIPadNativeInputAndNativeStorageAreOnThenEveryDisplayModeSupportsTheIPadNativeChatList() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual, nil] {
+            aiChatUserScriptHandler.displayMode = displayMode
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsiPadNativeChatList, true, "\(String(describing: displayMode))")
+        }
+    }
+
+    func testWhenNativeStorageIsOffThenTheIPadNativeChatListIsNotSupported() {
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsiPadNativeChatList, false)
+    }
+
+    func testWhenIPadNativeInputIsOffThenTheIPadNativeChatListIsNotSupported() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = false
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsiPadNativeChatList, false)
+    }
+
+    func testWhenOnIPhoneThenTheIPadNativeChatListIsNotSupported() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsiPadNativeChatList, false)
+    }
+
     func testWhenFullTabOnIPadWithNativeInputThenUsageWarningsMoveToTheNativeInput() {
         mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
         MockDevicePlatform.isIphone = false

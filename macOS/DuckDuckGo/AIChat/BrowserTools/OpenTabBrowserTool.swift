@@ -41,7 +41,8 @@ final class OpenTabBrowserTool: BrowserTool {
     }
 
     func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
-        arguments?["url"]?.stringValue
+        // The address `execute` opens, so the prompt never shows something else.
+        Self.webURL(from: arguments?["url"])?.absoluteString
     }
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {

@@ -29,6 +29,7 @@ struct UnifiedSuggestionsView: View {
     let favoritesPresentation: FocusedFavoritesPresentation
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    var showsOnlyRedesignedFavorites = false
     var escapeHatch: EscapeHatchModel?
 
     var body: some View {
@@ -77,8 +78,8 @@ struct UnifiedSuggestionsView: View {
             listLayer
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
-                                                   messagesModel: favoritesPresentation.viewController?.messagesModel,
-                                                   escapeHatch: escapeHatch)
+                                                   messagesModel: showsOnlyRedesignedFavorites ? nil : favoritesPresentation.viewController?.messagesModel,
+                                                   escapeHatch: showsOnlyRedesignedFavorites ? nil : escapeHatch)
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsRedesignedSearchModules ? 1 : 0)

@@ -44,6 +44,11 @@ enum NewTabPageInputPresentation: Equatable {
         !isOnAITab && self == .editing(usesUnifiedInput: true)
     }
 
+    /// A web page keeps the browser presentation, but its focused state shows the redesigned favorites.
+    func usesRedesignedFocusedFavorites(isOnWebPage: Bool) -> Bool {
+        isOnWebPage && self == .browser
+    }
+
     var hidesNavigationContainer: Bool {
         if case .resting = self { return true }
         return false

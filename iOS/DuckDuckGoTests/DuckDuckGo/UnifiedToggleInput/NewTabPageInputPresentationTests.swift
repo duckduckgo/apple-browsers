@@ -90,6 +90,20 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.reservesAddressBarSpace)
     }
 
+    func testWhenOnWebPageWithBrowserPresentationThenRedesignedFocusedFavoritesAreUsed() {
+        XCTAssertTrue(NewTabPageInputPresentation.browser.usesRedesignedFocusedFavorites(isOnWebPage: true))
+        XCTAssertFalse(NewTabPageInputPresentation.browser.usesRedesignedFocusedFavorites(isOnWebPage: false))
+    }
+
+    func testWhenInlineInputIsPresentThenRedesignedFocusedFavoritesAreNotUsed() {
+        let presentations: [NewTabPageInputPresentation] = [.resting(usesUnifiedInput: true),
+                                                           .editing(usesUnifiedInput: true),
+                                                           .editing(usesUnifiedInput: false)]
+        for presentation in presentations {
+            XCTAssertFalse(presentation.usesRedesignedFocusedFavorites(isOnWebPage: true))
+        }
+    }
+
     private func resolve(usesUnifiedInput: Bool = true,
                          legacyEditing: Bool = false,
                          unifiedEditing: Bool = false,

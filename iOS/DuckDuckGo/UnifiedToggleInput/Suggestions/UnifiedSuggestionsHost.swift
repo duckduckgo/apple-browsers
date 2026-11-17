@@ -42,6 +42,7 @@ final class UnifiedSuggestionsHost {
     private var cancellables = Set<AnyCancellable>()
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
+    private var showsOnlyRedesignedFavorites = false
     private var redesignedPresentationCancellable: AnyCancellable?
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
@@ -100,6 +101,7 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false,
+            showsOnlyRedesignedFavorites: showsOnlyRedesignedFavorites,
             escapeHatch: escapeHatch)
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.isFloatingUIEnabled = isFloatingUIEnabled
@@ -124,14 +126,18 @@ final class UnifiedSuggestionsHost {
         hostingController = hosting
     }
 
-    func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
-        guard enabled != (redesignedSearchPresentation != nil) else { return }
+    /// - Parameter favoritesOnly: Mounts only the redesigned favorites, without messages or the escape hatch.
+    func setUsesRedesignedNewTabPageLayout(_ enabled: Bool, favoritesOnly: Bool = false) {
+        let favoritesOnly = enabled && favoritesOnly
+        guard enabled != (redesignedSearchPresentation != nil) || favoritesOnly != showsOnlyRedesignedFavorites else { return }
+        showsOnlyRedesignedFavorites = favoritesOnly
         redesignedPresentationCancellable = nil
         if enabled {
             let presentation = RedesignedFocusedSearchPresentation(
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
-                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher())
+                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher(),
+                favoritesOnly: favoritesOnly)
             redesignedSearchPresentation = presentation
             redesignedPresentationCancellable = presentation.$showsSearchModules
                 .sink { [weak self] showsSearchModules in
@@ -271,6 +277,7 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false,
+            showsOnlyRedesignedFavorites: showsOnlyRedesignedFavorites,
             escapeHatch: escapeHatch)
         NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
     }

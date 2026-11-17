@@ -1112,6 +1112,10 @@ extension MainViewController {
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
         unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
             presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
+        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedFavoritesOnWebPage =
+            !isOnAITab
+            && presentation.usesRedesignedFocusedFavorites(isOnWebPage: currentTab?.link != nil)
+            && NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable
     }
 
     func installDuckAIKeyboardEdgeSweep() {

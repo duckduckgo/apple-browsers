@@ -37,6 +37,17 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.showsSearchModules)
     }
 
+    func testWhenFavoritesOnlyThenMessagesAloneDoNotShowModules() {
+        let presentation = makePresentation(favoritesOnly: true)
+        XCTAssertTrue(presentation.showsSearchModules)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: true, hasRecents: false, resultsPending: false))
+        XCTAssertFalse(presentation.showsSearchModules)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: true, hasRecents: false, resultsPending: false))
+        XCTAssertTrue(presentation.showsSearchModules)
+    }
+
     func testWhenLastFavoriteIsRemovedThenEmptyModulesYieldToLogo() {
         let presentation = makePresentation()
         let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
@@ -137,9 +148,10 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
             onTapAheadRow: { _ in }))
     }
 
-    private func makePresentation() -> RedesignedFocusedSearchPresentation {
+    private func makePresentation(favoritesOnly: Bool = false) -> RedesignedFocusedSearchPresentation {
         RedesignedFocusedSearchPresentation(inputsPublisher: inputs.eraseToAnyPublisher(),
                                             dismissPublisher: dismissal.eraseToAnyPublisher(),
-                                            fireTabPublisher: fireTab.eraseToAnyPublisher())
+                                            fireTabPublisher: fireTab.eraseToAnyPublisher(),
+                                            favoritesOnly: favoritesOnly)
     }
 }

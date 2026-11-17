@@ -106,12 +106,26 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     var usesRedesignedNewTabPageLayout = false {
         didSet {
             guard oldValue != usesRedesignedNewTabPageLayout else { return }
-            unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
+            applyRedesignedLayoutToHost(unifiedSuggestionsHost)
             if isViewLoaded {
                 view.setNeedsLayout()
                 applyRequestedContentInset()
             }
         }
+    }
+
+    /// Shows only the redesigned favorites when focused on a web page. Ignored while
+    /// `usesRedesignedNewTabPageLayout` selects the full redesigned modules.
+    var usesRedesignedFavoritesOnWebPage = false {
+        didSet {
+            guard oldValue != usesRedesignedFavoritesOnWebPage else { return }
+            applyRedesignedLayoutToHost(unifiedSuggestionsHost)
+        }
+    }
+
+    private func applyRedesignedLayoutToHost(_ host: UnifiedSuggestionsHost?) {
+        host?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout || usesRedesignedFavoritesOnWebPage,
+                                                favoritesOnly: !usesRedesignedNewTabPageLayout)
     }
 
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
@@ -617,7 +631,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let customizationStore = NewTabPageCustomizationStore()
         let hasFavorites: () -> Bool = { [weak self] in
-            let isVisible = self?.usesRedesignedNewTabPageLayout != true || customizationStore.isFavoritesSectionVisible
+            let usesRedesignedFavorites = self?.usesRedesignedNewTabPageLayout == true || self?.usesRedesignedFavoritesOnWebPage == true
+            let isVisible = !usesRedesignedFavorites || customizationStore.isFavoritesSectionVisible
             return isVisible && !dependencies.favoritesViewModel.favorites.isEmpty
         }
         let hasMessages: () -> Bool = {
@@ -677,7 +692,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let host = UnifiedSuggestionsHost(config: config)
         host.setEscapeHatch(escapeHatchModel)
-        host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
+        applyRedesignedLayoutToHost(host)
         host.onContentChanged = { [weak self] in
             self?.updatePinnedChrome()
             self?.refreshVisibleContent(animateContentUpdates: true)

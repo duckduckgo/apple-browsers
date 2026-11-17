@@ -47,11 +47,11 @@ final class CreditCardAutofillUITests: UITestCase {
         let deleteCards = table.cells.containing(.staticText, identifier: "Delete All Credit Cards").firstMatch
         table.swipeUpToReveal(deleteCards, timeout: UITestTimeouts.navigation)
         deleteCards.tapWhenHittable(in: app)
-        app.assertActionMessage(contains: "All credit cards deleted")
+        app.assertActionMessage(contains: "All credit cards deleted", waitForDismissal: false)
         let addCards = table.cells.containing(.staticText, identifier: "Add Test Credit Cards").firstMatch
         table.swipeUpToReveal(addCards, timeout: UITestTimeouts.navigation)
         addCards.tapWhenHittable(in: app)
-        app.assertActionMessage(contains: "Credit Cards added")
+        app.assertActionMessage(contains: "Credit Cards added", waitForDismissal: false)
 
         app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable(in: app)
         XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.elementExistence))

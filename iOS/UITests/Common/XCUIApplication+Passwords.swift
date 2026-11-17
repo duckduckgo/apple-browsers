@@ -55,7 +55,7 @@ extension XCUIApplication {
                 .tapWhenHittable(in: self, file: file, line: line)
             descendants(matching: .any)["Debug.Autofill.DeleteAllCredentials"]
                 .tapWhenHittable(in: self, file: file, line: line)
-            assertActionMessage(contains: "All credentials deleted", file: file, line: line)
+            assertActionMessage(contains: "All credentials deleted", waitForDismissal: false, file: file, line: line)
 
             let autofillNavigationBar = navigationBars["Autofill"]
             autofillNavigationBar.buttons["BackButton"].tapWhenHittable(in: self, file: file, line: line)

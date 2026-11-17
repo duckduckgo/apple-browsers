@@ -34,7 +34,7 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
         }
         app = XCUIApplication.setUp(featureFlags: featureFlags)
         app.enforceSingleWindow()
-        resetPinnedTabs()
+        app.resetPinnedTabs()
     }
 
     override func tearDownWithError() throws {
@@ -138,11 +138,7 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
         openPage("Suspension Active")
         // The test-mode inactivity threshold is five seconds, as in TabSuspensionTests.
         Thread.sleep(forTimeInterval: 6)
-        app.debugMenu.click()
-        let searchField = app.searchFields["Search debug menu..."]
-        XCTAssertTrue(searchField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Debug menu search field must appear")
-        searchField.typeText("Simulate Memory Pressure")
-        app.menuItems["Simulate Memory Pressure (Critical)"].clickAfterExistenceTestSucceeds()
+        app.simulateCriticalMemoryPressure()
         let source = app.tabs.element(boundBy: 0)
         source.rightClick()
         XCTAssertTrue(app.menuItems["isSuspended: true"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -282,12 +278,6 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
             let selectedTab = window.tabs.element(matching: \.isSelected, equalTo: true)
             XCTAssertEqual(selectedTab.url, url.absoluteString, file: file, line: line)
         }
-    }
-
-    private func resetPinnedTabs() {
-        app.debugMenu.click()
-        app.menuItems["MainMenu.resetData"].hover()
-        app.menuItems["Reset Pinned Tabs"].clickAfterExistenceTestSucceeds()
     }
 
     private func setPinnedTabsMode(shared: Bool) {

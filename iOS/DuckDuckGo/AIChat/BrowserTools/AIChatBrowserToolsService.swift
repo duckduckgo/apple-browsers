@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Core
 import FeatureFlags_iOS
 import Foundation
 import Persistence
@@ -52,18 +53,22 @@ final class AIChatBrowserToolsService {
         })
     let permissions: BrowserToolPermissionStoring
     let clientToolPermissions: ClientToolPermissionCoordinator
+    private let historyManager: HistoryManaging
     private let configuration: AIChatBrowserToolsConfiguration
 
     private var supportedCapabilities: [ClientToolCapability] = [
         .listOpenTabs,
         .switchToTab,
-        .readTabContent
+        .readTabContent,
+        .searchHistory
     ]
 
     init(featureFlagger: any FeatureFlagger,
+         historyManager: HistoryManaging,
          scopeProvider: BrowserToolScopeProvider? = nil,
          permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
          capabilities: [ClientToolCapability]? = nil) {
+        self.historyManager = historyManager
         configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
         injectedScopeProvider = scopeProvider
         if let capabilities {
@@ -87,7 +92,8 @@ final class AIChatBrowserToolsService {
         return [
             ListOpenTabsBrowserTool(scopeProvider: scopeProvider),
             SwitchToTabBrowserTool(scopeProvider: scopeProvider),
-            ReadTabContentBrowserTool(scopeProvider: scopeProvider, reader: BrowserToolPageContentReader())
+            ReadTabContentBrowserTool(scopeProvider: scopeProvider, reader: BrowserToolPageContentReader()),
+            SearchHistoryBrowserTool(historyManager: historyManager, scopeProvider: scopeProvider)
         ]
     }
 }
@@ -450,7 +456,9 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
             .aiChatBrowserToolSwitchToTab
         case .readTabContent:
             .aiChatBrowserToolReadTabContent
-        case .featureEnabled, .searchHistory, .findInPage, .highlightInPage,
+        case .searchHistory:
+            .aiChatBrowserToolSearchHistory
+        case .featureEnabled, .findInPage, .highlightInPage,
              .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks:
             nil
         }

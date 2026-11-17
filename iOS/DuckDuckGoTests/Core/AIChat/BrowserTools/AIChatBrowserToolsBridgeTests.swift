@@ -736,7 +736,7 @@ final class BrowserToolsBridgeFixture {
     lazy var script = makeScript()
 
     init(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs],
-         capabilities: [ClientToolCapability] = [.listOpenTabs]) {
+         capabilities: [ClientToolCapability]? = [.listOpenTabs], historyManager: HistoryManaging = MockHistoryManager()) {
         let suiteName = UUID().uuidString
         let defaults = UserDefaults(suiteName: suiteName)!
         let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true), enabledFeatureFlags: enabledFlags)
@@ -744,7 +744,7 @@ final class BrowserToolsBridgeFixture {
         self.defaults = defaults
         self.flags = flags
         owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://owner.example")!), fireTab: fire)
-        service = AIChatBrowserToolsService(featureFlagger: flags, permissionStorage: defaults.keyedStoring(),
+        service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: historyManager, permissionStorage: defaults.keyedStoring(),
                                             capabilities: capabilities)
         handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: flags),
                                           syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(),

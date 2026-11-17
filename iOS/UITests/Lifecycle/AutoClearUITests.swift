@@ -27,7 +27,8 @@ final class AutoClearUITests: UITestCase {
         ["autoclear-ui-test"]
     }
 
-    func testWhenAutoClearIsEnabledThenTabsCookiesAndLocalStorageAreClearedAfterBackgrounding() {
+    func testWhenAutoClearIsEnabledThenTabsCookiesAndLocalStorageAreClearedAfterBackgrounding() throws {
+        let site = try localWebsite()
         XCTContext.runActivity(named: "Enable Auto Clear after inactivity") { _ in
             app.openSettings()
             app.openDataClearingSettings()
@@ -66,7 +67,7 @@ final class AutoClearUITests: UITestCase {
             app.incrementStorageCounters()
 
             app.openNewTab()
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openTabSwitcher()
             app.assertTabCount(2)
             clearedTabs = [app.tabCell(at: 0), app.tabCell(at: 1)]
@@ -84,7 +85,7 @@ final class AutoClearUITests: UITestCase {
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.fireAnimation),
                 "Browser did not become available after Auto Clear.")
-            XCTAssertFalse(app.webViews.staticTexts["Privacy Test Pages"].exists, "Cleared page is still visible.")
+            XCTAssertFalse(app.webViews.staticTexts[LocalUITestWebsite.Page.first.title].exists, "Cleared page is still visible.")
 
             app.openTabSwitcher()
             app.assertTabCount(1)

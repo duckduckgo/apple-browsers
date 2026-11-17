@@ -172,27 +172,12 @@ jobs:
         SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
         DIAGNOSTICS_MODE: ${{ inputs.diagnostics-mode }}
       run: |
-        : > ui-tests.log
-        xctestrun_path=$(<xctestrun-path)
-        DESTINATION="platform=iOS Simulator,id=$SIMULATOR_UDID"
-        diagnostics_args=()
-        case "$DIAGNOSTICS_MODE" in
-          default) ;;
-          never) diagnostics_args=(-collect-test-diagnostics never) ;;
-          *) echo "::error::Unsupported diagnostics mode '$DIAGNOSTICS_MODE'."; exit 1 ;;
-        esac
-        set -o pipefail && env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
-          xcodebuild test-without-building \
-          -xctestrun "$xctestrun_path" \
-          -destination "$DESTINATION" \
-          -resultBundlePath TestResults.xcresult \
-          -test-iterations 2 \
-          -retry-tests-on-failure \
-          -test-repetition-relaunch-enabled YES \
-          "-only-testing:UI Tests/$TEST_CLASS" \
-          "${diagnostics_args[@]}" \
-        2>&1 | tee ui-tests.log \
-        | xcbeautify
+        export TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE"
+        python3 ../scripts/run-ios-ui-tests.py \
+          --xctestrun "$(<xctestrun-path)" \
+          --destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+          --test-class "$TEST_CLASS" \
+          --diagnostics-mode "$DIAGNOSTICS_MODE"
 
     - name: Restore simulator logging defaults
       if: always() && steps.simulator-logging.outputs.simulator-udid != ''
@@ -200,41 +185,6 @@ jobs:
         SIMULATOR_UDID: ${{ steps.simulator-logging.outputs.simulator-udid }}
       run: |
         xcrun simctl spawn "$SIMULATOR_UDID" log config --subsystem General --mode level:info,persist:default
-
-    - name: Prepare test report
-      if: always() && steps.checkout.outcome == 'success'
-      env:
-        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
-      run: |
-        file="${TEST_CLASS}-${DEVICE}-${USER_MODE}.xml"
-        invalid="reports/${file%.xml}.invalid"
-        selected_ios_version="${DESTINATION##*,OS=}"
-        test_id="$TEST_CLASS ($DEVICE_NAME, iOS $selected_ios_version, $USER_MODE)"
-        mkdir -p reports
-        touch "$invalid"
-        jq -n --argjson workflow_attempt "$GITHUB_RUN_ATTEMPT" \
-          '{workflow_attempt: $workflow_attempt}' \
-          > "reports/${file%.xml}.meta.json"
-
-        if [[ ! -s ui-tests.log ]]; then
-          echo "::error::UI test log is missing or empty."
-          exit 1
-        fi
-        xcbeautify --report junit --report-path reports --junit-report-filename "$file" < ui-tests.log
-        # Replace the default test suite name with the test id for better grouping in the test report
-        sed -i '' "s/Selected tests/${test_id}/" "reports/$file"
-        test_count=$(xmllint --xpath 'count(//testcase)' "reports/$file")
-        if [[ "$test_count" == 0 ]]; then
-          echo "::error::JUnit report contains no test cases."
-          exit 1
-        fi
-        xcrun xcresulttool get test-results summary \
-          --path TestResults.xcresult --compact > results-summary.json
-        if ! jq -e '(.totalTestCount | type) == "number" and ((.skippedTests // 0) | type) == "number" and (.totalTestCount > (.skippedTests // 0))' results-summary.json >/dev/null; then
-          echo "::error::xcresult contains no executed tests."
-          exit 1
-        fi
-        rm "$invalid"
 
     # Upload test report as artifact for the test-report job
     # that publishes a combined report for all test cases
@@ -254,7 +204,6 @@ jobs:
         name: "ios-uitest-logs-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}-attempt${{ github.run_attempt }}"
         path: |
           iOS/ui-tests.log
-          iOS/TestResults.xcresult
-          iOS/results-summary.json
+          iOS/ui-test-attempts
         if-no-files-found: warn
         retention-days: 7

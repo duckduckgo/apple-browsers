@@ -24,11 +24,24 @@ import UIKit
 import Combine
 import Foundation
 
-/// A Duck.ai page that can receive local-model pushes.
+/// A Duck.ai page's script that can receive local-model pushes.
 @MainActor
 public protocol AIChatLocalModelPushing: AnyObject {
+    /// The page the script serves, such as its web view. A page's scripts are replaced while it
+    /// stays open, for example when content blocking rules change, so a run belongs to the page and
+    /// its output goes to whichever script serves it now. Nil makes the script its own page.
+    var localModelPage: AnyObject? { get }
     func pushLocalModelState(_ update: AIChatLocalModelStateUpdate)
     func pushLocalRunChunk(_ chunk: AIChatLocalRunChunk)
+}
+
+public extension AIChatLocalModelPushing {
+    var localModelPage: AnyObject? { nil }
+
+    /// Identifies the page's runs, for `cancelRuns(ownerID:)`.
+    var localModelPageID: ObjectIdentifier {
+        ObjectIdentifier(localModelPage ?? self)
+    }
 }
 
 /// What the Duck.ai user script needs from the local model.
@@ -100,7 +113,8 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
     private let engineOverride: () -> AIChatLocalModelEngineKind?
     private let engineOverrideUpdates: AnyPublisher<Void, Never>
     private let runQueue: AIChatLocalRunQueue
-    private let pushers = NSHashTable<AnyObject>.weakObjects()
+    /// In the order they registered, so the newest script for a page is the last one.
+    private var pushers: [WeakPusher] = []
     private var lastPushed: PushedState?
     private var cancellables = Set<AnyCancellable>()
 
@@ -324,7 +338,12 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
     }
 
     public func register(_ pusher: AIChatLocalModelPushing) {
-        pushers.add(pusher)
+        pushers.removeAll { $0.pusher == nil || $0.pusher === pusher }
+        pushers.append(WeakPusher(pusher: pusher))
+    }
+
+    private var livePushers: [AIChatLocalModelPushing] {
+        pushers.compactMap(\.pusher)
     }
 
     public func startRun(_ request: AIChatLocalRunRequest, for pusher: AIChatLocalModelPushing) throws -> AIChatLocalRunStartReply {
@@ -335,16 +354,24 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         guard !request.requestId.isEmpty, !request.content.isEmpty else {
             throw AIChatLocalModelRequestError.invalidArguments
         }
-        runQueue.enqueue(request, ownerID: ObjectIdentifier(pusher)) { [weak pusher] chunk in
-            pusher?.pushLocalRunChunk(chunk)
+        let pageID = pusher.localModelPageID
+        runQueue.enqueue(request, ownerID: pageID) { [weak self] chunk in
+            self?.pushRunChunk(chunk, toPage: pageID)
         }
         return AIChatLocalRunStartReply(model: model)
     }
 
-    public func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {
-        runQueue.cancel(requestId: requestId, ownerID: ObjectIdentifier(pusher))
+    /// Only the script registered last for the page gets the chunk, so a page whose old script
+    /// is still around doesn't see a chunk twice.
+    private func pushRunChunk(_ chunk: AIChatLocalRunChunk, toPage pageID: ObjectIdentifier) {
+        livePushers.last { $0.localModelPageID == pageID }?.pushLocalRunChunk(chunk)
     }
 
+    public func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {
+        runQueue.cancel(requestId: requestId, ownerID: pusher.localModelPageID)
+    }
+
+    /// Ends the runs of a page that's gone, identified by its `localModelPageID`.
     public func cancelRuns(ownerID: ObjectIdentifier) {
         runQueue.cancelAll(ownerID: ownerID)
     }
@@ -398,10 +425,14 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         }
         // With the flag off Duck.ai treats the model as unsupported, so tell open pages exactly that.
         let update = state.update ?? AIChatLocalModelStateUpdate(state: .unsupported)
-        for case let pusher as AIChatLocalModelPushing in pushers.allObjects {
+        for pusher in livePushers {
             pusher.pushLocalModelState(update)
         }
     }
+}
+
+private struct WeakPusher {
+    weak var pusher: AIChatLocalModelPushing?
 }
 
 /// Lets the run queue use whichever engine is active when a run starts.

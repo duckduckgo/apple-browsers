@@ -63,6 +63,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let browserTools: AIChatBrowserToolsService?
     private let localModelService: AIChatLocalModelServing?
+    /// The page this script last started a local run for. `deinit` can't ask a web view that's
+    /// already gone for its identity.
+    private var localModelRunPageID: ObjectIdentifier?
     /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
     private let localModelAccessPrompt: LocalModelAccessAsking?
     private let bonusMessageLog: AIChatBonusMessageLogging?
@@ -318,10 +321,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     deinit {
-        guard let localModelService else { return }
-        let ownerID = ObjectIdentifier(self)
+        // Content-blocking updates replace every script while its page stays open. The page's runs
+        // carry on and reach it through the new script, so only a page that's gone ends them.
+        guard let localModelService, webView == nil, let pageID = localModelRunPageID else { return }
         Task { @MainActor in
-            localModelService.cancelRuns(ownerID: ownerID)
+            localModelService.cancelRuns(ownerID: pageID)
         }
     }
 }
@@ -338,7 +342,13 @@ extension AIChatUserScript: AIChatLocalModelPushing {
         guard let request: AIChatLocalRunRequest = DecodableHelper.decode(from: params) else {
             throw AIChatLocalModelRequestError.invalidArguments
         }
-        return try localModelService.startRun(request, for: self)
+        let reply = try localModelService.startRun(request, for: self)
+        localModelRunPageID = localModelPageID
+        return reply
+    }
+
+    var localModelPage: AnyObject? {
+        webView
     }
 
     /// A notification, but it also answers with `{}` in case the page sends it as a request.

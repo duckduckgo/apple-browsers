@@ -24,6 +24,8 @@ final class BrowserToolSitePermissions: BrowserToolPermissionStoring {
 
     static var domain: String { URL.duckAi.host ?? "duck.ai" }
 
+    let appliesDecisionsToAutoTools = true
+
     private let permissionManager: PermissionManagerProtocol
 
     init(permissionManager: PermissionManagerProtocol) {

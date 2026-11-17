@@ -47,12 +47,20 @@ private final class SitePermissionDialogHostingController: UIHostingController<S
 
     let pixelType: SitePermissionsEvent.PermissionType
     let frame: SitePermissionsEvent.DialogFrame
-    /// System uptime when the impression fired; `nil` until the user could see the dialog.
-    private(set) var impressionUptime: TimeInterval?
+    private enum Lifecycle {
+        case presented
+        case disappearing
+        case removed
+    }
+
+    private var lifecycle: Lifecycle = .presented
+    private var accumulatedVisibleDuration: TimeInterval?
+    private var visibleIntervalStartedAt: TimeInterval?
+    private var isApplicationActive = UIApplication.shared.applicationState == .active
     private let uptime: () -> TimeInterval
     private let isVisible: () -> Bool
     private var pendingImpression: (() -> Void)?
-    private var applicationActiveCancellable: AnyCancellable?
+    private var applicationActivityCancellable: AnyCancellable?
 
     init(rootView: SitePermissionDialogView,
          pixelType: SitePermissionsEvent.PermissionType,
@@ -67,11 +75,12 @@ private final class SitePermissionDialogHostingController: UIHostingController<S
         self.pendingImpression = onImpression
         super.init(rootView: rootView)
 
-        applicationActiveCancellable = NotificationCenter.default
-            .publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.fireImpressionIfVisible()
+        applicationActivityCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.willResignActiveNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification))
+            .sink { [weak self] notification in
+                self?.isApplicationActive = notification.name == UIApplication.didBecomeActiveNotification
+                self?.updateVisibility()
             }
     }
 
@@ -79,30 +88,62 @@ private final class SitePermissionDialogHostingController: UIHostingController<S
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        guard lifecycle != .removed else { return }
+        lifecycle = .presented
+        updateVisibility()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        fireImpressionIfVisible()
+        updateVisibility()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        guard lifecycle != .removed else { return }
+        lifecycle = .disappearing
+        updateVisibility()
     }
 
     override func willMove(toParent parent: UIViewController?) {
         if parent == nil {
-            pendingImpression = nil
-            applicationActiveCancellable = nil
+            finishVisibilityTracking()
         }
         super.willMove(toParent: parent)
     }
 
-    func fireImpressionIfVisible() {
-        guard pendingImpression != nil, isVisible() else { return }
+    func updateVisibility() {
+        guard lifecycle == .presented, isApplicationActive, isVisible() else {
+            stopVisibleInterval()
+            return
+        }
+        guard visibleIntervalStartedAt == nil else { return }
+        accumulatedVisibleDuration = accumulatedVisibleDuration ?? 0
+        visibleIntervalStartedAt = uptime()
         fireImpression()
+    }
+
+    @discardableResult
+    func finishVisibilityTracking() -> TimeInterval? {
+        stopVisibleInterval()
+        lifecycle = .removed
+        pendingImpression = nil
+        applicationActivityCancellable = nil
+        return accumulatedVisibleDuration
+    }
+
+    private func stopVisibleInterval() {
+        guard let startedAt = visibleIntervalStartedAt else { return }
+        accumulatedVisibleDuration = (accumulatedVisibleDuration ?? 0) + uptime() - startedAt
+        visibleIntervalStartedAt = nil
     }
 
     func fireImpression() {
         let impression = pendingImpression
         pendingImpression = nil
-        applicationActiveCancellable = nil
         guard let impression else { return }
-        impressionUptime = uptime()
         impression()
     }
 }
@@ -123,8 +164,6 @@ final class SitePermissionsState {
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
     fileprivate var dialogHostingController: SitePermissionDialogHostingController?
     fileprivate var dialogVisibilityOverride: (() -> Bool)?
-    /// Geolocation contexts carry only a frame ID, so remember which IDs belong to iframes for the dialog pixels.
-    fileprivate var geolocationIframeIDs = Set<UInt64>()
     fileprivate var recoveryHostingController: UIViewController?
     fileprivate var managementHostingController: UIHostingController<SitePermissionsSheetView>?
     fileprivate var managementViewModel: SitePermissionsSheetViewModel?
@@ -190,18 +229,19 @@ final class SitePermissionsState {
     /// Pass `nil` only when the user answered the dialog; any other removal reports why it closed without a choice.
     fileprivate func dismissDialog(unansweredReason: SitePermissionsEvent.DialogCloseReason?) {
         guard let hostingController = dialogHostingController else { return }
-        if let unansweredReason, let impressionUptime = hostingController.impressionUptime {
+        let visibleDuration = hostingController.finishVisibilityTracking()
+        dialogHostingController = nil
+        if let unansweredReason, let visibleDuration {
             eventHandler(.permissionDialogClosedWithoutChoice(
                 type: hostingController.pixelType,
                 reason: unansweredReason,
-                visibleFor: .init(seconds: uptimeProvider() - impressionUptime),
+                visibleFor: .init(seconds: visibleDuration),
                 frame: hostingController.frame
             ))
         }
         hostingController.willMove(toParent: nil)
         hostingController.view.removeFromSuperview()
         hostingController.removeFromParent()
-        dialogHostingController = nil
     }
 
     fileprivate func dismissRecovery(recoveryToken: UInt? = nil) {
@@ -301,7 +341,6 @@ final class SitePermissionsState {
             cancelContentBlockingWaits()
         }
         dismissDialog(unansweredReason: dialogCloseReason)
-        geolocationIframeIDs.removeAll()
         denyPendingBridgeRequests()
         handledBridgeRequestIDs.removeAll()
         mediaCapturePreapprovals.removeAll()
@@ -375,8 +414,8 @@ extension TabViewController {
         set { sitePermissionsState.dialogVisibilityOverride = newValue }
     }
 
-    func fireSitePermissionDialogImpressionIfVisible() {
-        sitePermissionsState.dialogHostingController?.fireImpressionIfVisible()
+    func updateSitePermissionDialogVisibility() {
+        sitePermissionsState.dialogHostingController?.updateVisibility()
     }
 
     static func shouldWaitForContentBlockingAssets(assetsInstalled: Bool,
@@ -942,15 +981,14 @@ extension TabViewController {
             contextProvider: { [weak self] frame in
                 self?.makeGeolocationSitePermissionContext(for: frame)
             },
-            requestPermission: { [weak self] context, completion in
+            requestPermission: { [weak self] context, isMainFrame, completion in
                 guard let self, let coordinator = sitePermissionsState.coordinator else {
                     completion(.deny(systemBlocks: []))
                     return
                 }
-                let isIframe = sitePermissionsState.geolocationIframeIDs.contains(context.requestingFrameID)
                 coordinator.request(
                     SitePermissionRequest(context: context, permissionTypes: [.location]),
-                    promptHandler: sitePermissionsPromptHandler(frame: isIframe ? .iframe : .main),
+                    promptHandler: sitePermissionsPromptHandler(frame: isMainFrame ? .main : .iframe),
                     completion: completion
                 )
             },
@@ -1020,9 +1058,6 @@ extension TabViewController {
             return nil
         }
 
-        if !frame.isMainFrame {
-            sitePermissionsState.geolocationIframeIDs.insert(frame.requestingFrameID)
-        }
         return SitePermissionRequestContext(
             tabID: tabModel.uid,
             topLevelSite: topLevelSite,
@@ -1184,7 +1219,7 @@ extension TabViewController {
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         hostingController.didMove(toParent: self)
-        hostingController.fireImpressionIfVisible()
+        hostingController.updateVisibility()
     }
 
     private func presentSitePermissionRecovery(_ recovery: SitePermissionRecovery,

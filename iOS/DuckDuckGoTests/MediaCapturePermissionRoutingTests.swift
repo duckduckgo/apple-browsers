@@ -1493,7 +1493,101 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
-    func testGeolocationDialogRemovedWithoutChoiceReportsRequestingFrame() async throws {
+    func testDialogVisibleDurationExcludesHiddenIntervalsAcrossAppearanceAndSwipeUpdates() async throws {
+        for useAppearance in [false, true] {
+            for resume in [false, true] {
+                var events = [SitePermissionsEvent]()
+                var uptime: TimeInterval = 100
+                var isVisible = true
+                let impression = expectation(description: "Dialog impression")
+                let sut = makeSUT(eventHandler: { event in
+                    events.append(event)
+                    if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+                })
+                sut.sitePermissionsUptimeProvider = { uptime }
+                sut.sitePermissionsDialogVisibilityOverride = { isVisible }
+                let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+                await fulfillment(of: [impression], timeout: 1)
+                let host = try XCTUnwrap(sut.children.compactMap { $0 as? UIHostingController<SitePermissionDialogView> }.first)
+
+                uptime += 2
+                if useAppearance {
+                    host.viewWillDisappear(false)
+                    host.viewWillDisappear(false)
+                } else {
+                    isVisible = false
+                    sut.updateSitePermissionDialogVisibility()
+                    sut.updateSitePermissionDialogVisibility()
+                }
+                uptime += 40
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                sut.updateSitePermissionDialogVisibility()
+                uptime += 40
+                if resume {
+                    isVisible = true
+                    host.viewWillAppear(false)
+                    host.viewDidAppear(false)
+                    sut.updateSitePermissionDialogVisibility()
+                    uptime += 4
+                }
+
+                sut.closeSitePermissions()
+                _ = await request.value
+                uptime += 100
+                host.viewWillAppear(false)
+                host.viewDidAppear(false)
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                sut.closeSitePermissions()
+
+                XCTAssertEqual(events, [
+                    .permissionDialogImpression(type: .camera),
+                    .permissionDialogClosedWithoutChoice(type: .camera,
+                                                         reason: .tabClosed,
+                                                         visibleFor: resume ? .fiveToThirtySeconds : .oneToFiveSeconds,
+                                                         frame: .iframe)
+                ], "appearance: \(useAppearance), resume: \(resume)")
+            }
+        }
+    }
+
+    func testDialogVisibleDurationExcludesInactiveIntervals() async throws {
+        for resume in [false, true] {
+            var events = [SitePermissionsEvent]()
+            var uptime: TimeInterval = 100
+            let impression = expectation(description: "Dialog impression")
+            let sut = makeSUT(eventHandler: { event in
+                events.append(event)
+                if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+            })
+            sut.sitePermissionsUptimeProvider = { uptime }
+            let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+            await fulfillment(of: [impression], timeout: 1)
+
+            uptime += 0.2
+            NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+            uptime += 40
+            NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+            sut.updateSitePermissionDialogVisibility()
+            if resume {
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                uptime += 0.2
+            }
+            sut.closeSitePermissions()
+            _ = await request.value
+            NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .camera),
+                .permissionDialogClosedWithoutChoice(type: .camera,
+                                                     reason: .tabClosed,
+                                                     visibleFor: .lessThanOneSecond,
+                                                     frame: .iframe)
+            ], "resume: \(resume)")
+        }
+    }
+
+    func testGeolocationDialogReportsCurrentNativeFrameClassificationWhenIdentityIsReused() async throws {
         for isMainFrame in [true, false] {
             var events = [SitePermissionsEvent]()
             let impression = expectation(description: "Impression; isMainFrame: \(isMainFrame)")
@@ -1509,12 +1603,19 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                                   events.append(event)
                                   if event == .permissionDialogImpression(type: .geolocation) { impression.fulfill() }
                               })
+            sut.sitePermissionsUptimeProvider = { 100 }
             let userScript = GeolocationUserScript(installImmediately: true)
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
-            let frame = geolocationFrame(on: sut.webView,
-                                         originURL: URL(string: "https://www.example.com/frame")!,
-                                         isMainFrame: isMainFrame)
+            let originURL = URL(string: "https://www.example.com/frame")!
+            let nativeFrame = MockWKFrameInfoObject(isMainFrame: false,
+                                                    securityOrigin: MockWKSecurityOrigin.new(url: originURL),
+                                                    webView: sut.webView,
+                                                    request: URLRequest(url: originURL))
+            let iframeContext = try XCTUnwrap(sut.makeGeolocationSitePermissionContext(for: GeolocationFrame(nativeFrame.frameInfo)))
+            nativeFrame.isMainFrame = isMainFrame
+            let frame = GeolocationFrame(nativeFrame.frameInfo)
+            XCTAssertEqual(frame.requestingFrameID, iframeContext.requestingFrameID)
             let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
             let request = Task { @MainActor in
                 await delegate.geolocationUserScript(userScript, getCurrentPositionWith: .init(), constraints: constraints, in: frame)
@@ -1565,7 +1666,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         // The removed dialog stays uncounted even once the tab becomes visible.
         isVisible = true
         removedHostingController.viewDidAppear(false)
-        sut.fireSitePermissionDialogImpressionIfVisible()
+        sut.updateSitePermissionDialogVisibility()
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
@@ -1621,7 +1722,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
 
         hostingController.viewDidAppear(false)
-        sut.fireSitePermissionDialogImpressionIfVisible()
+        sut.updateSitePermissionDialogVisibility()
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }

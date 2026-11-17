@@ -65,6 +65,7 @@ extension StubbedNetworkTests {
 
             #expect(store.installed().isEmpty)
             #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("fr-en").path))
+            #expect(try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent(".staging").path).isEmpty)
             try store.delete("fr-en")
         }
 

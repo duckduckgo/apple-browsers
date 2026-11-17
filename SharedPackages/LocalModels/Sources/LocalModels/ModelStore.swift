@@ -128,7 +128,10 @@ public final class ModelStore: @unchecked Sendable {
             return
         }
 
-        try FileManager.default.removeItem(at: folderURL(id))
+        // Moved out of `root` in one rename first, so a delete cut off partway leaves only staging, which `init` clears.
+        let trash = try makeStagingFolder(for: id)
+        try FileManager.default.moveItem(at: folderURL(id), to: trash.appendingPathComponent(id))
+        try? FileManager.default.removeItem(at: trash)
     }
 
     // MARK: - Paths

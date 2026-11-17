@@ -576,7 +576,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
             if storeIdentity?.store == .chromeWebStore,
                let oldIdentifier, let oldContext = context(for: oldIdentifier) {
-                // Both versions use the same origin, so only one can be loaded at a time.
                 await unloadGuard.awaitSettled(oldContext)
                 try loader.unloadExtension(identifier: oldIdentifier, from: controller)
                 replacedContext = oldContext

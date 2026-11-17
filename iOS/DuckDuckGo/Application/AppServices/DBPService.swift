@@ -45,7 +45,7 @@ final class DBPService: NSObject {
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
+        let featureFlagger = DBPFeatureFlagger(featureFlagger: appDependencies.featureFlagger,
                                                freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
             userDefaults: .dbp,
@@ -194,27 +194,27 @@ enum DataBrokerProtectionSubscriptionFlowParameter {
 
 final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging, EmailOptOutFeatureFlagging {
     
-    private let appDependencies: DependencyProvider
+    private let featureFlagger: FeatureFlagger
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
+        featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }
 
     var isContinuedProcessingFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
+        featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }
 
     var isCustomWebViewUserAgentOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpCustomWebViewUserAgent)
+        featureFlagger.isFeatureOn(.dbpCustomWebViewUserAgent)
     }
 
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+        featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     var isExtractedProfileRefreshOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
+        featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
     var isChallengeSolverOn: Bool {
@@ -224,16 +224,16 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging, E
 
     var isFreemiumPIREnabled: Bool {
         freemiumPIRDebugSettings.isEligibilityForced
-            || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+            || featureFlagger.isFeatureOn(.dbpFreemiumPIR)
     }
 
     var isEmailOptOutEnabled: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpEmailOptOut)
+        featureFlagger.isFeatureOn(.dbpEmailOptOut)
     }
 
-    init(appDependencies: DependencyProvider,
+    init(featureFlagger: FeatureFlagger,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
-        self.appDependencies = appDependencies
+        self.featureFlagger = featureFlagger
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
     }
 }

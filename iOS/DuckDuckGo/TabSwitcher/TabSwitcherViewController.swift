@@ -25,7 +25,6 @@ import DDGSync
 import WebKit
 import Bookmarks
 import Persistence
-import os.log
 import SwiftUI
 import Combine
 import DesignResourcesKit
@@ -93,6 +92,13 @@ class TabSwitcherViewController: UIViewController {
         }
 
     }
+
+    enum TransitionStyle {
+        case legacy
+        case modern
+    }
+
+    var transitionStyle: TransitionStyle = .legacy
 
     private(set) var chrome: TabSwitcherChrome!
 
@@ -495,6 +501,8 @@ class TabSwitcherViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
+        view.layoutIfNeeded()
         productSurfaceTelemetry.tabManagerUsed()
         showFireButtonPulseIfNeeded()
         // Prepare offscreen Fire content after presentation so it doesn't block the drag.
@@ -546,11 +554,16 @@ class TabSwitcherViewController: UIViewController {
         
     }
 
-    func prepareForPresentation() {
+    func prepareForPresentation(centerCurrentTab: Bool = false) {
         prepareChromeForPresentation()
         view.layoutIfNeeded()
         syncPagingScrollViewToCurrentMode(animated: false)
-        scrollToInitialTab()
+        if centerCurrentTab {
+            // The swipe needs only its active destination, already at its final position.
+            activePageController.scrollToInitialTab(at: .centeredVertically)
+        } else {
+            scrollToInitialTab()
+        }
     }
 
     private func prepareChromeForPresentation() {

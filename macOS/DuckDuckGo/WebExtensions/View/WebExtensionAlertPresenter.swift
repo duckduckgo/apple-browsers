@@ -20,7 +20,8 @@ import AppKit
 
 @MainActor
 protocol WebExtensionAlertPresenterProtocol {
-    func present(_ configuration: WebExtensionAlert.Configuration) async -> WebExtensionAlert.Response
+    /// Returns `nil` when the alert couldn't be shown, such as with no window or another sheet already attached.
+    func present(_ configuration: WebExtensionAlert.Configuration) async -> WebExtensionAlert.Response?
 }
 
 @MainActor
@@ -33,8 +34,8 @@ final class WebExtensionAlertPresenter: WebExtensionAlertPresenterProtocol {
         self.themeManager = themeManager
     }
 
-    func present(_ configuration: WebExtensionAlert.Configuration) async -> WebExtensionAlert.Response {
-        guard let window = windowProvider(), window.attachedSheet == nil else { return .cancelled }
+    func present(_ configuration: WebExtensionAlert.Configuration) async -> WebExtensionAlert.Response? {
+        guard let window = windowProvider(), window.attachedSheet == nil else { return nil }
         return await WebExtensionAlert.present(configuration, themeManager: themeManager, in: window)
     }
 }

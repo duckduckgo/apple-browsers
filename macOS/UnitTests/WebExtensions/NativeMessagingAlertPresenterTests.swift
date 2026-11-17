@@ -109,6 +109,15 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         ])
     }
 
+    func testWhenTheAlertCannotBeShownThenNoPixelFires() async throws {
+        alertPresenter.response = nil
+        let bitwarden = try await limitedContext(named: "Bitwarden")
+
+        await presenter.explain(bitwarden)
+
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
+    }
+
     private var firedPixels: [FiredPixel] {
         pixels.actualFireCalls.map { FiredPixel(name: $0.pixel.name, parameters: $0.pixel.parameters ?? [:], frequency: $0.frequency) }
     }
@@ -155,10 +164,10 @@ private enum NativeMessagingPermission: String {
 
 @MainActor
 private final class WebExtensionAlertPresenterMock: WebExtensionAlertPresenterProtocol {
-    var response: WebExtensionAlert.Response = .cancelled
+    var response: WebExtensionAlert.Response? = .cancelled
     private(set) var presentedConfigurations: [WebExtensionAlert.Configuration] = []
 
-    func present(_ configuration: WebExtensionAlert.Configuration) async -> WebExtensionAlert.Response {
+    func present(_ configuration: WebExtensionAlert.Configuration) async -> WebExtensionAlert.Response? {
         presentedConfigurations.append(configuration)
         return response
     }

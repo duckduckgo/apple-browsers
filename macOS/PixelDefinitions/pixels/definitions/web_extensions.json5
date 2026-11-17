@@ -676,7 +676,7 @@
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
     "web_extension_native_messaging_alert_shown_macos": {
-        "description": "App Store build only. Fires when the alert saying an extension can't connect to apps on the Mac is shown. It shows for an extension that has been refused native messaging, until the user ticks Don't show this again for it.",
+        "description": "App Store build only. Fires when the alert saying an extension can't connect to apps on the Mac was shown, sent once the user closes it; it isn't sent when the alert can't be shown (no window, or another sheet already open). It shows for an extension that has been refused native messaging, until the user ticks Don't show this again for it.",
         "owners": ["andremartingo"],
         "triggers": ["impression"],
         "suffixes": ["daily_count"],

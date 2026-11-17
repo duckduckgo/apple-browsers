@@ -67,9 +67,11 @@ final class NativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
               limitationProvider.hasHitNativeMessagingLimitation(identifier: identifier),
               !limitationProvider.isNativeMessagingAlertSuppressed(identifier: identifier) else { return }
 
+        guard let response = await alertPresenter.present(.nativeMessagingUnavailable(for: context.webExtension)) else { return }
+
         let pixelExtension = limitationProvider.nativeMessagingPixelExtension(identifier: identifier)
         pixelFiring?.fire(WebExtensionPixel.nativeMessagingAlertShown(extension: pixelExtension, source: source), frequency: .dailyAndCount)
-        switch await alertPresenter.present(.nativeMessagingUnavailable(for: context.webExtension)) {
+        switch response {
         case .confirmed(isChecked: true):
             limitationProvider.suppressNativeMessagingAlert(identifier: identifier)
         case .secondary:

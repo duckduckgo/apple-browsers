@@ -118,7 +118,8 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
             }
 
             let profileQuery = firstQueryData.profileQuery
-            let extractedProfile = ExtractedProfile(name: profileQuery.fullName,
+            // "Test" in front marks it as a seeded record on the dashboard and in the removal email.
+            let extractedProfile = ExtractedProfile(name: "Test \(profileQuery.fullName)",
                                                     addresses: [AddressCityState(city: profileQuery.city, state: profileQuery.state)],
                                                     profileUrl: "https://\(brokerURL)/profile/\(Self.identifier)",
                                                     age: String(profileQuery.age),

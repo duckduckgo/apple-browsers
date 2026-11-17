@@ -46,6 +46,7 @@ final class DataBrokerProtectionDebugEmailOptOutSeederTests: XCTestCase {
         XCTAssertEqual(seeded, ["fakebroker0.com"])
         XCTAssertNil(optOut.preferredRunDate)
         XCTAssertEqual(record.profileUrl, "https://fakebroker0.com/profile/debug-email-opt-out-seed")
+        XCTAssertTrue(try XCTUnwrap(optOut.extractedProfile.name).hasPrefix("Test "))
         XCTAssertEqual(record.foundDate, expectedFoundDate.timeIntervalSince1970, accuracy: 1)
         XCTAssertGreaterThan(try XCTUnwrap(queryData.scanJobData.preferredRunDate), now.addingTimeInterval(365 * 24 * 60 * 60))
         XCTAssertNotNil(queryData.scanJobData.lastRunDate)

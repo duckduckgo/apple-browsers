@@ -61,6 +61,18 @@ final class DataBrokerProtectionDebugEmailOptOutSeederTests: XCTestCase {
         XCTAssertEqual(try temporaryDatabase.database.fetchExtractedProfiles(for: brokerId).count, 1)
     }
 
+    func testSeed_whenALaterBrokerHasNoProfileQuery_writesNothing() throws {
+        let (brokerId, _) = try temporaryDatabase.saveBroker(fixture: "valid-child-broker")
+        let seeder = DataBrokerProtectionDebugEmailOptOutSeeder(database: temporaryDatabase.database,
+                                                                brokerURLs: ["fakebroker0.com", "missing-broker.com"])
+
+        XCTAssertThrowsError(try seeder.seed())
+
+        let queryData = try XCTUnwrap(temporaryDatabase.database.fetchBrokerProfileQueryData(forBrokerId: brokerId).first)
+        XCTAssertEqual(try temporaryDatabase.database.fetchExtractedProfiles(for: brokerId).count, 0)
+        XCTAssertNil(queryData.scanJobData.lastRunDate)
+    }
+
     func testSeed_whenTheBrokerHasNoProfileQuery_failsWithANamedError() {
         XCTAssertThrowsError(try makeSeeder().seed()) { error in
             guard case DebugEmailOptOutSeedError.noProfileQuery(brokerURL: "fakebroker0.com") = error else {

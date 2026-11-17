@@ -398,6 +398,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        // Mail's account check is UIKit API, so it has to run on the main thread.
+        let canSendEmail = await MainActor.run { delegate?.canSendEmail() ?? false }
         // brokerRemovalEnabled is hardcoded to true, given it's an "inaugural" flag for Data Broker Removal
         return DBPUIFeatureConfigurationResponse(
             useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
@@ -405,7 +407,7 @@ public struct DBPUICommunicationLayer: Subfeature {
             brokerRemovalEnabled: true,
             needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false,
             emailOptOutEnabled: delegate?.isEmailOptOutEnabled() ?? false,
-            canSendEmail: delegate?.canSendEmail() ?? false
+            canSendEmail: canSendEmail
         )
     }
 

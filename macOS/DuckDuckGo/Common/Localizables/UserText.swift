@@ -1725,9 +1725,18 @@ struct UserText {
     static let browserToolPermissionTitleSwitchToTab = NotLocalizedString("browser-tool.permission.title.switch-to-tab", value: "Allow Duck.ai to switch to another tab?", comment: "Title of the prompt asking to let Duck.ai switch tabs")
     static let browserToolPermissionTitleHighlightInPage = NotLocalizedString("browser-tool.permission.title.highlight-in-page", value: "Allow Duck.ai to highlight text on this page?", comment: "Title of the prompt asking to let Duck.ai highlight text on a page")
     static let browserToolAccessTitle = NotLocalizedString("browser-tool.access.title", value: "Allow Duck.ai to use these in this chat?", comment: "Title of the prompt Duck.ai shows once for the browser tools it expects to use in a chat. The tools are listed under it.")
-    static let browserToolAccessDetail = NotLocalizedString("browser-tool.access.detail", value: "Duck.ai can use these without asking again in this chat until you quit the browser.", comment: "Text under the title of the prompt Duck.ai shows once for the browser tools a chat will use")
+    static let browserToolAccessDetail = NotLocalizedString("browser-tool.access.detail", value: "Duck.ai can use these without asking again in this chat until you close the browser.", comment: "Text under the title of the prompt Duck.ai shows once for the browser tools a chat will use")
     static let browserToolAccessAllow = NotLocalizedString("browser-tool.access.allow", value: "Allow in This Chat", comment: "Button in the Duck.ai browser tools prompt that allows the listed tools in the current chat until the browser quits")
     static let browserToolAccessDontAllow = NotLocalizedString("browser-tool.access.dont-allow", value: "Don't Allow", comment: "Button in the Duck.ai browser tools prompt that refuses the listed tools this time, without remembering the choice")
+    static let browserToolAccessUndo = NotLocalizedString("browser-tool.access.undo", value: "Undo", comment: "Link in the Duck.ai browser tools prompt that puts back every tool the user took out of it")
+    static func browserToolAccessRemoveTool(toolName: String) -> String {
+        let localized = NotLocalizedString("browser-tool.access.remove-tool", value: "Don't allow %@", comment: "Tooltip and accessibility label of the X button beside one tool in the Duck.ai browser tools prompt. It takes that tool out of the ones being allowed. Parameter is the tool name, e.g. Read Tab Content")
+        return String(format: localized, toolName)
+    }
+    static func browserToolAccessRemovedNote(toolNames: String) -> String {
+        let localized = NotLocalizedString("browser-tool.access.removed-note", value: "Duck.ai won't use %@ this time.", comment: "Shown in the Duck.ai browser tools prompt after the user takes tools out of it. Parameter is the tools' names joined as a list, e.g. Read Tab Content and List Open Tabs. Followed by an Undo link")
+        return String(format: localized, toolNames)
+    }
     static let browserToolPermissionTitleOther = NotLocalizedString("browser-tool.permission.title.other", value: "Allow Duck.ai to use a browser tool?", comment: "Duck.ai browser tool permission prompt title")
     static let browserToolPermissionDetailListOpenTabs = NotLocalizedString("browser-tool.permission.detail.list-open-tabs", value: "It will see the title and address of each tab in this window.", comment: "Duck.ai browser tool permission prompt: what the tool will see")
     static let browserToolPermissionDetailSearchHistory = NotLocalizedString("browser-tool.permission.detail.search-history", value: "It will see sites you've visited, including before this chat.", comment: "Duck.ai browser tool permission prompt: what the tool will see")

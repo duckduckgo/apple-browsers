@@ -55,6 +55,8 @@ public enum ClientToolPermissionDecision: Equatable, Sendable {
     case allowOnce
     /// Allows this tool without asking again in the same chat, until quit or Fire.
     case allowForChat
+    /// Allows a `requestAccess` prompt's tools in the chat, except the ones the user took out.
+    case allowAccess(excluding: Set<String>)
     case always
     case never
     /// Denies this call without remembering it.
@@ -69,6 +71,23 @@ public protocol ClientToolPermissionCoordinating: AnyObject {
 
     /// The tool's state for a call in `chatID`: a `requestAccess` grant counts as allowed unless it was set to Never since.
     func state(for tool: any BrowserTool, chatID: String?) -> BrowserToolPermissionState
+
+    /// How a tool stands for `requestAccess` without asking, or `nil` when the user has to be asked.
+    func accessLevel(for tool: any BrowserTool, chatID: String) -> BrowserToolAccessLevel?
+}
+
+/// A capability's entry in the `requestAccess` reply.
+public enum BrowserToolAccessLevel: String, Sendable {
+    /// Allowed without asking by default.
+    case `default`
+    /// Set to Always allow.
+    case always
+    /// Allowed in this chat, in this prompt or earlier.
+    case chat
+    /// Set to Never allow.
+    case never
+    /// Taken out of the prompt or not served. Nothing remembers it, so a later request asks again.
+    case notGranted
 }
 
 public enum ClientToolPermissionAuthorization {
@@ -225,6 +244,11 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
                 chatGrants[chatID, default: []].formUnion(toolNames)
             }
             grant(entry)
+        case .allowAccess(let excluded):
+            if let chatID = entry.chatID, let toolNames = entry.accessToolNames {
+                chatGrants[chatID, default: []].formUnion(toolNames.filter { !excluded.contains($0) })
+            }
+            grant(entry)
         case .allowForChat:
             if let chatID = entry.chatID {
                 chatGrants[chatID, default: []].insert(entry.tool.name)
@@ -244,6 +268,14 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let state = permissions.effectiveState(for: tool)
         guard state == .ask, !tool.asksEveryTime, let chatID, chatGrants[chatID]?.contains(tool.name) == true else { return state }
         return .allow
+    }
+
+    public func accessLevel(for tool: any BrowserTool, chatID: String) -> BrowserToolAccessLevel? {
+        switch permissions.effectiveState(for: tool) {
+        case .deny: .never
+        case .allow: tool.permissionMode == .ask && permissions.state(forToolNamed: tool.name) == .allow ? .always : .default
+        case .ask: chatGrants[chatID]?.contains(tool.name) == true ? .chat : nil
+        }
     }
 
     public func revokeChatGrants() {

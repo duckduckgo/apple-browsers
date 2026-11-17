@@ -86,7 +86,8 @@ public final class BrowserToolInvoker {
     }
 
     /// One prompt for the tools the model expects to use in this chat. Allowed and Never Allow tools aren't asked
-    /// for, unknown and ask-every-time ones are dropped. Allowing grants the rest for the chat, in memory only.
+    /// for. The user may take some out: those are `notGranted` and asked for again next time. Allowing grants the
+    /// rest for the chat, in memory only.
     private func requestAccess(_ request: ExecuteClientToolRequest,
                                context: BrowserToolCallContext,
                                permissionPrompter: (any ClientToolPermissionPrompting)?) async -> ExecuteClientToolResponse {
@@ -96,13 +97,17 @@ public final class BrowserToolInvoker {
         guard let chatID = request.chatId, let requested = Self.requestedCapabilities(request.input) else {
             return .failure(callId: request.callId, error: .invalidArguments)
         }
-        var granted = Set<String>()
+        var access: [String: BrowserToolAccessLevel] = [:]
         var toAsk: [String] = []
-        for tool in requested.compactMap(catalog.tool(named:)) where !tool.asksEveryTime {
-            switch clientToolPermissions.state(for: tool, chatID: chatID) {
-            case .allow: granted.insert(tool.name)
-            case .ask: toAsk.append(tool.name)
-            case .deny: break
+        for name in requested {
+            guard let tool = catalog.tool(named: name), !tool.asksEveryTime else {
+                access[name] = .notGranted
+                continue
+            }
+            if let level = clientToolPermissions.accessLevel(for: tool, chatID: chatID) {
+                access[name] = level
+            } else {
+                toAsk.append(name)
             }
         }
         if !toAsk.isEmpty {
@@ -117,18 +122,24 @@ public final class BrowserToolInvoker {
                     return .failure(callId: request.callId, error: .cancelled)
                 }
             }
-            granted.formUnion(toAsk.filter { catalog.tool(named: $0) != nil })
+            for name in toAsk {
+                let tool = catalog.tool(named: name)
+                access[name] = tool.flatMap { clientToolPermissions.accessLevel(for: $0, chatID: chatID) } == .chat ? .chat : .notGranted
+            }
         }
-        return .success(callId: request.callId, value: .object(["granted": .array(requested.filter(granted.contains).map(JSONValue.string))]))
+        return .success(callId: request.callId, value: ["access": .object(access.mapValues { .string($0.rawValue) })])
     }
 
-    /// 1 to 12 unique names, never `requestAccess` itself or Duck.ai's own `loadUserSkill`.
+    /// Names a grant can never cover: `requestAccess` itself, Duck.ai's own `loadUserSkill`, and the tools that ask every time.
+    private static let ungrantable: Set<String> = [ClientToolCapability.requestAccess.name, "loadUserSkill", "openTab", "bookmarkTab"]
+
+    /// 1 to 12 unique names, none of them ungrantable.
     private static func requestedCapabilities(_ input: JSONValue) -> [String]? {
         guard let fields = input.objectValue, fields.count == 1,
               let items = fields["capabilities"]?.arrayValue, (1...12).contains(items.count) else { return nil }
         let names = items.compactMap(\.stringValue)
         guard names.count == items.count, Set(names).count == names.count,
-              names.allSatisfy({ (1...64).contains($0.count) && $0 != ClientToolCapability.requestAccess.name && $0 != "loadUserSkill" }) else {
+              names.allSatisfy({ (1...64).contains($0.count) && !ungrantable.contains($0) }) else {
             return nil
         }
         return names

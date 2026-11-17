@@ -84,14 +84,22 @@ enum BrowserToolPermissionPromptText {
     }
 }
 
+/// The tools the user took out of a `requestAccess` prompt, shared with the presenter's ⌘↵ handling.
+@MainActor
+final class BrowserToolAccessSelection: ObservableObject {
+    @Published var removed: [String] = []
+}
+
 struct BrowserToolPermissionPromptView: View {
 
     private enum Constants {
         static let width: CGFloat = 252
+        static let accessWidth: CGFloat = 360
         static let buttonHeight: CGFloat = 32
     }
 
     let prompt: ClientToolPermissionPrompt
+    @ObservedObject var selection: BrowserToolAccessSelection
     let decide: (ClientToolPermissionDecision) -> Void
 
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
@@ -124,28 +132,10 @@ struct BrowserToolPermissionPromptView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let accessToolNames = prompt.accessToolNames {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(accessToolNames, id: \.self) { toolName in
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(nsImage: BrowserToolPermissionPromptText.icon(toolName: toolName))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(BrowserToolSettingsText.title(toolName: toolName))
-                                    .font(.system(size: 13))
-                                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                                if let detail = BrowserToolSettingsText.detail(toolName: toolName) {
-                                    Text(detail)
-                                        .font(.system(size: 11))
-                                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                                }
-                            }
-                            .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
-                .accessibilityIdentifier("BrowserToolPermissionPrompt.accessTools")
+                accessTools(accessToolNames)
 
-                VStack(spacing: 8) {
-                    decisionButton(UserText.browserToolAccessAllow, .allowOnce, id: "allowInChat", shortcutHint: "⌘↵")
+                HStack(spacing: 12) {
+                    decisionButton(UserText.browserToolAccessAllow, .allowAccess(excluding: Set(selection.removed)), id: "allowInChat", shortcutHint: "⌘↵")
                     decisionButton(UserText.browserToolAccessDontAllow, .dontAllow, id: "dontAllow")
                 }
             } else {
@@ -163,8 +153,73 @@ struct BrowserToolPermissionPromptView: View {
             }
         }
         .padding(20)
-        .frame(width: Constants.width)
+        .frame(width: prompt.accessToolNames == nil ? Constants.width : Constants.accessWidth)
         .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
+    }
+
+    /// Each of two or more tools has an X that takes it out of what will be allowed; the last one can't be taken out.
+    @ViewBuilder
+    private func accessTools(_ toolNames: [String]) -> some View {
+        let kept = toolNames.filter { !selection.removed.contains($0) }
+        let boxed = toolNames.count > 1
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(kept.enumerated()), id: \.element) { index, toolName in
+                if index > 0 {
+                    Divider()
+                }
+                accessRow(toolName, removable: kept.count > 1)
+                    .padding(boxed ? 12 : 0)
+            }
+        }
+        .overlay(boxed ? RoundedRectangle(cornerRadius: 6).stroke(Color(designSystemColor: .containerBorderPrimary)) : nil)
+        .accessibilityIdentifier("BrowserToolPermissionPrompt.accessTools")
+
+        if !selection.removed.isEmpty {
+            let names = ListFormatter.localizedString(byJoining: selection.removed.map { BrowserToolSettingsText.title(toolName: $0) })
+            VStack(alignment: .leading, spacing: 2) {
+                Text(UserText.browserToolAccessRemovedNote(toolNames: names))
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(UserText.browserToolAccessUndo) { selection.removed = [] }
+                    .buttonStyle(PlainButtonStyle())
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(designSystemColor: .textLink))
+                    .accessibilityIdentifier("BrowserToolPermissionPrompt.undo")
+            }
+        }
+    }
+
+    private func accessRow(_ toolName: String, removable: Bool) -> some View {
+        let title = BrowserToolSettingsText.title(toolName: toolName)
+        return HStack(alignment: .top, spacing: 10) {
+            Image(nsImage: BrowserToolPermissionPromptText.icon(toolName: toolName))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                if let detail = BrowserToolSettingsText.detail(toolName: toolName) {
+                    Text(detail)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            if removable {
+                Button { selection.removed.append(toolName) } label: {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                        .renderingMode(.template)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help(UserText.browserToolAccessRemoveTool(toolName: title))
+                .accessibilityLabel(UserText.browserToolAccessRemoveTool(toolName: title))
+                .accessibilityIdentifier("BrowserToolPermissionPrompt.remove.\(toolName)")
+            }
+        }
     }
 
     private func decisionButton(_ title: String, _ decision: ClientToolPermissionDecision, id: String, shortcutHint: String? = nil) -> some View {

@@ -150,12 +150,21 @@ final class BrowserToolPermissionPromptPresenter {
         let prompt = request.prompt
         let popover = NSPopover()
         popover.behavior = .applicationDefined
-        let content = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt) { [weak self] decision in
+        let selection = BrowserToolAccessSelection()
+        let content = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt, selection: selection) { [weak self] decision in
             self?.answer(prompt.requestID, with: decision)
         })
         popover.contentViewController = content
         // Resized after showing, a popover drifts off its anchor.
         popover.contentSize = content.view.fittingSize
+        if #available(macOS 13.0, *), prompt.accessToolNames != nil {
+            // Taking a tool out or undoing it changes the height.
+            content.sizingOptions = .preferredContentSize
+        }
+        let primary: () -> ClientToolPermissionDecision = {
+            if prompt.accessToolNames != nil { return .allowAccess(excluding: Set(selection.removed)) }
+            return prompt.offersAllowForChat ? .allowForChat : .allowOnce
+        }
         let open: (NSView) -> Void = { [weak self, weak popover] anchor in
             guard let popover, !popover.isShown,
                   self?.shown.values.contains(where: { $0.requestID == prompt.requestID }) == true else { return }
@@ -163,7 +172,7 @@ final class BrowserToolPermissionPromptPresenter {
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(answering: prompt.requestID, primary: prompt.offersAllowForChat ? .allowForChat : .allowOnce, popover: popover, in: tabBar.view.window))
+                           keyMonitor: keyMonitor(answering: prompt.requestID, primary: primary, popover: popover, in: tabBar.view.window))
         tabBar.showBrowserToolPermissionButton(icon: BrowserToolPermissionPromptText.icon(toolName: prompt.toolName),
                                                title: BrowserToolPermissionPromptText.title(toolName: prompt.toolName,
                                                                                             targetsOtherTab: prompt.targetsOtherTab),
@@ -172,7 +181,7 @@ final class BrowserToolPermissionPromptPresenter {
     }
 
     // The popover doesn't take key focus, so SwiftUI shortcuts don't reach it.
-    private func keyMonitor(answering requestID: String, primary: ClientToolPermissionDecision, popover: NSPopover, in window: NSWindow?) -> Any? {
+    private func keyMonitor(answering requestID: String, primary: @escaping () -> ClientToolPermissionDecision, popover: NSPopover, in window: NSWindow?) -> Any? {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover, weak window] event in
             guard let self, let popover, popover.isShown,
                   event.window === window || event.window === popover.contentViewController?.view.window else { return event }
@@ -181,7 +190,7 @@ final class BrowserToolPermissionPromptPresenter {
             case (53, []): // Esc
                 answer(requestID, with: .dismiss)
             case (36, .command), (76, .command): // ⌘Return, ⌘Enter
-                answer(requestID, with: primary)
+                answer(requestID, with: primary())
             default:
                 return event
             }

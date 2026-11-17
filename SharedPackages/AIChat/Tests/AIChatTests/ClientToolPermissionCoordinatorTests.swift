@@ -32,7 +32,7 @@ struct ClientToolPermissionCoordinatorTests {
         harness.answer(harness.source.prompts[0], decision: decision)
         let result = await task.value
         switch decision {
-        case .allowOnce, .allowForChat, .always:
+        case .allowOnce, .allowForChat, .allowAccess, .always:
             #expect(result == .success(callId: "call", value: ["content": "page"]))
             #expect(harness.tool.calls.count == 1)
         case .never, .dontAllow:

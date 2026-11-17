@@ -404,4 +404,6 @@ private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoo
     }
 
     func state(for tool: any BrowserTool, chatID: String?) -> BrowserToolPermissionState { .ask }
+
+    func accessLevel(for tool: any BrowserTool, chatID: String) -> BrowserToolAccessLevel? { nil }
 }

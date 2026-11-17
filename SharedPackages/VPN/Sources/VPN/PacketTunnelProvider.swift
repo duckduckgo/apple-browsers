@@ -1675,7 +1675,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     func handleAccessRevoked(dueTo error: Error, notification: AuthNotification) async -> Bool {
-        defaults.enableEntitlementMessaging()
+
+        if notification == .subscriptionExpired {
+            defaults.enableEntitlementMessaging() // Show an alert and notification in the main app
+        }
+
         notification.present(with: notificationsPresenter)
 
         // We add a delay here so the notification has a chance to show up

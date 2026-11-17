@@ -131,7 +131,7 @@ enum WebExtensionManagerFactory {
             prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
         ) : nil
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
-        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+        let nativeMessagingHandler = buildType.isSparkleBuild
             ? NativeMessagingHandler(installationStore: installationStore)
             : nil
         let manager = WebExtensionManager(

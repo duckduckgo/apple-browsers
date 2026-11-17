@@ -1,24 +1,5 @@
 // Onboarding step completion pixels for measuring progress through the initial onboarding flow.
 {
-    "m_mac_onboarding_skipped": {
-        "description": "Fired when onboarding ends without completion. Includes closing or navigating away from onboarding and burn on exit; ordinary quit does not record a skip.",
-        "owners": ["diegoreymendez"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
-    "m_mac_onboarding_browsing-before-completion_u": {
-        "description": "Fired once per install when an HTTP(S) navigation starts while non-blocking onboarding is active. Excludes alternate HTML loads.",
-        "owners": ["diegoreymendez"],
-        "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
-    "m_mac_onboarding_contextual-dismissed_u": {
-        "description": "Fired once per install when the user presses X on a contextual dialog to stop all remaining contextual onboarding in non-blocking onboarding.",
-        "owners": ["diegoreymendez"],
-        "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
     "m_mac_onboarding_step-complete-welcome": {
         "description": "Fired when the user completes the Welcome step of the onboarding flow",
         "owners": ["Bunn"],

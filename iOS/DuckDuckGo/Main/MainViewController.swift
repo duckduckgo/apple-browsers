@@ -9797,7 +9797,10 @@ extension MainViewController: FireExecutorDelegate {
         if syncService.authState != .inactive {
             syncService.scheduler.requestSyncImmediately()
         }
-        if #available(iOS 18.4, *) {
+        // Auto-clear on launch finishes before the app starts its deferred extension load, which waits for the
+        // app to be active and protected data to be available, and then loads everything. Reloading here would
+        // load WebKit extensions on the main thread at launch, ahead of that gate, and risk a watchdog kill.
+        if #available(iOS 18.4, *), webExtensionLifecycleCoordinator?.hasRequestedInitialLoadAndSync == true {
             Task { @MainActor [weak self] in
                 guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
                 if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {

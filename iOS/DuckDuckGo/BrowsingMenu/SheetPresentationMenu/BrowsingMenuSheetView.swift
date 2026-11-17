@@ -85,6 +85,7 @@ struct BrowsingMenuSheetView: View {
     private let model: BrowsingMenuModel
     private let onDismiss: (_ wasActionSelected: Bool) -> Void
     private let dismissInstantly: (() -> Void)?
+    var fillsSheetWidth = false
 
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
     @State private var actionToPerform: (() -> Void)?
@@ -142,6 +143,7 @@ struct BrowsingMenuSheetView: View {
         })
         .tint(Color(designSystemColor: .textPrimary))
         .modifier(ScrollIndicatorsFlashOnAppearIfAvailable())
+        .ignoresSafeArea(.container, edges: fillsSheetWidth ? .horizontal : [])
 
     }
 

@@ -28,4 +28,12 @@ final class BrowsingMenuSheetViewController: UIHostingController<BrowsingMenuShe
         // Required for material background to become effective
         view.backgroundColor = .clear
     }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let fillsSheetWidth = DuoLayout.canFillSheetWidth(in: self)
+        if rootView.fillsSheetWidth != fillsSheetWidth {
+            rootView.fillsSheetWidth = fillsSheetWidth
+        }
+    }
 }

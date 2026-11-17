@@ -39,7 +39,8 @@ VAULT_APP_GROUP = com.duckduckgo.vault.alpha
 VPN_APP_GROUP = $(GROUP_ID_PREFIX).netp
 
 // Prevents asserts from crashing alpha TF builds
-OTHER_SWIFT_FLAGS[config=Alpha][arch=*][sdk=*] = $(inherited) -assert-config Release
+OTHER_SWIFT_FLAGS = $(inherited) $(DDG_DUO_LAYOUT_SWIFT_FLAG)
+OTHER_SWIFT_FLAGS[config=Alpha][arch=*][sdk=*] = $(inherited) $(DDG_DUO_LAYOUT_SWIFT_FLAG) -assert-config Release
 
 COMPILATION_CACHE_ENABLE_CACHING = YES
 

@@ -124,9 +124,24 @@ class MainViewCoordinator {
         !(unifiedToggleInputContainer?.isHidden ?? true) && (unifiedToggleInputContainer?.alpha ?? 0) > 0.01
     }
 
+    var aiChatHeaderTopInset: CGFloat {
+        superview.safeAreaInsets.top + (constraints.aiChatHeaderTop?.constant ?? 0)
+    }
+
+    func updateAIChatHeaderTopInset() {
+        guard let constraint = constraints.aiChatHeaderTop else { return }
+        let minimum = isDuckAIAndInputLiquidGlassEnabled && DuoLayout.hasVerticalBar(in: superview)
+            ? AIChatTabChatHeaderView.minimumFloatingTopInset : 0
+        let inset = max(0, minimum - superview.safeAreaInsets.top)
+        if constraint.constant != inset {
+            constraint.constant = inset
+        }
+    }
+
     func setFloatingUIEnabled(_ enabled: Bool, duckAIAndInputLiquidGlassEnabled: Bool = false) {
         isFloatingUIEnabled = enabled
         isDuckAIAndInputLiquidGlassEnabled = enabled && duckAIAndInputLiquidGlassEnabled
+        updateAIChatHeaderTopInset()
         if let bottomToToolbar = constraints.unifiedInputContentBottomToToolbar,
            let bottomToSuperview = constraints.unifiedInputContentBottomToSuperview,
            bottomToSuperview.isActive != isDuckAIAndInputLiquidGlassEnabled {
@@ -283,6 +298,7 @@ class MainViewCoordinator {
         var contentContainerTopToSafeArea: NSLayoutConstraint!
         var contentContainerTopToSuperview: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
+        var aiChatHeaderTop: NSLayoutConstraint?
         var contextualSidebarShown: NSLayoutConstraint?
         var contextualSidebarHidden: NSLayoutConstraint?
 

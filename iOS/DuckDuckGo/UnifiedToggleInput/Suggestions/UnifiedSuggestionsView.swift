@@ -171,7 +171,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
-    /// window-relative anchor `NewTabPageDaxLogoView` uses, so the focused and NTP logos share one
+    /// resting anchor `NewTabPageDaxLogoView` uses, so the focused and NTP logos share one
     /// resting position+size — focus/defocus is a pixel-identical crossfade (no slide), and it's stable
     /// across Search↔Duck.ai toggles and the keyboard.
     private var logoLayer: some View {

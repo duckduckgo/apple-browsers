@@ -209,7 +209,7 @@ private extension NewTabPageView {
     private var logoEmptyView: some View {
         GeometryReader { proxy in
             let viewport = proxy.frame(in: .global)
-            let centerY = viewModel.logoPosition?.centerY ?? FocusedLogoLayout.restingCenterY(in: viewport)
+            let centerY = viewModel.logoPosition?.centerY ?? FocusedLogoLayout.standardRestingCenterY
             let centerX = viewModel.logoPosition?.physicalCenterX
             let offsetX = (centerX ?? viewport.midX) - viewport.midX
             ZStack {

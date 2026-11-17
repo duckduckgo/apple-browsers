@@ -732,6 +732,7 @@ final class UnifiedToggleInputView: UIView {
 
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { aiTabCollapsedFireButton }
+    var aiTabMenuButton: UIButton { aiTabCollapsedMenuButton }
 
     func setMenuAlertVisible(_ isVisible: Bool, animated: Bool) {
         aiTabCollapsedMenuButton.setMenuAlertVisible(isVisible, animated: animated)
@@ -862,6 +863,10 @@ final class UnifiedToggleInputView: UIView {
 
     private struct OmnibarMatchViewport: Equatable {
         let windowSize: CGSize
+        let duoGeometry: DuoOmnibarGeometry?
+    }
+
+    private struct DuoOmnibarGeometry: Equatable {
         let minX: CGFloat
         let width: CGFloat
         let layoutDirection: UIUserInterfaceLayoutDirection
@@ -869,9 +874,14 @@ final class UnifiedToggleInputView: UIView {
 
     private var omnibarMatchViewport: OmnibarMatchViewport? {
         guard let window else { return nil }
-        let frame = convert(bounds, to: nil)
-        return OmnibarMatchViewport(windowSize: window.bounds.size, minX: frame.minX, width: frame.width,
-                                    layoutDirection: effectiveUserInterfaceLayoutDirection)
+        let duoGeometry: DuoOmnibarGeometry?
+        if DuoLayout.hasVerticalBar(in: self) {
+            let frame = convert(bounds, to: nil)
+            duoGeometry = DuoOmnibarGeometry(minX: frame.minX, width: frame.width, layoutDirection: effectiveUserInterfaceLayoutDirection)
+        } else {
+            duoGeometry = nil
+        }
+        return OmnibarMatchViewport(windowSize: window.bounds.size, duoGeometry: duoGeometry)
     }
 
     /// The collapsed pill's corner radius. The bottom floating omnibar renders as a capsule
@@ -1675,13 +1685,19 @@ final class UnifiedToggleInputView: UIView {
               let viewport = omnibarMatchViewport,
               bounds.width > 0 else { return }
         let pillInSelf = convert(pill, from: nil)
-        let left = pillInSelf.minX - bounds.minX
-        let right = bounds.maxX - pillInSelf.maxX
-        let isRTL = viewport.layoutDirection == .rightToLeft
-        let insets = OmnibarMatchedInsets(
-            leading: isRTL ? right : left,
-            trailing: -(isRTL ? left : right),
-            bottom: pillInSelf.maxY - bounds.maxY)
+        let insets: OmnibarMatchedInsets
+        if let duoGeometry = viewport.duoGeometry {
+            let left = pillInSelf.minX - bounds.minX
+            let right = bounds.maxX - pillInSelf.maxX
+            let isRTL = duoGeometry.layoutDirection == .rightToLeft
+            insets = OmnibarMatchedInsets(leading: isRTL ? right : left,
+                                         trailing: -(isRTL ? left : right),
+                                         bottom: pillInSelf.maxY - bounds.maxY)
+        } else {
+            insets = OmnibarMatchedInsets(leading: pillInSelf.minX,
+                                         trailing: -(bounds.width - pillInSelf.maxX),
+                                         bottom: -(bounds.height - pillInSelf.maxY))
+        }
         cachedOmnibarMatch = (insets, viewport)
         applyOmnibarMatchedInsets(insets)
         cardView.layer.cornerRadius = collapsedCornerRadius

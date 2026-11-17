@@ -142,12 +142,14 @@ enum SwipeChromeTransitionPolicy {
 final class SwipeChromeCrossFade {
 
     let leavesNewTabPage: Bool
+    private let blendsIndependentSideInsets: Bool
     private weak var outgoingToolbar: BrowserToolbarView?
     private weak var incomingToolbar: BrowserToolbarView?
     private var capturedInsets: (outgoing: UIEdgeInsets, incoming: UIEdgeInsets)?
 
-    init(leavesNewTabPage: Bool) {
+    init(leavesNewTabPage: Bool, blendsIndependentSideInsets: Bool) {
         self.leavesNewTabPage = leavesNewTabPage
+        self.blendsIndependentSideInsets = blendsIndependentSideInsets
     }
 
     /// Records the outgoing copy's toolbar, whose omnibar row shrinks as the swipe progresses.
@@ -178,7 +180,7 @@ final class SwipeChromeCrossFade {
                                         incoming: incomingToolbar.restingHorizontalOuterInsets)
         capturedInsets = insets
         let left = insets.outgoing.left + (insets.incoming.left - insets.outgoing.left) * progress
-        let right = insets.outgoing.right + (insets.incoming.right - insets.outgoing.right) * progress
+        let right = blendsIndependentSideInsets ? insets.outgoing.right + (insets.incoming.right - insets.outgoing.right) * progress : left
         outgoingToolbar.setHorizontalOuterInsetsOverride((left: left, right: right))
         incomingToolbar.setHorizontalOuterInsetsOverride((left: left, right: right))
     }
@@ -766,12 +768,14 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         if isSwipeChromeRefinementsEnabled, destinationTab?.isAITab == true, tabsModel.currentTab?.isAITab == true {
             return coordinator.contentContainer.bounds
         }
+        var safeAreaInsets = coordinator.superview.safeAreaInsets
+        safeAreaInsets.top = coordinator.aiChatHeaderTopInset
         return FloatingSwipePreviewGeometry.destinationFrame(
             isAITab: destinationTab?.isAITab == true,
             superviewBounds: coordinator.superview.bounds,
             contentContainerFrame: coordinator.contentContainer.frame,
-            safeAreaInsets: coordinator.superview.safeAreaInsets,
-            aiHeaderHeight: max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60),
+            safeAreaInsets: safeAreaInsets,
+            aiHeaderHeight: aiHeaderHeight,
             aiInputHeight: DefaultOmniBarView.expectedHeight
         )
     }
@@ -861,12 +865,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         )
         header.isUserInteractionEnabled = false
 
-        let headerHeight = max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60)
         header.frame = CGRect(
             x: 0,
-            y: coordinator.superview.safeAreaInsets.top,
+            y: coordinator.aiChatHeaderTopInset,
             width: container.bounds.width,
-            height: headerHeight
+            height: aiHeaderHeight
         )
         container.addSubview(header)
         header.configure(isSubscriptionActive: isPaidAIChatEnabledProvider(),
@@ -919,6 +922,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         inputController.refreshPlaceholderForCurrentMode()
         inputController.setFlankingAccessoriesVisible(.all)
         liveChromeControllers.append(inputController)
+    }
+
+    private var aiHeaderHeight: CGFloat {
+        max(coordinator.aiChatTabChatHeaderContainer.bounds.height, AIChatTabChatHeaderView.preferredHeight)
     }
 
     /// Adds a copy of the chrome `tab` shows at rest and returns its toolbar, if it has one.
@@ -998,10 +1005,16 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     private func pinToLiveSideInsets(_ toolbar: BrowserToolbarView) {
         // A copy parked off screen resolves the camera cutout from where it is rather than from where it
         // will land, so its own inset would differ from the live toolbar it hands over to.
+        guard #available(iOS 26.0, *) else { return }
         let host = coordinator.superview
-        let frame = toolbar.restingCapsuleFrame(in: host)
-        guard !frame.isEmpty else { return }
-        toolbar.setHorizontalOuterInsetsOverride((left: frame.minX - host.bounds.minX, right: host.bounds.maxX - frame.maxX))
+        if DuoLayout.hasVerticalBar(in: host) {
+            let frame = toolbar.restingCapsuleFrame(in: host)
+            guard !frame.isEmpty else { return }
+            toolbar.setHorizontalOuterInsetsOverride((left: frame.minX - host.bounds.minX, right: host.bounds.maxX - frame.maxX))
+        } else {
+            let insets = BrowserToolbarView.floatingStandaloneOuterInsets(in: host)
+            toolbar.setHorizontalOuterInsetsOverride((left: insets.left, right: insets.right))
+        }
     }
 
     private func makeReadOnlyToolbar(for tab: Tab?) -> BrowserToolbarView {
@@ -1250,7 +1263,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             destinationIsAITab: destinationTab?.isAITab == true,
             usesMinimalChromeForWebPages: usesMinimalChromeForWebPages())
         guard case .crossFade(let leavingNewTabPage) = transition else { return nil }
-        return SwipeChromeCrossFade(leavesNewTabPage: leavingNewTabPage)
+        return SwipeChromeCrossFade(leavesNewTabPage: leavingNewTabPage,
+                                  blendsIndependentSideInsets: DuoLayout.hasVerticalBar(in: coordinator.superview))
     }
 
     private func swipeProgress(offset: CGFloat) -> CGFloat {

@@ -4348,7 +4348,10 @@ class MainViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        unifiedToggleInputCoordinator?.viewController.updateNewTabPageHorizontalLayout(isNewTabPageVisible)
+        viewCoordinator.updateAIChatHeaderTopInset()
+        let centersOnNewTabPage = isNewTabPageVisible
+        unifiedToggleInputCoordinator?.viewController.updateNewTabPageHorizontalLayout(centersOnNewTabPage)
+        unifiedToggleInputCoordinator?.contentViewController.centersOnNewTabPage = centersOnNewTabPage
         if isFloatingUIEnabled {
             // Guide and selection settle after layout.
             DispatchQueue.main.async { [weak self] in
@@ -4368,6 +4371,7 @@ class MainViewController: UIViewController {
         updateWindowControlsRowMetricsIfNeeded()
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
+        updateBrowsingMenuPopoverAnchor()
         reanchorAITabCollapsedFooterIfNeeded()
         browserTabMentionSuggestionsController?.updateLayout()
         updateWindowedAddressBarCorners()
@@ -4378,7 +4382,10 @@ class MainViewController: UIViewController {
 
     override func viewSafeAreaInsetsDidChange() {
         super.viewSafeAreaInsetsDidChange()
-        viewCoordinator?.toolbar?.setNeedsLayout()
+        viewCoordinator?.updateAIChatHeaderTopInset()
+        if DuoLayout.hasVerticalBar(in: view) {
+            viewCoordinator?.toolbar?.setNeedsLayout()
+        }
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
@@ -6715,7 +6722,7 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.showPrivacyDashboard()
     }
 
-    @objc func onMenuPressed() {
+    @objc func onMenuPressed(_ sourceView: UIView) {
         viewCoordinator.menuToolbarButton.isEnabled = false
         omniBar.cancel()
 
@@ -6729,10 +6736,10 @@ extension MainViewController: OmniBarDelegate {
         }
         performCancel()
         ActionMessageView.dismissAllMessages()
-        launchBrowsingMenu()
+        launchBrowsingMenu(from: sourceView)
     }
 
-    private func launchBrowsingMenu() {
+    private func launchBrowsingMenu(from sourceView: UIView) {
         recordNewTabPageSessionAction { $0.openMenu() }
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
@@ -6749,7 +6756,7 @@ extension MainViewController: OmniBarDelegate {
         }
         
         if browsingMenuSheetCapability.isEnabled {
-            launchSheetBrowsingMenu(in: context, tabController: tab)
+            launchSheetBrowsingMenu(in: context, tabController: tab, from: sourceView)
         } else {
             launchDefaultBrowsingMenu(in: context, tabController: tab)
         }
@@ -6831,7 +6838,7 @@ extension MainViewController: OmniBarDelegate {
         present(controller, animated: true, completion: presentationCompletion)
     }
 
-    private func launchSheetBrowsingMenu(in context: BrowsingMenuContext, tabController tab: TabViewController) {
+    private func launchSheetBrowsingMenu(in context: BrowsingMenuContext, tabController tab: TabViewController, from sourceView: UIView) {
         guard let model = tab.buildSheetBrowsingMenu(
             context: context,
             with: menuBookmarksViewModel,
@@ -6907,21 +6914,41 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
+        let usesAdaptiveMenu = DuoLayout.usesAdaptiveBrowsingMenu(in: self.view)
         let isiPad = UIDevice.current.userInterfaceIdiom == .pad
-        controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
+        controller.modalPresentationStyle = usesAdaptiveMenu || isiPad ? .popover : .pageSheet
 
         if let popoverController = controller.popoverPresentationController {
-            popoverController.sourceView = omniBar.barView.menuButton
+            popoverController.sourceView = usesAdaptiveMenu ? sourceView : omniBar.barView.menuButton
             controller.preferredContentSize = CGSize(width: 391, height: contentHeight)
-
+            if usesAdaptiveMenu {
+                popoverController.permittedArrowDirections = []
+            }
             configureSheetPresentationController(popoverController.adaptiveSheetPresentationController)
         }
 
         if let sheet = controller.sheetPresentationController {
-           configureSheetPresentationController(sheet)
+            configureSheetPresentationController(sheet)
         }
 
         self.present(controller, animated: true)
+    }
+
+    private func updateBrowsingMenuPopoverAnchor() {
+        guard let menu = presentedViewController as? BrowsingMenuSheetViewController,
+              DuoLayout.usesAdaptiveBrowsingMenu(in: view),
+              let popover = menu.popoverPresentationController else { return }
+
+        // Resizing can move the menu action between the toolbar and the omnibar.
+        // The Duck.ai composer keeps its own button.
+        let toolbarButton = viewCoordinator.menuToolbarButton
+        let omnibarButton = omniBar.barView.menuButton
+        guard popover.sourceView === toolbarButton || popover.sourceView === omnibarButton else { return }
+
+        let visibleButton = isUsingSingleBar ? omnibarButton : toolbarButton
+        if popover.sourceView !== visibleButton {
+            popover.sourceView = visibleButton
+        }
     }
 
     @objc func onBookmarksPressed() {

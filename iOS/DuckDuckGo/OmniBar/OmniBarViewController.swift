@@ -983,7 +983,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onMenuButtonPressed() {
-        omniDelegate?.onMenuPressed()
+        omniDelegate?.onMenuPressed(barView.menuButton)
     }
 
     private func onTrackersViewPressed() {

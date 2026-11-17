@@ -85,6 +85,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private weak var contentContainerViewLeadingConstraint: NSLayoutConstraint?
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
+    var centersOnNewTabPage = false {
+        didSet {
+            if centersOnNewTabPage != oldValue {
+                viewIfLoaded?.setNeedsLayout()
+            }
+        }
+    }
 
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
@@ -574,14 +581,29 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // inset would squeeze their favorites grid and message cards into a narrow strip.
         let usesLandscapeInset = isHorizontallyCompactLayoutEnabled && !usesRedesignedNewTabPageLayout
         let horizontalMargin: CGFloat = usesLandscapeInset ? Metrics.horizontalMarginForCompactLayout : 0
-        self.contentContainerViewLeadingConstraint?.constant = horizontalMargin
-        self.contentContainerViewTrailingConstraint?.constant = -horizontalMargin
+        updateContentHorizontalInsets(margin: horizontalMargin)
         guard isContentActive else {
             markNeedsVisibleRefresh()
             return
         }
         self.refreshSyncPromoIfActive()
         self.updateLayoutForCurrentOrientation()
+    }
+
+    private func updateContentHorizontalInsets(margin: CGFloat) {
+        let safeFrame = view.bounds.inset(by: view.safeAreaInsets)
+        let frame = centersOnNewTabPage ? DuoLayout.centeredContentFrame(safeFrame, in: view) : safeFrame
+        let left = frame.minX - safeFrame.minX
+        let right = safeFrame.maxX - frame.maxX
+        let isRightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
+        let leading = margin + (isRightToLeft ? right : left)
+        let trailing = -(margin + (isRightToLeft ? left : right))
+        if contentContainerViewLeadingConstraint?.constant != leading {
+            contentContainerViewLeadingConstraint?.constant = leading
+        }
+        if contentContainerViewTrailingConstraint?.constant != trailing {
+            contentContainerViewTrailingConstraint?.constant = trailing
+        }
     }
 
     private func setupView() {

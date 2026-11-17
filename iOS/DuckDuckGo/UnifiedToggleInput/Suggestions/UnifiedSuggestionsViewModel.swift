@@ -181,7 +181,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     func logoLayout(in viewport: CGRect) -> FocusedLogoLayout {
         FocusedLogoLayout(viewport: viewport, chromeInsetTop: chromeInsetTop, placement: escapeHatchPlacement,
                           hatchFrame: embeddedEscapeHatchFrame, destinationHatchFrame: embeddedEscapeHatchDestinationFrame,
-                          restingCenterY: logoPosition?.centerY ?? FocusedLogoLayout.restingCenterY(in: viewport),
+                          restingCenterY: logoPosition?.centerY ?? FocusedLogoLayout.standardRestingCenterY,
                           centerX: physicalLogoCenterX)
     }
 

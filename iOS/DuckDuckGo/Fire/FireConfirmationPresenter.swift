@@ -135,7 +135,7 @@ struct FireConfirmationPresenter {
     // MARK: - Shared Presentation Helpers
         
     private func makeHostingController<Content: View>(with view: Content, prefersSheet: Bool) -> FireConfirmationHostingController<Content> {
-        let hostingController = FireConfirmationHostingController(rootView: view)
+        let hostingController = FireConfirmationHostingController(rootView: FireConfirmationSheetContent(content: view))
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
         hostingController.modalPresentationStyle = DevicePlatform.isIpad ? (prefersSheet ? .formSheet : .popover) : .pageSheet
@@ -251,13 +251,26 @@ struct FireConfirmationPresenter {
     
 }
 
-private final class FireConfirmationHostingController<Content: View>: UIHostingController<Content> {
+private struct FireConfirmationSheetContent<Content: View>: View {
+    let content: Content
+    var fillsSheetWidth = false
+
+    var body: some View {
+        content.ignoresSafeArea(.container, edges: fillsSheetWidth ? .horizontal : [])
+    }
+}
+
+private final class FireConfirmationHostingController<Content: View>: UIHostingController<FireConfirmationSheetContent<Content>> {
     var onPresentingSizeChange: ((CGSize) -> Void)?
     private var lastPresentingSize: CGSize?
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updatePresentingSize()
+        let fillsSheetWidth = DuoLayout.canFillSheetWidth(in: self)
+        if rootView.fillsSheetWidth != fillsSheetWidth {
+            rootView.fillsSheetWidth = fillsSheetWidth
+        }
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

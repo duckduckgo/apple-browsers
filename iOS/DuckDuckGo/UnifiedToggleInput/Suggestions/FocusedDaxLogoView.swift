@@ -155,13 +155,14 @@ struct NewTabPageLogoPosition: Equatable {
     let physicalCenterX: CGFloat?
 
     @MainActor
-    init(window: UIWindow) {
+    init?(window: UIWindow) {
+        guard DuoLayout.hasVerticalBar(in: window) else { return nil }
         centerY = FocusedLogoLayout.restingCenterY(in: window.bounds)
         let size = FocusedDaxLogoView.size
         let safeCenterX = window.safeAreaLayoutGuide.layoutFrame.midX
         let candidate = CGRect(x: safeCenterX - size.width / 2, y: centerY - size.height / 2,
                                width: size.width, height: size.height)
-        let centered = NewTabPageHorizontalLayout.centeredFrame(candidate, in: window)
+        let centered = DuoLayout.centeredFrame(candidate, in: window)
         physicalCenterX = centered == candidate ? nil : centered.midX
     }
 }
@@ -170,6 +171,9 @@ struct FocusedLogoLayout {
     let centerY: CGFloat
     let hatchLayout: EscapeHatchLogoLayout?
     let frame: CGRect
+
+    @MainActor
+    static var standardRestingCenterY: CGFloat { restingCenterY(in: UIScreen.main.bounds) }
 
     static func restingCenterY(in windowBounds: CGRect) -> CGFloat {
         windowBounds.midY - 55

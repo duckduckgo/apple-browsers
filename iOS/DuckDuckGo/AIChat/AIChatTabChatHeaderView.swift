@@ -46,6 +46,8 @@ final class AIChatTabChatHeaderView: UIView {
     /// Tells the header when a new tab comes in over the page, which shared chrome has to look right for.
     weak var newTabOpening: NewTabOpeningObserving?
     static var preferredHeight: CGFloat { Constants.headerHeight }
+    static var minimumFloatingTopInset: CGFloat { Constants.edgePadding - (Constants.headerHeight - Constants.buttonSize) / 2 }
+    private lazy var titleCenter = titleHolder.centerXAnchor.constraint(equalTo: centerXAnchor)
 
     enum Layout {
         /// Close button, and a Plus menu that starts chats in this tab or opens new tabs.
@@ -63,7 +65,7 @@ final class AIChatTabChatHeaderView: UIView {
     private enum Constants {
         static let headerHeight: CGFloat = 60
         static let buttonSize: CGFloat = 44
-        static let horizontalPadding: CGFloat = 16
+        static let edgePadding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let titleEdgeSpacing: CGFloat = 12
         static let titleHorizontalPadding: CGFloat = 12
@@ -460,6 +462,15 @@ final class AIChatTabChatHeaderView: UIView {
         }
     }
 
+    override func layoutSubviews() {
+        let insets = safeAreaInsets
+        let offset = usesFloatingAIChrome && DuoLayout.hasVerticalBar(in: self) ? (insets.left - insets.right) / 2 : 0
+        if titleCenter.constant != offset {
+            titleCenter.constant = offset
+        }
+        super.layoutSubviews()
+    }
+
     func configure(isSubscriptionActive: Bool, allowsSubscriptionUpsell: Bool = true) {
         var updatedState = state
         updatedState.isSubscriptionActive = isSubscriptionActive
@@ -585,13 +596,13 @@ final class AIChatTabChatHeaderView: UIView {
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.headerHeight),
 
-            leftStack.leadingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.leadingAnchor : leadingAnchor, constant: Constants.horizontalPadding),
+            leftStack.leadingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.leadingAnchor : leadingAnchor, constant: Constants.edgePadding),
             leftStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            rightStack.trailingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.trailingAnchor : trailingAnchor, constant: -Constants.horizontalPadding),
+            rightStack.trailingAnchor.constraint(equalTo: usesFloatingAIChrome ? safeAreaLayoutGuide.trailingAnchor : trailingAnchor, constant: -Constants.edgePadding),
             rightStack.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            titleHolder.centerXAnchor.constraint(equalTo: centerXAnchor),
+            titleCenter,
             titleHolder.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             titleContainer.topAnchor.constraint(equalTo: titleHolder.topAnchor),

@@ -30,3 +30,8 @@ PROVISIONING_PROFILE_SPECIFIER = Development - App
 
 // The keychain access group for subscriptions
 SUBSCRIPTION_APP_GROUP = com.duckduckgo.subscriptions
+
+// The minimum build SDK is iOS 27.0. Duo layout APIs were added in 27.1.
+DDG_DUO_LAYOUT_SWIFT_FLAG = -D DDG_HAS_DUO_LAYOUT_SDK
+DDG_DUO_LAYOUT_SWIFT_FLAG[sdk=iphoneos27.0*] =
+DDG_DUO_LAYOUT_SWIFT_FLAG[sdk=iphonesimulator27.0*] =

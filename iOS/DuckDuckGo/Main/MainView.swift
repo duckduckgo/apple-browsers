@@ -27,29 +27,90 @@ import History
 import Core
 import FeatureFlags_iOS
 
-@MainActor
-enum NewTabPageHorizontalLayout {
+enum DuoLayout {
+
+    static func hasVerticalBar(in view: UIView) -> Bool {
+#if DDG_HAS_DUO_LAYOUT_SDK
+        if #available(iOS 27.1, *), let window = (view as? UIWindow) ?? view.window, window.windowScene != nil {
+            return view.traitCollection.verticalBarEdge != .unspecified
+        }
+#endif
+        return false
+    }
+
+    @MainActor
+    static func usesAdaptiveBrowsingMenu(in view: UIView) -> Bool {
+#if DDG_HAS_DUO_LAYOUT_SDK
+        if #available(iOS 27.1, *), let window = view.window, window.traitCollection.userInterfaceIdiom == .phone {
+            // The inner display still reports its hinge region when it is flat and uses horizontal bars.
+            return hasVerticalBar(in: window) || !window.reservedRegions(kind: .division, options: .includeInactive).isEmpty
+        }
+#endif
+        return false
+    }
+
+    @MainActor
+    static func centeredContentFrame(_ safeFrame: CGRect, in view: UIView) -> CGRect {
+        guard let window = closedWindow(for: view) else { return safeFrame }
+        let centerX = view.convert(window.bounds, from: window).midX
+        // Scrolling content can pass the camera and status indicators at any height.
+        let halfWidth = min(centerX - safeFrame.minX, safeFrame.maxX - centerX)
+        guard halfWidth > 0 else { return safeFrame }
+        return CGRect(x: centerX - halfWidth, y: safeFrame.minY, width: halfWidth * 2, height: safeFrame.height)
+    }
+
+    @MainActor
+    static func canFillSheetWidth(in controller: UIViewController) -> Bool {
+#if DDG_HAS_DUO_LAYOUT_SDK
+        if #available(iOS 27.1, *), controller.activePresentationController is UISheetPresentationController,
+           let view = controller.viewIfLoaded, hasVerticalBar(in: view),
+           let scene = view.window?.windowScene, !view.bounds.isEmpty {
+            return clearsSystemUI(view.bounds, in: view, scene: scene)
+                && !view.reservedRegions(kind: .division).contains(where: { $0.frame.intersects(view.bounds) })
+        }
+#endif
+        return false
+    }
 
     /// The vertical system bar reserves a whole side in the safe area. Center a view in the
     /// window when its actual frame clears the camera, status bar, and other system occlusions.
+    @MainActor
     static func centeredFrame(_ frame: CGRect, in view: UIView) -> CGRect {
-        guard #available(iOS 27.1, *), let window = (view as? UIWindow) ?? view.window, let scene = window.windowScene,
-              window.bounds.height > window.bounds.width,
-              view.traitCollection.horizontalSizeClass == .compact,
-              view.traitCollection.verticalBarEdge != .unspecified,
+#if DDG_HAS_DUO_LAYOUT_SDK
+        guard #available(iOS 27.1, *), let window = closedWindow(for: view), let scene = window.windowScene,
               !frame.isEmpty else { return frame }
 
         let windowBounds = view.convert(window.bounds, from: window)
         let centered = frame.offsetBy(dx: windowBounds.midX - frame.midX, dy: 0)
         guard centered.minX >= view.bounds.minX, centered.maxX <= view.bounds.maxX,
-              !view.reservedRegions(kind: .occlusion).contains(where: { $0.frame.intersects(centered) }) else { return frame }
+              clearsSystemUI(centered, in: view, scene: scene) else { return frame }
+        return centered
+#else
+        return frame
+#endif
+    }
 
+#if DDG_HAS_DUO_LAYOUT_SDK
+    @available(iOS 27.1, *)
+    @MainActor
+    private static func clearsSystemUI(_ frame: CGRect, in view: UIView, scene: UIWindowScene) -> Bool {
+        guard !view.reservedRegions(kind: .occlusion).contains(where: { $0.frame.intersects(frame) }) else { return false }
         if let statusFrame = scene.statusBarManager?.statusBarFrame,
            !statusFrame.isEmpty,
-           scene.coordinateSpace.convert(statusFrame, to: view).intersects(centered) {
-            return frame
+           scene.coordinateSpace.convert(statusFrame, to: view).intersects(frame) {
+            return false
         }
-        return centered
+        return true
+    }
+#endif
+
+    @MainActor
+    private static func closedWindow(for view: UIView) -> UIWindow? {
+        guard let window = (view as? UIWindow) ?? view.window,
+              window.bounds.height > window.bounds.width,
+              view.traitCollection.horizontalSizeClass == .compact,
+              hasVerticalBar(in: view) else { return nil }
+        return window
     }
 }
 
@@ -761,12 +822,14 @@ extension MainViewFactory {
 
     private func constrainAIChatTabChatHeaderContainer() {
         let container = coordinator.aiChatTabChatHeaderContainer!
+        let headerTop = container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
+        coordinator.constraints.aiChatHeaderTop = headerTop
 
         coordinator.constraints.contentContainerTopToAIChatHeader = coordinator.contentContainer.topAnchor
             .constraint(equalTo: container.bottomAnchor)
 
         NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            headerTop,
             container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])

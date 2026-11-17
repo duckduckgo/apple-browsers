@@ -994,7 +994,7 @@ extension MainViewController {
         guard #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled,
               currentTab?.isAITab == true,
               viewCoordinator.aiChatTabChatHeaderContainer?.isHidden == false else { return 0 }
-        return view.safeAreaInsets.top + AIChatTabChatHeaderView.preferredHeight
+        return viewCoordinator.aiChatHeaderTopInset + AIChatTabChatHeaderView.preferredHeight
     }
 
     func aiTabChromeBackgroundState(for renderState: UTIRenderState) -> UnifiedInputChromeBackgroundState {
@@ -1680,7 +1680,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidRequestAppMenu() {
-        onMenuPressed()
+        let sourceView = unifiedToggleInputCoordinator?.viewController.aiTabMenuButton ?? viewCoordinator.menuToolbarButton
+        onMenuPressed(sourceView)
     }
 
     func unifiedToggleInputDidRequestAppMenuLongPress() {

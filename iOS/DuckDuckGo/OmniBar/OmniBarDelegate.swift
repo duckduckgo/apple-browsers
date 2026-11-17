@@ -44,7 +44,7 @@ protocol OmniBarDelegate: AnyObject {
 
     func onPrivacyIconPressed(isHighlighted: Bool)
     
-    func onMenuPressed()
+    func onMenuPressed(_ sourceView: UIView)
 
     func onBookmarksPressed()
 
@@ -192,7 +192,7 @@ extension OmniBarDelegate {
     func onAIChatSuggestionsActivateHighlight() -> Bool { false }
     func onAIChatSuggestionsClearHighlight() { }
 
-    func onMenuPressed() {
+    func onMenuPressed(_ sourceView: UIView) {
         
     }
 

@@ -19,7 +19,8 @@
 #include "BuildNumber.xcconfig"
 
 DDG_SLOW_COMPILE_CHECK_THRESHOLD = 100
-OTHER_SWIFT_FLAGS[config=Debug][arch=*][sdk=*] = $(inherited) -Xfrontend -warn-long-expression-type-checking=$(DDG_SLOW_COMPILE_CHECK_THRESHOLD) -Xfrontend -warn-long-function-bodies=$(DDG_SLOW_COMPILE_CHECK_THRESHOLD)
+OTHER_SWIFT_FLAGS = $(inherited) $(DDG_DUO_LAYOUT_SWIFT_FLAG)
+OTHER_SWIFT_FLAGS[config=Debug][arch=*][sdk=*] = $(inherited) $(DDG_DUO_LAYOUT_SWIFT_FLAG) -Xfrontend -warn-long-expression-type-checking=$(DDG_SLOW_COMPILE_CHECK_THRESHOLD) -Xfrontend -warn-long-function-bodies=$(DDG_SLOW_COMPILE_CHECK_THRESHOLD)
 
 COMPILATION_CACHE_ENABLE_CACHING = YES
 

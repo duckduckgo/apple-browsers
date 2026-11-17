@@ -401,22 +401,40 @@ final class BrowserToolbarView: UIView {
                 bottom: 0,
                 right: Self.floatingEmbeddedConcentricInset)
         }
-        let frame = floatingCapsuleFrame(in: host, height: buttonsHeightConstraint.constant)
-        return UIEdgeInsets(top: 0, left: frame.minX - host.bounds.minX, bottom: 0, right: host.bounds.maxX - frame.maxX)
+        let insets = floatingOuterInsets(in: host)
+        guard centersNewTabPageChrome, DuoLayout.hasVerticalBar(in: host) else { return insets }
+        let frame = floatingCapsuleFrame(in: host, height: buttonsHeightConstraint.constant, insets: insets)
+        let offset = frame.minX - host.bounds.minX - insets.left
+        return UIEdgeInsets(top: 0, left: insets.left + offset, bottom: 0, right: insets.right - offset)
     }
 
     @available(iOS 26.0, *)
-    private static func floatingOuterInsets(in host: UIView, isEmbedded: Bool) -> UIEdgeInsets {
-        let guideInsets = horizontalGuideInsets(in: host)
-        let safeArea = host.safeAreaInsets
+    private func floatingOuterInsets(in host: UIView) -> UIEdgeInsets {
+        Self.floatingOuterInsets(guideInsets: Self.horizontalGuideInsets(in: host),
+                                 safeArea: host.safeAreaInsets,
+                                 isEmbedded: usesEmbeddedBottomChromeMetrics,
+                                 hasVerticalBar: DuoLayout.hasVerticalBar(in: host))
+    }
+
+    /// Resting outer insets of the standard buttons-only toolbar.
+    @available(iOS 26.0, *)
+    static func floatingStandaloneOuterInsets(in host: UIView) -> UIEdgeInsets {
+        floatingOuterInsets(guideInsets: horizontalGuideInsets(in: host), safeArea: .zero, isEmbedded: false, hasVerticalBar: false)
+    }
+
+    static func floatingOuterInsets(guideInsets: (left: CGFloat, right: CGFloat),
+                                    safeArea: UIEdgeInsets,
+                                    isEmbedded: Bool,
+                                    hasVerticalBar: Bool) -> UIEdgeInsets {
         let physicalInset = isEmbedded ? floatingEmbeddedHorizontalInset : floatingPhysicalInset(guideInsets: guideInsets)
 
-        if safeArea.left != safeArea.right {
+        if hasVerticalBar, safeArea.left != safeArea.right {
             // Center within the usable area and keep equal padding inside both safe area edges.
             let padding = max(physicalInset, guideInsets.left - safeArea.left, guideInsets.right - safeArea.right)
             return UIEdgeInsets(top: 0, left: safeArea.left + padding, bottom: 0, right: safeArea.right + padding)
         }
         if isEmbedded {
+            guard hasVerticalBar else { return floatingEmbeddedBarOuterInsets }
             let inset = max(safeArea.left, physicalInset)
             return UIEdgeInsets(top: 0, left: inset, bottom: 0, right: inset)
         }
@@ -666,7 +684,7 @@ final class BrowserToolbarView: UIView {
         contentStackTrailingConstraint.constant = -currentContentStackHorizontalInset
         let buttonRowPadding = currentButtonRowHorizontalPadding
         let managesHorizontalSafeArea = isFloatingStyleEnabled && centersNewTabPageChrome && layoutHost.map { host in
-            insets.left < host.safeAreaInsets.left || insets.right < host.safeAreaInsets.right
+            DuoLayout.hasVerticalBar(in: host) && (insets.left < host.safeAreaInsets.left || insets.right < host.safeAreaInsets.right)
         } == true
         if buttonStack.insetsLayoutMarginsFromSafeArea == managesHorizontalSafeArea {
             buttonStack.insetsLayoutMarginsFromSafeArea = !managesHorizontalSafeArea
@@ -1056,7 +1074,7 @@ final class BrowserToolbarView: UIView {
         let height = hasEmbeddedOmnibar ? panelHeight : buttonsHeightConstraint.constant
 
         if #available(iOS 26.0, *) {
-            return floatingCapsuleFrame(in: view, height: height)
+            return floatingCapsuleFrame(in: view, height: height, insets: floatingOuterInsets(in: view))
         }
         let insets = currentBarOuterInsets
         let safeBottom = view.safeAreaInsets.bottom
@@ -1067,11 +1085,11 @@ final class BrowserToolbarView: UIView {
     }
 
     @available(iOS 26.0, *)
-    private func floatingCapsuleFrame(in view: UIView, height: CGFloat) -> CGRect {
-        let insets = Self.floatingOuterInsets(in: view, isEmbedded: usesEmbeddedBottomChromeMetrics)
-        let frame = CGRect(x: view.bounds.minX + insets.left, y: view.bounds.maxY - floatingBottomMargin - height,
+    private func floatingCapsuleFrame(in view: UIView, height: CGFloat, insets: UIEdgeInsets) -> CGRect {
+        let bottomMargin = usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomMargin : floatingBottomMargin
+        let frame = CGRect(x: view.bounds.minX + insets.left, y: view.bounds.maxY - bottomMargin - height,
                            width: max(0, view.bounds.width - insets.left - insets.right), height: height)
-        return centersNewTabPageChrome ? NewTabPageHorizontalLayout.centeredFrame(frame, in: view) : frame
+        return centersNewTabPageChrome ? DuoLayout.centeredFrame(frame, in: view) : frame
     }
 
     /// The glass panel's height at rest.

@@ -509,16 +509,14 @@ final class BrowserToolbarViewTests: XCTestCase {
         container.layoutIfNeeded()
 
         let frame = sut.restingCapsuleFrame(in: container)
-        let safeArea = container.safeAreaInsets
         let guideInsets = BrowserToolbarView.horizontalGuideInsets(in: container)
-        XCTAssertEqual(frame.midX, (safeArea.left + container.bounds.width - safeArea.right) / 2, accuracy: 0.01)
-        XCTAssertGreaterThanOrEqual(frame.minX, guideInsets.left - 0.01)
-        XCTAssertLessThanOrEqual(frame.maxX, container.bounds.width - guideInsets.right + 0.01)
+        let physical = BrowserToolbarView.floatingEmbeddedHorizontalInset
 
-        // The status area can move to the opposite side without a change to the view's size.
-        container.stubbedSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: concentric + 39)
-        let updatedFrame = sut.restingCapsuleFrame(in: container)
-        XCTAssertEqual(updatedFrame.midX, (container.bounds.width - container.safeAreaInsets.right) / 2, accuracy: 0.01)
+        // Each edge sits at its own guide, or at the physical inset when the guide is smaller.
+        XCTAssertEqual(frame.minX, max(guideInsets.left, physical), accuracy: 0.01)
+        XCTAssertEqual(container.bounds.width - frame.maxX, max(guideInsets.right, physical), accuracy: 0.01)
+        // The wide leading guide must not pull the opposite edge inside the physical inset.
+        XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, physical - 0.01)
     }
 
     func testWhenConcentricGuideHasResolvedThenThePillTucksInFromTheGuide() {

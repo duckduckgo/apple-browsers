@@ -45,6 +45,9 @@
          location = "group:LlamaRuntime">
       </FileRef>
       <FileRef
+         location = "group:LocalModels">
+      </FileRef>
+      <FileRef
          location = "group:Networking">
       </FileRef>
       <FileRef

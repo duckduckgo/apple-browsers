@@ -3,6 +3,7 @@
   {"path": "DDGError"},
   {"path": "ICSParser"},
   {"path": "LlamaRuntime"},
+  {"path": "LocalModels"},
   {"path": "Infrastructure/DesignResourcesKit"},
   {
     "path": "Infrastructure/SystemFrameworksExtensions",

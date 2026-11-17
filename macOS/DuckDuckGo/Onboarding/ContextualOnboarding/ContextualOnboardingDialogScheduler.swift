@@ -26,14 +26,16 @@ enum ContextualOnboardingDialogUpdate: Equatable {
     case show(ContextualDialogType)
     /// Remove the dialog on screen, if any.
     case hide
-    /// Leave the screen as it is.
-    case keep
 }
 
 /// Decides when a tab view asks for a contextual onboarding dialog. One per `BrowserTabViewController`.
-/// The tab view keeps drawing the dialog and handling its buttons, and applies the updates returned here.
+/// The tab view tells it what happened, keeps drawing the dialog and handling its buttons,
+/// and applies the updates sent through `onUpdate`.
 @MainActor
 final class ContextualOnboardingDialogScheduler {
+
+    /// Set by the tab view; receives every update the scheduler decides.
+    var onUpdate: (ContextualOnboardingDialogUpdate) -> Void = { _ in }
 
     private let dialogProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     private let featureFlagger: FeatureFlagger
@@ -55,31 +57,38 @@ final class ContextualOnboardingDialogScheduler {
     }
 
     /// A navigation finished in the tab on screen: moves onboarding forward, unless it's a reload.
-    func navigationDidFinish(in tab: Tab?) -> ContextualOnboardingDialogUpdate {
+    func navigationDidFinish(in tab: Tab?) {
         // A reload removes the dialog without asking for a new one.
         if tab == lastTab && tab?.url == lastURL && lastURL != nil {
-            return .hide
+            onUpdate(.hide)
+            return
         }
         lastURL = tab?.url
         lastTab = tab
-        guard canShowDialog(), let tab else { return .hide }
-        return update(showing: dialogProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo))
+        guard canShowDialog(), let tab else {
+            onUpdate(.hide)
+            return
+        }
+        send(dialogProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo))
     }
 
     /// The window became key; `displayed` is the dialog on screen, if any.
-    func windowDidBecomeKey(tab: Tab?, displayed: ContextualDialogType?) -> ContextualOnboardingDialogUpdate {
-        guard !isInPopUpWindow(), !wasDismissed, dialogProvider.state != .onboardingCompleted else { return .keep }
+    func windowDidBecomeKey(tab: Tab?, displayed: ContextualDialogType?) {
+        guard !isInPopUpWindow(), !wasDismissed, dialogProvider.state != .onboardingCompleted else { return }
         // Re-showing the same dialog would restart its typewriter animation.
         let expected = tab.flatMap { dialogProvider.lastDialogForTab($0) }
-        if displayed != nil && displayed == expected { return .keep }
-        return showLastDialog(in: tab)
+        if displayed != nil && displayed == expected { return }
+        showLastDialog(in: tab)
     }
 
     /// Shows again the last dialog of this tab, without moving onboarding forward.
     /// Only the tab it was shown on gets it back, so a new window doesn't repeat it.
-    func showLastDialog(in tab: Tab?) -> ContextualOnboardingDialogUpdate {
-        guard canShowDialog(), let tab else { return .hide }
-        return update(showing: dialogProvider.lastDialogForTab(tab))
+    func showLastDialog(in tab: Tab?) {
+        guard canShowDialog(), let tab else {
+            onUpdate(.hide)
+            return
+        }
+        send(dialogProvider.lastDialogForTab(tab))
     }
 
     /// The selected tab changed. Counts as dismissing the dialog.
@@ -100,9 +109,12 @@ final class ContextualOnboardingDialogScheduler {
         return !isInPopUpWindow()
     }
 
-    private func update(showing dialog: ContextualDialogType?) -> ContextualOnboardingDialogUpdate {
-        guard let dialog else { return .hide }
+    private func send(_ dialog: ContextualDialogType?) {
+        guard let dialog else {
+            onUpdate(.hide)
+            return
+        }
         wasDismissed = false
-        return .show(dialog)
+        onUpdate(.show(dialog))
     }
 }

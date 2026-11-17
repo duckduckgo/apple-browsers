@@ -28,12 +28,15 @@ import Testing
 struct ContextualOnboardingDialogSchedulerTests {
 
     private let provider = StubDialogProvider()
+    private let sent = SentUpdates()
     let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.contextualOnboarding.rawValue: true])
 
     func makeScheduler(isInPopUpWindow: Bool = false) -> ContextualOnboardingDialogScheduler {
-        ContextualOnboardingDialogScheduler(dialogProvider: provider,
-                                            featureFlagger: featureFlagger,
-                                            isInPopUpWindow: { isInPopUpWindow })
+        let scheduler = ContextualOnboardingDialogScheduler(dialogProvider: provider,
+                                                            featureFlagger: featureFlagger,
+                                                            isInPopUpWindow: { isInPopUpWindow })
+        scheduler.onUpdate = { [sent] in sent.updates.append($0) }
+        return scheduler
     }
 
     // MARK: - Navigation finished
@@ -44,7 +47,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.nextDialog = .tryASite
         let tab = await Tab(content: .url(try #require(URL(string: "https://example.com")), credential: nil, source: .ui))
 
-        #expect(makeScheduler().navigationDidFinish(in: tab) == .show(.tryASite))
+        makeScheduler().navigationDidFinish(in: tab)
+
+        #expect(sent.updates == [.show(.tryASite)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -53,7 +58,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.nextDialog = nil
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler().navigationDidFinish(in: tab) == .hide)
+        makeScheduler().navigationDidFinish(in: tab)
+
+        #expect(sent.updates == [.hide])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -62,10 +69,12 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.nextDialog = .tryASite
         let tab = await Tab(content: .url(try #require(URL(string: "https://example.com")), credential: nil, source: .ui))
         let scheduler = makeScheduler()
-        _ = scheduler.navigationDidFinish(in: tab)
+        scheduler.navigationDidFinish(in: tab)
         #expect(provider.dialogTypeForTabCallCount == 1)
 
-        #expect(scheduler.navigationDidFinish(in: tab) == .hide)
+        scheduler.navigationDidFinish(in: tab)
+
+        #expect(sent.updates == [.show(.tryASite), .hide])
         #expect(provider.dialogTypeForTabCallCount == 1)
     }
 
@@ -77,9 +86,11 @@ struct ContextualOnboardingDialogSchedulerTests {
         let tab = await Tab(content: .url(url, credential: nil, source: .ui))
         let otherTab = await Tab(content: .url(url, credential: nil, source: .ui))
         let scheduler = makeScheduler()
-        _ = scheduler.navigationDidFinish(in: tab)
+        scheduler.navigationDidFinish(in: tab)
 
-        #expect(scheduler.navigationDidFinish(in: otherTab) == .show(.tryASite))
+        scheduler.navigationDidFinish(in: otherTab)
+
+        #expect(sent.updates == [.show(.tryASite), .show(.tryASite)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -88,7 +99,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.nextDialog = .tryASearch
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler(isInPopUpWindow: true).navigationDidFinish(in: tab) == .hide)
+        makeScheduler(isInPopUpWindow: true).navigationDidFinish(in: tab)
+
+        #expect(sent.updates == [.hide])
         #expect(provider.dialogTypeForTabCallCount == 0)
     }
 
@@ -99,7 +112,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.nextDialog = .tryASearch
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler().navigationDidFinish(in: tab) == .hide)
+        makeScheduler().navigationDidFinish(in: tab)
+
+        #expect(sent.updates == [.hide])
         #expect(provider.turnOffFeatureCallCount == 1)
     }
 
@@ -111,7 +126,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.lastDialogForTabStub = .subscriptionUpsell
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler().showLastDialog(in: tab) == .show(.subscriptionUpsell))
+        makeScheduler().showLastDialog(in: tab)
+
+        #expect(sent.updates == [.show(.subscriptionUpsell)])
         #expect(provider.dialogTypeForTabCallCount == 0)
     }
 
@@ -123,7 +140,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.lastDialogForTabStub = .tryASite
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil) == .show(.tryASite))
+        makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil)
+
+        #expect(sent.updates == [.show(.tryASite)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -132,7 +151,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.lastDialogForTabStub = .tryASite
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite) == .keep)
+        makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite)
+
+        #expect(sent.updates.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -141,7 +162,9 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.lastDialogForTabStub = .tryFireButton
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite) == .show(.tryFireButton))
+        makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite)
+
+        #expect(sent.updates == [.show(.tryFireButton)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -158,7 +181,9 @@ struct ContextualOnboardingDialogSchedulerTests {
             scheduler.dialogDismissed()
         }
 
-        #expect(scheduler.windowDidBecomeKey(tab: tab, displayed: nil) == .keep)
+        scheduler.windowDidBecomeKey(tab: tab, displayed: nil)
+
+        #expect(sent.updates.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -169,9 +194,10 @@ struct ContextualOnboardingDialogSchedulerTests {
         let scheduler = makeScheduler()
         scheduler.dialogDismissed()
 
-        _ = scheduler.showLastDialog(in: tab)
+        scheduler.showLastDialog(in: tab)
+        scheduler.windowDidBecomeKey(tab: tab, displayed: nil)
 
-        #expect(scheduler.windowDidBecomeKey(tab: tab, displayed: nil) == .show(.tryASite))
+        #expect(sent.updates == [.show(.tryASite), .show(.tryASite)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -181,8 +207,15 @@ struct ContextualOnboardingDialogSchedulerTests {
         provider.lastDialogForTabStub = .tryASite
         let tab = await Tab(content: .newtab)
 
-        #expect(makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil) == .keep)
+        makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil)
+
+        #expect(sent.updates.isEmpty)
     }
+}
+
+/// Collects what the scheduler sends through `onUpdate`.
+private final class SentUpdates {
+    var updates: [ContextualOnboardingDialogUpdate] = []
 }
 
 /// Keeps "next dialog" and "last dialog for this tab" apart, so tests can tell which one was asked.

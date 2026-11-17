@@ -62,26 +62,28 @@ public final class ModelStore: @unchecked Sendable {
                 continuation.finish(throwing: error)
                 return
             }
+            lock.lock()
+            defer { lock.unlock() }
+            // Checked under the lock, so an install of the same id can't finish between this check and the next.
             if isInstalled(bundle.id) {
                 continuation.yield(1)
                 continuation.finish()
                 return
             }
-
-            lock.lock()
-            defer { lock.unlock() }
             guard running[bundle.id] == nil else {
                 continuation.finish(throwing: ModelStoreError.alreadyInstalling(bundle.id))
                 return
             }
             let task = Task {
+                var failure: Error?
                 do {
                     try await self.performInstall(bundle, policy: policy) { continuation.yield($0) }
-                    continuation.finish()
                 } catch {
-                    continuation.finish(throwing: Task.isCancelled ? CancellationError() : error)
+                    failure = Task.isCancelled ? CancellationError() : error
                 }
+                // Freed before the stream ends, so a caller that retries as soon as its loop ends isn't told it's still running.
                 self.lock.withLock { _ = self.running.removeValue(forKey: bundle.id) }
+                continuation.finish(throwing: failure)
             }
             running[bundle.id] = task
             continuation.onTermination = { termination in

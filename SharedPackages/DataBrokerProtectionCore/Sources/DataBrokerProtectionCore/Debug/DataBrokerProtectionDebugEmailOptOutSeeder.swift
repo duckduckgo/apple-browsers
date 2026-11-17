@@ -55,6 +55,39 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
         self.brokerURLs = brokerURLs
     }
 
+    /// Made-up person, so a seeded dashboard never sends a real opt-out.
+    public static let testProfile = DataBrokerProtectionProfile(names: [.init(firstName: "Jamie", lastName: "Seedtest")],
+                                                               addresses: [.init(city: "Austin", state: "TX")],
+                                                               phones: [],
+                                                               birthYear: 1985)
+
+    /// Opens the dashboard straight on results: saves the test profile when none exists,
+    /// marks every scan as done and pushes the next scan out, then adds the email opt-out records.
+    @discardableResult
+    public func seedDashboard(now: Date = Date()) async throws -> [String] {
+        if try database.fetchProfile() == nil {
+            try await database.save(Self.testProfile)
+        }
+        try markAllScansDone(now: now)
+        return try seed(now: now)
+    }
+
+    private func markAllScansDone(now: Date) throws {
+        let scannedDate = Calendar.current.date(byAdding: .day, value: -1, to: now) ?? now
+        let deferredScanDate = Calendar.current.date(byAdding: .day, value: Self.scanDeferralDays, to: now)
+
+        let unscanned = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
+            .filter { !$0.profileQuery.deprecated && $0.scanJobData.lastRunDate == nil }
+
+        for queryData in unscanned {
+            guard let brokerId = queryData.dataBroker.id, let profileQueryId = queryData.profileQuery.id else { continue }
+            try database.add(HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted, date: scannedDate))
+            try database.add(HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound, date: scannedDate))
+            try database.updateLastRunDate(scannedDate, brokerId: brokerId, profileQueryId: profileQueryId)
+            try database.updatePreferredRunDate(deferredScanDate, brokerId: brokerId, profileQueryId: profileQueryId)
+        }
+    }
+
     @discardableResult
     public func seed(now: Date = Date()) throws -> [String] {
         let queryData = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)

@@ -85,6 +85,12 @@ final public class DataBrokerProtectionViewController: UIViewController {
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.uiDelegate = self
         webView.navigationDelegate = self
+        #if DEBUG
+        // Lets Safari Web Inspector on a Mac open the dashboard on a phone, to read logs or clear its storage.
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        #endif
         return webView
     }()
 

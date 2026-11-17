@@ -870,6 +870,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     public func seedEmailOptOutTestRecords() throws -> [String] {
         try DataBrokerProtectionDebugEmailOptOutSeeder(database: vaultResources().database).seed()
     }
+
+    /// A developer's Debug build opens the dashboard on results, with no profile to type and no scan to wait for.
+    func seedEmailOptOutTestDashboard() async throws -> [String] {
+        try await DataBrokerProtectionDebugEmailOptOutSeeder(database: vaultResources().database).seedDashboard()
+    }
 #endif
 
     private var canStartDebugServer: Bool {
@@ -1037,13 +1042,22 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
 
     public func dataBrokerProtectionViewController(freeScanEntryPoint: FreemiumDBPEntryPoint?) -> DataBrokerProtectionViewController {
         // Ship review build: point the dashboard at the dev box and add the test records, so testers set nothing up.
-        // A developer's own Debug build keeps the Custom Web URL from the debug screen.
+        // A developer's Debug build takes the dashboard address from DBP_DASHBOARD_URL when it is launched with one.
         let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
-#if !DEBUG
+#if DEBUG
+        if let dashboardURL = ProcessInfo.processInfo.environment["DBP_DASHBOARD_URL"] {
+            webUISettings.setCustomURL(dashboardURL)
+            webUISettings.setURLType(.custom)
+        }
+#else
         webUISettings.setCustomURL(Self.shipReviewDashboardURL)
         webUISettings.setURLType(.custom)
 #endif
+#if DEBUG
+        Task { _ = try? await seedEmailOptOutTestDashboard() }
+#else
         _ = try? seedEmailOptOutTestRecords()
+#endif
 
         return DataBrokerProtectionViewController(authenticationDelegate: self,
                                                   databaseDelegate: self,

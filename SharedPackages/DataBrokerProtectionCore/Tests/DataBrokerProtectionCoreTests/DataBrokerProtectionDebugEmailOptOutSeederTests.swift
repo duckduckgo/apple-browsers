@@ -81,6 +81,20 @@ final class DataBrokerProtectionDebugEmailOptOutSeederTests: XCTestCase {
         }
     }
 
+    func testSeedDashboard_marksEveryScanDoneAndKeepsTheSavedProfile() async throws {
+        _ = try temporaryDatabase.saveBroker(fixture: "valid-child-broker")
+        let savedLastName = try XCTUnwrap(temporaryDatabase.database.fetchProfile()?.names.first?.lastName)
+
+        let seeded = try await makeSeeder().seedDashboard()
+
+        let allQueryData = try temporaryDatabase.database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
+        let progress = DBPUIInitialScanState(from: allQueryData).scanProgress
+        XCTAssertEqual(seeded, ["fakebroker0.com"])
+        XCTAssertGreaterThan(progress.totalScans, 0)
+        XCTAssertEqual(progress.currentScans, progress.totalScans)
+        XCTAssertEqual(try temporaryDatabase.database.fetchProfile()?.names.first?.lastName, savedLastName)
+    }
+
     private func makeSeeder() -> DataBrokerProtectionDebugEmailOptOutSeeder {
         DataBrokerProtectionDebugEmailOptOutSeeder(database: temporaryDatabase.database, brokerURLs: ["fakebroker0.com"])
     }

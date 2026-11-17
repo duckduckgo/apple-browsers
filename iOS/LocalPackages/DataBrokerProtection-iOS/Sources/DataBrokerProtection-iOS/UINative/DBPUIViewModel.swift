@@ -297,7 +297,8 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
         }
     }
 
-    // Ship review build: a device without Mail gets the Simulate Send alert, with no switch to turn on.
+    // Ship review build: a phone or Simulator with no Mail account still shows the email action,
+    // and gets the Simulate Send alert. A phone with Mail opens the real draft.
     private var isCanSendEmailForcedForDebug: Bool {
         true
     }

@@ -128,6 +128,11 @@ extension TabViewController: AITabController {
         aiChatContentHandler.submitOpenChatProtectionAction()
     }
 
+    /// Asks the Duck.ai page to open a chat in place; `nil` when it can't take the request or doesn't answer in time.
+    func openChatInPage(chatId: String) async -> AIChatOpenChatOutcome? {
+        await aiChatContentHandler.openChat(chatId: chatId)
+    }
+
     /// Reloads the full mode AI Chat tab if this is an AI tab.
     func reloadFullModeAIChatIfNeeded() {
         if isAITab {

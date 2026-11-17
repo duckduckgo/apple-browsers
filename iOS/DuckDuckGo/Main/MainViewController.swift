@@ -6599,6 +6599,12 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+        recordChatHistorySelection()
+        loadChatFromHistory(url)
+    }
+
+    /// Ends the instrumentation a chat pick closes and fires its entry pixel, whether the chat then loads or opens in place.
+    func recordChatHistorySelection() {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadPreviousChat)
 
@@ -6610,6 +6616,9 @@ extension MainViewController: OmniBarDelegate {
             unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         ) == .openInNewTab
         fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
+    }
+
+    func loadChatFromHistory(_ url: URL) {
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url) { $0.duckAIEntrySource = .chatHistoryOpenChat }
     }

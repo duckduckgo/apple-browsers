@@ -99,10 +99,28 @@ extension MainViewController {
             .setChatListFireButtonAvailable(hasChats)
     }
 
+    /// Duck.ai opens the chat in place; the URL load is the fallback when the page can't.
     fileprivate func openChatFromIPadChatListSidebar(chatId: String) {
-        guard currentTab?.url?.duckAIChatID != chatId else { return }
+        guard let tab = currentTab, tab.url?.duckAIChatID != chatId else { return }
         duckAIInputFocus.forget()
-        onChatHistorySelected(url: aiChatSettings.aiChatURL.withChatID(chatId))
+        iPadChatListSidebarState.pendingChatOpen?.cancel()
+        let url = aiChatSettings.aiChatURL.withChatID(chatId)
+        guard tab.isAITab else {
+            onChatHistorySelected(url: url)
+            return
+        }
+        recordChatHistorySelection()
+        iPadChatListSidebarState.pendingChatOpen = Task { @MainActor [weak self, weak tab] in
+            let outcome = await tab?.openChatInPage(chatId: chatId)
+            guard !Task.isCancelled, let self, let tab, tab === self.currentTab else { return }
+            guard outcome == .opened else {
+                self.loadChatFromHistory(url)
+                return
+            }
+            // No page load follows to take the stamp.
+            tab.tabModel.duckAIEntrySource = .chatHistoryOpenChat
+            tab.tabModel.discardDuckAIEntrySourceAwaitingPageLoad()
+        }
     }
 }
 
@@ -110,6 +128,7 @@ extension MainViewController {
 final class IPadChatListSidebarState {
     fileprivate(set) var sidebar: IPadChatListSidebar?
     fileprivate(set) var isOpen = false
+    fileprivate var pendingChatOpen: Task<Void, Never>?
 }
 
 /// Owns the list and answers its requests on behalf of `MainViewController`.

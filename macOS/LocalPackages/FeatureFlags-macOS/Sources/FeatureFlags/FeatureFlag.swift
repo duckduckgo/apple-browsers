@@ -506,10 +506,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Enables the Bookmark Toolbar ("Show Bookmarks Bar?") promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667616?focus=true
-    case promoQueueBookmarkToolbarPromo
-
     /// Enables the Sync Favicons ("Download Missing Icons?") promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667610?focus=true
     case promoQueueSyncFaviconsPromo
@@ -1050,8 +1046,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueueBookmarkToolbarPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkToolbarPromo))
         case .promoQueueSyncFaviconsPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncFaviconsPromo))
         case .promoQueueAutofillToolbarPinningPromo:

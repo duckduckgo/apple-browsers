@@ -14,7 +14,6 @@ appId: com.duckduckgo.mobile.ios
 - evalScript: "${output.watchOnYoutubeLabel = 'Watch on YouTube'}"
 - evalScript: "${output.watchInDuckPlayerLabel = 'Watch In Duck Player'}"
 - evalScript: "${output.youtubeDomain = 'youtube.com'}"
-- evalScript: "${output.youtubeSignIn = 'Sign In'}"
 - evalScript: "${output.youtubeLogo = 'YouTube Home'}"
 - evalScript: "${output.dontShowLabel = \"Don't Show\"}"
 - evalScript: "${output.videosTabLabel = 'Videos'}"

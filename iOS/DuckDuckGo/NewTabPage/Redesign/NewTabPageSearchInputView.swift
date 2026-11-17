@@ -49,6 +49,7 @@ struct NewTabPageSearchInputView: View {
                                         onActivate: onActivate,
                                         onVoiceSearch: onVoiceSearch,
                                         aiChatMenu: aiChatMenu)
+                .padding(.horizontal, Metrics.fieldHorizontalInset)
                 .frame(height: Metrics.fieldHeight)
         }
         .background(RedesignedNewTabPageCardBackground())
@@ -173,7 +174,8 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 private enum Metrics {
     static let horizontalMargin: CGFloat = 16
     static let cardPadding: CGFloat = 8
-    static let fieldHeight: CGFloat = 64
+    static let fieldHeight: CGFloat = 74
+    static let fieldHorizontalInset: CGFloat = 5
     static let toggleHeight: CGFloat = 40
 }
 

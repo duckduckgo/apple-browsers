@@ -22,6 +22,8 @@ import Foundation
 ///
 /// An install downloads into `root/.staging`, checks each file's size and sha256, runs the policy's `process`,
 /// then moves the whole folder to `root/<id>` in one rename. A bundle is either fully installed or absent.
+///
+/// Use one store per `root`: a new store clears `root/.staging`, and running installs are tracked per store.
 public final class ModelStore: @unchecked Sendable {
 
     private struct Record: Codable {

@@ -33,12 +33,18 @@ public protocol BrowserToolPermissionStoring: AnyObject {
 
     var storedDecisions: [String: BrowserToolPermissionState] { get }
     func clearAll()
+
+    /// Whether an `auto` tool follows a stored decision, as set from Settings. Otherwise it always runs.
+    var appliesDecisionsToAutoTools: Bool { get }
 }
 
 public extension BrowserToolPermissionStoring {
 
+    var appliesDecisionsToAutoTools: Bool { false }
+
     func effectiveState(for tool: any BrowserTool) -> BrowserToolPermissionState {
-        let state = state(forToolNamed: tool.name) ?? tool.permissionMode.defaultState
+        let stored = tool.permissionMode == .auto && !appliesDecisionsToAutoTools ? nil : state(forToolNamed: tool.name)
+        let state = stored ?? tool.permissionMode.defaultState
         return tool.asksEveryTime && state == .allow ? .ask : state
     }
 }

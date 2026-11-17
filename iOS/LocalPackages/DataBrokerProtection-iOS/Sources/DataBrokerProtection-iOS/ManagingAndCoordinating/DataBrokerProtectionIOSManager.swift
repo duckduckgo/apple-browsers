@@ -1038,7 +1038,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionViewControllerProvider {
-    static let shipReviewDashboardURL = "https://euw-dev1.duckduckgo.com/dbp"
+    static let shipReviewDashboardURL = "https://euw-dev1.duckduckgo.com/dbp#debug"
 
     public func dataBrokerProtectionViewController(freeScanEntryPoint: FreemiumDBPEntryPoint?) -> DataBrokerProtectionViewController {
         // Ship review build: point the dashboard at the dev box and add the test records, so testers set nothing up.
@@ -1050,8 +1050,11 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
             webUISettings.setURLType(.custom)
         }
 #else
-        webUISettings.setCustomURL(Self.shipReviewDashboardURL)
-        webUISettings.setURLType(.custom)
+        // Only the first time: after that the tester's own pick on the debug screen wins.
+        if webUISettings.customURL == nil {
+            webUISettings.setCustomURL(Self.shipReviewDashboardURL)
+            webUISettings.setURLType(.custom)
+        }
 #endif
 #if DEBUG
         Task { _ = try? await seedEmailOptOutTestDashboard() }

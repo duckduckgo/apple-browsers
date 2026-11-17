@@ -25,6 +25,7 @@ import FeatureFlags_iOS
 import WebExtensions
 import WebKit
 @_spi(Testing) import PixelKit
+@_spi(Testing) import Persistence
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -261,7 +262,8 @@ final class RulesCompilationPolicyTests: XCTestCase {
             XCTAssertTrue(firing.actualFireCalls.isEmpty)
             let readyAssets = ContentBlockingUpdating.NewContent(
                 rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
-                sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()), duckAiNativeStorageHandler: nil)
+                sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()), duckAiNativeStorageHandler: nil,
+                sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()))
             if rulesPreparedDuringExtensions {
                 let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
                 let installed = expectation(description: "Rules installed while extension still pending")
@@ -425,7 +427,8 @@ final class RulesCompilationPolicyTests: XCTestCase {
         let subscription = controller.$contentBlockingAssets.compactMap { $0 }.first().sink { _ in installed.fulfill() }
         defer { subscription.cancel() }
         assets.send(.init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
-                          sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()), duckAiNativeStorageHandler: nil))
+                          sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()), duckAiNativeStorageHandler: nil,
+                          sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())))
         await fulfillment(of: [installed], timeout: 5)
         return tab
     }

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import PixelKit
 import WebExtensions
 import WebKit
 
@@ -37,35 +38,45 @@ final class NativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
     private let limitationProvider: () -> NativeMessagingLimitationProviding?
     private let alertPresenter: WebExtensionAlertPresenterProtocol
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: PixelKitFiring?
 
     init(
         limitationProvider: @escaping () -> NativeMessagingLimitationProviding?,
         alertPresenter: WebExtensionAlertPresenterProtocol,
-        windowControllersManager: WindowControllersManagerProtocol
+        windowControllersManager: WindowControllersManagerProtocol,
+        pixelFiring: PixelKitFiring? = PixelKit.shared
     ) {
         self.limitationProvider = limitationProvider
         self.alertPresenter = alertPresenter
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
     }
 
     func explain(_ context: WKWebExtensionContext) async {
+        await explain(context, source: .permissionRequest)
+    }
+
+    func explainOnActionClick(_ context: WKWebExtensionContext) async {
+        guard context.webExtension.requestedPermissions.contains(.nativeMessaging) else { return }
+        await explain(context, source: .toolbarClick)
+    }
+
+    private func explain(_ context: WKWebExtensionContext, source: WebExtensionPixel.NativeMessagingAlertSource) async {
         let identifier = context.uniqueIdentifier
         guard let limitationProvider = limitationProvider(),
               limitationProvider.hasHitNativeMessagingLimitation(identifier: identifier),
               !limitationProvider.isNativeMessagingAlertSuppressed(identifier: identifier) else { return }
 
+        let pixelExtension = limitationProvider.nativeMessagingPixelExtension(identifier: identifier)
+        pixelFiring?.fire(WebExtensionPixel.nativeMessagingAlertShown(extension: pixelExtension, source: source), frequency: .dailyAndCount)
         switch await alertPresenter.present(.nativeMessagingUnavailable(for: context.webExtension)) {
         case .confirmed(isChecked: true):
             limitationProvider.suppressNativeMessagingAlert(identifier: identifier)
         case .secondary:
+            pixelFiring?.fire(WebExtensionPixel.nativeMessagingAlertLearnMoreClicked(extension: pixelExtension), frequency: .dailyAndCount)
             windowControllersManager.show(url: .ddgLearnMore, tabId: nil, source: .ui, newTab: true, selected: true)
         case .confirmed(isChecked: false), .cancelled:
             break
         }
-    }
-
-    func explainOnActionClick(_ context: WKWebExtensionContext) async {
-        guard context.webExtension.requestedPermissions.contains(.nativeMessaging) else { return }
-        await explain(context)
     }
 }

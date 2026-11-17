@@ -149,6 +149,9 @@ public enum WebExtensionPixelEvent {
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
+    /// The first time an extension tries to talk to an app on the Mac in a build that can't allow it,
+    /// such as the App Store build. Sent again only if the extension is reinstalled.
+    case nativeMessagingBlocked(extension: WebExtensionPixelExtension)
 }
 
 /// How many tabs have been silent since the extension last answered anything.

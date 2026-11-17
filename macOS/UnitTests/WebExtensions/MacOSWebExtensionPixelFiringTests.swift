@@ -37,6 +37,19 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         XCTAssertTrue(call.includeAppVersionParameter)
     }
 
+    func testNativeMessagingBlockedIsSentOnceWithTheExtension() throws {
+        let pixels = PixelKitMock()
+
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.nativeMessagingBlocked(extension: .catalog(.onePassword)))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        XCTAssertEqual(call.pixel.name, "web_extension_native_messaging_blocked_macos")
+        XCTAssertEqual(call.pixel.namePrefix, .none)
+        XCTAssertEqual(call.frequency, .standard)
+        XCTAssertEqual(call.pixel.parameters, ["extension": "onePassword"])
+    }
+
     func testUpdatePixelsUseOnlyAllowedParameters() throws {
         for pixelExtension in WebExtensionPixelExtension.allCases {
             var cases: [(WebExtensionPixelEvent, String, [String: String])] = [

@@ -1459,6 +1459,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    public func nativeMessagingPixelExtension(identifier: String) -> WebExtensionPixelExtension {
+        pixelExtension(for: installedExtension(identifier: identifier)?.storeIdentity)
+    }
+
+    @MainActor
     public func suppressNativeMessagingAlert(identifier: String) {
         guard let nativeMessagingLimitationStore, let key = nativeMessagingLimitationKey(for: identifier) else { return }
         nativeMessagingLimitationStore.suppressAlert(extensionKey: key)
@@ -1471,6 +1476,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
               !nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key) else { return }
         nativeMessagingLimitationStore.recordLimitation(extensionKey: key)
         NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
+        pixelFiring.fire(.nativeMessagingBlocked(extension: nativeMessagingPixelExtension(identifier: extensionContext.uniqueIdentifier)))
     }
 
     /// The store ID, so the state survives updates, or the installation ID for extensions from elsewhere.

@@ -220,6 +220,7 @@ private final class StubWebExtensionManager: WebExtensionManaging {
     @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { false }
     @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
     @MainActor func suppressNativeMessagingAlert(identifier: String) {}
+    @MainActor func nativeMessagingPixelExtension(identifier: String) -> WebExtensionPixelExtension { .other }
     @MainActor func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }

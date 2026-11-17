@@ -966,8 +966,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Failsafe for upgrading only CPM before launch load and carrying its origin to the replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
     case cpmUpgradeBeforeLoad
-    /// Controls native messaging between web extensions and host apps on macOS.
-    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

@@ -104,9 +104,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
     case webExtensionStateRestorationGate
 
-    /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
-    case webExtensionNativeMessaging
-
     /// Turns Bitwarden on or off. While off, an installed Bitwarden is disabled but kept with its data, and the
     /// Debug menu hides Install Bitwarden. Turning the flag back on doesn't re-enable Bitwarden; the user does.
     /// Follows Bitwarden's extensions catalog entry, which also controls installing Bitwarden.
@@ -825,8 +822,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
         case .cpmUpgradeBeforeLoad:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad), category: .webExtensions)
-        case .webExtensionNativeMessaging:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
         case .webExtensionBitwarden:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
         case .webExtensionOnePassword:

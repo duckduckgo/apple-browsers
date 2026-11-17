@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import FoundationExtensions
 import SwiftUI
@@ -52,6 +53,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
+    let withdrawal: SubscriptionWithdrawalModel
+    private var withdrawalCancellable: AnyCancellable?
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -186,11 +189,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     @MainActor
     func openStoreCancellation() async {
-        await manageAppleSubscription()
-        // Force a refetch so the status reflects any change made in the App Store, and update Settings with it.
-        _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
-        guard state.subscriptionInfo?.status == .notAutoRenewable else { return }
-        cancellationInstrumentation.appStoreSubscriptionCancelled()
+        await manageAppleSubscription(entry: .cancellation)
     }
 
     /// Handles navigation to plans page based on subscription platform
@@ -239,7 +238,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          locale: Locale = .current,
-         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
+         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation(),
+         withdrawalInstrumentation: SubscriptionWithdrawalInstrumenting = SubscriptionWithdrawalInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
@@ -249,6 +249,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
+        self.withdrawal = SubscriptionWithdrawalModel(subscriptionManager: subscriptionManager,
+                                                      featureFlagger: featureFlagger,
+                                                      locale: locale,
+                                                      instrumentation: withdrawalInstrumentation)
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             wideEvent: wideEvent)
@@ -258,6 +262,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
         setupNotificationObservers()
+        withdrawalCancellable = withdrawal.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
     }
 
     private var dateFormatter = {
@@ -305,12 +311,20 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                                                                                                  loadingIndicator: false)
             let (_, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
+            async let withdrawalEligibility = await self.fetchWithdrawalEligibility()
+
             // Reload remote subscription and email state
             async let reloadedEmail = await self.fetchAndUpdateAccountEmail(forceRefresh: true)
             async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: true,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
-            _ = await (reloadedEmail, reloadedSubscription)
+            _ = await (reloadedEmail, reloadedSubscription, withdrawalEligibility)
         }
+    }
+
+    @MainActor
+    private func fetchWithdrawalEligibility() async {
+        guard let subscription = state.subscriptionInfo else { return }
+        await withdrawal.fetchEligibility(for: subscription)
     }
 
     @MainActor
@@ -371,11 +385,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         switch platform {
         case .apple:
             Task {
-                await manageAppleSubscription()
-                // Refetch after the App Store sheet
-                if isAppleSubscriptionWithCancellationFlowEnabled {
-                    _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
-                }
+                await manageAppleSubscription(entry: .manage)
             }
         case .google:
             displayGoogleView(true)
@@ -607,13 +617,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     // MARK: -
 
-    @MainActor private func manageAppleSubscription() async {
+    @MainActor private func manageAppleSubscription(entry: SubscriptionCancellationEntry) async {
         Logger.subscription.log("Managing Apple Subscription")
-        if state.subscriptionInfo?.isActive ?? false {
+        if let subscriptionBefore = state.subscriptionInfo, subscriptionBefore.isActive {
             let url = subscriptionManager.url(for: .manageSubscriptionsInAppStore)
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 do {
                     try await AppStore.showManageSubscriptions(in: windowScene)
+                    await refetchAndDetectCancellation(since: subscriptionBefore, entry: entry)
                 } catch {
                     self.openURL(url)
                 }
@@ -621,6 +632,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                 self.openURL(url)
             }
         }
+    }
+
+    @MainActor private func refetchAndDetectCancellation(since subscriptionBefore: DuckDuckGoSubscription, entry: SubscriptionCancellationEntry) async {
+        // Force a refetch so the status reflects any change made in the App Store, and update Settings with it.
+        _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
+        guard subscriptionBefore.status == .autoRenewable,
+              state.subscriptionInfo?.status == .notAutoRenewable else { return }
+        cancellationInstrumentation.appStoreSubscriptionCancelled(entry: entry, subscription: subscriptionBefore)
     }
 
     private func manageStripeSubscription() async {

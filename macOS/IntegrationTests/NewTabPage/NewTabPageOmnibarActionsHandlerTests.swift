@@ -23,6 +23,7 @@ import AIChat
 import Common
 import FoundationExtensions
 import Combine
+import PixelKit
 import PrivacyConfig
 
 final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
@@ -37,11 +38,13 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     private var featureFlagger: MockFeatureFlagger!
 
     private var firedPixels: [String] = []
+    private var firedEvents: [PixelKit.Event] = []
 
     @MainActor
     override func setUp() {
         autoreleasepool {
             firedPixels = []
+            firedEvents = []
             featureFlagger = MockFeatureFlagger(featuresStub: ["aiChatNativeTermsOfService": true])
             termsUserDefaults = UserDefaults(suiteName: String(describing: Self.self))
             termsUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
@@ -65,7 +68,10 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                 ),
                 isShiftPressed: { false },
                 isCommandPressed: { false },
-                firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
+                firePixel: { [weak self] event in
+                    self?.firedPixels.append(event.name)
+                    self?.firedEvents.append(event)
+                }
             )
             tab = Tab(content: .none)
             window = WindowsManager.openNewWindow(with: tab)!
@@ -75,6 +81,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     override func tearDown() {
         autoreleasepool {
             firedPixels = []
+            firedEvents = []
             promptHandler = nil
             windowControllersManager = nil
             tabsPreferences = nil
@@ -86,6 +93,13 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             window?.close()
             window = nil
         }
+    }
+
+    /// Parameters of the one `new-tab-page_prompt_submitted` fired so far.
+    private func promptSubmittedParameters() -> [String: String]? {
+        let submitted = firedEvents.filter { $0.name == NewTabPagePixel.promptSubmitted(hasPastedText: false).name }
+        XCTAssertEqual(submitted.count, 1)
+        return submitted.first?.parameters
     }
 
     @MainActor
@@ -121,17 +135,18 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, textPasted: nil, aiTermsAccepted: false)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(promptSubmittedParameters(), ["has_pasted_text": "false"])
     }
 
     @MainActor
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, textPasted: nil, aiTermsAccepted: false)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
@@ -148,6 +163,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                            reasoningEffort: "low",
                            pageContexts: nil,
                            files: nil,
+                           textPasted: nil,
                            aiTermsAccepted: false)
 
         let prompt = promptHandler.consumeData()
@@ -172,6 +188,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                            reasoningEffort: nil,
                            pageContexts: [context],
                            files: [file],
+                           textPasted: nil,
                            aiTermsAccepted: false)
 
         let prompt = promptHandler.consumeData()
@@ -188,6 +205,38 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         }
         XCTAssertEqual(query.files?.first?.fileName, "doc.pdf")
         XCTAssertEqual(query.files?.first?.mimeType, "application/pdf")
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithPastedText_ThenPromptCarriesIt() {
+        handler.submitChat("summarize",
+                           target: .sameTab,
+                           modelId: nil,
+                           images: nil,
+                           mode: nil,
+                           toolChoice: nil,
+                           reasoningEffort: nil,
+                           pageContexts: nil,
+                           files: nil,
+                           textPasted: [NewTabPageDataModel.OmnibarPromptPastedText(content: "long paste")],
+                           aiTermsAccepted: false)
+
+        guard case .query(let query) = promptHandler.consumeData()?.tool else {
+            return XCTFail("Expected a query prompt")
+        }
+        XCTAssertEqual(query.attachments.textPasted, [AIChatNativePrompt.NativePromptPastedText(content: "long paste")])
+        XCTAssertEqual(promptSubmittedParameters(), ["has_pasted_text": "true"])
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithEmptyPastedText_ThenPromptOmitsIt() {
+        handler.submitChat("summarize", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, textPasted: [], aiTermsAccepted: false)
+
+        guard case .query(let query) = promptHandler.consumeData()?.tool else {
+            return XCTFail("Expected a query prompt")
+        }
+        XCTAssertNil(query.attachments.textPasted)
+        XCTAssertEqual(promptSubmittedParameters(), ["has_pasted_text": "false"])
     }
 
     // MARK: - Terms of Service
@@ -220,7 +269,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     @MainActor
     private func submitChat(aiTermsAccepted: Bool) {
-        handler.submitChat("duckduckgo", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: aiTermsAccepted)
+        handler.submitChat("duckduckgo", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, textPasted: nil, aiTermsAccepted: aiTermsAccepted)
     }
 
     private var termsStore: DuckAiTermsOfServiceStore {

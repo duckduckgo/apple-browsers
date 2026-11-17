@@ -299,6 +299,7 @@ final class NativeMessagingHostSessionTests: XCTestCase {
 
     private func makeSession(executable: URL) -> NativeMessagingHostSession {
         NativeMessagingHostSession(hostName: "com.duckduckgo.test.host",
+                                   extensionIdentifier: "test-extension",
                                    executable: executable,
                                    callerOrigin: Self.callerOrigin)
     }

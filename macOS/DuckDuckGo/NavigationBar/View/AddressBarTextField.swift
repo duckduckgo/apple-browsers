@@ -129,6 +129,11 @@ final class AddressBarTextField: NSTextField {
         allowsEditingTextAttributes = true
         super.delegate = self
 
+        // Without a content type, AppKit's AutoFill guesses the field may want a one-time code and flashes an empty panel on focus.
+        if #available(macOS 14.0, *) {
+            contentType = .URL
+        }
+
         registerForDraggedTypes([.string, .URL, .fileURL])
     }
 

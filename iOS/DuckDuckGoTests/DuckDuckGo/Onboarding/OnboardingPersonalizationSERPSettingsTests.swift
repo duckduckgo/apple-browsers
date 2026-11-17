@@ -33,56 +33,6 @@ struct OnboardingPersonalizationSERPSettingsTests {
         return sut
     }
 
-    // MARK: - Safe Search (Search step: On = Moderate, Off = Off)
-
-    @Test("Safe search defaults to Moderate (enabled) when nothing is stored")
-    func safeSearchDefaultsToModerate() {
-        // GIVEN
-        let sut = makeSUT()
-
-        // THEN
-        #expect(sut.safeSearch == .moderate)
-        #expect(sut.isSafeSearchEnabled)
-    }
-
-    @Test("Enabling safe search sets Moderate")
-    func enablingSafeSearchSetsModerate() {
-        // GIVEN
-        let sut = makeSUT()
-
-        // WHEN
-        sut.isSafeSearchEnabled = true
-
-        // THEN
-        #expect(sut.safeSearch == .moderate)
-        #expect(sut.isSafeSearchEnabled)
-    }
-
-    @Test("Disabling safe search sets Off")
-    func disablingSafeSearchSetsOff() {
-        // GIVEN
-        let sut = makeSUT()
-
-        // WHEN
-        sut.isSafeSearchEnabled = false
-
-        // THEN
-        #expect(sut.safeSearch == .off)
-        #expect(!sut.isSafeSearchEnabled)
-    }
-
-    @Test("A pre-existing Strict safe search reads as enabled")
-    func strictSafeSearchReadsAsEnabled() {
-        // GIVEN
-        let sut = makeSUT()
-
-        // WHEN
-        sut.safeSearch = .strict
-
-        // THEN - the two-state onboarding toggle treats anything other than Off as "on"
-        #expect(sut.isSafeSearchEnabled)
-    }
-
     // MARK: - Search Assist (No AI step: On = Sometimes, Off = Never)
 
     @Test("Search Assist defaults to Sometimes (enabled) when nothing is stored")

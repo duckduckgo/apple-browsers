@@ -336,6 +336,7 @@ public extension DesignSystemImages {
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked16) }
             public static var profileLock: DesignSystemImage { .init(resource: .profileLock16) }
             public static var qr: DesignSystemImage { .init(resource: .QR_16) }
+            public static var qrScan: DesignSystemImage { .init(resource: .qrScan16) }
             public static var recipe: DesignSystemImage { .init(resource: .recipe16) }
             public static var reload: DesignSystemImage { .init(resource: .reload16) }
             public static var screenShare: DesignSystemImage { .init(resource: .screenShare16) }

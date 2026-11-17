@@ -349,7 +349,7 @@ final class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     func fire(_ event: OnboardingSharedPixelEvent,
               source: OnboardingPixelParameter.Source?,
               flow: OnboardingPixelParameter.Flow?,
-              variant: OnboardingPixelParameter.Variant?) {
+              variants: OnboardingPixelParameter.Variants) {
         eventsReceived.append(event)
     }
 

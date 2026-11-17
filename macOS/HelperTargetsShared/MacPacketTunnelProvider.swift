@@ -614,6 +614,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: Bundle.keychainType,
                    tokenHandlerProvider: subscriptionManager,
+                   tokenSource: .fromOptions,
                    debugEvents: debugEvents,
                    providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,
@@ -643,7 +644,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // macOS-specific options
         try loadVPNSettings(from: options)
-        try await loadTokenContainer(from: options)
     }
 
     private func loadVPNSettings(from options: StartupOptions) throws {
@@ -655,35 +655,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         case .reset:
             // VPN settings are required - if we're in reset case, it means they were missing or invalid
             throw TunnelError.settingsMissing
-        }
-    }
-
-    private func loadTokenContainer(from options: StartupOptions) async throws {
-        let tokenHandler = tokenHandlerProvider
-        Logger.networkProtection.log("Load token container")
-        switch options.tokenContainer {
-        case .set(let newTokenContainer):
-            Logger.networkProtection.log("Set new token container")
-            do {
-                try await tokenHandler.adoptToken(newTokenContainer)
-            } catch {
-                Logger.networkProtection.fault("Error adopting token container: \(error, privacy: .public)")
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-        case .useExisting:
-            Logger.networkProtection.log("Use existing token container")
-            do {
-                try await tokenHandler.getToken()
-            } catch {
-                Logger.networkProtection.fault("Error loading token container: \(error, privacy: .public)")
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-        case .reset:
-            Logger.networkProtection.log("Reset token")
-            // This case should in theory not be possible, but it's ideal to have this in place
-            // in case an error in the controller on the client side allows it.
-            try await tokenHandler.removeToken()
-            throw TunnelError.tokenReset
         }
     }
 

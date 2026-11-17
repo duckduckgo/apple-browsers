@@ -145,6 +145,7 @@ struct DebugScreensView: View {
         .searchable(text: $model.filter, prompt: "Filter")
         .navigationTitle("Debug")
         .applyBackground()
+        .accessibilityIdentifier("Debug.List")
     }
 }
 
@@ -176,12 +177,13 @@ struct DebugScreensListView: View {
                         togglePinButton(screen)
                     }
 
-                case .view(let title, _):
+                case .view(let title, _, _):
                     NavigationLink(destination: LazyView(model.buildView(screen))) {
                         SettingsCellView(
                             label: title
                         )
                     }
+                    .accessibilityIdentifier(ifPresent: screen.accessibilityIdentifier)
                     .swipeActions {
                         togglePinButton(screen)
                     }

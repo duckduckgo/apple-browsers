@@ -101,11 +101,25 @@ public actor DataManager: DataManaging {
 
     @discardableResult
     func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) throws -> Int {
-        var dataSet = self.dataSet(for: key)
-        dataSet.apply(changeSet)
-
         let dataType = key.dataType
         let fileName = fileNameProvider(dataType)
+
+        // Remove the dataset from `store` before changing it.
+        // Datasets are copy-on-write: while `store` also references one, the first change copies all of it,
+        // which can crash on low-memory devices (EXC_BREAKPOINT in `_NativeSet.copy`).
+        // Safe because no other call on the actor can run in between deleting the dataset and putting it back so no callers can find it missing.
+        var dataSet: DataKey.DataSet
+        if changeSet.replace {
+            // Full replacement: release the old dataset first, so old and new aren't in memory together.
+            store[dataType] = nil
+            dataSet = DataKey.DataSet(revision: 0, items: [])
+        } else {
+            // Incremental update: load if needed, then drop `store`'s reference so `apply` changes it in place.
+            dataSet = self.dataSet(for: key)
+            store[dataType] = nil
+        }
+        dataSet.apply(changeSet)
+
         self.store[dataType] = dataSet
 
         let data: Data

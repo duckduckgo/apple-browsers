@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import EventHub
 import PrivacyConfig
 import UIKit
 import WebExtensions
@@ -37,14 +38,15 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         autoconsentPreferences: AutoconsentPreferencesProviding,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        searchTokenProvider: SearchTokenProviding? = nil
+        searchTokenProvider: SearchTokenProviding? = nil,
+        eventHub: EventHubManaging
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
         self.searchTokenProvider = searchTokenProvider
-        self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate()
+        self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {

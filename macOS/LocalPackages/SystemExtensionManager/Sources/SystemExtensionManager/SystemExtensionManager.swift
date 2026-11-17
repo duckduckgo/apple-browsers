@@ -58,6 +58,8 @@ public struct SystemExtensionPropertiesSnapshot: Equatable {
 public struct SystemExtensionManager {
 
     private static let defaultRequestTimeout: TimeInterval = 120
+    // Every VPN start runs this check before activating, so keep a stalled properties request from delaying it.
+    private static let preActivationStateCheckTimeout: TimeInterval = 10
     private static let networkExtensionSettingsExtensionPointIdentifier = "com.apple.system_extension.network_extension.extension-point"
 
     static func systemSettingsURLString(forExtensionWithIdentifier extensionBundleID: String) -> String {
@@ -103,7 +105,7 @@ public struct SystemExtensionManager {
     ///
     public func activate(waitingForUserApproval: @escaping () -> Void) async throws -> String? {
 
-        workaroundToActivateBeforeSequoia()
+        await openSystemSettingsIfAwaitingUserApproval()
 
         let activationRequest = SystemExtensionRequest.activationRequest(
             forExtensionWithIdentifier: extensionBundleID,
@@ -140,10 +142,21 @@ public struct SystemExtensionManager {
     /// For the users that don't see the alert come up more than once this should be invisible.  For users (like myself) that
     /// see the alert every single time, they'll see both the alert and system settings being opened automatically.
     ///
-    private func workaroundToActivateBeforeSequoia() {
-        if hasPendingActivationRequests() {
-            openSystemSettingsSecurity()
+    private func openSystemSettingsIfAwaitingUserApproval() async {
+        guard let properties = await propertySnapshots(requestTimeout: min(requestTimeout, Self.preActivationStateCheckTimeout)),
+              Self.shouldOpenSystemSettingsBeforeActivation(for: properties) else {
+            return
         }
+
+        openSystemSettingsSecurity()
+    }
+
+    /// Decides from the raw properties rather than `activationState(from:)`, whose ranking reports
+    /// `.uninstalling` when a deactivated copy awaits reboot alongside a new copy awaiting approval.
+    /// An enabled copy means any waiting entry is stale, so Settings must stay closed.
+    ///
+    static func shouldOpenSystemSettingsBeforeActivation(for properties: [SystemExtensionPropertiesSnapshot]) -> Bool {
+        !properties.contains(where: \.isEnabled) && properties.contains(where: \.isAwaitingUserApproval)
     }
 
     public func deactivate() async throws {
@@ -159,29 +172,38 @@ public struct SystemExtensionManager {
     }
 
     public func activationState() async -> SystemExtensionActivationState {
+        guard let properties = await propertySnapshots(requestTimeout: requestTimeout) else {
+            return .unknown
+        }
+
+        return Self.activationState(from: properties)
+    }
+
+    /// - Returns: `nil` when the properties request fails, times out or is cancelled.
+    ///
+    private func propertySnapshots(requestTimeout: TimeInterval) async -> [SystemExtensionPropertiesSnapshot]? {
         do {
             let properties = try await SystemExtensionPropertiesRequest.properties(
                 forExtensionWithIdentifier: extensionBundleID,
                 manager: manager,
                 requestTimeout: requestTimeout
             )
-            let snapshots = properties.map {
+            return properties.map {
                 SystemExtensionPropertiesSnapshot(
                     isEnabled: $0.isEnabled,
                     isAwaitingUserApproval: $0.isAwaitingUserApproval,
                     isUninstalling: $0.isUninstalling
                 )
             }
-            return Self.activationState(from: snapshots)
         } catch is CancellationError {
-            return .unknown
+            return nil
         } catch {
             Logger.systemExtensionManager.error("""
             Failed to query system extension state
               bundleID:    \(extensionBundleID, privacy: .public)
               description: \(error.localizedDescription, privacy: .public)
             """)
-            return .unknown
+            return nil
         }
     }
 
@@ -208,32 +230,6 @@ public struct SystemExtensionManager {
     @available(macOS 15.1, *)
     public func makeActivationStateObserver(onStateChange: @escaping () -> Void) -> SystemExtensionActivationStateObserver {
         SystemExtensionActivationStateObserver(extensionBundleID: extensionBundleID, onStateChange: onStateChange)
-    }
-
-    // MARK: - Activation: Checking if there are pending requests
-
-    /// Checks if there are pending activation requests for the system extension.
-    ///
-    /// This implementation should work well for all macOS 11+ releases.  A better implementation for macOS 12+
-    /// would be to use a properties request, but that option requires bigger changes and some rethinking of these
-    /// classes which I'd rather avoid right now.  In short this solution was picked as a quick solution with the best
-    /// ROI to avoid getting blocked.
-    ///
-    private func hasPendingActivationRequests() -> Bool {
-        let task = Process()
-        let pipe = Pipe()
-
-        task.standardOutput = pipe
-        task.launchPath = "/bin/bash" // Specify the shell to use
-        task.arguments = ["-c", "$(which systemextensionsctl) list | $(which egrep) -c '(?:\(extensionBundleID)).+(?:activated waiting for user)+'"]
-
-        task.launch()
-        task.waitUntilExit()
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        return (Int(output ?? "0") ?? 0) > 0
     }
 
     private func openSystemSettingsSecurity() {

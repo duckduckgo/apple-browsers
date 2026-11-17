@@ -489,6 +489,21 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
+    func testResetBrokerVersionsAndETagsClearsOnlyThoseColumns() throws {
+        let (freshProvider, url) = try createFreshTestVault()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let broker = BrokerDB.random(name: "Broker", removedAt: nil)
+        _ = try freshProvider.save(broker)
+
+        try freshProvider.resetBrokerVersionsAndETags()
+
+        let resetBroker = try XCTUnwrap(freshProvider.fetchAllBrokers().first)
+        XCTAssertEqual(resetBroker.version, "0")
+        XCTAssertEqual(resetBroker.eTag, "")
+        XCTAssertEqual(resetBroker.url, broker.url)
+        XCTAssertEqual(resetBroker.json, broker.json)
+    }
+
     func testHasScanHistoryEvents_whenScanHistoryEventsExist_returnsTrue() throws {
         XCTAssertTrue(try sut.hasScanHistoryEvents())
     }

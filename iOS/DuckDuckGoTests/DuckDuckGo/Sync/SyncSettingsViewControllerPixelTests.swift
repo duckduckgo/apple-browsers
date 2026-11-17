@@ -232,7 +232,7 @@ final class SyncSettingsViewControllerPixelTests {
         let sources = pixelKitMock.actualFireCalls
             .filter { screenShownPixelNames.contains($0.pixel.name) }
             .map { $0.additionalParameters?["source"] }
-        #expect(sources == ["promotion_bookmarks_another_device", "promotion_bookmarks_another_device"])
+        #expect(sources == ["promotion_bookmarks_multi_device", "promotion_bookmarks_multi_device"])
     }
 
     @available(iOS 16, macOS 13, *)

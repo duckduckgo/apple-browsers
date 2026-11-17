@@ -26,13 +26,6 @@ public enum BrowserToolPermissionState: String, Equatable, Sendable {
     case deny
 }
 
-/// The `choice` values the permission prompt offers, and the only ones native accepts back.
-public enum BrowserToolPermissionChoice: String, Equatable, Sendable {
-    case allowOnce
-    case alwaysAllow
-    case neverAllow
-}
-
 @MainActor
 public protocol BrowserToolPermissionStoring: AnyObject {
     func state(forToolNamed name: String) -> BrowserToolPermissionState
@@ -109,19 +102,4 @@ public final class BrowserToolPermissionStore: BrowserToolPermissionStoring {
         default: .ask
         }
     }
-}
-
-/// The permission prompt every `ask` tool poses: one required `choice`.
-public enum BrowserToolPermissionElicitation {
-
-    public static let choiceSchema: JSONValue = [
-        "type": "object",
-        "properties": [
-            "choice": [
-                "type": "string",
-                "enum": ["allowOnce", "alwaysAllow", "neverAllow"]
-            ]
-        ],
-        "required": ["choice"]
-    ]
 }

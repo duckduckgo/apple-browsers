@@ -306,7 +306,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         XCTAssertNotNil(daily, "Expected daily pixel \(dailyName)")
         XCTAssertNotNil(count, "Expected count pixel \(countName)")
 
-        if let test = daily?.parameters[PixelKit.Parameters.test] {
+        if daily?.parameters[PixelKit.Parameters.test] != nil {
             modifiedExpectedParameters[PixelKit.Parameters.test] = "1"
         }
 
@@ -340,7 +340,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         let legacyDaily = firedPixels.first(where: { $0.name == legacyDailyName })
 
         var modifiedExpectedParameters = expectedParameters
-        if let test = legacyDaily?.parameters[PixelKit.Parameters.test] {
+        if legacyDaily?.parameters[PixelKit.Parameters.test] != nil {
             modifiedExpectedParameters[PixelKit.Parameters.test] = "1"
         }
         XCTAssertNotNil(legacyDaily, "Expected legacy daily pixel \(legacyDailyName)")

@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Foundation
+import GRDB
 import SharedTestUtilities
 import XCTest
 
@@ -316,6 +317,77 @@ class BrowserProfileTests: XCTestCase {
         let hasBookmarks = profile.hasValidProfileData(for: .bookmarks)
 
         XCTAssertTrue(hasBookmarks)
+    }
+
+    func testWhenChromiumProfileHasOnlyHistory_ThenProfileIsImportable() {
+        let profileURL = profile(named: "Default")
+        let fileStore = FileStoreMock()
+        fileStore.directoryStorage[profileURL.absoluteString] = ["History"]
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL, fileStore: fileStore)
+
+        let list = DataImport.BrowserProfileList(browser: .chrome, profiles: [profile])
+
+        XCTAssertEqual(list.validImportableProfiles.map(\.profileURL), [profileURL])
+        XCTAssertTrue(profile.hasValidProfileData(for: .history))
+    }
+
+    func testWhenFirefoxProfileDataFilesAreEmpty_ThenNoDataTypeIsAvailable() {
+        let profileURL = profile(named: "gm867h0z.default")
+        let fileStore = fileStoreWithEmptyFiles(["places.sqlite", "key4.db", "logins.json"], in: profileURL)
+        fileStore.directoryStorage[profileURL.absoluteString]?.append("times.json")
+        let profile = DataImport.BrowserProfile(browser: .firefox, profileURL: profileURL, fileStore: fileStore)
+
+        let availableTypes = DataImport.DataType.allCases.filter(profile.hasValidProfileData)
+
+        XCTAssertEqual(availableTypes, [])
+    }
+
+    func testWhenChromiumProfileDataFilesAreEmpty_ThenNoDataTypeIsAvailable() {
+        let profileURL = profile(named: "Default")
+        let fileStore = fileStoreWithEmptyFiles(["Bookmarks", "History", "Login Data"], in: profileURL)
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL, fileStore: fileStore)
+
+        let availableTypes = DataImport.DataType.allCases.filter(profile.hasValidProfileData)
+
+        XCTAssertEqual(availableTypes, [])
+    }
+
+    func testWhenChromiumProfileDatabasesHaveNothingToImport_ThenNoDataTypeIsAvailable() throws {
+        let profileURL = try chromiumProfileWithEmptyDatabases()
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL)
+
+        let availableTypes = DataImport.DataType.allCases.filter(profile.hasValidProfileData)
+
+        XCTAssertNotNil(profile.validateProfileData())
+        XCTAssertEqual(availableTypes, [])
+    }
+
+    /// Like a new Chrome profile: no saved logins, and only visits the importer skips, such as Chrome's own pages.
+    private func chromiumProfileWithEmptyDatabases() throws -> URL {
+        let profileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: profileURL) }
+
+        try DatabaseQueue(path: profileURL.appendingPathComponent("Login Data").path).write { database in
+            try database.execute(sql: "CREATE TABLE logins (signon_realm TEXT, blacklisted_by_user INTEGER)")
+        }
+        let now = Int64((Date().timeIntervalSince1970 + ChromiumHistoryReader.Constants.chromiumEpochOffset) * 1_000_000)
+        try DatabaseQueue(path: profileURL.appendingPathComponent("History").path).write { database in
+            try database.execute(sql: "CREATE TABLE urls (id INTEGER PRIMARY KEY, url TEXT)")
+            try database.execute(sql: "CREATE TABLE visits (url INTEGER, visit_time INTEGER, transition INTEGER)")
+            try database.execute(sql: "INSERT INTO urls VALUES (1, 'chrome://newtab/')")
+            try database.execute(sql: "INSERT INTO visits VALUES (1, ?, ?)", arguments: [now, ChromiumHistoryReader.Transition.chainEnd])
+        }
+        return profileURL
+    }
+
+    private func fileStoreWithEmptyFiles(_ fileNames: [String], in profileURL: URL) -> FileStoreMock {
+        let fileStore = FileStoreMock()
+        fileStore.directoryStorage[profileURL.absoluteString] = fileNames
+        for fileName in fileNames {
+            fileStore.storage[fileName] = Data()
+        }
+        return fileStore
     }
 
     private func makeThrowingFileStoreMock() -> FileStoreMock {

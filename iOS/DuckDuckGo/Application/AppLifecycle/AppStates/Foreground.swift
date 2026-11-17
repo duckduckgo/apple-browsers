@@ -57,6 +57,7 @@ struct Foreground: ForegroundHandling {
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
             isFirstForeground: true,
+            drewIdleReturnNewTabPage: stateContext.drewIdleReturnNewTabPage,
             actionToHandle: actionToHandle,
             lastBackgroundDateStorage: lastBackgroundDateStorage
         )
@@ -68,6 +69,7 @@ struct Foreground: ForegroundHandling {
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
             isFirstForeground: stateContext.didTransitionFromLaunching,
+            drewIdleReturnNewTabPage: stateContext.drewIdleReturnNewTabPage,
             actionToHandle: actionToHandle,
             lastBackgroundDateStorage: lastBackgroundDateStorage
         )
@@ -76,6 +78,7 @@ struct Foreground: ForegroundHandling {
     private init(appDependencies: AppDependencies,
                  sceneDependencies: SceneDependencies,
                  isFirstForeground: Bool,
+                 drewIdleReturnNewTabPage: Bool,
                  actionToHandle: AppAction?,
                  lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.appDependencies = appDependencies
@@ -86,16 +89,8 @@ struct Foreground: ForegroundHandling {
                                     lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
                                     isFirstForeground: isFirstForeground,
                                     hasCompletedAuthentication: sceneDependencies.authenticationService.hasCompletedAuthentication)
-        let daxDialogsManager = appDependencies.mainCoordinator.controller.daxDialogsManager
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: appDependencies.featureFlagger,
-            keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
-        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
         appReturnInstrumentation = DefaultAppReturnInstrumentation(
-            eligibilityManager: idleReturnEligibilityManager,
+            eligibilityManager: appDependencies.idleReturnEligibilityManager,
             isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
         )
         let keyboardPresenter = KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
@@ -108,7 +103,8 @@ struct Foreground: ForegroundHandling {
             userActivityHandler: appDependencies.mainCoordinator,
             keyboardPresenter: keyboardPresenter,
             launchSourceService: appDependencies.launchSourceManager,
-            idleReturnEvaluator: idleReturnEvaluator,
+            idleReturnOutcome: appDependencies.idleReturnEvaluator.evaluateReturn(),
+            drewNewTabPage: drewIdleReturnNewTabPage,
             featureFlagger: appDependencies.featureFlagger,
             idleReturnDelegate: appDependencies.mainCoordinator
         )

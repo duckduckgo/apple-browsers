@@ -929,6 +929,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
     func testManageSubscription_WhenStripePortalLoads_ReportsManageSubscriptionSheetShown() async {
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.customerPortalURL = URL(string: "https://billing.stripe.com/p/session/test")!
         let instrumentation = SubscriptionCancellationInstrumentationSpy()
         sut = makeSUT(cancellationInstrumentation: instrumentation)
         await loadSubscriptionWithoutRefresh()

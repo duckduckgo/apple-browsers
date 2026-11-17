@@ -63,6 +63,20 @@ final class JWECompactCodecTests: XCTestCase {
         XCTAssertEqual(decrypted, payload)
     }
 
+    func testWhenEncryptingThirdPartyLoginNameAndTypeThenMatchesInteroperabilityVector() throws {
+        let userId = "e2dd518f-7a8b-45f1-8478-d745b9173add"
+        let scopedPassword = try XCTUnwrap(Base64URL.decode("rUzlGqLLlbonAC_zIeh1nrCmuDsDAn6UooUUDz-6x3o"))
+        let contentEncryptionKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: userId)
+        let iv = try XCTUnwrap(Base64URL.decode("DEJLNnQw_F2048HD"))
+        let codec = JWECompactCodec()
+
+        XCTAssertEqual(Base64URL.encode(contentEncryptionKey), "i_7OWhiM4eR6nR12wKiF97pEl0q7tMFOr5dqeaepGaw")
+        XCTAssertEqual(try codec.encryptDirect(payload: Data("Julia's Phone".utf8), contentEncryptionKey: contentEncryptionKey, kid: SyncCredentialID.thirdParty, iv: iv),
+                       "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiM3BhcnR5In0..DEJLNnQw_F2048HD.L0uTWnvXt4CjsnAg6w.Ws7LZ14qhU7AcD7qqpcTqw")
+        XCTAssertEqual(try codec.encryptDirect(payload: Data("Android 18".utf8), contentEncryptionKey: contentEncryptionKey, kid: SyncCredentialID.thirdParty, iv: iv),
+                       "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiM3BhcnR5In0..DEJLNnQw_F2048HD.JFCbQXWZoIDC4g.8H3fvBS-hVrDr9GjC1439A")
+    }
+
     func testWhenDecryptingDirectTokenWithUnexpectedKidThenThrows() throws {
         let codec = JWECompactCodec()
         let contentEncryptionKey = Data(repeating: 0x2B, count: 32)

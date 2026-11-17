@@ -97,10 +97,10 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         XCTAssertEqual(setup.events.events, [.accountInfoKeyWrapSuccess])
     }
 
-    func testWhenUpgradeRunsThenTemporaryLoginUsesAIChatsScopeAndFinalNativeLoginUsesSyncScope() async throws {
+    func testWhenUpgradeRunsThenBothLoginsUseSameDeviceIDAndExpectedScopes() async throws {
         let setup = try makeSUT()
 
-        _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
+        let result = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
             recoveryCode(),
             deviceName: "Mac",
             deviceType: "desktop")
@@ -110,13 +110,18 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
             .compactMap(\.body)
         XCTAssertEqual(loginBodies.count, 2)
 
-        let temporaryLoginPayload = try decodeJSONObject(try XCTUnwrap(loginBodies.first))
+        let thirdPartyLoginPayload = try decodeJSONObject(try XCTUnwrap(loginBodies.first))
         let finalLoginPayload = try decodeJSONObject(try XCTUnwrap(loginBodies.last))
-        XCTAssertEqual(temporaryLoginPayload["scope"] as? String, "ai_chats")
+        XCTAssertEqual(thirdPartyLoginPayload["scope"] as? String, "ai_chats")
         XCTAssertEqual(finalLoginPayload["scope"] as? String, "sync")
+        let thirdPartyLoginDeviceId = try XCTUnwrap(thirdPartyLoginPayload["device_id"] as? String)
+        let finalDeviceId = try XCTUnwrap(finalLoginPayload["device_id"] as? String)
+        XCTAssertFalse(thirdPartyLoginDeviceId.isEmpty)
+        XCTAssertEqual(thirdPartyLoginDeviceId, finalDeviceId)
+        XCTAssertEqual(result.account.deviceId, thirdPartyLoginDeviceId)
     }
 
-    func testWhenUpgradeSucceedsThenTemporaryThirdPartyDeviceIsLoggedOut() async throws {
+    func testWhenUpgradeRunsThenThirdPartyLoginEncryptsDeviceNameAndTypeAsDirectJWE() async throws {
         let setup = try makeSUT()
 
         _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
@@ -126,26 +131,55 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
 
         let loginBody = try XCTUnwrap(setup.api.createRequestCallArgs.first { $0.url == setup.endpoints.login }?.body)
         let loginPayload = try decodeJSONObject(loginBody)
-        let temporaryDeviceId = try XCTUnwrap(loginPayload["device_id"] as? String)
+        let mainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: userId)
+        let codec = JWECompactCodec()
+        let encryptedName = try XCTUnwrap(loginPayload["device_name"] as? String)
+        let encryptedType = try XCTUnwrap(loginPayload["device_type"] as? String)
 
-        XCTAssertEqual(setup.account.logoutCalls.map(\.deviceId), [temporaryDeviceId])
-        XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
+        let nameSegments = encryptedName.components(separatedBy: ".")
+        let typeSegments = encryptedType.components(separatedBy: ".")
+        let expectedHeader = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiM3BhcnR5In0"
+        XCTAssertEqual(nameSegments.count, 5)
+        XCTAssertEqual(typeSegments.count, 5)
+        XCTAssertEqual(nameSegments.first, expectedHeader)
+        XCTAssertEqual(typeSegments.first, expectedHeader)
+        XCTAssertNotEqual(nameSegments.dropFirst(2).first, typeSegments.dropFirst(2).first)
+
+        XCTAssertEqual(try codec.decryptDirect(token: encryptedName, contentEncryptionKey: mainKey, expectedKid: SyncCredentialID.thirdParty), Data("Mac".utf8))
+        XCTAssertEqual(try codec.decryptDirect(token: encryptedType, contentEncryptionKey: mainKey, expectedKid: SyncCredentialID.thirdParty), Data("desktop".utf8))
     }
 
-    func testWhenTemporaryThirdPartyDeviceLogoutFailsThenUpgradeStillReturnsNativeAccount() async throws {
+    func testWhenUpgradeSucceedsThenNoLogoutIsSent() async throws {
         let setup = try makeSUT()
-        setup.account.logoutError = SyncError.unexpectedStatusCode(500)
 
-        let result = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
+        _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
             recoveryCode(),
             deviceName: "Mac",
             deviceType: "desktop")
 
-        XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
-        XCTAssertEqual(result.account.token, "native-token")
+        XCTAssertTrue(setup.account.logoutCalls.isEmpty)
     }
 
-    func testWhenUpgradeAbortsAfterTemporaryLoginThenTemporaryThirdPartyDeviceIsLoggedOut() async throws {
+    func testWhenAbortCleanupLogoutFailsThenOriginalUpgradeErrorIsPreserved() async throws {
+        let accessCredentials = [AccessCredential(id: SyncCredentialID.defaultCredential, scope: "sync", encrypted3PartyCredential: nil)]
+        let setup = try makeSUT(accessCredentials: accessCredentials)
+        setup.account.logoutError = SyncError.unexpectedStatusCode(500)
+
+        do {
+            _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(recoveryCode(), deviceName: "Mac", deviceType: "desktop")
+            XCTFail("Expected existing ddg credential to abort upgrade")
+        } catch ThirdPartyAccountUpgradeError.nativeCredentialAlreadyPresent {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        let loginBody = try XCTUnwrap(setup.api.createRequestCallArgs.first { $0.url == setup.endpoints.login }?.body)
+        let deviceId = try XCTUnwrap(decodeJSONObject(loginBody)["device_id"] as? String)
+        XCTAssertEqual(setup.account.logoutCalls.map(\.deviceId), [deviceId])
+        XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
+    }
+
+    func testWhenUpgradeAbortsAfterThirdPartyLoginThenDeviceIsLoggedOut() async throws {
         let accessCredentials = [AccessCredential(id: SyncCredentialID.defaultCredential, scope: "sync", encrypted3PartyCredential: nil)]
         let setup = try makeSUT(accessCredentials: accessCredentials)
 
@@ -160,6 +194,9 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
             XCTFail("Unexpected error: \(error)")
         }
 
+        let loginBody = try XCTUnwrap(setup.api.createRequestCallArgs.first { $0.url == setup.endpoints.login }?.body)
+        let deviceId = try XCTUnwrap(decodeJSONObject(loginBody)["device_id"] as? String)
+        XCTAssertEqual(setup.account.logoutCalls.map(\.deviceId), [deviceId])
         XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
     }
 
@@ -178,11 +215,15 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
 
         let loginCalls = setup.api.createRequestCallArgs.filter { $0.url == setup.endpoints.login }
         XCTAssertEqual(loginCalls.count, 3)
-        XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
+        let deviceIDs = try loginCalls.map { try XCTUnwrap(decodeJSONObject(XCTUnwrap($0.body))["device_id"] as? String) }
+        XCTAssertFalse(deviceIDs[0].isEmpty)
+        XCTAssertTrue(deviceIDs.allSatisfy { $0 == deviceIDs[0] })
+        XCTAssertEqual(result.account.deviceId, deviceIDs[0])
+        XCTAssertTrue(setup.account.logoutCalls.isEmpty)
         XCTAssertEqual(result.account.token, "native-token")
     }
 
-    func testWhenFinalNativeLoginKeepsFailingThenRetriesAndLogsOutTemporaryThirdPartyDevice() async throws {
+    func testWhenFinalNativeLoginKeepsFailingThenRetriesWithoutLogout() async throws {
         let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
@@ -204,10 +245,10 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
 
         let loginCalls = setup.api.createRequestCallArgs.filter { $0.url == setup.endpoints.login }
         XCTAssertEqual(loginCalls.count, 4)
-        XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
+        XCTAssertTrue(setup.account.logoutCalls.isEmpty)
     }
 
-    func testWhenFinalNativeLoginReturnsUnauthorizedThenDoesNotRetryAndLogsOutTemporaryThirdPartyDevice() async throws {
+    func testWhenFinalNativeLoginReturnsUnauthorizedThenDoesNotRetryOrLogout() async throws {
         let setup = try makeSUT(finalNativeLoginRetryDelays: [0, 0])
         setup.api.fakeRequests[setup.endpoints.login] = SequencedThrowingHTTPRequestingMock(results: [
             .success(.init(data: Data(thirdPartyLoginBody().utf8), response: makeHTTPURLResponse(statusCode: 200))),
@@ -227,7 +268,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
 
         let loginCalls = setup.api.createRequestCallArgs.filter { $0.url == setup.endpoints.login }
         XCTAssertEqual(loginCalls.count, 2)
-        XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
+        XCTAssertTrue(setup.account.logoutCalls.isEmpty)
     }
 
     func testWhenDDGCredentialAlreadyExistsThenUpgradeAborts() async throws {
@@ -340,6 +381,10 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
             XCTFail("Unexpected error: \(error)")
         }
         XCTAssertEqual(setup.events.events, [.accountInfoKeyWrapFailed(.requestFailed)])
+        let loginBody = try XCTUnwrap(setup.api.createRequestCallArgs.first { $0.url == setup.endpoints.login }?.body)
+        let deviceId = try XCTUnwrap(decodeJSONObject(loginBody)["device_id"] as? String)
+        XCTAssertEqual(setup.account.logoutCalls.map(\.deviceId), [deviceId])
+        XCTAssertEqual(setup.account.logoutCalls.map(\.token), ["third-party-token"])
     }
 
     func testWhenNativeCredentialCreationIsRateLimitedThenFiresAccountInfoWrapRateLimitFailure() async throws {

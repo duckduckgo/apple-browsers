@@ -60,7 +60,8 @@ final class AIChatBrowserToolsService {
         .listOpenTabs,
         .switchToTab,
         .readTabContent,
-        .searchHistory
+        .searchHistory,
+        .findInPage
     ]
 
     init(featureFlagger: any FeatureFlagger,
@@ -89,11 +90,13 @@ final class AIChatBrowserToolsService {
         let scopeProvider: BrowserToolScopeProvider = { [weak self] context in
             self?.scope(for: context)
         }
+        let reader = BrowserToolPageContentReader()
         return [
             ListOpenTabsBrowserTool(scopeProvider: scopeProvider),
             SwitchToTabBrowserTool(scopeProvider: scopeProvider),
-            ReadTabContentBrowserTool(scopeProvider: scopeProvider, reader: BrowserToolPageContentReader()),
-            SearchHistoryBrowserTool(historyManager: historyManager, scopeProvider: scopeProvider)
+            ReadTabContentBrowserTool(scopeProvider: scopeProvider, reader: reader),
+            SearchHistoryBrowserTool(historyManager: historyManager, scopeProvider: scopeProvider),
+            FindInPageBrowserTool(scopeProvider: scopeProvider, reader: reader)
         ]
     }
 }
@@ -458,7 +461,9 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
             .aiChatBrowserToolReadTabContent
         case .searchHistory:
             .aiChatBrowserToolSearchHistory
-        case .featureEnabled, .findInPage, .highlightInPage,
+        case .findInPage:
+            .aiChatBrowserToolFindInPage
+        case .featureEnabled, .highlightInPage,
              .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks:
             nil
         }

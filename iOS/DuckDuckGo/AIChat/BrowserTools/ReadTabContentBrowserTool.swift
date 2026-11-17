@@ -104,7 +104,7 @@ final class ReadTabContentBrowserTool: BrowserTool {
         ])
     }
 
-    private static func redactedURL(_ url: String) -> String {
+    static func redactedURL(_ url: String) -> String {
         var redacted = String(url[..<(url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex)])
         if let scheme = redacted.range(of: "://") {
             let authorityEnd = redacted[scheme.upperBound...].firstIndex(of: "/") ?? redacted.endIndex

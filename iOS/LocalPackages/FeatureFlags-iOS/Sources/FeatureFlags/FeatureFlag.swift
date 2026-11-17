@@ -383,6 +383,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
     case aiChatBrowserToolSearchHistory
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolFindInPage
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218312902503176
     case aiChatContextualAttachMoreTabs
 
@@ -1017,6 +1020,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.readTabContent))
         case .aiChatBrowserToolSearchHistory:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchHistory))
+        case .aiChatBrowserToolFindInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.findInPage))
         case .aiChatBrowserToolSwitchToTab:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.switchToTab))
         case .aiChatContextualAttachMoreTabs:

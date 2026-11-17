@@ -136,6 +136,10 @@ extension Preferences {
                                   isEnabled: Binding(get: { entry.isEnabled },
                                                      set: { model.setEnabled($0, for: entry) }),
                                   isLocked: entry.isRemotelyDisabled,
+                                  allowsFireWindows: entry.hasAccessToPrivateData.map { allowed in
+                                      Binding(get: { allowed },
+                                              set: { model.setHasAccessToPrivateData($0, for: entry) })
+                                  },
                                   onDetails: { model.showDetails(for: entry) },
                                   onPublisher: { model.openPublisherPage(for: entry.listing) },
                                   onRemove: { model.remove(entry) },
@@ -270,6 +274,7 @@ extension Preferences {
         let imageLoader: RemoteMessagingImageLoading
         @Binding var isEnabled: Bool
         let isLocked: Bool
+        let allowsFireWindows: Binding<Bool>?
         let onDetails: () -> Void
         let onPublisher: () -> Void
         let onRemove: () -> Void
@@ -301,6 +306,10 @@ extension Preferences {
                 HStack(spacing: Const.optionsToSwitchSpacing) {
                     Menu {
                         Button(UserText.extensionsSettingsDetailsMenuItem, action: onDetails)
+                        if let allowsFireWindows {
+                            Toggle(UserText.webExtensionAllowFireWindows, isOn: allowsFireWindows)
+                                .disabled(isLocked)
+                        }
                         Divider()
                         Button(UserText.webExtensionRemoveMenuItem, action: onRemove)
                     } label: {

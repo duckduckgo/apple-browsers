@@ -54,7 +54,9 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
             print(val)
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 5)
+        withExtendedLifetime(cancellable) {
+            wait(for: [expectation], timeout: 5)
+        }
     }
 
     func testViewModelReturnsExpectedStrings() {

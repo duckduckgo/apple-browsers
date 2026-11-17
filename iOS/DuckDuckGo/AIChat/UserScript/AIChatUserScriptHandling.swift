@@ -156,6 +156,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
+    @MainActor func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession)
@@ -225,6 +226,15 @@ protocol AIChatUserScriptHandling: AnyObject {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            return .invalidRequest(rawParams: params)
+        }
+        guard let source else { return .failure(callId: request.callId, error: .unavailable) }
+        return await source.invokeBrowserTool(request).limitedToResultBytes()
+    }
+
 
     @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?
 
@@ -433,6 +443,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pixelFiring?.fire(DuckAiTermsOfServicePixel.duplicateAcceptanceContext(context), frequency: .dailyAndCount)
     }
 
+    /// The app's acceptance outlives the web app's record, which a Fire tab or a restored device can lack.
+    /// The page reads its records once it has this config, so the restored record is in place before then.
+    private func restoreTermsOfServiceRecordIfNeeded() {
+        guard featureFlagger.isFeatureOn(.duckAITermsOfServiceRecordRestore),
+              isNativeStorageBridgeAvailable,
+              termsOfServiceStore.hasAccepted,
+              let source = termsOfServiceWebRecordSource else { return }
+
+        let key = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        do {
+            guard !DuckAiNativeStorageConsent.isTermsOfServiceAccepted(try source.getEntry(key: key)) else { return }
+            try source.putEntry(key: key, value: "true")
+            Logger.aiChat.debug("[TermsOfService] Restored the web app's record from the app's acceptance")
+        } catch {
+            Logger.aiChat.error("[TermsOfService] Failed to restore the web app's record: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     /// Read when the page asks for the native config, before the web app writes its own acceptance.
     private func readTermsOfServicePageLoadState() -> DuckAiTermsOfServicePageLoadState {
         guard isNativeStorageBridgeAvailable, let source = termsOfServiceWebRecordSource else { return .unknown }
@@ -507,13 +535,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && isNativeChatInputAvailable
+        // Full mode also hands the chat header to native, which iPad doesn't have: its full-tab chat takes only the input.
+        let ownsIPadFullTabInput = displayMode == .fullTab && !devicePlatform.isIphone
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode || ownsIPadFullTabInput) && isNativeChatInputAvailable
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
     }
 
-    /// iPad keeps the web input on a full-tab chat, but its contextual sheet and sidebar use the native input like iPhone.
+    /// iPad's contextual sheet and sidebar always use the native input; its full-tab chat does once the iPad flag is on.
     private var isNativeChatInputAvailable: Bool {
-        unifiedToggleInputFeature.isAvailable || displayMode == .contextual
+        unifiedToggleInputFeature.isFullTabChatInputAvailable || displayMode == .contextual
     }
 
     private var supportsBrowserTabContexts: Bool {
@@ -530,10 +560,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let supportsTabContexts = supportsContextualMode || supportsBrowserTabContexts
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
+        restoreTermsOfServiceRecordIfNeeded()
         termsOfServicePageLoadState = readTermsOfServicePageLoadState()
 
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
-            && devicePlatform.isIphone
+            && (devicePlatform.isIphone || displayMode == .fullTab)
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable
         var config = AIChatNativeConfigValues(

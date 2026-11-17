@@ -685,10 +685,7 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                            isBitwardenEnabled: { [featureFlagger] in
-                                featureFlagger.isFeatureOn(.webExtensionBitwarden)
-                            }
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
@@ -1112,9 +1109,6 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Reinstall Detection")
                 .submenu(ReinstallUserDetectionDebugMenu())
-
-            NSMenuItem(title: "AppStore Updates")
-                .submenu(AppStoreUpdatesDebugMenu())
 
             if #available(macOS 13.5, *) {
                 NSMenuItem(title: "Autofill") {

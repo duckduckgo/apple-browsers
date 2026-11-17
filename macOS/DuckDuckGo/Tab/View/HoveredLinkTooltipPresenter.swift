@@ -66,7 +66,7 @@ final class HoveredLinkTooltipPresenter {
     private var windowObservers = [NSObjectProtocol]()
     private var appearanceObservation: NSKeyValueObservation?
 
-    init(hostView: NSView, backgroundColor: NSColor,
+    init(hostView: NSView, backgroundColor: NSColor, isWindowAccessible: Bool = false,
          makeWindow: () -> NSWindow = HoveredLinkTooltipPresenter.makeDefaultWindow,
          mouseLocation: @escaping () -> NSPoint = { NSEvent.mouseLocation },
          trailingInset: @escaping () -> CGFloat = { 0 },
@@ -80,10 +80,10 @@ final class HoveredLinkTooltipPresenter {
         self.animate = animate
         self.move = move
         self.schedule = schedule
-        setUpWindow(backgroundColor: backgroundColor)
+        setUpWindow(backgroundColor: backgroundColor, isWindowAccessible: isWindowAccessible)
     }
 
-    private static func makeDefaultWindow() -> NSWindow {
+    static func makeDefaultWindow() -> NSWindow {
         HoveredLinkTooltipWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: true)
     }
 
@@ -114,7 +114,7 @@ final class HoveredLinkTooltipPresenter {
         return item
     }
 
-    private func setUpWindow(backgroundColor: NSColor) {
+    private func setUpWindow(backgroundColor: NSColor, isWindowAccessible: Bool) {
         let background = NSBox(frame: .zero)
         background.boxType = .custom
         background.titlePosition = .noTitle
@@ -131,6 +131,9 @@ final class HoveredLinkTooltipPresenter {
         label.setAccessibilityIdentifier("HoveredLinkTooltip.label")
 
         window.contentView = background
+        // The tooltip only mirrors the page's hovered link, so its window stays out of the accessibility tree
+        // unless a UI test opts in.
+        window.setAccessibilityExposed(isWindowAccessible)
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false

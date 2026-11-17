@@ -99,7 +99,7 @@ final class UTIPixelReporterTests: XCTestCase {
     func testWhenReporterIsReleasedThenSubmissionKeepsOriginalAttribution() throws {
         var liveContext: UTIPixelContext? = context(surface: .addressBar, pageType: .website)
         var reporter: UTIPixelReporter? = makeReporter { liveContext }
-        weak var weakReporter = reporter
+        weak let weakReporter = reporter
         let report = try XCTUnwrap(reporter).makeTabSubmissionReporter(requestedTabCount: 1)
         liveContext = context(surface: .addressBar, pageType: .ntp)
         reporter = nil

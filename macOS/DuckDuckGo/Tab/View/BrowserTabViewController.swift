@@ -133,7 +133,6 @@ final class BrowserTabViewController: NSViewController {
     private var keyWindowSelectedTabCancellable: AnyCancellable?
     private var contentOverlayWindowResizeCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
-    private var contextualCompletionCancellable: AnyCancellable?
 
     private weak var previouslySelectedTab: Tab?
 
@@ -245,15 +244,6 @@ final class BrowserTabViewController: NSViewController {
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
-
-        contextualCompletionCancellable = onboardingDialogTypeProvider.isContextualOnboardingCompletedPublisher
-            .sink { [weak self] completed in
-                guard let self, completed,
-                      NonBlockingOnboarding(featureFlagger: self.featureFlagger).isNonBlocking,
-                      self.presentedContextualOnboardingDialogType != nil else { return }
-                self.delegate?.dismissViewHighlight()
-                self.removeExistingDialog()
-            }
     }
 
     override func loadView() {
@@ -899,23 +889,14 @@ final class BrowserTabViewController: NSViewController {
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
-        let onboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
-        if onboarding.isNonBlocking {
-            onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
-            PixelKit.fire(GeneralPixel.onboardingContextualDismissed, frequency: .uniqueByName)
-            onboardingDialogTypeProvider.turnOffFeature()
-        } else {
-            if displayedDialogType == .subscriptionUpsell,
-               onboardingDialogTypeProvider.lastDialog == displayedDialogType {
-                onboardingDialogTypeProvider.gotItPressed()
-            }
-            handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
+        if displayedDialogType == .subscriptionUpsell,
+           onboardingDialogTypeProvider.lastDialog == displayedDialogType {
+            onboardingDialogTypeProvider.gotItPressed()
         }
+        handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
-        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking,
-           onboardingDialogTypeProvider.state == .onboardingCompleted { return }
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingDialogTypeProvider.gotItPressed()
         onboardingPixelReporter.measureGotItPressed(dialogType: displayedDialogType)
@@ -1172,8 +1153,9 @@ final class BrowserTabViewController: NSViewController {
         let sidebarWidth: () -> CGFloat = { [weak self] in
             max(0, -(self?.sidebarContainerLeadingConstraint?.constant ?? 0))
         }
+        let isWindowAccessible = featureFlagger.isFeatureOn(.hoveredLinkTooltipAccessibility)
         return HoveredLinkTooltipPresenter(hostView: view, backgroundColor: NSColor(resource: .browserTabBackground),
-                                           trailingInset: sidebarWidth)
+                                           isWindowAccessible: isWindowAccessible, trailingInset: sidebarWidth)
     }
 
     func subscribeToHoveredLink(of tabViewModel: TabViewModel?) {

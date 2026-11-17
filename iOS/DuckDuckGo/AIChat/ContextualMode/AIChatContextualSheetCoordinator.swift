@@ -41,6 +41,7 @@ private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeaturePro
     let isAvailable: Bool
     let isToggleHiddenOnDuckAITab: Bool
     let isAttachmentPasteEnabled: Bool
+    let isFullTabChatInputAvailable: Bool
 }
 
 /// Delegate protocol for coordinating actions that require interaction with the browser.
@@ -112,6 +113,7 @@ final class AIChatContextualSheetCoordinator {
     private let usageContextProvider: UsageContextProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring
     private let isFireTab: Bool
     private let tabAttachmentSource: MultiTabAttachmentSource?
     static let contextualContextCollectionTimeout: TimeInterval = 5
@@ -121,6 +123,10 @@ final class AIChatContextualSheetCoordinator {
     private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
     private var sessionEffectCancellable: AnyCancellable?
+    weak var browserToolsOwner: Tab?
+    var browserToolsService: AIChatBrowserToolsService?
+    var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
+    private(set) weak var browserToolsWebViewController: AIChatContextualWebViewController?
     private var currentPageURLCancellable: AnyCancellable?
     private var didFinishURLCancellable: AnyCancellable?
     private var documentReadCancellable: AnyCancellable?
@@ -281,6 +287,7 @@ final class AIChatContextualSheetCoordinator {
          usageContextProvider: UsageContextProviding,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
@@ -307,6 +314,7 @@ final class AIChatContextualSheetCoordinator {
         self.usageContextProvider = usageContextProvider
         self.debugSettings = debugSettings
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingExperimentMetricStore = onboardingExperimentMetricStore
         self.pixelHandler = pixelHandler
         self.selectionJourneyInstrumentation = selectionJourneyInstrumentation ?? DefaultDuckAISelectionJourneyInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -902,10 +910,20 @@ final class AIChatContextualSheetCoordinator {
         startSessionTimer()
     }
 
+    func detachBrowserTools() {
+        browserToolScopeFactory = nil
+        browserToolsOwner = nil
+        browserToolsService = nil
+        browserToolsWebViewController?.detachBrowserTools()
+        browserToolsWebViewController = nil
+    }
+
     // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
     // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
     // when adding side effects to handleSheetDismissed.
     func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
+        browserToolsWebViewController?.detachBrowserTools()
+        browserToolsWebViewController = nil
         let sheetInSidebar = isSheetInSidebar ? sheetViewController : nil
         let parkedSheet = parkedSheetViewController
         parkedSheetViewController = nil
@@ -1328,7 +1346,8 @@ private extension AIChatContextualSheetCoordinator {
         let contextualUTIFeature = ContextualUnifiedToggleInputFeature(
             isAvailable: isWebUTIEnabled,
             isToggleHiddenOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
-            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            isFullTabChatInputAvailable: unifiedToggleInputFeature.isFullTabChatInputAvailable
         )
 
         let webVC = AIChatContextualWebViewController(
@@ -1355,6 +1374,7 @@ private extension AIChatContextualSheetCoordinator {
             },
             pixelHandler: pixelHandler,
             onboardingActivationRecorder: onboardingActivationRecorder,
+            onboardingExperimentMetricStore: onboardingExperimentMetricStore,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 guard self.isWebUTIEnabled else { return nil }
@@ -1371,6 +1391,10 @@ private extension AIChatContextualSheetCoordinator {
             }
         )
 
+        webVC.browserToolsOwner = browserToolsOwner
+        webVC.browserToolsService = browserToolsService
+        webVC.browserToolScopeFactory = browserToolScopeFactory
+        browserToolsWebViewController = webVC
         webVC.setAttachedSelectionsProvider { [weak self] in
             self?.sessionState.attachedSelections ?? []
         }

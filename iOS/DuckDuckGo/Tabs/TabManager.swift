@@ -37,6 +37,7 @@ import WebExtensions
 import PixelKit
 
 protocol TabManaging {
+    @MainActor var browserToolsService: AIChatBrowserToolsService { get }
     var currentTabsModel: TabsModelManaging { get }
     var allTabsModel: TabsModelReading { get }
     var currentBrowsingMode: BrowsingMode { get }
@@ -185,6 +186,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private weak var controllerPendingTerminationRecovery: TabViewController?
     let isSitePermissionsEnabled: Bool
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
+
+    @MainActor private(set) lazy var browserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger)
 
     @MainActor
     lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
@@ -364,6 +367,21 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
+    func makeBrowserToolScope(for owner: Tab) -> BrowserToolScope? {
+        let mode = owner.mode
+        guard tabsModel(for: mode).tabs.contains(where: { $0 === owner }) else { return nil }
+        return BrowserToolScope(owner: owner, source: makeTabAttachmentSource(for: owner), selectedTabID: { [weak self] in
+            self?.tabsModel(for: mode).currentTab?.uid
+        }, selectTab: { [weak self] target in
+            guard let self, self.currentBrowsingMode == .normal, target.mode == .normal,
+                  self.tabsModel(for: .normal).tabs.contains(where: { $0 === target }),
+                  let mainController = self.delegate as? MainViewController else { return false }
+            mainController.selectTab(target)
+            return self.currentTabsModel.currentTab === target
+        })
+    }
+
+    @MainActor
     func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
         let mode = tab.mode
         return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
@@ -485,6 +503,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        controller.browserToolsService = browserToolsService
+        controller.browserToolScopeFactory = { [weak self, weak tab] in
+            guard let self, let tab else { return nil }
+            return self.makeBrowserToolScope(for: tab)
+        }
         controller.tabAttachmentSource = makeTabAttachmentSource(for: tab)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
@@ -638,6 +661,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        controller.browserToolsService = browserToolsService
+        let owner = controller.tabModel
+        controller.browserToolScopeFactory = { [weak self, weak owner] in
+            guard let self, let owner else { return nil }
+            return self.makeBrowserToolScope(for: owner)
+        }
         controller.tabAttachmentSource = makeTabAttachmentSource(for: controller.tabModel)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
@@ -648,7 +677,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.applyInheritedAttribution(inheritedAttribution)
         addToCache(controller)
 
-        _ = save()
+        save()
         return controller
     }
 
@@ -657,7 +686,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
         model.insert(tab: tab, placement: placement, selectNewTab: true)
-        _ = save()
+        save()
     }
 
     @MainActor
@@ -670,7 +699,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
         tab.viewed = true
         addToCache(controller)
-        _ = save()
+        save()
         return controller
     }
 
@@ -713,7 +742,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         model.select(tab: tab)
         tabsAwaitingFirstSelection.remove(ObjectIdentifier(tab))
-        _ = save()
+        save()
         let controller = current(createIfNeeded: true)
         markAsMostRecentlyViewed(controller)
         return controller
@@ -743,7 +772,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         prepareBeforeCaching?(controller)
         addToCache(controller)
 
-        _ = save()
+        save()
         return controller
     }
 
@@ -755,7 +784,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? currentTabsModel
         model.removeTabs(tabs)
         clean(tabs: tabs, clearTabHistory: true)
-        _ = save()
+        save()
         notifyIfLastFireTabClosed(removedTabs: tabs)
     }
 
@@ -765,7 +794,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let model = tabsModel ?? self.tabsModel(for: tab.mode)
         model.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
-        _ = save()
+        save()
         notifyIfLastFireTabClosed(removedTabs: [tab])
     }
 
@@ -790,7 +819,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             model.insert(tab: newTab, placement: .replacing(tab), selectNewTab: false)
             clean(tabs: [tab], clearTabHistory: clearTabHistory)
         }
-        _ = save()
+        save()
     }
 
     @MainActor
@@ -802,6 +831,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     private func removeFromCache(_ controller: TabViewController) {
+        controller.detachBrowserTools()
         if controllerPendingTerminationRecovery === controller {
             controllerPendingTerminationRecovery = nil
         }
@@ -1046,6 +1076,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
+            browserToolsService.detachSources(ownerTabID: tab.uid)
             tab.iPadOmnibarDraft.invalidate()
             previewsSource.removePreview(forTab: tab)
             if let controller = controller(for: tab) {

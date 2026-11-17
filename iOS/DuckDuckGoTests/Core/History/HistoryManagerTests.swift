@@ -161,7 +161,7 @@ final class HistoryManagerTests: XCTestCase {
                                             isAutocompleteEnabledByUser: true,
                                             isRecentlyVisitedSitesEnabledByUser: true)
         
-        await historyManager.removeTabHistory(for: ["tab-1", "tab-2"])
+        _ = await historyManager.removeTabHistory(for: ["tab-1", "tab-2"])
         
         XCTAssertEqual(mockTabHistoryCoordinator.removeVisitsCalls.count, 1)
         XCTAssertEqual(mockTabHistoryCoordinator.removeVisitsCalls.first, ["tab-1", "tab-2"])
@@ -176,7 +176,7 @@ final class HistoryManagerTests: XCTestCase {
                                             isAutocompleteEnabledByUser: true,
                                             isRecentlyVisitedSitesEnabledByUser: true)
 
-        await historyManager.removeBrowsingHistory(tabID: "test-tab-123")
+        _ = await historyManager.removeBrowsingHistory(tabID: "test-tab-123")
 
         XCTAssertEqual(spyHistoryCoordinator.burnVisitsForTabIDCalls.count, 1)
         XCTAssertEqual(spyHistoryCoordinator.burnVisitsForTabIDCalls.first, "test-tab-123")

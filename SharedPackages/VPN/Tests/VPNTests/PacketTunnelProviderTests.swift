@@ -169,13 +169,12 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertEqual(presenter.shown, [.signedOut])
     }
 
-    func testWhenAccessIsRevokedOrTheSubscriptionExpiredThenTheEntitlementNotificationIsShown() {
+    func testWhenTheSubscriptionExpiredThenTheEntitlementNotificationIsShown() {
         let presenter = RecordingNotificationsPresenter()
 
-        PacketTunnelProvider.AuthNotification.userNeedsToOpenApp.present(with: presenter)
         PacketTunnelProvider.AuthNotification.subscriptionExpired.present(with: presenter)
 
-        XCTAssertEqual(presenter.shown, [.entitlement, .entitlement])
+        XCTAssertEqual(presenter.shown, [.entitlement])
     }
 
     func testWhenAPresenterHasNoSignedOutNotificationThenTheEntitlementNotificationIsShown() {

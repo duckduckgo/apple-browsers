@@ -405,7 +405,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private func subscriptionAccessErrorHandler(_ error: Error) async {
         switch error {
         case TunnelError.vpnAccessRevoked:
-            if await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp) {
+            if await handleAccessRevoked(dueTo: error, notification: .subscriptionExpired) {
                 await cancelTunnel(with: error)
             }
         default:
@@ -1658,7 +1658,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     enum AuthNotification {
         case subscriptionExpired
-        case userNeedsToOpenApp
         /// The tunnel couldn't start because no auth token is stored.
         case signedOut
 
@@ -1666,7 +1665,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         /// - Parameter presenter: The presenter that shows the notification.
         func present(with presenter: VPNNotificationsPresenting) {
             switch self {
-            case .subscriptionExpired, .userNeedsToOpenApp:
+            case .subscriptionExpired:
                 presenter.showEntitlementNotification()
             case .signedOut:
                 presenter.showSignedOutNotification()

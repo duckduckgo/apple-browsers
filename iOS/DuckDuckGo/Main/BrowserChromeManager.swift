@@ -288,23 +288,31 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     /// How far the page would scroll with the chrome fully hidden. Hiding hands the chrome's space to the
-    /// page, so the space the chrome still holds comes off the current range. The estimate errs high
-    /// while chrome insets lag the visibility, so a part-hidden bar is never snapped back mid-drag.
+    /// page, so the space the chrome still holds comes off the current range.
     private func hiddenChromeScrollableHeight(for scrollView: UIScrollView) -> CGFloat {
         let insets = scrollView.adjustedContentInset
         let currentScrollableHeight = scrollView.contentSize.height + insets.top + insets.bottom - scrollView.bounds.height
         guard let delegate else { return currentScrollableHeight }
 
-        let visibility = delegate.currentBarsVisibility.clamped(to: 0...1)
         let heldChromeHeight: CGFloat
         if delegate.isFloatingChromeEnabled {
-            let currentInsets = delegate.floatingWebViewObscuredInsets(for: visibility)
+            // Floating chrome changes the scroll view's insets only once a transition ends, so measure
+            // what the insets on the scroll view hold, not what the visibility says they will.
             let hiddenInsets = delegate.floatingWebViewObscuredInsets(for: 0)
-            heldChromeHeight = max(0, (currentInsets.top + currentInsets.bottom) - (hiddenInsets.top + hiddenInsets.bottom))
+            heldChromeHeight = max(0, (insets.top + insets.bottom) - (hiddenInsets.top + hiddenInsets.bottom))
         } else {
-            heldChromeHeight = delegate.barsMaxHeight * visibility
+            let visibility = delegate.currentBarsVisibility.clamped(to: 0...1)
+            heldChromeHeight = legacySlidingChromeHeight(for: delegate) * visibility
         }
         return currentScrollableHeight - heldChromeHeight
+    }
+
+    /// Classic chrome slides the toolbar, the omnibar and any tabs bar out together, and the page gets
+    /// all of that space back. `barsMaxHeight` counts only the taller bar.
+    private func legacySlidingChromeHeight(for delegate: BrowserChromeDelegate) -> CGFloat {
+        let tabsBarHeight = delegate.tabBarContainer.isHidden ? 0 : delegate.tabBarContainer.frame.height
+        let slidingHeight = delegate.toolbarHeight + delegate.omniBar.barView.expectedHeight + tabsBarHeight
+        return max(delegate.barsMaxHeight, slidingHeight)
     }
 
     func reset(animated: Bool = true) {

@@ -968,7 +968,11 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
 
-    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { .zero }
+    var floatingObscuredInsets: (CGFloat) -> UIEdgeInsets = { _ in .zero }
+
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        floatingObscuredInsets(barsVisibilityPercent)
+    }
 
     var floatingNewTabPageTopObscuredHeight: CGFloat = 0
 
@@ -1067,8 +1071,8 @@ class BarsAnimatorShortPageTests: XCTestCase {
     }
 
     func testWhenAPageWouldFitOnceBarsHideThenNoCollapseStarts() {
-        let barsMaxHeight = makeLegacyDelegate().barsMaxHeight
-        for scrollableHeight in [CGFloat(0), 10, 40, barsMaxHeight] {
+        let slidingChromeHeight = toolbarHeight + 52
+        for scrollableHeight in [CGFloat(0), 10, 40, 80, slidingChromeHeight] {
             let manager = BrowserChromeManager()
             let delegate = makeLegacyDelegate()
             manager.delegate = delegate
@@ -1131,6 +1135,19 @@ class BarsAnimatorShortPageTests: XCTestCase {
         withExtendedLifetime(manager) {}
     }
 
+    func testWhenFloatingChromeIsPartRevealedOnAShortPageThenItIsNotSnappedOpen() {
+        let (manager, delegate, scrollView) = makeManagerWithHiddenBars(scrollableHeight: 160)
+        // Floating chrome keeps the scroll view's hidden insets until a transition ends.
+        delegate.isFloatingChromeEnabled = true
+        delegate.floatingObscuredInsets = { UIEdgeInsets(top: 62 * $0, left: 0, bottom: 100 * $0, right: 0) }
+        delegate.currentBarsVisibility = 0.5
+
+        scrollView.contentSize.height += 1
+
+        XCTAssertTrue(delegate.receivedMessages.isEmpty)
+        withExtendedLifetime(manager) {}
+    }
+
     func testWhenContentShrinksUntilThePageFitsWithBarsHiddenThenBarsAreRevealed() {
         let (manager, delegate, scrollView) = makeManagerWithHiddenBars(scrollableHeight: 160)
 
@@ -1152,7 +1169,7 @@ class BarsAnimatorShortPageTests: XCTestCase {
         manager.scrollViewWillBeginDragging(scrollView)
         manager.scrollViewWillEndDragging(scrollView, withVelocity: CGPoint(x: 0, y: 1), targetContentOffset: &targetOffset)
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
-        scrollView.bounds.size.height += delegate.barsMaxHeight
+        scrollView.bounds.size.height += toolbarHeight + 52
         delegate.currentBarsVisibility = 0
         delegate.receivedMessages = []
         return (manager, delegate, scrollView)
@@ -1162,7 +1179,8 @@ class BarsAnimatorShortPageTests: XCTestCase {
         let delegate = BrowserChromeDelegateMock()
         delegate.canHideBars = true
         delegate.toolbarHeight = toolbarHeight
-        delegate.barsMaxHeight = toolbarHeight + 52
+        // As in the app: only the taller bar, though hiding gives the page both bars' space.
+        delegate.barsMaxHeight = max(toolbarHeight, 52)
         return delegate
     }
 

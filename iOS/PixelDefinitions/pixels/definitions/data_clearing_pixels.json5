@@ -61,7 +61,10 @@
         "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
         "parameters": ["appVersion", "pixelSource"]
     },
 
@@ -98,7 +101,10 @@
         "description": "Fired when user performs an action before the clearing operation completes",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
         "parameters": ["appVersion", "pixelSource"]
     },
 

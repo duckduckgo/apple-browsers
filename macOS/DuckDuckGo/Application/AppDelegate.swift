@@ -2062,6 +2062,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
+                applicationUpdateDetector: applicationUpdateDetector,
                 isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
             )
         } else {

@@ -214,7 +214,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .appRequestedCancellation:
                 return nil
             case .otherTunnelStartError:
-                return nil
+                return "Failed to start the VPN"
             }
         }
 
@@ -1004,7 +1004,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 await backOffBeforeFailingStartup()
             }
 
-            Logger.networkProtection.error("🔴 Interrupting tunnel start as preconditions weren't met: \(error)")
+            Logger.networkProtection.error("🔴 Interrupting tunnel start as preconditions weren't met: \(error, privacy: .public)")
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
@@ -1681,11 +1681,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// Tries to shut down the tunnel disabling on-demand.
     ///
     /// Not all OS versions support disabling on-demand, so if we can't disable on-demand we'll put the VPN in reasserting mode and
-    /// record the shutdown in our shutdown guard.  This was the user will notice the issue.
+    /// record the shutdown in our shutdown guard. This way the user will notice the issue.
     ///
     /// - Parameters:
     ///     - error: the error that made the shutdown necessary
-    ///     - needsToCancelTunnel: whether the tunnel needs to be cancelled, which isn't necessary during startup
     ///
     /// - Returns: `true` on success, `false` on failure
     ///

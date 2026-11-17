@@ -72,7 +72,7 @@ struct SettingsSubscriptionView: View {
     private var dataBrokerProtectionDestination: some View {
         if let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
             DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider,
-                                                             freeScanEntryPoint: settingsViewModel.hasCompletedFreemiumScan ? .appMenuPostScan : .appMenuPreScan)
+                                                             freeScanEntryPoint: settingsViewModel.hasCompletedFreemiumScan ? .appSettingsPostScan : .appSettingsPreScan)
                 .edgesIgnoringSafeArea(.bottom)
                 // Prevent an accidental downward swipe on the web view from dismissing the
                 // whole Settings modal and losing the user's place in the free-scan flow.

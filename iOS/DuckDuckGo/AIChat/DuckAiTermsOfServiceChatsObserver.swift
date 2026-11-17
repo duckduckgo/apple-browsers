@@ -21,30 +21,36 @@ import AIChat
 import Combine
 import Foundation
 import os.log
+import PixelKit
 
-/// Chats on the device mean the user accepted Duck.ai's Terms of Service before, here or on a device that
-/// synced them, so once any exist neither the native disclaimer nor the web app's card asks again.
+/// Chats on the device, or the web app's own record, mean the user accepted Duck.ai's Terms of Service
+/// before, so once either shows it neither the native disclaimer nor the web app's card asks again.
 final class DuckAiTermsOfServiceChatsObserver {
 
     private let storageHandler: DuckAiNativeObservableStorage
     private let store: DuckAiTermsOfServiceStore
     private let queue: DispatchQueue
+    private let pixelFiring: (any PixelKitFiring)?
     private var cancellable: AnyCancellable?
 
     init?(storageHandler: DuckAiNativeStorageHandling?,
           feature: DuckAiNativeTermsOfServiceFeatureProviding,
           store: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
-          queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.duckai.terms-of-service.chats", qos: .utility)) {
+          queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.duckai.terms-of-service.chats", qos: .utility),
+          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         guard feature.isAvailable, let storageHandler = storageHandler as? DuckAiNativeObservableStorage else { return nil }
         self.storageHandler = storageHandler
         self.store = store
         self.queue = queue
+        self.pixelFiring = pixelFiring
     }
 
     /// Off the main thread: the chats database opens in the background and its first read waits for it.
     func start() {
         queue.async { [weak self] in
-            guard let self, !(self.store.hasAccepted && self.isWebAcceptanceRecorded) else { return }
+            guard let self else { return }
+            self.adoptWebAcceptance()
+            guard !(self.store.hasAccepted && self.isWebAcceptanceRecorded) else { return }
             self.cancellable = self.storageHandler.chatsPublisher()
                 .first { !$0.isEmpty }
                 .sink(receiveCompletion: { completion in
@@ -54,6 +60,20 @@ final class DuckAiTermsOfServiceChatsObserver {
                     self?.recordAcceptance()
                 })
         }
+    }
+
+    /// The web moves its records into native storage the first time Duck.ai loads, which can happen after launch.
+    func refreshWebAcceptance() {
+        queue.async { [weak self] in
+            self?.adoptWebAcceptance()
+        }
+    }
+
+    /// Acceptances made on the web before the app kept its own record exist only on the web's side.
+    private func adoptWebAcceptance() {
+        guard isWebAcceptanceRecorded, store.recordAcceptedOnWeb() else { return }
+        Logger.aiChat.debug("[TermsOfService] Web acceptance adopted by the app")
+        pixelFiring?.fire(DuckAiTermsOfServicePixel.acceptedFromWeb, frequency: .standard)
     }
 
     private func recordAcceptance() {
@@ -70,6 +90,6 @@ final class DuckAiTermsOfServiceChatsObserver {
 
     private var isWebAcceptanceRecorded: Bool {
         let value = try? storageHandler.getEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey)
-        return value as? String == "true" || value as? Bool == true
+        return DuckAiNativeStorageConsent.isTermsOfServiceAccepted(value)
     }
 }

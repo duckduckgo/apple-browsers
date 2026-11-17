@@ -26,7 +26,7 @@ extension MainViewController {
         let hasInlineInput = newTabPageViewController?.hasInlineSearchInput == true
         return NewTabPageInputPresentation.resolve(
             hasInlineInput: hasInlineInput,
-            usesUnifiedInput: unifiedToggleInputCoordinator != nil,
+            usesUnifiedInput: unifiedToggleInputCoordinator != nil && !isIPadFullTabChatInput,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isHandingOff: isAddressBarHandOffInProgress || isPerformingOnboardingInputHandoff,
@@ -90,7 +90,7 @@ extension MainViewController {
         guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
         if isPresentingNewTabInputDirectly {
             restingNewTabPageSnapshot = nil
-        } else if unifiedToggleInputCoordinator != nil {
+        } else if unifiedToggleInputCoordinator != nil, !isIPadFullTabChatInput {
             captureRestingNewTabPageSnapshot()
         }
         isAddressBarHandOffInProgress = true
@@ -139,6 +139,11 @@ extension MainViewController {
 
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
         handleVoiceSearchOpenRequest(preferredTarget: textEntryMode == .aiChat ? .AIChat : .SERP)
+    }
+
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu? {
+        guard duckAIAddressBarEntry == .menu else { return nil }
+        return makeDuckAIMenu(source: .addressBarIcon, type: .webPage)
     }
 
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {

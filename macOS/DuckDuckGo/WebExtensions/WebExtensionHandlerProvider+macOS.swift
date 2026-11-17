@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import EventHub
 import PrivacyConfig
 import WebExtensions
 import WebKit
@@ -34,12 +35,13 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
-        darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil
+        darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
+        eventHub: EventHubManaging
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
-        self.autoconsentMessageHandler = MacOSAutoconsentMessageHandlerDelegate()
+        self.autoconsentMessageHandler = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
     }
 

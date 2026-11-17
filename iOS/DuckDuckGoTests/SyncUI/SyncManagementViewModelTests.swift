@@ -54,7 +54,9 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
             print(val)
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 5)
+        withExtendedLifetime(cancellable) {
+            wait(for: [expectation], timeout: 5)
+        }
     }
 
     func testViewModelReturnsExpectedStrings() {
@@ -259,7 +261,7 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-    func shareLink(for url: URL, with message: String, from rect: CGRect) {
+    func shareLink(for url: URL, with message: String, from sourceView: UIView) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 }

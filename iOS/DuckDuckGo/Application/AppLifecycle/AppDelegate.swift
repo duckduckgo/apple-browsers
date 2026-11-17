@@ -28,10 +28,8 @@ import Common
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
 
-        let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(MainViewController.keyboardSettings),
-                                          input: ",", modifierFlags: .command)
-        settingsCommand.wantsPriorityOverSystemBehavior = true
-        builder.replaceChildren(ofMenu: .preferences) { _ in [settingsCommand] }
+        // On iOS 26 and later, once the iPad menu bar feature is on, `MainMenuService` registers its own build handler and UIKit stops calling this method.
+        MainMenuBuilder().build(MainMenuSpec(isEnabled: false), with: builder)
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

@@ -19,6 +19,7 @@
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class NavigationBarBadgeAnimatorTests: XCTestCase {
 
     var sut: NavigationBarBadgeAnimator!
@@ -42,7 +43,8 @@ final class NavigationBarBadgeAnimatorTests: XCTestCase {
     // MARK: - Queue Tests (FIFO - no priority interruption)
 
     func testEnqueueAnimation_addsToQueue() {
-        // Given
+        // Given - shield animation in progress, so the queue is held
+        sut.isShieldAnimationInProgress = true
         let type: NavigationBarBadgeAnimationView.AnimationType = .trackersBlocked(count: 10)
 
         // When
@@ -107,6 +109,7 @@ final class NavigationBarBadgeAnimatorTests: XCTestCase {
 
     func testCancelPendingAnimations_clearsQueueWithoutActiveAnimation() {
         // Given - add multiple animations to queue without starting
+        sut.isShieldAnimationInProgress = true
         sut.enqueueAnimation(.trackersBlocked(count: 10), priority: .low, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
         sut.enqueueAnimation(.trackersBlocked(count: 20), priority: .low, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
 
@@ -167,14 +170,14 @@ final class NavigationBarBadgeAnimatorTests: XCTestCase {
 
     func testTabSwitch_cancelsInProgressAnimation() {
         // Given
-        let tab1 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo, downloadRequested: false)))
+        let tab1 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo.absoluteString, downloadRequested: false)))
         sut.enqueueAnimation(.trackersBlocked(count: 10), priority: .low, tab: tab1, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
         sut.processNextAnimation()
 
         XCTAssertTrue(sut.isAnimating)
 
         // When - switch to different tab
-        let tab2 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo, downloadRequested: false)))
+        let tab2 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo.absoluteString, downloadRequested: false)))
         sut.handleTabSwitch(to: tab2)
 
         // Then
@@ -183,14 +186,15 @@ final class NavigationBarBadgeAnimatorTests: XCTestCase {
 
     func testTabSwitch_clearsQueueForDifferentTab() {
         // Given
-        let tab1 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo, downloadRequested: false)))
+        sut.isShieldAnimationInProgress = true
+        let tab1 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo.absoluteString, downloadRequested: false)))
         sut.enqueueAnimation(.trackersBlocked(count: 10), priority: .low, tab: tab1, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
         sut.enqueueAnimation(.trackersBlocked(count: 20), priority: .low, tab: tab1, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
 
         XCTAssertEqual(sut.animationQueue.count, 2)
 
         // When
-        let tab2 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo, downloadRequested: false)))
+        let tab2 = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo.absoluteString, downloadRequested: false)))
         sut.handleTabSwitch(to: tab2)
 
         // Then
@@ -199,7 +203,7 @@ final class NavigationBarBadgeAnimatorTests: XCTestCase {
 
     func testTabSwitch_continuesAnimationForSameTab() {
         // Given
-        let tab = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo, downloadRequested: false)))
+        let tab = Tab(content: .url(URL.duckDuckGo, source: .userEntered(URL.duckDuckGo.absoluteString, downloadRequested: false)))
         sut.enqueueAnimation(.trackersBlocked(count: 10), priority: .low, tab: tab, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
         sut.processNextAnimation()
 
@@ -215,13 +219,15 @@ final class NavigationBarBadgeAnimatorTests: XCTestCase {
     // MARK: - Sequential Processing Tests
 
     func testMultipleNotifications_processSequentially() {
-        // Given - queue multiple animations
+        // Given - queue multiple animations while the shield animation holds the queue
+        sut.isShieldAnimationInProgress = true
         sut.enqueueAnimation(.cookiePopupManaged, priority: .high, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
         sut.enqueueAnimation(.trackersBlocked(count: 10), priority: .low, buttonsContainer: buttonsContainer, notificationBadgeContainer: notificationBadgeContainer)
 
         XCTAssertEqual(sut.animationQueue.count, 2)
 
-        // When - process first
+        // When - shield animation ends and the first is processed
+        sut.isShieldAnimationInProgress = false
         sut.processNextAnimation()
 
         // Then

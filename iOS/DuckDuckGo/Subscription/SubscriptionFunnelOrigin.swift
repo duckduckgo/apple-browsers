@@ -222,4 +222,7 @@ enum SubscriptionRestoreFunnelOrigin: String {
 enum SubscriptionPlanChangeOrigin: String {
     /// User triggered a plan change by cancelling a pending downgrade.
     case cancelDowngrade = "funnel_canceldowngrade_ios"
+
+    /// User triggered a plan change from the subscription cancellation flow.
+    case cancellationFlow = "funnel_appsettings_ios_cancellationflow"
 }

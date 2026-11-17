@@ -20,8 +20,7 @@
 import DesignResourcesKit
 import UIKit
 
-/// Glass capsule chrome for the Duck.ai tab headers; add controls to `contentView`. Split into an
-/// outer shadow host and an inner clipped host so the shadow renders outside while content clips.
+/// Glass capsule chrome for Duck.ai headers; add controls to `contentView`.
 final class AIChatHeaderGlassPill: UIView {
 
     let contentView = UIView()
@@ -43,27 +42,33 @@ final class AIChatHeaderGlassPill: UIView {
 
     private let cornerRadius: CGFloat
     private let shadowStyle: ShadowStyle
+    private let usesFloatingAIChrome: Bool
     private let clipHost = UIView()
     private var glassEffectView: UIVisualEffectView?
 
-    init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating) {
+    init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating, usesFloatingAIChrome: Bool = false) {
         self.cornerRadius = cornerRadius
         self.shadowStyle = shadowStyle
+        self.usesFloatingAIChrome = usesFloatingAIChrome
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
         clipHost.translatesAutoresizingMaskIntoConstraints = false
         clipHost.layer.cornerRadius = cornerRadius
-        clipHost.clipsToBounds = true
+        clipHost.clipsToBounds = !usesFloatingAIChrome
         addSubview(clipHost)
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
         if #available(iOS 26, *) {
-            let effectView = UIVisualEffectView(effect: Self.glassEffect(for: traitCollection))
+            let effectView = UIVisualEffectView(effect: glassEffect(for: traitCollection))
             effectView.translatesAutoresizingMaskIntoConstraints = false
-            effectView.layer.cornerRadius = cornerRadius
-            effectView.clipsToBounds = true
+            if usesFloatingAIChrome {
+                effectView.cornerConfiguration = .capsule()
+            } else {
+                effectView.layer.cornerRadius = cornerRadius
+                effectView.clipsToBounds = true
+            }
             clipHost.addSubview(effectView)
             effectView.contentView.addSubview(contentView)
             NSLayoutConstraint.activate([
@@ -111,12 +116,16 @@ final class AIChatHeaderGlassPill: UIView {
 
     func refreshGlassForCurrentTraits() {
         guard #available(iOS 26, *), let glassEffectView else { return }
-        glassEffectView.effect = Self.glassEffect(for: traitCollection)
+        glassEffectView.effect = glassEffect(for: traitCollection)
     }
 
     func applyShadow(dimmed: Bool) {
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = dimmed ? shadowStyle.dimmedOpacity : shadowStyle.opacity
+        if #available(iOS 26, *), usesFloatingAIChrome {
+            layer.shadowOpacity = 0
+        } else {
+            layer.shadowOpacity = dimmed ? shadowStyle.dimmedOpacity : shadowStyle.opacity
+        }
         layer.shadowOffset = shadowStyle.offset
         layer.shadowRadius = shadowStyle.radius
         layer.borderWidth = 0
@@ -125,8 +134,13 @@ final class AIChatHeaderGlassPill: UIView {
     }
 
     @available(iOS 26, *)
-    private static func glassEffect(for traitCollection: UITraitCollection) -> UIGlassEffect {
-        let glassStyle: UIGlassEffect.Style = traitCollection.userInterfaceStyle == .dark ? .clear : .regular
+    private func glassEffect(for traitCollection: UITraitCollection) -> UIGlassEffect {
+        let glassStyle: UIGlassEffect.Style
+        if usesFloatingAIChrome {
+            glassStyle = .regular
+        } else {
+            glassStyle = traitCollection.userInterfaceStyle == .dark ? .clear : .regular
+        }
         let effect = UIGlassEffect(style: glassStyle)
         effect.isInteractive = true
         return effect

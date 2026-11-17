@@ -45,11 +45,11 @@ jobs:
   performance-tests:
     name: Performance Tests
     needs: create-notarized-app
-    runs-on: [image:osx-tahoe-27, ui-tests]
+    runs-on: [image:osx-27-edge, ui-tests]
 
     env:
-      RUNS_ON: image:osx-tahoe-27,ui-tests # keep this in sync with runs-on above
-      RUNNER_NAME: image-osx-tahoe-27,ui-tests # artifact names cannot contain colons
+      RUNS_ON: image:osx-27-edge,ui-tests # keep this in sync with runs-on above
+      RUNNER_NAME: image-osx-27-edge,ui-tests # artifact names cannot contain colons
       OS_VERSION: "26"
 
     timeout-minutes: 60
@@ -143,7 +143,18 @@ jobs:
       working-directory: SharedPackages/BrowserServicesKit
       run: |
         sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        old_pid=$(pgrep -x logd || true)
         sudo killall logd || true
+        # killall returns right away, and the old logd can still be shutting down.
+        # Wait until it has exited and launchd has started a new one.
+        for _ in $(seq 1 60); do
+          if { [ -z "$old_pid" ] || ! ps -p "$old_pid" >/dev/null; } && pgrep -x logd >/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "::error::logd did not restart within 60 seconds"
+        exit 1
 
     - name: Start log stream in background
       working-directory: macOS

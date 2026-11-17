@@ -110,9 +110,10 @@ struct AIChatOpeningRequest {
 
     let url: URL
     let payload: Any?
-    let source: AIChatEntryPointSource
+    var source: AIChatEntryPointSource
     let opensNewTab: Bool
     let prompt: Prompt
+    var isVoice = false
 
     var promptInfo: AIChatOpeningPromptInfo {
         switch prompt {

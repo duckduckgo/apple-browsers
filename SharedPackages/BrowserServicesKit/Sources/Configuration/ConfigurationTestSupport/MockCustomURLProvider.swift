@@ -40,6 +40,12 @@ final class MockCustomURLProvider: CustomConfigurationURLProviding {
         capturedURL = url
     }
 
+    func setSessionURL(_ url: URL, for configuration: Configuration) {
+        capturedConfiguration = configuration
+        capturedConfigurations.append(configuration)
+        capturedURL = url
+    }
+
     func isURLOverridden(for configuration: Configuration) -> Bool {
         return capturedConfigurations.contains(configuration)
     }

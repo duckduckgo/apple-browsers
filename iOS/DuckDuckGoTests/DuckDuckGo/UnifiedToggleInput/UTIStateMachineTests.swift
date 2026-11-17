@@ -180,10 +180,32 @@ final class UTIStateMachineTests: XCTestCase {
         )
     }
 
-    /// Flanked carries the fire / menu accessories, which only a Duck.ai tab has.
-    func test_cardLayout_isFlankedOnlyForTheCollapsedAITab() {
-        XCTAssertEqual(renderState(for: .aiTab(.collapsed), host: .omnibar).cardLayout, .flanked)
+    func test_cardLayout_isFlankedByFireAndMenuForTheCollapsedAITab() {
+        XCTAssertEqual(renderState(for: .aiTab(.collapsed), host: .omnibar).cardLayout, .flanked(.all))
+    }
+
+    func test_cardLayout_contextualCollapsedPillIsBareWithoutAccessories() {
         XCTAssertEqual(renderState(for: .contextualChat(.collapsed), host: .contextualChat).cardLayout, .collapsed)
+    }
+
+    func test_cardLayout_contextualCollapsedPillIsFlankedByItsAccessories() {
+        let sut = makeSUT(.contextualChat(.collapsed), host: .contextualChat)
+        sut.contextualCollapsedAccessories = .fire
+
+        XCTAssertEqual(renderState(of: sut).cardLayout, .flanked(.fire))
+    }
+
+    func test_cardLayout_expandedContextualChatIgnoresCollapsedAccessories() {
+        let sut = makeSUT(.contextualChat(.expanded), host: .contextualChat)
+        sut.contextualCollapsedAccessories = .fire
+
+        XCTAssertEqual(renderState(of: sut).cardLayout, .expanded(showsToggle: false, showsToolbar: true))
+    }
+
+    private func renderState(of sut: UTIStateMachine) -> UTIRenderState {
+        sut.computeRenderState(inputMode: .aiChat, textState: .empty, cardPosition: .bottom,
+                               isInputVisibleForKeyboard: true, isContentOverlaySuppressed: false,
+                               isToggleEnabled: false, floatingReturnKeyState: .empty)
     }
 
     func test_cardLayout_isBarePillWhenHidden() {

@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Изисква се разрешение за камерата";
 
-/* No comment provided by engineer. */
-"Cancel" = "Отмени";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Отмени";
 

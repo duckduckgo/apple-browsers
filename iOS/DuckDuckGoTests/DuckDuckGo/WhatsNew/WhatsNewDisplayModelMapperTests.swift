@@ -50,8 +50,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -79,8 +78,7 @@ final class WhatsNewDisplayModelMapperTests {
             onMessageAppear: { },
             onItemAppear: { _ in },
             onItemAction: { _, _ in },
-            onPrimaryAction: { _ in },
-            onDismiss: { }
+            onPrimaryAction: { _ in }
         )
 
         // THEN
@@ -109,8 +107,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -139,8 +136,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -173,8 +169,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -201,8 +196,7 @@ final class WhatsNewDisplayModelMapperTests {
                 },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -233,8 +227,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -268,8 +261,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -299,8 +291,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -326,8 +317,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -354,8 +344,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -380,7 +369,6 @@ struct WhatsNewDisplayModelActionHandlingTests {
 
         var primaryActionCalled = false
         var capturedAction: RemoteAction?
-        var dismissCalled = false
 
         let displayModel = try #require(
             sut.makeDisplayModel(
@@ -391,9 +379,6 @@ struct WhatsNewDisplayModelActionHandlingTests {
                 onPrimaryAction: { action in
                     primaryActionCalled = true
                     capturedAction = action
-                },
-                onDismiss: {
-                    dismissCalled = true
                 }
             )
         )
@@ -405,7 +390,6 @@ struct WhatsNewDisplayModelActionHandlingTests {
         // THEN
         #expect(primaryActionCalled)
         #expect(capturedAction == expectedAction)
-        #expect(dismissCalled)
     }
 
     @Test("Check Item Appear Invokes Callback With Correct Item ID")
@@ -428,8 +412,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
                     itemAppearedCalls.append(itemId)
                 },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -466,8 +449,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
                     capturedAction = action
                     capturedItemId = itemId
                 },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -481,14 +463,13 @@ struct WhatsNewDisplayModelActionHandlingTests {
         #expect(capturedItemId == "1")
     }
 
-    @Test("Check Item Action Does Not Invoke Dismiss")
-    func whenItemActionInvokedThenDismissIsNotCalled() async throws {
+    @Test("Check Embedded URL Item Action Invokes Callback")
+    func whenEmbeddedURLItemActionInvokedThenCallbackIsCalled() async throws {
         // GIVEN
         let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "1", action: .urlInContext(value: "https://example.com"))
         let message = RemoteMessageModel.makeCardsListMessage(items: [item])
 
         var itemActionCalled = false
-        var dismissCalled = false
 
         let displayModel = try #require(
             sut.makeDisplayModel(
@@ -498,10 +479,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
                 onItemAction: { _, _ in
                     itemActionCalled = true
                 },
-                onPrimaryAction: { _ in },
-                onDismiss: {
-                    dismissCalled = true
-                }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -511,7 +489,6 @@ struct WhatsNewDisplayModelActionHandlingTests {
 
         // THEN
         #expect(itemActionCalled)
-        #expect(!dismissCalled)
     }
 
     @Test(
@@ -540,8 +517,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
                 onItemAction: { _, _ in },
                 onPrimaryAction: { action in
                     capturedAction = action
-                },
-                onDismiss: { }
+                }
             )
         )
 
@@ -568,8 +544,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
             onItemAction: { _, _ in
                 callCount += 1
             },
-            onPrimaryAction: { _ in },
-            onDismiss: { }
+            onPrimaryAction: { _ in }
         ))
 
         // WHEN
@@ -611,8 +586,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
                     capturedAction = action
                     capturedItemId = itemId
                 },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -642,8 +616,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
                     itemAppearedId = itemId
                 },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -674,8 +647,7 @@ struct WhatsNewDisplayModelMapperImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -698,8 +670,7 @@ struct WhatsNewDisplayModelMapperImageLoadingTests {
             onMessageAppear: { },
             onItemAppear: { _ in },
             onItemAction: { _, _ in },
-            onPrimaryAction: { _ in },
-            onDismiss: { }
+            onPrimaryAction: { _ in }
         )
 
         #expect(pixelReporter.didCallMeasureRemoteMessageImageLoadSuccess)
@@ -723,8 +694,7 @@ struct WhatsNewDisplayModelMapperImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -751,8 +721,7 @@ struct WhatsNewDisplayModelMapperImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -787,8 +756,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -815,8 +783,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -855,8 +822,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -887,8 +853,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -917,8 +882,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -950,8 +914,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -979,8 +942,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -1011,8 +973,7 @@ struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 

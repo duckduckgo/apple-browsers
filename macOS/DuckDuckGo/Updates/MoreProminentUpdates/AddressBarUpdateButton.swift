@@ -34,6 +34,7 @@ struct AddressBarUpdateButton: View {
                 .lineLimit(1)
         }
         .buttonStyle(AddressBarUpdateButtonStyle())
+        .padding(.leading, 6)
     }
 }
 
@@ -86,6 +87,6 @@ enum MoreProminentUpdatesTypography {
 }
 
 #Preview {
-    AddressBarUpdateButton(title: UserText.addressBarUpdateButton) {}
+    AddressBarUpdateButton(title: UserText.updatePromptUpdateButton) {}
         .padding()
 }

@@ -31,6 +31,10 @@ enum WebViewTransitionGeometry {
         return previewSize.height / previewSize.width
     }
 
+    static func hasSameOrientation(_ size: CGSize, as otherSize: CGSize) -> Bool {
+        (size.width > size.height) == (otherSize.width > otherSize.height)
+    }
+
     static func previewFrame(for cellBounds: CGSize, previewSize: CGSize, isGridViewEnabled: Bool) -> CGRect {
         guard let previewAspectRatio = aspectRatio(of: previewSize) else {
             return CGRect(origin: .zero, size: cellBounds)

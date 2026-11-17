@@ -90,6 +90,8 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     private let processStartedAt: Date
     private let processIdentifier: @Sendable () -> Int32
     private let appVersion: @Sendable () -> String
+    private let osVersion: @Sendable () -> String
+    private let bootTime: @Sendable () -> Date?
 
     private let lock = NSLock()
 
@@ -110,7 +112,9 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
                 isTelemetryEnabled: @escaping @Sendable () -> Bool,
                 now: @escaping @Sendable () -> Date = { Date() },
                 processIdentifier: @escaping @Sendable () -> Int32 = { ProcessInfo.processInfo.processIdentifier },
-                appVersion: @escaping @Sendable () -> String = { AppVersion.shared.versionNumber }) {
+                appVersion: @escaping @Sendable () -> String = { AppVersion.shared.versionNumber },
+                osVersion: @escaping @Sendable () -> String = { SystemStatusProvider.osVersion },
+                bootTime: @escaping @Sendable () -> Date? = { SystemStatusProvider.bootTime }) {
         self.wideEvent = wideEvent
         self.extensionType = extensionType
         self.isTelemetryEnabled = isTelemetryEnabled
@@ -118,6 +122,8 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
         self.processStartedAt = processStartedAt
         self.processIdentifier = processIdentifier
         self.appVersion = appVersion
+        self.osVersion = osVersion
+        self.bootTime = bootTime
         Logger.networkProtectionSessionHealth.debug("Initialized session health instrumentation")
     }
 
@@ -254,7 +260,9 @@ private extension DefaultVPNSessionHealthInstrumentation {
                                                   at: timestamp,
                                                   processStartDate: processStartedAt,
                                                   processIdentifier: processIdentifier(),
-                                                  appVersion: appVersion())
+                                                  appVersion: appVersion(),
+                                                  osVersion: osVersion(),
+                                                  bootTime: bootTime())
         event.lastObservedAt = timestamp
 
         completeEvent(event: event, outcome: outcome)
@@ -281,6 +289,8 @@ private extension DefaultVPNSessionHealthInstrumentation {
                                                       startedAt: now(),
                                                       extensionType: extensionType,
                                                       sessionStartPID: processIdentifier(),
+                                                      sessionStartOSVersion: osVersion(),
+                                                      sessionStartBootTime: bootTime(),
                                                       appData: WideEventAppData(version: appVersion()),
                                                       globalData: WideEventGlobalData())
         beginEventInLock(nextEvent)
@@ -306,7 +316,9 @@ private extension DefaultVPNSessionHealthInstrumentation {
                                            at: now(),
                                            processStartDate: processStartedAt,
                                            processIdentifier: processIdentifier(),
-                                           appVersion: appVersion())
+                                           appVersion: appVersion(),
+                                           osVersion: osVersion(),
+                                           bootTime: bootTime())
         completeEvent(event: completed.event, outcome: completed.outcome)
     }
 
@@ -321,7 +333,9 @@ private extension DefaultVPNSessionHealthInstrumentation {
                                                                 processStartDate: processStartedAt,
                                                                 processStartReason: reason,
                                                                 processIdentifier: processIdentifier(),
-                                                                appVersion: appVersion())
+                                                                appVersion: appVersion(),
+                                                                osVersion: osVersion(),
+                                                                bootTime: bootTime())
             completeEvent(event: completed.event, outcome: completed.outcome)
         }
     }

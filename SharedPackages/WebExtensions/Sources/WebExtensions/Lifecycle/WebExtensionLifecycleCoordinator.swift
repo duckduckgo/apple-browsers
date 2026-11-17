@@ -131,7 +131,7 @@ public final class WebExtensionLifecycleCoordinator {
         self.pixelFiring = pixelFiring
     }
 
-    /// Full load followed by embedded sync, as one indivisible chain entry. Launch / re-init.
+    /// Prepares CPM when enabled, loads installed extensions, then syncs all bundled types. Launch / re-init.
     @discardableResult
     public func loadAndSync() -> Task<Void, Never> {
         if let pendingLoadAndSync { return pendingLoadAndSync }
@@ -143,9 +143,7 @@ public final class WebExtensionLifecycleCoordinator {
                                self?.initialLoadAndSyncDidComplete()
                            }) { [weak self] in
             guard let self else { return }
-            await self.manager.loadInstalledExtensions()
-            guard !Task.isCancelled else { return }
-            await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
+            await self.loadAndSyncInstalledExtensions()
             guard !Task.isCancelled else { return }
             if isInitialLoadAndSync, self.initialLoadGateEnabledProvider(), !self.isInitialLoadGateOpen {
                 // WebKit's callback may never arrive. Only the bounded gate wait belongs on the
@@ -165,6 +163,18 @@ public final class WebExtensionLifecycleCoordinator {
             initialLoadAndSync = task
         }
         return task
+    }
+
+    private func loadAndSyncInstalledExtensions() async {
+        if manager.isCPMUpgradeBeforeLoadEnabled {
+            // Only CPM is updated/removed before its old context can start. Leave all other types
+            // and scriptlet downloads until after contexts load, preserving their existing startup.
+            await manager.syncCPMExtensionBeforeLoad(isEnabled: enabledTypesProvider().contains(.embedded))
+        }
+        // Failed CPM upgrades retain the previous installation for this load. The following sync
+        // also repairs any corrupt bundled installation that the full load removes.
+        await manager.loadInstalledExtensions()
+        await manager.syncEmbeddedExtensions(enabledTypes: enabledTypesProvider())
     }
 
     /// Embedded sync only. Appearance / YouTube / feature-flag triggers.

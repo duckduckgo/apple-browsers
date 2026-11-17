@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Απαιτείται άδεια κάμερας";
 
-/* No comment provided by engineer. */
-"Cancel" = "Ακύρωση";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Ακύρωση";
 

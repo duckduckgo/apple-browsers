@@ -58,17 +58,6 @@ final class BrowserToolCatalogTests: XCTestCase {
 
         XCTAssertEqual(catalog.enabledTools.map(\.name), names)
     }
-
-    func testWhenToolIsDescribedThenTheDescriptorCarriesItsSchemaAndAnnotations() {
-        let tool = StubBrowserTool(name: "alpha")
-
-        let descriptor = tool.descriptor()
-
-        XCTAssertEqual(descriptor.name, "alpha")
-        XCTAssertEqual(descriptor.title, "Alpha")
-        XCTAssertEqual(descriptor.inputSchema, ["type": "object"])
-        XCTAssertEqual(descriptor.annotations?.readOnlyHint, true)
-    }
 }
 
 // MARK: - Stubs
@@ -89,13 +78,8 @@ private final class StubBrowserToolsConfiguration: BrowserToolsConfiguration {
 
 private final class StubBrowserTool: BrowserTool {
     let name: String
-    var title: String { name.capitalized }
-    var description: String { "Stub tool" }
     var permissionMode: BrowserToolPermissionMode { .auto }
     var inputSchema: JSONValue { ["type": "object"] }
-    var annotations: MCPToolAnnotations? {
-        MCPToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false)
-    }
 
     init(name: String) {
         self.name = name

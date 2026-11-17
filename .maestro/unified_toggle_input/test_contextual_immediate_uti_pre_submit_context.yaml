@@ -20,6 +20,7 @@ name: test_contextual_immediate_uti_pre_submit_context
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
+        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "true"

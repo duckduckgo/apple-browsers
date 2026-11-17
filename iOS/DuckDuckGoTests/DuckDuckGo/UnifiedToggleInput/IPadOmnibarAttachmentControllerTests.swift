@@ -71,6 +71,28 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
         XCTAssertNotNil(sut.makeMenu())
     }
 
+    func testAttachMenuPixelsFireForTheAddressBar() throws {
+        guard #available(iOS 16, *) else { throw XCTSkip("UIAction.performWithSender requires iOS 16") }
+        let pixels = PixelKitMock()
+        let sut = IPadOmnibarAttachmentController(store: store, pixelFiring: pixels)
+        store.models = [makeModel(id: "gpt-5.2", supportsImageUpload: true)]
+        let menu = try XCTUnwrap(sut.makeMenu())
+        let attachPhoto = try XCTUnwrap(menu.children.compactMap { $0 as? UIAction }
+            .first { $0.title == UserText.aiChatAttachmentOptionAttachPhoto })
+
+        // The menu holds the controller weakly; keep it alive through the action.
+        withExtendedLifetime(sut) {
+            sut.reportMenuShown()
+            attachPhoto.performWithSender(nil, target: nil)
+        }
+
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.name), ["m_aichat_unified_input_attach_menu_shown",
+                                                                   "m_aichat_unified_input_attach_menu_item_selected"])
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.parameters), [["surface": "address_bar"],
+                                                                         ["surface": "address_bar", "item": "photo_library"]])
+        XCTAssertEqual(pixels.actualFireCalls.map(\.frequency), [.dailyAndCount, .dailyAndCount])
+    }
+
     func testWhenModelSupportsFileUploadThenAvailable() {
         store.models = [makeModel(id: "gpt-5.2", supportsImageUpload: false, supportedFileTypes: ["application/pdf"])]
 

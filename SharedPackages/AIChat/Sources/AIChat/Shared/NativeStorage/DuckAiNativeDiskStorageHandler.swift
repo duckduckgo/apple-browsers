@@ -113,6 +113,10 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
         dataStore.chatsPublisher()
     }
 
+    public func chatCountPublisher() -> AnyPublisher<Int, Error> {
+        dataStore.chatCountPublisher()
+    }
+
     public func deleteChat(chatId: String) throws {
         try dataStore.deleteChat(chatId: chatId)
         try markChatLocallyDeleted(chatId: chatId)

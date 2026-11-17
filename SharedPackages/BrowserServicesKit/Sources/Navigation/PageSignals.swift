@@ -110,6 +110,6 @@ private extension TLD {
             return nil
         }
 
-        return eTLDplus1(host) ?? host
+        return eTLDplus1(host)
     }
 }

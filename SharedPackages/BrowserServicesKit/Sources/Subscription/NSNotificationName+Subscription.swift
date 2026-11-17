@@ -35,6 +35,11 @@ public extension NSNotification.Name {
     static let userDidPurchaseSubscription = Notification.Name("com.duckduckgo.subscription.UserDidPurchase")
 }
 
+public enum UserDidPurchaseSubscriptionUserInfoKey {
+    /// `Bool`, whether the purchase started a free trial. Absent when unknown.
+    public static let isFreeTrial = "isFreeTrial"
+}
+
 public struct EntitlementsDidChangePayload {
 
     private let entitlementsKey = "entitlements"

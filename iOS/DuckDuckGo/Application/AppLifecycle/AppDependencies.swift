@@ -31,11 +31,14 @@ struct AppDependencies {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
     let backgroundTaskManager: BackgroundTaskManager
+    let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let idleReturnEvaluator: IdleReturnEvaluating
 
 }
 
 struct AppServices {
 
+    let mainMenuService: MainMenuService
     let contentBlockingService: ContentBlockingService
     let syncService: SyncService
     let vpnService: VPNService

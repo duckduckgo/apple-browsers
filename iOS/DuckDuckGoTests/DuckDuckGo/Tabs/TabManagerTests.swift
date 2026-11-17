@@ -28,11 +28,68 @@ import Core
 import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest
+import WebExtensions
+import WebExtensionsTestSupport
 import WebKit
 @testable import DuckDuckGo
 
 @MainActor
 final class TabManagerTests: XCTestCase {
+
+    func testOwnerRemovalDetachesSourcesEvenWithoutCachedController() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner) { [weak manager, weak owner = fixture.owner] in
+            guard let manager, let owner else { return nil }
+            return manager.makeBrowserToolScope(for: owner)
+        }
+        XCTAssertNil(manager.controller(for: fixture.owner))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        manager.remove(tab: fixture.owner)
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+    }
+
+    func testNormalControllerReceivesSharedServiceAndWeakOwnerScopeBeforeUse() throws {
+        let fixture = BrowserToolsBridgeFixture()
+        fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner, makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNotNil(manager.browserToolsService.configuration(for: fixture.script))
+        controller.prepareForDataClearing()
+        XCTAssertNil(fixture.script.browserToolsService)
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+        XCTAssertNil(controller.browserToolScopeFactory)
+        XCTAssertNil(controller.browserToolsService)
+        XCTAssertNil(controller.aiChatContextualSheetCoordinator.browserToolScopeFactory)
+    }
+
+    func testControllerCreatedWithParentFlagDisabledReceivesServiceThatEnablesWithoutReplacement() throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [.aiChatBrowserToolListOpenTabs])
+        defer { fixture.cleanUp() }
+        let model = TabsModel(tabs: [fixture.owner], desktop: false)
+        let manager = try makeManager(model, featureFlagger: fixture.flags)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        defer { controller.prepareForDataClearing() }
+        XCTAssertTrue(controller.browserToolsService === manager.browserToolsService)
+        XCTAssertEqual(controller.browserToolScopeFactory?()?.ownerTabID, fixture.owner.uid)
+        fixture.script.bindBrowserTools(to: manager.browserToolsService, owner: fixture.owner,
+                                       makeScope: try XCTUnwrap(controller.browserToolScopeFactory))
+        XCTAssertNil(manager.browserToolsService.configuration(for: fixture.script))
+
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        fixture.flags.triggerUpdate()
+        XCTAssertTrue(manager.current(createIfNeeded: true) === controller)
+        XCTAssertEqual(manager.browserToolsService.configuration(for: fixture.script)?.capabilities, [.listOpenTabs])
+    }
 
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
@@ -107,7 +164,7 @@ final class TabManagerTests: XCTestCase {
         mock.onRemovePreviewsWithIdNotIn = nil
 
         // This is just to keep a reference to the manager to supress the unused warning and keep it from being deinit
-        manager.removeAll()
+        _ = manager.removeAll()
     }
 
     // MARK: - Tab History Cleanup Tests
@@ -141,7 +198,7 @@ final class TabManagerTests: XCTestCase {
         mockHistoryManager.removeTabHistoryExpectation = expectation(description: "removeTabHistory called")
         let manager = try makeManager(tabsModel, historyManager: mockHistoryManager)
         
-        manager.removeAll()
+        _ = manager.removeAll()
         
         await fulfillment(of: [mockHistoryManager.removeTabHistoryExpectation!], timeout: 5.0)
         
@@ -208,7 +265,7 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.currentTabsModel.count, 2)
 
-        manager.removeAll()
+        _ = manager.removeAll()
 
         XCTAssertEqual(manager.currentTabsModel.count, 0)
         XCTAssertNil(manager.currentTabsModel.currentTab)
@@ -294,7 +351,7 @@ final class TabManagerTests: XCTestCase {
 
         let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
 
-        manager.removeAll(browsingMode: .fire)
+        _ = manager.removeAll(browsingMode: .fire)
 
         // Previews preserved
         XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
@@ -316,7 +373,7 @@ final class TabManagerTests: XCTestCase {
 
         let manager = try makeManager(normalModel, fireModel: fireModel, previewsSource: mockPreviews)
 
-        manager.removeAll(browsingMode: nil)
+        _ = manager.removeAll(browsingMode: nil)
 
         // Previews removed
         XCTAssertEqual(mockPreviews.removePreviewsWithIdNotInCalls.count, 1)
@@ -627,6 +684,28 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(manager.controller(for: laterTab.tabModel))
     }
 
+    func testWhenPageOpenedTabWaitsInTheBackgroundThenLRUCapacityDoesNotEvictIt() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let popup = manager.addURLRequest(nil, with: WKWebViewConfiguration(), inheritedAttribution: nil, inBackground: true)
+
+        let laterTab = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertTrue(manager.controller(for: popup.tabModel) === popup)
+        XCTAssertNil(manager.controller(for: laterTab.tabModel))
+    }
+
+    func testWhenPageOpenedTabHasBeenSelectedThenLRUCapacityCanEvictIt() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let currentTab = try XCTUnwrap(manager.current()?.tabModel)
+        let popup = manager.addURLRequest(nil, with: WKWebViewConfiguration(), inheritedAttribution: nil, inBackground: true)
+        _ = manager.select(popup.tabModel)
+        _ = manager.select(currentTab)
+
+        _ = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertNil(manager.controller(for: popup.tabModel))
+    }
+
     func testWhenInitialAIChatPromptIsConsumedThenLRUCapacityEvictsItsTab() throws {
         let manager = try makeManagerWithLoadedCurrentTab()
         let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("prompt", autoSubmit: true)) {}
@@ -754,7 +833,6 @@ final class TabManagerTests: XCTestCase {
                           (refresh: false, hasURL: true), (refresh: false, hasURL: false)]
         for retryCase in retryCases {
             let webViewReleased = expectation(description: "Retry web view released")
-            let contentControllerReleased = expectation(description: "Retry content controller released")
             try autoreleasepool {
                 let controller = TabViewController.fake(
                     customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
@@ -767,9 +845,7 @@ final class TabManagerTests: XCTestCase {
                 )
                 guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
                 let webView = try XCTUnwrap(controller.webView as? InitialPromptRetryWebView)
-                let contentController = webView.configuration.userContentController
                 webView.onDeinit { webViewReleased.fulfill() }
-                contentController.onDeinit { contentControllerReleased.fulfill() }
                 let navigationSource = WKWebView()
                 let url = URL(string: "https://duck.ai/chat")!
                 webView.currentURL = retryCase.hasURL ? url : nil
@@ -815,8 +891,47 @@ final class TabManagerTests: XCTestCase {
                 XCTAssertEqual(consumptionCount, 1)
                 XCTAssertFalse(controller.isProtectedFromCacheEviction)
             }
-            await fulfillment(of: [webViewReleased, contentControllerReleased], timeout: 3.0)
+            await fulfillment(of: [webViewReleased], timeout: 3.0)
         }
+    }
+
+    func testControllerReleaseCancelsContentBlockingSubscriptionAndRemovesUserScripts() async throws {
+        let assetsSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        var subscriptionCount = 0
+        var cancellationCount = 0
+        let assetsPublisher = assetsSubject.handleEvents(
+            receiveSubscription: { _ in subscriptionCount += 1 },
+            receiveCancel: { cancellationCount += 1 }
+        ).eraseToAnyPublisher()
+        let webViewReleased = expectation(description: "Closed tab web view released")
+        weak var releasedController: TabViewController?
+
+        try autoreleasepool {
+            let contentController = try autoreleasepool {
+                let controller = TabViewController.fake(
+                    customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
+                    specialErrorPageNavigationHandler: SpecialErrorPageNavigationHandler(
+                        maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
+                            maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager()
+                        )
+                    ),
+                    contentBlockingAssetsPublisher: assetsPublisher
+                )
+                releasedController = controller
+                let webView = try XCTUnwrap(controller.webView)
+                webView.onDeinit { webViewReleased.fulfill() }
+                let contentController = webView.configuration.userContentController
+                XCTAssertFalse(contentController.userScripts.isEmpty)
+                XCTAssertEqual(subscriptionCount, 1)
+                XCTAssertEqual(cancellationCount, 0)
+                return contentController
+            }
+
+            XCTAssertNil(releasedController)
+            XCTAssertEqual(cancellationCount, 1)
+            XCTAssertTrue(contentController.userScripts.isEmpty)
+        }
+        await fulfillment(of: [webViewReleased], timeout: 3.0)
     }
 
     func testControllerLeavingFailedChatDiscardsInitialPromptBeforeReturningToChat() async throws {
@@ -942,6 +1057,19 @@ final class TabManagerTests: XCTestCase {
                                         content: content, truncated: false, fullContentLength: content.count, tabId: name)
         }
         return .queryPrompt(text, autoSubmit: true, pageContext: .multiple(contexts))
+    }
+
+    func testDuplicateInsertsAfterSourceAndKeepsBrowsingMode() throws {
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.fireMode]
+        let manager = try makeManager(TabsModel(desktop: false), fireModel: fireModel, featureFlagger: flagger)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
+        let source = manager.add(url: try XCTUnwrap(URL(string: "https://example.com/source")), inheritedAttribution: nil)
+        let sourceIndex = try XCTUnwrap(fireModel.currentIndex)
+        let duplicate = manager.duplicate(source)
+        XCTAssertTrue(duplicate.tabModel.fireTab)
+        XCTAssertTrue(fireModel.tabs[sourceIndex + 1] === duplicate.tabModel)
     }
 
     /// Capacity 2 holds the current tab plus one background tab, so a second background tab forces eviction.
@@ -1100,6 +1228,47 @@ final class TabManagerTests: XCTestCase {
             XCTAssertEqual(controller.webView.configuration.websiteDataStore.identifier,
                            WKWebViewConfiguration.persistent(fireMode: true).websiteDataStore.identifier)
         }
+    }
+
+    func testBrowserToolServiceHasStableManagerOwnership() throws {
+        let manager = try makeManager(TabsModel(desktop: false))
+        XCTAssertTrue(manager.browserToolsService === manager.browserToolsService)
+    }
+
+    func testBrowserToolScopeUsesActualOwnerAndLiveNormalModelSelection() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let selected = Tab(uid: "selected", fireTab: false)
+        let fire = Tab(uid: "fire", fireTab: true)
+        let model = TabsModel(tabs: [owner, selected], currentIndex: 1, desktop: false)
+        let manager = try makeManager(model,
+                                      fireModel: TabsModel(tabs: [fire], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertTrue(scope.isValid)
+        XCTAssertEqual(scope.selectedTabID(), selected.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid])
+        XCTAssertNil(manager.makeBrowserToolScope(for: Tab(uid: owner.uid, fireTab: false)))
+        model.select(tab: owner)
+        XCTAssertEqual(scope.selectedTabID(), owner.uid)
+        let added = Tab(fireTab: false)
+        model.insert(tab: added, placement: .atEnd, selectNewTab: true)
+        XCTAssertEqual(scope.selectedTabID(), added.uid)
+        XCTAssertEqual(scope.source.tabsProvider().map(\.uid), [owner.uid, selected.uid, added.uid])
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        let fireScope = try XCTUnwrap(manager.makeBrowserToolScope(for: fire))
+        XCTAssertFalse(fireScope.isValid)
+        manager.remove(tab: owner)
+        XCTAssertFalse(scope.isValid)
+    }
+
+    func testBrowserToolScopeRejectsSelectionWithoutMainController() throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let target = Tab(uid: "target", fireTab: false)
+        let model = TabsModel(tabs: [owner, target], desktop: false)
+        let manager = try makeManager(model)
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        XCTAssertFalse(scope.selectTab(target))
+        XCTAssertEqual(model.currentTab?.uid, owner.uid)
     }
 
     private func makeAttachmentManager() throws -> (TabManager, [Tab]) {
@@ -1295,6 +1464,35 @@ final class TabManagerTests: XCTestCase {
         func escapeHatchDidRequestAfterInactivitySettings() {}
     }
 
+    /// The escape hatch and the Duck.ai onboarding remove tabs through these two overloads and rely on the
+    /// controller's release to end the CPM wait when they do not report the close themselves.
+    @available(iOS 18.4, *)
+    func testWhenATabIsRemovedThenTheCPMMonitorStopsWaitingForIt() async throws {
+        let tabs = (0..<3).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let model = TabsModel(tabs: tabs, desktop: false)
+        let manager = try makeManager(model)
+        let monitor = CapturingCPMMonitor()
+        let extensionManager = MockWebExtensionManaging()
+        extensionManager.cpmMessagingHealthMonitor = monitor
+        manager.setWebExtensionManager(extensionManager)
+        _ = manager.current(createIfNeeded: true)
+        _ = manager.select(tabs[1])
+        _ = manager.select(tabs[2])
+        _ = manager.select(tabs[0])
+
+        manager.remove(tab: tabs[1], in: model)
+        manager.remove(tab: tabs[2], clearTabHistory: false)
+
+        let expected = Set([tabs[1].uid, tabs[2].uid])
+        for _ in 0..<40 where Set(monitor.closedTabIdentifiers) != expected {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(Set(monitor.closedTabIdentifiers), expected)
+        XCTAssertFalse(monitor.closedTabIdentifiers.contains(tabs[0].uid))
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
@@ -1405,6 +1603,17 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
+    }
+}
+
+@available(iOS 18.4, *)
+private final class CapturingCPMMonitor: CPMMessagingHealthMonitoring, @unchecked Sendable {
+    private(set) var closedTabIdentifiers: [String] = []
+
+    @MainActor
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .tabClosed(let tabIdentifier) = event else { return }
+        closedTabIdentifiers.append(tabIdentifier)
     }
 }
 

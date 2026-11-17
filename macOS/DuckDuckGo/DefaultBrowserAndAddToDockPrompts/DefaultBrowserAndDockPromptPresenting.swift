@@ -76,7 +76,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private let uiProvider: DefaultBrowserAndDockPromptUIProviding
 
     private var popover: NSPopover?
-    private var inactiveUserModal: NSWindow?
+    private var inactiveUserModal: DefaultBrowserAndDockPromptModal?
     private var statusUpdateCancellable: Cancellable?
     private(set) var currentShownPrompt: DefaultBrowserAndDockPromptPresentationType?
 
@@ -230,8 +230,10 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             return
         }
 
-        initializeInactiveUserModal(with: content)
-        showInactiveUserModal(positionedOver: window)
+        MainActor.assumeMainThread {
+            initializeInactiveUserModal(with: content)
+            showInactiveUserModal(positionedOver: window)
+        }
     }
 
     /// Creates the banner view controller with three possible user actions.
@@ -307,34 +309,6 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         return NSHostingController(rootView: contentView)
     }
 
-    private func createInactiveUserModal(with type: DefaultBrowserAndDockPromptType) -> NSHostingController<DefaultBrowserAndDockPromptInactiveUserView> {
-        let content = DefaultBrowserAndDockPromptContent.inactive(type)
-        let viewModel = DefaultBrowserAndDockPromptInactiveUserViewModel(
-            message: content.message,
-            image: content.icon,
-            primaryButtonLabel: content.primaryButtonTitle,
-            dismissButtonLabel: content.secondaryButtonTitle,
-            primaryButtonAction: { [weak self] in
-                guard let self else { return }
-                clearStatusUpdateData()
-                coordinator.confirmAction(for: .inactive)
-                Task { @MainActor in
-                    await self.dismissInactiveUserModal()
-                }
-            },
-            dismissButtonAction: {[weak self] in
-                guard let self else { return }
-                clearStatusUpdateData()
-                coordinator.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: false))
-                Task { @MainActor in
-                    await self.dismissInactiveUserModal()
-                }
-            })
-        let contentView = DefaultBrowserAndDockPromptInactiveUserView(viewModel: viewModel, browsersComparisonChart: uiProvider.makeBrowserComparisonChart())
-
-        return NSHostingController(rootView: contentView)
-    }
-
     private func dismissBanner() {
         self.clearStatusUpdateData()
         self.bannerDismissedSubject.send()
@@ -343,7 +317,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private func dismissInactiveUserModal() async {
         guard let inactiveUserModal else { return }
         self.inactiveUserModal = nil
-        await inactiveUserModal.contentViewController?.dismiss()
+        await inactiveUserModal.dismiss()
     }
 
     private func dismissAllPrompts(onCompletion: (() -> Void)? = nil) {
@@ -370,15 +344,29 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         popover?.contentViewController?.view.makeMeFirstResponder()
     }
 
+    @MainActor
     private func initializeInactiveUserModal(with type: DefaultBrowserAndDockPromptType) {
-        let content = createInactiveUserModal(with: type)
-        inactiveUserModal = NSWindow(contentViewController: content)
-            .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.inactiveUserPrompt)
+        inactiveUserModal = DefaultBrowserAndDockPromptModal(
+            type: type,
+            uiProvider: uiProvider,
+            accessibilityIdentifier: AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.inactiveUserPrompt,
+            onConfirm: { [weak self] in
+                guard let self else { return }
+                clearStatusUpdateData()
+                coordinator.confirmAction(for: .inactive)
+                inactiveUserModal = nil
+            },
+            onDismiss: { [weak self] in
+                guard let self else { return }
+                clearStatusUpdateData()
+                coordinator.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: false))
+                inactiveUserModal = nil
+            })
     }
 
+    @MainActor
     private func showInactiveUserModal(positionedOver window: NSWindow) {
-        guard let inactiveUserModal else { return }
-        window.beginSheet(inactiveUserModal)
+        inactiveUserModal?.present(over: window)
     }
 
 }

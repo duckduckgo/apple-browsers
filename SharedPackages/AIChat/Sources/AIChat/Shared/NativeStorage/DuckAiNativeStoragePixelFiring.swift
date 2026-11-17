@@ -49,6 +49,28 @@ public enum DuckAiNativeStorageEvent {
     // Parsing errors
     case lastUsedModelParseError(Error)
     case lastUsedReasoningModeParseError(Error)
+
+    // Values from the page that JSON can't store
+    case invalidValue(DuckAiNativeStorageInvalidValue)
+}
+
+/// A value the page asked to save that JSON can't store, so it was dropped.
+public struct DuckAiNativeStorageInvalidValue: Equatable {
+
+    public enum ValueType: String {
+        case date
+        case nonFiniteNumber = "non_finite_number"
+        case other
+    }
+
+    public static let pixelName = "duck-ai_native-storage_invalid-value"
+
+    public let operation: DuckAiNativeStorageUserScriptMessages
+    public let valueType: ValueType
+
+    public var parameters: [String: String] {
+        ["operation": operation.rawValue, "value_type": valueType.rawValue]
+    }
 }
 
 public protocol DuckAiNativeStoragePixelFiring {

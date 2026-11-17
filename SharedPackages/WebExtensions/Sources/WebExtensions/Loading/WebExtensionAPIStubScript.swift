@@ -38,7 +38,12 @@ import Foundation
 ///
 /// In an extension page embedded in a website, `chrome.action.openPopup` is relayed to the extension's
 /// background page, since calling WebKit's own there would take the website's web process down.
+/// `action.setBadgeBackgroundColor` and `action.setBadgeTextColor` relay their color to the app through
+/// `badgeColorMessageHandlerName`.
 /// Extension pages also expose the DuckDuckGo brand through `navigator.userAgentData`.
+///
+/// A background page holds a keep-alive port when the app asks, so WebKit keeps the page loaded while
+/// the extension has a native messaging port open, as Chrome does (see `keepBackgroundAliveFunctionName`).
 ///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
 /// solves, for Chrome-only code no generic stub can cover.
@@ -46,7 +51,8 @@ import Foundation
 /// Chrome's enum-like constants WebKit lacks (`scripting.ExecutionWorld`, `tabs.TAB_ID_NONE`,
 /// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
 /// are defined where missing. `chrome.permissions` grants `idle` and `offscreen` itself, since the script
-/// implements them, and asks the app about `privacy`, so the user decides whether an extension gets it.
+/// implements them, and `webRequestAuthProvider`, since WebKit implements `webRequest.onAuthRequired` under
+/// `webRequest`. It asks the app about `privacy`, so the user decides whether an extension gets it.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -65,9 +71,22 @@ public enum WebExtensionAPIStubScript {
     /// doesn't know (see `WebExtensionAppPermission`). Without it they are never held.
     public static let permissionsMessageHandlerName = "ddgWebExtensionPermissions"
 
-    /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
-    /// without asking the user.
-    static let localPermissionNames = ["idle", "offscreen"]
+    /// Name of the script message handler `action.setBadgeBackgroundColor` and `action.setBadgeTextColor`
+    /// relay the color to as `#rrggbb`, since WebKit never passes it to the app. Without it the colors are dropped.
+    public static let badgeColorMessageHandlerName = "ddgWebExtensionBadgeColor"
+
+    /// Native messaging application a background page holds a port to only so WebKit keeps it loaded.
+    /// The app answers this port itself and starts no host.
+    public static let keepAliveApplicationIdentifier = "com.duckduckgo.background-keep-alive"
+
+    /// Global function of a background page that renews its port to `keepAliveApplicationIdentifier`,
+    /// which keeps WebKit from unloading the page, or closes that port when called with `false`. It
+    /// returns whether it succeeded.
+    public static let keepBackgroundAliveFunctionName = "__ddgKeepBackgroundAlive"
+
+    /// Permissions WebKit doesn't know that the script implements itself, or that WebKit covers under
+    /// another name (`webRequestAuthProvider`). They are always granted, without asking the user.
+    static let localPermissionNames = ["idle", "offscreen", "webRequestAuthProvider"]
 
     /// Permissions WebKit doesn't know that the script or the app implements.
     static let providedPermissionNames = Set(localPermissionNames + WebExtensionAppPermission.allCases.map(\.rawValue))
@@ -1485,6 +1504,169 @@ public enum WebExtensionAPIStubScript {
         } catch (error) {
             console.info("[DuckDuckGo] Could not relay chrome.action.openPopup: " + error);
         }
+
+        // Chrome keeps a background running as long as it has a native messaging port open, and
+        // extensions rely on that. iCloud Passwords keeps its paired session and its host's
+        // capabilities only in the background page: after an unload, its completion list offers
+        // only "Manage Passwords", and the button does nothing.
+        //
+        // WebKit keeps a background page loaded while the page has open ports that carried
+        // something from it in the last two minutes. But when any one port of the page closes,
+        // WebKit forgets all the page's ports (`WebExtensionContext::removePort` drops the whole
+        // set once one channel's count reaches zero), so the page unloads 30 seconds later even
+        // with its native port open. Closing the popup or reloading a website is enough.
+        //
+        // So while the extension has a native port open, the page holds a port to
+        // `keepAliveApplicationIdentifier`, which the app answers itself. The page renews that port
+        // whenever a port that reached it disconnects, and whenever the app calls
+        // `keepBackgroundAliveFunctionName`, which it does well within WebKit's 30 seconds. Opening a
+        // port puts the page back among WebKit's pages with ports and counts as activity. The old port
+        // is closed first, because closing it makes WebKit forget the page's ports again.
+        //
+        // The page keeps every port that reaches it until the port disconnects. Otherwise the garbage
+        // collector removes the ports nobody kept, which also makes WebKit forget the page's ports, and
+        // without a disconnect event. Chrome keeps an open port until it disconnects, too.
+        var keepAlivePort = null;
+        var watchesIncomingPorts = false;
+        var incomingPorts = [];
+
+        function closeKeepAlivePort() {
+            var port = keepAlivePort;
+            keepAlivePort = null;
+            if (port !== null) {
+                try {
+                    port.disconnect();
+                } catch (error) {
+                    // Already disconnected.
+                }
+            }
+        }
+
+        function renewKeepAlivePort() {
+            closeKeepAlivePort();
+            keepAlivePort = api.runtime.connectNative("\(Self.keepAliveApplicationIdentifier)");
+        }
+
+        function watchIncomingPorts() {
+            if (watchesIncomingPorts) {
+                return;
+            }
+            watchesIncomingPorts = true;
+            api.runtime.onConnect.addListener(function(port) {
+                incomingPorts.push(port);
+                port.onDisconnect.addListener(function() {
+                    var index = incomingPorts.indexOf(port);
+                    if (index !== -1) {
+                        incomingPorts.splice(index, 1);
+                    }
+                    if (keepAlivePort === null) {
+                        return;
+                    }
+                    try {
+                        renewKeepAlivePort();
+                    } catch (error) {
+                        keepAlivePort = null;
+                    }
+                });
+            });
+        }
+
+        // Renews the keep-alive port, or closes it when `keepAlive` is `false`. Returns whether it succeeded.
+        function keepBackgroundAlive(keepAlive) {
+            try {
+                if (keepAlive === false) {
+                    closeKeepAlivePort();
+                    return true;
+                }
+                watchIncomingPorts();
+                renewKeepAlivePort();
+                return true;
+            } catch (error) {
+                keepAlivePort = null;
+                return false;
+            }
+        }
+
+        try {
+            if (api.runtime && typeof api.runtime.connectNative === "function" && api.runtime.onConnect
+                && isBackgroundPage()) {
+                Object.defineProperty(globalThis, "\(Self.keepBackgroundAliveFunctionName)", {
+                    value: keepBackgroundAlive,
+                    enumerable: false,
+                    configurable: true
+                });
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not define the background keep-alive: " + error);
+        }
+
+        // WebKit accepts `setBadgeBackgroundColor` but never passes the color to the app, and has no
+        // `setBadgeTextColor`, so both send the color through `badgeColorMessageHandlerName` as `#rrggbb`.
+        var badgeColorMessageHandlerName = "\(Self.badgeColorMessageHandlerName)";
+        var badgeColorContext;
+
+        // Normalizes Chrome's `[r, g, b, a]` array or CSS color string to an opaque `#rrggbb`, or to `""` when it's
+        // fully transparent or not a color, which restores the default color.
+        function badgeColorHex(color) {
+            var context = badgeColorContext ||= new OffscreenCanvas(1, 1).getContext("2d");
+            context.fillStyle = "transparent";
+            context.fillStyle = Array.isArray(color) ? "rgb(" + color.map(function(c, i) { return i === 3 ? c / 255 : c; }) + ")" : color;
+            var hex = context.fillStyle;
+            if (hex[0] === "#") {
+                return hex;
+            }
+            // A translucent color (or an invalid one, which leaves `transparent` in place) reads back as `rgba(r, g, b, a)`.
+            var channels = hex.match(/[\\d.]+/g);
+            if (channels[3] === "0") {
+                return "";
+            }
+            context.fillStyle = "rgb(" + channels.slice(0, 3) + ")";
+            return context.fillStyle;
+        }
+
+        function relayBadgeColor(kind, details) {
+            try {
+                var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
+                var handler = handlers && handlers[badgeColorMessageHandlerName];
+                var color = details !== null && typeof details === "object" ? badgeColorHex(details.color) : null;
+                if (handler && color !== null) {
+                    handler.postMessage({ kind: kind, color: color });
+                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not relay the badge color: " + error);
+            }
+        }
+
+        function relayBadgeColorSetter(namespace, name, kind) {
+            var original = namespace[name];
+            return define(namespace, name, function(details) {
+                relayBadgeColor(kind, details);
+                if (typeof original === "function") {
+                    return original.apply(this, arguments);
+                }
+                var last = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                return answerBothStyles(Promise.resolve(), typeof last === "function" ? last : undefined);
+            });
+        }
+
+        // Manifest V2 extensions set badge colors through `browserAction` or `pageAction` instead of `action`.
+        var badgeActionNamespaces = ["action", "browserAction", "pageAction"];
+
+        badgeActionNamespaces.forEach(function(name) {
+            try {
+                var namespace = api[name];
+                if (namespace && typeof namespace.setBadgeBackgroundColor === "function") {
+                    if (relayBadgeColorSetter(namespace, "setBadgeBackgroundColor", "background")) {
+                        relayedMembers.push(name + ".setBadgeBackgroundColor");
+                    }
+                    if (relayBadgeColorSetter(namespace, "setBadgeTextColor", "text")) {
+                        relayedMembers.push(name + ".setBadgeTextColor");
+                    }
+                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not relay the " + name + " badge colors: " + error);
+            }
+        });
 
         if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0
             || relayedMembers.length > 0) {

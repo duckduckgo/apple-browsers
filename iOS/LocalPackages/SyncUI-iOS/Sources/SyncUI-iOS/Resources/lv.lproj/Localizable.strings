@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Nepieciešama kameras atļauja";
 
-/* No comment provided by engineer. */
-"Cancel" = "Atcelt";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Atcelt";
 

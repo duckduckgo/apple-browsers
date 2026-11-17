@@ -235,7 +235,26 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         XCTAssertNotNil(submitButton.image(for: .normal))
     }
 
+    // MARK: - Floating Suggestions
+
+    func testWhenAHardwareKeyboardShowsItsShortcutsBarThenSuggestionsStayInTheColumn() {
+        let shortcutsBar = CGRect(x: -657, y: sidebarColumn.maxY - 69, width: 1032, height: 69)
+
+        XCTAssertFalse(AIChatContextualInputViewController.keyboardFloatsSuggestions(keyboardFrame: shortcutsBar,
+                                                                                     columnBounds: sidebarColumn))
+    }
+
+    func testWhenASoftwareKeyboardCoversTheColumnThenSuggestionsFloat() {
+        let softwareKeyboard = CGRect(x: -657, y: sidebarColumn.maxY - 345, width: 1032, height: 345)
+
+        XCTAssertTrue(AIChatContextualInputViewController.keyboardFloatsSuggestions(keyboardFrame: softwareKeyboard,
+                                                                                    columnBounds: sidebarColumn))
+    }
+
     // MARK: - Helpers
+
+    /// An iPad sidebar column in its own space, under the tabs and address bars of a 13" iPad in portrait.
+    private let sidebarColumn = CGRect(x: 0, y: 0, width: 375, height: 1250)
 
     private func nativeInputSubmitButton(in viewController: UIViewController) -> UIButton? {
         findSubview(in: viewController.view) { $0.accessibilityIdentifier == "AIChatNativeInputView.submitButton" } as? UIButton

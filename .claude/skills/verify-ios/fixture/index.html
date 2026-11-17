@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>verify-ios fixture</title>
+<style>
+  body{font:17px -apple-system,system-ui,sans-serif;margin:24px;line-height:1.5}
+  button,input{font:inherit;padding:8px 12px;margin:4px 0}
+  .row{margin:14px 0}
+  #list li{padding:6px 0}
+  /* Follow the system appearance, so dark-mode captures show a dark page (Liquid Glass bars take their tint from it). */
+  :root{color-scheme:light dark}
+  @media (prefers-color-scheme: dark){body{background:#1c1c1e;color:#f2f2f7}a{color:#64a8ff}}
+</style>
+</head>
+<body>
+<h1 id="title">verify-ios fixture</h1>
+<p>token: <span id="token" aria-label="token">none</span></p>
+<p>status: <span id="status" aria-label="status">idle</span></p>
+<p>stored: <span id="stored" aria-label="stored">unknown</span></p>
+
+<div class="row">
+  <button id="change" aria-label="change status">change status</button>
+  <button id="disabled" aria-label="disabled button" disabled>disabled button</button>
+</div>
+
+<div class="row">
+  <!-- Two buttons with one label: a tap that guessed would change #status, so the ambiguity probe can see it. -->
+  <button id="twin-a" aria-label="twin button">twin button</button>
+  <button id="twin-b" aria-label="twin button">twin button</button>
+</div>
+
+<div class="row">
+  <label for="field">field</label>
+  <input id="field" aria-label="field" placeholder="type here">
+  <span id="echo" aria-label="echo"></span>
+</div>
+
+<div class="row">
+  <a id="external" href="/target.html" aria-label="external link">open the target page</a>
+</div>
+
+<div class="row">
+  <button id="geo" aria-label="ask for location">ask for location</button>
+  <span id="geo-result" aria-label="geo result">not asked</span>
+</div>
+
+<ol id="list" aria-label="long list"></ol>
+<p id="bottom" aria-label="bottom marker">bottom of page</p>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token") || "none";
+  document.getElementById("token").textContent = token;
+
+  // localStorage check for the fire button task: report what was there before this load, then write.
+  let prior = null;
+  try { prior = localStorage.getItem("verify-ios"); } catch (e) {}
+  document.getElementById("stored").textContent = prior ? "present" : "empty";
+  try { localStorage.setItem("verify-ios", token); } catch (e) {}
+
+  document.getElementById("change").addEventListener("click", () => {
+    document.getElementById("status").textContent = "changed";
+  });
+  for (const id of ["twin-a", "twin-b"]) {
+    document.getElementById(id).addEventListener("click", () => {
+      document.getElementById("status").textContent = id;
+    });
+  }
+  document.getElementById("field").addEventListener("input", (e) => {
+    document.getElementById("echo").textContent = e.target.value;
+  });
+  document.getElementById("geo").addEventListener("click", () => {
+    const out = document.getElementById("geo-result");
+    out.textContent = "asking";
+    if (!navigator.geolocation) { out.textContent = "unsupported"; return; }
+    navigator.geolocation.getCurrentPosition(
+      () => { out.textContent = "granted"; },
+      (err) => { out.textContent = err.code === 1 ? "denied" : "error"; },
+      { timeout: 15000 }
+    );
+  });
+  const list = document.getElementById("list");
+  for (let i = 1; i <= 60; i++) {
+    const li = document.createElement("li");
+    li.textContent = "item " + i;
+    list.appendChild(li);
+  }
+</script>
+</body>
+</html>

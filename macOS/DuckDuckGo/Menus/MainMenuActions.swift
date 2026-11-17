@@ -638,6 +638,10 @@ extension AppDelegate {
         NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
+    @objc func debugResetSuggestedPrompts(_ sender: Any?) {
+        NewTabPageOmnibarConfigProvider.resetSuggestedPrompts(in: keyValueStore)
+    }
+
     @objc func debugIncrementAutoconsentStats(_ sender: Any?) {
         Task {
             await autoconsentStats.recordAutoconsentAction(clicksMade: 1, timeSpent: 1.0)

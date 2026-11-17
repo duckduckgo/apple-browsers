@@ -150,6 +150,13 @@
             }
         ]
     },
+    "aichat_settings_keyboard_animation_disabled": {
+        "description": "Fired when the keyboard animation preference changes from enabled to disabled.",
+        "owners": ["pikorddg"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "aichat_settings_state": {
         "description": "Daily snapshot of the Duck.ai settings, mirroring macOS aichat_settings_state_macos, sent when the app comes to the foreground. The per-setting pixels only cover users who change a setting; this sizes each setting's base. Layout, window and keyboard go in the separate aichat_usage_context, sent at another moment, so the two can't be combined.",
         "owners": ["jaceklyp"],
@@ -157,6 +164,12 @@
         "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "keyboard_animation",
+                "description": "Keyboard animation preference.",
+                "type": "string",
+                "enum": ["enabled", "disabled", "unavailable"]
+            },
             { "key": "duckai_enabled", "description": "Whether Duck.ai is enabled in AI Features settings.", "type": "boolean" },
             {
                 "key": "addressbar_toggle",

@@ -654,6 +654,27 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(fired.first?.parameters == ["depth_bucket": expectedBucket])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("iPad sidebar pixels fire daily and counted", .timeLimit(.minutes(1)))
+    func sidebar_pixels_fire_daily_and_counted() {
+        var fired: [String] = []
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in Issue.record("Must use PixelKit") },
+            firePixelKitEvent: { event, frequency in
+                #expect(frequency == .dailyAndCount)
+                #expect(event.parameters == nil)
+                fired.append(event.name)
+            })
+
+        sut.fireSidebarOpened()
+        sut.fireSidebarClosed()
+
+        #expect(fired == [
+            "aichat_contextual_sidebar_opened",
+            "aichat_contextual_sidebar_closed"
+        ])
+    }
+
     @Test("Concurrent reset and navigation calls are thread-safe")
     func testConcurrentResetAndNavigation() async {
         // GIVEN

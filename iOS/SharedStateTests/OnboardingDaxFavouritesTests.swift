@@ -34,6 +34,7 @@ import Common
 import SystemSettingsPiPTutorialTestSupport
 import Combine
 import PrivacyConfig
+import AIChat
 import AIChatTestingUtilities
 
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
@@ -107,7 +108,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                               internalUserDecider: MockInternalUserDecider(),
                                                                               syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                              webExtensionAvailability: nil)
+                                                                              webExtensionAvailability: nil,
+                                                                              aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog()))
 
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
         let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)
@@ -323,7 +325,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
         host.tabManager.addHomeTab()
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         host.prepareHomePageMessagesForForegroundIfNeeded()
 
         XCTAssertTrue(store.fetchedTriggerFilters.isEmpty)
@@ -372,7 +374,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         )
         let host = makeHost(configuration)
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         let context = configuration.presentationContext(for: .remoteMessage(remoteMessage: message))
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
         host.newTab(allowingKeyboard: false)
@@ -396,7 +398,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         )
         let host = makeHost(configuration)
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         configuration.handleAppForegrounded()
         host.prepareHomePageMessagesForForegroundIfNeeded()
 
@@ -421,7 +423,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let host = makeHost(configuration)
 
         host.tabManager.currentTabsModel.currentTab?.link = Link(title: nil, url: websiteURL)
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         host.newTabPageViewController = nil
         configuration.handleAppForegrounded()
         host.prepareHomePageMessagesForForegroundIfNeeded()
@@ -494,7 +496,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         )
         let host = makeHost(configuration)
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         configuration.handleAppForegrounded()
         host.tabManager.currentTabsModel.currentTab?.openedAfterIdle = true
         host.prepareHomePageMessagesForForegroundIfNeeded()
@@ -521,7 +523,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
 
     private func makeSuggestionTraySpy(for host: MainViewController, websiteURL: URL) -> SuggestionTrayEligibilitySpy {
         host.tabManager.currentTabsModel.currentTab?.link = Link(title: nil, url: websiteURL)
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         host.newTabPageViewController = nil
         let dependencies = host.suggestionTrayDependencies
         let tray = SuggestionTrayEligibilitySpy(

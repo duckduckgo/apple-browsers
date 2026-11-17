@@ -124,6 +124,11 @@ public final class AIChatQuickActionChipView: UIView {
         accessibilityLabel = action.title
         accessibilityIdentifier = action.id
     }
+
+    /// The title's frame in this chip's own space, unaffected by its transform, for lining up two chip styles by their text.
+    public var titleFrame: CGRect {
+        label.convert(label.bounds, to: self)
+    }
 }
 
 // MARK: - Private Setup

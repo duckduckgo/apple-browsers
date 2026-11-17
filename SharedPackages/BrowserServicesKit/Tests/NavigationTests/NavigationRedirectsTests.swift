@@ -1018,7 +1018,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         }
         waitForExpectations()
 
-        assertHistory(ofResponderAt: 0, equalsTo: [
+        var expectedHistory: [TestsNavigationEvent] = [
             .navigationAction(req(urls.testScheme), .other, src: main(responderIdx: 0)),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),
             .didStart(Nav(action: navAct(1), .started)),
@@ -1027,14 +1027,26 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
             .navigationAction(NavAction(req(urls.local4), .other, from: history[1], src: main(urls.testScheme, responderIdx: 0))),
             .willStart(Nav(action: navAct(2), .approved, isCurrent: false)),
-
-            .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), resp: resp(0), .committed, isCurrent: false), NSURLErrorCancelled),
-
+        ]
+        if #unavailable(macOS 27) {
+            expectedHistory += [
+                .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), resp: resp(0), .committed, isCurrent: false), NSURLErrorCancelled),
+            ]
+        }
+        expectedHistory += [
             .didStart(Nav(action: navAct(2), .started)),
             .response(Nav(action: navAct(2), .responseReceived, resp: .resp(urls.local4, data.html.count, headers: .default + ["Content-Type": "text/html"]))),
             .didCommit(Nav(action: navAct(2), .responseReceived, resp: resp(1), .committed)),
             .didFinish(Nav(action: navAct(2), .finished, resp: resp(1), .committed))
-        ])
+        ]
+        assertHistory(ofResponderAt: 0, equalsTo: expectedHistory)
+
+        if #available(macOS 27, *) {
+            let eOnDidFail = expectation(description: "onDidFail")
+            responder(at: 0).onDidFail = { _, _ in eOnDidFail.fulfill() }
+            _webView.perform(Selector(("_close")))
+            waitForExpectations()
+        }
     }
 
     @MainActor

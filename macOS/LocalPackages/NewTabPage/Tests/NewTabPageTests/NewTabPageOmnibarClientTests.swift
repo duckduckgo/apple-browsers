@@ -1029,6 +1029,71 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
     }
 
+    // MARK: - Suggested prompts
+
+    @MainActor
+    func testGetConfigIncludesShowSuggestedPromptsFromProvider() async throws {
+        configProvider.showSuggestedPrompts = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showSuggestedPrompts, true)
+    }
+
+    @MainActor
+    func testWhileChipsAreShownEverySubmittedPromptIsCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        var chipPrompt = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        chipPrompt.suggestedPromptId = "jobapplication"
+        let typedPrompt = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: chipPrompt)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: typedPrompt)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 2)
+    }
+
+    @MainActor
+    func testWhenChipsAreNotShownPromptsAreNotCounted() async throws {
+        configProvider.showSuggestedPrompts = false
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
+    }
+
+    @MainActor
+    func testVoiceChatIsNotCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "", target: .sameTab, modelId: nil, images: nil, mode: AIChatNativePrompt.voiceMode, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
+    }
+
+    @MainActor
+    func testSubmissionFromASuggestedPromptIsReported() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.suggestedPromptId = "jobapplication"
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, ["jobapplication"])
+    }
+
+    @MainActor
+    func testTypedSubmissionIsNotReportedAsASuggestedPrompt() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, [])
+    }
+
     @MainActor
     func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)
@@ -1365,6 +1430,49 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         provider.enablePastedAttachments = true
         let on: NewTabPageDataModel.OmnibarConfig = try await helper.handleMessage(named: .getConfig)
         XCTAssertEqual(on.enablePastedAttachments, true)
+    }
+
+    @MainActor
+    func testGetConfigPassesPastedTextAndPromptLimitsThrough() async throws {
+        let off: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(off.enablePastedText, false)
+        XCTAssertNil(off.pastedTextLimits)
+
+        configProvider.isPastedTextEnabled = true
+        configProvider.pastedTextLimits = .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000)
+        let on: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(on.enablePastedText, true)
+        XCTAssertEqual(on.pastedTextLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
+    }
+
+    @MainActor
+    func testSubmitChatForwardsPastedTextWhenEnabled() async throws {
+        configProvider.isPastedTextEnabled = true
+        let mock = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+
+        let action: [String: Any] = ["chat": "Summarize", "target": "same-tab", "textPasted": [["content": "long paste"]]]
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(mock.lastSubmitChatTextPasted, [.init(content: "long paste")])
+    }
+
+    @MainActor
+    func testSubmitChatDropsPastedTextWhenDisabled() async throws {
+        let mock = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+
+        let action: [String: Any] = ["chat": "Summarize", "target": "same-tab", "textPasted": [["content": "long paste"]]]
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertNil(mock.lastSubmitChatTextPasted)
+    }
+
+    func testSubmitChatDecodesWithAndWithoutPastedText() throws {
+        let withPaste = Data(#"{"chat":"Hi","target":"same-tab","textPasted":[{"content":"a"},{"content":"b"}]}"#.utf8)
+        let decoded = try JSONDecoder().decode(NewTabPageDataModel.SubmitChatAction.self, from: withPaste)
+        XCTAssertEqual(decoded.textPasted, [.init(content: "a"), .init(content: "b")])
+
+        let withoutPaste = Data(#"{"chat":"Hi","target":"same-tab"}"#.utf8)
+        XCTAssertNil(try JSONDecoder().decode(NewTabPageDataModel.SubmitChatAction.self, from: withoutPaste).textPasted)
     }
 
     @MainActor

@@ -29,6 +29,7 @@ public struct ChromeWebStoreListing: Equatable, Identifiable {
     public let entry: ExtensionsCatalogSubfeature
     public let name: String
     public let publisher: String
+    public let publisherURL: URL?
     public let iconURL: URL?
     public let storeURL: URL
 
@@ -59,16 +60,26 @@ public enum ChromeWebStoreURL {
     }
 
     public static func downloadURL(for identifier: String) throws -> URL {
+        try serviceURL(for: identifier, response: "redirect", installedVersion: nil)
+    }
+
+    static func updateCheckURL(for identifier: String, installedVersion: String) throws -> URL {
+        try serviceURL(for: identifier, response: "updatecheck", installedVersion: installedVersion)
+    }
+
+    private static func serviceURL(for identifier: String, response: String, installedVersion: String?) throws -> URL {
         guard isValidExtensionID(identifier) else { throw ChromeWebStoreError.invalidRequest }
+        // Discovery reports the installed version; only package downloads use the on-demand source.
+        let extensionParameters = installedVersion.map { "&v=\($0)" } ?? "&installsource=ondemand"
         var components = URLComponents()
         components.scheme = "https"
         components.host = "clients2.google.com"
         components.path = "/service/update2/crx"
         components.queryItems = [
-            URLQueryItem(name: "response", value: "redirect"),
+            URLQueryItem(name: "response", value: response),
             Self.prodversionQueryItem,
             URLQueryItem(name: "acceptformat", value: "crx3"),
-            URLQueryItem(name: "x", value: "id=\(identifier)&installsource=ondemand&uc")
+            URLQueryItem(name: "x", value: "id=\(identifier)\(extensionParameters)&uc")
         ]
         guard let url = components.url else { throw ChromeWebStoreError.invalidRequest }
         return url
@@ -125,9 +136,15 @@ public extension ChromeWebStoreCatalogProviding {
 public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
     private let configurationManager: PrivacyConfigurationManaging
+    private let isAppStoreBuild: Bool
 
-    public init(configurationManager: PrivacyConfigurationManaging) {
+    /// - Parameter isAppStoreBuild: Whether the app is the App Store build, which also leaves out `appStoreHiddenExtensionIds`.
+    public init(
+        configurationManager: PrivacyConfigurationManaging,
+        isAppStoreBuild: Bool = false
+    ) {
         self.configurationManager = configurationManager
+        self.isAppStoreBuild = isAppStoreBuild
     }
 
     public var extensionIDs: [String] {
@@ -140,8 +157,13 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
               config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) else { return [] }
 
         let featureSettings = config.settings(for: .extensionManagement)
-        let excluded = Set(featureSettings["hiddenExtensionIds"] as? [String] ?? [])
+        var excluded = Set(featureSettings["hiddenExtensionIds"] as? [String] ?? [])
             .union(featureSettings["disabledExtensionIds"] as? [String] ?? [])
+        // Extensions that need what the App Store sandbox doesn't allow, such as iCloud Passwords and its
+        // native messaging host. Only macOS reads this key, so the Windows browser ignores it.
+        if isAppStoreBuild {
+            excluded.formUnion(featureSettings["appStoreHiddenExtensionIds"] as? [String] ?? [])
+        }
 
         // Each extension is its own subfeature, so Privacy Config evaluates its state,
         // rollout and minimum version. Subfeatures this build doesn't know are ignored.
@@ -174,6 +196,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         return ChromeWebStoreListing(entry: subfeature,
                                      name: name,
                                      publisher: settings["publisher"] as? String ?? "",
+                                     publisherURL: (settings["publisherUri"] as? String).flatMap(URL.init(string:)),
                                      iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
                                      storeURL: storeURL)
     }

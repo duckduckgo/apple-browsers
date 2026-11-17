@@ -122,8 +122,6 @@ extension XCUIApplication {
 
         static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
         static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
-
-        static let quitMenuItem = "Quit DuckDuckGo"
     }
 
     static func setUp(environment: [String: String]? = nil,

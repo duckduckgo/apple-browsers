@@ -94,6 +94,7 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var isAIChatTabBarContextualSheetButtonVisible: Bool = true
     var isAIChatFullModeEnabled: Bool = false
     var isAutomaticContextAttachmentEnabled: Bool = false
+    var isKeyboardAnimationEnabled = true
     var isChatSuggestionsEnabled: Bool = true
     var defaultOmnibarMode: DefaultOmnibarMode = .search
 
@@ -109,6 +110,9 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {}
     func enableAIChatSearchInputUserSettings(enable: Bool) {}
     func enableAIChatFullModeSetting(enable: Bool) {}
+    func enableKeyboardAnimation(enable: Bool) {
+        isKeyboardAnimationEnabled = enable
+    }
     func enableAutomaticContextAttachment(enable: Bool) {}
     func enableChatSuggestions(enable: Bool) {}
     func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
@@ -174,6 +178,11 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var lastUsedSidebarWidth: Double?
     var hasAcceptedTermsAndConditions: Bool = false
 
+    var pageSummariesModel: AIChatPageSummariesModel = .duckAI
+    var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
+        Empty().eraseToAnyPublisher()
+    }
+
     func reset() {
         isAIFeaturesEnabled = false
         showShortcutOnNewTabPage = false
@@ -186,6 +195,7 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
         hasAcceptedTermsAndConditions = false
+        pageSummariesModel = .duckAI
     }
 }
 #endif

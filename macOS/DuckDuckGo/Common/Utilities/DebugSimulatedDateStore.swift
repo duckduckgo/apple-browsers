@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Foundation
 import Persistence
 
@@ -55,5 +56,13 @@ final class DebugSimulatedDateStore {
 
     func reset() {
         try? keyValueStore.removeObject(forKey: Key.simulatedDate.rawValue)
+    }
+
+    /// The simulated date in debug and review builds when one is set, otherwise the current date.
+    static func makeDateProvider(keyValueStore: ThrowingKeyValueStoring) -> () -> Date {
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild else { return Date.init }
+        let store = DebugSimulatedDateStore(keyValueStore: keyValueStore)
+        return { store.simulatedDate ?? Date() }
     }
 }

@@ -54,13 +54,31 @@ struct CanonicalURLTests {
         let swift: String?
         let ns: String?
         let cf: String?
-        init(_ input: String, swift: String?, ns: String?, cf: String?) {
+        let nsSinceOS27: String?
+        let cfSinceOS27: String?
+        init(_ input: String, swift: String?, ns: String?, cf: String?, nsSinceOS27: String?, cfSinceOS27: String?) {
             self.input = input
             self.swift = swift
             self.ns = ns
             self.cf = cf
+            self.nsSinceOS27 = nsSinceOS27
+            self.cfSinceOS27 = cfSinceOS27
         }
         var testDescription: String { String(input.prefix(80)) }
+
+        var expectedNS: String? {
+            if #available(macOS 27, iOS 27, *) {
+                return nsSinceOS27
+            }
+            return ns
+        }
+
+        var expectedCF: String? {
+            if #available(macOS 27, iOS 27, *) {
+                return cfSinceOS27
+            }
+            return cf
+        }
     }
 
     struct RelativeCase: Sendable, CustomTestStringConvertible {
@@ -103,8 +121,8 @@ struct CanonicalURLTests {
     @Test("canonicalURL — recorded result that depends on how the URL was created", .timeLimit(.minutes(1)), arguments: CanonicalURLTests.recordedBackingDependent)
     func recordedBackingDependentResult(_ testCase: BackingDependentCase) {
         #expect(Self.canonical(URL(string: testCase.input)) == testCase.swift, "URL(string:)")
-        #expect(Self.canonical(NSURL(string: testCase.input) as URL?) == testCase.ns, "NSURL(string:)")
-        #expect(Self.canonical(Self.cfURL(testCase.input)) == testCase.cf, "CFURLCreateWithBytes")
+        #expect(Self.canonical(NSURL(string: testCase.input) as URL?) == testCase.expectedNS, "NSURL(string:)")
+        #expect(Self.canonical(Self.cfURL(testCase.input)) == testCase.expectedCF, "CFURLCreateWithBytes")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -332,39 +350,57 @@ struct CanonicalURLTests {
         BackingDependentCase("http://host/%%%25%32%35asd%%",
                              swift: "http://host/%25%25%2525%2532%2535asd%25%25",
                              ns: "http://host/%25%25%2525%2532%2535asd%25%25",
-                             cf: "http://host/%25%25%2525asd%25%25"),
+                             cf: "http://host/%25%25%2525asd%25%25",
+                             nsSinceOS27: "http://host/%25%25%2525asd%25%25",
+                             cfSinceOS27: "http://host/%25%25%2525asd%25%25"),
         BackingDependentCase("mailto:a@b.c#x",
                              swift: "mailto:a@b.c",
                              ns: "mailto:a@b.c#x",
-                             cf: "mailto:a@b.c#x"),
+                             cf: "mailto:a@b.c#x",
+                             nsSinceOS27: "mailto:a@b.c",
+                             cfSinceOS27: "mailto:a@b.c"),
         BackingDependentCase("about:blank#x",
                              swift: "about:blank",
                              ns: "about:blank#x",
-                             cf: "about:blank#x"),
+                             cf: "about:blank#x",
+                             nsSinceOS27: "about:blank",
+                             cfSinceOS27: "about:blank"),
         BackingDependentCase("data:text/html,a#b",
                              swift: "data:text/html,a",
                              ns: "data:text/html,a#b",
-                             cf: "data:text/html,a#b"),
+                             cf: "data:text/html,a#b",
+                             nsSinceOS27: "data:text/html,a",
+                             cfSinceOS27: "data:text/html,a"),
         BackingDependentCase("javascript:void(0)#z",
                              swift: "javascript:void(0)",
                              ns: "javascript:void(0)#z",
-                             cf: "javascript:void(0)#z"),
+                             cf: "javascript:void(0)#z",
+                             nsSinceOS27: "javascript:void(0)",
+                             cfSinceOS27: "javascript:void(0)"),
         BackingDependentCase("blob:https://e.com/uuid#f",
                              swift: "blob:https://e.com/uuid",
                              ns: "blob:https://e.com/uuid#f",
-                             cf: "blob:https://e.com/uuid#f"),
+                             cf: "blob:https://e.com/uuid#f",
+                             nsSinceOS27: "blob:https://e.com/uuid",
+                             cfSinceOS27: "blob:https://e.com/uuid"),
         BackingDependentCase("tel:+123#x",
                              swift: "tel:+123",
                              ns: "tel:+123#x",
-                             cf: "tel:+123#x"),
+                             cf: "tel:+123#x",
+                             nsSinceOS27: "tel:+123",
+                             cfSinceOS27: "tel:+123"),
         BackingDependentCase("http://e.com/%%41",
                              swift: "http://e.com/%25%2541",
                              ns: "http://e.com/%25%2541",
-                             cf: "http://e.com/%25a"),
+                             cf: "http://e.com/%25a",
+                             nsSinceOS27: "http://e.com/%25a",
+                             cfSinceOS27: "http://e.com/%25a"),
         BackingDependentCase("http://e.com/%41%",
                              swift: "http://e.com/%2541%25",
                              ns: "http://e.com/%2541%25",
-                             cf: "http://e.com/a%25"),
+                             cf: "http://e.com/a%25",
+                             nsSinceOS27: "http://e.com/a%25",
+                             cfSinceOS27: "http://e.com/a%25"),
     ]
 
     static let recordedRelative: [RelativeCase] = [

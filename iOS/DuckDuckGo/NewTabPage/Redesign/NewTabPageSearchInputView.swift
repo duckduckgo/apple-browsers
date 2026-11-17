@@ -27,20 +27,28 @@ struct NewTabPageSearchInputView: View {
     @ObservedObject var model: NewTabPageSearchInputModel
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
+    /// When non-nil, the Duck.ai button shows this menu instead of opening Duck.ai.
+    var aiChatMenu: () -> UIMenu? = { nil }
 
     var body: some View {
         VStack(spacing: 0) {
             if model.settings.isModeToggleShown {
-                NewTabPageModeToggle(textEntryMode: $model.textEntryMode)
-                    .frame(height: Metrics.toggleHeight)
-                    .padding(.top, Metrics.cardPadding)
-                    .padding(.horizontal, Metrics.cardPadding)
+                NewTabPageModeToggle(textEntryMode: model.textEntryMode) { mode in
+                    if model.select(mode) {
+                        // The handoff snapshots the resting field, so let SwiftUI apply the new mode first.
+                        DispatchQueue.main.async { onActivate(mode) }
+                    }
+                }
+                .frame(height: Metrics.toggleHeight)
+                .padding(.top, Metrics.cardPadding)
+                .padding(.horizontal, Metrics.cardPadding)
             }
             NewTabPageRestingSearchField(textEntryMode: model.textEntryMode,
                                         isAIChatButtonShown: model.isAIChatButtonShown,
                                         isVoiceSearchEnabled: model.settings.isVoiceSearchEnabled,
                                         onActivate: onActivate,
-                                        onVoiceSearch: onVoiceSearch)
+                                        onVoiceSearch: onVoiceSearch,
+                                        aiChatMenu: aiChatMenu)
                 .frame(height: Metrics.fieldHeight)
         }
         .background(RedesignedNewTabPageCardBackground())
@@ -50,7 +58,8 @@ struct NewTabPageSearchInputView: View {
 
 private struct NewTabPageModeToggle: UIViewRepresentable {
 
-    @Binding var textEntryMode: TextEntryMode
+    let textEntryMode: TextEntryMode
+    let onModeSelected: (TextEntryMode) -> Void
 
     func makeUIView(context: Context) -> UnifiedToggleInputToggleView {
         UnifiedToggleInputToggleView()
@@ -58,7 +67,7 @@ private struct NewTabPageModeToggle: UIViewRepresentable {
 
     func updateUIView(_ view: UnifiedToggleInputToggleView, context: Context) {
         view.setMode(textEntryMode, animated: false)
-        view.onModeChanged = { textEntryMode = $0 }
+        view.onModeChanged = onModeSelected
     }
 }
 
@@ -69,6 +78,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
     let isVoiceSearchEnabled: Bool
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
+    let aiChatMenu: () -> UIMenu?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(field: self)
@@ -117,6 +127,8 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
             attributes: [.foregroundColor: UIColor(designSystemColor: .textSecondary)])
         context.coordinator.activateButton.accessibilityLabel = placeholder
         view.aiChatButton.isHidden = !isAIChatButtonShown
+        view.aiChatButton.menu = aiChatMenu()
+        view.aiChatButton.showsMenuAsPrimaryAction = view.aiChatButton.menu != nil
         view.voiceSearchButton.isHidden = !isVoiceSearchEnabled
     }
 

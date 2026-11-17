@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
-        .package(url: "https://github.com/duckduckgo/OpenSSL-XCFramework", exact: "3.3.2000")
+        .package(url: "https://github.com/duckduckgo/OpenSSL-XCFramework", exact: "3.6.5000")
     ],
     targets: [
         .target(

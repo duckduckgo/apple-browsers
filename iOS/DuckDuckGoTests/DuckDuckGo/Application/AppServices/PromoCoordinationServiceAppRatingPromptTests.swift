@@ -82,7 +82,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
         service.presentModalPromptIfNeeded(from: presenter)
         #expect(service.shouldRequestAppRatingPrompt())
         #expect(reporter.shownPrompts.isEmpty)
-        #expect(reporter.finishedPrompts == (coordinated ? [.modal] : []))
+        #expect(reporter.shownCoordinatedPrompts == (coordinated ? [.modal] : []))
 
         service.didRequestAppRatingPrompt()
 

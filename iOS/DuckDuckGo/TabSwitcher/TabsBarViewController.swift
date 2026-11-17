@@ -112,7 +112,9 @@ class TabsBarViewController: UIViewController {
     }
 
     lazy var fireButton: UIButton = {
-        createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        let button = createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
+        return button
     }()
 
     lazy var addTabButton: UIButton = {
@@ -1156,7 +1158,7 @@ extension MainViewController: TabsBarDelegate {
         let switchesTab = tab !== tabManager.currentTabsModel.currentTab
         if switchesTab {
             // The sidebar leaves the tabs bar usable, and tapping the tab it belongs to keeps it open.
-            currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+            currentTabWillLeaveScreen(.tabSwitched)
             chromeManager.preventNextScrollToTop()
         }
         dismissOmniBar()

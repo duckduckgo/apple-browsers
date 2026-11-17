@@ -217,4 +217,21 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
         $requiresAiTermsAcceptance.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }
+
+    var showSuggestedPrompts: Bool = false
+    var suggestedPromptsPromptCount: Int = 0
+
+    let suggestedPromptsSubject = PassthroughSubject<Void, Never>()
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> {
+        suggestedPromptsSubject.eraseToAnyPublisher()
+    }
+
+    @Published var isPastedTextEnabled: Bool = false
+    @Published var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits?
+
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
+        $isPastedTextEnabled.dropFirst().map { _ in () }
+            .merge(with: $pastedTextLimits.dropFirst().map { _ in () })
+            .eraseToAnyPublisher()
+    }
 }

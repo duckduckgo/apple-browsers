@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import AppKitExtensions
 import Combine
 import Common
 import UserScript
@@ -28,26 +27,30 @@ import WebKit
 final class ChromeWebStoreUserScript: NSObject, Subfeature {
     static let featureNameValue = "chromeWebstorePatching"
     let featureName = featureNameValue
+
+    enum UserInfoKeys {
+        static let extensionID = "extensionId"
+    }
+
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: ChromeWebStoreURL.host)])
     weak var broker: UserScriptMessageBroker?
-    private let isEnabled: Bool
     private let serviceProvider: @MainActor () -> ChromeWebStoreManaging?
 
     private let notificationCenter: NotificationCenter
     private var changeCancellable: AnyCancellable?
-    @MainActor private weak var webView: WKWebView?
+    @MainActor private var installTasks: Set<Task<Bool, Never>> = []
+    /// The tab's web view, set by `ChromeWebStoreTabExtension`. The tab sets it on every new instance,
+    /// because changes such as an extension's autofill takeover rebuild the tab's user scripts.
+    @MainActor weak var webView: WKWebView?
 
     init(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?,
-         notificationCenter: NotificationCenter = .default,
-         buildType: ApplicationBuildType = StandardApplicationBuildType()) {
-        self.isEnabled = buildType.isSparkleBuild
+         notificationCenter: NotificationCenter = .default) {
         self.serviceProvider = serviceProvider
         self.notificationCenter = notificationCenter
     }
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
-        guard isEnabled else { return }
         changeCancellable = notificationCenter.publisher(for: .chromeWebStoreExtensionChanged)
             .sink { [weak self] notification in
                 guard let extensionId = notification.userInfo?["extensionId"] as? String else { return }
@@ -57,10 +60,15 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
             }
     }
 
+    /// Called when the tab goes away, so a late install never prompts and the message handler returns.
+    @MainActor func cancelPendingInstalls() {
+        installTasks.forEach { $0.cancel() }
+    }
+
     @MainActor
     private func extensionChanged(_ extensionId: String) {
-        // A tab may have navigated away since its last validated store request.
-        guard isEnabled, ChromeWebStoreURL.isValidExtensionID(extensionId),
+        // The tab may show a page other than the store.
+        guard ChromeWebStoreURL.isValidExtensionID(extensionId),
               let webView, let url = webView.url,
               url.scheme == "https", url.host == ChromeWebStoreURL.host,
               url.port == nil || url.port == 443 else { return }
@@ -118,12 +126,10 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
               pageURL.scheme == "https", pageURL.host == ChromeWebStoreURL.host,
               pageURL.port == nil || pageURL.port == 443 else { throw ChromeWebStoreError.invalidRequest }
 
-        // Setup is build-level and does not require an extension ID or a service.
+        // Setup does not require an extension ID or a service.
         if method == .initialSetup {
-            return InitialSetupResponse(enabled: isEnabled)
+            return InitialSetupResponse(enabled: true)
         }
-
-        guard isEnabled else { throw ChromeWebStoreError.unavailable }
 
         // The catalog takes no extension ID. Without a service, web extensions are off and
         // nothing is installable, so reply with an empty list. C-S-S hides the button on
@@ -135,8 +141,6 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         guard let request: ExtensionRequest = DecodableHelper.decode(from: params),
               ChromeWebStoreURL.isValidExtensionID(request.extensionId) else { throw ChromeWebStoreError.invalidRequest }
 
-        // Retain only a weak reference, and only after validating the main frame.
-        webView = message.webView
         let service = serviceProvider()
         switch method {
         case .getExtensionStatus:
@@ -146,7 +150,23 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
                   ChromeWebStoreURL.isValidDownloadURL(request.versionedCrxUrl, for: request.extensionId) else {
                 throw ChromeWebStoreError.invalidRequest
             }
-            let success = await service?.install(identifier: request.extensionId, downloadURL: request.versionedCrxUrl) ?? false
+
+            // Captured before the install: while loading, the extension may open and select a tab of its own.
+            let window = message.webView?.window
+            let downloadURL = request.versionedCrxUrl
+            let install = Task { @MainActor in
+                await service?.install(identifier: request.extensionId, downloadURL: downloadURL) ?? false
+            }
+
+            // We're supporting Task Cancellation (ie. Tab or Window closed)
+            installTasks.insert(install)
+            let success = await install.value
+            installTasks.remove(install)
+
+            if success, let window {
+                notificationCenter.post(name: .chromeWebStoreExtensionInstalled, object: window, userInfo: [UserInfoKeys.extensionID: request.extensionId])
+            }
+
             return OperationResponse(success: success)
         case .removeExtension:
             let success = await service?.remove(identifier: request.extensionId) ?? false
@@ -155,4 +175,8 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
             return nil
         }
     }
+}
+
+extension Notification.Name {
+    static let chromeWebStoreExtensionInstalled = Notification.Name("chromeWebStoreExtensionInstalled")
 }

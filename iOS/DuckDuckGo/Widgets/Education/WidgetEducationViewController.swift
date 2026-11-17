@@ -26,10 +26,13 @@ final class WidgetEducationViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = UserText.settingsAddWidget
+        view.backgroundColor = .systemBackground
         
         addChild(host)
         view.addSubview(host.view)
         setupConstraints()
+        host.didMove(toParent: self)
     }
     
     private func setupConstraints() {

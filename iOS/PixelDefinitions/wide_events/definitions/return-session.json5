@@ -4,7 +4,7 @@
         "owners": ["Bunn"],
         "meta": {
             "type": "ios-return-session",
-            "version": "5.0"
+            "version": "7.0"
         },
         "feature": {
             "name": "return-session",
@@ -89,11 +89,17 @@
                             "widget_favorite",
                             "widget_lock_screen",
                             "widget_control_center",
+                            "address_bar_custom_button",
+                            "toolbar_custom_button",
+                            "onboarding_completion_promo",
+                            "app_open",
+                            "tab_swipe",
                             "siri",
                             "deep_link_other",
                             "unknown",
                             "browsing_menu_duckai",
                             "duck_ai_new_chat",
+                            "swipe_up_new_chat",
                             "tab_switcher_existing_chat",
                             "tabs_bar_existing_chat",
                             "return_to_chat_card",

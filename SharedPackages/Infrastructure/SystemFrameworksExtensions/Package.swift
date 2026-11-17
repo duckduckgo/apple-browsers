@@ -50,21 +50,31 @@ let package = Package(
         // MARK: - Shared Targets
         .target(
             name: "FoundationExtensions",
-            exclude: ["README.md"]
+            exclude: ["README.md"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .target(
-            name: "CombineExtensions"
+            name: "CombineExtensions",
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .target(
             name: "ConcurrencyExtensions",
             swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
+                .define("DEBUG", .when(configuration: .debug)),
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
 
         // MARK: - Platform Specific Targets
         .target(
-            name: "UIKitExtensions"
+            name: "UIKitExtensions",
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .target(
             name: "UIKitExtensionsProxy",
@@ -73,17 +83,27 @@ let package = Package(
                   name: "UIKitExtensions",
                   condition: .when(platforms: [.iOS])
                 )
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
 
         // MARK: - Test Targets
         .testTarget(
             name: "FoundationExtensionsTests",
-            dependencies: ["FoundationExtensions"]
+            dependencies: ["FoundationExtensions"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .testTarget(
             name: "ConcurrencyExtensionsTests",
-            dependencies: ["ConcurrencyExtensions"]
+            dependencies: ["ConcurrencyExtensions"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )

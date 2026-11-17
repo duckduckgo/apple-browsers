@@ -171,6 +171,6 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
     }
 
     private func context(isBurner: Bool = false) -> BrowserToolCallContext {
-        BrowserToolCallContext(ownerTabID: "owner", ownerWindowToken: "w", isBurner: isBurner, supportsElicitationForm: true)
+        BrowserToolCallContext(ownerTabID: "owner", ownerWindowToken: "w", isBurner: isBurner)
     }
 }

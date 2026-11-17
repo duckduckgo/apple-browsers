@@ -221,7 +221,8 @@ public final class AttributedMetricManager: @unchecked Sendable {
         case userDidSearch
         case userDidSelectAD
         case userDidDuckAIChat
-        case userDidSubscribe
+        /// `isFreeTrial`: whether the App Store purchase started a free trial. `nil` when unknown (e.g. Stripe), in which case the backend is asked.
+        case userDidSubscribe(isFreeTrial: Bool?)
         case userDidSync(devicesCount: Int)
 
         public var debugDescription: String {
@@ -281,8 +282,8 @@ public final class AttributedMetricManager: @unchecked Sendable {
         case .userDidDuckAIChat:
             recordDuckAIChat()
             processAverageDuckAIChat()
-        case .userDidSubscribe:
-            processSubscriptionDay()
+        case .userDidSubscribe(isFreeTrial: let isFreeTrial):
+            processSubscriptionDay(purchaseIsFreeTrial: isFreeTrial)
         case .userDidSync(devicesCount: let devicesCount):
             processSyncCheck(devicesCount: devicesCount)
         }
@@ -511,10 +512,18 @@ public final class AttributedMetricManager: @unchecked Sendable {
     // MARK: - Subscription
     // https://app.asana.com/1/137249556945/project/1205842942115003/task/1211301604929613?focus=true
 
-    func processSubscriptionDay() {
-        Logger.attributedMetric.log("Processing subscription purchase")
-        guard dataStorage.subscriptionDate == nil else { return }
+    func processSubscriptionDay(purchaseIsFreeTrial: Bool?) {
+        Logger.attributedMetric.log("Processing subscription purchase, free trial from purchase: \(String(describing: purchaseIsFreeTrial), privacy: .public)")
+        guard dataStorage.subscriptionDate == nil else {
+            Logger.attributedMetric.log("Subscription already recorded")
+            return
+        }
         dataStorage.subscriptionDate = dateProvider.now()
+
+        if let purchaseIsFreeTrial {
+            processSubscriptionDay(isFreeTrial: purchaseIsFreeTrial)
+            return
+        }
 
         Task {
             let isFreeTrial = await subscriptionStateProvider.isFreeTrial()

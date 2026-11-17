@@ -30,7 +30,9 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
     var openPrivacyTermsHandler: (() -> Void)?
     private(set) var lastSubmitChatAiTermsAccepted: Bool?
+    private(set) var lastSubmitChatTextPasted: [NewTabPageDataModel.OmnibarPromptPastedText]?
     private(set) var openAttachmentPrivacyLearnMoreKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
+    private(set) var suggestedPromptSubmittedIds: [String] = []
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -52,9 +54,16 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
                     reasoningEffort: String?,
                     pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
                     files: [NewTabPageDataModel.OmnibarPromptFile]?,
+                    textPasted: [NewTabPageDataModel.OmnibarPromptPastedText]?,
                     aiTermsAccepted: Bool) {
         lastSubmitChatAiTermsAccepted = aiTermsAccepted
+        lastSubmitChatTextPasted = textPasted
         submitChatHandler?(chat, target, modelId, images, mode, toolChoice, reasoningEffort, pageContexts, files)
+    }
+
+    @MainActor
+    func suggestedPromptSubmitted(promptId: String) {
+        suggestedPromptSubmittedIds.append(promptId)
     }
 
     @MainActor

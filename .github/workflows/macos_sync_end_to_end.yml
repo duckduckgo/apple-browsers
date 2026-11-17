@@ -38,14 +38,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-15-xlarge, macos-26-xlarge]
+        os-version: [15, 26, 27]
         include:
           - xcode-version: "26.2"
-            runner: macos-15-xlarge
+            runner: [image:osx-sequoia-26, ui-tests]
             os-version: 15
+            ruby-version: "3.4.5"
           - xcode-version: "26.6"
-            runner: macos-26-xlarge
+            runner: [image:osx-tahoe-26, ui-tests]
             os-version: 26
+            ruby-version: "3.4.5"
+          - xcode-version: "27.0"
+            runner: [image:osx-27-edge, ui-tests]
+            os-version: 27
 
     timeout-minutes: 60
 
@@ -83,6 +88,7 @@ jobs:
       with:
         working-directory: macOS
         cache-key-prefix: macos-ruby
+        ruby-version: ${{ matrix.ruby-version }}
 
     - name: Sync code signing assets
       id: sync-signing-first-attempt
@@ -142,7 +148,18 @@ jobs:
       working-directory: SharedPackages/BrowserServicesKit
       run: |
         sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        old_pid=$(pgrep -x logd || true)
         sudo killall logd || true
+        # killall returns right away, and the old logd can still be shutting down.
+        # Wait until it has exited and launchd has started a new one.
+        for _ in $(seq 1 60); do
+          if { [ -z "$old_pid" ] || ! ps -p "$old_pid" >/dev/null; } && pgrep -x logd >/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "::error::logd did not restart within 60 seconds"
+        exit 1
 
     - name: Start log stream in background
       working-directory: macOS
@@ -271,7 +288,7 @@ jobs:
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_sync_tests
         pixel-params: |
-          runner: ${{ matrix.runner }}
+          runner: ${{ join(matrix.runner, ',') }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main' && !inputs.branch
@@ -289,7 +306,7 @@ jobs:
       uses: mikepenz/action-junit-report@v6
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
-        check_name: "Test Report ${{ matrix.runner }}"
+        check_name: "Test Report (macOS ${{ matrix.os-version }})"
         report_paths: macOS/ui-tests.xml
         check_retries: true
 
@@ -297,7 +314,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "xcresult-${{ matrix.runner }}"
+        name: "xcresult-macos${{ matrix.os-version }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
@@ -305,7 +322,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "app-console-${{ matrix.runner }}-macos${{ matrix.os-version }}"
+        name: "app-console-macos${{ matrix.os-version }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
         retention-days: 1
@@ -318,7 +335,7 @@ jobs:
 
         # Create staging directory with timestamp and OS version
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ matrix.runner }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        archive_name="BuildLogs (macOS ${{ matrix.os-version }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 

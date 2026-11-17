@@ -29,6 +29,9 @@ struct ScopedFireConfirmationView: View {
     
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
     @State private var isAnimating = false
+    @AppStorage(SlideToDeleteVariant.preferenceKey) private var slideVariant = SlideToDeleteVariant.defaultValue
+    @AppStorage(SlideToDeleteStyle.preferenceKey) private var slideStyle = SlideToDeleteStyle.defaultValue
+
     /// Presenting context's size class; the built-in one reports `.compact` inside a popover even on a wide iPad.
     @Environment(\.presentationHorizontalSizeClass) private var presentationSizeClass
 
@@ -37,7 +40,11 @@ struct ScopedFireConfirmationView: View {
     }
 
     private var contentPadding: EdgeInsets {
-        presentationSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
+        var padding = presentationSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
+        if viewModel.buttons.contains(where: { $0.style == .slide }) {
+            padding.bottom = 48
+        }
+        return padding
     }
     
     var body: some View {
@@ -94,14 +101,19 @@ struct ScopedFireConfirmationView: View {
     
     /// Scope selection buttons
     private var scopeButtons: some View {
-        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+        VStack(spacing: Constants.buttonSpacing) {
             ForEach(viewModel.buttons.indices, id: \.self) { index in
                 let button = viewModel.buttons[index]
-                Button(action: button.action) {
-                    Text(button.title)
+                if button.style == .slide {
+                    SlideToDeleteControl(title: button.title, variant: slideVariant, style: slideStyle, action: button.action)
+                        .accessibilityIdentifier(button.accessibilityIdentifier)
+                } else {
+                    Button(action: button.action) {
+                        Text(button.title)
+                    }
+                    .modifier(DestructiveButtonModifier(style: button.style))
+                    .accessibilityIdentifier(button.accessibilityIdentifier)
                 }
-                .modifier(DestructiveButtonModifier(style: button.style))
-                .accessibilityIdentifier(button.accessibilityIdentifier)
             }
         }
     }
@@ -132,6 +144,8 @@ private struct DestructiveButtonModifier: ViewModifier {
             content.buttonStyle(SecondaryDestructiveButtonStyle())
         case .secondaryNeutral:
             content.buttonStyle(SecondaryFillButtonStyle())
+        case .slide:
+            content
         }
     }
 }
@@ -154,9 +168,10 @@ extension EnvironmentValues {
 
 private extension ScopedFireConfirmationView {
     enum Constants {
-        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let mainSectionSpacing: CGFloat = 16
+        static let buttonSpacing: CGFloat = 16
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
         static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96

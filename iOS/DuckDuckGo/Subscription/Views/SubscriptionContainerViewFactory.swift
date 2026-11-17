@@ -342,7 +342,7 @@ enum SubscriptionContainerViewFactory {
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                        subscriptionAttributionOrigin: nil,
-                                                                       planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue,
+                                                                       planChangeEntry: SubscriptionPlanChangeOrigin.cancellationFlow.rawValue,
                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
                                                                        internalUserDecider: internalUserDecider,

@@ -15,6 +15,7 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         "autoclear-ui-test": true
         isRunningUITests: true
+        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: ${INTERNAL_USER_MODE}
 
 # Enable autoclear

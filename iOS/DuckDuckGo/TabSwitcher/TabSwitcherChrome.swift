@@ -78,6 +78,9 @@ protocol TabSwitcherChrome: AnyObject {
 
     func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool)
 
+    /// A menu replaces the Duck.ai button's tap action; `nil` restores it.
+    func configureDuckChatMenu(_ menu: UIMenu?)
+
     /// Applies the appropriate content insets so collection content clears the bars.
     func applyCollectionContentInset(to collectionView: UICollectionView)
 

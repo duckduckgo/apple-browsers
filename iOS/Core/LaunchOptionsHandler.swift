@@ -23,6 +23,7 @@ import PrivacyConfig
 import Common
 import FoundationExtensions
 import FeatureFlags_iOS
+import UIKit
 
 public final class LaunchOptionsHandler {
 
@@ -140,6 +141,34 @@ public final class LaunchOptionsHandler {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))
     }
 
+    public var contextualOnboardingMaxDays: Int? {
+        positiveOnboardingLimit(forKey: "contextualOnboardingMaxDays")
+    }
+
+    public var contextualOnboardingMaxAppOpens: Int? {
+        positiveOnboardingLimit(forKey: "contextualOnboardingMaxAppOpens")
+    }
+
+    /// Seconds since the Unix epoch, used to arrange a past start date in UI tests.
+    public var contextualOnboardingStartDate: Date? {
+#if DEBUG || ALPHA
+        guard let value = userDefaults.string(forKey: "contextualOnboardingStartDate"),
+              let timestamp = TimeInterval(value), timestamp.isFinite else { return nil }
+        return Date(timeIntervalSince1970: timestamp)
+#else
+        return nil
+#endif
+    }
+
+    private func positiveOnboardingLimit(forKey key: String) -> Int? {
+#if DEBUG || ALPHA
+        guard let value = userDefaults.string(forKey: key), let limit = Int(value), limit > 0 else { return nil }
+        return limit
+#else
+        return nil
+#endif
+    }
+
     private func sanitisedEnvParameter(string: String?) -> String? {
         guard let string, string != "null" else { return nil }
         return string
@@ -210,6 +239,10 @@ extension LaunchOptionsHandler {
         featureFlagOverrideStore: KeyValueStoring,
         configRolloutStore: UserDefaults
     ) {
+        if isUITesting && environment["UITEST_DISABLE_ANIMATIONS"] == "1" {
+            UIView.setAnimationsEnabled(false)
+        }
+
         let shouldClearAllDefaults = arguments.contains("-clearAllDefaults")
         let shouldBackdateInstallDate = arguments.contains("-backdateInstallDate")
         if shouldClearAllDefaults || shouldBackdateInstallDate {
@@ -313,6 +346,12 @@ extension LaunchOptionsHandler {
 
     private func applyFlagOverrides(featureFlagOverrideStore: KeyValueStoring, configRolloutStore: UserDefaults) {
         let persistor = FeatureFlagLocalOverridesUserDefaultsPersistor(keyValueStore: featureFlagOverrideStore)
+
+        // Focusing the address bar on every new tab breaks UI tests that expect other screens after launch.
+        // Tests that need it pass -ff.alwaysShowKeyboardOnNewTabPage true, which the loop below applies.
+        if isUITesting {
+            persistor.set(false, for: FeatureFlag.alwaysShowKeyboardOnNewTabPage)
+        }
 
         for arg in arguments {
             guard arg.hasPrefix("-") else { continue }

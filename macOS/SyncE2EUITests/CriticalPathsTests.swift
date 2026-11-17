@@ -159,10 +159,8 @@ final class CriticalPathsTests: XCTestCase {
         ensureSyncSettingsWindowOpen()
         settingsWindow.popUpButtons["Settings"].click()
         settingsWindow.menuItems["Bookmarks"].click()
-        bookmarksWindow.staticTexts["www.spreadprivacy.com"].rightClick()
-        bookmarksWindow.menus.menuItems["ContextualMenu.deleteBookmark"].click()
-        bookmarksWindow.staticTexts["www.duckduckgo.com"].rightClick()
-        bookmarksWindow.menus.menuItems["ContextualMenu.deleteBookmark"].click()
+        deleteBookmark("www.spreadprivacy.com", in: bookmarksWindow)
+        deleteBookmark("www.duckduckgo.com", in: bookmarksWindow)
 
         bookmarksWindow.splitGroups.children(matching: .popUpButton).element.click()
         bookmarksWindow.menuItems["Settings"].click()
@@ -386,6 +384,16 @@ final class CriticalPathsTests: XCTestCase {
         urlTextField.typeText("www.spreadprivacy.com")
         favoriteCheckBox.click()
         addButton.click()
+    }
+
+    private func deleteBookmark(_ title: String, in bookmarksWindow: XCUIElement) {
+        // On macOS 27, XCUITest finds no hit point for the center of a bookmark row label,
+        // so right-click a coordinate on the label text instead of the element itself.
+        bookmarksWindow.staticTexts[title].assertExists()
+            .coordinate(withNormalizedOffset: CGVector(dx: 0.0, dy: 0.5))
+            .withOffset(CGVector(dx: 20.0, dy: 0.0))
+            .rightClick()
+        bookmarksWindow.menus.menuItems["ContextualMenu.deleteBookmark"].click()
     }
 
     private func addLogin() {

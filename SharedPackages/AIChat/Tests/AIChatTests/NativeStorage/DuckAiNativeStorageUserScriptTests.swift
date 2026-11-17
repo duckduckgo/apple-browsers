@@ -96,6 +96,131 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
         XCTAssertEqual(mockHandler.putEntryCalls, 0)
     }
 
+    // MARK: - Values that aren't JSON
+
+    func testWhenPutChatDataContainsDateThenChatIsNotStored() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "putChat"))
+        let data: [String: Any] = ["title": "Ducks", "messages": [["createdAt": Date()]]]
+
+        _ = try await handler(["chatId": "chat-1", "data": data], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.putChatIds.isEmpty)
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .putChat, valueType: .date)])
+    }
+
+    func testWhenPutChatDataContainsNonFiniteNumberThenChatIsNotStored() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "putChat"))
+
+        for number in [Double.infinity, -Double.infinity, Double.nan] {
+            let data: [String: Any] = ["title": "Ducks", "meta": ["conversationLimitPercentage": NSNumber(value: number)]]
+            _ = try await handler(["chatId": "chat-1", "data": data], WKScriptMessage.mock())
+        }
+
+        XCTAssertTrue(mockHandler.putChatIds.isEmpty)
+        XCTAssertEqual(firedInvalidValues, Array(repeating: .init(operation: .putChat, valueType: .nonFiniteNumber), count: 3))
+    }
+
+    func testWhenPutChatDataContainsOtherNonJSONValueThenChatIsNotStored() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "putChat"))
+        let data: [String: Any] = ["title": "Ducks", "blob": Data([0x1])]
+
+        _ = try await handler(["chatId": "chat-1", "data": data], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.putChatIds.isEmpty)
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .putChat, valueType: .other)])
+    }
+
+    func testWhenPutChatDataIsValidJSONThenChatIsStored() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "putChat"))
+        let data: [String: Any] = ["title": "Ducks", "messages": [["createdAt": "2026-01-01T10:00:00.000Z"]]]
+
+        _ = try await handler(["chatId": "chat-1", "data": data], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.putChatIds, ["chat-1"])
+        XCTAssertTrue(firedInvalidValues.isEmpty)
+    }
+
+    func testWhenPutChatsContainsChatsWithInvalidValuesThenOnlyValidChatsAreStoredAndOnePixelFires() async throws {
+        let chats: [[String: Any]] = [
+            ["chatId": "valid", "data": ["title": "Ducks"]],
+            ["chatId": "date", "data": ["lastEdit": Date()]],
+            ["chatId": "nan", "data": ["limit": NSNumber(value: Double.nan)]]
+        ]
+
+        let response = try await response(of: "putChats", params: ["chats": chats])
+
+        XCTAssertEqual(response["success"] as? Bool, true)
+        XCTAssertEqual(mockHandler.putChatsIds, ["valid"])
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .putChats, valueType: .date)])
+    }
+
+    func testWhenMigrateChatsContainsChatWithDateThenOnlyValidChatsAreStored() async throws {
+        let chats: [[String: Any]] = [
+            ["chatId": "valid", "data": ["title": "Ducks"]],
+            ["chatId": "invalid", "data": ["lastEdit": Date()]]
+        ]
+
+        let response = try await response(of: "migrateChats", params: ["chats": chats])
+
+        XCTAssertEqual(response["success"] as? Bool, true)
+        XCTAssertEqual(mockHandler.putChatsIds, ["valid"])
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .migrateChats, valueType: .date)])
+    }
+
+    func testWhenPutFileContainsDateThenFileIsNotStored() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "putFile"))
+
+        _ = try await handler(["uuid": "file-1", "chatId": "chat-1", "createdAt": Date()], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.putFileCalls, 0)
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .putFile, valueType: .date)])
+    }
+
+    func testWhenPutEntryValueIsDateThenEntryIsNotStored() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "putEntry"))
+
+        _ = try await handler(["key": "setting", "value": Date()], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.putEntryCalls, 0)
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .putEntry, valueType: .date)])
+    }
+
+    func testWhenPutEntryValueIsStringThenEntryIsStored() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "putEntry"))
+
+        _ = try await handler(["key": "setting", "value": "on"], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.putEntryCalls, 1)
+        XCTAssertTrue(firedInvalidValues.isEmpty)
+    }
+
+    func testWhenReplaceAllEntriesContainsDateThenOnlyValidEntriesAreReplaced() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "replaceAllEntries"))
+
+        _ = try await handler(["entries": ["setting": "on", "theme": "dark", "updatedAt": Date()]], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.replaceAllEntriesCalls, 1)
+        XCTAssertEqual(mockHandler.replacedEntryKeys, ["setting", "theme"])
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .replaceAllEntries, valueType: .date)])
+    }
+
+    func testWhenReplaceAllEntriesContainsSeveralInvalidValuesThenOnePixelFires() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "replaceAllEntries"))
+        let entries: [String: Any] = ["setting": "on", "updatedAt": Date(), "createdAt": Date()]
+
+        _ = try await handler(["entries": entries], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.replacedEntryKeys, ["setting"])
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .replaceAllEntries, valueType: .date)])
+    }
+
+    private var firedInvalidValues: [DuckAiNativeStorageInvalidValue] {
+        mockPixelFiring.firedEvents.compactMap {
+            if case .invalidValue(let invalidValue) = $0 { return invalidValue }
+            return nil
+        }
+    }
+
     // MARK: - Values returned to the web
 
     func testWhenStoredChatHasPartIndexZeroAndOneThenGetChatReturnsNumbersNotBooleans() async throws {
@@ -248,6 +373,11 @@ final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     var stubbedChats: [DuckAiChatRecord] = []
     var stubbedFiles: [DuckAiFileContent] = []
     var putEntryCalls = 0
+    var replaceAllEntriesCalls = 0
+    var replacedEntryKeys: [String] = []
+    var putChatIds: [String] = []
+    var putChatsIds: [String] = []
+    var putFileCalls = 0
 
     func putEntry(key: String, value: Any) throws { putEntryCalls += 1 }
     func getEntry(key: String) throws -> Any? { nil }
@@ -257,14 +387,17 @@ final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     }
     func deleteEntry(key: String) throws {}
     func deleteAllEntries() throws {}
-    func replaceAllEntries(_ entries: [String: Any]) throws {}
-    func putChat(chatId: String, data: Data) throws {}
-    func putChats(_ chats: [DuckAiChatRecord]) throws {}
+    func replaceAllEntries(_ entries: [String: Any]) throws {
+        replaceAllEntriesCalls += 1
+        replacedEntryKeys = entries.keys.sorted()
+    }
+    func putChat(chatId: String, data: Data) throws { putChatIds.append(chatId) }
+    func putChats(_ chats: [DuckAiChatRecord]) throws { putChatsIds += chats.map(\.chatId) }
     func getChat(chatId: String) throws -> DuckAiChatRecord? { stubbedChats.first { $0.chatId == chatId } }
     func getAllChats() throws -> [DuckAiChatRecord] { stubbedChats }
     func deleteChat(chatId: String) throws {}
     func deleteAllChats() throws {}
-    func putFile(uuid: String, chatId: String, data: Data) throws {}
+    func putFile(uuid: String, chatId: String, data: Data) throws { putFileCalls += 1 }
     func getFile(uuid: String) throws -> DuckAiFileContent? { stubbedFiles.first { $0.uuid == uuid } }
     func listFiles() throws -> [DuckAiFileMetadata] { [] }
     func deleteFile(uuid: String) throws {}

@@ -23,14 +23,12 @@ import AIChat
 extension MainViewController: AIChatHistoryViewModelDelegate {
 
     func viewModelDidRequestOpenNewChat() {
+        duckAIInputFocus.forget()
         if let tab = currentTab, tab.isAITab {
-            fireAIChatEntryPointPixel(source: .chatHistoryNewChat, opensNewTab: false, hasPrompt: false)
-            stampDuckAIEntrySourceOnCurrentTab(.chatHistoryNewChat)
-            recordDuckAISessionNewChatCreatedOnCurrentTab()
-            unifiedToggleInputCoordinator?.startNewChat()
-            tab.submitStartChatAction()
-            dismiss(animated: true) { [weak self] in
-                self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+            if featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) {
+                openNewChatFromHistoryInNewTab(from: tab)
+            } else {
+                startNewChatFromHistoryInPlace(in: tab)
             }
         } else {
             dismiss(animated: true) { [weak self] in
@@ -39,7 +37,26 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
+    private func openNewChatFromHistoryInNewTab(from tab: TabViewController) {
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
+        newTabTransitions.openClosingPresentedScreen { [weak self] in
+            self?.openNewChatFromDuckAIPage(tab, source: .chatHistoryNewChat)
+        }
+    }
+
+    private func startNewChatFromHistoryInPlace(in tab: TabViewController) {
+        fireAIChatEntryPointPixel(source: .chatHistoryNewChat, opensNewTab: false, hasPrompt: false)
+        stampDuckAIEntrySourceOnCurrentTab(.chatHistoryNewChat)
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
+        unifiedToggleInputCoordinator?.startNewChat()
+        tab.submitStartChatAction()
+        dismiss(animated: true) { [weak self] in
+            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        }
+    }
+
     func viewModelDidRequestOpenChat(chatId: String) {
+        duckAIInputFocus.forget()
         let url = aiChatSettings.aiChatURL.withChatID(chatId)
         dismiss(animated: true) { [weak self] in
             self?.onChatHistorySelected(url: url)
@@ -47,6 +64,7 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
     }
 
     func viewModelDidRequestChatProtection() {
+        duckAIInputFocus.forget()
         dismiss(animated: true) { [weak self] in
             guard let self else { return }
             if let tab = self.currentTab, tab.isAITab {
@@ -66,6 +84,10 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         presentChatDownloadFinishedToast(NSAttributedString(string: UserText.aiChatHistoryDownloadCompleteMessage(count: count)))
     }
 
+    func viewModelWillClose() {
+        duckAIInputFocus.restore()
+    }
+
     func viewModelDidFailExport() {
         ActionMessageView.present(
             message: UserText.aiChatHistoryDownloadFailedMessage,
@@ -80,6 +102,7 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             actionTitle: UserText.actionGenericShow,
             presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
             onAction: { [weak self] in
+                self?.duckAIInputFocus.forget()
                 self?.dismiss(animated: true) { self?.segueToDownloads() }
             }
         )

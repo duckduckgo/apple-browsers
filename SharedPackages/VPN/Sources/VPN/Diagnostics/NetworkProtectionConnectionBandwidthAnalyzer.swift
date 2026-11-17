@@ -79,9 +79,8 @@ final actor NetworkProtectionConnectionBandwidthAnalyzer: BandwidthAnalyzing {
         let newer = entries[0]
         let older = entries[1]
 
-        guard newer.rxBytes > older.rxBytes && newer.txBytes > older.txBytes else {
-            // If this is allowed, the code below may crash with an arythmetic overflow
-            //
+        guard newer.rxBytes >= older.rxBytes && newer.txBytes >= older.txBytes else {
+            // Counter decreases indicate a reset; subtracting them would underflow.
             idle = false
             return
         }

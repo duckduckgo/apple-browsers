@@ -29,9 +29,12 @@ import Persistence
 import PrivacyConfig
 import PixelKit
 
+@MainActor
 final class UpdatesDebugMenu: NSMenu {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
     private let internalUserDecider: InternalUserDecider
+    private let debugSettings = UpdatesDebugSettings()
+    private let forceUpdateAvailableMenuItem = NSMenuItem(title: "Force Update Available", action: #selector(toggleForceUpdateAvailable))
 
     init(keyValueStore: ThrowingKeyValueStoring, internalUserDecider: InternalUserDecider) {
         self.settings = keyValueStore.throwingKeyedStoring()
@@ -70,9 +73,30 @@ final class UpdatesDebugMenu: NSMenu {
                 }
                 NSMenuItem.separator()
             }
-            NSMenuItem(title: "More Prominent Updates")
-                .submenu(MoreProminentUpdatesDebugMenu())
+            if buildType.isAppStoreBuild {
+                forceUpdateAvailableMenuItem
+                    .targetting(self)
+                NSMenuItem(title: "Reset Debug Settings", action: #selector(resetDebugSettings))
+                    .targetting(self)
+                NSMenuItem.separator()
+            }
+            NSMenuItem(title: "Prompt Stage")
+                .submenu(UpdatePromptStageDebugMenu())
         }
+    }
+
+    override func update() {
+        forceUpdateAvailableMenuItem.state = debugSettings.forceUpdateAvailable ? .on : .off
+        super.update()
+    }
+
+    @objc private func toggleForceUpdateAvailable() {
+        debugSettings.forceUpdateAvailable.toggle()
+    }
+
+    @objc private func resetDebugSettings() {
+        debugSettings.reset()
+        Application.appDelegate.updateController?.updatePromptStageTracker?.reevaluate()
     }
 
     required init(coder: NSCoder) {

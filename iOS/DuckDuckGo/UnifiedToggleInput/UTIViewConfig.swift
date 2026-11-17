@@ -22,20 +22,39 @@ import Foundation
 /// Composable description of which card components are visible at any given time. Replaces the
 /// previous boolean soup (`isExpanded` + `showToggle` + `alwaysShowToolbar`) with a single value
 /// callers compose explicitly.
+/// Accessory buttons beside a `.flanked` pill.
+struct UnifiedToggleInputFlankingAccessories: OptionSet, Equatable {
+    let rawValue: Int
+
+    static let fire = UnifiedToggleInputFlankingAccessories(rawValue: 1 << 0)
+    static let menu = UnifiedToggleInputFlankingAccessories(rawValue: 1 << 1)
+    static let all: UnifiedToggleInputFlankingAccessories = [.fire, .menu]
+}
+
 enum UnifiedToggleInputCardLayout: Equatable {
     /// Single-line slim pill with no surrounding accessories. Today its dimensions
     /// (44pt tall, 16pt corner radius, leading-aligned placeholder) mimic the regular
     /// omnibar, so the snap between the two reads as one continuous pill.
     case collapsed
-    /// Single-line pill flanked by accessory buttons on either side (fire / voice on
-    /// Duck.ai today). Slightly taller (48pt capsule) to match the accessory height.
-    case flanked
+    /// Single-line pill beside its accessory buttons: fire leading, menu trailing.
+    /// Slightly taller (48pt capsule) to match the accessory height.
+    case flanked(UnifiedToggleInputFlankingAccessories)
     /// Multi-line card. Each component independently visible.
     case expanded(showsToggle: Bool, showsToolbar: Bool)
 
     var isExpanded: Bool {
         if case .expanded = self { return true }
         return false
+    }
+
+    var isFlanked: Bool {
+        if case .flanked = self { return true }
+        return false
+    }
+
+    var flankingAccessories: UnifiedToggleInputFlankingAccessories {
+        if case .flanked(let accessories) = self { return accessories }
+        return []
     }
 
     var showsToggle: Bool {

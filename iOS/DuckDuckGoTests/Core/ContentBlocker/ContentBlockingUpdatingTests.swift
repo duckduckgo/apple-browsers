@@ -30,6 +30,8 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import UserScript
 import Network
+import AIChat
+import AIChatTestingUtilities
 @_spi(Testing) import PixelKit
 @_spi(Testing) import Persistence
 @testable import SitePermissions
@@ -60,6 +62,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     let configManager = PrivacyConfigurationManagerMock()
     let rulesManager = ContentBlockerRulesManagerMock()
     var updating: ContentBlockingUpdating!
+    let sponsorBlockPreferences = SponsorBlockPreferences(store: InMemoryKeyValueStore())
 
     override func setUp() {
         super.setUp()
@@ -71,7 +74,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                           internalUserDecider: MockInternalUserDecider(),
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                          webExtensionAvailability: nil))
+                                                                          webExtensionAvailability: nil,
+                                                                          aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog())),
+                                           sponsorBlockPreferences: sponsorBlockPreferences)
     }
 
     override static func setUp() {
@@ -940,7 +945,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
             sitePermissionsEnabled: false,
-            geolocationUserScript: geolocationUserScript
+            geolocationUserScript: geolocationUserScript,
+            sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertNil(disabledScripts.geolocationUserScript)
         XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationUserScript })
@@ -950,7 +956,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
             sitePermissionsEnabled: true,
-            geolocationUserScript: geolocationUserScript
+            geolocationUserScript: geolocationUserScript,
+            sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
         XCTAssertTrue(enabledScripts.userScripts.contains { ($0 as? GeolocationUserScript) === geolocationUserScript })
@@ -968,7 +975,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
             sitePermissionsEnabled: true,
-            geolocationUserScript: geolocationUserScript
+            geolocationUserScript: geolocationUserScript,
+            sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.geolocationUserScript === geolocationUserScript)
         XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.userScripts.contains { $0 === geolocationUserScript.policyScript })
@@ -977,14 +985,16 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
             sitePermissionsEnabled: false,
-            geolocationUserScript: geolocationUserScript
+            geolocationUserScript: geolocationUserScript,
+            sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertNil(tabDisabledWithDifferentGlobalFlag.geolocationUserScript)
         XCTAssertFalse(tabDisabledWithDifferentGlobalFlag.userScripts.contains { $0 is GeolocationPolicyUserScript })
 
         let nonTabScripts = UserScripts(
             with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            sponsorBlockPreferences: sponsorBlockPreferences
         )
         XCTAssertNil(nonTabScripts.geolocationUserScript)
         XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
@@ -1011,7 +1021,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             for _ in 0..<2 {
                 contentSubject.send(.init(rulesUpdate: Self.testUpdate(),
                                           sourceProvider: makeScriptSourceProvider(),
-                                          duckAiNativeStorageHandler: nil))
+                                          duckAiNativeStorageHandler: nil,
+                                          sponsorBlockPreferences: sponsorBlockPreferences))
             }
             XCTAssertEqual(receivedScripts.count, 2)
             for (media, geolocation) in receivedScripts {
@@ -1230,7 +1241,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                          contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                          internalUserDecider: MockInternalUserDecider(),
                                                          syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                         webExtensionAvailability: nil))
+                                                         webExtensionAvailability: nil,
+                                                         aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog())))
     }
 
     static let tracker = KnownTracker(domain: "tracker.com",

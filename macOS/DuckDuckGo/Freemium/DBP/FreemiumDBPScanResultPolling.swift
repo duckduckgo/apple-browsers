@@ -21,6 +21,12 @@ import DataBrokerProtection_macOS
 import Freemium
 import OSLog
 
+#if DEBUG
+extension Notification.Name {
+    static let freemiumDBPResetForDebugLaunch = Notification.Name("freemiumDBPResetForDebugLaunch")
+}
+#endif
+
 /// Protocol defining the interface for DBP scan result polling.
 protocol FreemiumDBPScanResultPolling {
     /// Starts the polling process for scan results or begins observing for profile saved events.
@@ -36,6 +42,9 @@ final class DefaultFreemiumDBPScanResultPolling: FreemiumDBPScanResultPolling {
     var timer: Timer?
 
     private var observer: Any?
+#if DEBUG
+    private var debugResetObserver: Any?
+#endif
 
     private let dataManager: DataBrokerProtectionDataManaging?
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -63,6 +72,13 @@ final class DefaultFreemiumDBPScanResultPolling: FreemiumDBPScanResultPolling {
         self.notificationCenter = notificationCenter
         self.timerInterval = timerInterval
         self.maxCheckDuration = maxCheckDuration
+#if DEBUG
+        debugResetObserver = notificationCenter.addObserver(forName: .freemiumDBPResetForDebugLaunch, object: nil, queue: .main) { [weak self] _ in
+            self?.stopTimer()
+            self?.stopObserving()
+            self?.startPollingOrObserving()
+        }
+#endif
     }
 
     // MARK: - Public Methods
@@ -79,6 +95,11 @@ final class DefaultFreemiumDBPScanResultPolling: FreemiumDBPScanResultPolling {
     }
 
     deinit {
+#if DEBUG
+        if let debugResetObserver {
+            notificationCenter.removeObserver(debugResetObserver)
+        }
+#endif
         stopObserving()
         stopTimer()
     }

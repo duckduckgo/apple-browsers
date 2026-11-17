@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Cameramachtiging is vereist";
 
-/* No comment provided by engineer. */
-"Cancel" = "Annuleren";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Annuleren";
 

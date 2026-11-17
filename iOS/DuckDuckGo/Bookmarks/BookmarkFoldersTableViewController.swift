@@ -49,6 +49,7 @@ class BookmarkFoldersViewController: UITableViewController {
 
         self.tableView.sectionIndexBackgroundColor = UIColor(designSystemColor: .background)
         self.tableView.separatorColor = ThemeManager.shared.currentTheme.tableCellSeparatorColor
+        self.tableView.accessibilityIdentifier = "Bookmarks.Editor.List"
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -102,9 +103,12 @@ class BookmarkFoldersViewController: UITableViewController {
                 return favoriteCellForBookmark(tableView)
 
             case 2:
-                return indexPath.row >= locationCount ?
-                    tableView.dequeueReusableCell(withIdentifier: "AddFolderCell")! :
-                    folderSelectorCell(tableView, forIndexPath: indexPath)
+                if indexPath.row >= locationCount {
+                    let cell = tableView.dequeueReusableCell(withIdentifier: "AddFolderCell")!
+                    cell.accessibilityIdentifier = "Bookmarks.Editor.AddFolder"
+                    return cell
+                }
+                return folderSelectorCell(tableView, forIndexPath: indexPath)
 
             case 3:
                 return deleteCell(tableView)
@@ -116,7 +120,9 @@ class BookmarkFoldersViewController: UITableViewController {
     }
 
     func deleteCell(_ tableView: UITableView) -> UITableViewCell {
-        return tableView.dequeueReusableCell(withIdentifier: "BookmarksDeleteButtonCell")!
+        let cell = tableView.dequeueReusableCell(withIdentifier: "BookmarksDeleteButtonCell")!
+        cell.accessibilityIdentifier = "Bookmarks.Editor.Delete"
+        return cell
     }
 
     private func confirmDelete() {
@@ -128,9 +134,11 @@ class BookmarkFoldersViewController: UITableViewController {
         let controller = UIAlertController(title: UserText.deleteBookmarkAlertTitle,
                                            message: UserText.deleteBookmarkAlertMessage.format(arguments: title),
                                            preferredStyle: .alert)
-        controller.addAction(UIAlertAction(title: UserText.actionDelete, style: .destructive) { [weak self] _ in
+        let deleteAction = UIAlertAction(title: UserText.actionDelete, style: .destructive) { [weak self] _ in
             self?.performDelete()
-        })
+        }
+        deleteAction.accessibilityIdentifier = "Bookmarks.Editor.ConfirmDelete"
+        controller.addAction(deleteAction)
         controller.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
         present(controller, animated: true)
     }
@@ -152,6 +160,7 @@ class BookmarkFoldersViewController: UITableViewController {
             folderCell.folder = viewModel.locations[indexPath.row].bookmark
             folderCell.depth = viewModel.locations[indexPath.row].depth
             folderCell.isSelected = viewModel.isSelected(viewModel.locations[indexPath.row].bookmark)
+            folderCell.accessibilityIdentifier = "Bookmarks.Editor.Folder"
             if folderCell.isSelected {
                 selected = indexPath
             }
@@ -238,6 +247,7 @@ class BookmarkFoldersViewController: UITableViewController {
         cell.textField.addTarget(self, action: #selector(textFieldDidReturn), for: .editingDidEndOnExit)
 
         cell.selectionStyle = .none
+        cell.textField.accessibilityIdentifier = "Bookmarks.Editor.FolderTitle"
         cell.title = viewModel?.bookmark.title
         return cell
     }

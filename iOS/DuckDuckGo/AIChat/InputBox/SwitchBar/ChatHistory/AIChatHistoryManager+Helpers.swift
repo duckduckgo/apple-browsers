@@ -30,20 +30,13 @@ extension AIChatHistoryManager {
                                    chatSyncCleaner: AIChatSyncCleaning?,
                                    nativeStorageHandler: DuckAiNativeStorageHandling?) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
     {
-        let suggestionsReader: AIChatSuggestionsReading = {
-            if isFireTab {
-                return NilSuggestionsReader()
-            }
-
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: nativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }()
+        let suggestionsReader: AIChatSuggestionsReading = isFireTab
+            ? NilSuggestionsReader()
+            : AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: false,
+                                                            nativeStorageHandler: nativeStorageHandler,
+                                                            fireModeStorageHandler: nil,
+                                                            featureFlagger: featureFlagger,
+                                                            privacyConfig: privacyConfigurationManager)
 
         let chatDeleter = AIChatDeleter(
             historyCleanerProvider: { _, _ in

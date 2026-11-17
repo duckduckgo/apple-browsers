@@ -31,22 +31,12 @@ struct AutofillManagingExtension: Equatable {
     }
 }
 
-/// Which extension manages autofill, and a way to give autofill back to DuckDuckGo.
-protocol WebExtensionAutofillTakeoverManaging: AnyObject {
-    /// The extension that manages autofill instead of DuckDuckGo, if any.
-    @MainActor var managingExtension: AutofillManagingExtension? { get }
-
-    /// Gives autofill back to DuckDuckGo.
-    @MainActor func giveBackToDuckDuckGo()
-}
-
 /// Whether a password manager extension has taken autofill over from DuckDuckGo.
 ///
 /// An extension becomes the password manager the way it does in Chrome: it turns the browser's password
 /// saving off through `chrome.privacy.services`, as Bitwarden does when the user makes it the default
 /// password manager. DuckDuckGo's built-in password manager then steps aside entirely, for passwords,
-/// addresses and cards, until the extension turns password saving back on, is uninstalled or disabled, or the user
-/// gives autofill back to DuckDuckGo in Settings.
+/// addresses and cards, until the extension turns password saving back on, or is uninstalled or disabled.
 ///
 /// Whether an extension manages autofill is saved in the autofill preferences, where every autofill
 /// decision reads it, from any thread. A change posts `.autofillUserSettingsDidChange`, which rebuilds the
@@ -58,7 +48,7 @@ protocol WebExtensionAutofillTakeoverManaging: AnyObject {
 /// Handing it a new extension manager doesn't read it: its extensions haven't loaded yet, and reading
 /// now would clear the saved state that tabs restored at launch rely on. The first read comes once
 /// they've loaded.
-final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
+final class WebExtensionAutofillTakeover {
 
     /// The app's extension manager. The app delegate sets it when it creates one.
     @MainActor weak var manager: WebExtensionManaging?
@@ -68,21 +58,17 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
 
     private var preferences: AutofillPreferencesPersistor
     private let readManagingExtension: (@MainActor () -> AutofillManagingExtension?)?
-    private let clearSettings: (@MainActor () -> Void)?
     private let notificationCenter: NotificationCenter
     private var observer: NSObjectProtocol?
 
     /// - Parameters:
     ///   - preferences: Where whether an extension manages autofill is saved for autofill to read.
     ///   - readManagingExtension: Which loaded extension manages autofill. Reads `manager` when `nil`.
-    ///   - clearSettings: Removes every extension's control of the privacy settings. Uses `manager` when `nil`.
     init(preferences: AutofillPreferencesPersistor = AutofillPreferences(),
          notificationCenter: NotificationCenter = .default,
-         readManagingExtension: (@MainActor () -> AutofillManagingExtension?)? = nil,
-         clearSettings: (@MainActor () -> Void)? = nil) {
+         readManagingExtension: (@MainActor () -> AutofillManagingExtension?)? = nil) {
         self.preferences = preferences
         self.readManagingExtension = readManagingExtension
-        self.clearSettings = clearSettings
         self.notificationCenter = notificationCenter
         if #available(macOS 15.4, *) {
             observer = notificationCenter.addObserver(forName: .webExtensionPrivacySettingsDidChange, object: nil, queue: .main) { [weak self] _ in
@@ -109,18 +95,6 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
         notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
     }
 
-    /// Gives autofill back to DuckDuckGo: no extension controls any privacy setting any more, not even one
-    /// that set it before the one managing autofill now. The extensions see that they aren't in control,
-    /// as in Chrome.
-    @MainActor
-    func giveBackToDuckDuckGo() {
-        if let clearSettings {
-            clearSettings()
-        } else {
-            clearSettingsForEveryExtension()
-        }
-    }
-
     // MARK: - Extension Manager
 
     @MainActor
@@ -132,12 +106,5 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
         return AutofillManagingExtension(identifier: identifier,
                                          name: context.webExtension.displayName ?? identifier,
                                          icon: context.webExtension.icon(for: NSSize(width: 32, height: 32)))
-    }
-
-    @MainActor
-    private func clearSettingsForEveryExtension() {
-        guard #available(macOS 15.4, *),
-              let store = (manager as? WebExtensionManager)?.privacySettings else { return }
-        WebExtensionPrivacySetting.allCases.forEach(store.clearAll)
     }
 }

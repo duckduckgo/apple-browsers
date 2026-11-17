@@ -22,7 +22,12 @@ jobs:
   calculate-alpha-build-number:
     name: Calculate Alpha Build Number
 
-    runs-on: [image:osx-tahoe-27, m4pro]
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
 
     outputs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
@@ -32,9 +37,6 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
-
-    - name: Print macOS version
-      run: sw_vers
 
     - name: Assert main branch
       run: |
@@ -81,6 +83,17 @@ jobs:
         echo "::notice::Using build number $next_build_number"
         echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
 
+    - name: Comment on merged PRs with alpha version
+      continue-on-error: true
+      timeout-minutes: 3
+      uses: actions/github-script@v8
+      env:
+        ALPHA_VERSION: 9999.9.9-${{ steps.update-build-number.outputs.build-number }}
+      with:
+        script: |
+          const commentOnAlphaPRs = require('./.github/scripts/alpha-pr-comment.js');
+          await commentOnAlphaPRs({ github, context, core, version: process.env.ALPHA_VERSION, platform: 'macos' });
+
   dmg-release:
     name: Prepare DMG Release
 
@@ -111,7 +124,7 @@ jobs:
 
     needs: dmg-release
 
-    runs-on: [image:osx-tahoe-27, m4pro]
+    runs-on: [image:osx-27-edge, m4pro]
 
     defaults:
       run:

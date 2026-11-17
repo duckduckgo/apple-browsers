@@ -17,8 +17,6 @@
 //
 
 import Foundation
-import Persistence
-import PixelKit
 
 final class UserChurnBackgroundActivityScheduler {
 
@@ -27,18 +25,8 @@ final class UserChurnBackgroundActivityScheduler {
 
     private let userChurnService: UserChurnService
 
-    init(
-        defaultBrowserProvider: DefaultBrowserProvider,
-        keyValueStore: ThrowingKeyValueStoring,
-        pixelFiring: PixelFiring?,
-        atbProvider: @escaping () -> String?
-    ) {
-        self.userChurnService = UserChurnService(
-            defaultBrowserProvider: defaultBrowserProvider,
-            keyValueStore: keyValueStore,
-            pixelFiring: pixelFiring,
-            atbProvider: atbProvider
-        )
+    init(userChurnService: UserChurnService) {
+        self.userChurnService = userChurnService
         activity = NSBackgroundActivityScheduler(identifier: identifier)
         activity.repeats = true
         activity.interval = 24 * 60 * 60  // Daily (in seconds)

@@ -28,10 +28,11 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
 
     private func makeSUT(
         stateStore: UnifiedInputStateStoring,
+        host: UnifiedToggleInputHost = .omnibar,
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil
     ) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
-            host: .omnibar,
+            host: host,
             isToggleEnabled: true,
             preferences: MockAIChatPreferencesForPerTab(),
             toggleModeStorage: MockToggleModeStorageForPerTab(),
@@ -693,6 +694,28 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.updateInputMode(.aiChat, animated: false)
 
         XCTAssertEqual(store.lastUsed.toggleMode, baseline)
+    }
+
+    func testWhenOmnibarSubmitsDuckAIPromptThenLastUsedToggleModeIsDuckAI() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.updateInputMode(.aiChat, animated: false)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(store.lastUsed.toggleMode, .aiChat)
+    }
+
+    // The contextual chat has no toggle, so its prompts must not decide the address bar's starting mode.
+    func testWhenContextualChatSubmitsPromptThenLastUsedToggleModeIsUnchanged() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store, host: .contextualChat)
+        sut.activateForTab("tab-A")
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(store.lastUsed.toggleMode, .search)
     }
 
     func test_selectTool_mutatesLastUsed() {

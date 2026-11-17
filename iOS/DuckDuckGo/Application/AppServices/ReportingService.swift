@@ -141,8 +141,9 @@ final class ReportingService {
 
         NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
             .receive(on: attributedMetricManager.workQueue)
-            .sink { [weak self] _ in
-                self?.attributedMetricManager.process(trigger: .userDidSubscribe)
+            .sink { [weak self] notification in
+                let isFreeTrial = notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial] as? Bool
+                self?.attributedMetricManager.process(trigger: .userDidSubscribe(isFreeTrial: isFreeTrial))
             }
             .store(in: &cancellables)
 

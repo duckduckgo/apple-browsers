@@ -18,11 +18,13 @@
 
 import AIChat
 import Combine
+import DuckAiDataStore
 import FeatureFlags_macOS
 import XCTest
 @_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import NewTabPage
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -1001,6 +1003,246 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         cancellable.cancel()
         XCTAssertEqual(events, [false, true])
+    }
+
+    // MARK: - suggested prompts
+
+    @MainActor
+    func testShowSuggestedPrompts_followsFeatureFlag() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        XCTAssertTrue(provider.showSuggestedPrompts)
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": false]
+        XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testSuggestedPromptsPromptLimit_comesFromRemoteSettings() throws {
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.subfeatureSettings = #"{ "promptLimit": 3 }"#
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig)), searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(provider.suggestedPromptsPromptLimit, 3)
+
+        provider.suggestedPromptsPromptCount = 3
+        XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testSuggestedPromptsPromptLimit_fallsBackToFiveWithoutValidSettings() throws {
+        let privacyConfig = MockPrivacyConfiguration()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), remoteSettings: AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig)), searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(provider.suggestedPromptsPromptLimit, 5)
+
+        privacyConfig.subfeatureSettings = #"{ "promptLimit": 0 }"#
+        XCTAssertEqual(provider.suggestedPromptsPromptLimit, 5)
+    }
+
+    // MARK: - Pasted text
+
+    @MainActor
+    func testPastedText_isOffWithoutTheFlagAndUsesTheBuiltInLimitsWithoutSettings() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
+
+        XCTAssertFalse(provider.isPastedTextEnabled)
+        XCTAssertNil(provider.pastedTextLimits)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        XCTAssertTrue(provider.isPastedTextEnabled)
+        XCTAssertEqual(provider.pastedTextLimits, .init(pasteConversionThreshold: 4_000, maxCharacters: 16_000))
+    }
+
+    @MainActor
+    func testPastedText_limitsComeFromTheNtpPastedTextSettings() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.subfeatureSettings = #"{ "pasteConversionThreshold": 2000, "maxCharacters": 8000 }"#
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfig)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(provider.pastedTextLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
+    }
+
+    @MainActor
+    func testPastedTextConfigPublisher_firesWhenTheFlagOrTheLimitsChange() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let privacyConfig = MockPrivacyConfiguration()
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfig)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
+        var changes = 0
+        let cancellable = provider.pastedTextConfigPublisher.sink { changes += 1 }
+
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 0, "An update that changes nothing is not pushed")
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 1)
+
+        privacyConfig.subfeatureSettings = #"{ "pasteConversionThreshold": 2000, "maxCharacters": 8000 }"#
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 2, "New limits are pushed while the flag stays on")
+        cancellable.cancel()
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_isFalseOnceFivePromptsWereSent() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        provider.suggestedPromptsPromptCount = 4
+        XCTAssertTrue(provider.showSuggestedPrompts)
+
+        provider.suggestedPromptsPromptCount = 5
+        XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testSuggestedPromptsState_persistsAcrossProviders() throws {
+        let store = try makeStore()
+        let first = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
+        first.suggestedPromptsPromptCount = 3
+
+        let second = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(second.suggestedPromptsPromptCount, 3)
+    }
+
+    @MainActor
+    func testSuggestedPromptsPublisher_emitsWhenStateChanges() throws {
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
+        var events = 0
+        let cancellable = provider.suggestedPromptsPublisher.sink { events += 1 }
+
+        provider.suggestedPromptsPromptCount = 1
+        provider.suggestedPromptsPromptCount = 2
+
+        cancellable.cancel()
+        XCTAssertEqual(events, 2)
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_isFalseOnceExistingChatsReachTheLimit() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let storage = ObservableChatStorage()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+        provider.suggestedPromptsPromptCount = 3
+
+        sendChats(3, through: storage)
+        XCTAssertTrue(provider.showSuggestedPrompts, "3 prompts and 3 chats aren't added together")
+
+        sendChats(5, through: storage)
+        XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_staysFalseOnceChatsAreDeleted() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let storage = ObservableChatStorage()
+        let store = try makeStore()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), keyValueStore: store, featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+
+        sendChats(5, through: storage)
+        sendChats(2, through: storage)
+        XCTAssertFalse(provider.showSuggestedPrompts)
+
+        let relaunched = try makeProvider(persistor: MockAIChatPreferencesPersisting(), keyValueStore: store, featureFlagger: featureFlagger)
+        XCTAssertFalse(relaunched.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_isNotHiddenByChatsReachingTheLimitWhileTheFeatureIsOff() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": false]
+        let storage = ObservableChatStorage()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+
+        sendChats(5, through: storage)
+        sendChats(2, through: storage)
+        XCTAssertEqual(storage.chatsPublisherRequests, 0, "Chats aren't observed while the feature is off")
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        featureFlagger.triggerUpdate()
+        drainMainQueue()
+
+        XCTAssertEqual(storage.chatsPublisherRequests, 1)
+        XCTAssertTrue(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_isFalseOnceTheFeatureTurnsOnWithChatsAtTheLimit() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": false]
+        let storage = ObservableChatStorage()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+        sendChats(5, through: storage)
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        featureFlagger.triggerUpdate()
+        drainMainQueue()
+        sendChats(2, through: storage)
+
+        XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testResetSuggestedPrompts_bringsTheChipsBackWithChatsAtTheLimit() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let storage = ObservableChatStorage()
+        let store = try makeStore()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), keyValueStore: store, featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+        sendChats(5, through: storage)
+        XCTAssertFalse(provider.showSuggestedPrompts)
+
+        NewTabPageOmnibarConfigProvider.resetSuggestedPrompts(in: store, notificationCenter: NotificationCenter())
+
+        XCTAssertTrue(provider.showSuggestedPrompts)
+    }
+
+    /// The provider reads the chat count on the main queue, so wait for the queue to reach past it.
+    @MainActor
+    private func sendChats(_ count: Int, through storage: ObservableChatStorage) {
+        storage.chats.send((0..<count).map { DuckAiChatRecord(chatId: "chat-\($0)", data: Data("{}".utf8)) })
+        drainMainQueue()
+    }
+
+    @MainActor
+    private func drainMainQueue() {
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+    }
+
+    @MainActor
+    func testResetSuggestedPrompts_clearsStateAndNotifies() throws {
+        let store = try makeStore()
+        let notificationCenter = NotificationCenter()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences(), notificationCenter: notificationCenter)
+        provider.suggestedPromptsPromptCount = 5
+        var events = 0
+        let cancellable = provider.suggestedPromptsPublisher.sink { events += 1 }
+
+        NewTabPageOmnibarConfigProvider.resetSuggestedPrompts(in: store, notificationCenter: notificationCenter)
+
+        cancellable.cancel()
+        XCTAssertEqual(provider.suggestedPromptsPromptCount, 0)
+        XCTAssertTrue(provider.showSuggestedPrompts)
+        XCTAssertEqual(events, 1)
     }
 
     // MARK: - chat/suggestion deletion

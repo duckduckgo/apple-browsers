@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKitExtensions
 import Foundation
 import BrowserServicesKit
 import Common
@@ -83,6 +84,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let requestValidator: any ScriptRequestValidator
+    private let buildType: ApplicationBuildType
 
     // Wide Event
     private let wideEvent: WideEventManaging
@@ -111,7 +113,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 pendingTransactionHandler: PendingTransactionHandling,
                 flowPerformer: any SubscriptionFlowsExecuting,
-                requestValidator: any ScriptRequestValidator) {
+                requestValidator: any ScriptRequestValidator,
+                buildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -130,6 +133,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.pendingTransactionHandler = pendingTransactionHandler
         self.flowPerformer = flowPerformer
         self.requestValidator = requestValidator
+        self.buildType = buildType
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -238,7 +242,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return GetFeatureValue(usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-                               useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+                               useAlternateStripePaymentFlow: buildType.isSparkleBuild && subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
         )
     }
 
@@ -330,6 +334,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
             // 5: No existing subscription was found, so proceed with the remaining purchase flow
             let purchaseTransactionJWS: String
+            let purchaseIsFreeTrial: Bool
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
@@ -343,6 +348,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             switch purchaseResult {
             case .success(let result):
                 purchaseTransactionJWS = result.transactionJWS
+                purchaseIsFreeTrial = result.isFreeTrial
 
                 // Account creation is only one piece of the purchase function's job, so we extract the creation
                 // duration from the result rather than time the execution of the entire call.
@@ -395,7 +401,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             data.activateAccountDuration = accountActivationDuration
             wideEvent.updateFlow(data)
 
-            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, experimentAttribution: nil)
+            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, isFreeTrial: purchaseIsFreeTrial, experimentAttribution: nil)
 
             func completeWideEventFlow(with error: Error) {
                 guard let purchaseWideEventData = self.purchaseWideEventData else { return }

@@ -251,7 +251,8 @@ enum Preferences {
                 case .subscriptionSettings:
                     SubscriptionUI.PreferencesSubscriptionSettingsView(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
                 case .autofill:
-                    AutofillView(model: AutofillPreferencesModel())
+                    AutofillView(model: AutofillPreferencesModel(),
+                                 showExtensions: { model.selectPane(.extensions) })
                 case .accessibility:
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
@@ -445,6 +446,22 @@ enum Preferences {
                         pixelHandler(.subscriptionUpgradeClick, .standard)
                     case .didClickCancelPendingDowngrade:
                         pixelHandler(.subscriptionCancelPendingDowngradeClick, .standard)
+                    case .didClickWithdraw:
+                        pixelHandler(.subscriptionWithdrawalWithdrawClick, .standard)
+                    case .didShowWithdrawalDialog:
+                        pixelHandler(.subscriptionWithdrawalDialogShown, .standard)
+                    case .didClickConfirmWithdrawal:
+                        pixelHandler(.subscriptionWithdrawalConfirmClick, .standard)
+                    case .didClickKeepSubscription:
+                        pixelHandler(.subscriptionWithdrawalKeepClick, .standard)
+                    case .withdrawalDidStart:
+                        subscriptionUIHandler.presentProgressViewController(withTitle: UserText.withdrawingSubscriptionTitle)
+                    case .withdrawalDidFinish:
+                        subscriptionUIHandler.dismissProgressViewController()
+                    case .withdrawalDidFail(let error):
+                        pixelHandler(.subscriptionWithdrawalFailure(error), .dailyAndCount)
+                    case .withdrawalEligibilityDidFail(let error):
+                        pixelHandler(.subscriptionWithdrawalEligibilityFailure(error), .dailyAndCount)
                     }
                 }
             }
@@ -458,7 +475,8 @@ enum Preferences {
                                                         isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
                                                         cancelPendingDowngradeHandler: { [flowPerformer] productId in
                 _ = await flowPerformer.performTierChange(to: productId, changeType: nil, wideEventFunnelName: "CancelDowngradeButton")
-            })
+            },
+                                                        isWithdrawalEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.stripeInternationalSubscriptionWithdrawal) })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

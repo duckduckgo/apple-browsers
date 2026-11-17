@@ -62,6 +62,20 @@ extension AutofillPreferencesPersistor {
 enum PasswordManager: String, CaseIterable {
     case duckduckgo
     case bitwarden
+
+    /// Where web extensions are supported, the Bitwarden extension replaces the native Bitwarden integration:
+    /// users who have the integration keep it until they leave it, and nobody else can turn it on.
+    func transitioned(to requested: PasswordManager, webExtensionsSupported: Bool) -> PasswordManager {
+        guard webExtensionsSupported, requested == .bitwarden else { return requested }
+        return self
+    }
+
+    static var areWebExtensionsSupported: Bool {
+        if #available(macOS 15.4, *) {
+            return true
+        }
+        return false
+    }
 }
 
 enum PasswordManagementSource: String {
@@ -208,7 +222,8 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
                 }
             }
 
-            selectedPasswordManager = newValue.rawValue
+            let current = PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
+            selectedPasswordManager = current.transitioned(to: newValue, webExtensionsSupported: PasswordManager.areWebExtensionsSupported).rawValue
         }
     }
 

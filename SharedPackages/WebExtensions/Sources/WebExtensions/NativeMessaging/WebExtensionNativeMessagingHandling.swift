@@ -35,6 +35,9 @@ public protocol WebExtensionNativeMessagingHandling: AnyObject {
                  applicationIdentifier: String?,
                  for context: WKWebExtensionContext) async throws
 
+    /// Whether the extension has a port to a host open.
+    func hasOpenPorts(for context: WKWebExtensionContext) -> Bool
+
     /// Sends one message to the named host and returns its answer.
     func sendMessage(_ message: Any,
                      applicationIdentifier: String?,

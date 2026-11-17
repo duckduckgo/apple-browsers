@@ -42,14 +42,20 @@ enum AIChatEntryPointPixel: PixelKit.Event {
                      duckAIEnabled: Bool,
                      toggleEnabled: Bool,
                      opensNewTab: Bool,
-                     hasPrompt: Bool) {
-        PixelKit.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount, withAdditionalParameters: [
+                     hasPrompt: Bool,
+                     voice: Bool,
+                     additionalParameters: [String: String] = [:],
+                     pixelFiring: PixelFiring? = PixelKit.shared) {
+        let parameters: [String: String] = [
             PixelParameters.source: source.rawValue,
             "duckai_enabled": String(duckAIEnabled),
             "toggle_enabled": String(toggleEnabled),
             "opens_new_tab": String(opensNewTab),
-            "has_prompt": String(hasPrompt)
-        ])
+            "has_prompt": String(hasPrompt),
+            "voice": String(voice)
+        ]
+        pixelFiring?.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount,
+                          options: .parameters(parameters.merging(additionalParameters) { current, _ in current }))
     }
 }
 
@@ -64,6 +70,7 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case browsingMenuWebpage = "browsing_menu_webpage"
     case browsingMenuDuckAI = "browsing_menu_duckai"
     case duckAINewChat = "duck_ai_new_chat"
+    case swipeUpNewChat = "swipe_up_new_chat"
     case tabSwitcher = "tab_switcher"
     case tabSwitcherExistingChat = "tab_switcher_existing_chat"
     case tabsBarExistingChat = "tabs_bar_existing_chat"
@@ -72,8 +79,8 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case chatHistoryNewChat = "chat_history_new_chat"
     case chatHistoryOpenChat = "chat_history_open_chat"
     case chatHistoryViewAll = "chat_history_view_all"
-    case voice
     case onboarding
+    case onboardingCompletionPromo = "onboarding_completion_promo"
     case subscriptionOnboarding = "subscription_onboarding"
     case paidSettings = "paid_settings"
     case directURL = "direct_url"
@@ -85,9 +92,13 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case widgetFavorite = "widget_favorite"
     case widgetLockScreen = "widget_lock_screen"
     case widgetControlCenter = "widget_control_center"
+    case addressBarCustomButton = "address_bar_custom_button"
+    case toolbarCustomButton = "toolbar_custom_button"
     case siri
     case deepLinkOther = "deep_link_other"
     case returnToChatCard = "return_to_chat_card"
+    case appOpen = "app_open"
+    case tabSwipe = "tab_swipe"
     case ddgHomepage = "ddg_homepage"
 }
 
@@ -96,7 +107,7 @@ extension AIChatEntryPointSource {
     /// Doors where the address bar hands a typed prompt to the Duck.ai page, which reports it as its own.
     var handsOverAddressBarPrompt: Bool {
         switch self {
-        case .addressBarPrompt, .addressBarEditingState, .suggestionAskAI, .ipadTogglePrompt: return true
+        case .addressBarPrompt, .addressBarEditingState, .suggestionAskAI, .ipadTogglePrompt, .onboardingCompletionPromo: return true
         default: return false
         }
     }

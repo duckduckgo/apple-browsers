@@ -26,6 +26,7 @@ enum AIChatHistorySource: String {
     case browserMenu = "browser_menu"
     case addressBar = "address_bar"
     case contextualChat = "contextual_chat"
+    case tabSwitcher = "tab_switcher"
 }
 
 protocol AIChatHistoryInstrumentation {

@@ -1329,6 +1329,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         fireButtonView.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
         DefaultOmniBarView.setUpCommonProperties(for: fireButtonView)
+        fireButtonView.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         fireButtonView.isHidden = true
 
         tabSwitcherContainerView.translatesAutoresizingMaskIntoConstraints = false

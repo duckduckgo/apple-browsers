@@ -48,7 +48,8 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeSUT(confirmResult: Bool = true) -> NewTabPageOmnibarActionsHandler {
+    private func makeSUT(confirmResult: Bool = true,
+                         fireDailyCountPixel: ((PixelKit.Event) -> Void)? = nil) -> NewTabPageOmnibarActionsHandler {
         NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
@@ -58,7 +59,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                 featureFlagger: MockFeatureFlagger(),
                 store: DuckAiTermsOfServiceStore(keyValueStore: MockKeyValueStore(), notificationCenter: NotificationCenter())
             ),
-            fireDailyCountPixel: { [weak self] event in self?.firedPixels.append(event.name) },
+            fireDailyCountPixel: fireDailyCountPixel ?? { [weak self] event in self?.firedPixels.append(event.name) },
             presentDeleteConfirmation: { _, _ in confirmResult }
         )
     }
@@ -153,6 +154,18 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             newTab: true,
             selected: true
         ))
+    }
+
+    // MARK: - suggestedPromptSubmitted
+
+    func testSuggestedPromptSubmittedFiresPixelWithPromptId() {
+        var firedEvents: [PixelKit.Event] = []
+        let sut = makeSUT(fireDailyCountPixel: { firedEvents.append($0) })
+
+        sut.suggestedPromptSubmitted(promptId: "summarize")
+
+        XCTAssertEqual(firedEvents.map(\.name), [AIChatPixel.aiChatNtpSuggestedPromptSubmitted(promptId: "summarize").name])
+        XCTAssertEqual(firedEvents.first?.parameters, ["promptId": "summarize"])
     }
 
 }

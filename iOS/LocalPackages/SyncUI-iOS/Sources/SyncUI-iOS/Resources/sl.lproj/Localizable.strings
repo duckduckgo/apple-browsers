@@ -46,9 +46,6 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Zahtevano je dovoljenje za fotoaparat";
 
-/* No comment provided by engineer. */
-"Cancel" = "Prekliči";
-
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Prekliči";
 

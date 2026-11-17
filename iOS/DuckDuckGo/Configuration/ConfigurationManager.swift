@@ -163,6 +163,17 @@ final class ConfigurationManager: DefaultConfigurationManager {
         return didFetchAnyTrackerBlockingDependencies
     }
 
+    /// Used by the `-privacyConfigURL` launch argument. Reapplies the stored configuration on a 304.
+    /// - Returns: true when the applied configuration is the downloaded one, not the embedded fallback.
+    func fetchPrivacyConfiguration() async throws -> Bool {
+        try await fetcher.fetch(.privacyConfiguration, isDebug: true)
+        let result = privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
+                                                        data: store.loadData(for: .privacyConfiguration))
+        ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
+        NotificationCenter.default.post(name: ConfigurationManager.didUpdateTrackerDependencies, object: self)
+        return result == .downloaded
+    }
+
     private func updateTrackerBlockingDependencies() {
         privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
                                            data: store.loadData(for: .privacyConfiguration))

@@ -458,6 +458,18 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User removes an image chip in the New Tab Page omnibar (reported by the page)
     case aiChatNtpImageRemoved(source: AIChatImageAttachmentSource)
 
+    /// Event Trigger: A long text paste is attached as a pasted-text chip in the New Tab Page omnibar (reported by the page)
+    case aiChatNtpPastedTextAttached
+
+    /// Event Trigger: User removes a pasted-text chip in the New Tab Page omnibar (reported by the page). Not fired when submitting clears it
+    case aiChatNtpPastedTextRemoved
+
+    /// Event Trigger: User saves changed text in the New Tab Page omnibar's Pasted Text dialog (reported by the page)
+    case aiChatNtpPastedTextEdited
+
+    /// Event Trigger: User opens the Pasted Text dialog from a chip in the New Tab Page omnibar (reported by the page)
+    case aiChatNtpPastedTextDialogOpened
+
     /// Event Trigger: User selects a model from the New Tab Page model picker
     case aiChatNtpModelSelected
 
@@ -483,6 +495,12 @@ enum AIChatPixel: PixelKit.Event {
 
     /// Event Trigger: User submits a prompt while web search mode is active on the New Tab Page
     case aiChatNtpWebSearchSubmitted
+
+    // MARK: - NTP Suggested Prompts
+
+    /// Event Trigger: User sends a prompt by picking a suggested-prompt chip on the New Tab Page.
+    /// `promptId` is the FE's fixed catalog key.
+    case aiChatNtpSuggestedPromptSubmitted(promptId: String)
 
     // MARK: - Customize Responses
 
@@ -902,6 +920,14 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_screenshot_permission_converted_macos_u"
         case .aiChatNtpImageRemoved:
             return "aichat_ntp_image_removed"
+        case .aiChatNtpPastedTextAttached:
+            return "aichat_ntp_pasted_text_attached"
+        case .aiChatNtpPastedTextRemoved:
+            return "aichat_ntp_pasted_text_removed"
+        case .aiChatNtpPastedTextEdited:
+            return "aichat_ntp_pasted_text_edited"
+        case .aiChatNtpPastedTextDialogOpened:
+            return "aichat_ntp_pasted_text_dialog_opened"
         case .aiChatNtpModelSelected:
             return "aichat_ntp_model_selected"
         case .aiChatNtpReasoningEffortSelected:
@@ -916,6 +942,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_ntp_image_generation_submitted"
         case .aiChatNtpWebSearchSubmitted:
             return "aichat_ntp_web_search_submitted"
+        case .aiChatNtpSuggestedPromptSubmitted:
+            return "aichat_ntp_suggested_prompt_submitted"
         case .aiChatAddressBarCustomizeResponsesOpened:
             return "aichat_addressbar_customize_responses_opened"
         case .aiChatNtpCustomizeResponsesOpened:
@@ -1047,6 +1075,10 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatOnboardingFinishedToggleOff,
                 .aiChatAddressBarScreenshotRemoved,
                 .aiChatNtpScreenshotRemoved,
+                .aiChatNtpPastedTextAttached,
+                .aiChatNtpPastedTextRemoved,
+                .aiChatNtpPastedTextEdited,
+                .aiChatNtpPastedTextDialogOpened,
                 .aiChatScreenshotPermissionNeeded,
                 .aiChatScreenshotPermissionAlertAccepted,
                 .aiChatScreenshotPermissionGranted,
@@ -1247,6 +1279,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["reason": reason.rawValue]
         case .aiChatSuggestionSelected(let suggestionId, let pageType):
             return ["suggestionId": suggestionId, "pageType": pageType]
+        case .aiChatNtpSuggestedPromptSubmitted(let promptId):
+            return ["promptId": promptId]
         case .aiChatSuggestionsViewed(let isSmart, let pageType):
             return ["isSmart": String(isSmart), "pageType": pageType]
         }
@@ -1376,6 +1410,10 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpScreenshotFailed,
                 .aiChatNtpImageAttached,
                 .aiChatNtpImageRemoved,
+                .aiChatNtpPastedTextAttached,
+                .aiChatNtpPastedTextRemoved,
+                .aiChatNtpPastedTextEdited,
+                .aiChatNtpPastedTextDialogOpened,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpSubscriptionUpsellTriggered,
@@ -1383,6 +1421,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNewVoiceChatOmnibarNtp,
                 .aiChatNtpImageGenerationSubmitted,
                 .aiChatNtpWebSearchSubmitted,
+                .aiChatNtpSuggestedPromptSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,

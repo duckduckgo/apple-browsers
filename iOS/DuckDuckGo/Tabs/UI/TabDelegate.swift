@@ -40,7 +40,7 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController)
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
 
     func newTab(reuseExisting: Bool)
 
@@ -68,10 +68,15 @@ protocol TabDelegate: AnyObject {
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
+    /// A screen this tab presented is still up; the new tab closes it as it opens.
+    /// Returns false when the new tab can't, so the caller closes the screen as usual.
+    func tab(_ tab: TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL) -> Bool
+
     /// Prompts in the new tab are attributed to `entrySource`; nil leaves them unattributed.
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource?)
+             entrySource: AIChatEntryPointSource?,
+             newChatInputRequest: DuckAINewChatInputRequest?)
 
     /// An entry into Duck.ai that the tab itself detected, reported like every other entry point.
     func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool)
@@ -130,6 +135,12 @@ protocol TabDelegate: AnyObject {
     /// Called for the browsing menu's new-chat entries, which load a duck.ai URL in a new tab.
     /// Routed through the delegate so the entry pixel is reported alongside the interceptor state.
     func tabDidRequestNewAIChatTab(tab: TabViewController)
+
+    /// What the chrome knows that pulling up past the bottom of a Duck.ai chat gates on; nil when `tab` isn't the current tab.
+    func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState?
+
+    /// The user pulled up past the bottom of the Duck.ai chat in `tab` to open a new chat in a new tab.
+    func tabDidRequestNewChatBySwipe(_ tab: TabViewController)
 
     /// Called when the user picks Ask Duck.ai from the web view's text-selection edit menu.
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String)
@@ -264,7 +275,7 @@ extension TabDelegate {
 
     func tabDidFinishNavigation(_ tab: TabViewController) {}
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 

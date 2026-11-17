@@ -39,6 +39,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatSearchInputUserSettingsDisabledByUser: Bool
     public var isAutomaticContextAttachmentEnabled: Bool
     public var isChatSuggestionsEnabled: Bool
+    public var isKeyboardAnimationEnabled: Bool = true
     public var defaultOmnibarMode: DefaultOmnibarMode
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
@@ -121,6 +122,10 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
 
     public func enableChatSuggestions(enable: Bool) {
         isChatSuggestionsEnabled = enable
+    }
+
+    public func enableKeyboardAnimation(enable: Bool) {
+        isKeyboardAnimationEnabled = enable
     }
 
     public func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {

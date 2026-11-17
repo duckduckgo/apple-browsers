@@ -165,4 +165,24 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// drops it once the user accepts, wherever they accepted.
     var requiresAiTermsAcceptance: Bool { get }
     var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the Duck.ai suggested-prompt chips show: the feature is on and the user hasn't yet
+    /// sent the maximum number of Duck.ai prompts.
+    var showSuggestedPrompts: Bool { get }
+
+    /// Persisted count of Duck.ai prompts sent from the NTP while the chips were offered.
+    /// The client increments it on each non-voice `omnibar_submitChat`.
+    var suggestedPromptsPromptCount: Int { get set }
+
+    /// Fires when the flag flips or the persisted count changes, so every open NTP re-reads the config.
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> { get }
+
+    /// Whether the page turns long text pastes into pasted-text attachments (`enablePastedText`).
+    var isPastedTextEnabled: Bool { get }
+
+    /// The paste length that becomes a chip and the cap on typed text plus pastes. `nil` while pasted text is off, so the page uses its built-in limits.
+    var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits? { get }
+
+    /// Fires when the flag or the limits change, so an open NTP updates without a reload.
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> { get }
 }

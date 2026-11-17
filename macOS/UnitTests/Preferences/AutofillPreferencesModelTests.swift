@@ -155,59 +155,92 @@ final class AutofillPreferencesModelTests: XCTestCase {
     // MARK: - Extension Managing Autofill
 
     @MainActor
-    func testWhenAnExtensionManagesAutofill_ThenItIsShown() throws {
-        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+    func testWhenAnExtensionManagesAutofill_ThenTheModelReportsIt() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.isManagedByExtension = true
 
-        let model = try makeModel(takeover: makeTakeover(bitwarden))
+        let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter())
 
-        XCTAssertEqual(model.managingExtension, bitwarden)
-    }
-
-    @MainActor
-    func testWhenTheUserUsesDuckDuckGoInstead_ThenAutofillIsGivenBack() throws {
-        var givenBackCount = 0
-        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
-        let model = try makeModel(takeover: makeTakeover(bitwarden) { givenBackCount += 1 })
-
-        model.useDuckDuckGoInstead()
-
-        XCTAssertEqual(givenBackCount, 1)
+        XCTAssertTrue(model.isManagedByExtension)
     }
 
     @MainActor
     func testWhenAnExtensionTakesOverWhileSettingsAreOpen_ThenTheModelFollows() throws {
-        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
-        var managing: AutofillManagingExtension?
-        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
-                                                    notificationCenter: NotificationCenter(),
-                                                    readManagingExtension: { managing },
-                                                    clearSettings: {})
-        let model = try makeModel(takeover: takeover)
-        XCTAssertNil(model.managingExtension)
+        let persistor = AutofillPreferencesPersistorMock()
+        let notificationCenter = NotificationCenter()
+        let model = try makeModel(persistor: persistor, notificationCenter: notificationCenter)
+        XCTAssertFalse(model.isManagedByExtension)
 
-        managing = bitwarden
-        takeover.refresh()
-        NotificationCenter.default.post(name: .autofillUserSettingsDidChange, object: nil)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        let updated = expectation(description: "isManagedByExtension updated")
+        let cancellable = model.$isManagedByExtension.dropFirst().sink { _ in updated.fulfill() }
 
-        XCTAssertEqual(model.managingExtension, bitwarden)
+        persistor.isManagedByExtension = true
+        notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
+
+        wait(for: [updated], timeout: 1)
+        XCTAssertTrue(model.isManagedByExtension)
+        cancellable.cancel()
+    }
+
+    // MARK: - Password Manager
+
+    @MainActor
+    func testWhenWebExtensionsAreSupportedAndDuckDuckGoUserSelectsBitwarden_ThenDuckDuckGoStaysSelected() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter(), areWebExtensionsSupported: true)
+
+        model.passwordManagerSettingsChange(passwordManager: .bitwarden)
+
+        XCTAssertEqual(model.passwordManager, .duckduckgo)
+        XCTAssertEqual(persistor.passwordManager, .duckduckgo)
     }
 
     @MainActor
-    private func makeTakeover(_ managing: AutofillManagingExtension?,
-                              clearSettings: @escaping @MainActor () -> Void = {}) -> WebExtensionAutofillTakeover {
-        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
-                                                    notificationCenter: NotificationCenter(),
-                                                    readManagingExtension: { managing },
-                                                    clearSettings: clearSettings)
-        takeover.refresh()
-        return takeover
+    func testWhenPasswordManagerChangesWhileSettingsAreOpen_ThenTheModelFollows() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.passwordManager = .bitwarden
+        let notificationCenter = NotificationCenter()
+        let model = try makeModel(persistor: persistor, notificationCenter: notificationCenter)
+        XCTAssertEqual(model.passwordManager, .bitwarden)
+
+        let updated = expectation(description: "passwordManager updated")
+        let cancellable = model.$passwordManager.dropFirst().sink { _ in updated.fulfill() }
+
+        persistor.passwordManager = .duckduckgo
+        notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
+
+        wait(for: [updated], timeout: 1)
+        XCTAssertEqual(model.passwordManager, .duckduckgo)
+        cancellable.cancel()
     }
 
     @MainActor
-    private func makeModel(takeover: WebExtensionAutofillTakeover) throws -> AutofillPreferencesModel {
-        try AutofillPreferencesModel(persistor: AutofillPreferencesPersistorMock(), userAuthenticator: UserAuthenticatorMock(),
+    func testPasswordManagerChoiceVisibility() throws {
+        let cases: [(selected: PasswordManager, webExtensionsSupported: Bool, sandboxed: Bool, visible: Bool)] = [
+            (.bitwarden, true, false, true),
+            (.duckduckgo, true, false, false),
+            (.duckduckgo, false, false, true),
+            (.bitwarden, false, false, true),
+            (.bitwarden, true, true, false),
+            (.duckduckgo, false, true, false),
+        ]
+
+        for testCase in cases {
+            let persistor = AutofillPreferencesPersistorMock()
+            persistor.passwordManager = testCase.selected
+            let model = try makeModel(persistor: persistor, notificationCenter: NotificationCenter(),
+                                      areWebExtensionsSupported: testCase.webExtensionsSupported, isSandboxed: testCase.sandboxed)
+
+            XCTAssertEqual(model.isPasswordManagerChoiceVisible, testCase.visible, "\(testCase)")
+        }
+    }
+
+    @MainActor
+    private func makeModel(persistor: AutofillPreferencesPersistorMock, notificationCenter: NotificationCenter,
+                           areWebExtensionsSupported: Bool = true, isSandboxed: Bool = false) throws -> AutofillPreferencesModel {
+        try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
                                      neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: MockSyncPromoManager(),
-                                     autofillTakeover: takeover)
+                                     notificationCenter: notificationCenter, areWebExtensionsSupported: areWebExtensionsSupported,
+                                     isSandboxed: isSandboxed)
     }
 }

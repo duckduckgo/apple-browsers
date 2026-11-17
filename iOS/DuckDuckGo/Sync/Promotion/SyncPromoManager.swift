@@ -30,20 +30,36 @@ import PixelKit
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool
+    func designFor(_ touchpoint: SyncPromoManager.Touchpoint) -> SyncPromoManager.Design
     func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint)
+    func recordPromoConfirmedFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason)
     func resetPromos()
+}
+
+extension SyncPromoManaging {
+    func designFor(_ touchpoint: SyncPromoManager.Touchpoint) -> SyncPromoManager.Design {
+        .standard
+    }
 }
 
 enum SyncPromoStorageKeyNames: String, StorageKeyDescribing {
     case aiChatDismissed = "sync-promo-ai-chat-dismissed"
     case aiChatImpressions = "sync-promo-ai-chat-impressions"
+    case syncedDevicesCount = "sync-promo-synced-devices-count"
+    case setupPromoConfirmed = "sync-promo-setup-promo-confirmed"
+    case bookmarksAnotherDeviceDismissed = "sync-promo-bookmarks-another-device-dismissed"
+    case passwordsAnotherDeviceDismissed = "sync-promo-passwords-another-device-dismissed"
 }
 
 struct SyncPromoStorageKeys: StoringKeys {
     let aiChatDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.aiChatDismissed)
     let aiChatImpressions = StorageKey<Int>(SyncPromoStorageKeyNames.aiChatImpressions)
+    let syncedDevicesCount = StorageKey<Int>(SyncPromoStorageKeyNames.syncedDevicesCount)
+    let setupPromoConfirmed = StorageKey<Date>(SyncPromoStorageKeyNames.setupPromoConfirmed)
+    let bookmarksAnotherDeviceDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.bookmarksAnotherDeviceDismissed)
+    let passwordsAnotherDeviceDismissed = StorageKey<Date>(SyncPromoStorageKeyNames.passwordsAnotherDeviceDismissed)
 }
 
 final class SyncPromoManager: SyncPromoManaging {
@@ -53,6 +69,8 @@ final class SyncPromoManager: SyncPromoManaging {
         case passwords
         case dataImport = "data_import"
         case aiChat = "ai_chat"
+        case bookmarksAnotherDevice = "bookmarks_multi_device"
+        case passwordsAnotherDevice = "passwords_multi_device"
     }
 
     enum DismissalReason: String {
@@ -60,13 +78,23 @@ final class SyncPromoManager: SyncPromoManaging {
         case impressionCap = "impression_cap"
     }
 
+    enum Design {
+        case standard
+        case redesigned
+    }
+
     static let aiChatImpressionCap = 5
+    static let redesignMinimumDaysSinceInstall = 3
+    static let syncAnotherDeviceMinimumDaysSinceInstall = 7
+    static let syncAnotherDeviceSetupPromoCooldown: TimeInterval = 24 * 60 * 60
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let storage: any KeyedStoring<SyncPromoStorageKeys>
     private let pixelFiring: (any PixelKitFiring)?
+    private let installDateProvider: () -> Date?
+    private let currentDateProvider: () -> Date
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
     private var syncPromoBookmarksDismissed: Date?
@@ -91,12 +119,16 @@ final class SyncPromoManager: SyncPromoManaging {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          storage: (any KeyedStoring<SyncPromoStorageKeys>) = UserDefaults.app.keyedStoring(),
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
+         currentDateProvider: @escaping () -> Date = Date.init) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
         self.storage = storage
         self.pixelFiring = pixelFiring
+        self.installDateProvider = installDateProvider
+        self.currentDateProvider = currentDateProvider
     }
 
     func shouldPresentPromoFor(_ touchpoint: Touchpoint, count: Int) -> Bool {
@@ -106,6 +138,7 @@ final class SyncPromoManager: SyncPromoManaging {
                syncService.authState == .inactive,
                featureFlagger.isFeatureOn(.sync),
                syncPromoBookmarksDismissed == nil,
+               isOldEnoughForRedesignedPromo,
                count > 0 {
                 return true
             }
@@ -114,6 +147,7 @@ final class SyncPromoManager: SyncPromoManaging {
                syncService.authState == .inactive,
                featureFlagger.isFeatureOn(.sync),
                syncPromoPasswordsDismissed == nil,
+               isOldEnoughForRedesignedPromo,
                count > 0 {
                 return true
             }
@@ -134,9 +168,83 @@ final class SyncPromoManager: SyncPromoManaging {
                count > 0 {
                 return true
             }
+        case .bookmarksAnotherDevice, .passwordsAnotherDevice:
+            if isSyncAnotherDeviceAvailable,
+               anotherDeviceDismissedDate(for: touchpoint) == nil,
+               featureFlagger.isFeatureOn(.sync),
+               let daysSinceInstall,
+               daysSinceInstall > Self.syncAnotherDeviceMinimumDaysSinceInstall,
+               let syncedDevicesCount = storage.syncedDevicesCount,
+               syncedDevicesCount < 2,
+               isSetupPromoCooldownOver,
+               count > 0 {
+                return true
+            }
         }
 
         return false
+    }
+
+    func refreshSyncedDevicesCount() async {
+        guard canRefreshSyncedDevicesCount,
+              let devices = try? await syncService.fetchDevices() else {
+            return
+        }
+        storage.syncedDevicesCount = devices.count
+    }
+
+    private var canRefreshSyncedDevicesCount: Bool {
+        isSyncAnotherDeviceAvailable
+        && (storage.bookmarksAnotherDeviceDismissed == nil || storage.passwordsAnotherDeviceDismissed == nil)
+    }
+
+    private var isSyncAnotherDeviceAvailable: Bool {
+        featureFlagger.isFeatureOn(.syncPromotionSyncAnotherDevice)
+        && syncService.authState != .inactive
+    }
+
+    private func anotherDeviceDismissedDate(for touchpoint: Touchpoint) -> Date? {
+        switch touchpoint {
+        case .bookmarksAnotherDevice:
+            storage.bookmarksAnotherDeviceDismissed
+        case .passwordsAnotherDevice:
+            storage.passwordsAnotherDeviceDismissed
+        case .bookmarks, .passwords, .dataImport, .aiChat:
+            nil
+        }
+    }
+
+    private var isSetupPromoCooldownOver: Bool {
+        guard let setupPromoConfirmed = storage.setupPromoConfirmed else {
+            return true
+        }
+        return currentDateProvider().timeIntervalSince(setupPromoConfirmed) >= Self.syncAnotherDeviceSetupPromoCooldown
+    }
+
+    private var isOldEnoughForRedesignedPromo: Bool {
+        guard featureFlagger.isFeatureOn(.syncPromotionRedesign) else {
+            return true
+        }
+        guard let daysSinceInstall else {
+            return false
+        }
+        return daysSinceInstall > Self.redesignMinimumDaysSinceInstall
+    }
+
+    private var daysSinceInstall: Int? {
+        guard let installDate = installDateProvider() else {
+            return nil
+        }
+        return Calendar.current.dateComponents([.day], from: installDate, to: currentDateProvider()).day
+    }
+
+    func designFor(_ touchpoint: Touchpoint) -> Design {
+        switch touchpoint {
+        case .bookmarks, .passwords:
+            return featureFlagger.isFeatureOn(.syncPromotionRedesign) ? .redesigned : .standard
+        case .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice:
+            return .standard
+        }
     }
 
     func markPromoHandledFor(_ touchpoint: Touchpoint) {
@@ -149,12 +257,16 @@ final class SyncPromoManager: SyncPromoManaging {
             syncPromoDataImportDismissed = Date()
         case .aiChat:
             syncPromoAIChatDismissed = Date()
+        case .bookmarksAnotherDevice:
+            storage.bookmarksAnotherDeviceDismissed = Date()
+        case .passwordsAnotherDevice:
+            storage.passwordsAnotherDeviceDismissed = Date()
         }
     }
 
     func recordImpressionFor(_ touchpoint: Touchpoint) {
         switch touchpoint {
-        case .bookmarks, .passwords, .dataImport:
+        case .bookmarks, .passwords, .dataImport, .bookmarksAnotherDevice, .passwordsAnotherDevice:
             break
         case .aiChat:
             syncPromoAIChatImpressions += 1
@@ -162,6 +274,17 @@ final class SyncPromoManager: SyncPromoManaging {
                 dismissPromoFor(.aiChat, reason: .impressionCap)
             }
         }
+    }
+
+    func recordPromoConfirmedFor(_ touchpoint: Touchpoint) {
+        switch touchpoint {
+        case .bookmarks, .passwords:
+            storage.setupPromoConfirmed = currentDateProvider()
+        case .dataImport, .aiChat, .bookmarksAnotherDevice, .passwordsAnotherDevice:
+            break
+        }
+
+        pixelFiring?.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
     }
 
     func dismissPromoFor(_ touchpoint: Touchpoint, reason: DismissalReason) {
@@ -177,5 +300,8 @@ final class SyncPromoManager: SyncPromoManaging {
         syncPromoDataImportDismissed = nil
         syncPromoAIChatDismissed = nil
         syncPromoAIChatImpressions = 0
+        storage.bookmarksAnotherDeviceDismissed = nil
+        storage.passwordsAnotherDeviceDismissed = nil
+        storage.setupPromoConfirmed = nil
     }
 }

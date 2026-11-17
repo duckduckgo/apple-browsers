@@ -500,6 +500,9 @@ final class NewTabPageOnboardingCoordinator {
         // - `!shouldOpenDuckAI`: dismiss the dialog and shows the subscription promo.
         if shouldOpenDuckAI {
             // Opens Duck.ai via the omnibar path, mirroring showDuckAIOnboardingCompletionWithActiveAddressBar.
+            if let page {
+                page.delegate?.newTabPageDidOpenDuckAIOnboardingPromo(page)
+            }
             chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
         } else {
             // Skip: mirror the standard final dialog's subscription hand-off.

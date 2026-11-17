@@ -152,6 +152,7 @@ public enum StorePurchaseManagerError: DDGError {
 
 public protocol StorePurchaseManager {
     typealias TransactionJWS = String
+    typealias PurchasedTransaction = (transactionJWS: TransactionJWS, isFreeTrial: Bool)
 
     /// Returns the available subscription tier options.
     /// - Returns: A `Result<SubscriptionTierOptions, StoreError>` where `.success` contains the available subscription tier plans and pricing,
@@ -175,7 +176,7 @@ public protocol StorePurchaseManager {
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
     func isUserEligibleForFreeTrial() -> Bool
 
-    @MainActor func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<StorePurchaseManager.TransactionJWS, StorePurchaseManagerError>
+    @MainActor func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<StorePurchaseManager.PurchasedTransaction, StorePurchaseManagerError>
 }
 
 @available(iOS 15.0, *) typealias Transaction = StoreKit.Transaction
@@ -491,7 +492,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     }
 
     @MainActor
-    public func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<TransactionJWS, StorePurchaseManagerError> {
+    public func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<PurchasedTransaction, StorePurchaseManagerError> {
 
         guard let product = await getAvailableProducts(includeProTier: includeProTier).first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
 
@@ -529,7 +530,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
                 await transaction.finish()
                 await self.updatePurchasedProducts()
                 await self.updateAvailableProductsTrialEligibility()
-                return .success(verificationResult.jwsRepresentation)
+                return .success((transactionJWS: verificationResult.jwsRepresentation, isFreeTrial: Self.isFreeTrial(transaction)))
             case let .unverified(_, error):
                 Logger.subscriptionStorePurchaseManager.log("purchaseSubscription result: success /unverified/ - \(String(reflecting: error), privacy: .public)")
                 // Successful purchase but transaction/receipt can't be verified
@@ -626,6 +627,14 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             await mutableProduct.refreshFreeTrialEligibility()
             self.availableProducts[index] = mutableProduct
         }
+    }
+
+    /// Before iOS 17.2 / macOS 14.2 StoreKit exposes only the offer type, so any introductory offer counts as a free trial.
+    static func isFreeTrial(_ transaction: Transaction) -> Bool {
+        if #available(iOS 17.2, macOS 14.2, *) {
+            return transaction.offer?.paymentMode == .freeTrial
+        }
+        return transaction.offerType == .introductory
     }
 }
 

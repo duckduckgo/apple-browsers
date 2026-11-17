@@ -349,7 +349,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - User Defaults
 
     private let defaults: UserDefaults
-    private let shutdownGuard: VPNShutdownGuard
+    private let startupGuard: VPNStartupGuard
 
     // MARK: - Server Selection
 
@@ -533,7 +533,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
         self.defaults = defaults
-        self.shutdownGuard = VPNShutdownGuard(defaults: defaults)
+        self.startupGuard = VPNStartupGuard(defaults: defaults)
         self.bandwidthAnalyzer = bandwidthAnalyzer ?? NetworkProtectionConnectionBandwidthAnalyzer()
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
@@ -927,32 +927,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         // Reset snooze if the VPN is restarting.
         self.snoozeTimingStore.reset()
 
-        func shutdown(dueTo error: Error) async throws {
-            defer {
-                completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
-                Logger.networkProtection.error("🔴 Shutting down VPN: \(error)")
-            }
-
-            switch await self.shutdown(dueTo: error) {
-            case .onDemandDisabled:
-                // Throwing here cancels the start attempt, and since on-demand is disabled
-                // the VPN shouldn't start again.
-                throw error
-            case .onDemandEnabledAndVPNReasserting:
-                // On-demand is still enabled, so back off before failing this start attempt.
-                try? await Task.sleep(interval: .seconds(15))
-                throw error
-            }
-        }
-
-        // Check if the VPN had been shutdown, and attempt shutdown again.
-        switch startupOptions.startupMethod {
-        case .manualByMainApp:
-            shutdownGuard.reset()
-        case .manualByTheSystem, .automaticOnDemand:
-            if shutdownGuard.isShutDown {
-                return try await shutdown(dueTo: TunnelError.reconnectBlocked)
-            }
+        if startupGuard.prepareForStartup(startupMethod: startupOptions.startupMethod) == .blocked {
+            return try await failStartupAfterShutdown(dueTo: TunnelError.reconnectBlocked)
         }
 
         do {
@@ -971,7 +947,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             switch internalError {
             case SubscriptionManagerError.noTokenAvailable:
                 error = TunnelError.startingTunnelWithoutAuthToken(internalError: internalError)
-                return try await shutdown(dueTo: error)
+                return try await failStartupAfterShutdown(dueTo: error)
             default:
                 error = TunnelError.otherTunnelStartError(internalError: internalError)
             }
@@ -987,9 +963,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // expired.  In either case it should be enough to record the manual failures
                 // for these prerequisited to avoid flooding our metrics.
                 providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken(error))
-                Logger.networkProtection.log("Going to sleep...")
-                try? await Task.sleep(interval: .seconds(15))
-                Logger.networkProtection.log("Waking up...")
+                await waitBeforeFailingStartup()
             } else {
                 loopDetector.connectionFailed(isOnDemand: false)
 
@@ -1036,9 +1010,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
                 // cycling.
-                Logger.networkProtection.log("Going to sleep...")
-                try? await Task.sleep(interval: .seconds(15))
-                Logger.networkProtection.log("Waking up...")
+                await waitBeforeFailingStartup()
             }
 
             let errorDescription = (error as? LocalizedError)?.localizedDescription ?? String(describing: error)
@@ -1052,6 +1024,32 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
+    }
+
+    @MainActor
+    private func failStartupAfterShutdown(dueTo error: Error) async throws {
+        defer {
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
+            Logger.networkProtection.error("🔴 Shutting down VPN: \(error)")
+        }
+
+        switch await shutdown(dueTo: error) {
+        case .onDemandDisabled:
+            // Throwing here cancels the start attempt, and since on-demand is disabled
+            // the VPN shouldn't start again.
+            throw error
+        case .onDemandEnabledAndVPNReasserting:
+            // On-demand is still enabled, so back off before failing this start attempt.
+            await waitBeforeFailingStartup()
+            throw error
+        }
+    }
+
+    @MainActor
+    private func waitBeforeFailingStartup() async {
+        Logger.networkProtection.log("Waiting 15 seconds before failing VPN startup to limit automatic retries")
+        try? await Task.sleep(interval: .seconds(15))
+        Logger.networkProtection.log("VPN startup failure delay finished")
     }
 
     var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod {
@@ -1701,7 +1699,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // shut it down even if the process keeps running.
 
             // Subscription recovery must not undo this guard if the extension process restarts.
-            shutdownGuard.markAsShutDown()
+            startupGuard.blockStartup()
 
             // We don't want to be firing monitoring pixels for failures from this point onward...
             await stopMonitors()

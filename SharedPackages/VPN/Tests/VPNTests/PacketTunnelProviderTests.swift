@@ -26,46 +26,49 @@ final class PacketTunnelProviderTests: XCTestCase {
 
     typealias TunnelError = PacketTunnelProvider.TunnelError
 
-    private var shutdownDefaults: UserDefaults!
-    private var shutdownDefaultsSuiteName: String!
+    private var startupDefaults: UserDefaults!
+    private var startupDefaultsSuiteName: String!
 
     override func setUp() {
         super.setUp()
-        shutdownDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
-        shutdownDefaults = UserDefaults(suiteName: shutdownDefaultsSuiteName)
+        startupDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
+        startupDefaults = UserDefaults(suiteName: startupDefaultsSuiteName)
     }
 
     override func tearDown() {
-        shutdownDefaults.removePersistentDomain(forName: shutdownDefaultsSuiteName)
-        shutdownDefaults = nil
-        shutdownDefaultsSuiteName = nil
+        startupDefaults.removePersistentDomain(forName: startupDefaultsSuiteName)
+        startupDefaults = nil
+        startupDefaultsSuiteName = nil
         super.tearDown()
     }
 
-    func testVPNIsNotShutDownByDefault() {
-        let shutdownGuard = VPNShutdownGuard(defaults: shutdownDefaults)
+    func testStartupIsAllowedByDefaultForEveryStartupMethod() {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
 
-        XCTAssertFalse(shutdownGuard.isShutDown)
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByMainApp), .allowed)
     }
 
-    func testShutdownPersistsAcrossGuardAndDefaultsInstances() throws {
-        VPNShutdownGuard(defaults: shutdownDefaults).markAsShutDown()
-        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: shutdownDefaultsSuiteName))
-        let restartedGuard = VPNShutdownGuard(defaults: restartedDefaults)
+    func testBlockedStartupPersistsAcrossGuardAndDefaultsInstances() throws {
+        VPNStartupGuard(defaults: startupDefaults).blockStartup()
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
 
-        XCTAssertTrue(restartedGuard.isShutDown)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .manualByTheSystem), .blocked)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .blocked)
     }
 
-    func testResetClearsShutdownAcrossGuardAndDefaultsInstances() throws {
-        let shutdownGuard = VPNShutdownGuard(defaults: shutdownDefaults)
-        shutdownGuard.markAsShutDown()
-        XCTAssertTrue(shutdownGuard.isShutDown)
+    func testMainAppStartupClearsBlockAcrossGuardAndDefaultsInstances() throws {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
+        startupGuard.blockStartup()
 
-        shutdownGuard.reset()
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByMainApp), .allowed)
 
-        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: shutdownDefaultsSuiteName))
-        let restartedGuard = VPNShutdownGuard(defaults: restartedDefaults)
-        XCTAssertFalse(restartedGuard.isShutDown)
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
     }
 
     func testReconnectBlockedErrorHasItsOwnCodeForProcessBoundaries() {

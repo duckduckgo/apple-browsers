@@ -1,5 +1,5 @@
 //
-//  VPNShutdownGuard.swift
+//  VPNStartupGuard.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,8 +18,13 @@
 
 import Foundation
 
-/// Persists shutdown state for the VPN
-struct VPNShutdownGuard {
+/// Persists startup blocking until an explicit start from the main app clears it.
+struct VPNStartupGuard {
+    enum StartupDecision: Equatable {
+        case allowed
+        case blocked
+    }
+
     private static let shutdownKey = "com.duckduckgo.vpn.shutdown"
     private let defaults: UserDefaults
 
@@ -27,16 +32,20 @@ struct VPNShutdownGuard {
         self.defaults = defaults
     }
 
-    private(set) var isShutDown: Bool {
+    private var isStartupBlocked: Bool {
         get { defaults.bool(forKey: Self.shutdownKey) }
         nonmutating set { defaults.set(newValue, forKey: Self.shutdownKey) }
     }
 
-    func reset() {
-        isShutDown = false
+    func prepareForStartup(startupMethod: StartupOptions.StartupMethod) -> StartupDecision {
+        if startupMethod == .manualByMainApp {
+            isStartupBlocked = false
+        }
+
+        return isStartupBlocked ? .blocked : .allowed
     }
 
-    func markAsShutDown() {
-        isShutDown = true
+    func blockStartup() {
+        isStartupBlocked = true
     }
 }

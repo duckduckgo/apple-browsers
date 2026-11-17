@@ -42,61 +42,8 @@ class ContextualDialogsManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Non-blocking contextual onboarding starts on NTP or DuckDuckGo and stays dismissed", .timeLimit(.minutes(1)),
-          arguments: ["ntp", "https://duckduckgo.com", "https://www.duckduckgo.com", "https://duckduckgo.com/?q=test"])
-    func testNonBlockingContextualLifecycle(url: String) async {
-        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                                       stateStorage: stateStorage,
-                                                       isNonBlocking: { true })
-        treatmentManager.state = .notStarted
-        let newTab = await Tab(content: .newtab)
-        let browsingTab = url == "ntp" ? newTab : await Tab(content: .url(URL(string: url)!, source: .ui))
-        #expect(treatmentManager.dialogTypeForTab(browsingTab) == .tryASearch)
-        #expect(treatmentManager.lastDialogForTab(browsingTab) == .tryASearch)
-
-        treatmentManager.turnOffFeature()
-
-        #expect(treatmentManager.state == .onboardingCompleted)
-        #expect(treatmentManager.lastDialogForTab(browsingTab) == nil)
-        #expect(treatmentManager.dialogTypeForTab(newTab) == nil)
-        treatmentManager.gotItPressed()
-        #expect(treatmentManager.state == .onboardingCompleted)
-        #expect(treatmentManager.lastDialog == nil)
-
-        let restored = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                               subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                               stateStorage: stateStorage,
-                                               isNonBlocking: { true })
-        #expect(restored.dialogTypeForTab(browsingTab) == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Other sites retain tracker tips without showing or consuming Try a search", .timeLimit(.minutes(1)),
-          arguments: ["https://example.com", "https://duckduckgo.com.example.com", "https://example.com/?q=test"])
-    func testTreatmentWebsiteDoesNotConsumeSearchPrompt(url: String) async {
-        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                                       stateStorage: stateStorage,
-                                                       isNonBlocking: { true })
-        treatmentManager.state = .notStarted
-        let siteTab = await Tab(content: .url(URL(string: url)!, source: .ui))
-        guard case .trackers = treatmentManager.dialogTypeForTab(siteTab) else {
-            Issue.record("Expected the tracker tip on a regular website")
-            return
-        }
-        #expect(!stateStorage.contextualDialogsSeen.contains("tryASearch"))
-        let newTab = await Tab(content: .newtab)
-        #expect(treatmentManager.dialogTypeForTab(newTab) == .tryASearch)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A cached search prompt is not restored on another site in treatment", .timeLimit(.minutes(1)), arguments: [false, true])
-    func testCachedSearchPromptAfterLeavingNewTab(isNonBlocking: Bool) async {
-        let manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                              subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                              stateStorage: stateStorage,
-                                              isNonBlocking: { isNonBlocking })
+    @Test("A cached search prompt is restored after leaving New Tab", .timeLimit(.minutes(1)))
+    func testCachedSearchPromptAfterLeavingNewTab() async {
         manager.state = .notStarted
         let schemeHandler = TestSchemeHandler { _ in .ok(.html("test")) }
         let tab = await Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
@@ -104,32 +51,7 @@ class ContextualDialogsManagerTests {
 
         tab.setContent(.url(URL(string: "https://example.com")!, source: .ui))
 
-        #expect(manager.lastDialogForTab(tab) == (isNonBlocking ? nil : .tryASearch))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The onboarding page neither advances contextual onboarding nor restores a cached dialog", .timeLimit(.minutes(1)))
-    func testOnboardingTabCannotPresentTheSubscriptionFollowUp() async {
-        subscriptionUpsellExperiment.cohortStub = .treatment
-        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                                       stateStorage: stateStorage,
-                                                       isNonBlocking: { true })
-        treatmentManager.state = .ongoing
-        stateStorage.contextualDialogsSeen = ["highFive"]
-        let tab = await Tab(content: .onboarding)
-
-        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
-        #expect(treatmentManager.state == .ongoing)
-        #expect(stateStorage.contextualDialogsSeen == ["highFive"])
-
-        tab.setContent(.url(URL(string: "https://example.com")!, source: .ui))
-        #expect(treatmentManager.dialogTypeForTab(tab) == .subscriptionUpsell)
-        #expect(treatmentManager.lastDialogForTab(tab) == .subscriptionUpsell)
-
-        tab.setContent(.onboarding)
-        #expect(treatmentManager.lastDialogForTab(tab) == nil)
-        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
+        #expect(manager.lastDialogForTab(tab) == .tryASearch)
     }
 
     // MARK: - Subscription Upsell Flow

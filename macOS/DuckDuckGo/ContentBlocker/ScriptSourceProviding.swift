@@ -246,8 +246,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             pinningManager: pinningManager,
             featureFlagger: featureFlagger,
             reinstallUserDetection: reinstallUserDetection,
-            installDateProvider: installDateProvider,
-            contextualOnboardingStateUpdater: Application.appDelegate.onboardingContextualDialogsManager
+            installDateProvider: installDateProvider
         )
     }
 

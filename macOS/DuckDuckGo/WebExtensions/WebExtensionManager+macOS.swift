@@ -140,7 +140,7 @@ enum WebExtensionManagerFactory {
             prompter: permissionPrompt
         ) : nil
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
-        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+        let nativeMessagingHandler = buildType.isSparkleBuild
             ? NativeMessagingHandler(installationStore: installationStore)
             : nil
         let manager = WebExtensionManager(
@@ -181,7 +181,7 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

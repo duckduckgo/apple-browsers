@@ -26,6 +26,7 @@ import Foundation
 import FoundationExtensions
 import Network
 import NetworkExtension
+import Networking
 import os.log
 import WideEvent
 import UserNotifications
@@ -390,6 +391,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var keyStore: NetworkProtectionKeyStore
 
     public let tokenHandlerProvider: any SubscriptionTokenHandling
+    private let tokenSource: StartupTokenSource
 
     private var keyRotator: KeyRotator!
 
@@ -490,6 +492,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 keychainType: KeychainType,
                 keyStore: NetworkProtectionKeyStore? = nil,
                 tokenHandlerProvider: any SubscriptionTokenHandling,
+                tokenSource: StartupTokenSource,
                 debugEvents: EventMapping<NetworkProtectionError>,
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
@@ -516,6 +519,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.notificationsPresenter = notificationsPresenter
         self.keychainType = keychainType
         self.tokenHandlerProvider = tokenHandlerProvider
+        self.tokenSource = tokenSource
         self.debugEvents = debugEvents
         self.providerEvents = providerEvents
         self.tunnelHealth = tunnelHealthStore
@@ -874,6 +878,35 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
+    public enum StartupTokenSource {
+        case fromOptions
+        case fromKeychain
+    }
+
+    @MainActor
+    private func loadToken(from source: StartupTokenSource, startupOptions: StartupOptions) async throws {
+        let tokenOption: StartupOptions.StoredOption<TokenContainer>
+        switch source {
+        case .fromOptions:
+            tokenOption = startupOptions.tokenContainer
+        case .fromKeychain:
+            tokenOption = .useExisting
+        }
+
+        switch tokenOption {
+        case .reset:
+            Logger.networkProtection.log("Reset token")
+            try await tokenHandlerProvider.removeToken()
+            throw TunnelError.tokenReset
+        case .set(let tokenContainer):
+            Logger.networkProtection.log("Set new token container")
+            try await tokenHandlerProvider.adoptToken(tokenContainer)
+        case .useExisting:
+            Logger.networkProtection.log("Use existing token container")
+            try await tokenHandlerProvider.getToken()
+        }
+    }
+
     @MainActor
     private func startTunnelInternal(options: [String: NSObject]? = nil) async throws {
         Logger.networkProtection.log("🚀 Starting tunnel")
@@ -894,16 +927,20 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         do {
             try reconnectGuard.runStartValidation(startupMethod: startupOptions.startupMethod)
+
+            // Keep token-reset failures separate from authentication failures.
+            let isResettingToken = tokenSource == .fromOptions && startupOptions.tokenContainer == .reset
+            do {
+                try await loadToken(from: tokenSource, startupOptions: startupOptions)
+            } catch where !isResettingToken {
+                Logger.networkProtection.fault("Error loading startup token: \(error, privacy: .public)")
+                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
+            }
+
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
 #if os(iOS)
-            do {
-                _ = try await tokenHandlerProvider.getToken()
-            } catch {
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-
             // Load resources that require the device to be unlocked.
             // At this point, the token check has passed, so protected data is available.
             await loadProtectedResources()

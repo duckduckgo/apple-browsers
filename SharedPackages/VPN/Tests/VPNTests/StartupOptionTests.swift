@@ -32,9 +32,7 @@ final class StartupOptionsTests: XCTestCase {
         let rawOptions = [String: Any]()
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .useExisting)
-#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)
@@ -56,9 +54,7 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .reset)
-#endif
         XCTAssertEqual(options.enableTester, .reset)
         XCTAssertEqual(options.vpnSettings, .reset)
         XCTAssertFalse(options.simulateCrash)
@@ -79,15 +75,31 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .useExisting)
-#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)
         XCTAssertFalse(options.simulateError)
         XCTAssertFalse(options.simulateMemoryCrash)
         XCTAssertEqual(options.startupMethod, .automaticOnDemand)
+    }
+
+    func testInvalidTokenContainerResetsTokenWhenStartedByMainApp() {
+        let options = StartupOptions(options: [
+            NetworkProtectionOptionKey.activationAttemptId: UUID().uuidString,
+            NetworkProtectionOptionKey.tokenContainer: Data("invalid token container".utf8) as NSData
+        ])
+
+        XCTAssertEqual(options.tokenContainer, .reset)
+    }
+
+    func testInvalidTokenContainerKeepsExistingTokenWhenStartedOnDemand() {
+        let options = StartupOptions(options: [
+            NetworkProtectionOptionKey.isOnDemand: true,
+            NetworkProtectionOptionKey.tokenContainer: Data("invalid token container".utf8) as NSData
+        ])
+
+        XCTAssertEqual(options.tokenContainer, .useExisting)
     }
 
     // MARK: - VPN Settings Tests

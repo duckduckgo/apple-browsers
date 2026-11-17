@@ -570,6 +570,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                              userDefaults: UserDefaults.standard,
                                                              subscriptionEndpointService: subscriptionEndpointService,
                                                              subscriptionEnvironment: subscriptionEnvironment,
+                                                             process: .vpn,
                                                              pixelHandler: pixelHandler,
                                                              initForPurchase: false,
                                                              wideEvent: wideEvent,

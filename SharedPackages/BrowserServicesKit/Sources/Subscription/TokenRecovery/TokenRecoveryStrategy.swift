@@ -49,6 +49,8 @@ public enum TokenRecoveryResult {
     case recovered
     /// The recovery doesn't apply, so nothing was tried.
     case notApplicable
+    /// Not tried, because a recent attempt failed for a temporary reason.
+    case deferred
     /// The user signed out, signed in or switched account while the recovery ran. Nothing was stored.
     case sessionChanged
     /// The recovery was tried and failed with the associated error.

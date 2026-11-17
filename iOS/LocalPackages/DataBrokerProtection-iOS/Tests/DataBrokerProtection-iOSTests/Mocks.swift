@@ -34,6 +34,7 @@ final class MockDataBrokerProtectionUserNotificationService: DataBrokerProtectio
 }
 
 final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSubscriptionManaging {
+    var isUserAuthenticated: Bool { false }
     func accessToken() async -> String? { nil }
     func entitlementStatus() async -> DataBrokerProtectionEntitlementStatus { .disabled }
     func isUserEligibleForFreeTrial() -> Bool { false }

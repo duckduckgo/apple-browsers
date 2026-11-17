@@ -61,7 +61,7 @@ final class BrowserToolPermissionPromptPresenter {
 
     func present(_ prompt: ClientToolPermissionPrompt, chatWebView: WKWebView?, prompter: any ClientToolPermissionPrompting) -> Bool {
         guard let ownerTabID = AIChatTabPickerSource.ownerTabID(for: chatWebView, in: windowControllersManager),
-              let collection = AIChatTabPickerSource.collection(containingTabID: ownerTabID, in: windowControllersManager),
+              let collection = AIChatTabPickerSource.ownerCollection(for: chatWebView, ownerTabID: ownerTabID, in: windowControllersManager),
               !collection.isBurner,
               let windowController = windowController(for: collection) else { return false }
 
@@ -78,7 +78,7 @@ final class BrowserToolPermissionPromptPresenter {
 
     func startUse(requestID: String, toolName: String, chatWebView: WKWebView?) {
         guard let ownerTabID = AIChatTabPickerSource.ownerTabID(for: chatWebView, in: windowControllersManager),
-              let collection = AIChatTabPickerSource.collection(containingTabID: ownerTabID, in: windowControllersManager),
+              let collection = AIChatTabPickerSource.ownerCollection(for: chatWebView, ownerTabID: ownerTabID, in: windowControllersManager),
               !collection.isBurner,
               let tabBar = windowController(for: collection)?.mainViewController.tabBarViewController else { return }
         let key = ObjectIdentifier(collection)
@@ -160,10 +160,12 @@ final class BrowserToolPermissionPromptPresenter {
             guard let popover, !popover.isShown,
                   self?.shown.values.contains(where: { $0.requestID == prompt.requestID }) == true else { return }
             popover.show(positionedBelow: anchor.bounds.insetFromLineOfDeath(flipped: anchor.isFlipped), in: anchor)
+            // Key, so its shortcuts only answer it and never a key press meant for the page or address bar.
+            popover.contentViewController?.view.window?.makeKey()
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(answering: prompt.requestID, popover: popover, in: tabBar.view.window))
+                           keyMonitor: keyMonitor(answering: prompt.requestID, popover: popover))
         tabBar.showBrowserToolPermissionButton(icon: BrowserToolPermissionPromptText.icon(toolName: prompt.toolName),
                                                title: BrowserToolPermissionPromptText.title(toolName: prompt.toolName,
                                                                                             targetsOtherTab: prompt.targetsOtherTab),
@@ -171,11 +173,10 @@ final class BrowserToolPermissionPromptPresenter {
                                                shown: open)
     }
 
-    // The popover doesn't take key focus, so SwiftUI shortcuts don't reach it.
-    private func keyMonitor(answering requestID: String, popover: NSPopover, in window: NSWindow?) -> Any? {
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover, weak window] event in
-            guard let self, let popover, popover.isShown,
-                  event.window === window || event.window === popover.contentViewController?.view.window else { return event }
+    // Only key presses in the popover answer it.
+    private func keyMonitor(answering requestID: String, popover: NSPopover) -> Any? {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover] event in
+            guard let self, let popover, popover.isShown, event.window === popover.contentViewController?.view.window else { return event }
             let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
             switch (event.keyCode, modifiers) {
             case (53, []): // Esc

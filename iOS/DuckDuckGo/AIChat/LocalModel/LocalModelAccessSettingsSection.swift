@@ -34,7 +34,7 @@ struct LocalModelAccessSettingsSection: View {
             } header: {
                 Text(UserText.localModelAccessSettingsTitle)
             } footer: {
-                Text(isPad ? UserText.localModelAccessSettingsFooterIPad : UserText.localModelAccessSettingsFooterIPhone)
+                Text(UserText.localModelAccessSettingsFooter)
             }
             .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
@@ -42,14 +42,9 @@ struct LocalModelAccessSettingsSection: View {
 
     private var row: some View {
         Toggle(isOn: model.isOnBinding) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(UserText.localModelAccessSystemModelTitle)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(String(format: UserText.localModelAccessSystemModelCaption, model.modelName))
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
+            Text(String(format: UserText.localModelAccessUseModelTitle, model.modelName))
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .textPrimary))
         }
         .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
         .accessibilityIdentifier("Settings.AIFeatures.LocalModelAccess.AppleIntelligenceToggle")

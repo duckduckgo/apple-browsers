@@ -2080,17 +2080,8 @@
 /* Used in the link to learn more about the AI features. */
 "duckai.settings.learn.more" = "Learn More";
 
-/* Footer of the On-Device Model section in AI Features settings, on iPad. */
-"duckai.settings.local-model-access.footer.ipad" = "Run Duck.ai tasks on your iPad so page content never leaves your device and save on your plan usage.";
-
-/* Footer of the On-Device Model section in AI Features settings, on iPhone. */
-"duckai.settings.local-model-access.footer.iphone" = "Run Duck.ai tasks on your iPhone so page content never leaves your device and save on your plan usage.";
-
-/* Caption under System Model in AI Features settings. %@ is the model's name, for example Apple Intelligence. */
-"duckai.settings.local-model-access.system-model.caption" = "Uses %@ for tasks like summarize page.";
-
-/* Name of the setting that lets Duck.ai use the model built into the device, such as Apple Intelligence. */
-"duckai.settings.local-model-access.system-model.title" = "System Model";
+/* Footer of the On-Device Model section in AI Features settings. It explains the toggle above it. */
+"duckai.settings.local-model-access.footer" = "On-device models help to keep page content locally and reduce your plan usage. The on-device model will be used for actions like Summarize page.";
 
 /* Section title in AI Features settings for on-device models Duck.ai may use. */
 "duckai.settings.local-model-access.title" = "On-Device Model";
@@ -2103,6 +2094,9 @@
 
 /* Title of the alert shown before turning on Apple Intelligence for Duck.ai page summaries. */
 "duckai.settings.local-model-access.turn-on-confirmation.title" = "Turn On Apple Intelligence?";
+
+/* Title of the toggle in AI Features settings that lets Duck.ai use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.settings.local-model-access.use-model.title" = "Use %@";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";

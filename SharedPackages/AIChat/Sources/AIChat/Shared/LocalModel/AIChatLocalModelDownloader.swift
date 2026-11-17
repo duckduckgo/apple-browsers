@@ -18,6 +18,7 @@
 
 import Combine
 import CryptoKit
+import DDGError
 import Foundation
 import Network
 import os.log
@@ -362,14 +363,41 @@ public extension URLSession {
 /// One attempt to fetch the rest of the file. Its delegate methods run on the session's queue.
 final class ModelFileDownload: NSObject, URLSessionDataDelegate, @unchecked Sendable {
 
-    enum Failure: Error, Equatable {
+    enum Failure: DDGError {
         case cancelled
         case network
+        /// The HTTP status code.
         case http(Int)
         case rangeNotSatisfiable
         case tooLarge
         case diskFull
         case file
+
+        static let errorDomain = "com.duckduckgo.aiChat.localModel.download"
+
+        var errorCode: Int {
+            switch self {
+            case .cancelled: return 1
+            case .network: return 2
+            case .http: return 3
+            case .rangeNotSatisfiable: return 4
+            case .tooLarge: return 5
+            case .diskFull: return 6
+            case .file: return 7
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .cancelled: return "ModelFileDownload.Failure.cancelled"
+            case .network: return "ModelFileDownload.Failure.network"
+            case .http(let status): return "ModelFileDownload.Failure.http(\(status))"
+            case .rangeNotSatisfiable: return "ModelFileDownload.Failure.rangeNotSatisfiable"
+            case .tooLarge: return "ModelFileDownload.Failure.tooLarge"
+            case .diskFull: return "ModelFileDownload.Failure.diskFull"
+            case .file: return "ModelFileDownload.Failure.file"
+            }
+        }
     }
 
     /// Progress is reported at most once per this many bytes.

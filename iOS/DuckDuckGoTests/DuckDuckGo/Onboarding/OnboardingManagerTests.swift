@@ -1069,10 +1069,10 @@ struct OnboardingDownloadReasonFlowTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The step after Try VPN has its own checkpoint and doesn't add to the step count", .timeLimit(.minutes(1)))
-    func tryVPNFollowUpHasCheckpointAndDoesNotCount() {
+    @Test("The step after Try VPN has its own checkpoint and counts toward progress", .timeLimit(.minutes(1)))
+    func tryVPNFollowUpHasCheckpointAndCounts() {
         #expect(OnboardingIntroStep.tryVPNFollowUp.resumeStep == .tryVPNFollowUp)
-        #expect(!OnboardingIntroStep.tryVPNFollowUp.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.tryVPNFollowUp.countsTowardProgress(flow: .default))
     }
 
     // MARK: - Helpers

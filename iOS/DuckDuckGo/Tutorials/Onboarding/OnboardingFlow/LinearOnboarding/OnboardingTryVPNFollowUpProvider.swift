@@ -22,22 +22,49 @@ import Subscription
 
 /// What the step after Try VPN needs from the subscription and the VPN.
 @MainActor
-protocol OnboardingTryVPNFollowUpProviding {
-    /// Whether the user's subscription includes the VPN.
-    func hasVPNAccess() async -> Bool
+protocol OnboardingTryVPNFollowUpProviding: AnyObject {
+    /// Whether the user's subscription includes the VPN, or `nil` until a check finishes.
+    var hasVPNAccess: Bool? { get }
+
+    /// Checks the subscription again, replacing any check that's still running.
+    func refreshVPNAccess() async
+
+    /// Drops a running check. With no answer yet, the user has no VPN access.
+    func cancelVPNAccessCheck()
 }
 
 @MainActor
-struct OnboardingTryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding {
+final class OnboardingTryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding {
 
-    private let subscriptionManager: any SubscriptionManager
+    private(set) var hasVPNAccess: Bool?
+    private let checkVPNAccess: @MainActor () async -> Bool
+    private var vpnAccessCheck: Task<Void, Never>?
 
-    init(subscriptionManager: any SubscriptionManager) {
-        self.subscriptionManager = subscriptionManager
+    convenience init(subscriptionManager: any SubscriptionManager) {
+        self.init {
+            (try? await subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false
+        }
     }
 
-    func hasVPNAccess() async -> Bool {
-        (try? await subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false
+    init(checkVPNAccess: @escaping @MainActor () async -> Bool) {
+        self.checkVPNAccess = checkVPNAccess
+    }
+
+    func refreshVPNAccess() async {
+        vpnAccessCheck?.cancel()
+        let check = Task { [weak self, checkVPNAccess] in
+            let hasVPNAccess = await checkVPNAccess()
+            guard !Task.isCancelled else { return }
+            self?.hasVPNAccess = hasVPNAccess
+        }
+        vpnAccessCheck = check
+        await check.value
+    }
+
+    func cancelVPNAccessCheck() {
+        vpnAccessCheck?.cancel()
+        vpnAccessCheck = nil
+        hasVPNAccess = hasVPNAccess ?? false
     }
 
 }

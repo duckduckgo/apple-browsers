@@ -235,13 +235,11 @@ extension OnboardingIntroStep {
     /// Whether this step counts toward the onboarding progress indicator.
     ///
     /// Excludes steps that aren't part of the tracked sequence: the intro dialog, interludes
-    /// (which render no view state), the Download Reason Screen and the Try VPN follow-up. Consumed when computing the
+    /// (which render no view state), and the Download Reason Screen. Consumed when computing the
     /// current/total step counts shown in the progress bar.
     func countsTowardProgress(flow: OnboardingFlowType) -> Bool {
         switch self {
         case .renderable(.introDialog), .renderable(.downloadReasonSelection), .interlude:
-            return false
-        case .tryVPNFollowUp:
             return false
         case .duckAIQuerySelection where flow == .duckAI:
             return true

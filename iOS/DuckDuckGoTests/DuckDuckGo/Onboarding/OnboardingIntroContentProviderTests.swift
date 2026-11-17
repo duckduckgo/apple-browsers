@@ -581,6 +581,10 @@ struct OnboardingIntroContentProviderTests {
             // THEN
             #expect(result.title == UserText.Onboarding.SubscriptionReminder.title)
             #expect(String(result.message.characters) == "Add the subscription anytime in Settings > Subscription")
+            let boldText = result.message.runs
+                .filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
+                .map { String(result.message[$0.range].characters) }
+            #expect(boldText == ["Settings > Subscription"])
             #expect(result.cta == UserText.Onboarding.SubscriptionReminder.cta)
         }
 

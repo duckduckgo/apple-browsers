@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import Common
 import FoundationExtensions
 import Core
@@ -802,14 +803,16 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
 final class OnboardingSubscriptionFlowNavigationController: UINavigationController, SubscriptionFlowNavigationStyling {
 
     var onDismiss: (() -> Void)?
-    private var purchaseObserver: NSObjectProtocol?
+    private var purchaseCancellable: AnyCancellable?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         applySubscriptionFlowStyle()
-        purchaseObserver = NotificationCenter.default.addObserver(forName: .userDidPurchaseSubscription, object: nil, queue: .main) { [weak self] _ in
-            self?.dismiss(animated: true)
-        }
+        purchaseCancellable = NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.dismiss(animated: true)
+            }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -817,12 +820,6 @@ final class OnboardingSubscriptionFlowNavigationController: UINavigationControll
         guard isBeingDismissed else { return }
         onDismiss?()
         onDismiss = nil
-    }
-
-    deinit {
-        if let purchaseObserver {
-            NotificationCenter.default.removeObserver(purchaseObserver)
-        }
     }
 }
 

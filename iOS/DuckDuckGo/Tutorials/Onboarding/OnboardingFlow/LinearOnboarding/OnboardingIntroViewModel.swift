@@ -124,9 +124,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     /// reason is chosen so the options are ready by the time that step appears.
     private let aiModelsPrefetcher: OnboardingAIModelsPrefetching
     private let tryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding
-    /// Whether the user's subscription includes the VPN. Checked when Try VPN shows and again after the paywall closes.
-    private var hasVPNAccess: Bool?
-    private var latestVPNAccessCheck = 0
 
     private var pendingOnboardingIntroActions: (() -> Void)?
 
@@ -354,7 +351,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         }
         onTryVPNFromOnboarding { [weak self] in
             Task { [weak self] in
-                await self?.refreshVPNAccess()
+                await self?.tryVPNFollowUpProvider.refreshVPNAccess()
                 guard self?.currentIntroStep == .tryVPN else { return }
                 transition { [weak self] in
                     guard let self, self.currentIntroStep == .tryVPN else { return }
@@ -367,7 +364,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     func skipTryVPNAction() {
         guard currentIntroStep == .tryVPN else { return }
         // They declined the offer, so don't wait on a pending subscription check.
-        hasVPNAccess = hasVPNAccess ?? false
+        tryVPNFollowUpProvider.cancelVPNAccessCheck()
         makeNextViewState()
     }
 
@@ -466,9 +463,7 @@ private extension OnboardingIntroViewModel {
             let flowType = onboardingManager.currentOnboardingFlow
             let progressSteps = introSteps.filter { $0.countsTowardProgress(flow: flowType) }
 
-            // A step that doesn't count shows the number of the next one that does.
-            guard let displayedStep = introSteps.drop(while: { $0 != introStep }).first(where: { $0.countsTowardProgress(flow: flowType) }),
-                  let currentStepIndex = progressSteps.firstIndex(of: displayedStep) else { return .hidden }
+            guard let currentStepIndex = progressSteps.firstIndex(of: introStep) else { return .hidden }
 
             // currentStep is 1-based (the first counted step shows as 1 / total).
             return OnboardingIntroViewState.Intro.StepInfo(currentStep: currentStepIndex + 1, totalSteps: progressSteps.count)
@@ -541,7 +536,7 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             case .tryVPNFollowUp:
-                let type: OnboardingIntroViewState.Intro.IntroType = hasVPNAccess == true
+                let type: OnboardingIntroViewState.Intro.IntroType = tryVPNFollowUpProvider.hasVPNAccess == true
                     ? .vpnActivationDialog(content: contentProvider.vpnActivationContent)
                     : .subscriptionReminderDialog(content: contentProvider.subscriptionReminderContent)
                 return .onboarding(
@@ -609,11 +604,11 @@ private extension OnboardingIntroViewModel {
             // Interlude steps don't render a view state. They inform the delegate that an interlude is starting.
             // The delegate will resume the onboarding by calling `resumeOnboardingFromInterlude()` when finished.
             onOnboardingInterlude?(interlude)
-        case .renderable(.tryVPNFollowUp) where hasVPNAccess == nil:
+        case .renderable(.tryVPNFollowUp) where tryVPNFollowUpProvider.hasVPNAccess == nil:
             resolveVPNAccessThenShowTryVPNFollowUp()
         case .renderable(.tryVPN):
             // Check ahead so the follow-up step knows which screen to show.
-            Task { [weak self] in await self?.refreshVPNAccess() }
+            Task { [tryVPNFollowUpProvider] in await tryVPNFollowUpProvider.refreshVPNAccess() }
             state = mapToViewState(renderableStep: .tryVPN)
         case let .renderable(renderable):
             state = mapToViewState(renderableStep: renderable)
@@ -623,19 +618,10 @@ private extension OnboardingIntroViewModel {
     /// Used when resuming on the follow-up step, before the subscription has been checked.
     func resolveVPNAccessThenShowTryVPNFollowUp() {
         Task { [weak self] in
-            await self?.refreshVPNAccess()
+            await self?.tryVPNFollowUpProvider.refreshVPNAccess()
             guard let self, self.currentIntroStep == .tryVPNFollowUp else { return }
             self.setViewState(introStep: .tryVPNFollowUp)
         }
-    }
-
-    func refreshVPNAccess() async {
-        latestVPNAccessCheck += 1
-        let check = latestVPNAccessCheck
-        let hasVPNAccess = await tryVPNFollowUpProvider.hasVPNAccess()
-        // An older check (e.g. from before a purchase) mustn't overwrite a newer one.
-        guard check == latestVPNAccessCheck else { return }
-        self.hasVPNAccess = hasVPNAccess
     }
 
     /// Enrolls the user in the VPN download-reason experiment when they start onboarding from the intro.

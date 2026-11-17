@@ -1886,15 +1886,15 @@ extension OnboardingIntroViewModelTests {
 
         sut.setDefaultBrowserAction()
         XCTAssertEqual(sut.state.intro?.type, .tryVPNDialog(content: .mock))
-        XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 2, totalSteps: 6))
+        XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 2, totalSteps: 7))
 
         sut.skipTryVPNAction()
         XCTAssertEqual(sut.state.intro?.type, .subscriptionReminderDialog(content: .mock))
-        XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 3, totalSteps: 6))
+        XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 3, totalSteps: 7))
 
         sut.tryVPNFollowUpContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
-        XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 3, totalSteps: 6))
+        XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 4, totalSteps: 7))
     }
 
     func testWhenTryVPNIsTappedThenStaysOnTryVPNWhileThePaywallIsUp() {
@@ -2170,13 +2170,20 @@ private final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
 @MainActor
 final class MockOnboardingTryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding {
     var hasVPNAccessValue = false
-    private(set) var hasVPNAccessCallCount = 0
+    private(set) var hasVPNAccess: Bool?
+    private(set) var refreshVPNAccessCallCount = 0
+    private(set) var cancelVPNAccessCheckCallCount = 0
 
     nonisolated init() {}
 
-    func hasVPNAccess() async -> Bool {
-        hasVPNAccessCallCount += 1
-        return hasVPNAccessValue
+    func refreshVPNAccess() async {
+        refreshVPNAccessCallCount += 1
+        hasVPNAccess = hasVPNAccessValue
+    }
+
+    func cancelVPNAccessCheck() {
+        cancelVPNAccessCheckCallCount += 1
+        hasVPNAccess = hasVPNAccess ?? false
     }
 }
 
@@ -2202,7 +2209,7 @@ struct OnboardingTryVPNFollowUpTests {
 
         // THEN
         await waitForIntroType(.vpnActivationDialog(content: .mock), in: sut)
-        #expect(sut.state.intro?.step == .init(currentStep: 3, totalSteps: 6))
+        #expect(sut.state.intro?.step == .init(currentStep: 3, totalSteps: 7))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -2220,7 +2227,7 @@ struct OnboardingTryVPNFollowUpTests {
 
         // THEN
         await waitForIntroType(.subscriptionReminderDialog(content: .mock), in: sut)
-        #expect(sut.state.intro?.step == .init(currentStep: 3, totalSteps: 6))
+        #expect(sut.state.intro?.step == .init(currentStep: 3, totalSteps: 7))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -2254,10 +2261,11 @@ struct OnboardingTryVPNFollowUpTests {
 
         // THEN
         #expect(sut.state.intro?.type == .subscriptionReminderDialog(content: .mock))
+        #expect(followUpProvider.cancelVPNAccessCheckCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Continuing from the follow-up shows the search experience step with the same number", .timeLimit(.minutes(1)))
+    @Test("Continuing from the follow-up shows the search experience step", .timeLimit(.minutes(1)))
     func continuingFromFollowUpShowsSearchExperience() {
         // GIVEN
         let sut = makeSUTOnTryVPN()
@@ -2268,7 +2276,7 @@ struct OnboardingTryVPNFollowUpTests {
 
         // THEN
         #expect(sut.state.intro?.type == .chooseSearchExperienceDialog(content: .mock))
-        #expect(sut.state.intro?.step == .init(currentStep: 3, totalSteps: 6))
+        #expect(sut.state.intro?.step == .init(currentStep: 4, totalSteps: 7))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -2306,7 +2314,7 @@ struct OnboardingTryVPNFollowUpTests {
             ? .vpnActivationDialog(content: .mock)
             : .subscriptionReminderDialog(content: .mock)
         await waitForIntroType(expectedType, in: sut)
-        #expect(followUpProvider.hasVPNAccessCallCount >= 1)
+        #expect(followUpProvider.refreshVPNAccessCallCount >= 1)
     }
 
     // MARK: - Helpers

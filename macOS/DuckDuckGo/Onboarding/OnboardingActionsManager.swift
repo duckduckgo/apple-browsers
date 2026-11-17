@@ -100,6 +100,9 @@ protocol OnboardingActionsManaging {
 
     /// Used for any event sent exclusively for telemetry
     func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent)
+
+    /// At the end of the onboarding the user submits a search or a Duck.ai prompt
+    func submitQuery(_ query: OnboardingUserScript.SubmitQuery)
 }
 
 protocol OnboardingNavigating: AnyObject {
@@ -298,6 +301,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func goToSettings() {
         _ = leaveOnboarding(content: .settings(pane: nil))
+    }
+
+    @MainActor
+    func submitQuery(_ query: OnboardingUserScript.SubmitQuery) {
     }
 
     @MainActor

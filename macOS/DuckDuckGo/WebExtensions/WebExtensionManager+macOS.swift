@@ -112,7 +112,6 @@ enum WebExtensionManagerFactory {
                 configuration: WebExtensionConfigurationProvider(), windowTabProvider: windowTabProvider,
                 permissionPrompter: WebExtensionPermissionPrompt(
                     windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
-                enforcesPermissions: true,
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
                 internalSiteHandler: internalSiteHandler,
                 isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

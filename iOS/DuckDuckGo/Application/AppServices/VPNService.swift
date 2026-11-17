@@ -39,18 +39,21 @@ final class VPNService: NSObject {
     private let subscriptionManager: any SubscriptionManager
     private let application: UIApplication
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingVPNExperimentMetrics: OnboardingVPNDownloadReasonExperimentMetrics
     init(mainCoordinator: MainCoordinator,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          application: UIApplication = UIApplication.shared,
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          notificationServiceManager: NotificationServiceManaging,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingVPNExperimentMetrics: OnboardingVPNDownloadReasonExperimentMetrics,
     ) {
         self.mainCoordinator = mainCoordinator
         self.subscriptionManager = subscriptionManager
         self.application = application
         self.notificationServiceManager = notificationServiceManager
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingVPNExperimentMetrics = onboardingVPNExperimentMetrics
 
         notificationCenter.delegate = notificationServiceManager
 
@@ -72,6 +75,7 @@ final class VPNService: NSObject {
     }
 
     private func reportVPNActivatedExperimentMetricIfNeeded() async {
+        onboardingVPNExperimentMetrics.fireVPNActivated()
         let wasAlreadyActivated = onboardingActivationRecorder.recordVPNActivatedIfNeeded()
         SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(
             isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
@@ -88,6 +92,10 @@ final class VPNService: NSObject {
 
         Task {
             await stopAndRemoveVPNIfNotAuthenticated()
+
+            if await tunnelController.isConnected {
+                onboardingVPNExperimentMetrics.fireVPNUse()
+            }
 
             if #available(iOS 17.0, *) {
                 await VPNSnoozeLiveActivityManager().endSnoozeActivityIfNecessary()

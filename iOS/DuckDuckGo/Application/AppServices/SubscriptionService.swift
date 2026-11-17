@@ -33,7 +33,9 @@ final class SubscriptionService {
 
     init(application: UIApplication = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         onboardingVPNExperimentMetrics: OnboardingVPNDownloadReasonExperimentMetrics,
+         notificationCenter: NotificationCenter) {
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(
                     privacyConfigurationManager: privacyConfigurationManager,
                     purchasePlatform: .appStore,
@@ -42,6 +44,22 @@ final class SubscriptionService {
         Task {
             await subscriptionManager.loadInitialData()
         }
+        recordPurchasesForOnboardingVPNExperiment(metrics: onboardingVPNExperimentMetrics,
+                                                  featureFlagger: featureFlagger,
+                                                  notificationCenter: notificationCenter)
+    }
+
+    /// Purchases from any entry point count, restores don't (they don't post `.userDidPurchaseSubscription`).
+    private func recordPurchasesForOnboardingVPNExperiment(metrics: OnboardingVPNDownloadReasonExperimentMetrics,
+                                                           featureFlagger: FeatureFlagger,
+                                                           notificationCenter: NotificationCenter) {
+        let subfeatureID = PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue
+        notificationCenter.publisher(for: .userDidPurchaseSubscription)
+            .sink { _ in
+                metrics.recordSubscriptionPurchase(enrollmentDate: featureFlagger.allActiveExperiments[subfeatureID]?.enrollmentDate,
+                                                   now: Date())
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Resume

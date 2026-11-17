@@ -68,11 +68,57 @@ final class DefaultSubscriptionExperimentAttributionProviderTests: XCTestCase {
         XCTAssertNil(provider.attribution(from: makeSelection()))
     }
 
+    func testWhenPaywallEntryWrapsMultipleExperimentsThenEntryIsAppended() {
+        let experiment = SubscriptionExperiment(experimentName: "onboardingVPNDownloadReasonExperiment", experimentCohort: "treatment")
+        let provider = PaywallEntryExperimentAttributionProvider(
+            wrapping: StubAttributionProvider(attribution: .multiple([experiment])),
+            entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry)
+
+        XCTAssertEqual(provider.attribution(from: makeSelection()), .multiple([
+            experiment,
+            SubscriptionExperiment(experimentName: "vpnOnboardingPaywall", experimentCohort: "treatment")
+        ]))
+    }
+
+    func testWhenPaywallEntryWrapsLegacyAttributionThenItIsUnchanged() {
+        let legacy = PurchaseExperimentAttribution.legacy(SubscriptionExperiment(experimentName: "fe", experimentCohort: "a"))
+        let provider = PaywallEntryExperimentAttributionProvider(
+            wrapping: StubAttributionProvider(attribution: legacy),
+            entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry)
+
+        XCTAssertEqual(provider.attribution(from: makeSelection()), legacy)
+    }
+
+    func testWhenPaywallEntryWrapsNoAttributionThenNothingIsSent() {
+        let provider = PaywallEntryExperimentAttributionProvider(
+            wrapping: StubAttributionProvider(attribution: nil),
+            entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry)
+
+        XCTAssertNil(provider.attribution(from: makeSelection()))
+    }
+
+    func testWhenPaywallEntryIsAlreadyPresentThenItIsNotDuplicated() {
+        let entry = PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry
+        let provider = PaywallEntryExperimentAttributionProvider(
+            wrapping: StubAttributionProvider(attribution: .multiple([entry])),
+            entry: entry)
+
+        XCTAssertEqual(provider.attribution(from: makeSelection()), .multiple([entry]))
+    }
+
     private func makeSelection() -> DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection {
         DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection(
             id: "product",
             experiment: nil,
             experiments: nil,
             scheduleNotification: nil)
+    }
+}
+
+private struct StubAttributionProvider: SubscriptionExperimentAttributionProviding {
+    let attribution: PurchaseExperimentAttribution?
+
+    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
+        attribution
     }
 }

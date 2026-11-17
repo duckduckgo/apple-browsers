@@ -1267,6 +1267,22 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains("onboarding_completed"))
     }
 
+    func testWhenMeasureChooseBrowserCTAActionThenSetDefaultExperimentMetricFires() {
+        // WHEN
+        sut.measureChooseBrowserCTAAction()
+
+        // THEN
+        XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["set_default"])
+    }
+
+    func testWhenMeasureVPNPaywallRestoredThenRestoredExperimentMetricFires() {
+        // WHEN
+        OnboardingDownloadReasonExperimentMetric(experimentPixelFiring: MockExperimentPixelFiring.self).measureVPNPaywallRestored()
+
+        // THEN
+        XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["vpn_paywall_restored"])
+    }
+
     func testWhenMeasureScreenImpressionOtherSharedEventThenOnboardingCompletedExperimentMetricDoesNotFire() {
         // WHEN
         sut.measureScreenImpression(.welcome(.shown))
@@ -1408,13 +1424,16 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureDownloadReasonSelection(.noAI)
         sharedPixelsStorageMock.onboardingDownloadReasonVariant = nil
         sut.measureDownloadReasonSelection(.blockAds)
+        sharedPixelsStorageMock.onboardingDownloadReasonVariant = nil
+        sut.measureDownloadReasonSelection(.vpn)
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [
             .downloadChoice(.clicked(.search)),
             .downloadChoice(.clicked(.aiChat)),
             .downloadChoice(.clicked(.noAI)),
-            .downloadChoice(.clicked(.adBlocking))
+            .downloadChoice(.clicked(.adBlocking)),
+            .downloadChoice(.clicked(.vpn))
         ])
         // The download-choice pixel itself carries no download reason variant (that variant is set from this choice).
         XCTAssertNil(sharedPixelHandlerMock.receivedVariants?.downloadReason)
@@ -1425,7 +1444,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
             (.browserPrivately, .downloadReasonSearch),
             (.privateAIChat, .downloadReasonAIChat),
             (.noAI, .downloadReasonNoAI),
-            (.blockAds, .downloadReasonAdBlocking)
+            (.blockAds, .downloadReasonAdBlocking),
+            (.vpn, .downloadReasonVPN)
         ]
 
         for (reason, expectedVariant) in expectedVariants {
@@ -1482,7 +1502,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
             (.browserPrivately, "download_reason_selected_search"),
             (.privateAIChat, "download_reason_selected_ai-chat"),
             (.noAI, "download_reason_selected_no-ai"),
-            (.blockAds, "download_reason_selected_ad-blocking")
+            (.blockAds, "download_reason_selected_ad-blocking"),
+            (.vpn, "download_reason_selected_vpn")
         ]
 
         for (reason, expectedMetric) in expectedMetrics {
@@ -1495,20 +1516,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
             // THEN
             XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains(expectedMetric), "Failed for reason \(reason)")
         }
-    }
-
-    func testWhenMeasureDownloadReasonSelectionWithVPNThenNothingFires() {
-        // GIVEN
-        sharedPixelsStorageMock.onboardingDownloadReasonVariant = nil
-        MockExperimentPixelFiring.reset()
-
-        // WHEN
-        sut.measureDownloadReasonSelection(.vpn)
-
-        // THEN
-        XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
-        XCTAssertNil(sharedPixelsStorageMock.onboardingDownloadReasonVariant)
-        XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.isEmpty)
     }
 
     func testWhenMeasureAIModelSelectionThenAIModelClickedFires() {

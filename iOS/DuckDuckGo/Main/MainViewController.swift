@@ -4895,7 +4895,8 @@ class MainViewController: UIViewController {
     private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
         let subscriptionFlowViewController = makeSubscriptionFlowViewController(
             redirectURLComponents: redirectURLComponents,
-            includesPostPurchaseOnboarding: true
+            includesPostPurchaseOnboarding: true,
+            subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger)
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4910,9 +4911,12 @@ class MainViewController: UIViewController {
         presenter.present(navigationController, animated: true)
     }
 
-    /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    /// - Parameters:
+    ///   - includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    ///   - subscriptionExperimentAttributionProvider: The experiments sent with a purchase made in this flow.
     private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
-                                                    includesPostPurchaseOnboarding: Bool) -> UIViewController {
+                                                    includesPostPurchaseOnboarding: Bool,
+                                                    subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4937,6 +4941,7 @@ class MainViewController: UIViewController {
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
+            subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
@@ -9958,10 +9963,17 @@ extension MainViewController: OnboardingDelegate {
         // The onboarding continues with its own VPN setup, so skip the subscription onboarding after purchase.
         let paywall = makeSubscriptionFlowViewController(
             redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
-            includesPostPurchaseOnboarding: false
+            includesPostPurchaseOnboarding: false,
+            subscriptionExperimentAttributionProvider: PaywallEntryExperimentAttributionProvider(
+                wrapping: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+                entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry
+            )
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
         navigationController.onDismiss = onDismiss
+        navigationController.onRestore = {
+            OnboardingDownloadReasonExperimentMetric().measureVPNPaywallRestored()
+        }
         controller.present(navigationController, animated: true)
     }
 

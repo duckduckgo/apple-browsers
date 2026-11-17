@@ -807,21 +807,43 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
 final class OnboardingSubscriptionFlowNavigationController: UINavigationController, SubscriptionFlowNavigationStyling {
 
     var onDismiss: (() -> Void)?
-    private var purchaseCancellable: AnyCancellable?
+    /// Called on dismissal when the paywall gave the user VPN access without a purchase: they restored a subscription
+    /// they already had ("Subscription Found" → Restore).
+    var onRestore: (() -> Void)?
+    private var cancellables = Set<AnyCancellable>()
+    private var didPurchase = false
+    private var didGainVPNEntitlement = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         applySubscriptionFlowStyle()
-        purchaseCancellable = NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
+        NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.didPurchase = true
                 self?.dismiss(animated: true)
             }
+            .store(in: &cancellables)
+        // A purchase changes entitlements too, before it posts `.userDidPurchaseSubscription`, so restores are told
+        // apart only once the paywall is gone.
+        NotificationCenter.default.publisher(for: .entitlementsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let userInfo = notification.userInfo,
+                      let payload = EntitlementsDidChangePayload(notificationUserInfo: userInfo),
+                      payload.entitlements.contains(.networkProtection) else { return }
+                self?.didGainVPNEntitlement = true
+            }
+            .store(in: &cancellables)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         guard isBeingDismissed else { return }
+        if didGainVPNEntitlement && !didPurchase {
+            onRestore?()
+        }
+        onRestore = nil
         onDismiss?()
         onDismiss = nil
     }

@@ -271,6 +271,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureChooseBrowserCTAAction() {
         fire(event: .onboardingIntroChooseBrowserCTAPressed, unique: false)
         fireSharedPixel(.setDefault(.clicked(.engage)))
+        downloadReasonExperimentMetric.measureSetDefaultTapped()
     }
 
     func measureAiIntroImpression() {
@@ -570,9 +571,8 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
     }
 
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
-        // The VPN reason isn't measured yet.
-        guard let value = OnboardingSharedPixelEvent.DownloadChoiceEvent.Value(reason),
-              let variant = OnboardingPixelParameter.DownloadReasonVariant(reason) else { return }
+        let value = OnboardingSharedPixelEvent.DownloadChoiceEvent.Value(reason)
+        let variant = OnboardingPixelParameter.DownloadReasonVariant(reason)
 
         fireSharedPixel(.downloadChoice(.clicked(value)))
         // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
@@ -624,13 +624,13 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
 
 private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
 
-    init?(_ reason: OnboardingDownloadReason) {
+    init(_ reason: OnboardingDownloadReason) {
         switch reason {
         case .browserPrivately: self = .search
         case .privateAIChat: self = .aiChat
         case .noAI: self = .noAI
         case .blockAds: self = .adBlocking
-        case .vpn: return nil
+        case .vpn: self = .vpn
         }
     }
 
@@ -661,6 +661,9 @@ struct OnboardingDownloadReasonExperimentMetric {
         case downloadReasonSelectedAIChat = "download_reason_selected_ai-chat"
         case downloadReasonSelectedNoAI = "download_reason_selected_no-ai"
         case downloadReasonSelectedAdBlocking = "download_reason_selected_ad-blocking"
+        case downloadReasonSelectedVPN = "download_reason_selected_vpn"
+        case setDefault = "set_default"
+        case vpnPaywallRestored = "vpn_paywall_restored"
     }
 
     private static let conversionWindowD0: ConversionWindow = 0...0
@@ -675,17 +678,27 @@ struct OnboardingDownloadReasonExperimentMetric {
         fire(metric: .onboardingCompleted)
     }
 
+    /// The set-as-default guardrail: the user tapped "Set as default" in onboarding.
+    func measureSetDefaultTapped() {
+        fire(metric: .setDefault)
+    }
+
+    /// The paywall opened from the Try VPN step signed the user in to a subscription they already had,
+    /// instead of selling one ("Subscription Found" → Restore).
+    func measureVPNPaywallRestored() {
+        fire(metric: .vpnPaywallRestored)
+    }
+
     /// Fires the per-reason "selected" metric (one metric per option, empty value, d0) when the user
     /// picks a download reason.
     func measureDownloadReasonSelected(_ reason: OnboardingDownloadReason) {
-        let metric: Name? = switch reason {
+        let metric: Name = switch reason {
         case .browserPrivately: .downloadReasonSelectedSearch
         case .privateAIChat: .downloadReasonSelectedAIChat
         case .noAI: .downloadReasonSelectedNoAI
         case .blockAds: .downloadReasonSelectedAdBlocking
-        case .vpn: nil
+        case .vpn: .downloadReasonSelectedVPN
         }
-        guard let metric else { return }
         fire(metric: metric)
     }
 

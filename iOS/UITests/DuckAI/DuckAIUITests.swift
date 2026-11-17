@@ -22,8 +22,9 @@ import UITestingSupport
 
 final class DuckAIUITests: DuckAIUITestCase {
 
-    func testWhenOpeningDuckAIFromBrowserShortcutsThenTabSwitcherReturnsToPreviousTab() {
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+    func testWhenOpeningDuckAIFromBrowserShortcutsThenTabSwitcherReturnsToPreviousTab() throws {
+        let site = try localWebsite()
+        site.open(.first, in: app)
         app.openTabSwitcher()
         app.assertTabCount(1)
         let websiteTab = app.tabCell(at: 0)
@@ -57,7 +58,7 @@ final class DuckAIUITests: DuckAIUITestCase {
         }
     }
 
-    func testWhenDuckAIIsDisabledThenAllBrowserShortcutsAreHidden() {
+    func testWhenDuckAIIsDisabledThenAllBrowserShortcutsAreHidden() throws {
         app.openAIFeaturesSettings()
         app.setDuckAIEnabled(false)
         app.navigateBackInSettings(from: "Settings.List.AIFeatures", to: "Settings.List.Main")
@@ -67,7 +68,8 @@ final class DuckAIUITests: DuckAIUITestCase {
             app.buttons["Browser.OmniBar.Button.AIChat"].waitForNonExistence(timeout: UITestTimeouts.elementExistence),
             "Duck.ai remained in the address bar after disabling the feature.")
 
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+        let site = try localWebsite()
+        site.open(.first, in: app)
         XCTContext.runActivity(named: "Verify Duck.ai is absent from the browsing menu") { _ in
             app.dismissAddressBarEditing()
             app.buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(in: app)
@@ -107,6 +109,6 @@ final class DuckAIUITests: DuckAIUITestCase {
     private func returnToWebsiteTab(_ tab: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         app.buttons["AIChat.Header.TabSwitcher"].tapWhenHittable(in: app, file: file, line: line)
         tab.buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app, file: file, line: line)
-        app.assertPageContains("Privacy Test Pages", file: file, line: line)
+        app.assertPageContains(LocalUITestWebsite.Page.first.title, file: file, line: line)
     }
 }

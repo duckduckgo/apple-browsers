@@ -9,4 +9,5 @@ appId: com.duckduckgo.mobile.ios
     text: ${output.youtubeLogo}
 
 - assertNotVisible:
+    id: ${output.searchEntryId}
     text: ${output.duckPlayerLabel}

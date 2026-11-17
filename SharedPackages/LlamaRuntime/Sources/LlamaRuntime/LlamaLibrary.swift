@@ -17,10 +17,11 @@
 //
 
 import CLlama
+import DDGError
 import Foundation
 import os.log
 
-public enum LlamaRuntimeError: Error, Equatable, Sendable {
+public enum LlamaRuntimeError: DDGError, Sendable {
     /// llama.cpp can't run here: an Intel Mac, Rosetta, or an OS older than its build supports.
     case unsupportedSystem
     case libraryUnavailable(String)
@@ -30,7 +31,37 @@ public enum LlamaRuntimeError: Error, Equatable, Sendable {
     case tokenizationFailed
     /// The prompt doesn't leave room in the context window.
     case contextFull
+    /// llama.cpp's own result code.
     case decodeFailed(Int32)
+
+    public static let errorDomain = "com.duckduckgo.llamaRuntime"
+
+    public var errorCode: Int {
+        switch self {
+        case .unsupportedSystem: return 1
+        case .libraryUnavailable: return 2
+        case .modelLoadFailed: return 3
+        case .contextCreationFailed: return 4
+        case .templateFailed: return 5
+        case .tokenizationFailed: return 6
+        case .contextFull: return 7
+        case .decodeFailed: return 8
+        }
+    }
+
+    /// Paths can appear in `libraryUnavailable`'s message, so it's left out.
+    public var description: String {
+        switch self {
+        case .unsupportedSystem: return "LlamaRuntimeError.unsupportedSystem"
+        case .libraryUnavailable: return "LlamaRuntimeError.libraryUnavailable"
+        case .modelLoadFailed: return "LlamaRuntimeError.modelLoadFailed"
+        case .contextCreationFailed: return "LlamaRuntimeError.contextCreationFailed"
+        case .templateFailed: return "LlamaRuntimeError.templateFailed"
+        case .tokenizationFailed: return "LlamaRuntimeError.tokenizationFailed"
+        case .contextFull: return "LlamaRuntimeError.contextFull"
+        case .decodeFailed(let code): return "LlamaRuntimeError.decodeFailed(\(code))"
+        }
+    }
 }
 
 /// llama.cpp, opened at runtime rather than linked, so systems it can't run on never load it.

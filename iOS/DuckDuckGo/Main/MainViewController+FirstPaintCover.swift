@@ -98,36 +98,29 @@ extension MainViewController {
         var windowFrame: CGRect = .zero
     }
 
-    /// A submit from the New Tab Page, waiting for its tab to come on screen.
+    /// A submit waiting for its load to be requested.
     struct PendingFirstPaintCover {
         let url: URL
         let exit: FirstPaintCoverExit
     }
 
-    enum FirstPaintCoverArming: Equatable {
-        case none
-        case now
-        /// New Tab Page: the tab isn't on screen until the load is requested.
-        case whenTabShows
+    /// The New Tab Page has no old page to hide, but the outline still helps; a same-document load never repaints.
+    static func coversSubmit(isAITab: Bool, isSameDocument: Bool) -> Bool {
+        !isAITab && !isSameDocument
     }
 
-    /// No page yet means the New Tab Page, where there's no old page to hide but the outline still helps.
-    static func firstPaintCoverArming(hasTab: Bool, hasPage: Bool, isAITab: Bool, isSameDocument: Bool) -> FirstPaintCoverArming {
-        guard !isAITab else { return .none }
-        guard hasTab, hasPage else { return .whenTabShows }
-        return isSameDocument ? .none : .now
-    }
-
-    /// Arms a cover saved by a New Tab Page submit; call once the tab is on screen, before WebKit reports anything.
+    /// Arms the cover saved at submit; call right after the load is requested, before WebKit reports anything.
+    /// Building it after the request, in the same pass, means the cover never holds up the network.
     func armPendingFirstPaintCover(on tab: TabViewController) {
         guard let pending = pendingFirstPaintCover else { return }
         pendingFirstPaintCover = nil
-        // Just attached: lay out now so the cover reads the web view's real width and content top.
+        // A New Tab Page tab was just attached: lay out now so the cover reads the web view's real width and content top.
         tab.view.layoutIfNeeded()
         armFirstPaintCover(on: tab, for: pending.url, exit: pending.exit)
     }
 
     private func prepareFirstPaintCover(forSubmitting url: URL) {
+        FirstPaintCover.signposter.emitEvent("Submit")
         pendingFirstPaintCover = nil
         // Other schemes, such as mailto:, never load in the tab.
         guard Self.coversSearchSubmit(isLargeWidth: AppWidthObserver.shared.isLargeWidth, featureFlagger: featureFlagger),
@@ -135,21 +128,11 @@ extension MainViewController {
               aiBoundaryDecision(for: url) == .loadInPlace else { return }
 
         let tab = currentTab
-        let arming = Self.firstPaintCoverArming(hasTab: tab != nil,
-                                                hasPage: tab?.link != nil,
-                                                isAITab: tab?.isAITab == true,
-                                                isSameDocument: Self.isSameDocument(url, as: tab?.url))
-        switch arming {
-        case .none:
-            return
-        case .now:
-            guard let tab else { return }
-            armFirstPaintCover(on: tab, for: url, exit: captureFirstPaintCoverExit())
-        case .whenTabShows:
-            pendingFirstPaintCover = PendingFirstPaintCover(url: url, exit: captureFirstPaintCoverExit())
-            // Only for the load this submit starts; a submit that goes elsewhere mustn't arm a later one.
-            DispatchQueue.main.async { [weak self] in self?.pendingFirstPaintCover = nil }
-        }
+        guard Self.coversSubmit(isAITab: tab?.isAITab == true, isSameDocument: Self.isSameDocument(url, as: tab?.url)) else { return }
+        // Capture the panel now, before it hides; the cover itself is built once the load is requested.
+        pendingFirstPaintCover = PendingFirstPaintCover(url: url, exit: captureFirstPaintCoverExit())
+        // Only for the load this submit starts; a submit that goes elsewhere mustn't arm a later one.
+        DispatchQueue.main.async { [weak self] in self?.pendingFirstPaintCover = nil }
     }
 
     private func captureFirstPaintCoverExit() -> FirstPaintCoverExit {

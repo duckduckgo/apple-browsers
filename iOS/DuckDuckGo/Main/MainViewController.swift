@@ -592,7 +592,7 @@ class MainViewController: UIViewController {
     /// Results-page colour per appearance, so a search from any page can hand off to it.
     let searchPageColorMemory = SearchPageColorMemory()
     let searchPageHeaderMemory = SearchPageHeaderMemory()
-    /// Set by a New Tab Page submit until its tab is on screen; cleared on the next runloop pass.
+    /// Set by a submit until its load is requested; cleared on the next runloop pass.
     var pendingFirstPaintCover: PendingFirstPaintCover?
     private var siteThemeColorObservation: NSKeyValueObservation?
     private var pageContentBackgroundColorObservation: NSKeyValueObservation?

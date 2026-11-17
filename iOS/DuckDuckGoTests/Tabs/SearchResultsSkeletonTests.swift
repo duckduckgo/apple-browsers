@@ -171,19 +171,11 @@ struct SearchResultsSkeletonTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A submit from a page covers now; from the New Tab Page, once the tab shows", .timeLimit(.minutes(1)))
+    @Test("Any submit that loads a new document is covered, from a page or the New Tab Page", .timeLimit(.minutes(1)))
     func coverArming() {
-        typealias Arming = MainViewController.FirstPaintCoverArming
-        func arming(hasTab: Bool = true, hasPage: Bool = true, isAITab: Bool = false, isSameDocument: Bool = false) -> Arming {
-            MainViewController.firstPaintCoverArming(hasTab: hasTab, hasPage: hasPage, isAITab: isAITab, isSameDocument: isSameDocument)
-        }
-
-        #expect(arming() == .now)
-        #expect(arming(hasPage: false) == .whenTabShows)
-        #expect(arming(hasTab: false, hasPage: false) == .whenTabShows)
-        #expect(arming(isAITab: true) == .none)
-        #expect(arming(hasPage: false, isAITab: true) == .none)
-        #expect(arming(isSameDocument: true) == .none)
+        #expect(MainViewController.coversSubmit(isAITab: false, isSameDocument: false))
+        #expect(!MainViewController.coversSubmit(isAITab: true, isSameDocument: false))
+        #expect(!MainViewController.coversSubmit(isAITab: false, isSameDocument: true))
     }
 
     @available(iOS 16, macOS 13, *)

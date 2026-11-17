@@ -1886,7 +1886,7 @@ class TabViewController: UIViewController {
     }
 
     /// Whether the results page shows its first result yet; its tabs row fills in at the same moment.
-    /// Answers true the moment the first result or ad is in the page, false after `timeout` or on failure.
+    /// Answers true once the first result or ad has been drawn, false after `timeout` or on failure.
     func waitForSearchResults(timeout: TimeInterval, completion: @escaping @MainActor (Bool) -> Void) {
         guard isViewLoaded, let webView else { return completion(true) }
         webView.callAsyncJavaScript(Self.searchResultsWaitScript,
@@ -1894,20 +1894,35 @@ class TabViewController: UIViewController {
                                     in: nil,
                                     in: .defaultClient) { result in
             let isShowing = (try? result.get()) as? Bool ?? false
-            MainActor.assumeIsolated { completion(isShowing) }
+            MainActor.assumeIsolated {
+                if isShowing { FirstPaintCover.signposter.emitEvent("Results drawn") }
+                completion(isShowing)
+            }
         }
     }
 
+    /// Only while Instruments records: marks a results page's commit, and with no cover up, when its results are drawn.
+    private func signpostSearchCommit(url: URL?) {
+        guard FirstPaintCover.signposter.isEnabled, url?.isDuckDuckGoSearch == true else { return }
+        FirstPaintCover.signposter.emitEvent("Commit")
+        // A covered page reports its results itself.
+        guard firstPaintCover.phase == .idle else { return }
+        waitForSearchResults(timeout: FirstPaintCover.Constants.contentGrace) { _ in }
+    }
+
     // Watches DOM inserts instead of polling, so a fast load isn't held back by the poll interval.
+    // A result is in the DOM a frame before it's drawn; the second animation frame runs after that paint.
     private static let searchResultsWaitScript = """
         const selector = '[data-testid="result"], [data-testid="ad"]';
-        if (document.querySelector(selector)) { return true; }
-        return await new Promise((resolve) => {
+        const drawn = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))));
+        if (document.querySelector(selector)) { return await drawn(); }
+        const isIn = await new Promise((resolve) => {
             const done = (isShowing) => { observer.disconnect(); clearTimeout(timer); resolve(isShowing); };
             const observer = new MutationObserver(() => { if (document.querySelector(selector)) { done(true); } });
             observer.observe(document, { childList: true, subtree: true });
             const timer = setTimeout(() => done(false), timeoutMs);
         });
+        return isIn ? await drawn() : false;
         """
 
     private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
@@ -2951,6 +2966,7 @@ extension TabViewController: WKNavigationDelegate {
             userScripts?.aiChatUserScript.browserToolsDocumentDidCommit()
             browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
             firstPaintCover.didCommit(navigation)
+            signpostSearchCommit(url: webView.url)
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil

@@ -19,6 +19,7 @@
 
 import AIChat
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 import UIKit
@@ -141,10 +142,8 @@ struct LocalModelAccessPromptView: View {
 
     private var card: some View {
         VStack(alignment: .leading, spacing: 20) {
-            AppleIntelligenceGlyph(size: 28)
-                .frame(width: 48, height: 48)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(designSystemColor: .controlsFillPrimary)))
+            Image(uiImage: DesignSystemImages.Color.Size96.duckAI)
+                .frame(width: 96, height: 96)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 8) {

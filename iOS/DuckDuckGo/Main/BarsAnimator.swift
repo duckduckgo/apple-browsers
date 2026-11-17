@@ -27,6 +27,10 @@ class BarsAnimator {
         static let legacyTransitionSpeed: CGFloat = 0.5
 
         static let floatingVelocityCommitThreshold: CGFloat = 0.15
+
+        /// Shortest collapse travel on a short page, so a few points of scroll don't snap the chrome.
+        /// Rubber-banding past the page end makes up any shortfall.
+        static let minimumShortPageTravel: CGFloat = 24
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -41,6 +45,14 @@ class BarsAnimator {
     private var transitionStartProgress: CGFloat = 0
 
     private var bottomRevealGestureState: BottomBounceRevealing = .possible
+
+    /// Scroll range captured when the drag starts. Hiding the chrome shrinks the live range mid-drag, so
+    /// travel derived from it would change under the user's finger.
+    private var dragScrollableHeight: CGFloat = .greatestFiniteMagnitude
+
+    /// Whether the drag began at the page bottom, decided when it starts. Hiding the chrome hands the page
+    /// more viewport, which moves the live bottom up past where a short page's drag began.
+    private var draggingStartedAtBottom = false
 
     private var combinedBarsHeight: CGFloat {
         guard let delegate = delegate else { return 0 }
@@ -61,6 +73,8 @@ class BarsAnimator {
 
     func didStartScrolling(in scrollView: UIScrollView) {
         draggingStartPosY = scrollView.contentOffset.y
+        dragScrollableHeight = scrollView.scrollableHeight
+        draggingStartedAtBottom = draggingStartPosY >= scrollView.contentOffsetYAtBottom
 
         if delegate?.isFloatingChromeEnabled == true {
             // Capture rendered visibility first, then pin any in-flight morph so tracking
@@ -97,8 +111,7 @@ class BarsAnimator {
 
     private func floatingDidScroll(in scrollView: UIScrollView) {
         if barsState == .hidden {
-            let startedDraggingAtBottom = draggingStartPosY >= scrollView.contentOffsetYAtBottom
-            if startedDraggingAtBottom, bottomRevealGestureState == .possible {
+            if draggingStartedAtBottom, bottomRevealGestureState == .possible {
                 if scrollView.contentOffset.y > scrollView.contentOffsetYAtBottom {
                     revealBars(animated: true)
                     bottomRevealGestureState = .triggered
@@ -144,7 +157,7 @@ class BarsAnimator {
 
     private func revealedAndScrolling(in scrollView: UIScrollView) {
         guard scrollView.contentOffset.y > draggingStartPosY else { return }
-        guard scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - combinedBarsHeight else { return }
+        guard scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - bottomBounceMargin else { return }
         guard bottomRevealGestureState != .triggered else { return }
 
         // In case view has been "caught" in the middle of the animation above the (0.0, 0.0) offset,
@@ -185,8 +198,7 @@ class BarsAnimator {
     }
 
     private func hiddenAndScrolling(in scrollView: UIScrollView) {
-        let startedDraggingAtBottom = draggingStartPosY >= scrollView.contentOffsetYAtBottom
-        if startedDraggingAtBottom, bottomRevealGestureState == .possible {
+        if draggingStartedAtBottom, bottomRevealGestureState == .possible {
             let isInBottomBounceArea = scrollView.contentOffset.y > scrollView.contentOffsetYAtBottom
             if isInBottomBounceArea {
                 revealBars(animated: true)
@@ -208,20 +220,34 @@ class BarsAnimator {
         transitionProgress = ratio
     }
 
+    /// Scroll distance that takes the chrome from revealed to hidden. A page shorter than the standard
+    /// travel collapses over its whole range instead, like Safari, so it can still reach the hidden state.
+    private var transitionTravel: CGFloat {
+        let standardTravel = delegate?.isFloatingChromeEnabled == true ? Metrics.floatingTransitionTravel : combinedBarsHeight
+        guard dragScrollableHeight < standardTravel else { return standardTravel }
+        return min(standardTravel, max(dragScrollableHeight, Metrics.minimumShortPageTravel))
+    }
+
+    /// Distance above the page bottom in which a drag starting with the chrome revealed doesn't hide it.
+    /// Shrinks on pages too short to fit both it and the collapse travel, so they can still collapse.
+    private var bottomBounceMargin: CGFloat {
+        min(combinedBarsHeight, max(0, dragScrollableHeight - transitionTravel))
+    }
+
     private func calculateTransitionRatio(for contentOffset: CGFloat) -> CGFloat {
         let distance = contentOffset - transitionStartPosY
-        let barsHeight = combinedBarsHeight
+        let travel = transitionTravel
 
-        guard barsHeight > 0 else { return 0 }
+        guard combinedBarsHeight > 0, travel > 0 else { return 0 }
 
         guard delegate?.isFloatingChromeEnabled == true else {
-            let cumulativeDistance = (barsHeight * transitionProgress) + distance
+            let cumulativeDistance = (travel * transitionProgress) + distance
             let normalizedDistance = max(cumulativeDistance, 0)
 
-            return min(normalizedDistance / barsHeight * Metrics.legacyTransitionSpeed, 1.0)
+            return min(normalizedDistance / travel * Metrics.legacyTransitionSpeed, 1.0)
         }
 
-        let target = transitionStartProgress + distance / Metrics.floatingTransitionTravel
+        let target = transitionStartProgress + distance / travel
         return target.clamped(to: 0...1)
     }
 
@@ -248,7 +274,7 @@ class BarsAnimator {
             return
         }
 
-        let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - combinedBarsHeight
+        let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - bottomBounceMargin
         guard barsState == .transitioning || isAboveExtendedBottomBounceArea else { return }
 
         guard velocity == 0 else {
@@ -275,7 +301,7 @@ class BarsAnimator {
             if velocity < 0 {
                 revealBars(animated: true)
             } else {
-                let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - combinedBarsHeight
+                let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - bottomBounceMargin
                 if barsState == .transitioning || isAboveExtendedBottomBounceArea {
                     hideBars(animated: true)
                 }
@@ -315,9 +341,15 @@ class BarsAnimator {
 }
 
 private extension UIScrollView {
-    /// Calculate Y-axis content offset corresponding to very bottom of the scroll area
+    /// Y-axis content offset at the very bottom of the scroll area. The top inset moves only the top of
+    /// the range, so it plays no part here; floating chrome's top inset would otherwise put this short
+    /// of the real bottom, and a drag from the top of a short page would count as starting at the bottom.
     var contentOffsetYAtBottom: CGFloat {
-        let yOffset = contentSize.height - bounds.height
-        return yOffset - adjustedContentInset.top + adjustedContentInset.bottom
+        contentSize.height - bounds.height + adjustedContentInset.bottom
+    }
+
+    /// Distance between the top and bottom of the scroll area.
+    var scrollableHeight: CGFloat {
+        contentOffsetYAtBottom + adjustedContentInset.top
     }
 }

@@ -85,6 +85,9 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
 
     struct Constants {
         static let zoomThreshold: CGFloat = 0.1
+
+        /// Pages that would scroll less than this with the chrome hidden keep their chrome.
+        static let minimumScrollableHeight: CGFloat = 1
         
         static let contentSizeKVOKey = "contentSize"
     }
@@ -277,10 +280,31 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         scrollToTop = false
     }
 
-    /// Bars should not be hidden in case ScrollView content is smaller than full (with bars hidden) viewport.
+    /// Bars hide only on a page taller than the viewport they leave behind, so the page still scrolls
+    /// with them gone. A page that would fit once they hide keeps them: no collapse even starts.
     private func canHideBars(for scrollView: UIScrollView) -> Bool {
-        let heightAllowsHide = scrollView.bounds.height + (delegate?.barsMaxHeight ?? 0) < scrollView.contentSize.height
-        return heightAllowsHide && (delegate?.canHideBars ?? true)
+        guard delegate?.canHideBars ?? true else { return false }
+        return hiddenChromeScrollableHeight(for: scrollView) >= Constants.minimumScrollableHeight
+    }
+
+    /// How far the page would scroll with the chrome fully hidden. Hiding hands the chrome's space to the
+    /// page, so the space the chrome still holds comes off the current range. The estimate errs high
+    /// while chrome insets lag the visibility, so a part-hidden bar is never snapped back mid-drag.
+    private func hiddenChromeScrollableHeight(for scrollView: UIScrollView) -> CGFloat {
+        let insets = scrollView.adjustedContentInset
+        let currentScrollableHeight = scrollView.contentSize.height + insets.top + insets.bottom - scrollView.bounds.height
+        guard let delegate else { return currentScrollableHeight }
+
+        let visibility = delegate.currentBarsVisibility.clamped(to: 0...1)
+        let heldChromeHeight: CGFloat
+        if delegate.isFloatingChromeEnabled {
+            let currentInsets = delegate.floatingWebViewObscuredInsets(for: visibility)
+            let hiddenInsets = delegate.floatingWebViewObscuredInsets(for: 0)
+            heldChromeHeight = max(0, (currentInsets.top + currentInsets.bottom) - (hiddenInsets.top + hiddenInsets.bottom))
+        } else {
+            heldChromeHeight = delegate.barsMaxHeight * visibility
+        }
+        return currentScrollableHeight - heldChromeHeight
     }
 
     func reset(animated: Bool = true) {

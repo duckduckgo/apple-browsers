@@ -980,3 +980,204 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var tabBarContainer: UIView = UIView()
 }
+
+// MARK: - Short pages
+
+class BarsAnimatorShortPageTests: XCTestCase {
+
+    /// Combined bars height with the mock omnibar (52pt) and a typical toolbar.
+    private let toolbarHeight: CGFloat = 49
+
+    func testWhenFloatingChromeScrollsToTheEndOfAShortPageThenBarsAreFullyHidden() {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollableHeight = BarsAnimator.Metrics.floatingTransitionTravel / 2
+        let scrollView = mockShortScrollView(scrollableHeight: scrollableHeight)
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        for offset in stride(from: CGFloat(5), through: scrollableHeight, by: 5) {
+            scrollView.contentOffset.y = offset
+            clock.advance(by: 1.0 / 30.0)
+            sut.didScroll(in: scrollView)
+        }
+
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+    }
+
+    func testWhenFloatingChromePageIsTinyThenCollapseTravelHasAFloor() throws {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockShortScrollView(scrollableHeight: 4)
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        scrollView.contentOffset.y = 4
+        clock.advance(by: 1.0 / 30.0)
+        sut.didScroll(in: scrollView)
+
+        let percent = try XCTUnwrap(delegate.receivedMessages.last?.percent)
+        XCTAssertEqual(percent, 1 - 4 / BarsAnimator.Metrics.minimumShortPageTravel, accuracy: 0.001)
+    }
+
+    func testWhenLegacyChromeScrollsToTheEndOfAShortPageThenBarsHideOnRelease() {
+        let (sut, delegate) = makeLegacySUT()
+        let scrollableHeight: CGFloat = 60
+        let scrollView = mockShortScrollView(scrollableHeight: scrollableHeight)
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        for offset in stride(from: CGFloat(5), through: scrollableHeight, by: 5) {
+            scrollView.contentOffset.y = offset
+            sut.didScroll(in: scrollView)
+        }
+        XCTAssertNotEqual(sut.barsState, .revealed)
+
+        sut.didFinishScrolling(in: scrollView, velocity: 0)
+
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+    }
+
+    func testWhenLegacyChromeScrollsALongPageThenTravelIsUnchanged() throws {
+        let (sut, delegate) = makeLegacySUT()
+        let scrollView = mockTallScrollView()
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        scrollView.contentOffset.y = 10
+        sut.didScroll(in: scrollView)
+
+        let combinedBarsHeight = toolbarHeight + 52
+        let expectedRatio = 10 / combinedBarsHeight * BarsAnimator.Metrics.legacyTransitionSpeed
+        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 1 - expectedRatio, accuracy: 0.001)
+    }
+
+    func testWhenAShortPageStillScrollsWithBarsHiddenThenFlickingDownHidesThem() {
+        let manager = BrowserChromeManager()
+        let delegate = makeLegacyDelegate()
+        manager.delegate = delegate
+        let scrollView = mockShortScrollView(scrollableHeight: delegate.barsMaxHeight + 60)
+        manager.attach(to: scrollView)
+        var targetOffset = CGPoint.zero
+
+        manager.scrollViewWillBeginDragging(scrollView)
+        manager.scrollViewWillEndDragging(scrollView, withVelocity: CGPoint(x: 0, y: 1), targetContentOffset: &targetOffset)
+
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+    }
+
+    func testWhenAPageWouldFitOnceBarsHideThenNoCollapseStarts() {
+        let barsMaxHeight = makeLegacyDelegate().barsMaxHeight
+        for scrollableHeight in [CGFloat(0), 10, 40, barsMaxHeight] {
+            let manager = BrowserChromeManager()
+            let delegate = makeLegacyDelegate()
+            manager.delegate = delegate
+            let scrollView = mockShortScrollView(scrollableHeight: scrollableHeight)
+            manager.attach(to: scrollView)
+            var targetOffset = CGPoint.zero
+
+            manager.scrollViewWillBeginDragging(scrollView)
+            manager.scrollViewWillEndDragging(scrollView, withVelocity: CGPoint(x: 0, y: 1), targetContentOffset: &targetOffset)
+
+            XCTAssertTrue(delegate.receivedMessages.isEmpty, "scrollable height \(scrollableHeight)")
+        }
+    }
+
+    func testWhenHidingTheChromeMakesAShortPageFitThenTheSameDragDoesNotRevealIt() {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockShortScrollView(scrollableHeight: 40)
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        scrollView.contentOffset.y = 40
+        clock.advance(by: 1.0 / 30.0)
+        sut.didScroll(in: scrollView)
+        XCTAssertEqual(sut.barsState, .hidden)
+
+        // The chrome's space goes back to the page, which now fits; the finger keeps rubber-banding.
+        scrollView.bounds.size.height += 108
+        scrollView.contentOffset.y = 50
+        clock.advance(by: 1.0 / 30.0)
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+    }
+
+    func testWhenFloatingChromeHasATopInsetThenDraggingFromTheTopOfAShortPageHidesBars() {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockShortScrollView(scrollableHeight: 40)
+        scrollView.contentInset = UIEdgeInsets(top: 62, left: 0, bottom: 0, right: 0)
+        scrollView.contentSize.height -= 62
+
+        scrollView.contentOffset.y = -62
+        sut.didStartScrolling(in: scrollView)
+        for offset in stride(from: CGFloat(-57), through: -22, by: 5) {
+            scrollView.contentOffset.y = offset
+            clock.advance(by: 1.0 / 30.0)
+            sut.didScroll(in: scrollView)
+        }
+
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+    }
+
+    func testWhenBarsHideOnAShortPageThenTheGrownViewportDoesNotRevealThem() {
+        let (manager, delegate, scrollView) = makeManagerWithHiddenBars(scrollableHeight: 160)
+
+        scrollView.contentSize.height += 1
+
+        XCTAssertTrue(delegate.receivedMessages.isEmpty)
+        withExtendedLifetime(manager) {}
+    }
+
+    func testWhenContentShrinksUntilThePageFitsWithBarsHiddenThenBarsAreRevealed() {
+        let (manager, delegate, scrollView) = makeManagerWithHiddenBars(scrollableHeight: 160)
+
+        scrollView.contentSize.height -= 100
+
+        XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(1)])
+        withExtendedLifetime(manager) {}
+    }
+
+    /// Hides the bars by flicking down, then grows the web view by the chrome height as the app does.
+    private func makeManagerWithHiddenBars(scrollableHeight: CGFloat)
+    -> (manager: BrowserChromeManager, delegate: BrowserChromeDelegateMock, scrollView: UIScrollView) {
+        let manager = BrowserChromeManager()
+        let delegate = makeLegacyDelegate()
+        manager.delegate = delegate
+        let scrollView = mockShortScrollView(scrollableHeight: scrollableHeight)
+        manager.attach(to: scrollView)
+        var targetOffset = CGPoint.zero
+        manager.scrollViewWillBeginDragging(scrollView)
+        manager.scrollViewWillEndDragging(scrollView, withVelocity: CGPoint(x: 0, y: 1), targetContentOffset: &targetOffset)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+        scrollView.bounds.size.height += delegate.barsMaxHeight
+        delegate.currentBarsVisibility = 0
+        delegate.receivedMessages = []
+        return (manager, delegate, scrollView)
+    }
+
+    private func makeLegacyDelegate() -> BrowserChromeDelegateMock {
+        let delegate = BrowserChromeDelegateMock()
+        delegate.canHideBars = true
+        delegate.toolbarHeight = toolbarHeight
+        delegate.barsMaxHeight = toolbarHeight + 52
+        return delegate
+    }
+
+    private func makeLegacySUT() -> (sut: BarsAnimator, delegate: BrowserChromeDelegateMock) {
+        let sut = BarsAnimator()
+        let delegate = makeLegacyDelegate()
+        sut.delegate = delegate
+        return (sut, delegate)
+    }
+}
+
+private func mockShortScrollView(scrollableHeight: CGFloat) -> UIScrollView {
+    let scrollView = UIScrollView()
+    scrollView.contentSize = .init(width: 300, height: 300 + scrollableHeight)
+    scrollView.bounds = .init(x: 0, y: 0, width: 300, height: 300)
+
+    return scrollView
+}

@@ -55,8 +55,18 @@ final class PacketTunnelProviderTests: XCTestCase {
         let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
         let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
 
-        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .manualByTheSystem), .blocked)
         XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .blocked)
+    }
+
+    func testSystemStartupClearsBlockAcrossGuardAndDefaultsInstances() throws {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
+        startupGuard.blockStartup()
+
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
+
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
     }
 
     func testMainAppStartupClearsBlockAcrossGuardAndDefaultsInstances() throws {

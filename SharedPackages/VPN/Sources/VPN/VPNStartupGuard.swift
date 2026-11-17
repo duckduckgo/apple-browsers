@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// Persists startup blocking until an explicit start from the main app clears it.
+/// Persists startup blocking until a manual start clears it.
 struct VPNStartupGuard {
     enum StartupDecision: Equatable {
         case allowed
@@ -38,8 +38,9 @@ struct VPNStartupGuard {
     }
 
     func prepareForStartup(startupMethod: StartupOptions.StartupMethod) -> StartupDecision {
-        if startupMethod == .manualByMainApp {
+        guard startupMethod == .automaticOnDemand else {
             isStartupBlocked = false
+            return .allowed
         }
 
         return isStartupBlocked ? .blocked : .allowed

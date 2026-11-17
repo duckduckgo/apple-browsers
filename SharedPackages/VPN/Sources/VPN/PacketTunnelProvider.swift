@@ -952,12 +952,27 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             switch internalError {
             case TunnelError.reconnectBlocked:
                 error = internalError
+
+                guard startupOptions.startupMethod == .automaticOnDemand else {
+                    needsBackoff = false
+                    break
+                }
+
                 let managedToShutdown = await shutdown(dueTo: error)
                 needsBackoff = !managedToShutdown
             case SubscriptionManagerError.noTokenAvailable:
                 error = TunnelError.startingTunnelWithoutAuthToken(internalError: internalError)
-                let managedToShutdown = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
-                needsBackoff = !managedToShutdown
+
+                switch startupOptions.startupMethod {
+                case .automaticOnDemand:
+                    let managedToShutdown = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
+                    needsBackoff = !managedToShutdown
+                case .manualByTheSystem:
+                    _ = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
+                    needsBackoff = false
+                case .manualByMainApp:
+                    needsBackoff = false
+                }
             default:
                 error = TunnelError.otherTunnelStartError(internalError: internalError)
                 needsBackoff = startupOptions.startupMethod == .automaticOnDemand

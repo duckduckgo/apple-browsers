@@ -965,10 +965,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
                 switch startupOptions.startupMethod {
                 case .automaticOnDemand:
-                    let managedToShutdown = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
+                    let managedToShutdown = await handleAccessRevoked(dueTo: error, notification: .signedOut)
                     needsBackoff = !managedToShutdown
                 case .manualByTheSystem:
-                    _ = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
+                    _ = await handleAccessRevoked(dueTo: error, notification: .signedOut)
                     needsBackoff = false
                 case .manualByMainApp:
                     needsBackoff = false
@@ -1659,18 +1659,28 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     enum AuthNotification {
         case subscriptionExpired
         case userNeedsToOpenApp
+        /// The tunnel couldn't start because no auth token is stored.
+        case signedOut
+
+        /// Presents the notification for this case.
+        /// - Parameter presenter: The presenter that shows the notification.
+        func present(with presenter: VPNNotificationsPresenting) {
+            switch self {
+            case .subscriptionExpired, .userNeedsToOpenApp:
+                presenter.showEntitlementNotification()
+            case .signedOut:
+                presenter.showSignedOutNotification()
+            }
+        }
     }
 
     @MainActor
     func handleAccessRevoked(dueTo error: Error, notification: AuthNotification) async -> Bool {
-        switch notification {
-        case .subscriptionExpired, .userNeedsToOpenApp:
-            defaults.enableEntitlementMessaging()
-            notificationsPresenter.showEntitlementNotification()
+        defaults.enableEntitlementMessaging()
+        notification.present(with: notificationsPresenter)
 
-            // We add a delay here so the notification has a chance to show up
-            try? await Task.sleep(interval: .seconds(5))
-        }
+        // We add a delay here so the notification has a chance to show up
+        try? await Task.sleep(interval: .seconds(5))
 
         return await shutdown(dueTo: error)
     }

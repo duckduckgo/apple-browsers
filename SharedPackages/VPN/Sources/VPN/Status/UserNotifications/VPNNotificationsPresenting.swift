@@ -55,13 +55,15 @@ public protocol VPNNotificationsPresenting {
     /// Clears any pending authorization-request suppression, without presenting a notification.
     func clearAuthorizationSuppression()
 
-    /// Present a notification asking the user to open the app, shown after the tunnel turned off Connect On Demand
-    /// because no auth token is stored.
+    /// Present a notification asking the user to open the app, shown when the tunnel can't start because no auth token is stored.
+    /// Defaults to `showEntitlementNotification()`.
     func showSignedOutNotification()
 
 }
 
 public extension VPNNotificationsPresenting {
     func clearAuthorizationSuppression() {}
-    func showSignedOutNotification() {}
+    func showSignedOutNotification() {
+        showEntitlementNotification()
+    }
 }

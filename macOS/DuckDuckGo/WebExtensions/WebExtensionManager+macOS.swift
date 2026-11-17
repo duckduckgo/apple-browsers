@@ -125,13 +125,13 @@ enum WebExtensionManagerFactory {
         let pixelFiring = MacOSWebExtensionPixelFiring()
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
         let installationStore = InstalledWebExtensionStore()
-        let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
+        let permissionController = WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
             installationStore: installationStore,
             prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
-        ) : nil
+        )
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
-        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+        let nativeMessagingHandler = buildType.isSparkleBuild
             ? NativeMessagingHandler(installationStore: installationStore)
             : nil
         let manager = WebExtensionManager(
@@ -140,6 +140,7 @@ enum WebExtensionManagerFactory {
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             installationStore: installationStore,
             permissionController: permissionController,
+            isPermissionEnforcementEnabled: { featureFlagger.isFeatureOn(.webExtensionsPermissions) },
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,

@@ -88,7 +88,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let storageProvider: WebExtensionStorageProviding
     let cpmBaseURLPolicy: CPMExtensionBaseURLPolicy
     public let loader: WebExtensionLoading
-    public let permissionController: WebExtensionPermissionController?
+    private let storedPermissionController: WebExtensionPermissionController?
+    private let isPermissionEnforcementEnabled: @MainActor () -> Bool
+
+    /// `nil` while permission enforcement is off, so loaded extensions get every permission they ask for.
+    @MainActor
+    public var permissionController: WebExtensionPermissionController? {
+        isPermissionEnforcementEnabled() ? storedPermissionController : nil
+    }
     public var chromeWebStore: ChromeWebStoreManaging?
     /// Disables extensions that remote configuration lists. `nil` until the host starts enforcement.
     public var remoteDisableEnforcer: WebExtensionRemoteDisableEnforcer?
@@ -114,8 +121,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
-    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
-    let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+    private let storedNativeMessagingHandler: WebExtensionNativeMessagingHandling?
+    private let isNativeMessagingEnabled: @MainActor () -> Bool
+
+    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS, or while native messaging is off.
+    @MainActor
+    var nativeMessagingHandler: WebExtensionNativeMessagingHandling? {
+        isNativeMessagingEnabled() ? storedNativeMessagingHandler : nil
+    }
 
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
@@ -243,6 +256,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 storageProvider: WebExtensionStorageProviding,
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
                 permissionController: WebExtensionPermissionController? = nil,
+                isPermissionEnforcementEnabled: @escaping @MainActor () -> Bool = { true },
                 loader: WebExtensionLoading? = nil,
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
@@ -258,6 +272,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
+                isNativeMessagingEnabled: @escaping @MainActor () -> Bool = { true },
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 retentionStore: WebExtensionRetentionStore? = nil,
                 isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
@@ -294,13 +309,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.windowTabProvider = windowTabProvider
         self.storageProvider = storageProvider
         self.installationStore = installationStore
-        self.permissionController = permissionController
+        self.storedPermissionController = permissionController
+        self.isPermissionEnforcementEnabled = isPermissionEnforcementEnabled
         self.bundledExtensionURL = bundledExtensionURL
         let baseURLPolicy = CPMExtensionBaseURLPolicy(installationStore: installationStore, isEnabled: isCPMStableBaseURLEnabled)
         self.cpmBaseURLPolicy = baseURLPolicy
         self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
                                                    isInspectable: configuration.isInspectable,
                                                    permissionController: permissionController,
+                                                   isPermissionEnforcementEnabled: isPermissionEnforcementEnabled,
                                                    baseURLProvider: baseURLPolicy.baseURL, installationStore: installationStore)
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
@@ -317,7 +334,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.isApplicationInBackground = isApplicationInBackground
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
-        self.nativeMessagingHandler = nativeMessagingHandler
+        self.storedNativeMessagingHandler = nativeMessagingHandler
+        self.isNativeMessagingEnabled = isNativeMessagingEnabled
         self.storePixelsReporter = retentionStore.map { WebExtensionStorePixelsReporter(store: $0, installationStore: installationStore, pixelFiring: pixelFiring, now: now) }
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
@@ -359,7 +377,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
-        permissionsHandler.controller = permissionController
+        permissionsHandler.controller = { [weak self] in self?.permissionController }
         permissionsHandler.extensionContext = { [weak self] url in
             self?.extensionContext(for: url)
         }
@@ -1255,7 +1273,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             if Self.isUpdateInstallationDeferral(error) { continue }
             // Uninstall broken 3rd-party extensions, unless they only failed to load because of a consent/settings read failure.
             if installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == false,
-               permissionController != nil,
                error is WebExtensionLoader.PermissionPreparationError
             {
                 continue

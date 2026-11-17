@@ -149,6 +149,11 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(response.accessToken, "")
     }
 
+    func testGetFeatureConfigAlwaysReturnsUsePaidDuckAiTrue() async throws {
+        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
+        XCTAssertTrue(response.usePaidDuckAi)
+    }
+
     func testWhenProTierIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,

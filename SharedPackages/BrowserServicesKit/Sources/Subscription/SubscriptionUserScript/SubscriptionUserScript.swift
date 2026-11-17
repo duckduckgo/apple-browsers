@@ -146,7 +146,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
-        let response = DataModel.GetFeatureConfigurationResponse(useProTier: featureFlagProvider.useProTier)
+        let response = DataModel.GetFeatureConfigurationResponse(usePaidDuckAi: true, useProTier: featureFlagProvider.useProTier)
         return response
     }
 
@@ -367,6 +367,7 @@ extension SubscriptionUserScript {
         }
 
         struct GetFeatureConfigurationResponse: Encodable {
+            let usePaidDuckAi: Bool
             let useProTier: Bool
         }
 

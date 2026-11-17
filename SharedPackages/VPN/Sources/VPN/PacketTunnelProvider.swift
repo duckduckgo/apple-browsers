@@ -405,7 +405,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private func subscriptionAccessErrorHandler(_ error: Error) async {
         switch error {
         case TunnelError.vpnAccessRevoked:
-            await handleAccessRevoked(dueTo: error)
+            if await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp) {
+                await cancelTunnel(with: error)
+            }
         default:
             break
         }
@@ -686,7 +688,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 try await self?.handleFailureRecoveryConfigUpdate(result: result)
             },
             onAccessRevoked: { @MainActor [weak self] in
-                await self?.handleAccessRevoked(dueTo: TunnelError.vpnAccessRevokedDetectedByMonitorCheck)
+                let error = TunnelError.vpnAccessRevokedDetectedByMonitorCheck
+                if await self?.handleAccessRevoked(dueTo: error, notification: .subscriptionExpired) == true {
+                    await self?.cancelTunnel(with: error)
+                }
             }
         )
 
@@ -927,11 +932,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         // Reset snooze if the VPN is restarting.
         self.snoozeTimingStore.reset()
 
-        if startupGuard.prepareForStartup(startupMethod: startupOptions.startupMethod) == .blocked {
-            return try await failStartupAfterShutdown(dueTo: TunnelError.reconnectBlocked)
-        }
-
         do {
+            if startupGuard.prepareForStartup(startupMethod: startupOptions.startupMethod) == .blocked {
+                throw TunnelError.reconnectBlocked
+            }
             try await loadToken(from: tokenSource, startupOptions: startupOptions)
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
@@ -943,13 +947,20 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 #endif
         } catch let internalError {
             let error: Error
+            let needsBackoff: Bool
 
             switch internalError {
+            case TunnelError.reconnectBlocked:
+                error = internalError
+                let managedToShutdown = await shutdown(dueTo: error)
+                needsBackoff = !managedToShutdown
             case SubscriptionManagerError.noTokenAvailable:
                 error = TunnelError.startingTunnelWithoutAuthToken(internalError: internalError)
-                return try await failStartupAfterShutdown(dueTo: error)
+                let managedToShutdown = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
+                needsBackoff = !managedToShutdown
             default:
                 error = TunnelError.otherTunnelStartError(internalError: internalError)
+                needsBackoff = startupOptions.startupMethod == .automaticOnDemand
             }
 
             if startupOptions.startupMethod == .automaticOnDemand {
@@ -963,7 +974,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // expired.  In either case it should be enough to record the manual failures
                 // for these prerequisited to avoid flooding our metrics.
                 providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken(error))
-                await waitBeforeFailingStartup()
             } else {
                 loopDetector.connectionFailed(isOnDemand: false)
 
@@ -975,7 +985,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents.fire(.reportConnectionAttempt(attempt: .failure, source: .start))
             }
 
-            Logger.networkProtection.error("🔴 Stopping VPN because startup prerequisites were not met")
+            if needsBackoff {
+                await backOffBeforeFailingStartup()
+            }
+
+            Logger.networkProtection.error("🔴 Interrupting tunnel start as preconditions weren't met: \(error)")
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
@@ -1010,7 +1024,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
                 // cycling.
-                await waitBeforeFailingStartup()
+                await backOffBeforeFailingStartup()
             }
 
             let errorDescription = (error as? LocalizedError)?.localizedDescription ?? String(describing: error)
@@ -1024,32 +1038,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
-    }
-
-    @MainActor
-    private func failStartupAfterShutdown(dueTo error: Error) async throws {
-        defer {
-            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
-            Logger.networkProtection.error("🔴 Shutting down VPN: \(error)")
-        }
-
-        switch await shutdown(dueTo: error) {
-        case .onDemandDisabled:
-            // Throwing here cancels the start attempt, and since on-demand is disabled
-            // the VPN shouldn't start again.
-            throw error
-        case .onDemandEnabledAndVPNReasserting:
-            // On-demand is still enabled, so back off before failing this start attempt.
-            await waitBeforeFailingStartup()
-            throw error
-        }
-    }
-
-    @MainActor
-    private func waitBeforeFailingStartup() async {
-        Logger.networkProtection.log("Waiting 15 seconds before failing VPN startup to limit automatic retries")
-        try? await Task.sleep(interval: .seconds(15))
-        Logger.networkProtection.log("VPN startup failure delay finished")
     }
 
     var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod {
@@ -1128,6 +1116,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
             }
         }
+    }
+
+    private func backOffBeforeFailingStartup() async {
+        Logger.networkProtection.log("Waiting 15 seconds before failing VPN startup to limit automatic retries")
+        try? await Task.sleep(interval: .seconds(15))
+        Logger.networkProtection.log("VPN startup failure delay finished")
     }
 
     // MARK: - Tunnel Stop
@@ -1647,30 +1641,26 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         try await updateTunnelConfiguration(updateMethod: .useConfiguration(tunnelConfiguration), reassert: true, attemptSource: .failureRecovery)
     }
 
-    @MainActor
-    func handleAccessRevoked(dueTo error: Error) async {
-        defaults.enableEntitlementMessaging()
-        notificationsPresenter.showEntitlementNotification()
-
-        // We add a delay here so the notification has a chance to show up
-        try? await Task.sleep(interval: .seconds(5))
-
-        switch await self.shutdown(dueTo: error) {
-        case .onDemandDisabled:
-            await cancelTunnel(with: error)
-        case .onDemandEnabledAndVPNReasserting:
-            break
-        }
+    enum AuthNotification {
+        case subscriptionExpired
+        case userNeedsToOpenApp
     }
 
-    private enum ShutdownResult {
-        /// On demand was disabled successfully
-        case onDemandDisabled
+    @MainActor
+    func handleAccessRevoked(dueTo error: Error, notification: AuthNotification) async -> Bool {
+        switch notification {
+        case .subscriptionExpired:
+            defaults.enableEntitlementMessaging()
+            notificationsPresenter.showEntitlementNotification()
 
-        /// On-demand was not disabled successfully, likely because the OS doesn't support it, but
-        /// we put the VPN in "reasserting" mode which shows "Connecting..." but lets internet traffic
-        /// through.
-        case onDemandEnabledAndVPNReasserting
+            // We add a delay here so the notification has a chance to show up
+            try? await Task.sleep(interval: .seconds(5))
+        case .userNeedsToOpenApp:
+            // No notification for this case yet.
+            break
+        }
+
+        return await shutdown(dueTo: error)
     }
 
     /// Tries to shut down the tunnel disabling on-demand.
@@ -1685,13 +1675,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// - Returns: `true` on success, `false` on failure
     ///
     @MainActor
-    private func shutdown(dueTo error: Error) async -> ShutdownResult {
+    private func shutdown(dueTo error: Error) async -> Bool {
         Logger.networkProtection.log("Shutting down due to: \(error.localizedDescription, privacy: .public)")
 
         do {
             try await disableOnDemandIfSupportedByOS()
 
-            return .onDemandDisabled
+            return true
         } catch {
             Logger.networkProtection.debug("Shutdown cancelled, probably because the OS does not support disabling on-demand: \(error.localizedDescription, privacy: .public)")
 
@@ -1701,14 +1691,16 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // Subscription recovery must not undo this guard if the extension process restarts.
             startupGuard.blockStartup()
 
-            // We don't want to be firing monitoring pixels for failures from this point onward...
-            await stopMonitors()
+            if hasStartedSuccessfully {
+                // We don't want to be firing monitoring pixels for failures from this point onward...
+                await stopMonitors()
 
-            // We show some visual indication that something's off, so the user can chose to
-            // manually stop the VPN.
-            reasserting = true
+                // We show some visual indication that something's off, so the user can chose to
+                // manually stop the VPN.
+                reasserting = true
+            }
 
-            return .onDemandEnabledAndVPNReasserting
+            return false
         }
     }
 
@@ -2049,7 +2041,7 @@ extension PacketTunnelProvider: TunnelStateProviding {
 extension PacketTunnelProvider: TunnelLifecycleManaging {
     // cancelTunnel(with:) — already internal @MainActor
     // resetRegistrationKey() — already internal @MainActor
-    // handleAccessRevoked(dueTo:) — already internal @MainActor
+    // handleAccessRevoked(dueTo:notification:) — already internal @MainActor
 
     func updateTunnelConfiguration(updateMethod: TunnelUpdateMethod, reassert: Bool, attemptSource: ConnectionAttemptSource) async throws {
         try await updateTunnelConfiguration(updateMethod: updateMethod, reassert: reassert, regenerateKey: false, attemptSource: attemptSource)

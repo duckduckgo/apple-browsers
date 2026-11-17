@@ -233,6 +233,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
             finish(entry.requestID, error: .denied, withdrawingPrompt: false)
             return
         }
+        // Nothing about `requestAccess` itself is stored: Always and Never answer only this prompt.
+        let decision: ClientToolPermissionDecision = switch (decision, entry.accessToolNames) {
+        case (.always, .some): .allowAccess(excluding: [])
+        case (.never, .some): .dontAllow
+        default: decision
+        }
         switch decision {
         case .always:
             if !entry.tool.asksEveryTime {

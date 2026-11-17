@@ -32,6 +32,8 @@ final class BrowserToolPermissionPromptPresenter {
         let ownerTabID: TabIdentifier
         weak var collection: TabCollectionViewModel?
         weak var prompter: (any ClientToolPermissionPrompting)?
+        // Kept for the prompt's life, so tools taken out stay out when its popover is rebuilt.
+        let selection: BrowserToolAccessSelection
     }
 
     private struct Shown {
@@ -65,7 +67,8 @@ final class BrowserToolPermissionPromptPresenter {
               !collection.isBurner,
               let windowController = windowController(for: collection) else { return false }
 
-        requests.append(Request(prompt: prompt, ownerTabID: ownerTabID, collection: collection, prompter: prompter))
+        requests.append(Request(prompt: prompt, ownerTabID: ownerTabID, collection: collection, prompter: prompter,
+                                selection: BrowserToolAccessSelection()))
         observeSelection(of: collection)
         if collection.selectedTabViewModel?.tab.uuid != ownerTabID,
            let index = collection.indexInAllTabs(where: { $0.uuid == ownerTabID }) {
@@ -150,7 +153,7 @@ final class BrowserToolPermissionPromptPresenter {
         let prompt = request.prompt
         let popover = NSPopover()
         popover.behavior = .applicationDefined
-        let selection = BrowserToolAccessSelection()
+        let selection = request.selection
         let content = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt, selection: selection) { [weak self] decision in
             self?.answer(prompt.requestID, with: decision)
         })

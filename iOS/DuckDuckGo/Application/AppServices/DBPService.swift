@@ -23,6 +23,7 @@ import Core
 import Common
 import FoundationExtensions
 import BrowserServicesKit
+import PrivacyConfig
 import PixelKit
 import Networking
 import Subscription

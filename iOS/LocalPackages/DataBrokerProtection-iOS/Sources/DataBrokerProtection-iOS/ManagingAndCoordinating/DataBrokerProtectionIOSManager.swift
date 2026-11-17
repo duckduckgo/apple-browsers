@@ -1038,21 +1038,13 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionViewControllerProvider {
-    static let shipReviewDashboardURL = "https://euw-dev1.duckduckgo.com/dbp#debug"
-
     public func dataBrokerProtectionViewController(freeScanEntryPoint: FreemiumDBPEntryPoint?) -> DataBrokerProtectionViewController {
-        // Ship review build: point the dashboard at the dev box and add the test records, so testers set nothing up.
+        // Ship review build: the dashboard address defaults to the dev box in DataBrokerProtectionWebUIURLSettings.
         // A developer's Debug build takes the dashboard address from DBP_DASHBOARD_URL when it is launched with one.
         let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
 #if DEBUG
         if let dashboardURL = ProcessInfo.processInfo.environment["DBP_DASHBOARD_URL"] {
             webUISettings.setCustomURL(dashboardURL)
-            webUISettings.setURLType(.custom)
-        }
-#else
-        // Only the first time: after that the tester's own pick on the debug screen wins.
-        if webUISettings.customURL == nil {
-            webUISettings.setCustomURL(Self.shipReviewDashboardURL)
             webUISettings.setURLType(.custom)
         }
 #endif

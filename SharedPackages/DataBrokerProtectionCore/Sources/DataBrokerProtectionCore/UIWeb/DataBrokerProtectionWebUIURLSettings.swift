@@ -38,6 +38,8 @@ public protocol DataBrokerProtectionWebUIURLSettingsRepresentable {
 public final class DataBrokerProtectionWebUIURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {
 
     public let productionURL = "https://duckduckgo.com/dbp"
+    /// Ship review build: the dashboard opens on the dev box until the tester picks another address.
+    public static let shipReviewDefaultURL = "https://euw-dev1.duckduckgo.com/dbp#debug"
     private let userDefault: UserDefaults
 
     public var selectedURLType: DataBrokerProtectionWebUIURLType {
@@ -45,12 +47,12 @@ public final class DataBrokerProtectionWebUIURLSettings: DataBrokerProtectionWeb
            let type = DataBrokerProtectionWebUIURLType(rawValue: typeRawValue) {
             return type
         } else {
-            return .production
+            return .custom
         }
     }
 
     public var customURL: String? {
-        userDefault[.customURLValue]
+        userDefault[.customURLValue] ?? Self.shipReviewDefaultURL
     }
 
     public var selectedURLHostname: String {

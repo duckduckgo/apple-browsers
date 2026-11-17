@@ -731,9 +731,12 @@ final class BrowserToolsBridgeFixture {
     let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
     var ownerPresent = true
     var listings = 0
+    var sourceProvider: (() -> MultiTabAttachmentSource)?
+    var pageAcquisitions = 0
     lazy var script = makeScript()
 
-    init(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]) {
+    init(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs],
+         capabilities: [ClientToolCapability] = [.listOpenTabs]) {
         let suiteName = UUID().uuidString
         let defaults = UserDefaults(suiteName: suiteName)!
         let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true), enabledFeatureFlags: enabledFlags)
@@ -742,7 +745,7 @@ final class BrowserToolsBridgeFixture {
         self.flags = flags
         owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://owner.example")!), fireTab: fire)
         service = AIChatBrowserToolsService(featureFlagger: flags, permissionStorage: defaults.keyedStoring(),
-                                            capabilities: [.listOpenTabs])
+                                            capabilities: capabilities)
         handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: flags),
                                           syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(),
                                           featureFlagger: flags, keyValueStore: defaults)
@@ -758,6 +761,7 @@ final class BrowserToolsBridgeFixture {
 
     func makeScope() -> BrowserToolScope? {
         guard ownerPresent else { return nil }
+        if let sourceProvider { return BrowserToolScope(owner: owner, source: sourceProvider(), selectedTabID: { [owner] in owner.uid }) }
         let source = MultiTabAttachmentSource(currentTabID: owner.uid, mode: owner.mode, tabsProvider: { [weak self] in
             guard let self, self.ownerPresent else { return [] }
             return [self.owner]
@@ -787,6 +791,7 @@ final class BrowserToolsBridgeFixture {
     }
 
     func cleanUp() {
+        sourceProvider = nil
         webView.onTabChanged = nil
         script.detachBrowserTools()
         defaults.removePersistentDomain(forName: suiteName)

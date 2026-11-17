@@ -56,7 +56,8 @@ final class AIChatBrowserToolsService {
 
     private var supportedCapabilities: [ClientToolCapability] = [
         .listOpenTabs,
-        .switchToTab
+        .switchToTab,
+        .readTabContent
     ]
 
     init(featureFlagger: any FeatureFlagger,
@@ -85,7 +86,8 @@ final class AIChatBrowserToolsService {
         }
         return [
             ListOpenTabsBrowserTool(scopeProvider: scopeProvider),
-            SwitchToTabBrowserTool(scopeProvider: scopeProvider)
+            SwitchToTabBrowserTool(scopeProvider: scopeProvider),
+            ReadTabContentBrowserTool(scopeProvider: scopeProvider, reader: BrowserToolPageContentReader())
         ]
     }
 }
@@ -446,7 +448,9 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
             .aiChatBrowserToolListOpenTabs
         case .switchToTab:
             .aiChatBrowserToolSwitchToTab
-        case .featureEnabled, .searchHistory, .readTabContent, .findInPage, .highlightInPage,
+        case .readTabContent:
+            .aiChatBrowserToolReadTabContent
+        case .featureEnabled, .searchHistory, .findInPage, .highlightInPage,
              .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks:
             nil
         }

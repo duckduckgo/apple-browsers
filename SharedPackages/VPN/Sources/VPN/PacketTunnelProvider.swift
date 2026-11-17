@@ -405,7 +405,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private func subscriptionAccessErrorHandler(_ error: Error) async {
         switch error {
         case TunnelError.vpnAccessRevoked:
-            if await handleAccessRevoked(dueTo: error, notification: .subscriptionExpired) {
+            if await handleAccessRevoked(dueTo: error, notification: .signedOut) {
                 await cancelTunnel(with: error)
             }
         default:

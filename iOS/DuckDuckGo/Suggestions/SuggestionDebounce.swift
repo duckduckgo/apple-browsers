@@ -32,7 +32,7 @@ extension Publisher where Output == String, Failure == Never {
         Deferred {
             var isFirstQuery = true
             return self.map { text -> AnyPublisher<SuggestionRequest, Never> in
-                let isEnabled = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
+                let isEnabled = featureFlagger.isFeatureOn(.debounceLogic2026)
                 let sendImmediately = isFirstQuery || text.isEmpty
                 isFirstQuery = text.isEmpty
                 let remote = SuggestionRequest(query: text, includeRemoteSuggestions: true)

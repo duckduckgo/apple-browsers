@@ -47,7 +47,9 @@ final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificat
     }
 
     var isEligible: Bool {
-        guard featureFlagger.isFeatureOn(.promoQueueUpdateAvailablePromo), let updateController else { return false }
+        guard featureFlagger.isFeatureOn(.promoQueueUpdateAvailablePromo),
+              !featureFlagger.isFeatureOn(.moreProminentUpdates),
+              let updateController else { return false }
         return updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators
     }
 

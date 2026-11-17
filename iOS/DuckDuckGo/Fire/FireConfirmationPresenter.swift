@@ -37,6 +37,7 @@ struct FireConfirmationPresenter {
                                  isSingleTab: Bool = false,
                                  chatCount: Int? = nil,
                                  browsingMode: BrowsingMode,
+                                 isChatSyncEnabled: Bool = false,
                                  onDeleteAllChats: (() -> Void)? = nil,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
@@ -51,6 +52,7 @@ struct FireConfirmationPresenter {
                                       isSingleTab: isSingleTab,
                                       chatCount: chatCount,
                                       browsingMode: browsingMode,
+                                      isChatSyncEnabled: isChatSyncEnabled,
                                       onDeleteAllChats: onDeleteAllChats,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)
@@ -65,6 +67,7 @@ struct FireConfirmationPresenter {
                                  isSingleTab: Bool = false,
                                  chatCount: Int? = nil,
                                  browsingMode: BrowsingMode,
+                                 isChatSyncEnabled: Bool = false,
                                  onDeleteAllChats: (() -> Void)? = nil,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
@@ -72,7 +75,19 @@ struct FireConfirmationPresenter {
             assertionFailure("No key window available")
             return
         }
-        presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, isSingleTab: isSingleTab, chatCount: chatCount, browsingMode: browsingMode, onDeleteAllChats: onDeleteAllChats, onConfirm: onConfirm, onCancel: onCancel)
+        presentScopeConfirmationSheet(on: viewController,
+                                      from: window,
+                                      sourceRect: sourceRect,
+                                      tabViewModel: tabViewModel,
+                                      pixelSource: pixelSource,
+                                      fireContext: fireContext,
+                                      isSingleTab: isSingleTab,
+                                      chatCount: chatCount,
+                                      browsingMode: browsingMode,
+                                      isChatSyncEnabled: isChatSyncEnabled,
+                                      onDeleteAllChats: onDeleteAllChats,
+                                      onConfirm: onConfirm,
+                                      onCancel: onCancel)
     }
 
     // MARK: - Scope-based Confirmation
@@ -88,6 +103,7 @@ struct FireConfirmationPresenter {
                                                isSingleTab: Bool,
                                                chatCount: Int?,
                                                browsingMode: BrowsingMode,
+                                               isChatSyncEnabled: Bool,
                                                onDeleteAllChats: (() -> Void)?,
                                                onConfirm: @escaping (FireRequest) -> Void,
                                                onCancel: @escaping () -> Void) {
@@ -97,6 +113,7 @@ struct FireConfirmationPresenter {
                                                         isSingleTab: isSingleTab,
                                                         chatCount: chatCount,
                                                         browsingMode: browsingMode,
+                                                        isChatSyncEnabled: isChatSyncEnabled,
                                                         onDeleteAllChats: onDeleteAllChats,
                                                         onConfirm: { [weak viewController] fireOptions in
                                                             viewController?.dismiss(animated: true) {

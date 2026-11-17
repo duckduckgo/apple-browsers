@@ -40,7 +40,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     enum FireContext {
         /// Standard fire confirmation with "Delete All" and optional "Delete This Tab/Chat" buttons.
         case `default`(daxDialogsManager: DaxDialogsManaging)
-        /// Contextual AI chat deletion with a single "Delete Chat" button.
         case contextualChat(onDelete: () -> Void)
         /// Duck.ai fire onboarding: single "Delete Chat" button scoped to the AI tab.
         case duckAIOnboarding
@@ -98,6 +97,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          browsingMode: BrowsingMode,
+         isChatSyncEnabled: Bool = false,
          onDeleteAllChats: (() -> Void)? = nil,
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
@@ -119,12 +119,23 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             chatCount: chatCount,
             isFlagOn: featureFlagger.isFeatureOn(.fireButtonDeleteAllChats))
 
-        self.headerTitle = Self.computeHeaderTitle(fireContext: fireContext,
-                                                   isSingleChatConfirmation: isSingleChatConfirmation,
-                                                   deleteAllChatsLayout: deleteAllChatsLayout,
-                                                   showDeleteAllOnlyForSingleTab: showDeleteAllOnlyForSingleTab,
-                                                   browsingMode: browsingMode,
-                                                   appSettings: appSettings)
+        if deleteAllChatsLayout == .none {
+            self.headerTitle = Self.computeHeaderTitle(fireContext: fireContext,
+                                                       isSingleChatConfirmation: isSingleChatConfirmation,
+                                                       showDeleteAllOnlyForSingleTab: showDeleteAllOnlyForSingleTab,
+                                                       browsingMode: browsingMode,
+                                                       appSettings: appSettings)
+            self.subtitle = Self.computeSubtitle(fireContext: fireContext,
+                                                 tabViewModel: tabViewModel,
+                                                 browsingMode: browsingMode,
+                                                 isSingleChatConfirmation: isSingleChatConfirmation,
+                                                 downloadManager: downloadManager,
+                                                 keyValueStore: keyValueStore,
+                                                 appSettings: appSettings)
+        } else {
+            self.headerTitle = UserText.scopedFireConfirmationDeleteChatsTitle
+            self.subtitle = Self.deleteAllChatsSubtitle(browsingMode: browsingMode, isChatSyncEnabled: isChatSyncEnabled)
+        }
         self.showAnimation = !(isRefinementsEnabled && appSettings.currentFireButtonAnimation == .none)
         let buttons = Self.makeButtons(fireContext: fireContext,
                                         tabViewModel: tabViewModel,
@@ -137,13 +148,13 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                         onDeleteAllChats: onDeleteAllChats,
                                         onConfirm: onConfirm,
                                         onCancel: onCancel)
-        if case .default = fireContext, featureFlagger.isFeatureOn(.slideToDelete) {
+        if featureFlagger.isFeatureOn(.slideToDelete) {
             self.buttons = buttons.map { button in
                 let title: String
-                switch button.accessibilityIdentifier {
-                case AccessibilityIdentifiers.deleteAll:
+                switch (fireContext, button.accessibilityIdentifier) {
+                case (.default, AccessibilityIdentifiers.deleteAll):
                     title = UserText.scopedFireConfirmationSlideToDeleteAll
-                case AccessibilityIdentifiers.deleteAllChats:
+                case (_, AccessibilityIdentifiers.deleteAllChats):
                     title = UserText.scopedFireConfirmationSlideToDeleteAllChats
                 default:
                     return button
@@ -156,13 +167,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         } else {
             self.buttons = buttons
         }
-        self.subtitle = Self.computeSubtitle(fireContext: fireContext,
-                                             tabViewModel: tabViewModel,
-                                             browsingMode: browsingMode,
-                                             isSingleChatConfirmation: isSingleChatConfirmation,
-                                             downloadManager: downloadManager,
-                                             keyValueStore: keyValueStore,
-                                             appSettings: appSettings)
     }
 
     // MARK: - Public Functions
@@ -209,14 +213,17 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                              isSingleChatConfirmation: Bool,
                                              chatCount: Int?,
                                              isFlagOn: Bool) -> DeleteAllChatsLayout {
-        guard case .default = fireContext, isSingleChatConfirmation, isFlagOn,
-              let chatCount, chatCount > 0 else { return .none }
-        return chatCount == 1 ? .allChatsOnly : .withThisChat
+        guard isSingleChatConfirmation, isFlagOn, let chatCount, chatCount > 0 else { return .none }
+        switch fireContext {
+        case .default, .contextualChat:
+            return chatCount == 1 ? .allChatsOnly : .withThisChat
+        default:
+            return .none
+        }
     }
 
     /// Builds the ordered list of action buttons for the confirmation sheet.
     ///
-    /// - Contextual chat: single "Delete Chat" button
     /// - Duck.ai fire onboarding: single "Delete Chat" button (primary) for AI tabs only
     /// - Normal tab + refinements: "Delete This Tab" (primary) then "Delete All" (secondary)
     /// - Default: "Delete All" (primary), optionally "Delete This Tab" (secondary) if tab supports history
@@ -233,7 +240,9 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                     onCancel: @escaping () -> Void) -> [FireConfirmationButton] {
         switch fireContext {
         case .contextualChat(let onDelete):
-            // Single "Delete Chat" button calling contextual onDelete
+            if deleteAllChatsLayout != .none {
+                return makeChatButtons(layout: deleteAllChatsLayout, onDeleteThisChat: onDelete, onDeleteAllChats: onDeleteAllChats)
+            }
             return [FireConfirmationButton(title: UserText.contextualChatDeleteConfirmationButton,
                                style: .primary,
                                action: onDelete,
@@ -279,20 +288,9 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         }
 
         if isSingleChatConfirmation {
-            let thisChatButton = FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteThisChatButton,
-                                                       style: .primary,
-                                                       action: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) },
-                                                       accessibilityIdentifier: AccessibilityIdentifiers.thisTab)
-            switch deleteAllChatsLayout {
-            case .none:
-                return [thisChatButton]
-            case .withThisChat, .allChatsOnly:
-                let allChatsButton = FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllChatsButton,
-                                                           style: deleteAllChatsLayout == .allChatsOnly ? .primary : .secondary,
-                                                           action: { onDeleteAllChats?() },
-                                                           accessibilityIdentifier: AccessibilityIdentifiers.deleteAllChats)
-                return deleteAllChatsLayout == .allChatsOnly ? [allChatsButton] : [thisChatButton, allChatsButton]
-            }
+            return makeChatButtons(layout: deleteAllChatsLayout,
+                                   onDeleteThisChat: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) },
+                                   onDeleteAllChats: onDeleteAllChats)
         }
 
         let deleteAllAction = { burnAll(browsingMode: browsingMode, source: source, onConfirm: onConfirm) }
@@ -357,11 +355,26 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         onConfirm(request)
     }
 
+    private static func makeChatButtons(layout: DeleteAllChatsLayout,
+                                        onDeleteThisChat: @escaping () -> Void,
+                                        onDeleteAllChats: (() -> Void)?) -> [FireConfirmationButton] {
+        let thisChatButton = FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteThisChatButton,
+                                                   style: .primary,
+                                                   action: onDeleteThisChat,
+                                                   accessibilityIdentifier: AccessibilityIdentifiers.thisTab)
+        guard layout != .none, let onDeleteAllChats else { return [thisChatButton] }
+
+        let allChatsButton = FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllChatsButton,
+                                                   style: layout == .allChatsOnly ? .primary : .secondary,
+                                                   action: onDeleteAllChats,
+                                                   accessibilityIdentifier: AccessibilityIdentifiers.deleteAllChats)
+        return layout == .allChatsOnly ? [allChatsButton] : [thisChatButton, allChatsButton]
+    }
+
     // MARK: - Header Title
 
     private static func computeHeaderTitle(fireContext: FireContext,
                                            isSingleChatConfirmation: Bool,
-                                           deleteAllChatsLayout: DeleteAllChatsLayout,
                                            showDeleteAllOnlyForSingleTab: Bool,
                                            browsingMode: BrowsingMode,
                                            appSettings: AppSettings) -> String {
@@ -378,9 +391,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return UserText.aiChatHistoryDeleteAllConfirmationTitle(count: count)
 
         case .default:
-            if deleteAllChatsLayout == .allChatsOnly {
-                return UserText.scopedFireConfirmationDeleteAllChatsTitle
-            }
             if isSingleChatConfirmation {
                 return UserText.contextualChatDeleteConfirmationTitle
             }
@@ -397,6 +407,15 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
 
     // MARK: - Subtitle
+
+    private static func deleteAllChatsSubtitle(browsingMode: BrowsingMode, isChatSyncEnabled: Bool) -> String {
+        if browsingMode == .fire {
+            return UserText.scopedFireConfirmationDeleteChatsFireSubtitle
+        }
+        return isChatSyncEnabled
+            ? UserText.scopedFireConfirmationDeleteChatsSyncedSubtitle
+            : UserText.scopedFireConfirmationDeleteChatsPinnedSubtitle
+    }
 
     /// Computes the subtitle text for the confirmation dialog.
     ///

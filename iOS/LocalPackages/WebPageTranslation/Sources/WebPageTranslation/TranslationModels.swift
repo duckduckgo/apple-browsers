@@ -30,6 +30,7 @@ public enum TranslationModelsError: DDGError {
     case unknownFile(String)
     case decompressedSizeMismatch(file: String)
     case decompressedHashMismatch(file: String)
+    case manifestUnavailable
 
     public static var errorDomain: String { "com.duckduckgo.webPageTranslation.TranslationModelsError" }
 
@@ -39,6 +40,7 @@ public enum TranslationModelsError: DDGError {
         case .unknownFile: return 2
         case .decompressedSizeMismatch: return 3
         case .decompressedHashMismatch: return 4
+        case .manifestUnavailable: return 5
         }
     }
 
@@ -48,6 +50,7 @@ public enum TranslationModelsError: DDGError {
         case .unknownFile(let name): return "The manifest has no entry for \(name)"
         case .decompressedSizeMismatch(let file): return "Decompressed \(file) has the wrong size"
         case .decompressedHashMismatch(let file): return "Decompressed \(file) doesn't match its sha256"
+        case .manifestUnavailable: return "No translation manifest has been fetched yet"
         }
     }
 }
@@ -66,15 +69,20 @@ public final class TranslationModels: @unchecked Sendable {
         manifestStore = TranslationManifestStore(keyValueStore: keyValueStore, session: session)
     }
 
-    /// The last manifest saved on this device.
+    /// The newest manifest fetched since launch, else the saved one. When there's neither, fetches one in the background.
     public var manifest: TranslationManifest? {
-        manifestStore.cached
+        guard let manifest = manifestStore.cached else {
+            Task { await refreshManifest() }
+            return nil
+        }
+
+        return manifest
     }
 
     /// Fetches the manifest, then deletes installed pairs it no longer lists. Without a manifest, nothing is deleted.
-    public func refreshManifest() async -> TranslationManifest? {
+    public func refreshManifest() async {
         guard let manifest = await manifestStore.refresh() else {
-            return nil
+            return
         }
 
         for bundle in store.installed() where manifest.models[bundle.id] == nil {
@@ -84,12 +92,14 @@ public final class TranslationModels: @unchecked Sendable {
                 Logger.webPageTranslation.error("Deleting translation pair \(bundle.id, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             }
         }
-        return manifest
     }
 
     /// Installs a pair the manifest lists, reporting progress from 0 to 1.
     public func install(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
-        guard let manifest, let pair = manifest.models[pairID], let bundle = manifest.bundle(for: pairID) else {
+        guard let manifest else {
+            return AsyncThrowingStream { $0.finish(throwing: TranslationModelsError.manifestUnavailable) }
+        }
+        guard let pair = manifest.models[pairID], let bundle = manifest.bundle(for: pairID) else {
             return AsyncThrowingStream { $0.finish(throwing: TranslationModelsError.unknownPair(pairID)) }
         }
 

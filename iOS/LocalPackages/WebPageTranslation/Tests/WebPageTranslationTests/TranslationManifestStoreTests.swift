@@ -105,6 +105,31 @@ extension StubbedNetworkTests {
 
             #expect(await store.refresh() == (try TranslationManifest.decode(fixture)))
             #expect(keyValueStore.underlyingDict.isEmpty)
+            #expect(store.cached == (try TranslationManifest.decode(fixture)))
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("an ETag is sent only when the saved manifest can be read", .timeLimit(.minutes(1)))
+        func unreadableCacheSendsNoETag() async throws {
+            keyValueStore.underlyingDict[TranslationManifestStore.Key.manifest] = Data("<html>".utf8)
+            keyValueStore.underlyingDict[TranslationManifestStore.Key.etag] = "v1"
+            let store = makeStore { _ in (response(200, etag: "v2"), fixture) }
+
+            #expect(await store.refresh() == (try TranslationManifest.decode(fixture)))
+            #expect(StubURLProtocol.requests.first?.value(forHTTPHeaderField: "If-None-Match") == nil)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("a refresh started while another runs makes no request", .timeLimit(.minutes(1)))
+        func overlappingRefreshMakesNoRequest() async throws {
+            let store = makeStore { _ in (response(200, etag: "v1"), fixture) }
+            StubURLProtocol.delay = 0.3
+
+            async let first = store.refresh()
+            async let second = store.refresh()
+            _ = await (first, second)
+
+            #expect(StubURLProtocol.requests.count == 1)
         }
 
         // MARK: - Helpers

@@ -45,7 +45,7 @@ extension StubbedNetworkTests {
         @Test("install downloads, decompresses and checks the pair's files", .timeLimit(.minutes(1)))
         func installDecompressesAndVerifies() async throws {
             let models = try makeModels(manifest: manifest(), file: zst)
-            _ = await models.refreshManifest()
+            await models.refreshManifest()
 
             for try await _ in models.install("fr-en") {}
 
@@ -58,7 +58,7 @@ extension StubbedNetworkTests {
         @Test("a wrong decompressed hash fails the install", .timeLimit(.minutes(1)))
         func decompressedHashMismatchFails() async throws {
             let models = try makeModels(manifest: manifest(decompressedHash: String(repeating: "0", count: 64)), file: zst)
-            _ = await models.refreshManifest()
+            await models.refreshManifest()
 
             await #expect(throws: TranslationModelsError.decompressedHashMismatch(file: "hello.txt")) {
                 for try await _ in models.install("fr-en") {}
@@ -71,7 +71,7 @@ extension StubbedNetworkTests {
         func corruptZstFails() async throws {
             let notZstd = Data("notzstd".utf8)
             let models = try makeModels(manifest: manifest(compressed: notZstd), file: notZstd)
-            _ = await models.refreshManifest()
+            await models.refreshManifest()
 
             await #expect(throws: (any Error).self) { for try await _ in models.install("fr-en") {} }
             #expect(models.installed().isEmpty)
@@ -81,20 +81,33 @@ extension StubbedNetworkTests {
         @Test("installing a pair the manifest doesn't list throws", .timeLimit(.minutes(1)))
         func unknownPairThrows() async throws {
             let models = try makeModels(manifest: manifest(), file: zst)
-            _ = await models.refreshManifest()
+            await models.refreshManifest()
 
             await #expect(throws: TranslationModelsError.unknownPair("xx-en")) { for try await _ in models.install("xx-en") {} }
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("installing before the manifest is available throws manifestUnavailable, then the manifest arrives", .timeLimit(.minutes(1)))
+        func installWithoutManifestThrowsThenFetches() async throws {
+            let models = try makeModels(manifest: manifest(), file: zst)
+
+            await #expect(throws: TranslationModelsError.manifestUnavailable) { for try await _ in models.install("fr-en") {} }
+            for _ in 0..<100 where models.manifest == nil {
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+
+            #expect(models.manifest?.models["fr-en"] != nil)
         }
 
         @available(iOS 16, macOS 13, *)
         @Test("refreshing deletes installed pairs the manifest no longer lists", .timeLimit(.minutes(1)))
         func refreshPrunesDroppedPairs() async throws {
             let models = try makeModels(manifest: manifest(), file: zst)
-            _ = await models.refreshManifest()
+            await models.refreshManifest()
             for try await _ in models.install("fr-en") {}
 
             serve(manifest: manifest(pairID: "de-en"), file: zst)
-            _ = await models.refreshManifest()
+            await models.refreshManifest()
 
             #expect(models.installed().isEmpty)
         }
@@ -103,7 +116,7 @@ extension StubbedNetworkTests {
         @Test("a refresh that gets no manifest deletes nothing", .timeLimit(.minutes(1)))
         func failedRefreshDoesNotPrune() async throws {
             let models = try makeModels(manifest: manifest(), file: zst)
-            _ = await models.refreshManifest()
+            await models.refreshManifest()
             for try await _ in models.install("fr-en") {}
 
             StubURLProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
@@ -111,7 +124,7 @@ extension StubbedNetworkTests {
                                                 keyValueStore: InMemoryThrowingKeyValueStore(),
                                                 session: .localModels(configuration: StubURLProtocol.configuration()))
 
-            #expect(await offline.refreshManifest() == nil)
+            await offline.refreshManifest()
             #expect(offline.installed().map(\.id) == ["fr-en"])
         }
 

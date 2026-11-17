@@ -35,6 +35,9 @@ public final class TranslationManifestStore: @unchecked Sendable {
     private let keyValueStore: ThrowingKeyValueStoring
     private let session: URLSession
     private let url: URL
+    private let lock = NSLock()
+    private var latest: TranslationManifest?
+    private var isFetching = false
 
     public init(keyValueStore: ThrowingKeyValueStoring, session: URLSession, url: URL = TranslationManifestStore.defaultURL) {
         self.keyValueStore = keyValueStore
@@ -42,8 +45,13 @@ public final class TranslationManifestStore: @unchecked Sendable {
         self.url = url
     }
 
-    /// The last saved manifest, or nil when there's none or it can't be read.
+    /// The newest manifest fetched since launch, else the last saved one; nil when there's neither.
     public var cached: TranslationManifest? {
+        lock.withLock { latest } ?? saved
+    }
+
+    /// The last saved manifest, or nil when there's none or it can't be read.
+    private var saved: TranslationManifest? {
         guard let data = (try? keyValueStore.object(forKey: Key.manifest)) as? Data else {
             return nil
         }
@@ -51,10 +59,17 @@ public final class TranslationManifestStore: @unchecked Sendable {
         return try? TranslationManifest.decode(data)
     }
 
-    /// Fetches the manifest when the server has a newer one. Any failure returns the cached copy.
+    /// Fetches the manifest when the server has a newer one. Any failure, or a fetch already running, returns the cached copy.
     public func refresh() async -> TranslationManifest? {
+        // One fetch at a time, so two can't interleave their manifest and ETag saves.
+        guard beginFetching() else {
+            return cached
+        }
+        defer { endFetching() }
+
         var request = URLRequest(url: url)
-        if let etag = (try? keyValueStore.object(forKey: Key.etag)) as? String {
+        // Without a readable saved copy, a 304 would leave us with nothing.
+        if saved != nil, let etag = (try? keyValueStore.object(forKey: Key.etag)) as? String {
             request.setValue(etag, forHTTPHeaderField: "If-None-Match")
         }
 
@@ -65,6 +80,8 @@ public final class TranslationManifestStore: @unchecked Sendable {
             return cached
         }
 
+        // Kept in memory too, so a failed save doesn't lose it for this launch.
+        lock.withLock { latest = manifest }
         // The ETag is saved only once its manifest is, so a failed save can't pair it with an older copy
         do {
             try keyValueStore.set(data, forKey: Key.manifest)
@@ -73,5 +90,20 @@ public final class TranslationManifestStore: @unchecked Sendable {
             Logger.webPageTranslation.error("Saving the translation manifest failed: \(error.localizedDescription, privacy: .public)")
         }
         return manifest
+    }
+
+    private func beginFetching() -> Bool {
+        lock.withLock {
+            guard !isFetching else {
+                return false
+            }
+
+            isFetching = true
+            return true
+        }
+    }
+
+    private func endFetching() {
+        lock.withLock { isFetching = false }
     }
 }

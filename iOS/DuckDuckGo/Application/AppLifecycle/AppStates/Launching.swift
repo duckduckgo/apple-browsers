@@ -149,6 +149,7 @@ struct Launching: LaunchingHandling {
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                       faviconStoring: favicons,
                                       duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+        syncService.registerAuditLogBackgroundTask(featureFlagger: featureFlagger)
         launchBreadcrumb.mark(.sync)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()

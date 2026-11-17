@@ -675,6 +675,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219707245498818?focus=true
     case syncLoginNotification
 
+    /// Background refresh for Sync audit-log polling.
+    case syncAuditLogBackgroundPolling
+
     /// NA Experiment: add VPN as a download reason, with its own onboarding branch that offers the subscription.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220388646436579
     case onboardingVPNDownloadReasonExperiment
@@ -1223,6 +1226,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.loginAuditLog))
         case .syncLoginNotification:
             Config(source: .remoteReleasable(SyncSubfeature.loginNotification))
+        case .syncAuditLogBackgroundPolling:
+            Config(source: .remoteReleasable(SyncSubfeature.auditLogBackgroundPolling))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .pageSignals:

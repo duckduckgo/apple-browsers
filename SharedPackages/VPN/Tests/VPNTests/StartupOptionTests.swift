@@ -92,6 +92,28 @@ final class StartupOptionsTests: XCTestCase {
 
     // MARK: - VPN Settings Tests
 
+    func testVPNSettingsSnapshotIgnoresLegacySessionHealthEnablement() throws {
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(86400),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var payload = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertNil(payload["sessionHealthTelemetryEnabled"])
+
+        for enabled in [false, true] {
+            payload["sessionHealthTelemetryEnabled"] = enabled
+            let legacyData = try JSONSerialization.data(withJSONObject: payload)
+            let options = StartupOptions(options: [NetworkProtectionOptionKey.settings: legacyData])
+
+            XCTAssertEqual(options.vpnSettings, .set(snapshot))
+        }
+    }
+
     func testVPNSettingsCanBeEncodedAndParsed() throws {
         // Create a VPN settings snapshot
         let settingsSnapshot = VPNSettingsSnapshot(

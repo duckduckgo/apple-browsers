@@ -505,8 +505,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: .app,
-            processStartedAt: processStartedAt,
-            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
+            processStartedAt: processStartedAt)
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default

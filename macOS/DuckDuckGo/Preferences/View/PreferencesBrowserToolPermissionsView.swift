@@ -48,8 +48,8 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
          permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager) {
         self.catalog = catalog
         self.permissions = permissions
-        permissionChanges = permissionManager.permissionPublisher
-            .filter { $0.domain == BrowserToolSitePermissions.domain }
+        // Every write, removal and burn, not only prompt answers.
+        permissionChanges = permissionManager.persistedPermissionsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.reload() }
         reload()

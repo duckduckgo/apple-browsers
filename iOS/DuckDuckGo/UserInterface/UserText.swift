@@ -393,8 +393,6 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
-    public static let bookmarkAllTabs = NSLocalizedString("bookmarkAll.tabs.label", value: "Add all tabs as bookmarks", comment: "Accessibility label")
-
     public static let themeStyleNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
     public static let themeStyleNameLight = NSLocalizedString("theme.name.light", value: "Light", comment: "Light Theme entry")
     public static let themeStyleNameDark = NSLocalizedString("theme.name.dark", value: "Dark", comment: "Dark Theme entry")

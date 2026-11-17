@@ -1456,9 +1456,6 @@
 /* Info message after selecting Bookmark All button */
 "bookmarkAll.tabs.failed" = "Added new bookmarks for all tabs";
 
-/* Accessibility label */
-"bookmarkAll.tabs.label" = "Add all tabs as bookmarks";
-
 /* Confirmation message after selecting Bookmark All button */
 "bookmarkAll.tabs.saved" = "All tabs bookmarked";
 

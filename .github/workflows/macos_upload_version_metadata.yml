@@ -1,6 +1,8 @@
 name: macOS - Upload Version Metadata
 
 on:
+  schedule:
+    - cron: '20 * * * *'
   workflow_dispatch:
     inputs:
       is_critical:

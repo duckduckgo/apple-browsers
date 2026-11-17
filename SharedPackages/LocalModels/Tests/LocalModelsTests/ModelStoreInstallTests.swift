@@ -138,6 +138,20 @@ extension StubbedNetworkTests {
         }
 
         @available(iOS 16, macOS 13, *)
+        @Test("file names that collide with the record, a download or each other are rejected",
+              .timeLimit(.minutes(1)),
+              arguments: [["bundle.json"], ["a.download"], ["a.bin", "a.bin"]])
+        func rejectsCollidingFileNames(names: [String]) async throws {
+            let store = try makeStore()
+            let files = names.map { file("a.bin", name: $0) }
+
+            await #expect(throws: ModelStoreError.invalidName(names.last!)) {
+                try await collect(store.install(ModelBundle(id: "ok", version: "1", files: files)))
+            }
+            #expect(StubURLProtocol.requests.isEmpty)
+        }
+
+        @available(iOS 16, macOS 13, *)
         @Test("a second install of the same id while one runs throws", .timeLimit(.minutes(1)))
         func secondConcurrentInstallThrows() async throws {
             let store = try makeStore()

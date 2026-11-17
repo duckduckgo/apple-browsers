@@ -158,10 +158,14 @@ public final class ModelStore: @unchecked Sendable {
 
     /// Names become path components under `root`, so none may climb out of it or hide in a dot folder.
     private static func validateNames(of bundle: ModelBundle) throws {
-        // The id and each file name are separate path components, so each is checked on its own.
-        let names = [bundle.id] + bundle.files.map(\.name)
-        for name in names {
+        try validateName(bundle.id)
+        var seen: Set<String> = []
+        for name in bundle.files.map(\.name) {
             try validateName(name)
+            // The store writes `bundle.json` and `<name>.download` next to the files, and each file needs its own name.
+            if name == recordName || name.hasSuffix(".download") || !seen.insert(name).inserted {
+                throw ModelStoreError.invalidName(name)
+            }
         }
     }
 

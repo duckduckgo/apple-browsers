@@ -563,6 +563,8 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
     // MARK: - URL Construction Tests
 
+    // CI builds packages in release, where the override is compiled out.
+    #if DEBUG
     func testDebugMetadataOverride_changesAndResetsWithoutRecreatingChecker() async throws {
         let debugSettings = UpdatesDebugSettings(persistor: UpdatesDebugSettingsUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
         let checker = LatestReleaseChecker(urlSession: mockURLSession, debugSettings: debugSettings)
@@ -598,6 +600,24 @@ final class LatestReleaseCheckerTests: XCTestCase {
             XCTAssertNil(request.value(forHTTPHeaderField: "X-DDG-Test-App-Build"))
         }
     }
+    #else
+    func testDebugMetadataOverride_isIgnoredOutsideDebugBuilds() async throws {
+        let debugSettings = UpdatesDebugSettings(persistor: UpdatesDebugSettingsUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
+        debugSettings.appStoreMetadataBaseURL = "http://localhost:8765/"
+        let checker = LatestReleaseChecker(urlSession: mockURLSession, debugSettings: debugSettings)
+        var capturedRequest: URLRequest?
+        respond(with: """
+        {"latest_appstore_version": {"latest_version": "1.156.0", "build_number": 540,
+        "release_date": "2025-09-11T10:30:00Z", "is_critical": false}}
+        """, capturingRequest: { capturedRequest = $0 })
+
+        _ = try await checker.getAppStoreReleases()
+
+        XCTAssertEqual(capturedRequest?.url?.absoluteString, "https://staticcdn.duckduckgo.com/macos-desktop-browser/release_metadata.json")
+        XCTAssertNil(capturedRequest?.value(forHTTPHeaderField: "X-DDG-Test-App-Version"))
+        XCTAssertNil(capturedRequest?.value(forHTTPHeaderField: "X-DDG-Test-App-Build"))
+    }
+    #endif
 
     func testExplicitBaseURL_takesPrecedenceOverDebugMetadataOverride() async throws {
         let debugSettings = UpdatesDebugSettings(persistor: UpdatesDebugSettingsUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))

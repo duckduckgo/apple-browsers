@@ -39,8 +39,7 @@ extension MainViewController {
         tab.installChatListSidebar(sidebar.navigationController,
                                    isOpen: iPadChatListSidebarState.isOpen,
                                    onToggle: { [weak self] in self?.toggleIPadChatListSidebar() },
-                                   onFire: { [weak sidebar] source in sidebar?.historyViewController.presentDeleteAllChatsConfirmation(from: source) })
-        tab.setChatListFireButtonAvailable(sidebar.hasChats)
+                                   onNewChat: { [weak self] in self?.startNewChatFromIPadChatListSidebar() })
         sidebar.followCurrentChat(of: tab)
     }
 
@@ -95,11 +94,6 @@ extension MainViewController {
         tab.submitStartChatAction()
     }
 
-    fileprivate func iPadChatListSidebarHasChatsDidChange(_ hasChats: Bool) {
-        (iPadChatListSidebarState.sidebar?.navigationController.parent as? TabViewController)?
-            .setChatListFireButtonAvailable(hasChats)
-    }
-
     /// Duck.ai opens the chat in place; the URL load is the fallback when the page can't.
     fileprivate func openChatFromIPadChatListSidebar(chatId: String) {
         guard let tab = currentTab, tab.openChatID(in: tab.url) != chatId else { return }
@@ -149,8 +143,6 @@ final class IPadChatListSidebar {
     let navigationController: UINavigationController
     let historyViewController: AIChatHistoryViewController
     let isFireMode: Bool
-    /// Fire has nothing to delete without chats, so the closed sidebar's fire button hides.
-    private(set) var hasChats = false
 
     private let viewModel: AIChatHistoryViewModel
     private weak var host: MainViewController?
@@ -178,11 +170,6 @@ final class IPadChatListSidebar {
 
     private func listedChatsDidChange(_ chatIds: Set<String>) {
         defer { listedChatIds = chatIds }
-        let hasChats = viewModel.totalChatCount > 0
-        if hasChats != self.hasChats {
-            self.hasChats = hasChats
-            host?.iPadChatListSidebarHasChatsDidChange(hasChats)
-        }
         // A search narrows the list without deleting anything.
         guard viewModel.query.isEmpty,
               let currentChatId = historyViewController.currentChatId,
@@ -279,9 +266,9 @@ final class IPadChatListSidebarContainerView: UIView {
     fileprivate let showChatsButton = IPadChatListSidebarContainerView.makeFloatingButton(
         image: DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate),
         accessibilityLabel: UserText.aiChatHistorySidebarShowAccessibilityLabel)
-    fileprivate let fireButton = IPadChatListSidebarContainerView.makeFloatingButton(
-        image: DesignSystemImages.Glyphs.Size24.fireSolid,
-        accessibilityLabel: UserText.aiChatHistoryFireAllAccessibilityLabel)
+    fileprivate let newChatButton = IPadChatListSidebarContainerView.makeFloatingButton(
+        image: DesignSystemImages.Glyphs.Size24.compose,
+        accessibilityLabel: UserText.actionNewAIChat)
     fileprivate let widthProbe = WidthProbeView()
 
     fileprivate var leadingConstraint: NSLayoutConstraint?
@@ -290,10 +277,9 @@ final class IPadChatListSidebarContainerView: UIView {
     fileprivate var contentLeadingConstraint: NSLayoutConstraint?
     fileprivate weak var standaloneContentLeadingConstraint: NSLayoutConstraint?
     fileprivate var onToggle: (() -> Void)?
-    fileprivate var onFire: ((AnyObject) -> Void)?
+    fileprivate var onNewChat: (() -> Void)?
     fileprivate(set) var isOpen = false
     fileprivate(set) var isOverlay = false
-    fileprivate var isFireAvailable = true
 
     private let separator: UIView = {
         let separator = UIView()
@@ -314,7 +300,7 @@ final class IPadChatListSidebarContainerView: UIView {
             separator.widthAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
         ])
         showChatsButton.addTarget(self, action: #selector(showChatsTapped), for: .touchUpInside)
-        fireButton.addTarget(self, action: #selector(fireTapped(_:)), for: .touchUpInside)
+        newChatButton.addTarget(self, action: #selector(newChatTapped), for: .touchUpInside)
         widthProbe.onWidthChange = { [weak self] width in
             self?.applyLayoutMode(forTabWidth: width)
         }
@@ -334,22 +320,12 @@ final class IPadChatListSidebarContainerView: UIView {
         let closedOffset = isOverlay ? -(superview?.bounds.width ?? Self.width) : -Self.width
         leadingConstraint?.constant = isOpen ? 0 : closedOffset
         showChatsButton.alpha = isOpen ? 0 : 1
-        fireButton.alpha = isOpen ? 0 : 1
+        newChatButton.alpha = isOpen ? 0 : 1
         accessibilityElementsHidden = !isOpen
         showChatsButton.isAccessibilityElement = !isOpen
-        updateFireButtonVisibility()
-    }
-
-    fileprivate func setFireAvailable(_ isAvailable: Bool) {
-        isFireAvailable = isAvailable
-        updateFireButtonVisibility()
-    }
-
-    /// A narrow window's input spans the tab under the button, and its toolbar already carries fire.
-    private func updateFireButtonVisibility() {
-        let isShown = isFireAvailable && !isOverlay
-        fireButton.isHidden = !isShown
-        fireButton.isAccessibilityElement = !isOpen && isShown
+        // A narrow window's input spans the tab under the button.
+        newChatButton.isHidden = isOverlay
+        newChatButton.isAccessibilityElement = !isOpen && !isOverlay
     }
 
     /// Follows live window resizes: a narrow tab trades the column for a list over the whole tab.
@@ -373,8 +349,8 @@ final class IPadChatListSidebarContainerView: UIView {
         onToggle?()
     }
 
-    @objc private func fireTapped(_ sender: UIButton) {
-        onFire?(sender)
+    @objc private func newChatTapped() {
+        onNewChat?()
     }
 
     fileprivate static func animate(_ changes: @escaping () -> Void, completion: @escaping (Bool) -> Void) {
@@ -393,10 +369,10 @@ final class IPadChatListSidebarContainerView: UIView {
             showChatsButton.topAnchor.constraint(equalTo: top, constant: Constants.buttonInset),
             showChatsButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             showChatsButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-            fireButton.leadingAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.leadingAnchor, constant: Constants.buttonInset),
-            fireButton.bottomAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.buttonInset),
-            fireButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            fireButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newChatButton.leadingAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.leadingAnchor, constant: Constants.buttonInset),
+            newChatButton.bottomAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.buttonInset),
+            newChatButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newChatButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
         ]
     }
 
@@ -454,10 +430,10 @@ extension TabViewController {
     func installChatListSidebar(_ listViewController: UIViewController,
                                 isOpen: Bool,
                                 onToggle: @escaping () -> Void,
-                                onFire: @escaping (AnyObject) -> Void) {
+                                onNewChat: @escaping () -> Void) {
         if let chatListSidebarContainer, listViewController.parent === self {
             chatListSidebarContainer.onToggle = onToggle
-            chatListSidebarContainer.onFire = onFire
+            chatListSidebarContainer.onNewChat = onNewChat
             bringChatListSidebarControlsToFront()
             if chatListSidebarContainer.isOpen != isOpen {
                 setChatListSidebarOpen(isOpen, animated: false)
@@ -470,11 +446,11 @@ extension TabViewController {
         let container = IPadChatListSidebarContainerView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.onToggle = onToggle
-        container.onFire = onFire
+        container.onNewChat = onNewChat
         view.insertSubview(container.widthProbe, at: 0)
         view.addSubview(container)
         view.addSubview(container.showChatsButton)
-        view.addSubview(container.fireButton)
+        view.addSubview(container.newChatButton)
 
         addChild(listViewController)
         let listView: UIView = listViewController.view
@@ -521,7 +497,7 @@ extension TabViewController {
             child.removeFromParent()
         }
         container.showChatsButton.removeFromSuperview()
-        container.fireButton.removeFromSuperview()
+        container.newChatButton.removeFromSuperview()
         container.widthProbe.removeFromSuperview()
         container.contentLeadingConstraint?.isActive = false
         container.removeFromSuperview()
@@ -552,15 +528,11 @@ extension TabViewController {
         })
     }
 
-    func setChatListFireButtonAvailable(_ isAvailable: Bool) {
-        chatListSidebarContainer?.setFireAvailable(isAvailable)
-    }
-
     /// The input and other tab overlays are added later, so keep the buttons above them.
     func bringChatListSidebarControlsToFront() {
         guard let container = chatListSidebarContainer else { return }
         view.bringSubviewToFront(container)
         view.bringSubviewToFront(container.showChatsButton)
-        view.bringSubviewToFront(container.fireButton)
+        view.bringSubviewToFront(container.newChatButton)
     }
 }

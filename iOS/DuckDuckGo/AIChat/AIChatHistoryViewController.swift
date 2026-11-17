@@ -559,8 +559,7 @@ final class AIChatHistoryViewController: UIViewController {
         presentDeleteAllChatsConfirmation(from: sender)
     }
 
-    /// Asks before deleting every chat. Also reached from the iPad's fire button while the sidebar is closed.
-    func presentDeleteAllChatsConfirmation(from sender: AnyObject) {
+    private func presentDeleteAllChatsConfirmation(from sender: AnyObject) {
         guard viewModel.totalChatCount > 0 else { return }
         viewModel.fireAllTapped()
         presentDeleteChatsConfirmation(count: viewModel.totalChatCount, attachPopoverTo: sender) { [weak self] in

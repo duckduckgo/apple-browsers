@@ -206,9 +206,7 @@ public struct StartupOptions {
     let simulateCrash: Bool
     let simulateMemoryCrash: Bool
     public let vpnSettings: StoredOption<VPNSettingsSnapshot>
-#if os(macOS)
     public let tokenContainer: StoredOption<TokenContainer>
-#endif
     let enableTester: StoredOption<Bool>
 
     init(options: [String: Any]) {
@@ -229,10 +227,7 @@ public struct StartupOptions {
         simulateMemoryCrash = options[NetworkProtectionOptionKey.tunnelMemoryCrashSimulation] as? Bool ?? false
 
         let resetStoredOptionsIfNil = startupMethod == .manualByMainApp
-#if os(macOS)
         tokenContainer = Self.readTokenContainer(from: options, resetIfNil: resetStoredOptionsIfNil)
-
-#endif
         enableTester = Self.readEnableTester(from: options, resetIfNil: resetStoredOptionsIfNil)
         vpnSettings = Self.readVPNSettings(from: options, resetIfNil: resetStoredOptionsIfNil)
     }
@@ -247,17 +242,14 @@ public struct StartupOptions {
             vpnSettings: \(self.vpnSettings.description),
             enableTester: \(self.enableTester),
         """
-#if os(macOS)
         result += """
             tokenContainer: \(self.tokenContainer.stateDescription),
         """
-#endif
         return result
     }
 
     // MARK: - Helpers for reading stored options
 
-#if os(macOS)
     private static func readTokenContainer(from options: [String: Any], resetIfNil: Bool) -> StoredOption<TokenContainer> {
         StoredOption(resetIfNil: resetIfNil) {
             guard let data = options[NetworkProtectionOptionKey.tokenContainer] as? NSData,
@@ -268,7 +260,6 @@ public struct StartupOptions {
             return tokenContainer
         }
     }
-#endif
 
     private static func readVPNSettings(from options: [String: Any], resetIfNil: Bool) -> StoredOption<VPNSettingsSnapshot> {
         StoredOption(resetIfNil: resetIfNil) {

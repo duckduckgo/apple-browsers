@@ -610,6 +610,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: .dataProtection(.unspecified),
                    tokenHandlerProvider: tokenHandler,
+                   tokenSource: .fromKeychain,
                    debugEvents: Self.networkProtectionDebugEvents(controllerErrorStore: errorStore),
                    providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,

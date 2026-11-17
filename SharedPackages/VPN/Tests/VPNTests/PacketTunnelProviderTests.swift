@@ -26,67 +26,46 @@ final class PacketTunnelProviderTests: XCTestCase {
 
     typealias TunnelError = PacketTunnelProvider.TunnelError
 
-    private var reconnectDefaults: UserDefaults!
-    private var reconnectDefaultsSuiteName: String!
+    private var shutdownDefaults: UserDefaults!
+    private var shutdownDefaultsSuiteName: String!
 
     override func setUp() {
         super.setUp()
-        reconnectDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
-        reconnectDefaults = UserDefaults(suiteName: reconnectDefaultsSuiteName)
+        shutdownDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
+        shutdownDefaults = UserDefaults(suiteName: shutdownDefaultsSuiteName)
     }
 
     override func tearDown() {
-        reconnectDefaults.removePersistentDomain(forName: reconnectDefaultsSuiteName)
-        reconnectDefaults = nil
-        reconnectDefaultsSuiteName = nil
+        shutdownDefaults.removePersistentDomain(forName: shutdownDefaultsSuiteName)
+        shutdownDefaults = nil
+        shutdownDefaultsSuiteName = nil
         super.tearDown()
     }
 
-    func testReconnectIsAllowedByDefaultForEveryStartupMethod() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
+    func testVPNIsNotShutDownByDefault() {
+        let shutdownGuard = VPNShutdownGuard(defaults: shutdownDefaults)
 
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .automaticOnDemand))
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .manualByTheSystem))
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .manualByMainApp))
+        XCTAssertFalse(shutdownGuard.isShutDown)
     }
 
-    func testBlockedReconnectPersistsAcrossGuardAndDefaultsInstances() throws {
-        ReconnectGuard(defaults: reconnectDefaults).blockAutomaticReconnect()
-        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: reconnectDefaultsSuiteName))
-        let restartedGuard = ReconnectGuard(defaults: restartedDefaults)
+    func testShutdownPersistsAcrossGuardAndDefaultsInstances() throws {
+        VPNShutdownGuard(defaults: shutdownDefaults).markAsShutDown()
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: shutdownDefaultsSuiteName))
+        let restartedGuard = VPNShutdownGuard(defaults: restartedDefaults)
 
-        XCTAssertThrowsError(try restartedGuard.runStartValidation(startupMethod: .automaticOnDemand)) { error in
-            XCTAssertEqual((error as? TunnelError)?.code, .reconnectBlocked)
-        }
+        XCTAssertTrue(restartedGuard.isShutDown)
     }
 
-    func testBlockedReconnectRejectsSystemStartsWithoutMainAppOptions() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
-        reconnectGuard.blockAutomaticReconnect()
-        let options = StartupOptions(options: [:])
+    func testResetClearsShutdownAcrossGuardAndDefaultsInstances() throws {
+        let shutdownGuard = VPNShutdownGuard(defaults: shutdownDefaults)
+        shutdownGuard.markAsShutDown()
+        XCTAssertTrue(shutdownGuard.isShutDown)
 
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: options.startupMethod)) { error in
-            XCTAssertEqual((error as? TunnelError)?.code, .reconnectBlocked)
-        }
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: .automaticOnDemand))
-    }
+        shutdownGuard.reset()
 
-    func testManualAppValidationImmediatelyAllowsSubsequentAutomaticReconnect() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
-        reconnectGuard.blockAutomaticReconnect()
-
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .manualByMainApp))
-        let subsequentGuard = ReconnectGuard(defaults: reconnectDefaults)
-        XCTAssertNoThrow(try subsequentGuard.runStartValidation(startupMethod: .automaticOnDemand))
-        XCTAssertNoThrow(try subsequentGuard.runStartValidation(startupMethod: .manualByTheSystem))
-    }
-
-    func testOtherStartSourcesCannotClearTheReconnectGuard() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
-        reconnectGuard.blockAutomaticReconnect()
-
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: .manualByTheSystem))
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: .automaticOnDemand))
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: shutdownDefaultsSuiteName))
+        let restartedGuard = VPNShutdownGuard(defaults: restartedDefaults)
+        XCTAssertFalse(restartedGuard.isShutDown)
     }
 
     func testReconnectBlockedErrorHasItsOwnCodeForProcessBoundaries() {

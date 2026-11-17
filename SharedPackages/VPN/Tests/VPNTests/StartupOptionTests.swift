@@ -32,9 +32,7 @@ final class StartupOptionsTests: XCTestCase {
         let rawOptions = [String: Any]()
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .useExisting)
-#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)
@@ -56,9 +54,7 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .reset)
-#endif
         XCTAssertEqual(options.enableTester, .reset)
         XCTAssertEqual(options.vpnSettings, .reset)
         XCTAssertFalse(options.simulateCrash)
@@ -79,9 +75,7 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .useExisting)
-#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)

@@ -685,7 +685,8 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                            appStoreBuildSimulation: StandardApplicationBuildType().isSparkleBuild ? AppStoreBuildSimulation() : nil
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {

@@ -27,6 +27,7 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
 
     private let webExtensionManager: WebExtensionManaging
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
+    private let appStoreBuildSimulation: AppStoreBuildSimulationProtocol?
 #if DEBUG && WEB_EXTENSION_UPDATE_TESTING
     private let updateTestServer = ChromeWebStoreManualUpdateServer()
 #endif
@@ -41,10 +42,15 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
     private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
     private let backdateInstallDatesMenuItem = NSMenuItem(title: "Backdate Install Dates by a Month", action: #selector(WebExtensionsDebugMenu.backdateInstallDates))
 
-    init(webExtensionManager: WebExtensionManaging,
-         cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
+    /// - Parameter appStoreBuildSimulation: The "Simulate App Store Build" setting, or `nil` to leave the item out (in the App Store build).
+    init(
+        webExtensionManager: WebExtensionManaging,
+        cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
+        appStoreBuildSimulation: AppStoreBuildSimulationProtocol? = nil
+    ) {
         self.webExtensionManager = webExtensionManager
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
+        self.appStoreBuildSimulation = appStoreBuildSimulation
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
@@ -78,6 +84,11 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
         addItem(printScriptletInfoMenuItem)
         updateSimulateCPMBreakageMenuItem()
         addItem(simulateCPMBreakageMenuItem)
+        if let appStoreBuildSimulation {
+            let simulateAppStoreBuild = NSMenuItem(title: "Simulate App Store Build", action: #selector(toggleAppStoreBuildSimulation), target: self)
+            simulateAppStoreBuild.state = appStoreBuildSimulation.isEnabled ? .on : .off
+            addItem(simulateAppStoreBuild)
+        }
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
         addItem(extensionsPageMenuItem)
@@ -268,6 +279,18 @@ final class WebExtensionsDebugMenu: NSMenu, NSMenuItemValidation {
             ? AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOn
             : AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOff
         simulateCPMBreakageMenuItem.state = isEnabled ? .on : .off
+    }
+
+    /// Saves the setting; the extension manager reads it at launch, so it applies after a restart.
+    @objc func toggleAppStoreBuildSimulation() {
+        guard let appStoreBuildSimulation else { return }
+        appStoreBuildSimulation.isEnabled.toggle()
+        let alert = NSAlert()
+        alert.messageText = "Restart the app to apply"
+        alert.informativeText = appStoreBuildSimulation.isEnabled
+            ? "After a restart, extensions behave as in the App Store build: native messaging is refused and explained, Settings → Extensions shows the warning, and extensions hidden for the App Store build leave the catalog."
+            : "After a restart, extensions can connect to apps on your Mac again."
+        alert.runModal()
     }
 
     @objc func showExtensionsPage() {

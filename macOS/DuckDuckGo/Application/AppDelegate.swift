@@ -2383,6 +2383,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
             themeManager: themeManager,
+            buildType: WebExtensionsBuildType(base: StandardApplicationBuildType(), simulation: AppStoreBuildSimulation()),
             darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration(),
             eventHub: eventHubIntegration.eventHub

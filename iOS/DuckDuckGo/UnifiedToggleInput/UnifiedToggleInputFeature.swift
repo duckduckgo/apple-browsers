@@ -34,17 +34,24 @@ protocol UnifiedToggleInputFeatureProviding {
 
     /// When true, a native image/file paste is routed into the attachment strip. Backed by `FeatureFlag.unifiedToggleInputAttachmentPaste`.
     var isAttachmentPasteEnabled: Bool { get }
+
+    /// True when a full-tab Duck.ai chat uses the native chat input instead of the web one: always on
+    /// iPhone, and on iPad behind `FeatureFlag.aiChatNativeInputIPad`. `isAvailable` stays iPhone-only
+    /// because it also covers the omnibar takeover, which iPad doesn't use.
+    var isFullTabChatInputAvailable: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
     private static let isToggleHiddenOnDuckAITabKey = "com.duckduckgo.unifiedToggleInput.aiChatTabHideToggle.session.enabled"
     private static let isAttachmentPasteEnabledKey = "com.duckduckgo.unifiedToggleInput.attachmentPaste.session.enabled"
+    private static let isIPadFullTabChatInputEnabledKey = "com.duckduckgo.unifiedToggleInput.iPadFullTabChatInput.session.enabled"
 
     /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads them.
     static func resolve(using featureFlagger: FeatureFlagger) {
         UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
         UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPaste), forKey: isAttachmentPasteEnabledKey)
+        UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatNativeInputIPad), forKey: isIPadFullTabChatInputEnabledKey)
     }
 
     private let devicePlatform: DevicePlatformProviding.Type
@@ -63,6 +70,13 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
     var isAttachmentPasteEnabled: Bool {
         UserDefaults.app.bool(forKey: Self.isAttachmentPasteEnabledKey)
+    }
+
+    var isFullTabChatInputAvailable: Bool {
+        if devicePlatform.isIphone { return true }
+        // The iPad input rides the keyboard layout guide, which iOS 15 doesn't drive.
+        guard #available(iOS 16, *) else { return false }
+        return UserDefaults.app.bool(forKey: Self.isIPadFullTabChatInputEnabledKey)
     }
 
 }

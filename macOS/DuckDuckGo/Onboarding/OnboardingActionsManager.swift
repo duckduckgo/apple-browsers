@@ -39,12 +39,7 @@ enum OnboardingSteps: String, CaseIterable {
     case duckPlayerSingle
     case customize
     case addressBarMode
-}
-
-/// Defines which onboarding steps should be excluded from the flow
-enum OnboardingExcludedStep: String {
-    case addressBarMode
-    case duckPlayerSingle
+    case searchOrChat
 }
 
 enum OnboardingRow: String, Decodable {
@@ -181,26 +176,29 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             env = "production"
         }
 
-        let excludedSteps = buildExcludedSteps()
+        let activeSteps = OnboardingSteps.allCases.filter(isStepActive)
+        // `exclude` only lists steps the v4 page knows.
+        let excludedSteps = OnboardingSteps.allCases.filter { $0 != .searchOrChat && !isStepActive($0) }
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
-                                       exclude: excludedSteps,
+                                       exclude: excludedSteps.map(\.rawValue),
+                                       steps: activeSteps.map(\.rawValue),
                                        order: "v4",
                                        env: env,
                                        locale: preferredLocale,
                                        platform: platform)
     }
 
-    private func buildExcludedSteps() -> [String] {
-        var excludedSteps: [String] = [OnboardingExcludedStep.duckPlayerSingle.rawValue]
-
-        let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
-
-        if !isAIChatOmnibarOnboardingEnabled {
-            excludedSteps.append(OnboardingExcludedStep.addressBarMode.rawValue)
+    /// Whether the page may show `step`; the page decides the order.
+    private func isStepActive(_ step: OnboardingSteps) -> Bool {
+        switch step {
+        case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
+            true
+        case .duckPlayerSingle:
+            false
+        case .searchOrChat:
+            featureFlagger.isFeatureOn(.onboardingSearchOrChat)
         }
-
-        return excludedSteps
     }
 
     private var didRequestDefaultBrowser: Bool = false
@@ -452,6 +450,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .addressBarMode:
             // No pixel for addressBarMode as it's the last step before final
             pixel = nil
+        case .searchOrChat:
+            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            pixel = nil
         }
         if let pixel {
             PixelKit.fire(pixel, frequency: .dailyAndCount)
@@ -489,6 +490,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .addressBarMode:
             let value: OnboardingSharedPixelEvent.SearchExperienceEvent.Value = aiChatPreferencesStorage.showSearchAndDuckAIToggle ? .searchPlusDuckAI : .searchOnly
             pixel = .searchExperience(.clicked(value))
+        case .searchOrChat:
+            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            pixel = nil
         }
         if let pixel {
             onboardingSharedPixelHandler.fire(pixel)
@@ -515,6 +519,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             pixel = .customization(.shown)
         case .addressBarMode:
             pixel = .searchExperience(.shown)
+        case .searchOrChat:
+            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            pixel = nil
         }
         if let pixel {
             onboardingSharedPixelHandler.fire(pixel)
@@ -569,12 +576,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
         switch outcome {
         case .completed:
-            let userSawToggleOnboarding = wasToggleOnboardingStepShown()
-            if userSawToggleOnboarding {
-                aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
-            }
+            aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
             if !nonBlockingOnboarding.isNonBlocking || isFirstOutcome {
-                fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+                fireOnboardingFinishedPixels()
             }
         case .skipped:
             // Skipping must not record a final step or suppress a toggle popover the user never saw.
@@ -599,31 +603,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         NotificationCenter.default.post(name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification, object: nil)
     }
 
-    /// Returns true if the toggle onboarding step was shown to the user.
-    /// The step is only shown when the aiChatOmnibarOnboarding flag is enabled.
-    private func wasToggleOnboardingStepShown() -> Bool {
-        return featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
-    }
-
-    private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
+    private func fireOnboardingFinishedPixels() {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
-        fireSharedPixelForFinalStep(userSawToggleOnboarding)
+        fireSharedPixelOnStepCompletion(for: .addressBarMode)
         chromeExtensionExperiment.fireMetric(.onboardingCompleted)
-
-        guard userSawToggleOnboarding else { return }
 
         let togglePixel: AIChatPixel = aiChatPreferencesStorage.showSearchAndDuckAIToggle
             ? .aiChatOnboardingFinishedToggleOn
             : .aiChatOnboardingFinishedToggleOff
         PixelKit.fire(togglePixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-    }
-
-    private func fireSharedPixelForFinalStep(_ userSawToggleOnboarding: Bool) {
-        if userSawToggleOnboarding {
-            fireSharedPixelOnStepCompletion(for: .addressBarMode)
-        } else {
-            fireSharedPixelOnStepCompletion(for: .customize)
-        }
     }
 
 }

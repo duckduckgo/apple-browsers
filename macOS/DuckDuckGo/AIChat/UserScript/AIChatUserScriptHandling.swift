@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKitExtensions
 import AppKit
 import BrowserServicesKit
 import Combine
@@ -135,8 +136,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     // MARK: Browser tools
 
-    @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable?
-    @MainActor func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable?
+    @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -174,6 +174,15 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    // Bonus offer
+    /// The record to push to Duck.ai after every change, while the offer is enabled.
+    var bonusRecordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never> { get }
+    func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable?
+    func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable?
+    func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable?
+    func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -211,9 +220,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
     private let browserTools: AIChatBrowserToolsService
+    private let localModelService: AIChatLocalModelServing?
     private let fireNewAIChatExperimentPixels: () -> Void
     private let featureDiscovery: FeatureDiscovery
     private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let bonusHandler: AIChatBonusHandling
+    private let bonusMessageLog: AIChatBonusMessageLogging?
+    private let isSparkleBuild: Bool
 
     var isFireWindowProvider: (() -> Bool)?
     var isSidebarProvider: (() -> Bool)?
@@ -267,10 +280,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels,
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
-        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        localModelService: AIChatLocalModelServing? = nil,
+        bonusHandler: AIChatBonusHandling = Application.appDelegate.aiChatBonusOffer.handler,
+        bonusMessageLog: AIChatBonusMessageLogging? = nil,
+        isSparkleBuild: Bool = StandardApplicationBuildType().isSparkleBuild
     ) {
         self.storage = storage
+        self.localModelService = localModelService
         self.termsOfServiceStore = termsOfServiceStore
+        self.bonusHandler = bonusHandler
+        self.bonusMessageLog = bonusMessageLog
+        self.isSparkleBuild = isSparkleBuild
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.browserTools = browserTools
@@ -334,7 +355,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
         let isFireWindow = isFireWindowProvider?() ?? false
-        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+        var config = messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+        config.localModel = localModelService?.config()
+        return config
     }
 
     @MainActor
@@ -850,6 +873,80 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return migrationStore.clear()
     }
 
+    // MARK: - Bonus offer
+
+    /// Only Sparkle builds can tell a new install from a reinstall, which the offer's eligibility needs.
+    private var isBonusOfferEnabled: Bool {
+        isSparkleBuild && featureFlagger.isFeatureOn(.aiChatLimitExtensionPromo)
+    }
+
+    var bonusRecordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never> {
+        bonusHandler.recordPayloadPublisher
+            .filter { [weak self] _ in self?.isBonusOfferEnabled == true }
+            .eraseToAnyPublisher()
+    }
+
+    func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
+        let method = AIChatUserScriptMessages.getAIChatBonusRecord.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.request, method: method, params: params)
+            return nil
+        }
+        // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
+        let reply = bonusHandler.getAIChatBonusRecord()
+        logBonusRequest(method, params: params, reply: reply)
+        return reply
+    }
+
+    func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
+        let method = AIChatUserScriptMessages.getAIChatNewBonusRecord.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.request, method: method, params: params)
+            return nil
+        }
+        // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
+        let reply = bonusHandler.getAIChatNewBonusRecord(params: params)
+        logBonusRequest(method, params: params, reply: reply)
+        return reply
+    }
+
+    func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? {
+        bonusMessageLog?.record(.notification, method: AIChatUserScriptMessages.aiChatBonusRedeemOutcome.rawValue, params: params)
+        bonusHandler.aiChatBonusRedeemOutcome(params: params)
+        return nil
+    }
+
+    func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? {
+        bonusMessageLog?.record(.notification, method: AIChatUserScriptMessages.aiChatBonusDismiss.rawValue, params: params)
+        bonusHandler.aiChatBonusDismiss(params: params)
+        return nil
+    }
+
+    func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable? {
+        bonusMessageLog?.record(.notification, method: AIChatUserScriptMessages.aiChatBonusEnd.rawValue, params: params)
+        bonusHandler.aiChatBonusEnd()
+        return nil
+    }
+
+    private func logBonusRequest(_ method: String, params: Any, reply: Encodable?) {
+        bonusMessageLog?.record(
+            .request,
+            method: method,
+            params: params,
+            body: reply,
+            note: reply == nil ? "No reply: invalid params, or the record couldn't be read or written" : nil
+        )
+    }
+
+    private func logIgnoredBonusMessage(_ kind: AIChatBonusMessageLog.Kind, method: String, params: Any) {
+        bonusMessageLog?.record(
+            kind,
+            method: method,
+            params: params,
+            note: "Dropped: aiChatLimitExtensionPromo is off, or not a Sparkle build"
+        )
+    }
+
     // MARK: - Sync
 
     private func setUpSyncStatusObserverIfNeeded(syncService: DDGSyncing? = nil) {
@@ -1342,16 +1439,16 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 extension AIChatUserScriptHandler {
 
     /// Always replies with the request's `callId`, including for an invalid payload.
-    /// - Parameter permissionPusher: the chat page that made the call. `nil` means the page may not
+    /// - Parameter permissionPrompter: asks for the chat that made the call. `nil` means the page may not
     ///   use client tools, so the call is `unavailable`.
     @MainActor
-    func executeClientTool(params: Any, message: UserScriptMessage, permissionPusher: (any ClientToolPermissionPushing)?) async -> Encodable? {
+    func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable? {
         guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
             return ExecuteClientToolResponse.invalidRequest(rawParams: params)
         }
 
         // Scoped by the owner tab, never the key window, so a backgrounded chat cannot act on another window.
-        guard let permissionPusher,
+        guard let permissionPrompter,
               let ownerTabID = ownerTabID(for: message),
               let ownerCollection = AIChatTabPickerSource.ownerCollection(for: message.messageWebView,
                                                                           ownerTabID: ownerTabID,
@@ -1363,17 +1460,8 @@ extension AIChatUserScriptHandler {
             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
             isBurner: ownerCollection.isBurner
         )
-        let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPusher: permissionPusher)
+        let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
         return response.limitedToResultBytes()
-    }
-
-    /// Always acknowledged with `{}`. A late, mismatched or unreadable answer changes nothing.
-    @MainActor
-    func respondToClientToolPermission(params: Any, message: UserScriptMessage, source: any ClientToolPermissionPushing) async -> Encodable? {
-        if let response: RespondToClientToolPermissionRequest = DecodableHelper.decode(from: params) {
-            browserTools.clientToolPermissions.respond(to: response, from: source)
-        }
-        return RespondToClientToolPermissionResponse()
     }
 
     /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached

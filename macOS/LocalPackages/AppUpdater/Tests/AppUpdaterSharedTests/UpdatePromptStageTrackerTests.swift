@@ -319,15 +319,16 @@ final class UpdatePromptStageTrackerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Each stage shows the dot, the prominent menu prompt and the toolbar button as designed", .timeLimit(.minutes(1)), arguments: [
-        (UpdatePromptStage.none, false, UpdatePromptMenuStyle?.none, false),
-        (.available, false, nil, false),
-        (.firstPrompt, true, nil, false),
-        (.secondPrompt, true, .row, false),
-        (.thirdPrompt, false, .card, true)
+    @Test("Each stage shows the dot, the menu update, the prominent menu prompt and the toolbar button as designed", .timeLimit(.minutes(1)), arguments: [
+        (UpdatePromptStage.none, false, false, UpdatePromptMenuStyle?.none, false),
+        (.available, false, false, nil, false),
+        (.firstPrompt, true, true, nil, false),
+        (.secondPrompt, true, true, .row, false),
+        (.thirdPrompt, false, true, .card, true)
     ])
-    func stagePresentation(stage: UpdatePromptStage, dot: Bool, menuPrompt: UpdatePromptMenuStyle?, toolbarButton: Bool) {
+    func stagePresentation(stage: UpdatePromptStage, dot: Bool, menuUpdate: Bool, menuPrompt: UpdatePromptMenuStyle?, toolbarButton: Bool) {
         #expect(stage.showsNotificationDot == dot)
+        #expect(stage.showsMenuUpdate == menuUpdate)
         #expect(stage.prominentMenuPrompt == menuPrompt)
         #expect(stage.showsToolbarButton == toolbarButton)
     }

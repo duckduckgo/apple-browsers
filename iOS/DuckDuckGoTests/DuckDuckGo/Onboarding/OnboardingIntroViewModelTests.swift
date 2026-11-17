@@ -1305,6 +1305,15 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
     }
 
+    func testWhenResumeStepIsTryVPNThenOnAppearShowsTryVPN() {
+        let store = MockKeyValueStore()
+        setResumeStep(.tryVPN, in: store)
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection] + OnboardingStepsHelper.expectedRemainingSteps(for: .vpn)
+        let sut = makeSUT(resumeStepStore: store)
+        sut.onAppear()
+        XCTAssertEqual(sut.state.intro?.type, .tryVPNDialog(content: .mock))
+    }
+
     func testWhenResumeStepIsNotInCurrentFlowThenStoreIsClearedAndOnboardingStartsFromBeginning() {
         // addToDockPromo is not in the iPad flow
         let store = MockKeyValueStore()
@@ -1446,7 +1455,44 @@ extension OnboardingIntroViewModelTests {
 
 extension OnboardingIntroViewModelTests {
 
-    // MARK: - Download Reason Experiment
+    // MARK: - Download Reason VPN Experiment
+
+    func testWhenStartOnboardingActionFromIntroThenEnrollsInVPNExperiment() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneDownloadReasonSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false))
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN
+        XCTAssertEqual(onboardingManagerMock.enrollInDownloadReasonVPNExperimentCallCount, 1)
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .downloadReasonDialog(content: .mock), step: .hidden)))
+    }
+
+    func testWhenStartOnboardingActionResumingThenDoesNotEnrollInVPNExperiment() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneDownloadReasonSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false))
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: true)
+
+        // THEN
+        XCTAssertEqual(onboardingManagerMock.enrollInDownloadReasonVPNExperimentCallCount, 0)
+    }
+
+    func testWhenStartOnboardingActionPastTheIntroThenDoesNotEnrollInVPNExperiment() {
+        // GIVEN — a restored checkpoint already placed the user further into the flow.
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN
+        XCTAssertEqual(onboardingManagerMock.enrollInDownloadReasonVPNExperimentCallCount, 0)
+    }
 
     func testWhenCurrentStepIsDownloadReasonThenViewStateIsDownloadReasonDialogWithHiddenProgress() {
         // GIVEN
@@ -1825,6 +1871,49 @@ extension OnboardingIntroViewModelTests {
 
         sut.appIconPickerContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .duckAIQueryDialog(content: .mock))
+    }
+
+    func testVPNFlowAdvancesThroughItsStepsInOrder() {
+        // GIVEN a treatment user picking "VPN" on the Download Screen
+        let sut = makeSUTOnDownloadScreen(for: .vpn)
+
+        // WHEN / THEN each action advances to the next screen of the real VPN sequence
+        sut.selectDownloadReasonAction(.vpn)
+        XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
+
+        sut.setDefaultBrowserAction()
+        XCTAssertEqual(sut.state.intro?.type, .tryVPNDialog(content: .mock))
+        XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 2, totalSteps: 6))
+
+        sut.skipTryVPNAction()
+        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
+    }
+
+    func testWhenTryVPNIsTappedThenStaysOnTryVPN() {
+        // GIVEN
+        let sut = makeSUTOnDownloadScreen(for: .vpn)
+        sut.selectDownloadReasonAction(.vpn)
+        sut.cancelSetDefaultBrowserAction()
+
+        // WHEN
+        sut.tryVPNAction()
+
+        // THEN
+        XCTAssertEqual(sut.state.intro?.type, .tryVPNDialog(content: .mock))
+    }
+
+    func testWhenTryVPNIsSkippedThenAdvancesToNextStep() {
+        // GIVEN
+        let sut = makeSUTOnDownloadScreen(for: .vpn)
+        sut.selectDownloadReasonAction(.vpn)
+        sut.cancelSetDefaultBrowserAction()
+        XCTAssertEqual(sut.state.intro?.type, .tryVPNDialog(content: .mock))
+
+        // WHEN
+        sut.skipTryVPNAction()
+
+        // THEN
+        XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
     }
 
     func testPrivateAIChatFlowAdvancesThroughItsStepsInOrder() {

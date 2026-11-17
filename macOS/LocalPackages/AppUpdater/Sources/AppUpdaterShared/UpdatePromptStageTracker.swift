@@ -51,6 +51,11 @@ public enum UpdatePromptStage: Int, Comparable, CaseIterable, Sendable {
         }
     }
 
+    /// Whether the menu offers the update at all.
+    public var showsMenuUpdate: Bool {
+        self >= .firstPrompt
+    }
+
     /// The prominent update prompt the menu shows in place of the regular update item, if any.
     public var prominentMenuPrompt: UpdatePromptMenuStyle? {
         switch self {

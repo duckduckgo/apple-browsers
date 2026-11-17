@@ -177,7 +177,7 @@ final class AppStoreUpdateControllerPromptStageTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("With the flag on, the dot shows only at the first and second prompts, with no popover", .timeLimit(.minutes(1)))
+    @Test("With the flag on, the menu item shows from the first prompt and the dot only at the first and second prompts, with no popover", .timeLimit(.minutes(1)))
     func dotFollowsThePromptStage() async {
         publish(latest: Self.olderVersion, available: Self.newerVersion)
         now = releaseDate + .hours(24)
@@ -187,9 +187,11 @@ final class AppStoreUpdateControllerPromptStageTests {
 
         await controller.performUpdateCheck(dismissRateLimiting: true)
         #expect(controller.hasPendingUpdate)
+        #expect(!controller.mustShowUpdateIndicators)
         #expect(!controller.needsNotificationDot)
 
         tracker.moveClock(to: .firstPrompt)
+        #expect(controller.mustShowUpdateIndicators)
         #expect(controller.needsNotificationDot)
 
         tracker.moveClock(to: .secondPrompt)
@@ -197,6 +199,7 @@ final class AppStoreUpdateControllerPromptStageTests {
 
         tracker.moveClock(to: .thirdPrompt)
         #expect(!controller.needsNotificationDot, "the toolbar button takes over from the dot")
+        #expect(controller.mustShowUpdateIndicators)
 
         #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt, .thirdPrompt])
         #expect(notificationPresenter.shownUpdateTypes.isEmpty)
@@ -212,6 +215,7 @@ final class AppStoreUpdateControllerPromptStageTests {
 
         await controller.performUpdateCheck(dismissRateLimiting: true)
 
+        #expect(controller.mustShowUpdateIndicators)
         #expect(controller.needsNotificationDot)
         #expect(notificationPresenter.shownUpdateTypes == [.regular])
     }

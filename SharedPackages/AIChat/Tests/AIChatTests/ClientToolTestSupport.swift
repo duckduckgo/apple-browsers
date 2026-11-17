@@ -53,15 +53,13 @@ final class ClientToolTestHarness {
     func start(callID: String = "call", name: String = "readTabContent", version: Int = 1,
                source: ClientToolTestSource? = nil) throws -> Task<ExecuteClientToolResponse, Never> {
         let request = try request(callID: callID, name: name, version: version)
-        return Task { await invoker.invokeClientTool(request, context: context, permissionPusher: source ?? self.source) }
+        return Task { await invoker.invokeClientTool(request, context: context, permissionPrompter: source ?? self.source) }
     }
 
-    func answer(_ prompt: ClientToolPermissionRequested, decision: String,
-                source: ClientToolTestSource? = nil, callID: String? = nil, requestID: String? = nil) throws {
-        let data = try JSONEncoder().encode(["callId": callID ?? prompt.callId,
-                                            "requestId": requestID ?? prompt.requestId, "decision": decision])
-        let response = try JSONDecoder().decode(RespondToClientToolPermissionRequest.self, from: data)
-        coordinator.respond(to: response, from: source ?? self.source)
+    func answer(_ prompt: ClientToolPermissionPrompt, decision: ClientToolPermissionDecision,
+                source: ClientToolTestSource? = nil, callID: String? = nil, requestID: String? = nil) {
+        let answered = ClientToolPermissionPrompt(requestID: requestID ?? prompt.requestID, callID: callID ?? prompt.callID, toolName: prompt.toolName)
+        coordinator.respond(to: answered, decision: decision, from: source ?? self.source)
     }
 }
 
@@ -106,12 +104,17 @@ final class ClientToolTestTool: BrowserTool {
 }
 
 @MainActor
-final class ClientToolTestSource: ClientToolPermissionPushing {
-    var prompts: [ClientToolPermissionRequested] = []
-    var onPush: ((ClientToolPermissionRequested) -> Bool)?
+final class ClientToolTestSource: ClientToolPermissionPrompting {
+    var prompts: [ClientToolPermissionPrompt] = []
+    var withdrawn: [String] = []
+    var onPush: ((ClientToolPermissionPrompt) -> Bool)?
     private var waiters: [(Int, CheckedContinuation<Void, Never>)] = []
 
-    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        withdrawn.append(requestID)
+    }
+
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
         prompts.append(prompt)
         let ready = waiters.filter { prompts.count >= $0.0 }
         waiters.removeAll { prompts.count >= $0.0 }

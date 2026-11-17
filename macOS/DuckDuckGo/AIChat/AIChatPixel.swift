@@ -458,6 +458,18 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User removes an image chip in the New Tab Page omnibar (reported by the page)
     case aiChatNtpImageRemoved(source: AIChatImageAttachmentSource)
 
+    /// Event Trigger: A long text paste is attached as a pasted-text chip in the New Tab Page omnibar (reported by the page)
+    case aiChatNtpPastedTextAttached
+
+    /// Event Trigger: User removes a pasted-text chip in the New Tab Page omnibar (reported by the page). Not fired when submitting clears it
+    case aiChatNtpPastedTextRemoved
+
+    /// Event Trigger: User saves changed text in the New Tab Page omnibar's Pasted Text dialog (reported by the page)
+    case aiChatNtpPastedTextEdited
+
+    /// Event Trigger: User opens the Pasted Text dialog from a chip in the New Tab Page omnibar (reported by the page)
+    case aiChatNtpPastedTextDialogOpened
+
     /// Event Trigger: User selects a model from the New Tab Page model picker
     case aiChatNtpModelSelected
 
@@ -908,6 +920,14 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_screenshot_permission_converted_macos_u"
         case .aiChatNtpImageRemoved:
             return "aichat_ntp_image_removed"
+        case .aiChatNtpPastedTextAttached:
+            return "aichat_ntp_pasted_text_attached"
+        case .aiChatNtpPastedTextRemoved:
+            return "aichat_ntp_pasted_text_removed"
+        case .aiChatNtpPastedTextEdited:
+            return "aichat_ntp_pasted_text_edited"
+        case .aiChatNtpPastedTextDialogOpened:
+            return "aichat_ntp_pasted_text_dialog_opened"
         case .aiChatNtpModelSelected:
             return "aichat_ntp_model_selected"
         case .aiChatNtpReasoningEffortSelected:
@@ -1055,6 +1075,10 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatOnboardingFinishedToggleOff,
                 .aiChatAddressBarScreenshotRemoved,
                 .aiChatNtpScreenshotRemoved,
+                .aiChatNtpPastedTextAttached,
+                .aiChatNtpPastedTextRemoved,
+                .aiChatNtpPastedTextEdited,
+                .aiChatNtpPastedTextDialogOpened,
                 .aiChatScreenshotPermissionNeeded,
                 .aiChatScreenshotPermissionAlertAccepted,
                 .aiChatScreenshotPermissionGranted,
@@ -1386,6 +1410,10 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpScreenshotFailed,
                 .aiChatNtpImageAttached,
                 .aiChatNtpImageRemoved,
+                .aiChatNtpPastedTextAttached,
+                .aiChatNtpPastedTextRemoved,
+                .aiChatNtpPastedTextEdited,
+                .aiChatNtpPastedTextDialogOpened,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,
                 .aiChatNtpSubscriptionUpsellTriggered,

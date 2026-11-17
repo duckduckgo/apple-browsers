@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Combine
 import Foundation
+import PrivacyConfig
 import Suggestions
 
 /// Reuses Search-side `SuggestionLoader` ranking; produces top-N URL-typed suggestions for the Duck.ai list.
@@ -27,23 +28,30 @@ import Suggestions
 final class DuckAIURLSuggestionsLoader {
 
     static let defaultMaxResults = 3
-    private static let debounceMilliseconds = 100
 
     @Published private(set) var topURLs: [Suggestion] = []
 
+    private let featureFlagger: FeatureFlagger
     private let dataSource: SuggestionLoadingDataSource
     private let maxResults: Int
     private lazy var loader = SuggestionLoader(
         shouldLoadSuggestionsForUserInput: { _ in true },
         isUrlIgnored: { _ in false }
     )
+    private lazy var localLoader = SuggestionLoader(
+        shouldLoadSuggestionsForUserInput: { _ in false },
+        isUrlIgnored: { _ in false }
+    )
     /// Out-of-order guard: `SuggestionLoader` has no cancellation, so a slow callback for a stale query would otherwise win.
-    private var latestDispatchedQuery: String?
+    private var latestQuery: String?
+    private var fetchID = UUID()
+    private var cachedRemoteResult: SuggestionResult = .appEmpty
     /// Settle marker: callers compare against current text to detect "fetcher hasn't caught up yet" and gate Dax visibility.
     private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
 
-    init(dataSource: SuggestionLoadingDataSource, maxResults: Int = defaultMaxResults) {
+    init(dataSource: SuggestionLoadingDataSource, featureFlagger: FeatureFlagger, maxResults: Int = defaultMaxResults) {
+        self.featureFlagger = featureFlagger
         self.dataSource = dataSource
         self.maxResults = maxResults
     }
@@ -53,47 +61,67 @@ final class DuckAIURLSuggestionsLoader {
         Array(result.filteringToURLsOnly().all.prefix(max))
     }
 
-    func subscribeToTextChanges<P: Publisher>(_ textPublisher: P)
+    func subscribeToTextChanges<P: Publisher, S: Scheduler>(_ textPublisher: P, scheduler: S = DispatchQueue.main)
         where P.Output == String, P.Failure == Never {
         textPublisher
-            .debounce(for: .milliseconds(Self.debounceMilliseconds), scheduler: DispatchQueue.main)
-            .removeDuplicates()
-            .sink { [weak self] text in
-                self?.fetch(query: text)
+            .removeDuplicates(by: { [featureFlagger] previous, current in
+                featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+            })
+            .handleEvents(receiveOutput: { [weak self] text in
+                guard let self, self.featureFlagger.isFeatureOn(.suggestionDebounce200ms) else { return }
+                self.latestQuery = text
+            })
+            .debounceSuggestions(using: featureFlagger, scheduler: scheduler)
+            .removeDuplicates(by: { [featureFlagger] previous, current in
+                !featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+            })
+            .sink { [weak self] request in
+                self?.fetch(query: request.query, includeRemoteSuggestions: request.includeRemoteSuggestions)
             }
             .store(in: &cancellables)
     }
 
     func refreshSuggestions() {
-        fetch(query: latestDispatchedQuery ?? "")
+        fetch(query: latestQuery ?? "")
     }
 
-    func fetch(query: String) {
-        latestDispatchedQuery = query
+    func fetch(query: String, includeRemoteSuggestions: Bool = true) {
+        let usesSeparateDebounce = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
+        latestQuery = query
+        let fetchID = UUID()
+        self.fetchID = fetchID
         guard !query.isEmpty else {
+            cachedRemoteResult = .appEmpty
             // Skip re-emitting an already-empty list — @Published emits unconditionally and would trigger a needless reload.
             if !topURLs.isEmpty { topURLs = [] }
             lastCompletedFetchQuery = query
             return
         }
 
-        loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, _ in
+        let loader = includeRemoteSuggestions ? self.loader : localLoader
+        loader.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self else { return }
-            guard self.latestDispatchedQuery == query else { return }
+            guard !usesSeparateDebounce || self.fetchID == fetchID,
+                  self.latestQuery == query || (usesSeparateDebounce && self.topURLs.isEmpty && self.latestQuery?.hasPrefix(query) == true) else { return }
             // Always settle, even on error — otherwise `hasSettled` stays false forever and Dax suppression never clears.
-            self.lastCompletedFetchQuery = query
-            // Local matches (bookmarks/history/open tabs) come back even when the remote API errors — keep them.
-            if let result {
-                self.topURLs = Self.urlOnlyTopHits(from: result, max: self.maxResults)
-            } else if !self.topURLs.isEmpty {
-                self.topURLs = []
+            if includeRemoteSuggestions { self.lastCompletedFetchQuery = query }
+            let result = result ?? .appEmpty
+            let displayedResult: SuggestionResult
+            if includeRemoteSuggestions, error == nil {
+                self.cachedRemoteResult = result
+                displayedResult = result
+            } else {
+                displayedResult = result.retainingRemoteSuggestions(from: self.cachedRemoteResult)
             }
+            self.topURLs = Self.urlOnlyTopHits(from: displayedResult, max: self.maxResults)
         }
     }
 
     func tearDown() {
         cancellables.removeAll()
-        latestDispatchedQuery = nil
+        fetchID = UUID()
+        cachedRemoteResult = .appEmpty
+        latestQuery = nil
         lastCompletedFetchQuery = nil
         topURLs = []
     }

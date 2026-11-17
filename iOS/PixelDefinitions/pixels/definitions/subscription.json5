@@ -975,14 +975,14 @@
         ]
     },
     "subscription_onboarding_step_completed_": {
-        "description": "Fired when an onboarding step is completed — the protection it offers was activated. Only activation steps can complete.",
+        "description": "Fired when an onboarding step is completed. Activation steps complete when the protection they offer is activated; the intro, features summary and completion steps complete when their primary button is tapped.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": [
             {
                 "type": "string",
                 "description": "The onboarding step that was completed",
-                "enum": ["vpn", "idtr", "duck_ai", "pir"]
+                "enum": ["intro", "features_summary", "vpn", "idtr", "duck_ai", "pir", "completion"]
             },
             "platform",
             "form_factor"

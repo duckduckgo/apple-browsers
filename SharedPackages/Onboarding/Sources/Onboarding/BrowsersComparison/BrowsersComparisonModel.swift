@@ -161,6 +161,7 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 public static let noAIAnswers = NSLocalizedString("onboarding.browsers.features.noAIAnswers", bundle: Bundle.module, value: "No AI-assisted answers in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that search shows no AI-assisted answers.")
                 public static let hideAIImages = NSLocalizedString("onboarding.browsers.features.hideAIImages", bundle: Bundle.module, value: "Hide AI-generated images in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that AI-generated images can be hidden in search results.")
                 public static let privateWebSearch = NSLocalizedString("onboarding.browsers.features.privateWebSearch", bundle: Bundle.module, value: "Search the web privately with trackers blocked", comment: "One of the rows in the onboarding AI comparison chart. Highlights private web search with trackers blocked.")
+                public static let hideLocationWithVPN = NotLocalizedString("onboarding.browsers.features.hideLocationWithVPN", value: "Hide your location with VPN", comment: "One of the rows in the onboarding comparison chart for users who chose VPN as their download reason.")
             }
         }
     }

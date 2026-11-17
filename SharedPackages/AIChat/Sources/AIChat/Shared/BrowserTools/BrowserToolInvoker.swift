@@ -34,7 +34,7 @@ public final class BrowserToolInvoker {
 
     public func invokeClientTool(_ request: ExecuteClientToolRequest,
                                  context: BrowserToolCallContext,
-                                 permissionPusher: (any ClientToolPermissionPushing)?) async -> ExecuteClientToolResponse {
+                                 permissionPrompter: (any ClientToolPermissionPrompting)?) async -> ExecuteClientToolResponse {
         guard !context.isBurner,
               let tool = catalog.tool(for: request.capability) else {
             return .failure(callId: request.callId, error: .unavailable)
@@ -43,7 +43,7 @@ public final class BrowserToolInvoker {
         guard Self.isAcceptedInput(request.input, for: tool) else {
             return .failure(callId: request.callId, error: .invalidArguments)
         }
-        let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, source: permissionPusher)
+        let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, prompter: permissionPrompter)
         switch authorization {
         case .refused(.cancelled):
             return .failure(callId: request.callId, error: .cancelled)

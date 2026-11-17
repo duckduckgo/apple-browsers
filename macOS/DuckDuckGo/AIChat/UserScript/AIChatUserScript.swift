@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import ConcurrencyExtensions
 import FoundationExtensions
 import Foundation
 import Persistence
@@ -48,6 +49,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         Task { @MainActor [weak self] in
             guard let self else { return }
             self.browserTools?.register(self)
+            self.localModelService?.register(self)
         }
     }
 
@@ -60,12 +62,22 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private let browserTools: AIChatBrowserToolsService?
+    private let localModelService: AIChatLocalModelServing?
+    /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
+    private let localModelAccessPrompt: LocalModelAccessAsking?
+    private let bonusMessageLog: AIChatBonusMessageLogging?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
-         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService) {
+         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
+         localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService,
+         localModelAccessPrompt: LocalModelAccessAsking? = nil,
+         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
         self.handler = handler
         self.browserTools = browserTools
+        self.localModelService = localModelService
+        self.localModelAccessPrompt = localModelAccessPrompt
+        self.bonusMessageLog = bonusMessageLog
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -116,6 +128,15 @@ final class AIChatUserScript: NSObject, Subfeature {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 self?.submitSyncStatusChanged(status)
+            }
+            .store(in: &cancellables)
+
+        handler.bonusRecordPayloadPublisher
+            .sink { [weak self] payload in
+                // The bonus service already delivers on the main queue, so push right away and keep the order of the changes.
+                MainActor.assumeMainThread {
+                    self?.submitBonusRecord(payload)
+                }
             }
             .store(in: &cancellables)
     }
@@ -219,18 +240,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .getAIChatTabContent:
             return handler.getAIChatTabContent
 
-        // Client tools. The script is the permission source, so a prompt goes back to the page
-        // that made the call and only that page can answer it.
+        // Client tools. The script stands for the chat in permission prompts, which the browser shows
+        // and answers natively: the page has no message to answer them.
         case .executeClientTool:
             return { @MainActor [weak self] params, message in
                 guard let self else { return nil }
-                let pusher = self.isClientToolsPage(message.messageWebView?.url) ? self : nil
-                return await self.handler.executeClientTool(params: params, message: message, permissionPusher: pusher)
-            }
-        case .respondToClientToolPermission:
-            return { @MainActor [weak self] params, message in
-                guard let self else { return nil }
-                return await self.handler.respondToClientToolPermission(params: params, message: message, source: self)
+                let prompter = self.isClientToolsPage(message.messageWebView?.url) ? self : nil
+                return await self.handler.executeClientTool(params: params, message: message, permissionPrompter: prompter)
             }
 
         case .reportMetric:
@@ -259,6 +275,16 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.sendToSyncSettings
         case .setAIChatHistoryEnabled:
             return handler.setAIChatHistoryEnabled
+        case .getAIChatBonusRecord:
+            return handler.getAIChatBonusRecord
+        case .getAIChatNewBonusRecord:
+            return handler.getAIChatNewBonusRecord
+        case .aiChatBonusRedeemOutcome:
+            return handler.aiChatBonusRedeemOutcome
+        case .aiChatBonusDismiss:
+            return handler.aiChatBonusDismiss
+        case .aiChatBonusEnd:
+            return handler.aiChatBonusEnd
         case .voiceSessionStarted:
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
@@ -271,24 +297,97 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.customizeResponsesModalClosed
         case .getAIChats:
             return handler.getAIChats
+
+        // Main-actor closures, so the reply isn't held up by a hop in the middle of the handler.
+        case .startAIChatLocalRun:
+            return { @MainActor [weak self] params, message in
+                try self?.startAIChatLocalRun(params: params, message: message)
+            }
+        case .cancelAIChatLocalRun:
+            return { @MainActor [weak self] params, _ in
+                self?.cancelAIChatLocalRun(params: params)
+            }
+        case .requestAIChatLocalModelAccess:
+            return { @MainActor [weak self] _, message in
+                try await self?.requestAIChatLocalModelAccess(message: message)
+            }
+
         default:
             return nil
         }
+    }
+
+    deinit {
+        guard let localModelService else { return }
+        let ownerID = ObjectIdentifier(self)
+        Task { @MainActor in
+            localModelService.cancelRuns(ownerID: ownerID)
+        }
+    }
+}
+
+// MARK: - Local models
+
+extension AIChatUserScript: AIChatLocalModelPushing {
+
+    @MainActor
+    func startAIChatLocalRun(params: Any, message: UserScriptMessage) throws -> Encodable? {
+        guard let localModelService, isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
+        guard let request: AIChatLocalRunRequest = DecodableHelper.decode(from: params) else {
+            throw AIChatLocalModelRequestError.invalidArguments
+        }
+        return try localModelService.startRun(request, for: self)
+    }
+
+    /// A notification, but it also answers with `{}` in case the page sends it as a request.
+    @MainActor
+    func cancelAIChatLocalRun(params: Any) -> Encodable? {
+        if let request: AIChatLocalRunCancelRequest = DecodableHelper.decode(from: params) {
+            localModelService?.cancelRun(requestId: request.requestId, for: self)
+        }
+        return [String: String]()
+    }
+
+    /// Waits for the user's answer, so the page must not time it out.
+    @MainActor
+    func requestAIChatLocalModelAccess(message: UserScriptMessage) async throws -> Encodable? {
+        guard let localModelService, isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
+        let localModelAccessPrompt = localModelAccessPrompt ?? Application.appDelegate.localModelAccessPrompt
+        let webView = message.messageWebView
+        let modelName = localModelService.model.name
+        let result = try await localModelService.requestAccess {
+            await localModelAccessPrompt.ask(from: webView, modelName: modelName)
+        }
+        return AIChatLocalModelAccessReply(result: result)
+    }
+
+    @MainActor
+    func pushLocalModelState(_ update: AIChatLocalModelStateUpdate) {
+        pushToDuckAI(.submitAIChatLocalModelState, params: update)
+    }
+
+    @MainActor
+    func pushLocalRunChunk(_ chunk: AIChatLocalRunChunk) {
+        pushToDuckAI(.submitAIChatLocalRunChunk, params: chunk)
     }
 }
 
 // MARK: - Client tools
 
-extension AIChatUserScript: ClientToolPermissionPushing {
+extension AIChatUserScript: ClientToolPermissionPrompting {
+
+    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
+    @MainActor
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        false
+    }
 
     @MainActor
-    func pushClientToolPermissionRequested(_ prompt: ClientToolPermissionRequested) -> Bool {
-        guard let webView, let broker,
-              isClientToolsPage(webView.url),
-              ClientToolPayloadLimits.fits(prompt, within: ClientToolPayloadLimits.permissionBytes) else { return false }
-        broker.push(method: AIChatUserScriptMessages.clientToolPermissionRequested.rawValue, params: prompt, for: self, into: webView)
-        return true
-    }
+    func withdrawClientToolPermissionPrompt(requestID: String) {}
 
     /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
     /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.
@@ -312,6 +411,11 @@ extension AIChatUserScript: ClientToolPermissionPushing {
         let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
         guard var configValues = response as? AIChatNativeConfigValues else { return response }
         configValues.clientTools = clientToolsConfiguration(for: message)
+        // The model's state and text reach the page only through `pushToDuckAI`. A page it skips,
+        // such as Duck.ai on duckduckgo.com, would wait for a summary that never arrives.
+        if !isDuckAIPushDestination(message.messageWebView?.url) {
+            configValues.localModel = nil
+        }
         return configValues
     }
 
@@ -354,12 +458,25 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
         pushToDuckAI(.aiChatTabChanged, params: data)
     }
 
-    /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.
-    private func pushToDuckAI(_ message: AIChatUserScriptMessages, params: Encodable?) {
+    /// Pushes the bonus record to this tab after it changes, so Duck.ai re-derives the offer state.
+    private func submitBonusRecord(_ payload: AIChatBonusRecordPayload) {
+        // Every tab has this script, so only a Duck.ai page gets it.
         guard let webView, let broker,
               let host = webView.url?.host,
               messageDestinationPolicy.isAllowed(host) else { return }
+        broker.push(method: AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue, params: payload, for: self, into: webView)
+        bonusMessageLog?.record(.push, method: "\(AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue) → \(host)", body: payload)
+    }
+
+    /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.
+    private func pushToDuckAI(_ message: AIChatUserScriptMessages, params: Encodable?) {
+        guard let webView, let broker, isDuckAIPushDestination(webView.url) else { return }
         broker.push(method: message.rawValue, params: params, for: self, into: webView)
+    }
+
+    fileprivate func isDuckAIPushDestination(_ url: URL?) -> Bool {
+        guard let host = url?.host else { return false }
+        return messageDestinationPolicy.isAllowed(host)
     }
 }
 

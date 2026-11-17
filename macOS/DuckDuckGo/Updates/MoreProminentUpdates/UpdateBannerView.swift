@@ -225,9 +225,18 @@ extension UpdateBannerView {
 
 extension UpdateController {
 
-    /// "Restart now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update now".
+    private var isAtRestartCheckpoint: Bool {
+        (self as? any SparkleUpdateControlling)?.isAtRestartCheckpoint == true
+    }
+
+    /// "Restart Now" when a Sparkle update has downloaded and is waiting for a restart, otherwise "Update Now".
     var updatePromptButtonTitle: String {
-        (self as? any SparkleUpdateControlling)?.isAtRestartCheckpoint == true ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
+        isAtRestartCheckpoint ? UserText.updatePromptRestartButton : UserText.updatePromptUpdateButton
+    }
+
+    /// The toolbar button uses softer wording than the menu: "Restart To Update" once a Sparkle update has downloaded, otherwise "Update Available".
+    var addressBarUpdateButtonTitle: String {
+        isAtRestartCheckpoint ? UserText.updateToolbarRestartButton : UserText.updateToolbarAvailableButton
     }
 
     /// App Store builds can't tell whether the update has downloaded, so they say "Update available".

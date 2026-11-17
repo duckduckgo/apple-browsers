@@ -1023,5 +1023,47 @@
         "triggers": ["user_submitted"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "subscription_withdrawal_withdraw_click_macos": {
+        "description": "Fired when the user clicks 'Withdraw from contract' in Subscription Settings, shown to eligible international Stripe subscribers.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "subscription_withdrawal_dialog_shown_macos": {
+        "description": "Fired when the withdrawal confirmation dialog is presented, which happens when the user clicks 'Withdraw from contract'.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "subscription_withdrawal_confirm_click_macos": {
+        "description": "Fired when the user clicks 'Confirm Withdrawal' in the withdrawal confirmation dialog, which sends the withdrawal request.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "subscription_withdrawal_keep_click_macos": {
+        "description": "Fired when the withdrawal confirmation dialog closes without withdrawing: the user clicks 'Keep Subscription' or dismisses it, for example with Esc.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "subscription_withdrawal_failure_macos": {
+        "description": "Fired when the withdrawal request fails: an HTTP 409 because the subscription is no longer eligible (the withdrawal option is hidden), or any other HTTP 4xx/5xx or network error (the user sees the withdrawal error dialog). A success response that cannot be decoded still completes the withdrawal and does not fire this pixel.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_withdrawal_eligibility_failure_macos": {
+        "description": "Fired when fetching withdrawal eligibility fails, such as a network error, an HTTP 4xx/5xx response or a response that cannot be decoded, so the 'Withdraw from contract' section is not shown.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
     }
 }

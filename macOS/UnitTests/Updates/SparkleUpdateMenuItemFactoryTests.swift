@@ -69,6 +69,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
         XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptUpdateButton)
         XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptUpdateButton)
+        XCTAssertEqual(mockController.addressBarUpdateButtonTitle, UserText.updateToolbarAvailableButton)
         XCTAssertEqual(mockController.updateBannerRowTitle, UserText.updateBannerRowReadyTitle)
     }
 
@@ -78,6 +79,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
         XCTAssertEqual(mockController.updatePromptButtonTitle, UserText.updatePromptRestartButton)
         XCTAssertEqual(mockController.updateBannerButtonTitle, UserText.updatePromptRestartButton)
+        XCTAssertEqual(mockController.addressBarUpdateButtonTitle, UserText.updateToolbarRestartButton)
         XCTAssertEqual(mockController.updateBannerRowTitle, UserText.updateBannerRowReadyTitle)
     }
 

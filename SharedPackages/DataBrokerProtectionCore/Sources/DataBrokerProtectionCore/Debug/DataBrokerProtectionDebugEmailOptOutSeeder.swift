@@ -18,11 +18,20 @@
 
 #if DEBUG
 import Foundation
+import DDGError
 
-public enum DebugEmailOptOutSeedError: Error, LocalizedError {
+public enum DebugEmailOptOutSeedError: DDGError {
     case noProfileQuery(brokerURL: String)
 
-    public var errorDescription: String? {
+    public static var errorDomain: String { "com.duckduckgo.databrokerprotection.DebugEmailOptOutSeedError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noProfileQuery: return 1
+        }
+    }
+
+    public var description: String {
         switch self {
         case .noProfileQuery(let brokerURL):
             return "No saved profile query for \(brokerURL). Save a profile first, then run Force Broker JSON Refresh if the broker is still missing."

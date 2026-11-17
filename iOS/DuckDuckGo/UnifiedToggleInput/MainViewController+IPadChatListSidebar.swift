@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
@@ -101,7 +102,7 @@ extension MainViewController {
 
     /// Duck.ai opens the chat in place; the URL load is the fallback when the page can't.
     fileprivate func openChatFromIPadChatListSidebar(chatId: String) {
-        guard let tab = currentTab, tab.url?.duckAIChatID != chatId else { return }
+        guard let tab = currentTab, tab.openChatID(in: tab.url) != chatId else { return }
         duckAIInputFocus.forget()
         iPadChatListSidebarState.pendingChatOpen?.cancel()
         let url = aiChatSettings.aiChatURL.withChatID(chatId)
@@ -110,6 +111,8 @@ extension MainViewController {
             return
         }
         recordChatHistorySelection()
+        // Marked now rather than when the page reports it; a fallback load lands on the same chat.
+        iPadChatListSidebarState.sidebar?.historyViewController.currentChatId = chatId
         iPadChatListSidebarState.pendingChatOpen = Task { @MainActor [weak self, weak tab] in
             let outcome = await tab?.openChatInPage(chatId: chatId)
             guard !Task.isCancelled, let self, let tab, tab === self.currentTab else { return }
@@ -121,6 +124,14 @@ extension MainViewController {
             tab.tabModel.duckAIEntrySource = .chatHistoryOpenChat
             tab.tabModel.discardDuckAIEntrySourceAwaitingPageLoad()
         }
+    }
+}
+
+private extension TabViewController {
+    /// Unlike `URL.duckAIChatID`, also reads the debug Duck.ai URL, which the tab already counts as Duck.ai.
+    func openChatID(in url: URL?) -> String? {
+        guard isAITab, let chatId = url?.getParameter(named: "chatID"), !chatId.isEmpty else { return nil }
+        return chatId
     }
 }
 
@@ -183,7 +194,7 @@ final class IPadChatListSidebar {
     /// The page reports the open chat in its URL, including chats started from the input.
     fileprivate func followCurrentChat(of tab: TabViewController) {
         currentChatCancellable = tab.webView?.publisher(for: \.url)
-            .map { $0?.duckAIChatID }
+            .map { [weak tab] url in tab?.openChatID(in: url) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] chatId in

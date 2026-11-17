@@ -53,6 +53,11 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
         let foundDate = Calendar.current.date(byAdding: .day, value: -Self.foundDaysAgo, to: now) ?? now
         let deferredScanDate = Calendar.current.date(byAdding: .day, value: Self.scanDeferralDays, to: now)
 
+        // Check every broker first, so a missing one fails the run before anything is written.
+        if let missingBrokerURL = brokerURLs.first(where: { brokerURL in !queryData.contains { $0.dataBroker.url == brokerURL } }) {
+            throw DebugEmailOptOutSeedError.noProfileQuery(brokerURL: missingBrokerURL)
+        }
+
         return try brokerURLs.compactMap { brokerURL in
             let brokerQueryData = queryData.filter { $0.dataBroker.url == brokerURL }
             guard let firstQueryData = brokerQueryData.first,

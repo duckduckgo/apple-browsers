@@ -50,7 +50,8 @@ final class FirstPaintCover {
     }
 
     /// For Instruments: submit, commit, results drawn and cover removed, with the cover on or off.
-    static let signposter = OSSignposter(subsystem: "com.duckduckgo.mobile.ios", category: "SearchSubmit")
+    /// Dynamic tracing stays off until Instruments records, so nothing extra runs for users.
+    static let signposter = OSSignposter(subsystem: "com.duckduckgo.mobile.ios.SearchSubmit", category: .dynamicTracing)
 
     /// How the cover takes over from the input panel that is leaving.
     struct Handoff {

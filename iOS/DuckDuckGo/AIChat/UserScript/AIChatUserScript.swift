@@ -162,6 +162,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case openSettingsAction
         case startUsingWeeklyLimitAction
         case toggleSidebarAction
+        case openChatAction(chatId: String)
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
         case customizeResponsesAction
         case changeModelAction(modelId: String)
@@ -175,6 +176,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         struct NativeInputFocusedParams: Encodable {
             let focused: Bool
+        }
+
+        struct OpenChatActionParams: Encodable {
+            let chatId: String
         }
 
         var methodName: String {
@@ -193,6 +198,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitStartUsingWeeklyLimitAction"
             case .toggleSidebarAction:
                 return "submitToggleSidebarAction"
+            case .openChatAction:
+                return AIChatUserScriptMessages.submitOpenChatAction.rawValue
             case .syncStatusChanged:
                 return "submitSyncStatusChanged"
             case .customizeResponsesAction:
@@ -218,6 +225,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return ChangeModelActionParams(modelId: modelId)
             case .nativeInputFocused(let focused):
                 return NativeInputFocusedParams(focused: focused)
+            case .openChatAction(let chatId):
+                return OpenChatActionParams(chatId: chatId)
             case .bonusRecordChanged(let payload):
                 return payload
             default:
@@ -440,6 +449,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.voiceModeClosed
         case .newImageGenerationChatStarted:
             return handler.newImageGenerationChatStarted
+        case .openChatActionHandled:
+            return handler.openChatActionHandled
         case .showModelPicker:
             return handler.showModelPicker
         case .showReasoningPicker:
@@ -798,6 +809,14 @@ final class AIChatUserScript: NSObject, Subfeature {
     @MainActor
     func submitOpenChatProtectionAction() {
         push(.openChatProtectionAction)
+    }
+
+    /// Asks the page to open a chat in place; it answers with `openChatActionHandled`.
+    /// - Returns: whether the message was dispatched.
+    @discardableResult
+    @MainActor
+    func submitOpenChatAction(chatId: String) -> Bool {
+        push(.openChatAction(chatId: chatId))
     }
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).

@@ -31,10 +31,15 @@ public extension NSNotification.Name {
     static let aiChatOpenFilePicker: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.openFilePicker")
     static let aiChatCustomizeResponsesModalClosed: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesModalClosed")
     static let aiChatCustomizeResponsesDidChange: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesDidChange")
+    static let aiChatOpenChatActionHandled: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.openChatActionHandled")
 }
 
 /// `userInfo` keys for AIChat notifications.
 public enum AIChatNotificationUserInfoKey {
     /// Hex background colour (`#RRGGBB`) carried by `aiChatVoiceModeOpened`.
     public static let voiceModeBackgroundColor = "backgroundColor"
+    /// Chat id (`String`) carried by `aiChatOpenChatActionHandled`.
+    public static let chatId = "chatId"
+    /// Whether the chat opened (`Bool`), carried by `aiChatOpenChatActionHandled`.
+    public static let chatOpened = "chatOpened"
 }

@@ -100,7 +100,13 @@ extension TabViewController: AITabController {
         }
         aiChatContentHandler.submitToggleSidebarAction()
     }
-    
+
+    /// Asks the page to open a chat in place; it answers with `aiChatOpenChatActionHandled`.
+    /// - Returns: whether the message was dispatched.
+    func submitOpenChatAction(chatId: String) -> Bool {
+        aiChatContentHandler.submitOpenChatAction(chatId: chatId)
+    }
+
     /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab(source: AIChatEntryPointSource?, inputRequest: DuckAINewChatInputRequest? = nil) {
         let newChatURL = aiChatContentHandler.buildQueryURL(

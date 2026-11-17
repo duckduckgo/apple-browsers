@@ -128,6 +128,12 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// daily one is gone. Web owns what that means; native only reports the choice.
     case submitStartUsingWeeklyLimitAction
 
+    /// Pushed to the duck.ai page to open a chat by id, as a click in its own sidebar does.
+    case submitOpenChatAction
+
+    /// Posted by the FE once per `submitOpenChatAction`: the chat `opened`, was `notFound`, or `failed`.
+    case openChatActionHandled
+
     /// Posted by the Customize Responses card placement when the user dismisses it.
     case customizeResponsesModalClosed
 

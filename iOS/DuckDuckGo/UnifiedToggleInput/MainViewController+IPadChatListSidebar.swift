@@ -99,17 +99,51 @@ extension MainViewController {
             .setChatListFireButtonAvailable(hasChats)
     }
 
+    /// Asks the page to switch chats in place, and loads the chat's URL only when the page can't: it reports
+    /// `notFound` or `failed`, or doesn't answer at all, as a Duck.ai build without the message won't.
     fileprivate func openChatFromIPadChatListSidebar(chatId: String) {
         guard currentTab?.url?.duckAIChatID != chatId else { return }
         duckAIInputFocus.forget()
-        onChatHistorySelected(url: aiChatSettings.aiChatURL.withChatID(chatId))
+        let url = aiChatSettings.aiChatURL.withChatID(chatId)
+        iPadChatListSidebarState.openChatCancellable = nil
+        guard let tab = currentTab, tab.isAITab, let webView = tab.webView else {
+            onChatHistorySelected(url: url)
+            return
+        }
+        // Subscribed before the push, so an immediate answer isn't missed.
+        iPadChatListSidebarState.openChatCancellable = NotificationCenter.default
+            .publisher(for: .aiChatOpenChatActionHandled, object: webView)
+            .filter { $0.userInfo?[AIChatNotificationUserInfoKey.chatId] as? String == chatId }
+            .map { $0.userInfo?[AIChatNotificationUserInfoKey.chatOpened] as? Bool == true }
+            .first()
+            .timeout(.seconds(IPadChatListSidebarState.openChatTimeout), scheduler: DispatchQueue.main)
+            .replaceEmpty(with: false)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isOpened in
+                guard let self else { return }
+                self.iPadChatListSidebarState.openChatCancellable = nil
+                if isOpened {
+                    self.fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: false, hasPrompt: false)
+                } else {
+                    self.onChatHistorySelected(url: url)
+                }
+            }
+        if !tab.submitOpenChatAction(chatId: chatId) {
+            iPadChatListSidebarState.openChatCancellable = nil
+            onChatHistorySelected(url: url)
+        }
     }
 }
 
 /// Where the list lives between Duck.ai tabs, and whether it was last left open.
 final class IPadChatListSidebarState {
+    /// How long the page has to answer an open-chat request before the chat's URL is loaded instead.
+    fileprivate static let openChatTimeout = 3
+
     fileprivate(set) var sidebar: IPadChatListSidebar?
     fileprivate(set) var isOpen = false
+    /// Waits for the page's answer to the last chat picked; picking another replaces it.
+    fileprivate var openChatCancellable: AnyCancellable?
 }
 
 /// Owns the list and answers its requests on behalf of `MainViewController`.

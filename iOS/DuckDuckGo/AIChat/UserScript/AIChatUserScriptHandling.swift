@@ -196,6 +196,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable?
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openChatActionHandled(params: Any, message: UserScriptMessage) async -> Encodable?
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -882,6 +883,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Open Chat
+
+    /// The page's answer to `submitOpenChatAction`. Only `opened` counts as success; `notFound`, `failed` and
+    /// anything else leave native to load the chat itself.
+    @MainActor
+    func openChatActionHandled(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let params = params as? [String: Any],
+              let chatId = params["chatId"] as? String else { return nil }
+        NotificationCenter.default.post(name: .aiChatOpenChatActionHandled,
+                                        object: message.messageWebView,
+                                        userInfo: [AIChatNotificationUserInfoKey.chatId: chatId,
+                                                   AIChatNotificationUserInfoKey.chatOpened: params["status"] as? String == "opened"])
         return nil
     }
 

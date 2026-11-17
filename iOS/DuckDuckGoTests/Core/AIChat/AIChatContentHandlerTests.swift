@@ -1121,6 +1121,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
     var submitOpenChatProtectionActionCallCount = 0
+    var submittedOpenChatIds: [String] = []
     var submitPageContextCallCount = 0
     var lastSubmittedPageContextViaSubmit: AIChatPageContextData?
     var lastDisplayModeSet: AIChatDisplayMode?
@@ -1212,6 +1213,11 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitOpenChatProtectionActionCallCount += 1
     }
 
+    func submitOpenChatAction(chatId: String) -> Bool {
+        submittedOpenChatIds.append(chatId)
+        return true
+    }
+
     func submitPageContext(_ context: AIChatPageContextData?) {
         submitPageContextCallCount += 1
         lastSubmittedPageContextViaSubmit = context
@@ -1284,6 +1290,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func openChatActionHandled(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

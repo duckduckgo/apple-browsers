@@ -293,8 +293,6 @@ final class IPadChatListSidebarContainerView: UIView {
     fileprivate var onFire: ((AnyObject) -> Void)?
     fileprivate(set) var isOpen = false
     fileprivate(set) var isOverlay = false
-    /// An image of the chat held over the page while the column slides; see `coverPageForSlide`.
-    fileprivate weak var pageCover: UIView?
     fileprivate var isFireAvailable = true
 
     private let separator: UIView = {
@@ -545,44 +543,12 @@ extension TabViewController {
         }
         view.layoutIfNeeded()
         container.isHidden = false
-        // An overlay leaves the page where it is; a column resizes it.
-        let cover = container.isOverlay ? nil : coverPageForSlide(in: container)
         IPadChatListSidebarContainerView.animate({ [weak self] in
             container.applyOpenState(isOpen)
             self?.view.layoutIfNeeded()
         }, completion: { _ in
             // Bar buttons reach past the column's edge, so a closed list must not take touches.
             container.isHidden = !container.isOpen
-            cover.map(Self.revealPage(under:))
-        })
-    }
-
-    /// WebKit lays the page out for its final width as soon as the frame starts to change, so the chat jumps ahead
-    /// of the column and leaves a bare strip behind. An image of the chat stands in while it slides: the Duck.ai
-    /// transcript is centered, so the image kept centered sits where the reflowed page will end up.
-    private func coverPageForSlide(in container: IPadChatListSidebarContainerView) -> UIView? {
-        container.pageCover?.removeFromSuperview()
-        guard webViewContainer.window != nil,
-              let snapshot = webViewContainer.snapshotView(afterScreenUpdates: false) else { return nil }
-        let cover = UIView(frame: webViewContainer.bounds)
-        cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        cover.backgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
-        cover.isUserInteractionEnabled = false
-        cover.clipsToBounds = true
-        snapshot.frame = cover.bounds
-        snapshot.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin]
-        cover.addSubview(snapshot)
-        webViewContainer.addSubview(cover)
-        container.pageCover = cover
-        return cover
-    }
-
-    /// Waits a frame for WebKit to draw at the new width, then lets the real page show through.
-    private static func revealPage(under cover: UIView) {
-        UIView.animate(withDuration: 0.15, delay: 0.05, options: [.curveEaseOut, .allowUserInteraction], animations: {
-            cover.alpha = 0
-        }, completion: { _ in
-            cover.removeFromSuperview()
         })
     }
 

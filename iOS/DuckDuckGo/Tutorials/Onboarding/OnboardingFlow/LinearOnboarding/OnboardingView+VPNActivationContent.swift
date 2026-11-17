@@ -39,7 +39,7 @@ extension OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
+        @StateObject private var viewModel = SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(pixelFiring: nil))
         @State private var shouldStartTyping = false
         @State private var showContent = false
         @Binding private var isVisible: Bool
@@ -49,12 +49,10 @@ extension OnboardingView {
 
         init(
             content: OnboardingVPNActivationContent,
-            viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
             isVisible: Binding<Bool>,
             continueAction: @escaping () -> Void
         ) {
             self.content = content
-            self._viewModel = StateObject(wrappedValue: viewModel())
             self._isVisible = isVisible
             self.continueAction = continueAction
         }

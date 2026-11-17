@@ -31,9 +31,6 @@ protocol OnboardingTryVPNFollowUpProviding: AnyObject {
 
     /// Drops a running check. With no answer yet, the user has no VPN access.
     func cancelVPNAccessCheck()
-
-    /// Builds the view model that turns the VPN on, reusing the subscription onboarding's.
-    func makeVPNActivationViewModel() -> SubscriptionOnboardingVPNActivationViewModel
 }
 
 @MainActor
@@ -68,10 +65,6 @@ final class OnboardingTryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding 
         vpnAccessCheck?.cancel()
         vpnAccessCheck = nil
         hasVPNAccess = hasVPNAccess ?? false
-    }
-
-    func makeVPNActivationViewModel() -> SubscriptionOnboardingVPNActivationViewModel {
-        SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(pixelFiring: nil))
     }
 
 }

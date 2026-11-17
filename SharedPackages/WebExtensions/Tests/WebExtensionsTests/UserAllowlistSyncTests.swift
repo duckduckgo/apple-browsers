@@ -89,8 +89,10 @@ final class UserAllowlistChangeNotifierTests: XCTestCase {
         let changes = PassthroughSubject<Void, Never>()
         var domains = ["a.com"]
         var notifications = 0
+        var lastSnapshot: UserAllowlistSnapshot?
         let notifier = UserAllowlistChangeNotifier(changes: changes.eraseToAnyPublisher(), allowlist: { domains }) {
             notifications += 1
+            lastSnapshot = $0
         }
 
         changes.send()
@@ -99,6 +101,7 @@ final class UserAllowlistChangeNotifierTests: XCTestCase {
         domains.append("b.com")
         changes.send()
         XCTAssertEqual(notifications, 1)
+        XCTAssertEqual(lastSnapshot, UserAllowlistSnapshot(domains: ["a.com", "b.com"]))
 
         changes.send()
         XCTAssertEqual(notifications, 1)

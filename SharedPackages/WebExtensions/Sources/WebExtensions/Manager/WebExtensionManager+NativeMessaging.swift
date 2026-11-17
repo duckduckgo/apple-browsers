@@ -31,6 +31,8 @@ extension WebExtensionManager {
     }
 
     func registerHandlersForExtension(identifier: String, context: WKWebExtensionContext) {
+        registerSubscriptionEventsHandler(identifier: identifier, context: context)
+
         guard let handlerProvider = handlerProvider else {
             Logger.webExtensions.debug("⚠️ No handler provider configured")
             return

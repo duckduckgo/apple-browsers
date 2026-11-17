@@ -20,15 +20,13 @@ import Combine
 import ConcurrencyExtensions
 import Foundation
 import os.log
-import WebKit
 
 /// Names shared with the embedded extension's `UserAllowlistSync` component.
 public enum UserAllowlistSync {
     /// The native messaging feature the extension pulls the allowlist from.
     public static let featureName = "userAllowlist"
-    /// A manifest command with no shortcut. Performing it tells the extension the allowlist changed.
-    /// WebKit wakes a sleeping background to deliver it, so this one signal covers an asleep and an awake extension.
-    public static let changedCommandIdentifier = "ddg-allowlist-changed"
+    /// The subscription event native sends, with `version` and `domains`, when the allowlist changes.
+    public static let changedSubscriptionName = "onAllowlistChanged"
 }
 
 /// Tells the embedded extension when the user's allowlist changes.
@@ -39,13 +37,13 @@ public enum UserAllowlistSync {
 public final class UserAllowlistChangeNotifier {
 
     private let allowlist: () -> [String]
-    private let notify: @MainActor () -> Void
+    private let notify: @MainActor (UserAllowlistSnapshot) -> Void
     private var lastVersion: String
     private var cancellable: AnyCancellable?
 
     public init(changes: AnyPublisher<Void, Never>,
                 allowlist: @escaping () -> [String],
-                notify: @escaping @MainActor () -> Void) {
+                notify: @escaping @MainActor (UserAllowlistSnapshot) -> Void) {
         self.allowlist = allowlist
         self.notify = notify
         self.lastVersion = UserAllowlistSnapshot(domains: allowlist()).version
@@ -57,17 +55,18 @@ public final class UserAllowlistChangeNotifier {
     }
 
     func checkForChange() {
-        let version = UserAllowlistSnapshot(domains: allowlist()).version
-        guard version != lastVersion else { return }
-        lastVersion = version
-        notify()
+        let snapshot = UserAllowlistSnapshot(domains: allowlist())
+        guard snapshot.version != lastVersion else { return }
+        lastVersion = snapshot.version
+        notify(snapshot)
     }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager {
 
-    /// Starts telling the embedded extension about allowlist changes.
+    /// Starts sending allowlist changes to the embedded extension as `UserAllowlistSync.changedSubscriptionName`
+    /// subscription events.
     ///
     /// - Parameters:
     ///   - changes: Fires after the allowlist may have changed. Content blocking rules recompile after every
@@ -76,26 +75,13 @@ extension WebExtensionManager {
     @MainActor
     public func installUserAllowlistNotifier(changes: AnyPublisher<Void, Never>, allowlist: @escaping () -> [String]) {
         guard userAllowlistNotifier == nil else { return }
-        userAllowlistNotifier = UserAllowlistChangeNotifier(changes: changes, allowlist: allowlist) { [weak self] in
-            self?.notifyEmbeddedExtensionUserAllowlistChanged()
+        userAllowlistNotifier = UserAllowlistChangeNotifier(changes: changes, allowlist: allowlist) { [weak self] snapshot in
+            Logger.webExtensions.debug("🛡️ Allowlist changed (\(snapshot.domains.count, privacy: .public) domains)")
+            self?.sendSubscriptionEvent(WebExtensionSubscriptionEvent(
+                featureName: UserAllowlistSync.featureName,
+                subscriptionName: UserAllowlistSync.changedSubscriptionName,
+                params: ["version": snapshot.version, "domains": snapshot.domains]
+            ))
         }
-    }
-
-    /// Performs the allowlist-changed command in the embedded extension, which then pulls the new list.
-    ///
-    /// The extension also pulls the list whenever its background starts, so a signal that cannot be delivered now
-    /// (the extension is not loaded yet) is not lost.
-    @MainActor
-    public func notifyEmbeddedExtensionUserAllowlistChanged() {
-        guard let context = embeddedBackgroundContextForNavigation, context.isLoaded else {
-            Logger.webExtensions.debug("🛡️ Allowlist changed, but the embedded extension is not loaded")
-            return
-        }
-        guard let command = context.commands.first(where: { $0.id == UserAllowlistSync.changedCommandIdentifier }) else {
-            Logger.webExtensions.debug("🛡️ Allowlist changed, but the embedded extension has no allowlist command")
-            return
-        }
-        Logger.webExtensions.debug("🛡️ Allowlist changed, so the embedded extension is told to sync")
-        context.performCommand(command)
     }
 }

@@ -39,8 +39,8 @@ public struct UserAllowlistSnapshot: Equatable {
 
 /// Answers the embedded extension's `userAllowlist` messages.
 ///
-/// The extension pulls the list when its background starts, and again when the app performs
-/// `UserAllowlistSync.changedCommandIdentifier` (see `WebExtensionManager.notifyEmbeddedExtensionUserAllowlistChanged()`).
+/// The extension pulls the list when its background starts. Later changes reach it as subscription events (see
+/// `WebExtensionManager.installUserAllowlistNotifier(changes:allowlist:)`).
 @available(macOS 15.4, iOS 18.4, *)
 public final class UserAllowlistWebExtensionMessageHandler: WebExtensionMessageHandler {
 

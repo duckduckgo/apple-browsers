@@ -94,6 +94,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public var remoteDisableEnforcer: WebExtensionRemoteDisableEnforcer?
     /// Tells the embedded extension when the user's allowlist changes. See `installUserAllowlistNotifier`.
     var userAllowlistNotifier: UserAllowlistChangeNotifier?
+    /// Subscription events waiting for the embedded extension to pull them. See `sendSubscriptionEvent`.
+    let subscriptionEventOutbox = WebExtensionEventOutbox()
     let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening { listener }
     private let listener = WebExtensionEventsListener()

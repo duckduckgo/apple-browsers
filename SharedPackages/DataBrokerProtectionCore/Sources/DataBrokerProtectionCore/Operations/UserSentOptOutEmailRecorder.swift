@@ -18,12 +18,21 @@
 
 import Foundation
 import Common
+import DDGError
 import os.log
 
-public enum UserSentOptOutEmailError: Error, LocalizedError {
+public enum UserSentOptOutEmailError: DDGError {
     case recordNotFound(recordId: Int64)
 
-    public var errorDescription: String? {
+    public static var errorDomain: String { "com.duckduckgo.databrokerprotection.UserSentOptOutEmailError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .recordNotFound: return 1
+        }
+    }
+
+    public var description: String {
         switch self {
         case .recordNotFound(let recordId):
             return "No extracted profile with id \(recordId)"

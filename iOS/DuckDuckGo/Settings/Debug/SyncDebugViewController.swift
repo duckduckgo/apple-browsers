@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import BackgroundTasks
 import Core
 import Persistence
 import Bookmarks
@@ -69,6 +70,7 @@ class SyncDebugViewController: UITableViewController {
         case resetMigrationMarker
         case resetDeviceActivityReviewDate
         case fetchAuditLogDump
+        case scheduleBackgroundPoll
 
     }
 
@@ -197,6 +199,8 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Reset migration marker"
             case .resetDeviceActivityReviewDate:
                 cell.textLabel?.text = "Reset Device Activity review date"
+            case .scheduleBackgroundPoll:
+                cell.textLabel?.text = "Schedule background audit poll"
             case .fetchAuditLogDump:
                 cell.textLabel?.text = "Fetch decoded audit log"
                 cell.detailTextLabel?.text = isFetchingAuditLogDump ? "Loading…" : auditLogDumpStatus
@@ -322,6 +326,8 @@ class SyncDebugViewController: UITableViewController {
                 confirmResetMigrationMarker()
             case .resetDeviceActivityReviewDate:
                 showDeviceActivityReviewDateOptions(at: indexPath)
+            case .scheduleBackgroundPoll:
+                showBackgroundPollOptions(at: indexPath)
             case .fetchAuditLogDump:
                 fetchAuditLogDump()
             case .none:
@@ -514,6 +520,60 @@ class SyncDebugViewController: UITableViewController {
             refreshMigrationStatus()
         })
         present(alertController, animated: true)
+    }
+
+    private func showBackgroundPollOptions(at indexPath: IndexPath) {
+        let alert = UIAlertController(title: "Schedule background audit poll", message: "The delay is the earliest start time. iOS decides when the task runs.", preferredStyle: .actionSheet)
+        let options: [(String, TimeInterval)] = [("10 seconds", 10), ("30 seconds", 30), ("1 minute", 60), ("5 minutes", 300)]
+        for (title, delay) in options {
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                self?.scheduleBackgroundPoll(after: delay)
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Custom delay…", style: .default) { [weak self] _ in
+            self?.showCustomBackgroundPollDelay()
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.popoverPresentationController?.sourceView = tableView
+        alert.popoverPresentationController?.sourceRect = tableView.rectForRow(at: indexPath)
+        present(alert, animated: true)
+    }
+
+    private func showCustomBackgroundPollDelay() {
+        let alert = UIAlertController(title: "Background poll delay", message: "Enter minutes and seconds.", preferredStyle: .alert)
+        for placeholder in ["Minutes", "Seconds"] {
+            alert.addTextField {
+                $0.placeholder = placeholder
+                $0.keyboardType = .decimalPad
+            }
+        }
+        alert.addAction(UIAlertAction(title: "Schedule", style: .default) { [weak self, weak alert] _ in
+            let fields = alert?.textFields
+            let minutesText = fields?.first?.text ?? ""
+            let secondsText = fields?.last?.text ?? ""
+            guard let minutes = Double(minutesText.isEmpty ? "0" : minutesText),
+                  let seconds = Double(secondsText.isEmpty ? "0" : secondsText),
+                  minutes >= 0, seconds >= 0,
+                  (minutes * 60 + seconds).isFinite, minutes * 60 + seconds > 0 else {
+                self?.showAlert(title: "Invalid delay", message: "Enter a positive delay in minutes or seconds.")
+                return
+            }
+            self?.scheduleBackgroundPoll(after: minutes * 60 + seconds)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    private func scheduleBackgroundPoll(after delay: TimeInterval) {
+        let request = BGAppRefreshTaskRequest(identifier: SyncAuditLogBackgroundTask.identifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: delay)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+            showAlert(title: "Background poll request queued",
+                      message: "Earliest start: \(delay) seconds from now. Put the app in the background. iOS decides when it runs. Normal eligibility rules still apply.")
+        } catch {
+            showAlert(title: "Could not queue background poll", message: error.localizedDescription)
+        }
     }
 
     private func showDeviceActivityReviewDateOptions(at indexPath: IndexPath) {

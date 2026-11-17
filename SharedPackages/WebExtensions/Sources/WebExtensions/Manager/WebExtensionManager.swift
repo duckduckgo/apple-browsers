@@ -1765,7 +1765,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.Permission>, Date?) {
         let unavailable = permissions.intersection(unavailablePermissions)
-        if !unavailable.isEmpty {
+        if unavailable.contains(.nativeMessaging) {
             recordNativeMessagingLimitation(for: extensionContext)
         }
         let request = WebExtensionPermissionRequest(permissions: permissions.subtracting(unavailable), unavailablePermissions: unavailable)

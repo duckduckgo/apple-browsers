@@ -67,8 +67,10 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
             Logger.webExtensions.debug("Chrome Web Store extension base URL: \(baseURL.absoluteString, privacy: .public)")
         }
         registerHandlersForExtension(identifier: identifier, context: context)
-        // A grant saved before the permission became unavailable lets the extension skip asking, so the user
-        // would never learn why the feature doesn't work. Required permissions stay, as the extension needs them to load.
+        // Users who allowed an optional permission (e.g. Bitwarden's nativeMessaging) before this build made it
+        // unavailable still have that grant saved, so the extension never asks again and they never see why the
+        // feature doesn't work. Dropping the grant makes the next request show the explanation.
+        // Required permissions stay, as the extension needs them to load.
         let revoked = unavailablePermissions.subtracting(context.webExtension.requestedPermissions)
         if !revoked.isEmpty {
             context.grantedPermissions = context.grantedPermissions.filter { !revoked.contains($0.key) }

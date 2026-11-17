@@ -70,7 +70,7 @@ struct BrowserToolsDebugView: View {
                         .foregroundColor(.secondary)
                 }
                 Picker(selection: $model.tool) {
-                    ForEach([ClientToolCapability.listOpenTabs, .switchToTab], id: \.name) { capability in
+                    ForEach([ClientToolCapability.listOpenTabs, .switchToTab, .readTabContent, .searchHistory, .findInPage], id: \.name) { capability in
                         Text(verbatim: capability.name).tag(capability.name)
                     }
                 } label: {
@@ -229,7 +229,15 @@ private final class BrowserToolsDebugModel: ObservableObject {
     }
 
     @Published var tool = ClientToolCapability.listOpenTabs.name {
-        didSet { arguments = tool == ClientToolCapability.listOpenTabs.name ? "{\"limit\":50}" : "{\n  \"tabId\": \"\"\n}" }
+        didSet {
+            switch tool {
+            case ClientToolCapability.listOpenTabs.name: arguments = "{\"limit\":50}"
+            case ClientToolCapability.switchToTab.name: arguments = "{\n  \"tabId\": \"\"\n}"
+            case ClientToolCapability.searchHistory.name: arguments = "{\"limit\":10}"
+            case ClientToolCapability.findInPage.name: arguments = "{\"query\":\"\",\"maxMatches\":10}"
+            default: arguments = "{}"
+            }
+        }
     }
     @Published var arguments = "{\"limit\":50}"
     @Published private var execution = Execution.idle

@@ -24,6 +24,7 @@ import UIKit
 protocol AIChatNativePermissionPresenting: AnyObject {
     var isSurfaceAvailable: Bool { get }
     var isPresentingPermission: Bool { get }
+    func owns(_ viewController: UIViewController) -> Bool
     func present(_ prompt: ClientToolPermissionPrompt, message: String, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool
     func withdraw(requestID: String, completion: @escaping @MainActor () -> Void)
     func withdrawActive(completion: @escaping @MainActor () -> Void)
@@ -37,8 +38,7 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
         let requestID: String
         let alert: UIAlertController
         var phase = Phase.presenting
-        var dismissalRequested = false
-        var decisionSelected = false
+        var dismissalAnimated: Bool?
         var completions: [@MainActor () -> Void] = []
 
         init(requestID: String, alert: UIAlertController) {
@@ -49,7 +49,7 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
 
     private let surface: @MainActor () -> UIViewController?
     private let show: @MainActor (UIViewController, UIAlertController, @escaping @MainActor () -> Void) -> Bool
-    private let dismiss: @MainActor (UIAlertController, @escaping @MainActor () -> Void) -> Void
+    private let dismiss: @MainActor (UIAlertController, Bool, @escaping @MainActor () -> Void) -> Void
     private var active: Presentation?
 
     init(surface: @escaping @MainActor () -> UIViewController?,
@@ -57,13 +57,13 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
              owner.present(alert, animated: true, completion: completion)
              return alert.presentingViewController != nil
          },
-         dismiss: @escaping @MainActor (UIAlertController, @escaping @MainActor () -> Void) -> Void = { alert, completion in
+         dismiss: @escaping @MainActor (UIAlertController, Bool, @escaping @MainActor () -> Void) -> Void = { alert, animated, completion in
              guard alert.presentingViewController != nil else { completion(); return }
              if alert.isBeingDismissed, let transition = alert.transitionCoordinator,
                 transition.animate(alongsideTransition: nil, completion: { _ in completion() }) {
                  return
              }
-             alert.dismiss(animated: true, completion: completion)
+             alert.dismiss(animated: animated, completion: completion)
          }) {
         self.surface = surface
         self.show = show
@@ -71,6 +71,10 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
     }
 
     var isPresentingPermission: Bool { active != nil }
+
+    func owns(_ viewController: UIViewController) -> Bool {
+        active?.alert === viewController
+    }
 
     var isSurfaceAvailable: Bool {
         guard let owner = surface(), owner.viewIfLoaded?.window != nil,
@@ -96,16 +100,16 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
         ]
         for (title, choice, style) in choices {
             alert.addAction(UIAlertAction(title: title, style: style) { [weak self, weak presentation] _ in
-                guard let self, let presentation, self.active === presentation, !presentation.decisionSelected else { return }
-                presentation.decisionSelected = true
-                self.withdraw(requestID: presentation.requestID) { decision(choice) }
+                guard let self, let presentation, self.active === presentation,
+                      presentation.dismissalAnimated == nil else { return }
+                self.withdraw(requestID: presentation.requestID, animated: true) { decision(choice) }
             })
         }
         active = presentation
-        let shown = show(owner, alert) { [weak self, weak presentation] in
-            guard let self, let presentation, self.active === presentation else { return }
+        let shown = show(owner, alert) { [self, presentation] in
+            guard active === presentation, case .presenting = presentation.phase else { return }
             presentation.phase = .presented
-            if presentation.dismissalRequested { self.dismiss(presentation) }
+            if presentation.dismissalAnimated != nil { dismiss(presentation) }
         }
         if !shown { completeDismissal(presentation) }
         return shown
@@ -117,19 +121,24 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
     }
 
     func withdraw(requestID: String, completion: @escaping @MainActor () -> Void) {
+        withdraw(requestID: requestID, animated: false, completion: completion)
+    }
+
+    private func withdraw(requestID: String, animated: Bool, completion: @escaping @MainActor () -> Void) {
         guard let presentation = active, presentation.requestID == requestID else {
             completion()
             return
         }
         presentation.completions.append(completion)
-        presentation.dismissalRequested = true
+        if presentation.dismissalAnimated == nil { presentation.dismissalAnimated = animated }
         if case .presented = presentation.phase { dismiss(presentation) }
     }
 
     private func dismiss(_ presentation: Presentation) {
+        guard case .presented = presentation.phase, let animated = presentation.dismissalAnimated else { return }
         presentation.phase = .dismissing
-        dismiss(presentation.alert) { [weak self, presentation] in
-            self?.completeDismissal(presentation)
+        dismiss(presentation.alert, animated) { [self, presentation] in
+            completeDismissal(presentation)
         }
     }
 

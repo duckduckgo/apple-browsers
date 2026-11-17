@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import UIKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -33,6 +34,8 @@ final class MockAIChatNativePermissionPresenter: AIChatNativePermissionPresentin
     var isPresentingPermission: Bool { active != nil }
 
     var isSurfaceAvailable: Bool { isAvailable }
+
+    func owns(_ viewController: UIViewController) -> Bool { false }
 
     func present(_ prompt: ClientToolPermissionPrompt, message: String, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
         guard isAvailable, active == nil else { return false }

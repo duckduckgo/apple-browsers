@@ -111,7 +111,7 @@ public final class AIChatLocalRunQueue {
             let end = now()
             let metrics = AIChatLocalRunChunk.Metrics(timeToFirstWordMs: firstWordAt.map { Self.milliseconds($0 - start) },
                                                       totalMs: Self.milliseconds(end - start),
-                                                      loadMs: nil,
+                                                      loadMs: summary?.loadMs,
                                                       promptTokens: summary?.promptTokens,
                                                       outputTokens: summary?.outputTokens,
                                                       inputTruncated: summary?.inputTruncated ?? false)

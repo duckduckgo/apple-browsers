@@ -20,7 +20,7 @@ import CLlama
 import Foundation
 import os.log
 
-public enum LlamaRuntimeError: Error, Equatable {
+public enum LlamaRuntimeError: Error, Equatable, Sendable {
     /// llama.cpp can't run here: an Intel Mac, Rosetta, or an OS older than its build supports.
     case unsupportedSystem
     case libraryUnavailable(String)

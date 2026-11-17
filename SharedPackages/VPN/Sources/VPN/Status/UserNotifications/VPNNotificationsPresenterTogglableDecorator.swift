@@ -81,6 +81,10 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         }
     }
 
+    public func showSignedOutNotification() {
+        wrappeePresenter.showSignedOutNotification()
+    }
+
     public func showDebugEventNotification(message: String) {
         if settings.showDebugVPNEventNotifications {
             wrappeePresenter.showDebugEventNotification(message: message)

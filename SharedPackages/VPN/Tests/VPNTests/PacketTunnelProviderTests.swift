@@ -159,6 +159,32 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertTrue(recorder.retryOnFailure)
     }
 
+    // MARK: - Auth notifications
+
+    func testWhenTheTunnelStartsWithoutATokenThenTheSignedOutNotificationIsShown() {
+        let presenter = RecordingNotificationsPresenter()
+
+        PacketTunnelProvider.AuthNotification.signedOut.present(with: presenter)
+
+        XCTAssertEqual(presenter.shown, [.signedOut])
+    }
+
+    func testWhenTheSubscriptionExpiredThenTheEntitlementNotificationIsShown() {
+        let presenter = RecordingNotificationsPresenter()
+
+        PacketTunnelProvider.AuthNotification.subscriptionExpired.present(with: presenter)
+
+        XCTAssertEqual(presenter.shown, [.entitlement])
+    }
+
+    func testWhenAPresenterHasNoSignedOutNotificationThenTheEntitlementNotificationIsShown() {
+        let presenter = EntitlementOnlyNotificationsPresenter()
+
+        PacketTunnelProvider.AuthNotification.signedOut.present(with: presenter)
+
+        XCTAssertEqual(presenter.entitlementNotificationsShown, 1)
+    }
+
     /// Tests that `TunnelError` has the expected underlying error information.
     ///
     func testThatTunnelErrorHasTheExpectedUnderlyingErrorInformation() {
@@ -260,4 +286,38 @@ private final class RetryRecordingPixelFiring: PixelKitFiring {
         retryOnFailure = options.retryOnFailure
         mock.fire(event: event, frequency: frequency, options: options, onComplete: onComplete)
     }
+}
+
+private final class EntitlementOnlyNotificationsPresenter: VPNNotificationsPresenting {
+    private(set) var entitlementNotificationsShown = 0
+
+    func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {}
+    func showStrictRoutingReminderNotification() {}
+    func showReconnectingNotification() {}
+    func showConnectionFailureNotification() {}
+    func showSnoozingNotification(duration: TimeInterval) {}
+    func showSupersededNotification() {}
+    func showTestNotification() {}
+    func showEntitlementNotification() { entitlementNotificationsShown += 1 }
+    func showDebugEventNotification(message: String) {}
+}
+
+private final class RecordingNotificationsPresenter: VPNNotificationsPresenting {
+    enum Notification: Equatable {
+        case entitlement
+        case signedOut
+    }
+
+    private(set) var shown: [Notification] = []
+
+    func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {}
+    func showStrictRoutingReminderNotification() {}
+    func showReconnectingNotification() {}
+    func showConnectionFailureNotification() {}
+    func showSnoozingNotification(duration: TimeInterval) {}
+    func showSupersededNotification() {}
+    func showTestNotification() {}
+    func showEntitlementNotification() { shown.append(.entitlement) }
+    func showDebugEventNotification(message: String) {}
+    func showSignedOutNotification() { shown.append(.signedOut) }
 }

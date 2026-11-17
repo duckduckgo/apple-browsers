@@ -2337,7 +2337,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     // MARK: - Address Bar Update Button
 
-    /// Shows the prominent update button to the left of the browser menu button at the second prompt stage.
+    /// Shows the prominent update button to the left of the browser menu button at the stages that call for it.
     private func setupAddressBarUpdateButton() {
         guard !isInPopUpWindow, let updateController = Application.appDelegate.updateController else { return }
 
@@ -2345,7 +2345,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         updateController.pendingUpdatePromptStagePublisher
             .combineLatest(updateController.updateProgressPublisher)
             .receive(on: DispatchQueue.main)
-            .map { stage, _ in stage == .secondPrompt ? updateController.updatePromptButtonTitle : nil }
+            .map { stage, _ in stage.showsToolbarButton ? updateController.addressBarUpdateButtonTitle : nil }
             .removeDuplicates()
             .sink { [weak self] title in
                 self?.addressBarUpdateButton?.removeFromSuperview()
@@ -2359,6 +2359,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     private func addAddressBarUpdateButton(title: String, for updateController: any UpdateController) {
         let button = AddressBarUpdateButton(title: title) {
+            UpdateClickReporter().reportClick(on: .toolbarButton)
             updateController.runUpdateFromPrompt()
         }.embeddedInHostingView()
 

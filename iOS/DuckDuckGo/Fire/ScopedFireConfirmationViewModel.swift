@@ -29,7 +29,15 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     // MARK: - Types
 
     struct FireConfirmationButton {
-        enum Style { case primary, secondary, secondaryNeutral, slide }
+        enum Style: Equatable {
+            case primary, secondary, secondaryNeutral
+            case slide(completionTitle: String)
+
+            var isSlide: Bool {
+                if case .slide = self { return true }
+                return false
+            }
+        }
 
         let title: String
         let style: Style
@@ -160,7 +168,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                     return button
                 }
                 return FireConfirmationButton(title: title,
-                                              style: .slide,
+                                              style: .slide(completionTitle: button.title),
                                               action: button.action,
                                               accessibilityIdentifier: button.accessibilityIdentifier)
             }
@@ -177,8 +185,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
 
     // MARK: - Button Building
 
-    /// Returns `true` when the dialog should show only a single chat-delete button
-    /// (contextual chat deletion, or AI tab with refinements enabled).
     private static func isSingleChatConfirmation(fireContext: FireContext,
                                                  isRefinementsEnabled: Bool,
                                                  tabViewModel: TabViewModel?) -> Bool {

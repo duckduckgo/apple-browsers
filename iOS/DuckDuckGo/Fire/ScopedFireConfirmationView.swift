@@ -41,7 +41,7 @@ struct ScopedFireConfirmationView: View {
 
     private var contentPadding: EdgeInsets {
         var padding = presentationSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
-        if viewModel.buttons.contains(where: { $0.style == .slide }) {
+        if viewModel.buttons.contains(where: { $0.style.isSlide }) {
             padding.bottom = 48
         }
         return padding
@@ -104,8 +104,12 @@ struct ScopedFireConfirmationView: View {
         VStack(spacing: Constants.buttonSpacing) {
             ForEach(viewModel.buttons.indices, id: \.self) { index in
                 let button = viewModel.buttons[index]
-                if button.style == .slide {
-                    SlideToDeleteControl(title: button.title, variant: slideVariant, style: slideStyle, action: button.action)
+                if case .slide(let completionTitle) = button.style {
+                    SlideToDeleteControl(title: button.title,
+                                         completionTitle: completionTitle,
+                                         variant: slideVariant,
+                                         style: slideStyle,
+                                         action: button.action)
                         .accessibilityIdentifier(button.accessibilityIdentifier)
                 } else {
                     Button(action: button.action) {

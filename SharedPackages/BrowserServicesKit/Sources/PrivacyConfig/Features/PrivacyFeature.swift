@@ -1006,9 +1006,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
-    case syncFaviconsPromo
-
     /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
     case autofillToolbarPinningPromo
 

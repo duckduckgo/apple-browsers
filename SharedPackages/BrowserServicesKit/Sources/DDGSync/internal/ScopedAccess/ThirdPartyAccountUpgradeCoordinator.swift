@@ -96,22 +96,23 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
         self.retrySleep = retrySleep
     }
 
-    /// Upgrades a 3party account to a native (default) credential: temporary scoped login → create the native credential (rewrapping 3party keys) → drop the temp device → log in as the new native device.
+    /// Upgrades a 3party account to a native (default) credential: temporary scoped login → create the native credential (rewrapping 3party keys) → replace the temporary session with a native login using the same device ID.
     func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> UpgradedThirdPartyAccount {
         // Decode the 3party recovery code and use it for a temporary scoped login.
         let recoveryKey = try decodeThirdPartyRecoveryKey(from: recoveryCode)
         let scopedPassword = try decodeScopedPassword(from: recoveryKey)
+        let deviceId = UUID().uuidString
 
         let thirdPartyLogin: ThirdPartyLogin
         do {
-            thirdPartyLogin = try await loginThirdPartyCredential(recoveryKey, scopedPassword: scopedPassword, deviceName: deviceName, deviceType: deviceType)
+            thirdPartyLogin = try await loginThirdPartyCredential(recoveryKey, scopedPassword: scopedPassword, deviceId: deviceId, deviceName: deviceName, deviceType: deviceType)
         } catch let error as ThirdPartyAccountUpgradeError {
             throw error
         } catch {
             throw ThirdPartyAccountUpgradeError.temporaryThirdPartyLoginFailed
         }
 
-        let thirdPartyAccount = SyncAccount(deviceId: thirdPartyLogin.deviceId,
+        let thirdPartyAccount = SyncAccount(deviceId: deviceId,
                                             deviceName: deviceName,
                                             deviceType: deviceType,
                                             userId: recoveryKey.userId,
@@ -120,7 +121,8 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
                                             token: thirdPartyLogin.token,
                                             state: .addingNewDevice)
 
-        var didLogoutTemporaryThirdPartyDevice = false
+        let accountKeys: AccountCreationKeys
+        let rewrappedProtectedKeys: [ProtectedKey]
         do {
             // Confirm the account has not already been upgraded before creating native credentials.
             let accessCredentials = try await fetchAccessCredentials(for: thirdPartyAccount)
@@ -130,10 +132,9 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
 
             // Rewrap 3party-protected keys to the new native secret key and store the old scoped password as a protected credential.
             let thirdPartyProtectedKeys = try await fetchUsableThirdPartyProtectedKeys(for: thirdPartyAccount)
-            let accountKeys = try generateDefaultCredentialMaterial(userId: recoveryKey.userId)
+            accountKeys = try generateDefaultCredentialMaterial(userId: recoveryKey.userId)
             let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: accountKeys.primaryKey, userID: recoveryKey.userId)
             let addsAccountInfoWrapper = thirdPartyProtectedKeys.contains { $0.purpose == ProtectedKeyPurpose.accountInfo }
-            let rewrappedProtectedKeys: [ProtectedKey]
             do {
                 rewrappedProtectedKeys = try rewrapThirdPartyProtectedKeys(thirdPartyProtectedKeys,
                                                                            fromWrappingKey: thirdPartyLogin.mainKey,
@@ -152,20 +153,16 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
                                                  encryptedThirdPartyCredential: encryptedThirdPartyCredential,
                                                  keys: rewrappedProtectedKeys,
                                                  addsAccountInfoWrapper: addsAccountInfoWrapper)
-
-            // Remove the temporary 3party device before logging in as the newly-created native device.
-            await logoutTemporaryThirdPartyDevice(thirdPartyLogin)
-            didLogoutTemporaryThirdPartyDevice = true
-
-            let nativeLogin = try await loginDefaultCredentialWithRetry(userId: recoveryKey.userId, accountKeys: accountKeys, deviceName: deviceName, deviceType: deviceType)
-
-            return UpgradedThirdPartyAccount(account: nativeLogin.account, devices: nativeLogin.devices, scopedPassword: scopedPassword, protectedKeys: rewrappedProtectedKeys)
         } catch {
-            if !didLogoutTemporaryThirdPartyDevice {
-                await logoutTemporaryThirdPartyDevice(thirdPartyLogin)
-            }
+            // Failures before the native login abort with a logout; a new attempt generates a new device ID.
+            await logoutAfterAbortedUpgrade(deviceId: deviceId, token: thirdPartyLogin.token)
             throw error
         }
+
+        // The native login replaces the third-party token. Do not use that token for cleanup after this point.
+        let nativeLogin = try await loginDefaultCredentialWithRetry(userId: recoveryKey.userId, accountKeys: accountKeys, deviceId: deviceId, deviceName: deviceName, deviceType: deviceType)
+
+        return UpgradedThirdPartyAccount(account: nativeLogin.account, devices: nativeLogin.devices, scopedPassword: scopedPassword, protectedKeys: rewrappedProtectedKeys)
     }
 
     private func decodeThirdPartyRecoveryKey(from recoveryCode: String) throws -> SyncCode.RecoveryKeyV2 {
@@ -248,14 +245,14 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
         }
     }
 
-    private func loginThirdPartyCredential(_ recoveryKey: SyncCode.RecoveryKeyV2, scopedPassword: Data, deviceName: String, deviceType: String) async throws -> ThirdPartyLogin {
-        let deviceId = UUID().uuidString
+    private func loginThirdPartyCredential(_ recoveryKey: SyncCode.RecoveryKeyV2, scopedPassword: Data, deviceId: String, deviceName: String, deviceType: String) async throws -> ThirdPartyLogin {
         let hashedPassword = ScopedAccessKeyDerivation.hashedPassword(from: scopedPassword, userID: recoveryKey.userId)
+        let mainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: recoveryKey.userId)
         let params = ThirdPartyLoginParameters(userId: recoveryKey.userId,
                                                hashedPassword: hashedPassword,
                                                deviceId: deviceId,
-                                               deviceName: Data(deviceName.utf8).base64EncodedString(),
-                                               deviceType: Data(deviceType.utf8).base64EncodedString(),
+                                               deviceName: try jweCompactCodec.encryptDirect(payload: Data(deviceName.utf8), contentEncryptionKey: mainKey, kid: SyncCredentialID.thirdParty),
+                                               deviceType: try jweCompactCodec.encryptDirect(payload: Data(deviceType.utf8), contentEncryptionKey: mainKey, kid: SyncCredentialID.thirdParty),
                                                scope: LoginScope.thirdPartyAccountManagement)
         let requestJson = try JSONEncoder.snakeCaseKeys.encode(params)
         let request = api.createUnauthenticatedJSONRequest(url: endpoints.login, method: .post, json: requestJson)
@@ -271,27 +268,25 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
         guard let loginResult = try? JSONDecoder.snakeCaseKeys.decode(ThirdPartyLoginResult.self, from: body) else {
             throw ThirdPartyAccountUpgradeError.invalidTemporaryLoginResponse
         }
-        return ThirdPartyLogin(deviceId: deviceId,
-                               token: loginResult.token,
+        return ThirdPartyLogin(token: loginResult.token,
                                hashedPassword: hashedPassword,
-                               mainKey: ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: recoveryKey.userId),
-                               devices: loginResult.registeredDevices)
+                               mainKey: mainKey)
     }
 
-    private func logoutTemporaryThirdPartyDevice(_ thirdPartyLogin: ThirdPartyLogin) async {
+    private func logoutAfterAbortedUpgrade(deviceId: String, token: String) async {
         do {
-            try await account.logout(deviceId: thirdPartyLogin.deviceId, token: thirdPartyLogin.token)
+            try await account.logout(deviceId: deviceId, token: token)
         } catch {
-            Logger.sync.error("3party account upgrade failed to log out temporary 3party device: \(String(reflecting: error))")
+            Logger.sync.error("3party account upgrade cleanup logout failed: \(String(reflecting: error))")
         }
     }
 
-    private func loginDefaultCredentialWithRetry(userId: String, accountKeys: AccountCreationKeys, deviceName: String, deviceType: String) async throws -> LoginResult {
+    private func loginDefaultCredentialWithRetry(userId: String, accountKeys: AccountCreationKeys, deviceId: String, deviceName: String, deviceType: String) async throws -> LoginResult {
         var retryDelays = finalNativeLoginRetryDelays
 
         while true {
             do {
-                return try await loginDefaultCredential(userId: userId, accountKeys: accountKeys, deviceName: deviceName, deviceType: deviceType)
+                return try await loginDefaultCredential(userId: userId, accountKeys: accountKeys, deviceId: deviceId, deviceName: deviceName, deviceType: deviceType)
             } catch let error as ThirdPartyAccountUpgradeError {
                 throw error
             } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
@@ -370,9 +365,9 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
 
     private func loginDefaultCredential(userId: String,
                                         accountKeys: AccountCreationKeys,
+                                        deviceId: String,
                                         deviceName: String,
                                         deviceType: String) async throws -> LoginResult {
-        let deviceId = UUID().uuidString
         let loginInfo = try crypter.extractLoginInfo(
             recoveryKey: SyncCode.RecoveryKey(userId: userId, primaryKey: accountKeys.primaryKey))
         let params = DefaultCredentialLoginParameters(
@@ -470,37 +465,11 @@ private struct DefaultCredentialLoginResult: Decodable {
 }
 
 private struct ThirdPartyLoginResult: Decodable {
-    let devices: [ThirdPartyLoginDevice]?
     let token: String
-
-    var registeredDevices: [RegisteredDevice] {
-        devices?.map { $0.registeredDevice } ?? []
-    }
-}
-
-private struct ThirdPartyLoginDevice: Decodable {
-    let id: String
-    let name: String
-    let type: String?
-
-    var registeredDevice: RegisteredDevice {
-        RegisteredDevice(id: id,
-                         name: Self.base64DecodedUTF8(name) ?? name,
-                         type: type.flatMap { Self.base64DecodedUTF8($0) } ?? type ?? "")
-    }
-
-    private static func base64DecodedUTF8(_ value: String) -> String? {
-        guard let data = Data(base64Encoded: value) else {
-            return nil
-        }
-        return String(data: data, encoding: .utf8)
-    }
 }
 
 private struct ThirdPartyLogin {
-    let deviceId: String
     let token: String
     let hashedPassword: String
     let mainKey: Data
-    let devices: [RegisteredDevice]
 }

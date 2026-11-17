@@ -57,6 +57,12 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
 
     func viewModelDidRequestOpenChat(chatId: String) {
         duckAIInputFocus.forget()
+        // A Duck.ai tab switches chats in place; anywhere else the chat's URL is loaded.
+        if let tab = currentTab, tab.isAITab {
+            tab.aiChatContentHandler.submitOpenChatAction(chatId: chatId)
+            dismiss(animated: true)
+            return
+        }
         let url = aiChatSettings.aiChatURL.withChatID(chatId)
         dismiss(animated: true) { [weak self] in
             self?.onChatHistorySelected(url: url)

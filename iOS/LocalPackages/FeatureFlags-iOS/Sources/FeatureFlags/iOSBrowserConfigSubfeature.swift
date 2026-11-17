@@ -44,7 +44,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case unifiedURLPredictor
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220345796572420
-    case suggestionDebounce200ms
+    case debounceLogic2026
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings

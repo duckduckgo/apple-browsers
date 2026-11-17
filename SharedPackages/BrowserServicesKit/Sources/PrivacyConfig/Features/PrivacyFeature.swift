@@ -807,6 +807,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canReadUnifiedDeviceList
     case loginAuditLog
     case loginNotification
+    case auditLogBackgroundPolling
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow

@@ -74,6 +74,18 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
+    func testSyncBackgroundPollingHasAnIndependentDefaultDisabledRemoteFlag() {
+        let flag = FeatureFlag.syncAuditLogBackgroundPolling
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            return XCTFail("Expected a remote-releasable flag")
+        }
+        XCTAssertEqual(subfeature as? SyncSubfeature, .auditLogBackgroundPolling)
+        XCTAssertEqual(subfeature.parent, .sync)
+        guard case .disabled = flag.defaultValue else {
+            return XCTFail("Background audit polling must default to disabled")
+        }
+    }
+
     func testAttachmentPrivacyUsesRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.unifiedToggleInputAttachmentPrivacy
         guard case let .remoteReleasable(subfeature) = flag.source else {

@@ -939,9 +939,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // the VPN shouldn't start again.
                 throw error
             case .onDemandEnabledAndVPNReasserting:
-                // Returning here claims success — the shutdown call above ensures the VPN is
-                // reasserting and allowing connections to get through.
-                return
+                // On-demand is still enabled, so back off before failing this start attempt.
+                try? await Task.sleep(interval: .seconds(15))
+                throw error
             }
         }
 

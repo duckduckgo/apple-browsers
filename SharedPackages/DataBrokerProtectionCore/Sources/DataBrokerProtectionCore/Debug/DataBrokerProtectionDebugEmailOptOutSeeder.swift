@@ -56,7 +56,7 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
     }
 
     /// Made-up person, so a seeded dashboard never sends a real opt-out.
-    public static let testProfile = DataBrokerProtectionProfile(names: [.init(firstName: "Jamie", lastName: "Seedtest")],
+    public static let testProfile = DataBrokerProtectionProfile(names: [.init(firstName: "Jamie", lastName: "Doe")],
                                                                addresses: [.init(city: "Austin", state: "TX")],
                                                                phones: [],
                                                                birthYear: 1985)
@@ -118,8 +118,8 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
             }
 
             let profileQuery = firstQueryData.profileQuery
-            // "Test" in front marks it as a seeded record on the dashboard and in the removal email.
-            let extractedProfile = ExtractedProfile(name: "Test \(profileQuery.fullName)",
+            // "(Test)" after the name marks it as a seeded record on the dashboard and in the removal email.
+            let extractedProfile = ExtractedProfile(name: "\(profileQuery.fullName) (Test)",
                                                     addresses: [AddressCityState(city: profileQuery.city, state: profileQuery.state)],
                                                     profileUrl: "https://\(brokerURL)/profile/\(Self.identifier)",
                                                     age: String(profileQuery.age),

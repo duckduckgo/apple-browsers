@@ -26,6 +26,7 @@ import Combine
 import Common
 import FoundationExtensions
 import Configuration
+import GameController
 import Core
 import CoreData
 import DataBrokerProtection_iOS
@@ -1760,7 +1761,8 @@ class MainViewController: UIViewController {
         // the collapse — otherwise the expanded bar collapses on every focus, making it
         // impossible to type.
         if coordinator.viewController.isInputFirstResponder {
-            return
+            // iPad's keyboard can be put away with the input still focused, which leaves it nothing to type with.
+            guard isIPadFullTabChatInput, GCKeyboard.coalesced == nil, presentedViewController == nil else { return }
         }
         coordinator.showCollapsed()
     }

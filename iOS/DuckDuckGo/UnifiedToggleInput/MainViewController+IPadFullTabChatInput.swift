@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import UIKit
 
 /// iPad runs the iPhone Duck.ai tab input (same coordinator, view and FE bridge) but keeps its own address bar and
@@ -34,8 +35,29 @@ extension MainViewController {
         subscribeToModeChanges(coordinator)
         subscribeToSystemEvents()
         subscribeToToggleSettings()
+        // With a hardware keyboard nothing hides when the input loses focus, so the bar follows the focus instead.
+        NotificationCenter.default.publisher(for: UITextView.textDidEndEditingNotification)
+            .filter { [weak coordinator] notification in
+                guard let coordinator, let textView = notification.object as? UIView else { return false }
+                return textView.isDescendant(of: coordinator.viewController.view)
+            }
+            .sink { [weak self] _ in self?.collapseUnfocusedIPadFullTabChatInput() }
+            .store(in: &unifiedToggleInputCancellables)
         if let currentTab {
             refreshUnifiedToggleInput(for: currentTab)
+        }
+    }
+
+    private func collapseUnfocusedIPadFullTabChatInput() {
+        // Focus can move straight back, e.g. while the input re-renders, so judge it once that settles.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator,
+                  coordinator.isAITabExpanded,
+                  !coordinator.isEditing,
+                  !coordinator.viewController.isInputFirstResponder,
+                  // Pickers the input opens take focus while it waits for their result.
+                  self.presentedViewController == nil else { return }
+            coordinator.showCollapsed()
         }
     }
 

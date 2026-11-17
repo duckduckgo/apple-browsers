@@ -19,6 +19,7 @@
 import AIChat
 import AppKit
 import Combine
+import DesignResourcesKitIcons
 import SwiftUI
 import WebKit
 
@@ -178,7 +179,8 @@ final class BrowserToolPermissionPromptPresenter {
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
                            keyMonitor: keyMonitor(answering: prompt.requestID, primary: primary, popover: popover))
-        tabBar.showBrowserToolPermissionButton(icon: BrowserToolPermissionPromptText.icon(toolName: prompt.toolName),
+        // A waiting prompt shows the AI icon; only tools that run without asking show their own.
+        tabBar.showBrowserToolPermissionButton(icon: DesignSystemImages.Glyphs.Size16.aiGeneral,
                                                title: BrowserToolPermissionPromptText.title(toolName: prompt.toolName,
                                                                                             targetsOtherTab: prompt.targetsOtherTab),
                                                action: { [weak self] _ in self?.answer(prompt.requestID, with: .dismiss) },

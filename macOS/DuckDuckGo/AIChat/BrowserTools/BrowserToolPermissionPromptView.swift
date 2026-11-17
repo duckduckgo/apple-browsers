@@ -135,7 +135,7 @@ struct BrowserToolPermissionPromptView: View {
                 accessTools(accessToolNames)
 
                 HStack(spacing: 12) {
-                    decisionButton(UserText.browserToolAccessDontAllow, .dontAllow, id: "dontAllow")
+                    decisionButton(UserText.browserToolAccessDontAllow, .dontAllow, id: "dontAllow", fillsWidth: false)
                     decisionButton(UserText.browserToolAccessAllow, .allowAccess(excluding: Set(selection.removed)), id: "allowInChat", shortcutHint: "⌘↵")
                 }
             } else {
@@ -226,7 +226,9 @@ struct BrowserToolPermissionPromptView: View {
         }
     }
 
-    private func decisionButton(_ title: String, _ decision: ClientToolPermissionDecision, id: String, shortcutHint: String? = nil) -> some View {
+    /// `fillsWidth: false` sizes the button to its title, leaving the rest of the row to the others.
+    private func decisionButton(_ title: String, _ decision: ClientToolPermissionDecision, id: String, shortcutHint: String? = nil,
+                                fillsWidth: Bool = true) -> some View {
         let palette = themeManager.theme.palette
         let primary = shortcutHint != nil
         return Button(action: { decide(decision) }) {
@@ -238,7 +240,8 @@ struct BrowserToolPermissionPromptView: View {
             }
             .font(.system(size: 13))
             .foregroundColor(primary ? Color(palette.accentContentPrimary) : Color(designSystemColor: .textPrimary))
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, fillsWidth ? 0 : 24)
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
             .frame(height: Constants.buttonHeight)
             .background(primary ? Color(palette.accentPrimary) : Color(designSystemColor: .controlsFillPrimary))
             .clipShape(Capsule())

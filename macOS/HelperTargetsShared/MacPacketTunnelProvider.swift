@@ -533,8 +533,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: { Self.isAppex ? .app : .system }(),
-            processStartedAt: processStartedAt,
-            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
+            processStartedAt: processStartedAt)
 
         // MARK: - Subscription configuration
 

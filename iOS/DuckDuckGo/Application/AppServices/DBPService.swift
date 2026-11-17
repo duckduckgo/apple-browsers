@@ -24,6 +24,7 @@ import Common
 import FoundationExtensions
 import BrowserServicesKit
 import DDGError
+import PrivacyConfig
 import PixelKit
 import Networking
 import Subscription

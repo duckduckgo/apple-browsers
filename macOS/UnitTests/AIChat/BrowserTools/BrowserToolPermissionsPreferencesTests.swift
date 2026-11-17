@@ -86,9 +86,8 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
 
     func testWhenTheChoiceChangesElsewhereThenTheRowsFollow() {
         let expectation = expectation(description: "reloaded")
-        let cancellable = model.$storedStates.dropFirst().sink { _ in expectation.fulfill() }
+        let cancellable = model.$storedStates.first { $0["listOpenTabs"] == .allow }.sink { _ in expectation.fulfill() }
         permissions.setState(.allow, forToolNamed: "listOpenTabs")
-        manager.permissionSubject.send((BrowserToolSitePermissions.domain, .browserTool(name: "listOpenTabs"), .decisionChanged(.allow)))
 
         wait(for: [expectation], timeout: 1)
 

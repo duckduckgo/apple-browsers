@@ -30,12 +30,19 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     private enum Metrics {
         static let estimatedNavBarHeight: CGFloat = 50
         static let estimatedToolbarHeight: CGFloat = 49
+        static let minimumStatusBarRowWidth: CGFloat = 320
         static let topFloatingInset: CGFloat = 8
         static let bottomFloatingInset: CGFloat = 8
         static let fallbackToolbarHorizontalPadding: CGFloat = 20
         static let fallbackAIButtonSpacing: CGFloat = 12
         static let menuButtonSize: CGFloat = 36
         static let fallbackMenuButtonSize: CGFloat = 44
+    }
+
+    private struct StatusBarRow: Equatable {
+        let guide: UILayoutGuide
+        var leftInset: CGFloat = 0
+        var rightInset: CGFloat = 0
     }
 
     private let navigationBar = UINavigationBar()
@@ -57,6 +64,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     private weak var centerView: UIView?
     private var glassCenterContainer: UIView?
     private var layoutConstraints: [NSLayoutConstraint] = []
+    private var navigationBarConstraints: [NSLayoutConstraint] = []
+    private var statusBarRow: StatusBarRow?
     private var isFireModeEnabled = false
     private var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
 
@@ -392,10 +401,13 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     /// Both pages use this so tab cards keep the same top spacing during a paging swipe.
     var topBarBottomOffset: CGFloat {
         if navigationBar.frame.maxY > 0 {
-            return navigationBar.frame.maxY
+            let statusBarClearance = sharesStatusBarRow ? hostView?.safeAreaInsets.top ?? 0 : 0
+            return max(navigationBar.frame.maxY, statusBarClearance)
         }
         return Metrics.topFloatingInset + Metrics.estimatedNavBarHeight
     }
+
+    var sharesStatusBarRow: Bool { statusBarRow != nil }
 
     func applyCollectionContentInset(to collectionView: UICollectionView) {
         collectionView.contentInsetAdjustmentBehavior = .never
@@ -438,7 +450,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         toolbar.isHidden = interfaceMode.isLarge
 
         NSLayoutConstraint.deactivate(layoutConstraints)
-        layoutConstraints = []
+        NSLayoutConstraint.deactivate(navigationBarConstraints)
+        navigationBarConstraints = []
 
         [navigationBar, toolbar, fallbackTopBackgroundView, contentView].forEach { $0.removeFromSuperview() }
 
@@ -450,18 +463,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         hostView.addSubview(toolbar)
         hostView.addSubview(navigationBar)
 
-        let topGuide: UILayoutGuide
-        if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad {
-            topGuide = hostView.layoutGuide(for: .margins(cornerAdaptation: .vertical))
-        } else {
-            topGuide = hostView.layoutMarginsGuide
-        }
-
         var constraints = [
-            navigationBar.topAnchor.constraint(equalTo: topGuide.topAnchor, constant: Metrics.topFloatingInset),
-            navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
-            navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
-
             contentView.topAnchor.constraint(equalTo: hostView.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
@@ -493,9 +495,70 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         }
         NSLayoutConstraint.activate(constraints)
         layoutConstraints = constraints
+        updateNavigationBarLayout()
+    }
+
+    func updateNavigationBarLayout() {
+        guard let hostView, navigationBar.superview === hostView else { return }
+        let row = statusBarRow(in: hostView)
+        guard navigationBarConstraints.isEmpty || statusBarRow != row else { return }
+
+        NSLayoutConstraint.deactivate(navigationBarConstraints)
+        statusBarRow = row
+
+        if let row {
+            navigationBarConstraints = [
+                navigationBar.centerYAnchor.constraint(equalTo: row.guide.centerYAnchor),
+                navigationBar.leftAnchor.constraint(equalTo: row.guide.leftAnchor, constant: row.leftInset),
+                navigationBar.rightAnchor.constraint(equalTo: row.guide.rightAnchor, constant: -row.rightInset),
+            ]
+        } else {
+            let topGuide: UILayoutGuide
+            if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad {
+                topGuide = hostView.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            } else {
+                topGuide = hostView.layoutMarginsGuide
+            }
+            navigationBarConstraints = [
+                navigationBar.topAnchor.constraint(equalTo: topGuide.topAnchor, constant: Metrics.topFloatingInset),
+                navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
+                navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
+            ]
+        }
+        NSLayoutConstraint.activate(navigationBarConstraints)
     }
 
     // MARK: - Private
+
+    private func statusBarRow(in hostView: UIView) -> StatusBarRow? {
+#if DDG_HAS_DUO_LAYOUT_SDK
+        if #available(iOS 27.1, *), let window = hostView.window, hostView.traitCollection.userInterfaceIdiom == .phone,
+           hostView.bounds.width > hostView.bounds.height,
+           !window.reservedRegions(kind: .division, options: .includeInactive).isEmpty {
+
+            let height = max(navigationBar.intrinsicContentSize.height, Metrics.estimatedNavBarHeight)
+            let region = UIView.LayoutRegion.bar(onEdge: UIRectEdge.top, extent: height)
+            let availableFrame = hostView.bounds.inset(by: hostView.edgeInsets(for: region))
+            guard !availableFrame.isEmpty,
+                  availableFrame.midY < hostView.bounds.minY + hostView.safeAreaInsets.top else { return nil }
+
+            let guide = hostView.layoutGuide(for: region)
+            let fold = hostView.reservedRegions(kind: .division)
+                .reduce(CGRect.null) { $0.union($1.frame.intersection(availableFrame)) }
+            guard !fold.isNull else { return StatusBarRow(guide: guide) }
+
+            // Keep the controls together on the side with enough room for the compact phone layout.
+            let leftWidth = fold.minX - availableFrame.minX
+            let rightWidth = availableFrame.maxX - fold.maxX
+            guard max(leftWidth, rightWidth) >= Metrics.minimumStatusBarRowWidth else { return nil }
+            if leftWidth >= rightWidth {
+                return StatusBarRow(guide: guide, rightInset: availableFrame.maxX - fold.minX)
+            }
+            return StatusBarRow(guide: guide, leftInset: fold.maxX - availableFrame.minX)
+        }
+#endif
+        return nil
+    }
 
     private var menuImage: UIImage {
         if #available(iOS 26.0, *) {

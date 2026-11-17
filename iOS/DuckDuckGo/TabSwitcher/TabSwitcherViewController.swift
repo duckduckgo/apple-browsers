@@ -524,6 +524,19 @@ class TabSwitcherViewController: UIViewController {
         firePageController?.updateEmptyStateVisibility()
     }
 
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        chrome.updateNavigationBarLayout()
+
+        if #available(iOS 16.4, *), let picker = segmentedPickerHostingController {
+            // UIKit already positions the picker outside the system's reserved regions in this row.
+            let regions: SafeAreaRegions = chrome.sharesStatusBarRow ? [] : .all
+            if picker.safeAreaRegions != regions {
+                picker.safeAreaRegions = regions
+            }
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         applyCollectionContentInsets()

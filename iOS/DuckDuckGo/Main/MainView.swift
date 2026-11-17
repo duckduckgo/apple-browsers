@@ -39,7 +39,7 @@ enum DuoLayout {
     }
 
     @MainActor
-    static func usesAdaptiveBrowsingMenu(in view: UIView) -> Bool {
+    static func hasVerticalBarOrHinge(in view: UIView) -> Bool {
 #if DDG_HAS_DUO_LAYOUT_SDK
         if #available(iOS 27.1, *), let window = view.window, window.traitCollection.userInterfaceIdiom == .phone {
             // The inner display still reports its hinge region when it is flat and uses horizontal bars.

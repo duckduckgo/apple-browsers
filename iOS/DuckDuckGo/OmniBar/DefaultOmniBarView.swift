@@ -301,7 +301,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let isExpandedPhone = layoutMode == .expandedPhone
         var leading = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
         var trailing = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.trailing : Metrics.textAreaHorizontalPadding
-        if hasVerticalBar && isFloatingUIEnabled && isExpandedPhone {
+        if isFloatingUIEnabled && isExpandedPhone && DuoLayout.hasVerticalBarOrHinge(in: self) {
             // Keep the floating button groups clear of the window edges without adding to a system inset.
             let insets = safeAreaManagedByContainer ? (superview?.safeAreaInsets ?? .zero) : safeAreaInsets
             let isRightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft

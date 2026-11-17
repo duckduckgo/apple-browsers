@@ -630,6 +630,7 @@ extension MainViewController {
                 // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
                 configure?(settingsViewModel, settingsController)
 
+                navController.updateDuoSheetPlacement(in: view.window)
                 present(navController, animated: true) {
                     completion?(settingsViewModel)
                 }
@@ -720,6 +721,7 @@ class SettingsUINavigationController: UINavigationController {
     /// Whether a subscription was acquired while the subscription flow was presented
     private var didAcquireSubscription = false
     private var subscriptionChangeObserver: Any?
+    private var usesTrailingDuoSheetPlacement = false
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -738,6 +740,30 @@ class SettingsUINavigationController: UINavigationController {
         if let subscriptionChangeObserver {
             NotificationCenter.default.removeObserver(subscriptionChangeObserver)
         }
+    }
+
+    func updateDuoSheetPlacement(in window: UIWindow?) {
+#if DDG_HAS_DUO_LAYOUT_SDK
+        guard #available(iOS 27.1, *), let window, !dismissesModalOnSubscriptionBailout else { return }
+
+        let usesTrailingPlacement = window.traitCollection.userInterfaceIdiom == .phone
+            && window.bounds.width > window.bounds.height
+            && !window.reservedRegions(kind: .division, options: .includeInactive).isEmpty
+        guard usesTrailingPlacement != usesTrailingDuoSheetPlacement else { return }
+
+        if usesTrailingPlacement, presentingViewController == nil, modalPresentationStyle == .automatic {
+            modalPresentationStyle = .formSheet
+        }
+        guard let sheet = sheetPresentationController else { return }
+
+        usesTrailingDuoSheetPlacement = usesTrailingPlacement
+        sheet.preferredPlacement = usesTrailingPlacement ? .trailing : .automatic
+#endif
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        updateDuoSheetPlacement(in: view.window)
     }
 
     override func viewDidDisappear(_ animated: Bool) {

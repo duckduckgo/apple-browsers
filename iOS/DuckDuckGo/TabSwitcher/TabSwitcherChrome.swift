@@ -62,6 +62,11 @@ protocol TabSwitcherChrome: AnyObject {
     func layout(addressBarPosition: AddressBarPosition,
                 interfaceMode: TabSwitcherViewController.InterfaceMode)
 
+    /// Updates navigation bar placement as the available space changes.
+    func updateNavigationBarLayout()
+
+    var sharesStatusBarRow: Bool { get }
+
     /// Updates the bar contents for the current toolbar state.
     func update(state: TabSwitcherToolbarState,
                 tabsStyle: TabSwitcherViewController.TabsStyle,
@@ -96,6 +101,9 @@ protocol TabSwitcherChrome: AnyObject {
 
 extension TabSwitcherChrome {
     var topBarBottomOffset: CGFloat { 0 }
+    var sharesStatusBarRow: Bool { false }
+
+    func updateNavigationBarLayout() {}
 
     func trackScrollEdge(of scrollView: UIScrollView) {}
 }

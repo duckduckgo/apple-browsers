@@ -128,6 +128,14 @@ class MainViewController: UIViewController {
         return ThemeManager.shared.currentTheme.statusBarStyle
     }
 
+#if DDG_HAS_DUO_LAYOUT_SDK
+    @available(iOS 27.1, *)
+    override var preferredVerticalBarBehavior: UIVerticalBarBehavior {
+        // A horizontal status bar lets the webpage use the width beneath it.
+        .disabled
+    }
+#endif
+
     override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge {
         let isIPad = UIDevice.current.userInterfaceIdiom == .pad
 
@@ -6914,7 +6922,7 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
-        let usesAdaptiveMenu = DuoLayout.usesAdaptiveBrowsingMenu(in: self.view)
+        let usesAdaptiveMenu = DuoLayout.hasVerticalBarOrHinge(in: self.view)
         let isiPad = UIDevice.current.userInterfaceIdiom == .pad
         controller.modalPresentationStyle = usesAdaptiveMenu || isiPad ? .popover : .pageSheet
 
@@ -6936,7 +6944,7 @@ extension MainViewController: OmniBarDelegate {
 
     private func updateBrowsingMenuPopoverAnchor() {
         guard let menu = presentedViewController as? BrowsingMenuSheetViewController,
-              DuoLayout.usesAdaptiveBrowsingMenu(in: view),
+              DuoLayout.hasVerticalBarOrHinge(in: view),
               let popover = menu.popoverPresentationController else { return }
 
         // Resizing can move the menu action between the toolbar and the omnibar.

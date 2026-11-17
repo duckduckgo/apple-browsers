@@ -104,6 +104,20 @@ final class UserSentOptOutEmailRecorderTests: XCTestCase {
         try assertNothingRecorded(for: record)
     }
 
+    func testUserSendsEmailWhileOurOptOutAwaitsItsConfirmationEmail_theConfirmationIsStillFetched() throws {
+        let record = try saveRecord(fixture: "valid-broker")
+        try temporaryDatabase.database.add(HistoryEvent(extractedProfileId: record.extractedProfileId,
+                                                        brokerId: record.brokerId,
+                                                        profileQueryId: record.profileQueryId,
+                                                        type: .optOutSubmittedAndAwaitingEmailConfirmation,
+                                                        date: Date().addingTimeInterval(-60)))
+
+        try makeRecorder().record(recordIds: [record.extractedProfileId])
+
+        let expected = OptOutIdentifier(brokerId: record.brokerId, profileQueryId: record.profileQueryId, extractedProfileId: record.extractedProfileId)
+        XCTAssertEqual(try temporaryDatabase.database.fetchIdentifiersForActiveEmailConfirmations(), [expected])
+    }
+
     private struct Record {
         let brokerId: Int64
         let profileQueryId: Int64

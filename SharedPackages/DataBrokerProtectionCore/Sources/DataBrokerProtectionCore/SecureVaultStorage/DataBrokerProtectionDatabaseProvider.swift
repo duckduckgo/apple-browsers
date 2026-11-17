@@ -721,9 +721,11 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
             var results: Set<OptOutIdentifier> = []
             for event in recentEvents {
                 let identifier = OptOutIdentifier(brokerId: event.brokerId, profileQueryId: event.profileQueryId, extractedProfileId: event.extractedProfileId)
+                let eventType = try JSONDecoder().decode(HistoryEvent.EventType.self, from: event.event)
+                // A user-sent email doesn't end the wait for our own opt-out's confirmation email.
+                guard eventType != .optOutByUserEmail else { continue }
                 if !visitedCombinations.contains(identifier) {
                     visitedCombinations.insert(identifier)
-                    let eventType = try JSONDecoder().decode(HistoryEvent.EventType.self, from: event.event)
                     if eventType == .optOutSubmittedAndAwaitingEmailConfirmation {
                         results.insert(identifier)
                     }

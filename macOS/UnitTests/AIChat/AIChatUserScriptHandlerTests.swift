@@ -212,6 +212,72 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativeConfigValues carries the screenshot provider's modes", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConfigValuesCarryScreenshotModes() async throws {
+        let provider = MockAIChatScreenshotProvider()
+        provider.screenshotModes = ["dragToSelect", "selectWindowOrDisplay"]
+        let handler = makeHandler(screenshotProvider: provider)
+
+        let config = try #require(await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock()) as? AIChatNativeConfigValues)
+        #expect(config.screenshotModes == ["dragToSelect", "selectWindowOrDisplay"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativeConfigValues omits screenshot modes when the provider has none", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConfigValuesOmitScreenshotModesWhenUnavailable() async throws {
+        let handler = makeHandler(screenshotProvider: MockAIChatScreenshotProvider())
+
+        let config = try #require(await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock()) as? AIChatNativeConfigValues)
+        #expect(config.screenshotModes == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("captureScreenshot passes the mode to the provider and returns its reply", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatCaptureScreenshotUsesProvider() async {
+        let provider = MockAIChatScreenshotProvider()
+        provider.response = .failed
+        let handler = makeHandler(screenshotProvider: provider)
+
+        let response = await handler.captureScreenshot(params: ["mode": "dragToSelect"], message: WKScriptMessage.mock())
+        #expect(provider.capturedModes == ["dragToSelect"])
+        #expect(response as? AIChatCaptureScreenshotResponse == AIChatCaptureScreenshotResponse.failed)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("captureScreenshot without a mode is a cancel and never captures", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatCaptureScreenshotWithoutModeCancels() async {
+        let provider = MockAIChatScreenshotProvider()
+        let handler = makeHandler(screenshotProvider: provider)
+
+        let response = await handler.captureScreenshot(params: [:], message: WKScriptMessage.mock())
+        #expect(provider.capturedModes.isEmpty)
+        #expect(response as? AIChatCaptureScreenshotResponse == AIChatCaptureScreenshotResponse.cancelled)
+    }
+
+    @MainActor
+    private func makeHandler(screenshotProvider: AIChatScreenshotProviding) -> AIChatUserScriptHandler {
+        AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            aiChatUserScriptErrorEventMapper: userScriptErrorEventMapper,
+            freeTrialConversionService: mockFreeTrialConversionService,
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery,
+            screenshotProvider: screenshotProvider
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("getAIChatNativePrompt calls messageHandler", .timeLimit(.minutes(1)))
     func testThatGetAIChatNativePromptCallsMessageHandler() async {
         _ = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock())
@@ -2733,5 +2799,17 @@ private final class BonusHandlingSpy: AIChatBonusHandling {
 
     func aiChatBonusEnd() {
         calls.append("end")
+    }
+}
+
+@MainActor
+private final class MockAIChatScreenshotProvider: AIChatScreenshotProviding {
+    var screenshotModes: [String]?
+    var response: AIChatCaptureScreenshotResponse = .cancelled
+    private(set) var capturedModes: [String] = []
+
+    func captureScreenshot(mode: String, requestingWebView: WKWebView?) async -> AIChatCaptureScreenshotResponse {
+        capturedModes.append(mode)
+        return response
     }
 }

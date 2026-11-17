@@ -53,7 +53,7 @@ final class FirstPaintCover {
         var isContentReady: ContentCheck?
     }
 
-    /// Reports whether the covered page shows its content yet.
+    /// Calls back once: true as soon as the covered page shows its content, false if it gives up first.
     typealias ContentCheck = (_ completion: @escaping @MainActor (Bool) -> Void) -> Void
 
     /// Returns a closure that cancels the scheduled action.
@@ -73,9 +73,9 @@ final class FirstPaintCover {
         static let meaningfulPaintGrace: TimeInterval = 0.3
         /// Caps the wait for a results page's first result after first layout; a page may have none.
         static let contentGrace: TimeInterval = 2
-        static let contentPollInterval: TimeInterval = 0.1
 
-        static let revealDuration: TimeInterval = 0.18
+        /// Short, so a fast load isn't held back by the fade.
+        static let revealDuration: TimeInterval = 0.1
         static let exitDuration: TimeInterval = 0.15
         static let colorHandoffDuration: TimeInterval = 0.25
         static let reducedMotionScale: Double = 0.5
@@ -107,7 +107,6 @@ final class FirstPaintCover {
     private var contentCheck: ContentCheck?
     /// Moves on with every arm, so a content answer for an earlier load can't lift a later cover.
     private var armGeneration = 0
-    private var cancelContentPoll: (() -> Void)?
 
     /// The navigation the cover waits for; anything else belongs to the previous page.
     private enum CoveredNavigation {
@@ -131,7 +130,6 @@ final class FirstPaintCover {
     func arm(in container: UIView, above webView: UIView, handoff: Handoff = Handoff(), contentTop: CGFloat = 0) {
         stopAnimators()
         cancelDebugHold()
-        cancelContentPolling()
         armedAt = CACurrentMediaTime()
         armGeneration += 1
         contentCheck = handoff.isContentReady
@@ -267,32 +265,19 @@ final class FirstPaintCover {
         cancelHold = nil
     }
 
-    /// Asks the page until its content is in, or until the grace runs out.
+    /// The page reports the moment its content is in; a page that never gets there is lifted by the grace or finishing.
     private func awaitContent(_ check: @escaping ContentCheck) {
         phase = .awaitingContent
         restartTimeout(after: Constants.contentGrace)
-        pollContent(check)
-    }
-
-    private func pollContent(_ check: @escaping ContentCheck) {
         let generation = armGeneration
         check { [weak self] isReady in
-            guard let self, self.isAwaitingContent(armedIn: generation) else { return }
-            guard !isReady else { return self.reveal(animated: true) }
-            self.cancelContentPoll = self.scheduler(Constants.contentPollInterval) { [weak self] in
-                guard let self, self.isAwaitingContent(armedIn: generation) else { return }
-                self.pollContent(check)
-            }
+            guard let self, isReady, self.isAwaitingContent(armedIn: generation) else { return }
+            self.reveal(animated: true)
         }
     }
 
     private func isAwaitingContent(armedIn generation: Int) -> Bool {
         phase == .awaitingContent && armGeneration == generation
-    }
-
-    private func cancelContentPolling() {
-        cancelContentPoll?()
-        cancelContentPoll = nil
     }
 
     private var isAwaitingStart: Bool {
@@ -309,7 +294,6 @@ final class FirstPaintCover {
     private func reveal(animated: Bool) {
         if animated, holdForDebugSlowdown() { return }
         cancelDebugHold()
-        cancelContentPolling()
         phase = .idle
         coveredNavigation = .notStarted
         cancelTimeout?()

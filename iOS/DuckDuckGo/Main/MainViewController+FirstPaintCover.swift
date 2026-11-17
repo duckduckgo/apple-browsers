@@ -115,7 +115,7 @@ extension MainViewController {
             // Holding for the first result keeps the half-built tabs row from flashing in over the remembered one.
             handoff.isContentReady = { [weak tab] completion in
                 guard let tab else { return completion(true) }
-                tab.checkSearchResultsShowing(completion: completion)
+                tab.waitForSearchResults(timeout: FirstPaintCover.Constants.contentGrace, completion: completion)
             }
         }
         tab.coverPageUntilFirstPaint(handoff: handoff)

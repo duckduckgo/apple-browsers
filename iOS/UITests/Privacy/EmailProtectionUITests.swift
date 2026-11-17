@@ -75,7 +75,7 @@ final class EmailProtectionUITests: UITestCase {
         let clearSignInState = app.cells["Debug.Autofill.ClearEmailProtectionSignInState"]
         app.tables.firstMatch.swipeUpToReveal(clearSignInState, timeout: UITestTimeouts.navigation)
         clearSignInState.tapWhenHittable(in: app)
-        app.assertActionMessage(contains: "Email Protection sign-in state cleared")
+        app.assertActionMessage(contains: "Email Protection sign-in state cleared", waitForDismissal: false)
 
         app.navigationBars["Autofill"].buttons["BackButton"].tapWhenHittable(in: app)
         XCTAssertTrue(debugList.waitForExistence(timeout: UITestTimeouts.elementExistence), "Debug screen did not reappear.")

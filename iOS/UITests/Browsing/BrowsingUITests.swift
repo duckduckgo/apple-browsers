@@ -55,10 +55,11 @@ final class BrowsingUITests: UITestCase {
         app.dismissSettings()
     }
 
-    func testSettingsCanBeOpenedFromWebpageMenu() {
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+    func testSettingsCanBeOpenedFromWebpageMenu() throws {
+        let site = try localWebsite()
+        site.open(.browsing, in: app)
         app.openSettings()
         app.dismissSettings()
-        app.assertPageContains("Privacy Test Pages")
+        app.assertPageContains(LocalUITestWebsite.Page.browsing.title)
     }
 }

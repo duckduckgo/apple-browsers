@@ -92,21 +92,81 @@ extension MainViewController {
         return (vertical == nil || vertical == "web") && !items.contains { $0.name == "iax" || $0.name == "iaxm" }
     }
 
+    /// The input panel as it looked at submit, captured before it hides.
+    struct FirstPaintCoverExit {
+        var snapshot: UIView?
+        var windowFrame: CGRect = .zero
+    }
+
+    /// A submit from the New Tab Page, waiting for its tab to come on screen.
+    struct PendingFirstPaintCover {
+        let url: URL
+        let exit: FirstPaintCoverExit
+    }
+
+    enum FirstPaintCoverArming: Equatable {
+        case none
+        case now
+        /// New Tab Page: the tab isn't on screen until the load is requested.
+        case whenTabShows
+    }
+
+    /// No page yet means the New Tab Page, where there's no old page to hide but the outline still helps.
+    static func firstPaintCoverArming(hasTab: Bool, hasPage: Bool, isAITab: Bool, isSameDocument: Bool) -> FirstPaintCoverArming {
+        guard !isAITab else { return .none }
+        guard hasTab, hasPage else { return .whenTabShows }
+        return isSameDocument ? .none : .now
+    }
+
+    /// Arms a cover saved by a New Tab Page submit; call once the tab is on screen, before WebKit reports anything.
+    func armPendingFirstPaintCover(on tab: TabViewController) {
+        guard let pending = pendingFirstPaintCover else { return }
+        pendingFirstPaintCover = nil
+        // Just attached: lay out now so the cover reads the web view's real width and content top.
+        tab.view.layoutIfNeeded()
+        armFirstPaintCover(on: tab, for: pending.url, exit: pending.exit)
+    }
+
     private func prepareFirstPaintCover(forSubmitting url: URL) {
+        pendingFirstPaintCover = nil
         // Other schemes, such as mailto:, never load in the tab.
         guard Self.coversSearchSubmit(isLargeWidth: AppWidthObserver.shared.isLargeWidth, featureFlagger: featureFlagger),
               let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
-              let tab = currentTab, tab.link != nil, !tab.isAITab,
-              !Self.isSameDocument(url, as: tab.url),
               aiBoundaryDecision(for: url) == .loadInPlace else { return }
 
-        var handoff = FirstPaintCover.Handoff()
+        let tab = currentTab
+        let arming = Self.firstPaintCoverArming(hasTab: tab != nil,
+                                                hasPage: tab?.link != nil,
+                                                isAITab: tab?.isAITab == true,
+                                                isSameDocument: Self.isSameDocument(url, as: tab?.url))
+        switch arming {
+        case .none:
+            return
+        case .now:
+            guard let tab else { return }
+            armFirstPaintCover(on: tab, for: url, exit: captureFirstPaintCoverExit())
+        case .whenTabShows:
+            pendingFirstPaintCover = PendingFirstPaintCover(url: url, exit: captureFirstPaintCoverExit())
+            // Only for the load this submit starts; a submit that goes elsewhere mustn't arm a later one.
+            DispatchQueue.main.async { [weak self] in self?.pendingFirstPaintCover = nil }
+        }
+    }
+
+    private func captureFirstPaintCoverExit() -> FirstPaintCoverExit {
+        var exit = FirstPaintCoverExit()
         let panel: UIView? = viewCoordinator.unifiedInputContentContainer
         if let panel, panel.window != nil, !panel.isHidden, panel.alpha > 0,
            let snapshot = panel.snapshotView(afterScreenUpdates: false) {
-            handoff.exitSnapshot = snapshot
-            handoff.exitSnapshotWindowFrame = panel.convert(panel.bounds, to: nil)
+            exit.snapshot = snapshot
+            exit.windowFrame = panel.convert(panel.bounds, to: nil)
         }
+        return exit
+    }
+
+    private func armFirstPaintCover(on tab: TabViewController, for url: URL, exit: FirstPaintCoverExit) {
+        var handoff = FirstPaintCover.Handoff()
+        handoff.exitSnapshot = exit.snapshot
+        handoff.exitSnapshotWindowFrame = exit.windowFrame
         handoff.destinationColor = expectedPageBackgroundColor(for: url)
         handoff.showsSearchResultsSkeleton = Self.showsSearchResultsSkeleton(for: url)
         if handoff.showsSearchResultsSkeleton {

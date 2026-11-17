@@ -592,6 +592,8 @@ class MainViewController: UIViewController {
     /// Results-page colour per appearance, so a search from any page can hand off to it.
     let searchPageColorMemory = SearchPageColorMemory()
     let searchPageHeaderMemory = SearchPageHeaderMemory()
+    /// Set by a New Tab Page submit until its tab is on screen; cleared on the next runloop pass.
+    var pendingFirstPaintCover: PendingFirstPaintCover?
     private var siteThemeColorObservation: NSKeyValueObservation?
     private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
@@ -3493,6 +3495,7 @@ class MainViewController: UIViewController {
         lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         dismissOmniBar()
         transitionTo(tab: tab, from: nil)
+        armPendingFirstPaintCover(on: tab)
     }
 
     /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.

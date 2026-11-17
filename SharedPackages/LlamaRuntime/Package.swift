@@ -28,6 +28,9 @@ let package = Package(
     products: [
         .library(name: "LlamaRuntime", targets: ["LlamaRuntime"]),
     ],
+    dependencies: [
+        .package(path: "../DDGError"),
+    ],
     targets: [
         // llama.cpp's headers, from the same release as the framework `embed_llama_framework.sh`
         // copies into the app. Nothing links llama.cpp: `cllama_load` opens it at runtime.
@@ -37,7 +40,7 @@ let package = Package(
         ),
         .target(
             name: "LlamaRuntime",
-            dependencies: ["CLlama"],
+            dependencies: ["CLlama", "DDGError"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
                 .enableExperimentalFeature("StrictConcurrency")

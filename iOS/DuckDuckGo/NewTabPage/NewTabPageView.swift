@@ -146,7 +146,7 @@ private extension NewTabPageView {
                     .modifier(FocusedContentTopInset(topInset: viewModel.focusedContentTopInset,
                                                      fixedTopInset: contentTopInset(in: geometry),
                                                      onEscapeHatchGeometryChange: { viewModel.onFocusedEscapeHatchGeometryChange?($0) }))
-                    .padding(.bottom, sectionsViewPadding(in: geometry))
+                    .padding(.bottom, sectionsViewPadding(in: geometry) + viewModel.scrollContentBottomInset)
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: geometry))
                 }
             }
@@ -184,7 +184,7 @@ private extension NewTabPageView {
                         .opacity(viewModel.isFavoritesHidden ? 0 : 1)
                 }
                 .padding(.top, contentTopInset(in: proxy))
-                .padding(.bottom, sectionsViewPadding(in: proxy))
+                .padding(.bottom, sectionsViewPadding(in: proxy) + viewModel.scrollContentBottomInset)
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
                 .id(NewTabPageScrollToTop.topAnchor)

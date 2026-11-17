@@ -192,29 +192,31 @@ struct BrowserToolPermissionPromptView: View {
 
     private func accessRow(_ toolName: String, removable: Bool) -> some View {
         let title = BrowserToolSettingsText.title(toolName: toolName)
-        return HStack(alignment: .top, spacing: 10) {
-            Image(nsImage: BrowserToolPermissionPromptText.icon(toolName: toolName))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                if let detail = BrowserToolSettingsText.detail(toolName: toolName) {
-                    Text(detail)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+        return HStack(spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(nsImage: BrowserToolPermissionPromptText.icon(toolName: toolName))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                    if let detail = BrowserToolSettingsText.detail(toolName: toolName) {
+                        Text(detail)
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                    }
                 }
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
             if removable {
                 Button { selection.removed.append(toolName) } label: {
-                    Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
                         .renderingMode(.template)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(PlainButtonStyle())
+                .buttonStyle(HoverHighlightButtonStyle())
                 .help(UserText.browserToolAccessRemoveTool(toolName: title))
                 .accessibilityLabel(UserText.browserToolAccessRemoveTool(toolName: title))
                 .accessibilityIdentifier("BrowserToolPermissionPrompt.remove.\(toolName)")

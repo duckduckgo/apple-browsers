@@ -16,38 +16,67 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
+@_spi(Testing) import Networking
+import PrivacyConfig
+import Subscription
+import SubscriptionTestingUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
 final class OnboardingSubscriptionUpsellEligibilityTests: XCTestCase {
 
+    private var featureFlagger: MockFeatureFlagger!
+    private var subscriptionManager: SubscriptionManagerMock!
+    private var sut: OnboardingSubscriptionUpsellEligibility!
+
+    override func setUp() {
+        super.setUp()
+        featureFlagger = MockFeatureFlagger()
+        subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        subscriptionManager.hasResolvedAppStoreProducts = true
+        subscriptionManager.resultTokenContainer = nil
+        sut = OnboardingSubscriptionUpsellEligibility(featureFlagger: featureFlagger, subscriptionManager: subscriptionManager)
+    }
+
+    override func tearDown() {
+        sut = nil
+        subscriptionManager = nil
+        featureFlagger = nil
+        super.tearDown()
+    }
+
     func testWhenPurchaseEligibleAndNotSubscribedThenEligible() {
-        let eligibility = OnboardingSubscriptionUpsellEligibility(subscriptionState: .eligible)
-
-        XCTAssertTrue(eligibility.isEligible)
+        XCTAssertEqual(sut.isUserEligible, true)
     }
 
-    func testWhenNotPurchaseEligibleThenNotEligible() {
-        let state = StubOnboardingSubscriptionUpsellSubscriptionState(isSubscriptionPurchaseEligible: false,
-                                                                     isUserAuthenticated: false)
+    func testWhenProductsResolvedButUnavailableThenNotEligible() {
+        subscriptionManager.hasAppStoreProductsAvailable = false
 
-        XCTAssertFalse(OnboardingSubscriptionUpsellEligibility(subscriptionState: state).isEligible)
+        XCTAssertEqual(sut.isUserEligible, false)
     }
 
-    func testWhenAlreadyASubscriberThenNotEligible() {
-        let state = StubOnboardingSubscriptionUpsellSubscriptionState(isSubscriptionPurchaseEligible: true,
-                                                                     isUserAuthenticated: true)
+    func testWhenProductsNotResolvedYetThenEligibilityIsUnknown() {
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.hasResolvedAppStoreProducts = false
 
-        XCTAssertFalse(OnboardingSubscriptionUpsellEligibility(subscriptionState: state).isEligible)
+        XCTAssertNil(sut.isUserEligible)
     }
-}
 
-private struct StubOnboardingSubscriptionUpsellSubscriptionState: OnboardingSubscriptionUpsellSubscriptionState {
+    func testWhenAlreadySignedInThenNotEligible() {
+        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
 
-    static let eligible = StubOnboardingSubscriptionUpsellSubscriptionState(isSubscriptionPurchaseEligible: true,
-                                                                           isUserAuthenticated: false)
+        XCTAssertEqual(sut.isUserEligible, false)
+    }
 
-    let isSubscriptionPurchaseEligible: Bool
-    let isUserAuthenticated: Bool
+    func testUpsellFollowsTheRemoteFlag() {
+        featureFlagger.featuresStub[FeatureFlag.onboardingSubscriptionUpsell.rawValue] = true
+        XCTAssertTrue(sut.isUpsellEnabled)
+
+        featureFlagger.featuresStub[FeatureFlag.onboardingSubscriptionUpsell.rawValue] = false
+        XCTAssertFalse(sut.isUpsellEnabled)
+    }
 }

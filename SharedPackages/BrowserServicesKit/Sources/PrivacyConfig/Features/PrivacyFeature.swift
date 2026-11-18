@@ -786,6 +786,10 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionOnboardingFreeTrialsNov2026
     case subscriptionOnboardingPaidSubsNov2026
 
+    /// Remote kill switch for the subscription upsell at the end of macOS contextual onboarding.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1219346955712864
+    case onboardingSubscriptionUpsell
+
     /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
 

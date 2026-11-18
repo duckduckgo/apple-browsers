@@ -31,6 +31,7 @@ class ContextualDialogsManagerTests {
     var searchPathStorage: MockBlockedTrackerStoring!
     let store = InMemoryThrowingKeyValueStore()
     var subscriptionUpsellEligibility: StubOnboardingSubscriptionUpsellEligibility!
+    var endingStorage: MockOnboardingEndingStoring!
     let expectation = XCTestExpectation()
 
     init() {
@@ -38,6 +39,7 @@ class ContextualDialogsManagerTests {
         searchPathStorage = MockBlockedTrackerStoring()
         trackerProvider = MockTrackerMessageProvider(expectation: expectation)
         subscriptionUpsellEligibility = StubOnboardingSubscriptionUpsellEligibility()
+        endingStorage = MockOnboardingEndingStoring()
         manager = makeManager()
     }
 
@@ -46,6 +48,7 @@ class ContextualDialogsManagerTests {
                         subscriptionUpsellEligibility: subscriptionUpsellEligibility,
                         stateStorage: stateStorage,
                         searchPathStorage: searchPathStorage,
+                        endingStorage: endingStorage,
                         settings: store.throwingKeyedStoring())
     }
 
@@ -68,7 +71,7 @@ class ContextualDialogsManagerTests {
     @Test("Navigation after High Five advances to the upsell for eligible users", .timeLimit(.minutes(1)),
           arguments: [26, 28, 30, 32])
     func testWhenHighFiveIsShownThenEligibleUserAdvancesToUpsell(contextualDialogsSeenKey: Int) async {
-        subscriptionUpsellEligibility.isEligible = true
+        subscriptionUpsellEligibility.isUserEligible = true
         manager.state = .ongoing
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let tab = await Tab(content: .newtab)
@@ -92,7 +95,7 @@ class ContextualDialogsManagerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Eligible users get the one-shot upsell queued after High Five", .timeLimit(.minutes(1)))
     func testWhenEligibleUserCompletesHighFiveThenUpsellIsQueued() {
-        subscriptionUpsellEligibility.isEligible = true
+        subscriptionUpsellEligibility.isUserEligible = true
         manager.state = .ongoing
         manager.lastDialog = .highFive
 
@@ -106,7 +109,7 @@ class ContextualDialogsManagerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Ineligible users complete onboarding at High Five", .timeLimit(.minutes(1)))
     func testWhenNotEligibleThenHighFiveCompletesOnboarding() {
-        subscriptionUpsellEligibility.isEligible = false
+        subscriptionUpsellEligibility.isUserEligible = false
         manager.state = .ongoing
         manager.lastDialog = .highFive
 
@@ -133,7 +136,7 @@ class ContextualDialogsManagerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Navigation away from a shown upsell completes onboarding", .timeLimit(.minutes(1)))
     func testWhenNavigatingAwayFromUpsellThenOnboardingCompletes() async {
-        subscriptionUpsellEligibility.isEligible = true
+        subscriptionUpsellEligibility.isUserEligible = true
         manager.state = .ongoing
         manager.lastDialog = .highFive
         manager.gotItPressed()
@@ -147,7 +150,7 @@ class ContextualDialogsManagerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Relaunch after the upsell was queued does not show it again", .timeLimit(.minutes(1)))
     func testWhenRelaunchingAfterUpsellWasQueuedThenOnboardingCompletes() async {
-        subscriptionUpsellEligibility.isEligible = true
+        subscriptionUpsellEligibility.isUserEligible = true
         manager.state = .ongoing
         manager.lastDialog = .highFive
         manager.gotItPressed()
@@ -157,6 +160,23 @@ class ContextualDialogsManagerTests {
 
         #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == nil)
         #expect(relaunched.state == .onboardingCompleted)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Relaunching on High Five keeps the eligibility saved when it was shown", .timeLimit(.minutes(1)),
+          arguments: [26, 28, 30, 32])
+    func testWhenRelaunchingOnHighFiveThenSavedEligibilityDecides(contextualDialogsSeenKey: Int) async {
+        subscriptionUpsellEligibility.isUserEligible = true
+        manager.state = .ongoing
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let tab = await Tab(content: .newtab)
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .highFive)
+
+        // After the relaunch the App Store products haven't loaded yet, so eligibility is unknown.
+        subscriptionUpsellEligibility.isUserEligible = nil
+        let relaunched = makeManager()
+
+        #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == .subscriptionUpsell)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -488,7 +508,12 @@ class MockTrackerMessageProvider: TrackerMessageProviding {
 }
 
 class StubOnboardingSubscriptionUpsellEligibility: OnboardingSubscriptionUpsellEligibilityChecking {
-    var isEligible = false
+    var isUpsellEnabled = true
+    var isUserEligible: Bool? = false
+}
+
+class MockOnboardingEndingStoring: OnboardingEndingStoring {
+    var subscriptionUpsellEligible: Bool?
 }
 
 class MockContextualDialogStateStoring: ContextualOnboardingStateStoring {
@@ -509,6 +534,7 @@ extension ContextualDialogsManager {
                                subscriptionUpsellEligibility: OnboardingSubscriptionUpsellEligibilityChecking,
                                stateStorage: ContextualOnboardingStateStoring,
                                searchPathStorage: BlockedTrackerStoring,
+                               endingStorage: OnboardingEndingStoring = MockOnboardingEndingStoring(),
                                settings: any ThrowingKeyedStoring<ContextualOnboardingSettings>) -> ContextualDialogsManager {
         ContextualDialogsManager(trackerMessageProvider: trackerMessageProvider,
                                  subscriptionUpsellEligibility: subscriptionUpsellEligibility,
@@ -517,6 +543,7 @@ extension ContextualDialogsManager {
                                  makePath: { _, progress in
                                      SearchOnboardingPath(progress: progress,
                                                           storage: searchPathStorage,
+                                                          endingStorage: endingStorage,
                                                           subscriptionUpsellEligibility: subscriptionUpsellEligibility,
                                                           trackerMessageProvider: trackerMessageProvider)
                                  })

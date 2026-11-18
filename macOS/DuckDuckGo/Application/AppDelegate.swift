@@ -1292,6 +1292,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
             subscriptionUpsellEligibility: OnboardingSubscriptionUpsellEligibility(
+                featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
             ),
             settings: keyValueStore.throwingKeyedStoring()

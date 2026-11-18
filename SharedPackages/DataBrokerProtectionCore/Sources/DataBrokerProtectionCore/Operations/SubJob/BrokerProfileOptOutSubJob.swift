@@ -122,7 +122,8 @@ struct BrokerProfileOptOutSubJob {
                                                               database: dependencies.database,
                                                               pixelHandler: dependencies.pixelHandler,
                                                               vpnConnectionState: vpnConnectionState,
-                                                              vpnBypassStatus: vpnBypassStatus)
+                                                              vpnBypassStatus: vpnBypassStatus,
+                                                              isUserAssisted: !kind.isRegular)
 
         // An assisted run that didn't submit leaves the schedule alone, so the record keeps waiting for the user.
         var submitted = false
@@ -280,7 +281,8 @@ struct BrokerProfileOptOutSubJob {
                                              database: DataBrokerProtectionRepository,
                                              pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                              vpnConnectionState: String,
-                                             vpnBypassStatus: String) -> StageDurationContext {
+                                             vpnBypassStatus: String,
+                                             isUserAssisted: Bool = false) -> StageDurationContext {
         // 5. Set up dependencies used to report the status of the opt-out job:
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
@@ -289,7 +291,8 @@ struct BrokerProfileOptOutSubJob {
             parentURL: brokerProfileQueryData.dataBroker.parent,
             isFreeScan: false,
             vpnConnectionState: vpnConnectionState,
-            vpnBypassStatus: vpnBypassStatus
+            vpnBypassStatus: vpnBypassStatus,
+            isUserAssisted: isUserAssisted
         )
 
         // 6. Record the start of the opt-out job:
@@ -354,7 +357,8 @@ struct BrokerProfileOptOutSubJob {
                 actionId: stageDurationCalculator.actionID ?? "unknown",
                 duration: stageDurationCalculator.durationSinceLastStage(),
                 tries: stageDurationCalculator.tries
-            )
+            ),
+            parameters: stageDurationCalculator.userAssistedParameters
         )
         stageDurationCalculator.setStage(.emailConfirmHalted)
         Logger.dataBrokerProtection.log("✉️ Opt-out status changed to awaiting email confirmation")

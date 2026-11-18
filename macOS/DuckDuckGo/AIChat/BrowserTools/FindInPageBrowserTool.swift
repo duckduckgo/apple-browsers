@@ -30,7 +30,6 @@ final class FindInPageBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.findInPage`, which is how the catalog gates it.
     let name = "findInPage"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "Duck.ai wants to find text on this page."
 
     let inputSchema: JSONValue = [
         "type": "object",

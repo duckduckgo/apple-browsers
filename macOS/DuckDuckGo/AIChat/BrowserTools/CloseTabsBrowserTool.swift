@@ -26,7 +26,6 @@ final class CloseTabsBrowserTool: BrowserTool {
 
     let name = "closeTabs"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "It will close tabs in this window. Pinned tabs stay open."
 
     let inputSchema: JSONValue = [
         "type": "object",

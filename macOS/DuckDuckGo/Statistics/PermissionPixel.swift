@@ -220,6 +220,9 @@ extension PermissionType {
             return "external-scheme"
         case .autoplayPolicy:
             return "autoplay-policy"
+        case .browserTool:
+            // Not fired: browser tool choices don't go through website permission prompts or settings.
+            return "browser-tool"
         }
     }
 }

@@ -91,12 +91,11 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
 
     private let progress: ContextualOnboardingProgress
-    private let searchPath: SearchOnboardingPath
+    private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath
 
     /// The path chosen at the junction. No saved path means search.
-    private var activePath: ContextualOnboardingPath {
-        searchPath
-    }
+    /// Built on first use, so a finished onboarding never builds one.
+    private lazy var activePath: ContextualOnboardingPath = makePath(progress.pathKind ?? .search)
 
     // The last dialog that was presented.
     var lastDialog: ContextualDialogType?
@@ -124,6 +123,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             // If onboarding is restarted, clear all stored dialogs and flags.
             if newValue == .notStarted {
                 progress.reset()
+                activePath = makePath(.search)
             }
         }
     }
@@ -134,10 +134,15 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring()) {
         let progress = ContextualOnboardingProgress(storage: stateStorage, settings: settings)
         self.progress = progress
-        self.searchPath = SearchOnboardingPath(progress: progress,
-                                               storage: stateStorage,
-                                               subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                               trackerMessageProvider: trackerMessageProvider)
+        self.makePath = { kind in
+            switch kind {
+            case .search:
+                SearchOnboardingPath(progress: progress,
+                                     storage: stateStorage,
+                                     subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                     trackerMessageProvider: trackerMessageProvider)
+            }
+        }
         // Compares the raw value, as before: an unreadable saved value counts as not completed here.
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
@@ -179,6 +184,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     /// Called from the junction with the path the user picked.
     func startPath(_ kind: ContextualOnboardingPathKind) {
         progress.pathKind = kind
+        activePath = makePath(kind)
         switch kind {
         case .search:
             // The user has just searched from the junction, so Try a search is skipped.

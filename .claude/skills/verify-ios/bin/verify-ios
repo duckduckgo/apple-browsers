@@ -43,6 +43,8 @@ def build_parser():
     a.add_argument("--devices", help="iphone,ipad (default: the proof's DEVICES)")
     a.add_argument("--keep", action="store_true", help="leave the simulator, runner and app running afterwards (to explore or debug a failure)")
     a.add_argument("--no-video", action="store_true", help="don't record each device's screen to <device>/recording.mp4")
+    a.add_argument("--base", metavar="REF", help="also prove on REF (built in its own worktree) and judge each check against both runs")
+    a.add_argument("--as-base", action="store_true", help=argparse.SUPPRESS)   # set by --base on its base run
     add_evidence_options(a)
     a = sp.add_parser("check", help="compile and import proofs without touching a device")
     a.add_argument("proofs", nargs="+")
@@ -120,9 +122,18 @@ def dispatch(args):
         if not all(c["ok"] for c in checked):
             raise ProveExit(2, dict(ok=False, code="PROOF_REJECTED", proofs=checked))
         return dict(proofs=checked)
+    if args.cmd == "prove" and args.base:
+        if len(args.proofs) != 1 or args.keep or args.as_base:
+            raise ProveExit(2, dict(ok=False, code="BAD_ARGS", message="--base takes one proof, without --keep"))
+        from verify_ios import compare
+        code, out = compare.prove_against_base(args.proofs[0], args.base, args.devices.split(",") if args.devices else None,
+                                               args.decision_log, args.evidence_dir, not args.no_video)
+        if code:
+            raise ProveExit(code, out)
+        return out
     if args.cmd == "prove":
         code, out = harness.run_proofs(args.proofs, args.devices.split(",") if args.devices else None, args.keep,
-                                       args.decision_log, args.evidence_dir, not args.no_video)
+                                       args.decision_log, args.evidence_dir, not args.no_video, args.as_base)
         if code:
             raise ProveExit(code, out)
         return out

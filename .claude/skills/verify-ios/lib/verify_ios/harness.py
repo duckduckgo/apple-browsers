@@ -4,11 +4,13 @@ A proof is a short Python file written for one change, saved with its evidence, 
 and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services it depends on),
 `FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS) and
 `LANGUAGE = {"language": "fr", "locale": "fr_FR"}` (only to test localization: the default, env.LANGUAGE, is en-US).
+Checks made inside `with ios.on_base("fail"):` (or "pass") declare what the base build should do; `prove --base`
+judges each check against a run on the base build (compare.py). Elsewhere a check should be unchanged on base.
 
 A run passes only when the proof returned, recorded at least one passing check and no failing one, and the app was
 still in the foreground at the end. Anything that goes wrong before the proof's own steps is an error, not a failure.
 """
-import importlib.util, inspect, json, os, shlex, shutil, signal, sys, time, traceback, urllib.parse, uuid
+import contextlib, importlib.util, inspect, json, os, re, shlex, shutil, signal, sys, time, traceback, urllib.parse, uuid
 
 from . import env
 from .device import Device, fixture, fixture_release
@@ -33,16 +35,20 @@ def run(ios):
 '''
 
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
+LOCAL_PORT = re.compile(r"(127\.0\.0\.1|localhost|\[::1\]):\d+")   # the fixture's port is per checkout
 
 
 # Runner codes that mean "absent", as opposed to a refusal or an error that must surface.
 ABSENT = {"NOT_FOUND", "TIMEOUT"}
 
+# What a check should do on the base build, for `prove --base`. Checks outside an `on_base` block are "unchanged".
+BASE_OUTCOMES = ("fail", "pass", "unchanged")
+
 
 class Ios:
     """The handle a proof receives: user actions, reads, waiting assertions, telemetry and evidence for one device."""
 
-    def __init__(self, device, evidence, flags=None, device_obj=None, language=None):
+    def __init__(self, device, evidence, flags=None, device_obj=None, language=None, as_base=False):
         self.device = device                     # "iphone" | "ipad"
         self.form_factor = "phone" if device == "iphone" else "tablet"   # pixel names end in _ios_<form_factor>
         self.d = device_obj or Device(device)
@@ -56,6 +62,9 @@ class Ios:
         self.pixels = None
         self.wide_events = None
         self.launched = None                     # what the last launch/reset verified (build identity, flags)
+        self.as_base = as_base                   # this is the base-build run of `prove --base`
+        self.base_outcome = "unchanged"          # what checks made now should do on the base build (on_base)
+        self.tokens = []                         # tokens issued this run, left out of check keys
 
     # transcript ------------------------------------------------------------------
     def _log(self, action, args, fn):
@@ -185,7 +194,22 @@ class Ios:
 
     def token(self, prefix="t"):
         """A fresh token for this run; never reuse one."""
-        return f"{prefix}-{uuid.uuid4().hex[:8]}"
+        token = f"{prefix}-{uuid.uuid4().hex[:8]}"
+        self.tokens.append((token, prefix))
+        return token
+
+    @contextlib.contextmanager
+    def on_base(self, outcome):
+        """Checks made inside this block should `outcome` ("fail", "pass" or "unchanged") on the base build, for
+        `prove --base`. On the base run a check expected to fail is recorded and the proof carries on, so the checks
+        after it are still observed; that check then returns False or None."""
+        if outcome not in BASE_OUTCOMES:
+            raise ValueError(f"on_base takes one of {BASE_OUTCOMES}, got {outcome!r}")
+        outer, self.base_outcome = self.base_outcome, outcome
+        try:
+            yield
+        finally:
+            self.base_outcome = outer
 
     def fixture_url(self, token):
         return fixture()["url"] + token
@@ -298,15 +322,14 @@ class Ios:
             if ok:
                 return self._record(what, True, last)
             if time.time() > end:
-                self._record(what, False, last)
-                raise Failed(f"{what}: not true within {timeout}s (last: {_trim(last)})")
+                return self._fail(what, last, Failed(f"{what}: not true within {timeout}s (last: {_trim(last)})"))
             time.sleep(every)
 
     def check(self, what, ok, detail=None):
         """Record a named check; fail the proof if it is false."""
-        self._record(what, bool(ok), detail)
         if not ok:
-            raise Failed(f"check failed: {what}", detail=_trim(detail))
+            return self._fail(what, detail, Failed(f"check failed: {what}", detail=_trim(detail)))
+        self._record(what, True, detail)
         return True
 
     def expect_url_contains(self, text, timeout=10):
@@ -320,16 +343,14 @@ class Ios:
         return self.eventually(f"{css} reads {value!r}", lambda: self.d.get(f"web:css={css}")["value"] == value, timeout)
 
     def expect_visible(self, locator, timeout=8):
-        self.wait(locator, "visible", timeout)
-        return self._record(f"{locator} visible", True)
+        return self._expect(f"{locator} visible", lambda: self.wait(locator, "visible", timeout))
 
     def expect_hidden(self, locator, timeout=8):
-        self.wait(locator, "hidden", timeout)
-        return self._record(f"{locator} gone", True)
+        return self._expect(f"{locator} gone", lambda: self.wait(locator, "hidden", timeout))
 
     def expect_keyboard(self, shown, timeout=5):
-        self.wait("role=keyboard", "exists" if shown else "hidden", timeout)
-        return self._record(f"keyboard {'shown' if shown else 'hidden'}", True)
+        return self._expect(f"keyboard {'shown' if shown else 'hidden'}",
+                            lambda: self.wait("role=keyboard", "exists" if shown else "hidden", timeout))
 
     def expect_focused(self, element_id, timeout=5):
         return self.eventually(f"{element_id} has focus", lambda: self.focused() == element_id, timeout)
@@ -346,31 +367,35 @@ class Ios:
             if _code(e) == "NOT_FOUND" and "alert" not in runner:   # the runner saw no alert at all
                 return self._record("no alert shown", True)
             if "alert" in runner:   # an alert was on screen, just not answerable
-                self.check("no alert shown", False, runner)
+                return self.check("no alert shown", False, runner)
             raise
         self.check("no alert shown", False, "an alert appeared (and was dismissed)")
 
     def expect_pixel(self, name, params=None, occurrence=0, timeout=10):
         """Wait for pixel `name` to fire after ios.mark(); check `params` is a subset of what it carried."""
-        px = self._log("pixel", [name, occurrence], lambda: self.pixels.fired(name, occurrence, timeout))
-        if params:
+        what = f"pixel {name} params {params}" if params else f"pixel {name} fired"
+        px = self._expect(what, lambda: self._log("pixel", [name, occurrence], lambda: self.pixels.fired(name, occurrence, timeout)),
+                          record=not params)
+        if params and px:
             wrong = {k: (v, px["params"].get(k)) for k, v in params.items() if px["params"].get(k) != v}
-            self.check(f"pixel {name} params {params}", not wrong, dict(mismatched=wrong, pixel=px))
-        else:
-            self._record(f"pixel {name} fired", True, px)
-        return px
+            if not self.check(what, not wrong, dict(mismatched=wrong, pixel=px)):
+                return None
+        return px or None
 
     def expect_no_pixel(self, name, within=3):
         """Pixel `name` does not fire between ios.mark() and `within` seconds from now."""
-        self._log("no pixel", [name, within], lambda: self.pixels.not_fired(name, within))
-        return self._record(f"pixel {name} not fired", True)
+        return self._expect(f"pixel {name} not fired",
+                            lambda: self._log("no pixel", [name, within], lambda: self.pixels.not_fired(name, within)))
 
     def expect_wide_event(self, feature, status=None, occurrence=0, timeout=10):
         """Wait for a wide event of `feature` written after ios.mark(); check its status."""
-        ev = self._log("wide event", [feature, occurrence], lambda: self.wide_events.wait(feature, occurrence, timeout))
+        what = f"wide event {feature}" + (f" status {status}" if status else "")
+        ev = self._expect(what, lambda: self._log("wide event", [feature, occurrence],
+                                                  lambda: self.wide_events.wait(feature, occurrence, timeout)), record=False)
+        if not ev:
+            return None
         got = ev.get("feature", {}).get("status")
-        self.check(f"wide event {feature}" + (f" status {status}" if status else ""), status is None or got == status, ev)
-        return ev
+        return ev if self.check(what, status is None or got == status, ev) else None
 
     # evidence --------------------------------------------------------------------
     def shot(self, name):
@@ -384,8 +409,33 @@ class Ios:
         """Name behavior this proof could not verify, and why; it appears in the report."""
         self.unverified_items.append(dict(what=what, why=why))
 
+    def _expect(self, what, fn, record=True):
+        """Run `fn`, an assertion that raises Failed when it doesn't hold, and record its outcome as check `what`.
+        Returns what `fn` returned, or True (`record=False` leaves the passing record to the caller)."""
+        try:
+            out = fn()
+        except SetupFailed:
+            raise
+        except Failed as e:
+            # only "absent" or a failed assertion can be the expected failure; a runner refusal or error is not
+            return self._fail(what, getattr(e, "extra", None) or str(e), e, expectable=_code(e) in ABSENT | {None})
+        if record:
+            self._record(what, True, out)
+        return out or True
+
+    def _fail(self, what, detail, error, expectable=True):
+        """Record failed check `what` and raise `error`, except on the base run inside on_base("fail"): there the
+        failure is what the proof expects, so it is recorded and the proof carries on."""
+        self._record(what, False, detail)
+        if expectable and self.as_base and self.base_outcome == "fail":
+            return False
+        raise error
+
     def _record(self, what, ok, detail=None):
-        self.checks.append(dict(check=what, ok=ok, detail=_trim(detail)))
+        key = LOCAL_PORT.sub(r"\1:<port>", what)   # tokens and local ports differ per run and checkout; keys don't
+        for token, prefix in self.tokens:
+            key = key.replace(token, f"<token:{prefix}>")
+        self.checks.append(dict(check=what, ok=ok, detail=_trim(detail), base=self.base_outcome, key=key))
         return detail if detail is not None else ok
 
 
@@ -518,8 +568,9 @@ def _restore(handlers):
         signal.signal(s, h)
 
 
-def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, video=True):
-    """Run one proof file on each device, always writing evidence and cleaning up. Returns (exit code, summary)."""
+def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, video=True, as_base=False):
+    """Run one proof file on each device, always writing evidence and cleaning up. Returns (exit code, summary).
+    `as_base`: this is the base-build run of `prove --base` (see Ios.on_base)."""
     mod, problems = load(path)
     if problems:
         return 2, dict(proof=path, ok=False, preflight=problems)
@@ -536,7 +587,8 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
             results = [dict(device=d, status="error", reason=f"setup: {e}", checks=[], problems=[], evidence=None) for d in devices]
         else:
             for dev in devices:
-                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags, language=language, video=video))
+                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags, language=language, video=video,
+                                           as_base=as_base))
                 if results[-1]["status"] == "cancelled":
                     break
     except _Stop as e:   # between devices, or before the first one started
@@ -545,7 +597,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
         _ignore_signals()   # writing the manifest and report must not be interrupted
     try:
         manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log,
-                             evidence_dir, video)
+                             evidence_dir, video, as_base)
         with open(f"{attempt}/manifest.json", "w") as f:
             json.dump(manifest, f, indent=1)
         with open(f"{attempt}/report.md", "w") as f:
@@ -557,7 +609,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
                       results=[{k: r[k] for k in ("device", "status", "reason", "problems") if r.get(k)} for r in results])
 
 
-def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=None, video=True):
+def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=None, video=True, as_base=False):
     lock = DeviceLock(device)
     try:
         lock.acquire(f"prove {os.path.basename(os.path.dirname(evidence))}")
@@ -568,7 +620,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=No
     status, reason, ios, phase, recording, problems = "error", None, None, "setup", None, []
     try:
         try:
-            ios = Ios(device, evidence, flags, device_obj, language)
+            ios = Ios(device, evidence, flags, device_obj, language, as_base)
             ios.launch()
             if video:   # a recording that fails is an evidence problem, never a proof failure
                 try:
@@ -630,14 +682,21 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=No
 def _verdict(ios):
     """Pass needs at least one passing check, no failing check, and the app still in the foreground."""
     failed = [c["check"] for c in ios.checks if not c["ok"]]
+    checked = any(c["ok"] for c in ios.checks)
+    try:   # observed on a failing run too, so `prove --base` can compare it with the other run
+        foreground = ios.d.foreground()
+    except Exception:
+        if not failed and checked:
+            raise
+        foreground = None   # the run has already failed: don't turn that into an error
+    if foreground is not None:
+        ios._record("app still in the foreground at the end", foreground)
     if failed:
         return "fail", f"recorded checks failed: {failed}"
-    if not any(c["ok"] for c in ios.checks):
+    if not checked:
         return "fail", "the proof recorded no checks: nothing was verified"
-    if not ios.d.foreground():
-        ios._record("app still in the foreground at the end", False)
+    if not foreground:
         return "fail", "the app was not in the foreground at the end (crashed or backgrounded)"
-    ios._record("app still in the foreground at the end", True)
     return "pass", None
 
 
@@ -709,7 +768,7 @@ def _skill_hash():
 
 
 def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None, evidence_dir=None,
-              video=True):
+              video=True, as_base=False):
     xcode = run(["xcodebuild", "-version"]).stdout.split()
     hosts = sorted({h for r in results for h in r.get("liveHostsSeen", [])})
     return dict(
@@ -730,7 +789,9 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         rerun=f"cd {shlex.quote(ROOT)} && " + shlex.join([f"{SKILL}/bin/verify-ios", "prove", proof_path,
                                                           "--devices", ",".join(devices)]
                                                          + evidence_args(decision_log, evidence_dir)
-                                                         + ([] if video else ["--no-video"])),
+                                                         + ([] if video else ["--no-video"])
+                                                         + (["--as-base"] if as_base else [])),
+        role="base" if as_base else "this checkout",
         decisionLog=os.path.realpath(decision_log) if decision_log else None,
         evidenceDir=os.path.realpath(evidence_dir) if evidence_dir else None,
         video={r["device"]: f"{r['device']}/{r['video']}" if r.get("video") else None
@@ -802,7 +863,7 @@ def check_only(paths):
     return out
 
 
-def run_proofs(paths, devices=None, keep=False, decision_log=None, evidence_dir=None, video=True):
+def run_proofs(paths, devices=None, keep=False, decision_log=None, evidence_dir=None, video=True, as_base=False):
     """Preflight every file first: a broken proof fails before any device is touched."""
     evidence_root(decision_log, evidence_dir)   # a bad --decision-log or --evidence-dir fails before anything runs
     if devices:
@@ -812,7 +873,7 @@ def run_proofs(paths, devices=None, keep=False, decision_log=None, evidence_dir=
         return 2, dict(ok=False, preflight=checked)
     codes, summaries = [], []
     for p in paths:
-        code, s = prove(p, devices, keep, decision_log, evidence_dir, video)
+        code, s = prove(p, devices, keep, decision_log, evidence_dir, video, as_base)
         codes.append(code)
         summaries.append(s)
         if code == 130:

@@ -133,8 +133,8 @@ What `ios` gives you (`lib/verify_ios/harness.py`):
 - Every action's `after` is checked: an action that changed nothing in the UI tree is listed under Warnings in the
   report, so you can see where the proof's own reads must carry the proof.
 
-Shared steps (`lib/verify_ios/steps.py`) hold the app's quirks once; [features/README.md](features/README.md) lists
-them. Add a step when a second proof needs a quirk handled; document every quirk there.
+Shared steps (`lib/verify_ios/steps.py`) hold the app's quirks once; [features/shared-steps.md](features/shared-steps.md)
+lists them. Add a step when a second proof needs a quirk handled; document every quirk there.
 
 Locators: `id=searchEntry`, `label="Fire Solid 24"`, `role=button label="New Tab"`, `text="Done"`, `contains="token"`,
 plus `nth=<n>` when several match (otherwise the action fails with AMBIGUOUS; it never guesses). `web:css=#token` and

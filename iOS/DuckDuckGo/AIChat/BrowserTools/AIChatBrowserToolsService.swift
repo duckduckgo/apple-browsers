@@ -352,8 +352,7 @@ extension AIChatBrowserToolsService {
         debugSessions.removeValue(forKey: ObjectIdentifier(session))
         session.scope.revoke()
         clientToolPermissions.cancelRequests(from: session)
-        let presenter = session.presenter
-        presenter.withdrawActive { _ = presenter }
+        session.presenter.withdrawActive {}
     }
 
     private func debugAdmissionFailure(toolName: String? = nil,
@@ -409,8 +408,7 @@ final class BrowserToolsDebugSession: ClientToolPermissionPrompting {
     }
 
     func withdrawClientToolPermissionPrompt(requestID: String) {
-        let presenter = presenter
-        presenter.withdraw(requestID: requestID) { _ = presenter }
+        presenter.withdraw(requestID: requestID) {}
     }
 }
 #endif

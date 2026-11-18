@@ -61,7 +61,7 @@ struct AssistedOptOutQueueTests {
         try await queue.start(id: fixture.id)
         try await queue.start(id: .init(brokerId: 1, profileQueryId: 1, extractedProfileId: 2))
         #expect(queue.activeSessions.count == 1)
-        #expect(presenter.presentations.count == 2)
+        #expect(presenter.presentations.count == 3)
         #expect(presenter.presentations.allSatisfy { $0 === session })
         #expect(session.phase == .ready)
         #expect(!fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))

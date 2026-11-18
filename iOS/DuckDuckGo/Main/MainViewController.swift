@@ -3628,6 +3628,7 @@ class MainViewController: UIViewController {
             tab.webView.underPageBackgroundColor = color
         }
         addToContentContainer(controller: tab)
+        tab.browserToolsDidBecomeActive()
 
         viewCoordinator.logoContainer.isHidden = true
 

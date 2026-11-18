@@ -852,8 +852,16 @@ class TabViewController: UIViewController {
     private var browserToolsSurfaceVisible = false
     private var browserToolsPermissionPresenter: AIChatNativePermissionPresenter?
 
+    func browserToolsDidBecomeActive() {
+        browserToolsSurfaceVisible = true
+    }
+
     func browserToolsWillLeaveScreen() {
         browserToolsSurfaceVisible = false
+        cancelPendingBrowserToolRequests()
+    }
+
+    private func cancelPendingBrowserToolRequests() {
         if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
     }
 
@@ -1154,7 +1162,6 @@ class TabViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        browserToolsSurfaceVisible = true
         setSitePermissionsGeolocationActive(true)
         installDuckAISwipeNewChatIfNeeded()
         
@@ -1164,7 +1171,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if browserToolsPermissionPresenter?.isPresentingPermission != true { browserToolsWillLeaveScreen() }
+        if browserToolsPermissionPresenter?.isPresentingPermission != true { cancelPendingBrowserToolRequests() }
         closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         duckAISwipeNewChat?.cancel()

@@ -58,12 +58,6 @@ final class AIChatContextualWebViewController: UIViewController {
     var browserToolsService: AIChatBrowserToolsService?
     var browserToolsPermissionPresenter: (any AIChatNativePermissionPresenting)?
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if browserToolsPermissionPresenter?.isPresentingPermission != true || parent?.isBeingDismissed == true || isMovingFromParent {
-            browserToolsWillLeaveScreen()
-        }
-    }
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     private weak var browserToolsScript: AIChatUserScript?
     weak var delegate: AIChatContextualWebViewControllerDelegate?
@@ -244,6 +238,13 @@ final class AIChatContextualWebViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateFloatingInputInset()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if browserToolsPermissionPresenter?.isPresentingPermission != true || parent?.isBeingDismissed == true || isMovingFromParent {
+            browserToolsWillLeaveScreen()
+        }
     }
 
     deinit {

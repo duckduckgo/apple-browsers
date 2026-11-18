@@ -28,6 +28,7 @@ struct SuggestionsListView: View {
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
     var isFloatingPopover: Bool = false
+    var backdropOpacity: Double = 1
 
     fileprivate enum Metrics {
         /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
@@ -64,7 +65,7 @@ struct SuggestionsListView: View {
                                                  bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
                                                  horizontal: Metrics.listHorizontalContentMargin))
             .hideScrollContentBackground()
-            .background(Color(designSystemColor: .background))
+            .background(Color(designSystemColor: .background).opacity(backdropOpacity))
             .scrollDismissesKeyboardIfAvailable()
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
             .onHover { isHovering in

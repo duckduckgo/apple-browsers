@@ -471,6 +471,8 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
             restoreScrollPosition(savedLayout.isGeometryValid ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1
+        // The focused layer draws its own content over the illustration, so the page content must not show through.
+        scrollView.alpha = isEditing && !isPresentingOnboardingDialog ? 0 : 1
         view.accessibilityElementsHidden = isEditing && !isPresentingOnboardingDialog
         searchInputView?.isUserInteractionEnabled = !isEditing
         scrollView.isScrollEnabled = !isEditing

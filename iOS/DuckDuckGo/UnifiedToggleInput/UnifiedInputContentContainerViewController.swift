@@ -112,6 +112,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             guard oldValue != usesRedesignedNewTabPageLayout else { return }
             unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
             if isViewLoaded {
+                applyBackgroundColor()
                 view.setNeedsLayout()
                 applyRequestedContentInset()
             }
@@ -584,8 +585,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.updateLayoutForCurrentOrientation()
     }
 
+    /// The redesigned New Tab Page layout lets the page's illustration show through.
+    private func applyBackgroundColor() {
+        view.backgroundColor = usesRedesignedNewTabPageLayout ? .clear : Metrics.backgroundColor
+    }
+
     private func setupView() {
-        view.backgroundColor = Metrics.backgroundColor
+        applyBackgroundColor()
         setUpContentContainer()
         setUpSwipeDownGesture()
         modeSwitchSwipeController.install(on: view)

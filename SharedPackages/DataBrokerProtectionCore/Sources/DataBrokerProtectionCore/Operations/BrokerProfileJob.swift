@@ -325,6 +325,7 @@ private extension Array where Element == BrokerJobData {
 }
 
 extension Array where Element == BrokerJobData {
+    /// Drops opt-outs for brokers that need the user, and any record an assisted run is already working on.
     func excludingOptOutsLeftToUserAssistance(_ config: UserAssistanceConfig,
                                               brokerProfileQueriesData: [BrokerProfileQueryData],
                                               runningAttempts: RunningAssistedOptOuts) -> [BrokerJobData] {

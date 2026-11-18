@@ -24,6 +24,8 @@ public struct HistoryEvent: Identifiable, Sendable {
         case matchesFound(count: Int)
         case error(error: DataBrokerProtectionError)
         case optOutStarted
+        /// The record waits for the user to run its opt-out from the "Needs you" list. Written when it joins the list,
+        /// and again when an assisted attempt ends without submitting.
         case optOutAwaitingUserAssistance
         case optOutRequested
         case optOutSubmittedAndAwaitingEmailConfirmation

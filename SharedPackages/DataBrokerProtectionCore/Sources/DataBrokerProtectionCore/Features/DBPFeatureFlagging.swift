@@ -46,6 +46,7 @@ public protocol ExtractedProfileRefreshFeatureFlagging {
     var isExtractedProfileRefreshOn: Bool { get }
 }
 
+/// Gates user-assisted opt-outs. When off, the remote list of brokers that need the user is ignored.
 public protocol UserAssistanceFeatureFlagging {
     var isUserAssistanceOn: Bool { get }
 }

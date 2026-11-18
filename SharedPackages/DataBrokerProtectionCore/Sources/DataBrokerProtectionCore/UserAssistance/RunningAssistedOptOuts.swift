@@ -18,6 +18,7 @@
 
 import Foundation
 
+/// The opt-out records running right now. Scheduled and assisted runs both claim a record here, so it never runs twice at once.
 public final class RunningAssistedOptOuts: @unchecked Sendable {
     private let lock = NSLock()
     private var ids: Set<AssistedOptOutID> = []

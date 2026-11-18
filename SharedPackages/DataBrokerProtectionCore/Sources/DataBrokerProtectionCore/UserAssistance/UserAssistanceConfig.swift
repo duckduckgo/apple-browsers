@@ -19,6 +19,7 @@
 import Foundation
 import PrivacyConfig
 
+/// The remote list of broker URLs whose opt-outs need the user. Scheduled runs skip them, and the user starts them from the "Needs you" list.
 public struct UserAssistanceConfig: Decodable, Equatable, Sendable {
     public let enabledBrokers: Set<String>
 
@@ -33,6 +34,7 @@ public struct UserAssistanceConfig: Decodable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let brokers = try container.decodeIfPresent([String].self, forKey: .enabledBrokers) ?? []
+        // Brokers must be named one by one, so a "*" entry never turns this on for every broker.
         enabledBrokers = Set(brokers.filter { $0 != "*" })
     }
 

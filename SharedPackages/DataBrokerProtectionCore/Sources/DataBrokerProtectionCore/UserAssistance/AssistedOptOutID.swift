@@ -18,6 +18,7 @@
 
 import Foundation
 
+/// One opt-out record: the broker, the user's profile query, and the match found on that broker.
 public struct AssistedOptOutID: Hashable, Sendable, CustomStringConvertible {
     public let brokerId: Int64
     public let profileQueryId: Int64

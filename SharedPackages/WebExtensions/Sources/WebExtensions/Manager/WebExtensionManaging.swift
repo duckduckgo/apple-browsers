@@ -20,7 +20,7 @@ import Foundation
 import WebKit
 
 /// Protocol defining the interface for managing web extensions.
-public protocol WebExtensionManaging: AnyObject {
+public protocol WebExtensionManaging: AnyObject, NativeMessagingLimitationProviding {
 
     /// Shared Chrome Web Store service, available only when installation is supported.
     @available(macOS 15.4, iOS 18.4, *)

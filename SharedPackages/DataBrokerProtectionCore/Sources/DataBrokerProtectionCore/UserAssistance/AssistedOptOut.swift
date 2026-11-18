@@ -18,6 +18,7 @@
 
 import Foundation
 
+/// One entry on the dashboard's "Needs you" list: an opt-out whose broker page has a step only the user can do.
 public struct AssistedOptOut: Codable, Equatable, Sendable {
     public struct DataBroker: Codable, Equatable, Sendable {
         public let name: String
@@ -29,14 +30,22 @@ public struct AssistedOptOut: Codable, Equatable, Sendable {
         }
     }
 
+    /// What the dashboard shows for an entry. A running attempt tracks its own `AssistedAttemptPhase`,
+    /// and `init(phase:isWindowKey:)` turns that into the state shown here.
     public enum State: String, Codable, Sendable {
+        /// Not running. Either the user hasn't started it yet, or they just did and the app is about to take over.
         case waiting
+        /// The app is filling in the broker's opt-out form.
         case agentInControl
+        /// The broker page is waiting for the user, but its window isn't in front, so the dashboard asks them to come back.
         case needsUser
+        /// The broker page is waiting for the user and its window is in front, so they are working on it.
         case userInControl
+        /// The opt-out request was sent to the broker.
         case submitted
     }
 
+    /// Progress through the broker's opt-out steps, shown while the attempt runs. `index` counts from zero.
     public struct Step: Codable, Equatable, Sendable {
         public let index: Int
         public let count: Int
@@ -72,15 +81,24 @@ public struct AssistedOptOutList: Codable, Equatable, Sendable {
     }
 }
 
+/// Where an assisted attempt is, as tracked by `AssistedOptOutSession`. Unlike `AssistedOptOut.State`,
+/// it doesn't know whether the user is looking at the window, so the dashboard state combines the two.
 public enum AssistedAttemptPhase: Equatable, Sendable {
+    /// The window shows the introduction and waits for the user to press start.
     case ready
+    /// The user pressed start and the app hasn't run the first opt-out action yet.
     case queued
+    /// The app is running the broker's opt-out actions on the page.
     case agentInControl
+    /// The run reached a `userAssist` action, such as a CAPTCHA, and is paused until the user finishes it.
     case userTurn
+    /// The run finished and sent the opt-out request.
     case submitted
 }
 
 public extension AssistedOptOut.State {
+    /// `ready` and `userTurn` both wait on the user. If the window is in front they are already on it (`userInControl`),
+    /// otherwise the dashboard has to bring them back (`needsUser`).
     init(phase: AssistedAttemptPhase, isWindowKey: Bool) {
         switch phase {
         case .ready, .userTurn: self = isWindowKey ? .userInControl : .needsUser

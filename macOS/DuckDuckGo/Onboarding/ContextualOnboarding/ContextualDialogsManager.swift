@@ -37,6 +37,7 @@ enum ContextualDialogType: Equatable {
     case tryFireButton
     case highFive
     case subscriptionUpsell
+    case thatsDuckAI
 }
 
 /// Protocol for providing the appropriate dialog type based on a Tab.
@@ -258,6 +259,8 @@ extension ContextualDialogType {
             return "highFive"
         case .subscriptionUpsell:
             return "subscriptionUpsell"
+        case .thatsDuckAI:
+            return "thatsDuckAI"
         }
     }
 

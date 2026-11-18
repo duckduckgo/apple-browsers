@@ -91,12 +91,16 @@ Keep implementation details out; name user paths, stable handles, required state
   registers its undo with `ios.on_cleanup`. The iOS location alert belongs to SpringBoard and has three buttons, so
   `ios.alert` needs `button=`.
 - `open_duckai_new_chat`, `send_duckai_prompt`, `read_duckai_answer`: see [Duck.ai: full-tab chat](./duck-ai-tab.md).
+- `duckai_chat_id`, `new_duckai_chat_tab`, `duckai_history`, `delete_current_duckai_chat`, `duckai_storage`: see
+  [Duck.ai: full-tab chat](./duck-ai-tab.md). After any manual Fire, the app covers its window with an invisible
+  overlay until clearing finishes, so every control reads as not hittable until then; wait for a control to be
+  `visible` again rather than retrying taps.
 
 ## Features
 
 - Duck.ai
-  - [Full-tab chat](./duck-ai-tab.md): open Duck.ai, send a prompt, read the answer; native input on iPhone, web
-    input on iPad (example t8).
+  - [Full-tab chat](./duck-ai-tab.md): open Duck.ai, send a prompt, read the answer, chat history, attachments,
+    deleting a chat; native input on iPhone, web input on iPad (examples t8, t12).
   - [Contextual chat](./duck-ai-contextual.md): Duck.ai in a sheet over a web page. Not mapped yet.
 
 ## Worked examples
@@ -104,4 +108,5 @@ Keep implementation details out; name user paths, stable handles, required state
 `examples/t<n>_*.py` show how to drive the harness, not how to verify a feature: t1 launch and build identity, t2,
 t3 and t9 the address bar, page reads and focus, t4 tabs, t5 a long-press menu, t6 a permission sheet and an iOS
 alert, t7 the Fire button with pixels and a wide event, t10 capture conditions. `selftest` runs t7 on each device
-because it needs no live service. t8 is the Duck.ai proof.
+because it needs no live service. t8 and t12 are Duck.ai proofs: t12 deletes a chat and reads history and storage
+before and after.

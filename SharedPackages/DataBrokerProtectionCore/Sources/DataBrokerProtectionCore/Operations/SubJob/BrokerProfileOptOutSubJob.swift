@@ -92,9 +92,11 @@ struct BrokerProfileOptOutSubJob {
                            showWebView: Bool,
                            kind: RunKind,
                            shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
+        // Scheduled runs leave brokers that need the user to the "Needs you" list.
         if kind.isRegular, brokerProfileQueryData.dataBroker.requiresUserAssistance {
             return false
         }
+        // Claim the record so the user can't start an assisted run on it at the same time.
         let regularID: AssistedOptOutID?
         if kind.isRegular, let extractedID = extractedProfile.id,
            let brokerID = brokerProfileQueryData.dataBroker.id, let profileID = brokerProfileQueryData.profileQuery.id {

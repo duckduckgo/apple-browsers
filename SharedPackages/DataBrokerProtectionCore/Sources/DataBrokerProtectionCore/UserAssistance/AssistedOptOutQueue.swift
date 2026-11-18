@@ -20,6 +20,7 @@ import ConcurrencyExtensions
 import Foundation
 
 @MainActor
+/// Shows and closes the window where the user works through an assisted opt-out.
 public protocol AssistedOptOutPresenting: AnyObject {
     func present(_ session: AssistedOptOutSession)
     func userTurnStarted(in session: AssistedOptOutSession)
@@ -27,15 +28,21 @@ public protocol AssistedOptOutPresenting: AnyObject {
 }
 
 @MainActor
+/// Decides which opt-outs need the user, lists them for the dashboard, and runs the one the user starts.
+/// Only one assisted attempt runs at a time.
 public final class AssistedOptOutQueue {
     public static let defaultAttemptTimeout: TimeInterval = .minutes(10)
 
+    /// An opt-out record the queue might ask the user about, read from the database for a broker on the remote list.
+    /// Being a candidate doesn't put it on the "Needs you" list; `entersNeedsYou` and `isAwaiting` decide that.
     private struct Candidate: Sendable {
         let data: BrokerProfileQueryData
         let job: OptOutJobData
         let id: AssistedOptOutID
     }
 
+    /// The candidate list plus the generation and config it was loaded under. Callers check sign-in after loading,
+    /// and `isAuthenticated(for:)` uses these to throw away a list that went stale during that wait.
     private struct LoadedSnapshot {
         let candidates: [Candidate]
         let generation: Int
@@ -48,14 +55,22 @@ public final class AssistedOptOutQueue {
     private let instrumentation: AssistedOptOutInstrumentation?
     public weak var presenter: AssistedOptOutPresenting?
 
+    /// Attempts with an open window, including submitted ones the dashboard still shows.
     private var sessions: [AssistedOptOutID: AssistedOptOutSession] = [:]
+    /// The attempt currently working on a broker page, if any.
     private var runningID: AssistedOptOutID?
     private var runningTask: Task<Void, Never>?
     private var runningCancellation: AttemptCancellation?
+    /// Cached candidates, so each dashboard refresh doesn't reread the database.
     private var snapshot: [Candidate]?
+    /// The remote config the cache was built for. A different config means the cache is stale.
     private var snapshotConfig: UserAssistanceConfig?
+    /// The database read in progress, shared by callers that ask while it runs.
     private var snapshotTask: Task<[Candidate], Error>?
+    /// Bumped whenever the cache is cleared, for example after an attempt ends or the config changes.
+    /// A load or sign-in check that started under an older generation is thrown away.
     private var generation = 0
+    /// Records this queue put on the "Needs you" list that the cached candidates don't show yet.
     private var awaitingIDs: Set<AssistedOptOutID> = []
 
     public init(dependencies: BrokerProfileJobDependencyProviding,
@@ -88,6 +103,8 @@ public final class AssistedOptOutQueue {
         cancelAttemptsNotEnabled()
     }
 
+    /// Puts due opt-outs onto the "Needs you" list by recording that they wait for the user,
+    /// and closes attempts whose record is no longer a candidate.
     public func refresh() async throws {
         cancelAttemptsNotEnabled()
         guard !dependencies.isPausedForRevokedSigningKey else {
@@ -119,6 +136,8 @@ public final class AssistedOptOutQueue {
         }
     }
 
+    /// The "Needs you" list for the dashboard: attempts with an open window, then opt-outs the user hasn't started.
+    /// `droppingSubmitted` closes finished attempts first.
     public func assistedOptOuts(droppingSubmitted: Bool = false) async throws -> [AssistedOptOut] {
         cancelAttemptsNotEnabled()
         guard try await isAuthenticated() else {
@@ -147,6 +166,8 @@ public final class AssistedOptOutQueue {
         return live + waiting
     }
 
+    /// Opens the window for an opt-out the user picked from the dashboard. Brings an already open window to the front,
+    /// and does nothing while another attempt is in progress.
     public func start(id: AssistedOptOutID) async throws {
         cancelAttemptsNotEnabled()
         guard try await isAuthenticated(), config.isEnabled, !dependencies.isPausedForRevokedSigningKey else {
@@ -255,6 +276,8 @@ public final class AssistedOptOutQueue {
         }
     }
 
+    /// Throws if the cache was cleared or the config changed while waiting for the sign-in check,
+    /// so the caller drops what it loaded.
     private func isAuthenticated(for loaded: LoadedSnapshot? = nil) async throws -> Bool {
         let expectedGeneration = loaded?.generation ?? generation
         let expectedConfig = loaded?.config ?? config
@@ -305,11 +328,14 @@ public final class AssistedOptOutQueue {
         }
     }
 
+    /// Whether the record is on the "Needs you" list. It's hidden while a scheduled opt-out is running on it.
     private func isAwaiting(_ candidate: Candidate) -> Bool {
         guard !dependencies.runningAssistedOptOuts.isRegularRunning(candidate.id) else { return false }
         return awaitingIDs.contains(candidate.id) || candidate.job.historyEvents.max(by: { $0.date < $1.date })?.type == .optOutAwaitingUserAssistance
     }
 
+    /// Whether `refresh` should add the record to the "Needs you" list: nothing is running it, it isn't listed yet,
+    /// and its opt-out is due or was interrupted before submitting.
     private func entersNeedsYou(_ candidate: Candidate) -> Bool {
         guard sessions[candidate.id] == nil, !dependencies.runningAssistedOptOuts.contains(candidate.id),
               !isAwaiting(candidate) else { return false }

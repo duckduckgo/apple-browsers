@@ -150,7 +150,7 @@ struct AssistedOptOutAddress: View {
 
     static func addressBarHost(of url: URL) -> String? {
         guard let host = url.host, !host.isEmpty else { return nil }
-        let displayHost = (host.punycodeDecodedHostname ?? host).droppingWwwPrefix()
+        let displayHost = host.droppingWwwPrefix()
         return url.port.map { "\(displayHost):\($0)" } ?? displayHost
     }
 }

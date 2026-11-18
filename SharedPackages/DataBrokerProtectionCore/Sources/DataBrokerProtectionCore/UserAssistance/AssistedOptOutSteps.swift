@@ -18,6 +18,7 @@
 
 import Foundation
 
+/// The step titles the user sees during an assisted opt-out, taken in order from the `step` labels in the broker JSON.
 public struct AssistedOptOutSteps: Equatable, Sendable {
     public let titles: [String]
 

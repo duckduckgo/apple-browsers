@@ -125,13 +125,14 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
     }
 
-    func testMarksDuringSimulationAreIgnored() {
+    func testMarksDuringSimulationAreCountedAndAnswersAreDropped() {
         monitor.setBreakageSimulationEnabled(true)
         commit("a", path: "a")
-        mark(.backgroundReceived, path: "a")
+        mark(.responseSent, path: "a")
+        monitor.handle(.dashboardResponse(url: url("a"), isAnswer: true))
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .responseSent, tabs: .one)])
     }
 
     func testClosedTabForgetsItsMarks() {

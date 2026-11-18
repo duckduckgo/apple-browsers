@@ -294,9 +294,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     /// Records how far one page's init got. A mark is not an answer: the background can receive `init` and
     /// still never answer, which is the silence this metric reports. Two tabs on one page both get the mark.
+    /// The Debug simulation drops only the answers, so the marks of a simulated silent tab are still recorded.
     private func receiveProgress(url: URL, stage: CPMInitStage, extensionIdentifier: String?) {
         if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
-        guard !isCPMMessagingBreakageSimulationEnabled else { return }
         let tabs = waitingTabs(showing: url)
         guard !tabs.isEmpty else {
             keepForCommit(RecentMark(url: url, stage: stage, date: now()))

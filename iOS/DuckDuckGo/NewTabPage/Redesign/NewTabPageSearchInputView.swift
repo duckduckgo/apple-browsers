@@ -50,7 +50,7 @@ struct NewTabPageSearchInputView: View {
                                         onVoiceSearch: onVoiceSearch,
                                         aiChatMenu: aiChatMenu)
                 .padding(.horizontal, Metrics.fieldHorizontalInset)
-                .frame(height: Metrics.fieldHeight)
+                .frame(height: model.settings.isModeToggleShown ? Metrics.fieldHeightWithToggle : Metrics.fieldHeightWithoutToggle)
         }
         .background(RedesignedNewTabPageCardBackground())
         .padding(.horizontal, Metrics.horizontalMargin)
@@ -174,7 +174,8 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 private enum Metrics {
     static let horizontalMargin: CGFloat = 16
     static let cardPadding: CGFloat = 8
-    static let fieldHeight: CGFloat = 74
+    static let fieldHeightWithToggle: CGFloat = 64
+    static let fieldHeightWithoutToggle: CGFloat = 57
     static let fieldHorizontalInset: CGFloat = 5
     static let toggleHeight: CGFloat = 40
 }

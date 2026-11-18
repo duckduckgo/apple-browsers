@@ -28,6 +28,11 @@ import SwiftUI
 
 struct AddToDockVideoSheet: View {
 
+    private enum Layout {
+        static let minWidth: CGFloat = 416
+        static let maxWidth: CGFloat = 544
+    }
+
     let videoURL: URL
     /// Video size used to calculate aspect ratio for the player view.
     let videoSize: CGSize
@@ -60,11 +65,11 @@ struct AddToDockVideoSheet: View {
             VideoPlayerView(player: coordinator.queuePlayer)
                 .aspectRatio(videoSize.width / videoSize.height, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: Preferences.Const.paneContentWidth)
+                .frame(minWidth: Layout.minWidth, maxWidth: Layout.maxWidth)
 
             if showsInstructions {
                 Text(.init(UserText.addToDockInstructionsCaption))
-                    .frame(minWidth: Preferences.Const.minContentWidth, maxWidth: .infinity, alignment: .leading)
+                    .frame(minWidth: Layout.minWidth, maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -83,7 +88,7 @@ struct AddToDockVideoSheet: View {
             }
         }
         .padding()
-        .frame(maxWidth: Preferences.Const.paneContentWidth)
+        .frame(maxWidth: Layout.maxWidth)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {
             coordinator.loadVideoAsset(url: videoURL)

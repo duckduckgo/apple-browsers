@@ -177,13 +177,19 @@ runner's own lines are left out). A log over 5 MB keeps its end and says so on i
 
 An attempt folder is used once: a proof inside a folder that holds anything else is copied to a new folder.
 
-**Where evidence goes.** Pass one of these to `new-proof` and `prove` (the manifest and rerun command record it):
+**Where evidence goes.** Pass one of these to `new-proof` and `prove` (`selftest` takes `--evidence-dir`); the
+manifest and rerun command record it:
 - `--evidence-dir <dir>`: any directory outside the checkout, created if missing; each run writes a fresh attempt
   folder in it. Use the directory your tooling publishes evidence from.
 - `--decision-log <path>`: a `decisions.tsv` outside the checkout; attempt folders go in `proofs/` next to it, so the
   log can link them.
 
 Either one inside the checkout is refused, so evidence never lands in the repo.
+
+**Publishing it in a PR.** Allocate a fresh directory per attempt from the evidence store your PR tooling uploads
+from, pass it as `--evidence-dir` to `new-proof` and `prove`, then publish it with that tooling. Upload the whole
+attempt folder, since `report.md` links its evidence by relative path. In the PR's Verification section, link
+`report.md` as the entry point, each device's `recording.mp4`, and `final.png` or your screenshots as key frames.
 
 **Video.** `prove` records each device's screen to `<device>/recording.mp4` (h264) from launch until the final
 screenshot, on pass, fail and cancel. Your `shot()` screenshots and `final.png` are the key frames. A recording that
@@ -199,6 +205,12 @@ Report to the user from `report.md`: **passed, failed and unverified** behavior 
 live services or only the local fixture, the revision, the rerun command, and links to the evidence. Look at the
 screenshots before claiming anything about appearance. The report's **Problems** section lists cleanup and evidence
 failures; pass them on, never hide them.
+
+**Run it in a subagent.** An agent verifying its own change hands the proof to a subagent: writing it, `new-proof`,
+`check`, `prove`, retries and build waits, whose output would fill the lead's context. Brief it with the claim, the
+devices and the evidence directory. It returns only the verdict per device (pass, fail or INCONCLUSIVE), the
+`report.md` path and the evidence folder. The lead still reads `report.md` and looks at the screenshots and the video
+before claiming anything.
 
 **Before and after (bug fixes).** Run the same proof against the base commit: add a worktree at it and run *this*
 checkout's `verify-ios` from inside that worktree. The checkout is taken from the current directory and the skill

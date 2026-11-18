@@ -4280,21 +4280,19 @@ extension TabViewController: WKNavigationDelegate {
             startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
         }
         sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
-            defer {
-                state?.contentBlockingWaitTasks[waitID] = nil
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
-            }
             // The assets publisher never finishes, so this returns nil only when the wait is cancelled.
             let isReady = await geolocationInstalled.values.first { _ in true } != nil
-            // Remove before completion: success re-enters the navigation policy delegate.
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
             guard isReady, !Task.isCancelled, isCurrentWait else {
                 completion(false)
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
                 return
             }
             if isMainFrame {
                 state?.contentBlockingWaitTimeoutPixel = nil
             }
+            // Resuming navigation re-enters policy and can record a zero-second wait.
+            rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
             completion(true)
         }
         return true

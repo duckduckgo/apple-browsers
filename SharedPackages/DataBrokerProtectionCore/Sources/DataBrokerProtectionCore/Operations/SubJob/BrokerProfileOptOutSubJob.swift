@@ -92,7 +92,9 @@ struct BrokerProfileOptOutSubJob {
                            showWebView: Bool,
                            kind: RunKind,
                            shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
-        guard !kind.isRegular || !brokerProfileQueryData.dataBroker.requiresUserAssistance else { return false }
+        if kind.isRegular, brokerProfileQueryData.dataBroker.requiresUserAssistance {
+            return false
+        }
         let regularID: AssistedOptOutID?
         if kind.isRegular, let extractedID = extractedProfile.id,
            let brokerID = brokerProfileQueryData.dataBroker.id, let profileID = brokerProfileQueryData.profileQuery.id {

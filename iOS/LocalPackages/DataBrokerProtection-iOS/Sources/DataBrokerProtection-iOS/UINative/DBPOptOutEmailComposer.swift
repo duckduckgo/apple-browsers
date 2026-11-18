@@ -28,7 +28,8 @@ public protocol DBPOptOutEmailComposing {
 final class DBPOptOutEmailComposer: NSObject, DBPOptOutEmailComposing {
 
     private weak var presentingViewController: UIViewController?
-    private var pendingCompose: CheckedContinuation<MFMailComposeResult, Never>?
+    private weak var composeViewController: MFMailComposeViewController?
+    var pendingCompose: CheckedContinuation<MFMailComposeResult, Never>?
 
     init(presentingViewController: UIViewController) {
         self.presentingViewController = presentingViewController
@@ -41,6 +42,15 @@ final class DBPOptOutEmailComposer: NSObject, DBPOptOutEmailComposing {
 
     @MainActor var canSendMail: Bool {
         MFMailComposeViewController.canSendMail()
+    }
+
+    /// Closing the dashboard also closes Mail without a delegate callback, so the request resolves as not sent here.
+    @MainActor
+    func presenterDidDisappear() {
+        guard pendingCompose != nil, composeViewController?.presentingViewController == nil else { return }
+        let continuation = pendingCompose
+        pendingCompose = nil
+        continuation?.resume(returning: .cancelled)
     }
 
     @MainActor
@@ -58,6 +68,7 @@ final class DBPOptOutEmailComposer: NSObject, DBPOptOutEmailComposing {
 
         return await withCheckedContinuation { continuation in
             pendingCompose = continuation
+            self.composeViewController = composeViewController
             presentingViewController.present(composeViewController, animated: true)
         }
     }
@@ -68,6 +79,7 @@ private extension DBPOptOutEmailComposer {
     var readyPresentingViewController: UIViewController? {
         guard let presentingViewController,
               presentingViewController.viewIfLoaded?.window != nil,
+              !presentingViewController.isBeingDismissed,
               presentingViewController.presentedViewController == nil else {
             return nil
         }

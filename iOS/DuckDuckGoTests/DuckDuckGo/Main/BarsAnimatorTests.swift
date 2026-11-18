@@ -1186,30 +1186,33 @@ class BarsAnimatorShortPageTests: XCTestCase {
     }
 
     func testWhenFloatingChromeHidesAtThePageBottomThenThePageFollowsTheBarDown() {
-        let (manager, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 100)
+        let (manager, delegate, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 100)
 
         manager.followFloatingChromeBottom { 70 }
         XCTAssertEqual(scrollView.contentOffset.y, 170)
 
         manager.followFloatingChromeBottom { 40 }
         XCTAssertEqual(scrollView.contentOffset.y, 140)
+        withExtendedLifetime(delegate) {}
     }
 
     func testWhenFloatingChromeIsRevealingThenThePageIsNotMoved() {
-        let (manager, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 40)
+        let (manager, delegate, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 40)
 
         manager.followFloatingChromeBottom { 100 }
 
         XCTAssertEqual(scrollView.contentOffset.y, 140)
+        withExtendedLifetime(delegate) {}
     }
 
     func testWhenThePageIsAboveTheBottomTheHidingBarLeavesThenItIsNotMoved() {
-        let (manager, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 100)
+        let (manager, delegate, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 100)
         scrollView.contentOffset.y = 50
 
         manager.followFloatingChromeBottom { 40 }
 
         XCTAssertEqual(scrollView.contentOffset.y, 50)
+        withExtendedLifetime(delegate) {}
     }
 
     func testWhenTheOffsetShiftsUnderTheDragThenTheFloatingBarsKeepTheirProgress() {
@@ -1258,7 +1261,10 @@ class BarsAnimatorShortPageTests: XCTestCase {
     }
 
     /// A page scrolled to the bottom its revealed floating chrome allows.
-    private func makeFloatingManagerAtPageBottom(contentInsetBottom: CGFloat) -> (manager: BrowserChromeManager, scrollView: UIScrollView) {
+    /// The manager holds its delegate weakly, so callers keep the returned delegate alive for the test.
+    private func makeFloatingManagerAtPageBottom(
+        contentInsetBottom: CGFloat
+    ) -> (manager: BrowserChromeManager, delegate: BrowserChromeDelegateMock, scrollView: UIScrollView) {
         let manager = BrowserChromeManager()
         let delegate = BrowserChromeDelegateMock()
         delegate.isFloatingChromeEnabled = true
@@ -1270,7 +1276,7 @@ class BarsAnimatorShortPageTests: XCTestCase {
         scrollView.contentInset.bottom = contentInsetBottom
         scrollView.contentOffset.y = 100 + contentInsetBottom
         manager.attach(to: scrollView)
-        return (manager, scrollView)
+        return (manager, delegate, scrollView)
     }
 
     private func makeLegacyDelegate() -> BrowserChromeDelegateMock {

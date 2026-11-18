@@ -115,8 +115,7 @@ public final class AssistedOptOutQueue {
             cancelAll()
             return
         }
-        let loaded = try await loadSnapshot()
-        guard try await isAuthenticated(for: loaded) else {
+        guard let loaded = try await loadAuthenticatedSnapshot() else {
             cancelAll()
             return
         }
@@ -154,8 +153,7 @@ public final class AssistedOptOutQueue {
                 presenter?.dismiss(session)
             }
         }
-        let loaded = try await loadSnapshot()
-        guard try await isAuthenticated(for: loaded), !dependencies.isPausedForRevokedSigningKey else {
+        guard let loaded = try await loadAuthenticatedSnapshot(), !dependencies.isPausedForRevokedSigningKey else {
             cancelAll()
             return []
         }
@@ -183,8 +181,8 @@ public final class AssistedOptOutQueue {
             return
         }
         guard runningID == nil else { return }
-        let loaded = try await loadSnapshot()
-        guard try await isAuthenticated(for: loaded), loaded.config.isEnabled, !dependencies.isPausedForRevokedSigningKey else { return }
+        guard let loaded = try await loadAuthenticatedSnapshot(), loaded.config.isEnabled,
+              !dependencies.isPausedForRevokedSigningKey else { return }
         if let blocking = sessions.values.first(where: { $0.phase != .submitted }) {
             presenter?.present(blocking)
             return
@@ -292,6 +290,20 @@ public final class AssistedOptOutQueue {
         let authenticated = await dependencies.isAuthenticatedUser()
         guard expectedGeneration == generation, expectedConfig == config else { throw CancellationError() }
         return authenticated
+    }
+
+    /// Loads the candidates and checks sign-in, loading again a few times if the cache is cleared meanwhile.
+    /// Returns nil when the user isn't signed in.
+    private func loadAuthenticatedSnapshot() async throws -> LoadedSnapshot? {
+        var reloads = 0
+        while true {
+            do {
+                let loaded = try await loadSnapshot()
+                return try await isAuthenticated(for: loaded) ? loaded : nil
+            } catch is CancellationError where reloads < 2 && !Task.isCancelled {
+                reloads += 1
+            }
+        }
     }
 
     private func loadSnapshot() async throws -> LoadedSnapshot {

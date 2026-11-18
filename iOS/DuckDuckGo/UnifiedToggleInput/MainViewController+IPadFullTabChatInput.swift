@@ -144,6 +144,9 @@ final class FullTabChatInputContainerView: UIView {
     /// Pins the web view container's bottom to this container's top while the input is visible.
     var webViewContainerBottomConstraint: NSLayoutConstraint?
 
+    /// The web view's color before the chat repainted it, restored when the input leaves the tab.
+    var webViewBackgroundBeforeInput: UIColor?
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = UIColor(singleUseColor: .duckAIWebViewBackground)
@@ -194,8 +197,18 @@ extension TabViewController {
         NSLayoutConstraint.activate(constraints)
         inputViewController.didMove(toParent: self)
         fullTabChatInputContainer = container
+        paintWebViewForChatInput(container)
 
         UIView.performWithoutAnimation { view.layoutIfNeeded() }
+    }
+
+    /// Until Duck.ai paints, the web view shows its anti-flash and page-derived colors, a second surface above the input.
+    private func paintWebViewForChatInput(_ container: FullTabChatInputContainerView) {
+        container.webViewBackgroundBeforeInput = webView.backgroundColor
+        let color = UIColor(singleUseColor: .duckAIWebViewBackground)
+        webView.backgroundColor = color
+        // The adapter owns the scroll view's color and repaints it whenever the page color changes.
+        pullToRefreshViewAdapter?.backgroundColorOverride = color
     }
 
     func removeFullTabChatInput() {
@@ -205,6 +218,8 @@ extension TabViewController {
             child.view.removeFromSuperview()
             child.removeFromParent()
         }
+        webView.backgroundColor = container.webViewBackgroundBeforeInput
+        pullToRefreshViewAdapter?.backgroundColorOverride = nil
         container.removeFromSuperview()
         fullTabChatInputContainer = nil
         webViewContainerBottomConstraint?.isActive = true

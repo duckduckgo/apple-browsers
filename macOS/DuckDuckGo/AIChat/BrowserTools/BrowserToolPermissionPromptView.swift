@@ -175,7 +175,8 @@ struct BrowserToolPermissionPromptView: View {
         .accessibilityIdentifier("BrowserToolPermissionPrompt.accessTools")
 
         if !selection.removed.isEmpty {
-            let names = ListFormatter.localizedString(byJoining: selection.removed.map { BrowserToolSettingsText.title(toolName: $0) })
+            let titles = selection.removed.map { BrowserToolSettingsText.title(toolName: $0) }
+            let names = titles.count > 2 ? titles.dropLast().joined(separator: ", ") + ", or " + titles[titles.count - 1] : titles.joined(separator: " or ")
             VStack(alignment: .leading, spacing: 2) {
                 Text(UserText.browserToolAccessRemovedNote(toolNames: names))
                     .font(.system(size: 12))

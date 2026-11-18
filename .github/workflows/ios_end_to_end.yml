@@ -21,10 +21,26 @@ jobs:
           gh api --hostname api.copilot.mobile.dev --method GET \
             --header "Authorization: Bearer $MAESTRO_API_KEY" \
             --header "Accept: application/json" \
-            "v2/project/$PROJECT_ID/upload/mupload_01m7nmc5hdetbbhh0t5dxr0tzj" \
+            "https://api.copilot.mobile.dev/v2/project/$PROJECT_ID/upload/mupload_01m7nmc5hdetbbhh0t5dxr0tzj" \
             > diagnostics/upload.json
+          jq -r '.flows[] | select(.status != "SUCCESS") | .runId // empty' \
+            diagnostics/upload.json > diagnostics/failed-runs.txt
+          test -s diagnostics/failed-runs.txt
+          while read -r run_id; do
+            gh api --hostname api.copilot.mobile.dev --method GET \
+              --header "Authorization: Bearer $MAESTRO_API_KEY" \
+              --header "Accept: application/json" \
+              "https://api.copilot.mobile.dev/v2/runs/$run_id?includeArchive=true" \
+              > run.json
+            archive_url=$(jq -er '.artifacts[] | select(.type == "artifactsArchive") | .url' run.json)
+            gh api --method GET --header "Authorization:" \
+              --header "Accept: application/zip" "$archive_url" \
+              > "diagnostics/$run_id.zip"
+            jq 'del(.artifacts[].url)' run.json > "diagnostics/$run_id.json"
+          done < diagnostics/failed-runs.txt
 
       - name: Preserve diagnostic evidence
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: duckplayer-ci-diagnostics

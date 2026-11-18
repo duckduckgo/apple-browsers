@@ -20,6 +20,7 @@
 import Testing
 import Foundation
 import MaliciousSiteProtection
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 
 @Suite("Malicious Site Protection - Manager")
@@ -31,6 +32,9 @@ final class MaliciousSiteProtectionManagerTests {
     private var preferencesManagerMock: MockMaliciousSiteProtectionPreferencesManager!
     private var featureFlaggerMock: MockMaliciousSiteProtectionFeatureFlags!
     private var scamProtectionSupported = false
+    private var isInBackground = false
+    private let dataLoadStateProvider = MockMaliciousSiteProtectionDataLoadStateProvider()
+    private let pixelKit = PixelKitMock()
 
     init() {
         dataManager = MaliciousSiteProtection.DataManager(
@@ -51,7 +55,10 @@ final class MaliciousSiteProtectionManagerTests {
             maliciousSiteProtectionFeatureFlagger: featureFlaggerMock,
             supportedThreatsProvider: {
                 return self.scamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
-            }
+            },
+            isInBackground: { self.isInBackground },
+            dataLoadStateProvider: dataLoadStateProvider,
+            pixelFiring: { [pixelKit] in pixelKit }
         )
     }
 
@@ -153,5 +160,92 @@ final class MaliciousSiteProtectionManagerTests {
 
         // THEN
         #expect(result == threatInfo.threat)
+    }
+
+    // MARK: - Check Pixel
+
+    private func enableChecks() {
+        preferencesManagerMock.isMaliciousSiteProtectionOn = true
+        featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
+        featureFlaggerMock.shouldDetectMaliciousThreatForDomainResult = true
+    }
+
+    @available(iOS 16, *)
+    @Test(
+        "Background check fires a daily and count pixel for its data state",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            (isCached: true, name: "m_debug_malicious-site-protection_url-check_background_cached"),
+            (isCached: false, name: "m_debug_malicious-site-protection_url-check_background_disk")
+        ]
+    )
+    func backgroundCheckFiresPixel(state: (isCached: Bool, name: String)) async throws {
+        // GIVEN
+        isInBackground = true
+
+        // WHEN
+        await sut.fireBackgroundURLCheckPixel(isCached: state.isCached).value
+
+        // THEN
+        #expect(pixelKit.actualFireCalls.map(\.pixel.name) == [state.name])
+        #expect(pixelKit.actualFireCalls.map(\.frequency) == [.dailyAndCount])
+    }
+
+    @available(iOS 16, *)
+    @Test("Foreground check fires nothing, whether or not the hash prefixes are in memory", .timeLimit(.minutes(1)), arguments: [true, false])
+    func foregroundCheckFiresNothing(isCached: Bool) async throws {
+        // GIVEN
+        isInBackground = false
+
+        // WHEN
+        await sut.fireBackgroundURLCheckPixel(isCached: isCached).value
+
+        // THEN
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check asks whether the hash prefixes of every supported threat are in memory", .timeLimit(.minutes(1)), arguments: [false, true])
+    func checkAsksForSupportedThreatHashPrefixes(isScamSupported: Bool) async throws {
+        // GIVEN
+        enableChecks()
+        scamProtectionSupported = isScamSupported
+
+        // WHEN
+        _ = await sut.evaluate(try #require(URL(string: "https://example.com")))
+
+        // THEN
+        #expect(dataLoadStateProvider.capturedKind == .hashPrefixSet)
+        #expect(dataLoadStateProvider.capturedThreatKinds == (isScamSupported ? ThreatKind.allCases : [.phishing, .malware]))
+    }
+
+    /// The pixel's task starts only after the data state is read, so a check that never reads it fires nothing.
+    @available(iOS 16, *)
+    @Test("No check when the feature is off", .timeLimit(.minutes(1)))
+    func noCheckWhenFeatureIsOff() async throws {
+        // GIVEN
+        enableChecks()
+        featureFlaggerMock.shouldDetectMaliciousThreatForDomainResult = false
+
+        // WHEN
+        _ = await sut.evaluate(try #require(URL(string: "https://example.com")))
+
+        // THEN
+        #expect(dataLoadStateProvider.capturedKind == nil)
+    }
+
+    /// The pixel's task starts only after the data state is read, so a check that never reads it fires nothing.
+    @available(iOS 16, *)
+    @Test("No check when the setting is off", .timeLimit(.minutes(1)))
+    func noCheckWhenSettingIsOff() async throws {
+        // GIVEN
+        enableChecks()
+        preferencesManagerMock.isMaliciousSiteProtectionOn = false
+
+        // WHEN
+        _ = await sut.evaluate(try #require(URL(string: "https://example.com")))
+
+        // THEN
+        #expect(dataLoadStateProvider.capturedKind == nil)
     }
 }

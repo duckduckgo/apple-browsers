@@ -20,13 +20,14 @@ import XCTest
 
 final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
+    private typealias Identifiers = XCUIApplication.AccessibilityIdentifiers
+
     private var didSetCustomConfiguration = false
 
     override func tearDownWithError() throws {
         if didSetCustomConfiguration, let app {
-            app.debugMenu.click()
-            app.debugMenu.menuItems["Remote Configuration"].click()
-            app.debugMenu.menuItems["Reset configuration to default"].firstMatch.click()
+            app.revealDebugMenuItem(Identifiers.debugMenuResetPrivacyConfigurationToDefault, in: Identifiers.debugMenuRemoteConfiguration)
+                .clickAfterExistenceTestSucceeds()
 
             let configUpdateComplete = app.staticTexts["Configuration Update Complete"]
             XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.navigation), "Default configuration was not restored")
@@ -41,25 +42,20 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         app.openNewTab()
 
         // Step 1: Enable internal user if needed
-        app.debugMenu.click()
-        let searchField = app.searchFields["Search debug menu..."]
-        searchField.click()
-        searchField.typeText("internal")
-        let internalUserMenuItem = app.menuItems["Set Internal User State"]
-        if internalUserMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
-            internalUserMenuItem.click()
-            app.debugMenu.click()
+        let internalUserMenuItem = app.revealDebugMenuItem(Identifiers.debugMenuInternalUserState)
+        guard internalUserMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
+            XCTFail("Internal user menu item did not appear")
+            return
         }
-        let activeSearchField = app.searchFields["Search debug menu..."]
-        activeSearchField.click()
-        activeSearchField.typeKey("a", modifierFlags: .command)
-        activeSearchField.typeKey(.delete, modifierFlags: [])
-        app.typeKey(.escape, modifierFlags: [])
+        if internalUserMenuItem.title == "Set Internal User State" {
+            internalUserMenuItem.click()
+        } else {
+            app.typeKey(.escape, modifierFlags: [])
+        }
 
         // Step 2: Load custom remote config
-        app.debugMenu.click()
-        app.debugMenu.menuItems["Remote Configuration"].click()
-        app.debugMenu.menuItems["Set custom configuration URL…"].click()
+        app.revealDebugMenuItem(Identifiers.debugMenuSetCustomPrivacyConfigurationURL, in: Identifiers.debugMenuRemoteConfiguration)
+            .clickAfterExistenceTestSucceeds()
 
         let configURL = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
         let textField = app.dialogs["alert"].children(matching: .textField).element

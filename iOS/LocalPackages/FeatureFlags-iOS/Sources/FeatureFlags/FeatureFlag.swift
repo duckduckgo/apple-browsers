@@ -261,14 +261,10 @@ public enum FeatureFlag: String {
     case unifiedURLPredictor
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220345796572420
-    case suggestionDebounce200ms
+    case debounceLogic2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
-
-    /// Gates the VPN Session Health Telemetry
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
-    case vpnSessionHealthTelemetry
 
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
@@ -690,6 +686,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220301490819843
+    case idleReturnNewTabPageOnForeground
+
     /// Holds a background task assertion during `didFinishLaunching`, so iOS doesn't suspend the app mid-launch
     /// while it holds a lock on a shared App Group database (0xdead10cc).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
@@ -926,14 +925,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign))
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
-        case .suggestionDebounce200ms:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.suggestionDebounce200ms))
+        case .debounceLogic2026:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.debounceLogic2026))
         case .unifiedURLPredictor:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .vpnMenuItem:
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
-        case .vpnSessionHealthTelemetry:
-            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.sessionHealthTelemetry))
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .forgetAllInSettings:
@@ -1192,6 +1189,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageCover))
         case .idleReturnNewTabPageAtLaunch:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
+        case .idleReturnNewTabPageOnForeground:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageOnForeground))
         case .launchBackgroundTask:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         case .webPageTranslation:

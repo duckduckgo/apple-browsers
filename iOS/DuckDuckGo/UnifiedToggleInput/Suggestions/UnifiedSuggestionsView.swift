@@ -96,7 +96,7 @@ struct UnifiedSuggestionsView: View {
                                                    contentTopInset: viewModel.contentTopInset,
                                                    usesScrollableEscapeHatch: usesScrollableEscapeHatch,
                                                    onEscapeHatchGeometryChange: { viewModel.setEmbeddedEscapeHatchGeometry($0) })
-                    .background(usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout ? Color.clear : Color(designSystemColor: .background))
+                    .background(Color.clear)
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsEmbeddedContent ? 1 : 0)

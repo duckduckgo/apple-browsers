@@ -141,6 +141,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                     return
                 }
 
+                // Fail before loading the page: without a user to hand it to, this opt-out can't finish.
                 let needsUser = context.dataBroker.optOutStep()?.actions.contains(where: \.requiresUserAssistance) ?? false
                 if needsUser, assistanceObserver == nil {
                     failed(with: DataBrokerProtectionError.userAssistanceRequired)

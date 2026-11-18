@@ -46,6 +46,7 @@ extension Action {
     public var needsEmail: Bool { false }
     public var json: Data? { nil }
 
+    /// The `step` label from the broker JSON. It groups actions into the steps the user sees during an assisted opt-out.
     public var step: String? {
         guard let json, let object = try? JSONSerialization.jsonObject(with: json) as? [String: Any] else { return nil }
         return object["step"] as? String

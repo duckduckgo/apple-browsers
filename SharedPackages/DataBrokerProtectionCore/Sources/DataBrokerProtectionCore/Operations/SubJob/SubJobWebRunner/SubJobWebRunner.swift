@@ -63,6 +63,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     /// downstream actions can reference keys by name.
     var emailData: ExtractedEmailData { get set }
 
+    /// Set only for an assisted opt-out the user started. Without it, a step that needs the user fails the run.
     var assistanceObserver: OptOutAssistanceObserving? { get }
 
     func run(inputValue: InputValue,
@@ -428,6 +429,7 @@ public extension SubJobWebRunning {
                                                                                visualizeActions: assistanceObserver != nil)
         }
 
+        // The assisted opt-out UI hosts the page itself, so the separate debug window stays closed.
         await webViewHandler?.initializeWebView(showWebView: showWebView && assistanceObserver == nil)
         if let assistanceObserver, let webView = await (webViewHandler as? DataBrokerProtectionWebViewHandler)?.currentWebView {
             await assistanceObserver.attemptDidCreate(webView: webView)

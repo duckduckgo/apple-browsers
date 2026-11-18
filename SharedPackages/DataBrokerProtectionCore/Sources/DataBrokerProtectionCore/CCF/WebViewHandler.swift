@@ -48,6 +48,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     private var webView: WebView?
     var webViewForTesting: WKWebView? { webView }
+    /// The live broker page, which an assisted opt-out shows to the user.
     public var currentWebView: WKWebView? { webView }
 
     /// The userAssist in flight. A navigation drops it from the page, so it's sent again once the new page loads.
@@ -509,6 +510,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFail: \(error.localizedDescription, privacy: .public)")
+        // A cancelled load was replaced by another navigation, so the userAssist stays pending for the new page.
         if (error as? URLError)?.code != .cancelled {
             failPendingUserAssist(with: error)
         }

@@ -91,7 +91,16 @@ extension XCUIApplication {
 
     func openBrowsingMenu(revealing identifier: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
         dismissAddressBarEditing(file: file, line: line)
-        buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(in: self, file: file, line: line)
+        // The menu can be exposed through the toolbar or the iPad omnibar.
+        let menuIdentifiers = UIDevice.current.userInterfaceIdiom == .pad
+            ? ["Browser.OmniBar.Button.BrowsingMenu", "Browser.Toolbar.Button.Menu"]
+            : ["Browser.Toolbar.Button.Menu", "Browser.OmniBar.Button.BrowsingMenu"]
+        let preferredMenuButton = browserWindow.buttons[menuIdentifiers[0]]
+        let fallbackMenuButton = browserWindow.buttons[menuIdentifiers[1]]
+        let menuButton = preferredMenuButton.isHittableInAppWindow(in: self)
+            ? preferredMenuButton
+            : fallbackMenuButton.isHittableInAppWindow(in: self) ? fallbackMenuButton : preferredMenuButton
+        menuButton.tapWhenHittable(in: self, file: file, line: line)
         let menu = descendants(matching: .any)["Browser.Menu.List"]
         let item = descendants(matching: .any)[identifier]
         let deadline = Date().addingTimeInterval(UITestTimeouts.navigation)

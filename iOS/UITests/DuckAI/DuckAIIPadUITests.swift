@@ -1,0 +1,109 @@
+//
+//  DuckAIIPadUITests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import UITestingSupport
+
+final class DuckAIIPadUITests: DuckAIUITestCase {
+
+    override var duckAIFeatureFlagLaunchArguments: [String] {
+        [
+            "-ff.aiChatChromeShortcutIPad", "true",
+            "-ff.aiChatChromeMenuButtonIPad", "false",
+        ]
+    }
+
+    func testWhenChangingDuckAISearchInputThenIPadModeControlsFollowTheSetting() {
+        XCTContext.runActivity(named: "Verify iPad AI settings and enable Search & Duck.ai") { _ in
+            app.openAIFeaturesSettings()
+            app.revealDuckAIEnableToggle()
+            let duckAIEnabled = app.settingsToggle(withIdentifier: "Settings.AIFeatures.EnableToggle")
+            XCTAssertEqual(duckAIEnabled.value as? String, "1", "Duck.ai should be enabled after resetting settings.")
+
+            for identifier in ["Settings.AIFeatures.Picker.SearchOnly", "Settings.AIFeatures.Picker.SearchAndDuckAI"] {
+                let option = app.aiFeaturesSettingsList.descendants(matching: .any)[identifier]
+                app.aiFeaturesSettingsList.swipeUpToReveal(option, timeout: UITestTimeouts.navigation)
+                XCTAssertTrue(
+                    option.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
+                    "The iPad search-input choice did not become visible: \(identifier).")
+            }
+            app.selectDuckAISearchInput(true)
+        }
+
+        XCTContext.runActivity(named: "Verify the iPad Duck.ai shortcut setting") { _ in
+            app.openDuckAIShortcutsSettings()
+            let shortcuts = app.descendants(matching: .any)["Settings.List.AIChatShortcuts"]
+            let tabBarShortcut = shortcuts.switches.matching(identifier: "Settings.AIChat.TabBarToggle").firstMatch
+            shortcuts.swipeUpToReveal(tabBarShortcut, timeout: UITestTimeouts.navigation)
+            XCTAssertTrue(
+                tabBarShortcut.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
+                "The iPad Tab Bar shortcut setting did not appear.")
+            // With the current iPad chrome feature, Tab Bar replaces Maestro's older Address Bar shortcut row.
+            XCTAssertFalse(shortcuts.switches.matching(identifier: "Settings.AIChat.AddressBarToggle").firstMatch.exists)
+            app.navigateBackInSettings(from: "Settings.List.AIChatShortcuts", to: "Settings.List.AIFeatures")
+            app.navigateBackInSettings(from: "Settings.List.AIFeatures", to: "Settings.List.Main")
+            app.dismissSettings()
+        }
+
+        XCTContext.runActivity(named: "Verify both mode controls while the iPad address bar is focused") { _ in
+            app.searchEntry.tapWhenHittable(in: app)
+            for identifier in ["Browser.OmniBar.Button.ModeToggle.Search", "Browser.OmniBar.Button.ModeToggle.AIChat"] {
+                let modeControl = app.browserWindow.buttons[identifier]
+                XCTAssertTrue(
+                    modeControl.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.elementExistence),
+                    "The focused iPad address bar did not show its mode control: \(identifier).")
+            }
+        }
+
+        XCTContext.runActivity(named: "Select Search Only and verify both mode controls stay hidden when focused") { _ in
+            app.browserWindow.buttons["Browser.OmniBar.Button.BrowsingMenu"].tapWhenHittable(in: app)
+            XCTAssertTrue(
+                app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+                "The iPad keyboard remained visible after opening the browsing menu.")
+
+            let menu = app.descendants(matching: .any)["Browser.Menu.List"]
+            XCTAssertTrue(menu.waitForExistence(timeout: UITestTimeouts.elementExistence), "Browsing menu did not appear.")
+            let settings = app.descendants(matching: .any)["Browser.Menu.Settings"]
+            menu.swipeUpToReveal(settings, timeout: UITestTimeouts.navigation)
+            settings.tapWhenHittable(in: app)
+
+            let settingsList = app.descendants(matching: .any)["Settings.List.Main"]
+            XCTAssertTrue(settingsList.waitForExistence(timeout: UITestTimeouts.elementExistence), "Settings did not appear.")
+            let aiFeatures = settingsList.buttons["Settings.Main.AIFeatures"]
+            settingsList.swipeUpToReveal(aiFeatures, timeout: UITestTimeouts.navigation)
+            aiFeatures.tapWhenHittable(in: app)
+            XCTAssertTrue(
+                app.aiFeaturesSettingsList.waitForExistence(timeout: UITestTimeouts.elementExistence),
+                "AI Features settings did not appear.")
+
+            app.selectDuckAISearchInput(false)
+            app.navigateBackInSettings(from: "Settings.List.AIFeatures", to: "Settings.List.Main")
+            app.dismissSettings()
+            app.searchEntry.tapWhenHittable(in: app)
+            XCTAssertTrue(
+                app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
+                "The address bar did not enter editing before checking Search Only controls.")
+            for identifier in ["Browser.OmniBar.Button.ModeToggle.Search", "Browser.OmniBar.Button.ModeToggle.AIChat"] {
+                XCTAssertTrue(
+                    app.buttons[identifier].waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+                    "An iPad mode control remained visible after selecting Search Only: \(identifier).")
+            }
+        }
+    }
+}

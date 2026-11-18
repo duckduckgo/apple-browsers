@@ -38,6 +38,9 @@ protocol BrowserChromeDelegate: AnyObject {
     var isToolbarHidden: Bool { get }
     var currentBarsVisibility: CGFloat { get }
     var toolbarHeight: CGFloat { get }
+    /// True when the toolbar stays put while the rest of the chrome slides, as on iPad and in the minimal
+    /// layout. Hiding the chrome then gives the page none of the toolbar's height.
+    var isToolbarParked: Bool { get }
     var barsMaxHeight: CGFloat { get }
     var isInMinimalChromeLayout: Bool { get }
 
@@ -326,10 +329,12 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     /// Classic chrome slides the toolbar, the omnibar and any tabs bar out together, and the page gets
-    /// all of that space back. `barsMaxHeight` counts only the taller bar.
+    /// all of that space back. `barsMaxHeight` counts only the taller bar. A parked toolbar doesn't
+    /// slide, so its height stays out.
     private func legacySlidingChromeHeight(for delegate: BrowserChromeDelegate) -> CGFloat {
         let tabsBarHeight = delegate.tabBarContainer.isHidden ? 0 : delegate.tabBarContainer.frame.height
-        let slidingHeight = delegate.toolbarHeight + delegate.omniBar.barView.expectedHeight + tabsBarHeight
+        let toolbarHeight = delegate.isToolbarParked ? 0 : delegate.toolbarHeight
+        let slidingHeight = toolbarHeight + delegate.omniBar.barView.expectedHeight + tabsBarHeight
         return max(delegate.barsMaxHeight, slidingHeight)
     }
 

@@ -959,6 +959,8 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var toolbarHeight: CGFloat = 0
 
+    var isToolbarParked: Bool = false
+
     var barsMaxHeight: CGFloat = 0
 
     var isInMinimalChromeLayout: Bool = false
@@ -1098,6 +1100,22 @@ class BarsAnimatorShortPageTests: XCTestCase {
         let delegate = makeLegacyDelegate()
         manager.delegate = delegate
         let scrollView = mockShortScrollView(scrollableHeight: delegate.barsMaxHeight + 60)
+        manager.attach(to: scrollView)
+        var targetOffset = CGPoint.zero
+
+        manager.scrollViewWillBeginDragging(scrollView)
+        manager.scrollViewWillEndDragging(scrollView, withVelocity: CGPoint(x: 0, y: 1), targetContentOffset: &targetOffset)
+
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+    }
+
+    func testWhenTheToolbarIsParkedThenAPageThatStillScrollsWithoutTheOmnibarHidesTheBars() {
+        let manager = BrowserChromeManager()
+        let delegate = makeLegacyDelegate()
+        delegate.isToolbarParked = true
+        manager.delegate = delegate
+        // Taller than the omnibar the page gets back, shorter than the omnibar and toolbar together.
+        let scrollView = mockShortScrollView(scrollableHeight: 52 + 20)
         manager.attach(to: scrollView)
         var targetOffset = CGPoint.zero
 

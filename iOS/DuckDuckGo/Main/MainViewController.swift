@@ -6105,6 +6105,11 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.toolbarHeight.constant
     }
 
+    /// Matches `updateToolbarConstant`, which keeps a hidden or minimal-layout toolbar in place.
+    var isToolbarParked: Bool {
+        viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout
+    }
+
     var isFloatingChromeEnabled: Bool {
         isFloatingUIEnabled
     }

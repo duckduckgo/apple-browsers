@@ -223,8 +223,9 @@ final class DataBrokerJobTests: XCTestCase {
 
         await fulfillment(of: [initializationStarted], timeout: 5)
         runTask.cancel()
+        await fulfillment(of: [webViewFinished], timeout: 5)
         await initializationGate.open()
-        await fulfillment(of: [runFinished, webViewFinished], timeout: 5)
+        await fulfillment(of: [runFinished], timeout: 5)
 
         XCTAssertTrue(webViewHandler.wasFinishCalled)
         XCTAssertEqual(webViewHandler.executeCallCount, 0)

@@ -20,6 +20,7 @@ import DataBrokerProtectionCore
 import Foundation
 import PixelKit
 
+/// Fires the assisted opt-out pixels from the background agent. Durations are sent as coarse buckets, not exact times.
 @MainActor
 final class AssistedOptOutPixelInstrumentation: AssistedOptOutInstrumentation {
     private let pixelFiring: PixelFiring?

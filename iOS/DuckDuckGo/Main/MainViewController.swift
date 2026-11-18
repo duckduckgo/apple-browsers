@@ -6671,6 +6671,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if isPad {
+            guard omniBar.isTextFieldEditing || areSuggestionsVisible else { return }
             // iPad: the single authority decides search content for the typed text.
             refreshPopoverSuggestions()
             return

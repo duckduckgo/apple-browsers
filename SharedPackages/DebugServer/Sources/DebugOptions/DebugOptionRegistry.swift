@@ -25,8 +25,8 @@ public typealias DebugActionHandler = @MainActor ([String: DebugValue]) async th
 public final class DebugOptionRegistry {
     private struct Entry {
         let descriptor: DebugOptionDescriptor
-        let availability: (String) -> DebugOptionError?
-        let handlers: [String: DebugActionHandler]
+        let availability: (DebugActionID) -> DebugOptionError?
+        let handlers: [DebugActionID: DebugActionHandler]
     }
 
     private var entries: [String: Entry] = [:]
@@ -34,8 +34,8 @@ public final class DebugOptionRegistry {
     public init() {}
 
     public func register(_ descriptor: DebugOptionDescriptor,
-                         availability: @escaping (String) -> DebugOptionError? = { _ in nil },
-                         handlers: [String: DebugActionHandler]) throws {
+                         availability: @escaping (DebugActionID) -> DebugOptionError? = { _ in nil },
+                         handlers: [DebugActionID: DebugActionHandler]) throws {
         guard entries[descriptor.id] == nil else {
             throw DebugOptionError(code: .conflict, message: "Duplicate debug option: \(descriptor.id)")
         }
@@ -65,7 +65,7 @@ public final class DebugOptionRegistry {
         }
         guard let action = entry.descriptor.actions.first(where: { $0.id == invocation.action }),
               let handler = entry.handlers[invocation.action] else {
-            throw DebugOptionError(code: .unsupportedAction, message: "Unsupported action: \(invocation.action)")
+            throw DebugOptionError(code: .unsupportedAction, message: "Unsupported action: \(invocation.action.rawValue)")
         }
         try action.parametersSchema.validate(invocation.parameters)
         if let error = entry.availability(invocation.action) { throw error }

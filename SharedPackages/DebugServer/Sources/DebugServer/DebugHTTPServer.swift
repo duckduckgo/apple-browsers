@@ -76,7 +76,8 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
     /// Creates a new debug server.
     ///
     /// - Parameters:
-    ///   - port: The TCP port to listen on. Defaults to `8473`.
+    ///   - port: The TCP port to listen on. Defaults to `8473`. Pass `0` to let the system pick a free
+    ///     port, then read the bound port from `ServerState.running`.
     ///   - loopbackOnly: When `true`, the listener binds to `127.0.0.1` only, so the server is
     ///     unreachable from the LAN. Defaults to `false`, preserving the original all-interfaces
     ///     behavior for existing callers.
@@ -102,7 +103,7 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
             isStopping = false
 
             let parameters = NWParameters.tcp
-            let nwPort = NWEndpoint.Port(rawValue: port)!
+            let nwPort = NWEndpoint.Port(rawValue: port) ?? .any
 
             let listener: NWListener
             if loopbackOnly {
@@ -177,8 +178,9 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
     private func handleListenerStateChange(_ listenerState: NWListener.State) {
         switch listenerState {
         case .ready:
-            state = .running(port: listener?.port?.rawValue ?? port)
-            logger.info("DebugServer listening on port \(self.port)")
+            let boundPort = listener?.port?.rawValue ?? port
+            state = .running(port: boundPort)
+            logger.info("DebugServer listening on port \(boundPort)")
         case .failed(let error):
             state = .failed(error.localizedDescription)
             logger.error("DebugServer failed: \(error.localizedDescription)")

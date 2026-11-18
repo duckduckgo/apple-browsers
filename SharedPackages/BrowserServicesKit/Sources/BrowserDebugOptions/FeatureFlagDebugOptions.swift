@@ -75,8 +75,8 @@ public final class FeatureFlagDebugOptions<Flag: FeatureFlagDescribing> {
         changeSubject.send()
     }
 
-    public func activation(for flag: Flag) -> String {
-        requiresRelaunch(flag) ? "nextLaunch" : "nextFeatureEvaluation"
+    public func activation(for flag: Flag) -> DebugActivation {
+        requiresRelaunch(flag) ? .nextLaunch : .nextFeatureEvaluation
     }
 
     public func state(for flag: Flag) -> DebugValue {
@@ -95,7 +95,7 @@ public final class FeatureFlagDebugOptions<Flag: FeatureFlagDescribing> {
         return .object([
             "overrideValue": override, "baseValue": base, "resolvedValue": resolved,
             "overridesEnabled": .bool(featureFlagger.internalUserDecider.isInternalUser),
-            "activation": .string(activation(for: flag)),
+            "activation": .string(activation(for: flag).rawValue),
         ])
     }
 
@@ -104,17 +104,17 @@ public final class FeatureFlagDebugOptions<Flag: FeatureFlagDescribing> {
             let id = "featureFlags.\(flag.rawValue)" + (flag.cohortType == nil ? "" : ".cohort")
             let schema = DebugValueSchema(type: flag.cohortType == nil ? .boolean : .string,
                                           enumValues: flag.cohortType?.cohorts.map { $0.rawValue })
-            let descriptor = DebugOptionDescriptor(id: id, title: flag.rawValue, group: "Feature Flags", activation: activation(for: flag), actions: [
-                .init(id: "get", description: "Read the override, base value, and resolved value without assigning a cohort."),
-                .init(id: "set", description: "Save an explicit local override.",
+            let descriptor = DebugOptionDescriptor(id: id, title: flag.rawValue, group: .featureFlags, activation: activation(for: flag), actions: [
+                .init(id: .get, description: "Read the override, base value, and resolved value without assigning a cohort."),
+                .init(id: .set, description: "Save an explicit local override.",
                       parametersSchema: .init(properties: ["value": schema], required: ["value"])),
-                .init(id: "reset", description: "Remove this override and use the normal feature flag value."),
+                .init(id: .reset, description: "Remove this override and use the normal feature flag value."),
             ])
             try registry.register(descriptor, availability: { [self] action in
-                action == "get" ? nil : mutationUnavailableReason.map { DebugOptionError(code: .unavailable, message: $0) }
+                action == .get ? nil : mutationUnavailableReason.map { DebugOptionError(code: .unavailable, message: $0) }
             }, handlers: [
-                "get": { [self] _ in state(for: flag) },
-                "set": { [self] parameters in
+                .get: { [self] _ in state(for: flag) },
+                .set: { [self] parameters in
                     switch parameters["value"] {
                     case .bool(let enabled): try setEnabled(enabled, for: flag)
                     case .string(let cohort): try setCohort(cohort, for: flag)
@@ -122,7 +122,7 @@ public final class FeatureFlagDebugOptions<Flag: FeatureFlagDescribing> {
                     }
                     return state(for: flag)
                 },
-                "reset": { [self] _ in
+                .reset: { [self] _ in
                     try reset(flag)
                     return state(for: flag)
                 },

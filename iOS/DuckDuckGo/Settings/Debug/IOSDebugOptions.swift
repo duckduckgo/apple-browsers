@@ -95,13 +95,13 @@ final class IOSDebugOptions: ObservableObject {
 
     #if DEBUG
     private func registerInternalUser(in registry: DebugOptionRegistry) throws {
-        try registry.register(.init(id: "general.internalUser", title: "Internal User", group: "General", activation: "nextFeatureEvaluation", actions: [
-            .init(id: "get", description: "Read the app's internal-user debug state. This state never authorizes the HTTP server."),
-            .init(id: "set", description: "Set internal-user debug state to enable feature and configuration overrides.",
+        try registry.register(.init(id: "general.internalUser", title: "Internal User", group: .general, activation: .nextFeatureEvaluation, actions: [
+            .init(id: .get, description: "Read the app's internal-user debug state. This state never authorizes the HTTP server."),
+            .init(id: .set, description: "Set internal-user debug state to enable feature and configuration overrides.",
                   parametersSchema: .init(properties: ["value": .init(type: .boolean)], required: ["value"])),
         ]), handlers: [
-            "get": { [weak self] _ in .object(["value": .bool(self?.isInternalUser ?? false)]) },
-            "set": { [weak self] parameters in
+            .get: { [weak self] _ in .object(["value": .bool(self?.isInternalUser ?? false)]) },
+            .set: { [weak self] parameters in
                 guard let self, case .bool(let value) = parameters["value"] else {
                     throw DebugOptionError(code: .invalidParameters, message: "A Boolean value is required.")
                 }
@@ -127,7 +127,7 @@ final class IOSDebugOptions: ObservableObject {
             try configurations.register(in: registry)
             try registerInternalUser(in: registry)
             let handler = try DebugOptionsHTTPHandler(registry: registry, token: token)
-            let newServer = DebugHTTPServer(port: 8475, loopbackOnly: true)
+            let newServer = DebugHTTPServer(port: 0, loopbackOnly: true)
             handler.register(on: newServer)
             newServer.stateDidChange = { [weak self] state in
                 Task { @MainActor in self?.updateServerState(state, token: token) }

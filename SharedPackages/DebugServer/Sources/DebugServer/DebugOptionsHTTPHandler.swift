@@ -23,6 +23,7 @@ import os
 /// The wire contract is independent of option IDs and platform-specific handlers.
 public struct DebugOptionsHTTPHandler: Sendable {
     public static let root = "/api/v1/debug-options"
+    public static let invokePath = root + "/invoke"
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.duckduckgo.debug-options", category: "DebugOptionsAPI")
     private let registry: DebugOptionRegistry
     private let token: String
@@ -37,7 +38,7 @@ public struct DebugOptionsHTTPHandler: Sendable {
 
     public func register(on server: DebugHTTPServer) {
         server.addAsyncRoute(Self.root, method: .GET) { request in await handle(request) }
-        server.addAsyncRoute(Self.root + "/modify", method: .POST) { request in await handle(request) }
+        server.addAsyncRoute(Self.invokePath, method: .POST) { request in await handle(request) }
     }
 
     public func handle(_ request: HTTPRequest) async -> HTTPResponse {
@@ -67,7 +68,7 @@ public struct DebugOptionsHTTPHandler: Sendable {
                 let options = await registry.discover()
                 return try encodedResponse(Discovery(options: options))
             }
-            guard request.path == Self.root + "/modify", request.method == .POST else {
+            guard request.path == Self.invokePath, request.method == .POST else {
                 Self.logger.warning("[DebugOptions API] [\(requestID, privacy: .public)] Rejected: unsupportedRequest")
                 return response(.object(["error": .object(["code": .string("unsupportedRequest")])]), status: .methodNotAllowed)
             }
@@ -82,7 +83,7 @@ public struct DebugOptionsHTTPHandler: Sendable {
                 throw DebugOptionError(code: .invalidParameters, message: "Provide id, action, and an object containing parameters.")
             }
             guard let invocation else { preconditionFailure("Invocation decoded above") }
-            Self.logger.notice("[DebugOptions API] [\(requestID, privacy: .public)] Executing id=\(logValue(invocation.id), privacy: .public) action=\(logValue(invocation.action), privacy: .public)")
+            Self.logger.notice("[DebugOptions API] [\(requestID, privacy: .public)] Executing id=\(logValue(invocation.id), privacy: .public) action=\(logValue(invocation.action.rawValue), privacy: .public)")
             let result = try await registry.execute(invocation)
             return try encodedResponse(Execution(id: invocation.id, action: invocation.action, result: result))
         } catch let error as DebugOptionError {
@@ -101,13 +102,13 @@ public struct DebugOptionsHTTPHandler: Sendable {
 
     private struct Execution: Encodable {
         let id: String
-        let action: String
+        let action: DebugActionID
         let result: DebugValue
     }
 
     private struct Failure: Encodable {
         let id: String?
-        let action: String?
+        let action: DebugActionID?
         let error: DebugOptionError
     }
 

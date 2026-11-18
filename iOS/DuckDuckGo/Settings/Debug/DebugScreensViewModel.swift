@@ -224,7 +224,7 @@ class DebugScreensViewModel: ObservableObject {
     }
 
     func requiresRelaunch(_ flag: FeatureFlag) -> Bool {
-        options.featureFlags.activation(for: flag) == "nextLaunch"
+        options.featureFlags.activation(for: flag) == .nextLaunch
     }
 
     func resetFeatureFlagOverride(_ flag: FeatureFlag) {

@@ -80,25 +80,25 @@ public final class ConfigurationDebugOptions {
     public func register(in registry: DebugOptionRegistry) throws {
         for configuration in configurations {
             let descriptor = DebugOptionDescriptor(id: "configuration.\(configuration.rawValue).url",
-                                                   title: configuration.rawValue, group: "Configuration", activation: "afterRefresh", actions: [
-                .init(id: "get", description: "Read saved, session, and resolved URLs and the last refresh result."),
-                .init(id: "set", description: "Save a URL override, then fetch and process the configuration.",
+                                                   title: configuration.rawValue, group: .configuration, activation: .afterRefresh, actions: [
+                .init(id: .get, description: "Read saved, session, and resolved URLs and the last refresh result."),
+                .init(id: .set, description: "Save a URL override, then fetch and process the configuration.",
                       parametersSchema: .init(properties: ["value": .init(type: .string, description: "HTTP(S) URL with a host")], required: ["value"])),
-                .init(id: "reset", description: "Remove the saved override, then refresh from the default URL."),
-                .init(id: "refresh", description: "Fetch and process configuration from the resolved URL."),
+                .init(id: .reset, description: "Remove the saved override, then refresh from the default URL."),
+                .init(id: .refresh, description: "Fetch and process configuration from the resolved URL."),
             ])
             try registry.register(descriptor, availability: { [self] action in
-                action == "get" ? nil : availabilityError(configuration, changingURL: action != "refresh")
+                action == .get ? nil : availabilityError(configuration, changingURL: action != .refresh)
             }, handlers: [
-                "get": { [self] _ in state(for: configuration) },
-                "set": { [self] parameters in
+                .get: { [self] _ in state(for: configuration) },
+                .set: { [self] parameters in
                     guard case .string(let url) = parameters["value"] else {
                         throw DebugOptionError(code: .invalidParameters, message: "A URL value is required.")
                     }
                     return try await setURL(url, for: configuration)
                 },
-                "reset": { [self] _ in try await reset(configuration) },
-                "refresh": { [self] _ in try await refresh(configuration) },
+                .reset: { [self] _ in try await reset(configuration) },
+                .refresh: { [self] _ in try await refresh(configuration) },
             ])
         }
     }

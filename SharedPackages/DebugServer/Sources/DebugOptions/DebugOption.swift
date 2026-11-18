@@ -18,6 +18,54 @@
 
 import Foundation
 
+/// An action an option supports. Extend with new static members rather than passing raw strings.
+public struct DebugActionID: RawRepresentable, Hashable, Codable, Sendable {
+    public let rawValue: String
+
+    public init(rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public init(from decoder: Decoder) throws {
+        rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let get = DebugActionID(rawValue: "get")
+    public static let set = DebugActionID(rawValue: "set")
+    public static let reset = DebugActionID(rawValue: "reset")
+    public static let refresh = DebugActionID(rawValue: "refresh")
+}
+
+/// Groups options in discovery. Platforms add groups through static members in extensions.
+public struct DebugOptionGroup: RawRepresentable, Hashable, Encodable, Sendable {
+    public let rawValue: String
+
+    public init(rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let general = DebugOptionGroup(rawValue: "General")
+    public static let featureFlags = DebugOptionGroup(rawValue: "Feature Flags")
+    public static let configuration = DebugOptionGroup(rawValue: "Configuration")
+}
+
+/// When a change made through an option takes effect.
+public enum DebugActivation: String, Encodable, Sendable {
+    case nextFeatureEvaluation
+    case afterRefresh
+    case nextLaunch
+}
+
 public struct DebugValueSchema: Codable, Sendable {
     public enum ValueType: String, Codable, Sendable {
         case boolean, string, number, integer, object
@@ -69,14 +117,14 @@ public struct DebugParametersSchema: Encodable, Sendable {
 }
 
 public struct DebugActionDescriptor: Encodable, Sendable {
-    public let id: String
+    public let id: DebugActionID
     public let description: String
     public let parametersSchema: DebugParametersSchema
     public let resultSchema = DebugValueSchema(type: .object)
     public let retrySafe: Bool
     public var unavailableReason: String?
 
-    public init(id: String, description: String, parametersSchema: DebugParametersSchema = .init(), retrySafe: Bool = true) {
+    public init(id: DebugActionID, description: String, parametersSchema: DebugParametersSchema = .init(), retrySafe: Bool = true) {
         self.id = id
         self.description = description
         self.parametersSchema = parametersSchema
@@ -87,11 +135,11 @@ public struct DebugActionDescriptor: Encodable, Sendable {
 public struct DebugOptionDescriptor: Encodable, Sendable {
     public let id: String
     public let title: String
-    public let group: String
-    public let activation: String
+    public let group: DebugOptionGroup
+    public let activation: DebugActivation
     public var actions: [DebugActionDescriptor]
 
-    public init(id: String, title: String, group: String, activation: String, actions: [DebugActionDescriptor]) {
+    public init(id: String, title: String, group: DebugOptionGroup, activation: DebugActivation, actions: [DebugActionDescriptor]) {
         self.id = id
         self.title = title
         self.group = group
@@ -102,10 +150,10 @@ public struct DebugOptionDescriptor: Encodable, Sendable {
 
 public struct DebugOptionInvocation: Codable, Sendable {
     public let id: String
-    public let action: String
+    public let action: DebugActionID
     public let parameters: [String: DebugValue]
 
-    public init(id: String, action: String, parameters: [String: DebugValue] = [:]) {
+    public init(id: String, action: DebugActionID, parameters: [String: DebugValue] = [:]) {
         self.id = id
         self.action = action
         self.parameters = parameters

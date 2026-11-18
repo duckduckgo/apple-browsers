@@ -2695,6 +2695,9 @@
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Return to %1$@, %2$@";
 
+/* Button in the Return to module header that opens the tab switcher */
+"escapeHatch.showAllTabs.label" = "Show All Tabs";
+
 /* Swipe action that closes the open tab referenced by the escape hatch card */
 "escapeHatch.swipeAction.closeTab" = "Close Tab";
 
@@ -3670,6 +3673,18 @@ https://duckduckgo.com/mac";
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Enforce Strict Routing (Recommended)";
 
+/* Opens the app settings from the New Tab Page customization sheet */
+"new-tab-page.customization.all-settings" = "All Settings";
+
+/* Setting to always show the keyboard when a new tab is opened */
+"new-tab-page.customization.always-show-keyboard" = "Always Show Keyboard";
+
+/* Name of the New Tab Page section showing messages, in the customization sheet */
+"new-tab-page.customization.messages" = "Messages";
+
+/* Title of the sheet for customizing the New Tab Page */
+"new-tab-page.customization.title" = "Customize Your Start";
+
 /* Dax greeting on the New Tab page. Refers to private AI chat. */
 "new-tab-page.dax-greeting.askMe" = "Ask me anything.";
 
@@ -3726,6 +3741,21 @@ https://duckduckgo.com/mac";
 
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.whereToToday" = "Where to today?";
+
+/* Name field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.name" = "Name";
+
+/* Error shown when saving a favorite fails */
+"new-tab-page.favorite.save-failed" = "Couldn't save favorite.";
+
+/* URL field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.url" = "URL";
+
+/* Button that expands the New Tab Page favorites grid to show all favorites */
+"new-tab-page.favorites.see-all" = "See All";
+
+/* Button that collapses the New Tab Page favorites grid to show fewer favorites */
+"new-tab-page.favorites.see-less" = "See Less";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";

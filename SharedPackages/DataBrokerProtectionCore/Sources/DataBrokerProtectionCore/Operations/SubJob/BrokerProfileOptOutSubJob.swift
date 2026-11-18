@@ -114,8 +114,7 @@ struct BrokerProfileOptOutSubJob {
                 profileQueryId: identifiers.profileQueryId,
                 database: dependencies.database,
                 notificationCenter: dependencies.notificationCenter,
-                updateDates: kind.isRegular || submitted,
-                recordErrors: kind.isRegular
+                updateDates: kind.isRegular || submitted
             )
         }
 
@@ -436,8 +435,7 @@ struct BrokerProfileOptOutSubJob {
                                            profileQueryId: Int64,
                                            database: DataBrokerProtectionRepository,
                                            notificationCenter: NotificationCenter,
-                                           updateDates: Bool,
-                                           recordErrors: Bool) {
+                                           updateDates: Bool) {
         Logger.dataBrokerProtection.log("Finished opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
@@ -453,18 +451,16 @@ struct BrokerProfileOptOutSubJob {
                     featureFlagger: dependencies.featureFlagger
                 )
             } catch {
-                if recordErrors {
-                    handleOperationError(
-                        origin: .optOut,
-                        brokerId: brokerId,
-                        profileQueryId: profileQueryId,
-                        extractedProfileId: extractedProfileId,
-                        error: error,
-                        database: database,
-                        schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                        featureFlagger: dependencies.featureFlagger
-                    )
-                }
+                handleOperationError(
+                    origin: .optOut,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    extractedProfileId: extractedProfileId,
+                    error: error,
+                    database: database,
+                    schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
+                    featureFlagger: dependencies.featureFlagger
+                )
             }
         }
         notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishOptOut, object: brokerProfileQueryData.dataBroker.name)

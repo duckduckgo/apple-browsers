@@ -224,6 +224,7 @@ private class PrivacyConfigurationDataBrokerProtectionConfigOverride: PrivacyCon
     var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never>
     var privacyConfig: PrivacyConfiguration
     var internalUserDecider: InternalUserDecider
+    /// Has the page script show each action on the page, so a user watching an assisted opt-out can follow along.
     private let visualizeActions: Bool
 
     var currentConfig: Data {

@@ -32,6 +32,7 @@ public protocol CCFCommunicationDelegate: AnyObject {
     func success(actionId: String, actionType: ActionType) async
     func conditionSuccess(actions: [Action]) async
     func onError(error: Error) async
+    /// The page reached a step only the user can do, so the app should hand the page over.
     func userTurnNeeded(actionID: String) async
 }
 
@@ -61,8 +62,10 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     private var shouldContinueAction: () -> Bool
 
+    /// The action last sent to the page. A reply carrying a different action ID is stale and ignored.
     @MainActor private var currentActionID: String?
 
+    /// Called when the page answers the current action, so the web view stops re-sending a pending userAssist.
     @MainActor var onActionResponse: (() -> Void)?
 
     private let executionConfig: BrokerJobExecutionConfig
@@ -279,6 +282,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         }
     }
 
+    /// Fails the current action when the page can't answer for itself, such as when it crashes during a userAssist.
     @MainActor
     func failCurrentAction(with error: Error) {
         removeTimers()

@@ -18,10 +18,14 @@
 
 import Foundation
 
+/// A broker step only a person can do, such as a CAPTCHA. DuckDuckGo hands the page to the user and takes it back once the step is done.
 struct UserAssistAction: Action {
     let id: String
     let actionType: ActionType
+    /// A CSS selector for the part of the broker page the user needs to act on.
     let highlight: String?
+    /// How long, in milliseconds, the page waits for the step to clear on its own, such as a CAPTCHA that passes
+    /// without a challenge, before handing it to the user.
     let handOffAfterMs: Int?
     let json: Data?
 
@@ -64,6 +68,7 @@ struct UserAssistAction: Action {
 }
 
 extension Action {
+    /// True when this action or any action nested under it needs the user, so the whole opt-out can be routed to them before it starts.
     var requiresUserAssistance: Bool {
         actionType == .userAssist || nestedActionObjects.contains { $0["actionType"] as? String == ActionType.userAssist.rawValue }
     }

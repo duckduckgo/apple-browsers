@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 
+/// Follows an assisted opt-out, so the app can show the broker page and tell the user when it's their turn.
 @MainActor
 public protocol OptOutAssistanceObserving: AnyObject {
     func attemptDidCreate(webView: WKWebView)

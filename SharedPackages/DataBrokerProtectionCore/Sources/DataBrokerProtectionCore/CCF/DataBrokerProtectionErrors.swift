@@ -45,6 +45,7 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case secureVaultNotNeeded
     /// A main-frame challenge did not reach the broker page before the solver deadline.
     case challengeNotSolved
+    /// The opt-out has a step only a person can do, but no user is there to take it, as in a scheduled run.
     case userAssistanceRequired
 
     static func parse(params: Any) -> DataBrokerProtectionError {

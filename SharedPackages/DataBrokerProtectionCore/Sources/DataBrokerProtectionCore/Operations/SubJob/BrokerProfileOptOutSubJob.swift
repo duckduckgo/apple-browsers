@@ -33,6 +33,7 @@ struct BrokerProfileOptOutSubJob {
         let stageDurationCalculator: DataBrokerProtectionStageDurationCalculator
     }
 
+    /// A regular run is scheduled. An assisted run is one the user started from the "Needs you" list.
     private enum RunKind {
         case regular
         case assisted(OptOutAssistanceObserving)
@@ -105,6 +106,7 @@ struct BrokerProfileOptOutSubJob {
                                                               vpnConnectionState: vpnConnectionState,
                                                               vpnBypassStatus: vpnBypassStatus)
 
+        // An assisted run that didn't submit leaves the schedule alone, so the record keeps waiting for the user.
         var submitted = false
         defer {
             reportOptOutJobCompletion(
@@ -169,6 +171,7 @@ struct BrokerProfileOptOutSubJob {
                                     identifiers: identifiers,
                                     stageDurationCalculator: stageDurationContext.stageDurationCalculator)
             } else {
+                // An assisted failure schedules no retry. The record goes back to waiting for the user, and a cancel or timeout isn't reported as a failure.
                 switch error {
                 case is CancellationError, DataBrokerProtectionError.cancelled, DataBrokerProtectionError.jobTimeout:
                     break

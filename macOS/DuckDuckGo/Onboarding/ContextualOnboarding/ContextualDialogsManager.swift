@@ -60,6 +60,21 @@ protocol ContextualOnboardingStateUpdater: AnyObject {
     func turnOffFeature()
 }
 
+/// Starts the contextual onboarding path the user picked on the junction.
+protocol ContextualOnboardingPathStarting: AnyObject {
+    func startPath(_ kind: ContextualOnboardingPathKind)
+}
+
+/// Stands in for the dialogs manager, which is created after the onboarding scripts that need it.
+/// Calls before `target` is set do nothing; the junction can't be reached that early.
+final class ContextualOnboardingPathStarterProxy: ContextualOnboardingPathStarting {
+    weak var target: ContextualOnboardingPathStarting?
+
+    func startPath(_ kind: ContextualOnboardingPathKind) {
+        target?.startPath(kind)
+    }
+}
+
 /// Protocol for storing onboarding state data.
 protocol ContextualOnboardingStateStoring: AnyObject {
     /// Array of string representations of dialogs that have been shown.
@@ -85,7 +100,7 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 }
 
 /// Main manager responsible for deciding which onboarding dialog to display based on the current state and tab.
-public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
+public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater, ContextualOnboardingPathStarting {
 
     private let progress: ContextualOnboardingProgress
     private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath

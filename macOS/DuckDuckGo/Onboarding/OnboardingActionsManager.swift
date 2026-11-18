@@ -115,6 +115,7 @@ protocol OnboardingNavigating: AnyObject {
 final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private let navigation: OnboardingNavigating
+    private let pathStarter: ContextualOnboardingPathStarting
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let appearancePreferences: AppearancePreferences
@@ -214,6 +215,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     convenience init(
         navigationDelegate: OnboardingNavigating,
+        pathStarter: ContextualOnboardingPathStarting,
         dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
@@ -233,6 +235,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         )
         self.init(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -253,6 +256,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     init(
         navigationDelegate: OnboardingNavigating,
+        pathStarter: ContextualOnboardingPathStarting,
         dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
@@ -265,6 +269,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     ) {
         self.navigation = navigationDelegate
+        self.pathStarter = pathStarter
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
         self.appearancePreferences = appearancePreferences

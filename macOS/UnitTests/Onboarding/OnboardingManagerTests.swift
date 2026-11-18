@@ -36,6 +36,7 @@ class OnboardingManagerTests: XCTestCase {
     private var originalOnboardingFinished: Bool!
     var manager: OnboardingActionsManaging!
     var navigationDelegate: CapturingOnboardingNavigation!
+    var pathStarter: CapturingPathStarter!
     var dockCustomization: CapturingDockCustomizer!
     var defaultBrowserProvider: CapturingDefaultBrowserProvider!
     var appearancePreferences: AppearancePreferences!
@@ -52,6 +53,7 @@ class OnboardingManagerTests: XCTestCase {
         originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
         OnboardingActionsManager.isOnboardingFinished = false
         navigationDelegate = CapturingOnboardingNavigation()
+        pathStarter = CapturingPathStarter()
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
@@ -75,6 +77,7 @@ class OnboardingManagerTests: XCTestCase {
         chromeExtensionInstaller = MockThirdPartyBrowserExtensionInstalling()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -94,6 +97,7 @@ class OnboardingManagerTests: XCTestCase {
                                         fire: { _, _, _ in })
         manager = nil
         navigationDelegate = nil
+        pathStarter = nil
         dockCustomization = nil
         defaultBrowserProvider = nil
         appearancePreferences = nil
@@ -168,6 +172,7 @@ class OnboardingManagerTests: XCTestCase {
         dockCustomization.supportsAddingToDock = false
         let appStoreManager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -662,6 +667,7 @@ class OnboardingManagerTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         let manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -730,6 +736,7 @@ class OnboardingManagerTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = enabledFlags
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -796,6 +803,7 @@ private extension OnboardingManagerTests {
         chromeExtensionInstaller.canInstallDDGExtension = canInstall
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,

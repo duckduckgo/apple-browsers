@@ -1635,7 +1635,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testResizeParksImmediatelyButWaitsForNativeAlertWithdrawalBeforeAdapting() async throws {
+    func testResizeAdaptsImmediatelyWhileNativeAlertWithdrawalIsPending() async throws {
         let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = try XCTUnwrap(sut.sheetViewController)
@@ -1648,17 +1648,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         host.canPresentContextualSidebar = false
 
         sut.parkSurfaceForResize(animated: false)
-        sut.adaptSurface(toPresenter: host, animated: false)
-
         XCTAssertTrue(sut.hasParkedSurface)
         XCTAssertTrue(host.sidebarDetachments.first === sheet)
         XCTAssertNil(sheet.parent)
         XCTAssertEqual(host.modalPresentationCount, 0)
-        presenter.completeDismissal()
-        XCTAssertTrue(host.sidebarDetachments.first === sheet)
+        XCTAssertFalse(presenter.withdrawals.isEmpty)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        sut.adaptSurface(toPresenter: host, animated: false)
         XCTAssertEqual(host.modalPresentationCount, 1)
         XCTAssertFalse(sut.hasParkedSurface)
         XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        presenter.completeDismissal()
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
     }
 
     @MainActor
@@ -1729,31 +1738,46 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testPendingTabReturnIsInvalidatedByAnotherDeparture() async {
+    func testSidebarCanLeaveAgainAfterImmediateReturnWhilePermissionWithdrawalIsPending() async throws {
         let host = makeSidebarHost()
         await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
         let presenter = holdNativePermission()
         sut.tabWillLeaveScreen()
         sut.tabDidReturnToScreen(presentedFrom: host)
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(presenter.isPresentingPermission)
 
         sut.tabWillLeaveScreen()
-        sut.adaptSurface(toPresenter: host, animated: false)
+        XCTAssertEqual(host.sidebarDetachments.count, 2)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(sut.hasParkedSurface)
+        XCTAssertNil(sheet.parent)
+
         presenter.completeDismissal()
 
-        XCTAssertEqual(host.sidebarDetachments.count, 1)
-        XCTAssertEqual(host.sidebarPresentations.count, 1)
+        XCTAssertEqual(host.sidebarDetachments.count, 2)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
         XCTAssertTrue(sut.hasParkedSurface)
-        XCTAssertNil(sut.sheetViewController?.parent)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertNil(sheet.parent)
     }
 
     @MainActor
-    func testPendingTabReturnRestoresOnceAfterWithdrawal() async {
+    func testTabReturnRestoresImmediatelyWhilePermissionWithdrawalIsPending() async {
         let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let presenter = holdNativePermission()
         sut.tabWillLeaveScreen()
 
         sut.tabDidReturnToScreen(presentedFrom: host)
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.sheetViewController?.parent === host)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
         presenter.completeDismissal()
 
         XCTAssertEqual(host.sidebarDetachments.count, 1)
@@ -1763,18 +1787,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testCloseDuringPendingResizeRemovesChildAndCompletesOnce() async throws {
+    func testClosingParkedChatCompletesOnceWhileNativeAlertWithdrawalIsPending() async throws {
         let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = try XCTUnwrap(sut.sheetViewController)
         let presenter = holdNativePermission()
         sut.parkSurfaceForResize(animated: false)
-        sut.adaptSurface(toPresenter: host, animated: false)
         var completionCount = 0
 
         sut.dismissSheet(animated: false) { completionCount += 1 }
         XCTAssertNil(sheet.parent)
         XCTAssertEqual(completionCount, 1)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        sut.adaptSurface(toPresenter: host, animated: false)
         presenter.completeDismissal()
         presenter.completeDismissal()
 
@@ -1788,27 +1815,30 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testPresenterReplacementWaitsForOldWithdrawalOnlyWhenAdapting() async throws {
+    func testPresenterReplacementWithdrawsOldPermissionWithoutDelayingAdaptation() async throws {
         mockSettings.aiChatURL = URL(string: "https://duck.ai")!
         let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = try XCTUnwrap(sut.sheetViewController)
-        var presenter: MockAIChatNativePermissionPresenter? = holdNativePermission()
-        weak var oldPresenter = presenter
+        let presenter = holdNativePermission()
 
         sheet.loadViewIfNeeded()
         XCTAssertFalse(sut.browserToolsPermissionPresenter === presenter)
-        presenter = nil
-        XCTAssertNotNil(oldPresenter)
+        XCTAssertFalse(presenter.withdrawals.isEmpty)
         sut.parkSurfaceForResize(animated: false)
         XCTAssertEqual(host.sidebarDetachments.count, 1)
         sut.adaptSurface(toPresenter: host, animated: false)
-        XCTAssertEqual(host.sidebarPresentations.count, 1)
-        oldPresenter?.completeDismissal()
         XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        presenter.completeDismissal()
 
         XCTAssertEqual(host.sidebarDetachments.count, 1)
-        XCTAssertNil(oldPresenter)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
     }
 
     @MainActor
@@ -1887,27 +1917,30 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testLatestPendingAdaptationWinsAndExplicitShowCancelsIt() async throws {
+    func testReopenedChatIsUnaffectedByPreviousPermissionWithdrawal() async throws {
         let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = try XCTUnwrap(sut.sheetViewController)
         let presenter = holdNativePermission()
-        sut.parkSurfaceForResize(animated: false)
-        let otherHost = makeSidebarHost()
-        sut.adaptSurface(toPresenter: otherHost, animated: false)
-        sut.adaptSurface(toPresenter: host, animated: false)
-        presenter.completeDismissal()
-        XCTAssertTrue(sheet.parent === host)
-        XCTAssertEqual(host.sidebarPresentations.count, 2)
-        XCTAssertTrue(otherHost.sidebarPresentations.isEmpty)
 
-        let nextPresenter = holdNativePermission()
-        sut.adaptSurface(toPresenter: otherHost, animated: false)
+        sut.dismissSheet(animated: false)
+        XCTAssertNil(sheet.parent)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
         await sut.presentSheet(from: host)
-        nextPresenter.completeDismissal()
         XCTAssertTrue(sheet.parent === host)
-        XCTAssertTrue(otherHost.sidebarPresentations.isEmpty)
-        XCTAssertEqual(host.sidebarPresentations.count, 3)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        presenter.completeDismissal()
+
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertEqual(host.sidebarDismissals.count, 1)
     }
 
     @MainActor

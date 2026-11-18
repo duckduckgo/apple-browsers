@@ -4,7 +4,7 @@ from verify_ios import steps
 
 LIVE = ["duck.ai"]
 FLAGS = {"aiChatNativeStorage": True, "aiChatNativeDataAccess": True,   # where production keeps chats
-         "fireButtonRefinements": True}                                  # the "Delete This Chat" sheet
+         "fireButtonRefinements": True, "fireMode": True}                # the "Delete This Chat" sheet
 
 
 def start_chat(ios, word, tag):

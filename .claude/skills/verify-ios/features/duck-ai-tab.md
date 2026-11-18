@@ -63,8 +63,10 @@ Preconditions:
 - A proof that reads storage or history pins where chats live:
   `FLAGS = {"aiChatNativeStorage": True, "aiChatNativeDataAccess": True}`, as production ships. With them off, chats
   live only in the web page's IndexedDB and the iPhone Chats sheet has nothing to read.
-- A proof that deletes a chat also pins `fireButtonRefinements: True` (on by default, remote). It gives a Duck.ai
-  tab its own "Delete This Chat" sheet; without it the Fire button shows the usual "Delete All" sheet.
+- A proof that deletes a chat also pins `fireButtonRefinements: True` and `fireMode: True` (both on by default,
+  remote; on iOS 17+ the first needs the second, which the app reads once at launch). Together they give a Duck.ai
+  tab its own "Delete This Chat" sheet. If either is off, the Fire button shows "Delete All" and, below it, "Delete This
+  Tab" (same id, `Fire.Confirmation.Button.ThisTab`).
 
 ### Steps
 
@@ -86,8 +88,7 @@ Preconditions:
   `id=Fire.Confirmation.Button.ThisTab` deletes it and the tab reloads an empty chat.
 - **Storage.** `steps.duckai_storage(ios, needles)` runs on a duck.ai page and returns the chats in native storage
   (id, title), the `locallyDeletedChatIds` tombstones, and every store where a needle appears: localStorage, each
-  IndexedDB store, and native storage's chats, files and entries. It reads native storage through the page's
-  `duckAiNativeStorage` bridge, the one Duck.ai itself uses.
+  IndexedDB store, and native storage's chats, files and entries.
 - Worked proofs: `examples/t8_duckai.py` (send and read), `examples/t12_duckai_delete_chat.py` (delete: history and
   storage before and after, a second chat that must survive).
 
@@ -113,11 +114,13 @@ Preconditions:
   and passes 150 pt before release; `ios.swipe` is a fast fling and doesn't arm it. It needs a press-and-drag action
   in the runner.
 - **A custom front-end URL**: the debug menu's AI Chat screen, "Set Custom AI Chat URL", stored in UserDefaults
-  `aichat.debug.customURL` (a launch argument can set it). The app matches pages against it by scheme and host
-  only, so any path on that host counts as Duck.ai and only a different host is treated as leaving it. No proof
-  uses this yet.
-- **Data Clearing "Delete Duck.ai Chats"** decides whether Fire's "Delete All" on a web tab also deletes chats;
-  "Delete This Chat" on a Duck.ai tab ignores it.
+  `aichat.debug.customURL` (a launch argument can set it). Any path on that host counts as Duck.ai; only a
+  different host leaves it. No proof uses this yet.
+- **Data Clearing "Delete Duck.ai Chats"** (off by default) decides whether Fire's "Delete All", from any tab, also
+  deletes chats; "Delete This Chat" and "Delete This Tab" ignore it.
+- **Other ways to delete chats**, not driven: the iPhone Chats sheet (swipe a row for its fire icon, "Select Chats"
+  then Delete, or its fire button for all), the fire button on a recent chat listed under the Duck.ai input, and
+  the iPad menu bar's "Delete All Chats".
 
 ### Already covered elsewhere
 
@@ -126,6 +129,8 @@ XCUITests in `iOS/AtbUITests` (`iOS/UITests` has none):
 - `FloatingUIXCUITests.swift`: the address-bar Duck.ai button's menu ("New Chat" and "Chats" on a blank tab, "Ask
   About Page" on a page), and a custom front-end URL treated as Duck.ai.
 - `ApplicationShortcutItemsUITests.swift`: the home-screen quick action "Duck.ai" exists.
+- `SitePermissionsXCUITests.swift`: Duck.ai dictation and voice chat losing microphone access (the input's mic
+  permission, not the chat tab).
 
 Maestro flows in `.maestro/`:
 

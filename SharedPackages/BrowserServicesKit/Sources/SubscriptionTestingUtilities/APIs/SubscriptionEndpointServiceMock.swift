@@ -41,7 +41,9 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
     // MARK: - Products
 
     public var getTierProductsResult: Result<GetTierProductsResponse, APIRequestV2Error>?
-    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+    public var getTierProductsLocation: TierProductsLocation?
+    public func getTierProducts(location: TierProductsLocation, platform: String?) async throws -> GetTierProductsResponse {
+        getTierProductsLocation = location
         switch getTierProductsResult! {
         case .success(let result): return result
         case .failure(let error): throw error
@@ -53,6 +55,24 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
     public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIRequestV2Error>?
     public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse {
         switch getCustomerPortalURLResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
+    }
+
+    // MARK: - Withdrawal
+
+    public var getWithdrawalEligibilityResult: Result<WithdrawalEligibility, APIRequestV2Error>?
+    public func getWithdrawalEligibility(accessToken: String) async throws -> WithdrawalEligibility {
+        switch getWithdrawalEligibilityResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
+    }
+
+    public var withdrawSubscriptionResult: Result<WithdrawSubscriptionResponse, APIRequestV2Error>?
+    public func withdrawSubscription(accessToken: String) async throws -> WithdrawSubscriptionResponse {
+        switch withdrawSubscriptionResult! {
         case .success(let result): return result
         case .failure(let error): throw error
         }

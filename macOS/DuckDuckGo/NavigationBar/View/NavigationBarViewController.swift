@@ -80,7 +80,7 @@ final class NavigationBarViewController: NSViewController {
     private(set) var buttonsTopConstraint: NSLayoutConstraint!
     private(set) var addressBarMinWidthConstraint: NSLayoutConstraint?
     private(set) var logoWidthConstraint: NSLayoutConstraint!
-    private(set) var backgroundColorView: MouseOverView!
+    private(set) var backgroundColorView: ColorView!
     private(set) var backgroundBaseColorView: ColorView!
 
     private var feedbackButton: MouseOverButton?
@@ -529,7 +529,7 @@ final class NavigationBarViewController: NSViewController {
         backgroundBaseColorView = ColorView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
         let view = backgroundBaseColorView!
 
-        backgroundColorView = MouseOverView(frame: .zero)
+        backgroundColorView = ColorView(frame: .zero)
         backgroundColorView.translatesAutoresizingMaskIntoConstraints = false
 
         let windowDraggingView = WindowDraggingView()
@@ -805,11 +805,21 @@ final class NavigationBarViewController: NSViewController {
                                                            themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
-                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab },
+                                                           nativeMessagingAlertPresenter: makeNativeMessagingAlertPresenter())
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
             subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    @available(macOS 15.4, *)
+    private func makeNativeMessagingAlertPresenter() -> NativeMessagingAlertPresenter {
+        NativeMessagingAlertPresenter(
+            limitationProvider: { NSApp.delegateTyped.webExtensionManager },
+            alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window }, themeManager: appThemeManager),
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
     }
 
     /// Only the window the install started from shows the popover.
@@ -1395,10 +1405,7 @@ final class NavigationBarViewController: NSViewController {
             backgroundBaseColorView.backgroundColor = colorsProvider.baseBackgroundColor
             backgroundColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.cornerRadius = topCornerRadius
-            backgroundColorView.maskedCorners = [
-                .layerMinXMaxYCorner,
-                .layerMaxXMaxYCorner
-            ]
+            backgroundColorView.roundedCorners = [.topLeft, .topRight]
         } else {
             backgroundBaseColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.isHidden = true
@@ -2340,7 +2347,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     // MARK: - Address Bar Update Button
 
-    /// Shows the prominent update button to the left of the browser menu button at the second prompt stage.
+    /// Shows the prominent update button to the left of the browser menu button at the stages that call for it.
     private func setupAddressBarUpdateButton() {
         guard !isInPopUpWindow, let updateController = Application.appDelegate.updateController else { return }
 
@@ -2348,7 +2355,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         updateController.pendingUpdatePromptStagePublisher
             .combineLatest(updateController.updateProgressPublisher)
             .receive(on: DispatchQueue.main)
-            .map { stage, _ in stage == .secondPrompt ? updateController.updatePromptButtonTitle : nil }
+            .map { stage, _ in stage.showsToolbarButton ? updateController.addressBarUpdateButtonTitle : nil }
             .removeDuplicates()
             .sink { [weak self] title in
                 self?.addressBarUpdateButton?.removeFromSuperview()
@@ -2362,6 +2369,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     private func addAddressBarUpdateButton(title: String, for updateController: any UpdateController) {
         let button = AddressBarUpdateButton(title: title) {
+            UpdateClickReporter().reportClick(on: .toolbarButton)
             updateController.runUpdateFromPrompt()
         }.embeddedInHostingView()
 

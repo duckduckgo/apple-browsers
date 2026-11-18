@@ -26,6 +26,69 @@ final class PacketTunnelProviderTests: XCTestCase {
 
     typealias TunnelError = PacketTunnelProvider.TunnelError
 
+    private var startupDefaults: UserDefaults!
+    private var startupDefaultsSuiteName: String!
+
+    override func setUp() {
+        super.setUp()
+        startupDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
+        startupDefaults = UserDefaults(suiteName: startupDefaultsSuiteName)
+    }
+
+    override func tearDown() {
+        startupDefaults.removePersistentDomain(forName: startupDefaultsSuiteName)
+        startupDefaults = nil
+        startupDefaultsSuiteName = nil
+        super.tearDown()
+    }
+
+    func testStartupIsAllowedByDefaultForEveryStartupMethod() {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
+
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByMainApp), .allowed)
+    }
+
+    func testBlockedStartupPersistsAcrossGuardAndDefaultsInstances() throws {
+        VPNStartupGuard(defaults: startupDefaults).blockStartup()
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
+
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .blocked)
+    }
+
+    func testSystemStartupClearsBlockAcrossGuardAndDefaultsInstances() throws {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
+        startupGuard.blockStartup()
+
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
+
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
+    }
+
+    func testMainAppStartupClearsBlockAcrossGuardAndDefaultsInstances() throws {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
+        startupGuard.blockStartup()
+
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByMainApp), .allowed)
+
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
+    }
+
+    func testReconnectBlockedErrorHasItsOwnCodeForProcessBoundaries() {
+        let error = TunnelError.reconnectBlocked as NSError
+
+        XCTAssertEqual(error.domain, TunnelError.errorDomain)
+        XCTAssertEqual(TunnelError.Code(rawValue: error.code), .reconnectBlocked)
+        XCTAssertEqual(error.localizedDescription, TunnelError.reconnectBlocked.errorDescription)
+    }
+
     func testPostWakeCounterReportsOnlyTheThirdFailure() {
         let date = Date()
         var counter = PacketTunnelProvider.PostWakeConnectivityFailures(wakeDate: date)

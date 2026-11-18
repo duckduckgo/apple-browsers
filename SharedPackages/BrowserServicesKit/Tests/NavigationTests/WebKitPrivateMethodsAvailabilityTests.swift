@@ -32,8 +32,6 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         static let backgroundWebView = NSSelectorFromString("_backgroundWebView")
         static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
         static let webProcessIdentifier = NSSelectorFromString("_webProcessIdentifier")
-        static let webProcessIsResponsive = NSSelectorFromString("_webProcessIsResponsive")
-        static let contentWorld = NSSelectorFromString("_contentWorld")
         static let resourceLoadDelegate = NSSelectorFromString("_resourceLoadDelegate")
         static let setResourceLoadDelegate = NSSelectorFromString("_setResourceLoadDelegate:")
         static let originalURL = NSSelectorFromString("originalURL")
@@ -61,14 +59,6 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
 
     func testWebViewRespondsTo_webProcessIdentifier() {
         XCTAssertTrue(WKWebView.instancesRespond(to: Selector.webProcessIdentifier))
-    }
-
-    func testWebViewRespondsTo_webProcessIsResponsive() {
-        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.webProcessIsResponsive))
-    }
-
-    func testUserScriptRespondsTo_contentWorld() {
-        XCTAssertTrue(WKUserScript.instancesRespond(to: Selector.contentWorld))
     }
 
 #if PRIVATE_PAGE_SIGNALS_ENABLED

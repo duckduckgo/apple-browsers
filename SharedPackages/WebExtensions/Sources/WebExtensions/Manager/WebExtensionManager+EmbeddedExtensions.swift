@@ -129,7 +129,6 @@ extension WebExtensionManager {
                                                        requiresExtraction: bundledMetadata.requiresExtraction,
                                                        cpmOriginIdentifier: origin,
                                                        startScriptlets: startScriptlets)
-                    cpmDiagnosticsRecorder?.extensionDidUpdate(type: descriptor.type)
 
                     // Only unload the old version once its own load has settled.
                     await unloadGuard.awaitSettled(context(for: oldIdentifier))

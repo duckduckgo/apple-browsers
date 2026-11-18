@@ -143,12 +143,18 @@ jobs:
       working-directory: SharedPackages/BrowserServicesKit
       run: |
         sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        old_pid=$(pgrep -x logd || true)
         sudo killall logd || true
-        # Wait for launchd to restart logd before the next steps use logging
-        for _ in $(seq 1 30); do
-          pgrep -x logd >/dev/null && break
+        # killall returns right away, and the old logd can still be shutting down.
+        # Wait until it has exited and launchd has started a new one.
+        for _ in $(seq 1 60); do
+          if { [ -z "$old_pid" ] || ! ps -p "$old_pid" >/dev/null; } && pgrep -x logd >/dev/null; then
+            exit 0
+          fi
           sleep 1
         done
+        echo "::error::logd did not restart within 60 seconds"
+        exit 1
 
     - name: Start log stream in background
       working-directory: macOS

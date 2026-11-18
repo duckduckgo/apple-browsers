@@ -24,6 +24,11 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+
     outputs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
 
@@ -77,6 +82,17 @@ jobs:
         fi
         echo "::notice::Using build number $next_build_number"
         echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
+
+    - name: Comment on merged PRs with alpha version
+      continue-on-error: true
+      timeout-minutes: 3
+      uses: actions/github-script@v8
+      env:
+        ALPHA_VERSION: 9999.9.9-${{ steps.update-build-number.outputs.build-number }}
+      with:
+        script: |
+          const commentOnAlphaPRs = require('./.github/scripts/alpha-pr-comment.js');
+          await commentOnAlphaPRs({ github, context, core, version: process.env.ALPHA_VERSION, platform: 'macos' });
 
   dmg-release:
     name: Prepare DMG Release

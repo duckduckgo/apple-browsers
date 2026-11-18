@@ -1,0 +1,9 @@
+{
+  "covers": ["read REVIEW.md before reviewing"],
+  "prompt": "Review commit 56a9d28e24 for bugs and risks. Report your findings; don't change any files.",
+  "max_turns": 20,
+  "graders": [
+    {"type": "file_read", "pattern": "(^|/)REVIEW\\.md$"},
+    {"type": "no_changes"}
+  ]
+}

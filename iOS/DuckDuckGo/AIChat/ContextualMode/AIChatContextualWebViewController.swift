@@ -54,6 +54,10 @@ final class AIChatContextualWebViewController: UIViewController {
 
     // MARK: - Properties
 
+    weak var browserToolsOwner: Tab?
+    var browserToolsService: AIChatBrowserToolsService?
+    var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
+    private weak var browserToolsScript: AIChatUserScript?
     weak var delegate: AIChatContextualWebViewControllerDelegate?
 
     private let aiChatSettings: AIChatSettingsProvider
@@ -74,6 +78,8 @@ final class AIChatContextualWebViewController: UIViewController {
     private var promptFlowReporter: ContextualDuckAIPromptFlowReporting?
     private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
+    private weak var floatingInputView: UIView?
+    private var floatingInputObscuredHeight: CGFloat = 0
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -167,6 +173,7 @@ final class AIChatContextualWebViewController: UIViewController {
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -191,6 +198,7 @@ final class AIChatContextualWebViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
             onboardingActivationRecorder: onboardingActivationRecorder,
+            onboardingExperimentMetricStore: onboardingExperimentMetricStore,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
             debugSettings: debugSettings,
             getPageContext: getPageContext
@@ -225,10 +233,17 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateFloatingInputInset()
+    }
+
     deinit {
+        let browserToolsScript = browserToolsScript
         let request = pendingRichPrompt?.tabAttachmentRequest
         let contentHandler = aiChatContentHandler
         Task { @MainActor in
+            browserToolsScript?.detachBrowserTools()
             request?.cancel()
             contentHandler.cancelPendingTabContextSubmission()
         }
@@ -355,6 +370,37 @@ final class AIChatContextualWebViewController: UIViewController {
         let newConstraint = webView.bottomAnchor.constraint(equalTo: anchor)
         newConstraint.isActive = true
         webViewBottomConstraint = newConstraint
+    }
+
+    func setFloatingInputView(_ inputView: UIView) {
+        if floatingInputView === inputView {
+            updateFloatingInputInset()
+            return
+        }
+        floatingInputView = inputView
+        if #available(iOS 26, *) {
+            let color = UIColor(singleUseColor: .duckAIWebViewBackground)
+            view.backgroundColor = color
+            webView.backgroundColor = color
+            webView.scrollView.backgroundColor = color
+            webView.underPageBackgroundColor = color
+            webView.isOpaque = false
+            webView.scrollView.bottomEdgeEffect.isHidden = true
+        }
+        view.setNeedsLayout()
+    }
+
+    private func updateFloatingInputInset() {
+        guard #available(iOS 26, *), let floatingInputView else { return }
+        let top = floatingInputView.convert(.zero, to: view).y
+        let height = max(0, view.bounds.maxY - top)
+        guard height != floatingInputObscuredHeight else { return }
+        floatingInputObscuredHeight = height
+        let insets = UIEdgeInsets(top: 0, left: 0, bottom: height, right: 0)
+        if webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) {
+            webView.obscuredContentInsets = insets
+        }
+        DuckAIChatScrollInsetStyler.apply(insets, to: webView)
     }
 
     func loadChatURL(_ url: URL) {
@@ -552,6 +598,11 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
 
     func configureContentHandler(with userScript: AIChatUserScript) {
         aiChatContentHandler.setup(with: userScript, webView: webView, displayMode: .contextual)
+        browserToolsScript = nil
+        if let browserToolsService, let browserToolsOwner, let browserToolScopeFactory {
+            browserToolsScript = userScript
+            userScript.bindBrowserTools(to: browserToolsService, owner: browserToolsOwner, makeScope: browserToolScopeFactory)
+        }
         userScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScript)
         isContentHandlerReady = true
@@ -559,9 +610,23 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     }
 }
 
+extension AIChatContextualWebViewController {
+    func detachBrowserTools() {
+        browserToolScopeFactory = nil
+        browserToolsOwner = nil
+        browserToolsService = nil
+        browserToolsScript?.detachBrowserTools()
+        browserToolsScript = nil
+    }
+}
+
 // MARK: - WKNavigationDelegate
 
 extension AIChatContextualWebViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        guard webView === self.webView else { return }
+        browserToolsScript?.browserToolsDocumentDidCommit()
+    }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .allow }
@@ -593,6 +658,12 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(webView.url?.shortDescription ?? "nil")")
         loadingView.stopAnimating()
         isPageReady = true
+        if #available(iOS 26, *), floatingInputView != nil {
+            DuckAIChatScrollInsetStyler.apply(
+                UIEdgeInsets(top: 0, left: 0, bottom: floatingInputObscuredHeight, right: 0),
+                to: webView
+            )
+        }
         submitPendingIfReady()
     }
 

@@ -64,7 +64,6 @@ extension AuthenticationService: AuthenticationServiceProtocol {
             isUnlocked = true
             return
         }
-        overlayWindowManager.removeAnyOverlay()
         let authenticationViewController = showAuthenticationScreen()
         await authenticate(with: authenticationViewController)
     }

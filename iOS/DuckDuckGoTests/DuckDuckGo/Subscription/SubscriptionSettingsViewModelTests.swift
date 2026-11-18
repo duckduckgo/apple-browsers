@@ -936,6 +936,28 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(instrumentation.appStoreSubscriptionCancelledCount, 0)
     }
 
+    // MARK: - Withdrawal
+
+    func testWithdrawal_WhenConfirmationIsSet_NotifiesSettingsViewModel() async {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.withdrawSubscriptionResult = .success(WithdrawSubscriptionResponse())
+        sut = makeSUT()
+        let withdrawal = sut.withdrawal
+        var confirmationNotificationCount = 0
+        sut.objectWillChange
+            .sink { _ in
+                if withdrawal.isWithdrawing && withdrawal.confirmation == nil {
+                    confirmationNotificationCount += 1
+                }
+            }
+            .store(in: &cancellables)
+
+        await withdrawal.withdraw()
+
+        XCTAssertEqual(confirmationNotificationCount, 1)
+        XCTAssertNotNil(withdrawal.confirmation)
+    }
+
     // MARK: - Helpers
 
     private func assertManageSubscriptionWhenAppleInactiveDoesNotRefetchOrFireCancelled() async {

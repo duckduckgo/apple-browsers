@@ -65,7 +65,7 @@ class KeyValueFileStorePerformanceTests: XCTestCase {
         let nested = 5
 
         var dict = [String: [String: String]]()
-        for i in 1...count {
+        for _ in 1...count {
 
             var subDict = [String: String]()
             for n in 1...nested {

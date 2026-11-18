@@ -31,6 +31,13 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshAITab(.showCollapsed(expandAfterRefresh: true)))
     }
 
+    func test_newChatInputRequest_fromExpandedInput_staysExpanded() {
+        let inputs = makeInputs(tabIsAITab: true, tabURL: URL(string: "https://duck.ai/"), tabLinkURL: URL(string: "https://duck.ai/"),
+                                tabRequestsNewChatInput: true, coordinatorIsAITabState: true, keepsExpandedInputForNewChat: true)
+
+        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .refreshAITab(.showExpanded))
+    }
+
     func test_newChatInputRequest_onAITabFromAnotherAITab_expandsInsteadOfPreserving() {
         let inputs = makeInputs(tabIsAITab: true, tabURL: URL(string: "https://duck.ai/"), tabLinkURL: URL(string: "https://duck.ai/"),
                                 tabRequestsNewChatInput: true, coordinatorIsAITabState: true)
@@ -191,6 +198,31 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         )
     }
 
+    func test_aiTab_arrivingByTabSwipe_fromExpandedAITab_collapsesWithoutExpand() {
+        let inputs = makeInputs(
+            tabIsAITab: true,
+            coordinatorIsAITabState: true,
+            isArrivingByTabSwipe: true
+        )
+        XCTAssertEqual(
+            MainViewController.decideRefreshAction(for: inputs),
+            .refreshAITab(.showCollapsed(expandAfterRefresh: false))
+        )
+    }
+
+    func test_aiTab_freshChat_arrivingByTabSwipe_collapsesWithoutExpand() {
+        let inputs = makeInputs(
+            tabIsAITab: true,
+            tabURL: URL(string: "https://duckduckgo.com/?q=hello&ia=chat&duckai=2"),
+            coordinatorIsAITabState: false,
+            isArrivingByTabSwipe: true
+        )
+        XCTAssertEqual(
+            MainViewController.decideRefreshAction(for: inputs),
+            .refreshAITab(.showCollapsed(expandAfterRefresh: false))
+        )
+    }
+
     // MARK: - Helpers
 
     private func makeInputs(
@@ -201,6 +233,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         tabRequestsDeepLinkSurface: Bool = false,
         tabRequestsNewChatInput: Bool = false,
         coordinatorIsAITabState: Bool = false,
+        keepsExpandedInputForNewChat: Bool = false,
         coordinatorIsActive: Bool = false,
         coordinatorIsOmnibarSession: Bool = false,
         coordinatorHasSubmittedPrompt: Bool = false,
@@ -208,7 +241,8 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         isNavigationChromeHidden: Bool = false,
         isFloatingUIEnabled: Bool = false,
         isRefreshingCurrentTab: Bool = false,
-        isAddressBarPositionCurrent: Bool = true
+        isAddressBarPositionCurrent: Bool = true,
+        isArrivingByTabSwipe: Bool = false
     ) -> UnifiedToggleInputRefreshActionInputs {
         UnifiedToggleInputRefreshActionInputs(
             tabIsAITab: tabIsAITab,
@@ -218,6 +252,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             tabRequestsDeepLinkSurface: tabRequestsDeepLinkSurface,
             tabRequestsNewChatInput: tabRequestsNewChatInput,
             coordinatorIsAITabState: coordinatorIsAITabState,
+            keepsExpandedInputForNewChat: keepsExpandedInputForNewChat,
             coordinatorIsActive: coordinatorIsActive,
             coordinatorIsOmnibarSession: coordinatorIsOmnibarSession,
             coordinatorHasSubmittedPrompt: coordinatorHasSubmittedPrompt,
@@ -225,7 +260,8 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             isNavigationChromeHidden: isNavigationChromeHidden,
             isFloatingUIEnabled: isFloatingUIEnabled,
             isRefreshingCurrentTab: isRefreshingCurrentTab,
-            isAddressBarPositionCurrent: isAddressBarPositionCurrent
+            isAddressBarPositionCurrent: isAddressBarPositionCurrent,
+            isArrivingByTabSwipe: isArrivingByTabSwipe
         )
     }
 }

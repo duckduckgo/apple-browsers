@@ -157,11 +157,22 @@ final class URLEventHandler {
     /// Handles DBP URLs
     ///
     private static func handleDataBrokerProtectionURL(_ url: URL) {
-        switch url {
-        case DataBrokerProtectionNotificationCommand.showDashboard.url:
+        // Strip query items before matching so commands that carry parameters still match by path.
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems
+        components?.queryItems = nil
+        let strippedURL = components?.url ?? url
+
+        switch strippedURL {
+        case DataBrokerProtectionNotificationCommand.showDashboard(freeScanEntryPoint: nil).url:
+            let freeScanEntryPoint = queryItems?
+                .first(where: { $0.name == DataBrokerProtectionNotificationCommand.freeScanEntryPointQueryItem })?
+                .value
+                .flatMap(FreemiumDBPEntryPoint.init(rawValue:))
+            let context: DataBrokerProtectionTabContext = freeScanEntryPoint.map { .freemium($0) } ?? .subscribed
             NotificationCenter.default.post(name: DataBrokerProtectionNotifications.shouldReloadUI, object: nil)
             DispatchQueue.main.async {
-                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
+                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection(context))
             }
         default:
             return

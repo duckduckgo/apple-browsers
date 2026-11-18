@@ -3,6 +3,7 @@
   {"path": "Common", "macosTestOnly": true},
   {"path": "DDGError"},
   {"path": "ICSParser"},
+  {"path": "LocalModels"},
   {"path": "Infrastructure/DesignResourcesKit"},
   {
     "path": "Infrastructure/SystemFrameworksExtensions",

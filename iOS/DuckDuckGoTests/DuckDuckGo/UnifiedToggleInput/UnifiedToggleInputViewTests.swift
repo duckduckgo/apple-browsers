@@ -305,6 +305,14 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
     }
 
+    @available(iOS 26, *)
+    func testGlassIsNotAppliedWithoutOptIn() {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.isAITab = true
+        sut.applyCardLayout(.flanked(.all), animated: false)
+        XCTAssertFalse(allDescendants(of: UIVisualEffectView.self, in: sut).contains { $0.effect is UIGlassEffect })
+    }
+
     func testWhenExpandedSearchOnlyInputIsShownThenCardHasNoOutline() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
@@ -312,6 +320,63 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
 
         XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    @available(iOS 26, *)
+    func testFloatingGlassKeepsNativeMaterialThroughFocusAndAITabTransitions() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false), usesFloatingUI: true)
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+        let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first { $0.effect is UIGlassEffect })
+        let card = try XCTUnwrap(glass.superview)
+        let restingRadius = card.layer.cornerRadius
+        XCTAssertEqual(card.layer.shadowOpacity, 0)
+        sut.prepareForOmnibarMaterialTransition(duration: 0.25)
+        sut.applyOmnibarEditingShowPose()
+        XCTAssertTrue(glass.isDescendant(of: sut))
+        XCTAssertNotEqual(card.layer.cornerRadius, restingRadius)
+        XCTAssertEqual(card.layer.shadowOpacity, 0)
+        XCTAssertEqual(card.layer.borderWidth, 0)
+        XCTAssertFalse(card.clipsToBounds)
+
+        sut.applyOmnibarEditingDismissPose()
+        XCTAssertTrue(glass.isDescendant(of: sut))
+        XCTAssertEqual(card.layer.cornerRadius, restingRadius)
+        XCTAssertEqual(card.layer.shadowOpacity, 0)
+
+        sut.isAITab = true
+        sut.applyCardLayout(.flanked(.all), animated: false)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        XCTAssertTrue(glass.isDescendant(of: sut))
+        XCTAssertEqual(sut.aiTabFireButton.layer.shadowOpacity, 0)
+        XCTAssertEqual(card.layer.borderWidth, 0)
+        XCTAssertFalse(card.clipsToBounds)
+    }
+
+    @available(iOS 26, *)
+    func testFloatingGlassKeepsFireModeTintThroughFocusAndModeChanges() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isFireTab: true)
+        let sut = UnifiedToggleInputView(handler: handler, usesFloatingUI: true)
+        sut.overrideUserInterfaceStyle = .light
+        prepareForFitting(sut, width: 402, height: 192)
+        let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first { $0.effect is UIGlassEffect })
+
+        for isFireTab in [true, false, true] {
+            handler.isFireTab = isFireTab
+            sut.refreshFireMode(fireMode: isFireTab)
+            for isAITab in [false, true] {
+                sut.isAITab = isAITab
+                for layout in [UnifiedToggleInputCardLayout.flanked(.all), .expanded(showsToggle: true, showsToolbar: true)] {
+                    sut.applyCardLayout(layout, animated: false)
+                    sut.refreshFireMode(fireMode: isFireTab)
+                    let effect = try XCTUnwrap(glass.effect as? UIGlassEffect)
+                    let expectedTint = isFireTab ? UIColor(singleUseColor: .fireModeBackground) : nil
+                    XCTAssertEqual(effect.tintColor?.resolvedColor(with: sut.traitCollection),
+                                   expectedTint?.resolvedColor(with: sut.traitCollection))
+                    XCTAssertEqual(glass.overrideUserInterfaceStyle, .unspecified)
+                }
+            }
+        }
     }
 
     func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {
@@ -419,6 +484,46 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         textEntry.setNeedsLayout()
         textEntry.layoutIfNeeded()
         XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
+    }
+
+    func test_stopButtonBackgroundFollowsGlassForChatAndContextualInput() throws {
+        for usesFloatingUI in [false, true] {
+            for isAITab in [false, true] {
+                let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+                let sut = UnifiedToggleInputView(
+                    handler: handler,
+                    placesAttachmentsAboveInput: !isAITab,
+                    usesFloatingUI: usesFloatingUI
+                )
+                sut.isAITab = isAITab
+                sut.setInputMode(.aiChat, animated: false)
+                handler.isGenerating = true
+                sut.isGenerating = true
+                sut.applyCardLayout(isAITab ? .flanked(.all) : .collapsed, animated: false)
+                flushMainQueue()
+                let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+                let stopButton = try XCTUnwrap(findButton(accessibilityIdentifier: "Browser.OmniBar.Button.StopGenerating", in: buttons))
+                XCTAssertFalse(stopButton.isHidden)
+                let traits = UITraitCollection(userInterfaceStyle: .light)
+                let stopBackground = UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground).resolvedColor(with: traits)
+                let backdrop = try XCTUnwrap(allDescendants(of: UIView.self, in: stopButton).first {
+                    $0.backgroundColor?.resolvedColor(with: traits) == stopBackground
+                })
+
+                let usesGlass: Bool
+                if #available(iOS 26, *) { usesGlass = usesFloatingUI } else { usesGlass = false }
+                XCTAssertEqual(backdrop.isHidden, usesGlass)
+
+                sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: true), animated: false)
+                let toolbarStop = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.StopGenerating", in: sut))
+                XCTAssertFalse(toolbarStop.isHidden)
+                let background = usesGlass ? UIColor.clear : stopBackground
+                XCTAssertEqual(toolbarStop.backgroundColor?.resolvedColor(with: traits), background)
+                toolbarStop.isHighlighted = true
+                toolbarStop.isHighlighted = false
+                XCTAssertEqual(toolbarStop.backgroundColor?.resolvedColor(with: traits), background)
+            }
+        }
     }
 
     func test_fireOnlyFlankedPose_showsFire() {

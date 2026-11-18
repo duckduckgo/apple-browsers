@@ -1503,7 +1503,14 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
         case .summarize, .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
             promoteFloatingInputToSheet()
-            persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+            func submitPrompt() {
+                persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+            }
+            if let sheetViewController {
+                sheetViewController.submittingSummary(submitPrompt)
+            } else {
+                submitPrompt()
+            }
         }
     }
 

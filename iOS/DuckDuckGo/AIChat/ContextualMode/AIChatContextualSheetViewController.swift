@@ -1213,7 +1213,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     private static let summarizePageSuggestionID = "summarize-page"
 
     /// Tells Duck.ai the prompt is a page summary, which it can run on the local model.
-    private func submittingSummary(_ submit: () -> Void) {
+    func submittingSummary(_ submit: () -> Void) {
         guard let userScript = webViewController?.aiChatUserScript else {
             submit()
             return

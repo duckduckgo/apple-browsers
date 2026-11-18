@@ -28,8 +28,7 @@ struct SearchOnboardingPathTests {
 
     let storage = MockContextualDialogStateStoring()
     let pathStorage = MockBlockedTrackerStoring()
-    let eligibility = StubOnboardingSubscriptionUpsellEligibility()
-    let endingStorage = MockOnboardingEndingStoring()
+    let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
     let trackerProvider = MockTrackerMessageProvider()
     let progress: ContextualOnboardingProgress
     let sut: SearchOnboardingPath
@@ -38,8 +37,7 @@ struct SearchOnboardingPathTests {
         progress = ContextualOnboardingProgress(storage: storage, settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
         sut = SearchOnboardingPath(progress: progress,
                                    storage: pathStorage,
-                                   endingStorage: endingStorage,
-                                   subscriptionUpsellEligibility: eligibility,
+                                   subscriptionUpsellExperiment: experiment,
                                    trackerMessageProvider: trackerProvider)
     }
 
@@ -55,7 +53,7 @@ struct SearchOnboardingPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Once High Five was seen, the ending decides before the tab's own rules", .timeLimit(.minutes(1)))
     func endingDecidesFirst() async {
-        eligibility.isUserEligible = true
+        experiment.isEligible = true
         progress.markSeen(.highFive)
         let tab = await Tab(content: .newtab)
 
@@ -88,15 +86,13 @@ struct SearchOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Reset clears the blocked tracker flag and the saved upsell eligibility", .timeLimit(.minutes(1)))
+    @Test("Reset clears the blocked tracker flag", .timeLimit(.minutes(1)))
     func resetClearsBlockedTrackers() {
         pathStorage.blockedTrackerSeen = true
-        endingStorage.subscriptionUpsellEligible = true
 
         sut.reset()
 
         #expect(!pathStorage.blockedTrackerSeen)
-        #expect(endingStorage.subscriptionUpsellEligible == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -128,7 +124,7 @@ struct SearchOnboardingPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Got it on High Five and the upsell is handled by the ending", .timeLimit(.minutes(1)))
     func gotItOnEndingDialogs() {
-        eligibility.isUserEligible = true
+        experiment.isEligible = true
 
         #expect(sut.gotItPressed(lastDialog: .highFive) == .next(.subscriptionUpsell))
         #expect(sut.gotItPressed(lastDialog: .subscriptionUpsell) == .completed)

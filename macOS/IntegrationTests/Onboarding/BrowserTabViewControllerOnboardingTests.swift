@@ -554,7 +554,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUpsellCTACompletesBeforeNavigationThenItIsNotCompletedAgain() throws {
+    func testWhenUpsellCTACompletesBeforeNavigationThenItIsNotPresentedAgain() throws {
         presentDialog(.subscriptionUpsell)
         let presentationsBefore = factory.makeViewCallCount
 
@@ -562,36 +562,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         factory.performOnDismiss()
 
         XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
-        XCTAssertEqual(dialogProvider.gotItPressedDialogs, [.subscriptionUpsell])
-    }
-
-    @MainActor
-    func testWhenNavigationRemovesAVisibleUpsellThenItIsCompleted() throws {
-        presentDialog(.subscriptionUpsell)
-        let destination = try XCTUnwrap(URL(string: "https://example.com"))
-
-        dialogProvider.dialog = nil
-        let expectation = self.expectation(description: "dialogTypeForTab")
-        dialogProvider.dialogTypeForTabExpectation = expectation
-        tab.navigateFromOnboarding(to: destination)
-        wait(for: [expectation], timeout: 5.0)
-
-        XCTAssertEqual(dialogProvider.gotItPressedDialogs, [.subscriptionUpsell])
-        XCTAssertNil(dialogProvider.lastDialog)
-    }
-
-    @MainActor
-    func testWhenAnEarlierDialogIsRemovedByNavigationThenItIsNotCompleted() throws {
-        presentDialog(.tryFireButton)
-        let destination = try XCTUnwrap(URL(string: "https://example.com"))
-
-        dialogProvider.dialog = nil
-        let expectation = self.expectation(description: "dialogTypeForTab")
-        dialogProvider.dialogTypeForTabExpectation = expectation
-        tab.navigateFromOnboarding(to: destination)
-        wait(for: [expectation], timeout: 5.0)
-
-        XCTAssertTrue(dialogProvider.gotItPressedDialogs.isEmpty)
     }
 
     @MainActor
@@ -722,11 +692,7 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
         return dialog
     }
 
-    /// The dialog that was current each time `gotItPressed()` was called.
-    var gotItPressedDialogs: [ContextualDialogType?] = []
-
     func gotItPressed() {
-        gotItPressedDialogs.append(lastDialog)
         switch lastDialog {
         case .trackers:
             lastDialog = .tryFireButton

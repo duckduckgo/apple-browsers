@@ -53,14 +53,11 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
 
     init(progress: ContextualOnboardingProgressReading,
          storage: BlockedTrackerStoring = SearchOnboardingPathStorage(),
-         endingStorage: OnboardingEndingStoring = OnboardingEndingStorage(),
-         subscriptionUpsellEligibility: OnboardingSubscriptionUpsellEligibilityChecking,
+         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
          trackerMessageProvider: TrackerMessageProviding) {
         self.progress = progress
         self.storage = storage
-        self.ending = OnboardingEndingSteps(progress: progress,
-                                            storage: endingStorage,
-                                            subscriptionUpsellEligibility: subscriptionUpsellEligibility)
+        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
         self.trackerMessageProvider = trackerMessageProvider
     }
 
@@ -68,7 +65,6 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
 
     func reset() {
         storage.blockedTrackerSeen = false
-        ending.reset()
     }
 
     func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision {

@@ -42,10 +42,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
-    /// Subscription upsell after High Five in contextual onboarding. On unless the remote config turns it off.
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1219346955712864
-    case onboardingSubscriptionUpsell
-
     /// Simplified Fire dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
     case fireDialogSimplified
@@ -764,10 +760,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingSearchOrChat:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
-        case .onboardingSubscriptionUpsell:
-            Config(defaultValue: .enabled,
-                   source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsell),
-                   category: .subscription)
         case .fireDialogSimplified:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:

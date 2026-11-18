@@ -118,7 +118,6 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     case contextualOnboardingPathKind = "contextual-onboarding_path-kind"
     case contextualOnboardingBlockedTrackers = "contextual-onboarding_blocked-trackers"
-    case contextualOnboardingSubscriptionUpsellEligible = "contextual-onboarding_subscription-upsell-eligible"
 }
 
 // MARK: - StorageKey Extensions

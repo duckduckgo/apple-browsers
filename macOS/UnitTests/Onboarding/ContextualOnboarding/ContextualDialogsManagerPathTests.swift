@@ -31,7 +31,7 @@ struct ContextualDialogsManagerPathTests {
 
     init() {
         manager = .withSearchPath(trackerMessageProvider: MockTrackerMessageProvider(),
-                                  subscriptionUpsellEligibility: StubOnboardingSubscriptionUpsellEligibility(),
+                                  subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling(),
                                   stateStorage: stateStorage,
                                   searchPathStorage: searchPathStorage,
                                   settings: store.throwingKeyedStoring())

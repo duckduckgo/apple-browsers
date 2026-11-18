@@ -81,7 +81,11 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user submits a prompt from native input. `termsAccepted` is `true` only for a prompt sent with Ask.
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String, termsAccepted: Bool)
+    /// `localTask` is set for a page summary, which Duck.ai can run on the local model.
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didSubmitPrompt prompt: String,
+                                             termsAccepted: Bool,
+                                             localTask: AIChatLocalModelTask?)
 
     /// Called when the user taps a suggested prompt.
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async
@@ -203,6 +207,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// The single web view controller for this sheet, created once and reused
     private var webViewController: AIChatContextualWebViewController?
+
+    /// Set only while `submittingSummary` runs, so the prompt it submits is marked as a summary.
+    private var localTaskForSubmission: AIChatLocalModelTask?
 
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
@@ -828,7 +835,7 @@ private extension AIChatContextualSheetViewController {
         updateContentContainerBottomConstraint()
     }
 
-    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
+    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool, localTask: AIChatLocalModelTask? = nil) {
         Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt called")
 
         guard let webVC = webViewController else {
@@ -839,7 +846,7 @@ private extension AIChatContextualSheetViewController {
 
         // Don't transition immediately - wait for delegate callback after prompt is submitted
         // This prevents showing the initial duck.ai page before the prompt navigates it
-        webVC.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+        webVC.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted, localTask: localTask)
         if !isWaitingForInitialPromptResponseState {
             expandToLargeDetent()
         }
@@ -1214,11 +1221,13 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     /// Tells Duck.ai the prompt is a page summary, which it can run on the local model.
     func submittingSummary(_ submit: () -> Void) {
-        guard let userScript = webViewController?.aiChatUserScript else {
+        localTaskForSubmission = .summarize
+        defer { localTaskForSubmission = nil }
+        guard let webViewController else {
             submit()
             return
         }
-        userScript.submitting(localTask: .summarize, submit)
+        webViewController.submitting(localTask: .summarize, submit)
     }
 
     /// A sheet promoted for a submission that never arrived would sit on the web view with no input at
@@ -1419,8 +1428,8 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ effect: SheetEffect) {
         switch effect {
-        case .submitPrompt(let prompt, let context, let termsAccepted):
-            showWebViewWithPrompt(prompt, pageContext: context, termsAccepted: termsAccepted)
+        case .submitPrompt(let prompt, let context, let termsAccepted, let localTask):
+            showWebViewWithPrompt(prompt, pageContext: context, termsAccepted: termsAccepted, localTask: localTask)
         case .reloadWebView:
             webViewController?.reload()
         case .deliverPageContext:
@@ -1499,7 +1508,9 @@ private extension AIChatContextualSheetViewController {
         }
         contextualInputViewController.hideStartActionsForSubmittedPrompt()
         beginWaitingForInitialPromptResponseState()
-        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted)
+        // The prompt reaches the web view a main-queue hop later, so the mark travels with it.
+        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted,
+                                                      localTask: localTaskForSubmission)
     }
 
     /// `isSuggestedPrompt` is false for a search query handed over from the results page.

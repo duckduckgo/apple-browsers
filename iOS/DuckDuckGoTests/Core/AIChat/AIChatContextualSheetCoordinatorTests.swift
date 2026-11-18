@@ -488,7 +488,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         XCTAssertEqual(sut.sessionState.chipState, .placeholder)
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?", termsAccepted: false)
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?", termsAccepted: false, localTask: nil)
 
         XCTAssertEqual(mockSelectionJourneyInstrumentation.promptSubmittedCount, 1)
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
@@ -504,7 +504,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             return
         }
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page", termsAccepted: false)
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page", termsAccepted: false, localTask: nil)
 
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
     }
@@ -516,7 +516,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         var submittedTermsAccepted: [Bool] = []
         let cancellable = sut.sessionState.effects.sink { effect in
-            if case .submitPrompt(_, _, let termsAccepted) = effect { submittedTermsAccepted.append(termsAccepted) }
+            if case .submitPrompt(_, _, let termsAccepted, _) = effect { submittedTermsAccepted.append(termsAccepted) }
         }
         defer { cancellable.cancel() }
 
@@ -524,6 +524,39 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                                             didSelectQuickAction: .summarizePage)
 
         XCTAssertEqual(submittedTermsAccepted, [false])
+    }
+
+    /// Without the input host the prompt reaches the web view through a sheet effect, after the tap has returned.
+    @MainActor
+    func testWhenTheSummarizePageChipIsTappedInTheBasicInputThenTheSubmitEffectIsMarkedAsASummary() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        var localTasks: [AIChatLocalModelTask?] = []
+        let cancellable = sut.sessionState.effects.sink { effect in
+            if case .submitPrompt(_, _, _, let localTask) = effect { localTasks.append(localTask) }
+        }
+        defer { cancellable.cancel() }
+
+        sheet.contextualInputViewController(AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper()),
+                                            didSelectQuickAction: .summarizePage)
+
+        XCTAssertEqual(localTasks, [.summarize])
+    }
+
+    @MainActor
+    func testWhenAPromptIsTypedInTheBasicInputThenTheSubmitEffectIsNotMarked() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        var localTasks: [AIChatLocalModelTask?] = []
+        let cancellable = sut.sessionState.effects.sink { effect in
+            if case .submitPrompt(_, _, _, let localTask) = effect { localTasks.append(localTask) }
+        }
+        defer { cancellable.cancel() }
+
+        sheet.contextualInputViewController(AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper()),
+                                            didSubmitPrompt: "Summarize this page.")
+
+        XCTAssertEqual(localTasks, [nil])
     }
 
     @MainActor

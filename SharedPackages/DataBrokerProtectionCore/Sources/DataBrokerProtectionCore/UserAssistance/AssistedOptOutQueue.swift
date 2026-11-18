@@ -192,8 +192,10 @@ public final class AssistedOptOutQueue {
         let config = config
         if let cache, cache.config == config { return cache.candidates }
         let database = dependencies.database
+        let allowedBrokerURLs = dependencies.dataBrokerProtectionSettings.debugTestBrokerURLs
         let candidates = try config.enabledBrokers.sorted().flatMap { url -> [Candidate] in
-            guard let broker = try database.fetchBroker(withURL: url), let brokerID = broker.id,
+            guard allowedBrokerURLs?.contains(url) ?? true,
+                  let broker = try database.fetchBroker(withURL: url), let brokerID = broker.id,
                   broker.requiresUserAssistance, !broker.isRemoved, !broker.performsOptOutWithinParent() else { return [] }
             return try database.fetchBrokerProfileQueryData(forBrokerId: brokerID).flatMap { data in
                 data.optOutJobData.compactMap { job -> Candidate? in

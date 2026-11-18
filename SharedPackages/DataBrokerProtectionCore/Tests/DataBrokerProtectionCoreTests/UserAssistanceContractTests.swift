@@ -30,6 +30,58 @@ struct UserAssistanceContractTests {
 #if os(macOS)
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func bundledBeenVerifiedDefinitionDecodesAsActiveAssistedBroker() throws {
+        let package = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        let resource = try DataBroker.initFromResource(package.appendingPathComponent(
+            "Sources/DataBrokerProtectionCore/BundleResources/JSON/beenverified.com.json"))
+        #expect(resource.broker.version == "0.12.0")
+        #expect(!resource.broker.isRemoved)
+        let optOut = try #require(resource.broker.steps.first { $0.type == .optOut })
+        #expect(optOut.actions.contains { $0.actionType == .userAssist })
+    }
+#endif
+
+#if DEBUG
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [JobType.manualScan, .scheduledScan, .optOut, .all])
+    func debugBrokerSelectionRestrictsEveryRegularJobType(jobType: JobType) throws {
+        let suite = "DebugBrokerSelectionTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let dependencies = MockBrokerProfileJobDependencies()
+        let database = MockDatabase()
+        dependencies.database = database
+        dependencies.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: defaults)
+        let allowed = DataBroker.mockWithDefaults(id: 2, url: "beenverified.com")
+        let excluded = DataBroker.mock
+        let allowedQuery = BrokerProfileQueryData(dataBroker: allowed, profileQuery: .mock, scanJobData: .mock)
+        let excludedQuery = BrokerProfileQueryData(dataBroker: excluded, profileQuery: .mock, scanJobData: .mock)
+        database.brokerProfileQueryDataToReturn = [allowedQuery]
+        let provider = BrokerProfileJobProvider()
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
+        defaults.set(["beenverified.com"], forKey: "dbp.debug.testBrokerURLs")
+        let selected = try provider.createJobs(with: jobType, withPriorityDate: nil, showWebView: false,
+                                              statusReportingDelegate: delegate, isAuthenticatedUser: true,
+                                              jobDependencies: dependencies)
+        #expect(selected.count == 1)
+        database.brokerProfileQueryDataToReturn = [excludedQuery]
+        let excludedJobs = try provider.createJobs(with: jobType, withPriorityDate: nil, showWebView: false,
+                                                  statusReportingDelegate: delegate, isAuthenticatedUser: true,
+                                                  jobDependencies: dependencies)
+        #expect(excludedJobs.isEmpty)
+        database.brokerProfileQueryDataToReturn = [allowedQuery, excludedQuery]
+        defaults.removeObject(forKey: "dbp.debug.testBrokerURLs")
+        let unrestricted = try provider.createJobs(with: jobType, withPriorityDate: nil, showWebView: false,
+                                                  statusReportingDelegate: delegate, isAuthenticatedUser: true,
+                                                  jobDependencies: dependencies)
+        #expect(unrestricted.count == 2)
+    }
+#endif
+
+#if os(macOS)
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func parsedUserAssistPreservesCompleteWhenAndStepInRequestsAndSteps() throws {
         let step = try JSONDecoder().decode(Step.self, from: Data(Self.stepJSON.utf8))
         let action = try #require(step.actions.first as? UserAssistAction)

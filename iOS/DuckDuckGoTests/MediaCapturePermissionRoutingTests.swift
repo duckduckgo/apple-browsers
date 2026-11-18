@@ -255,7 +255,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertNil(releasedTab)
     }
 
-    func testFlagOnRoutesOrdinaryCaptureTypesUsingCommittedTopLevelSite() async {
+    func testWhenEnabledThenOrdinaryCaptureTypesRouteUsingCommittedTopLevelSite() async {
         let scenarios: [(WKMediaCaptureType, Set<SitePermissionType>)] = [
             (.camera, [.camera]),
             (.microphone, [.microphone]),
@@ -398,7 +398,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
-    func testFlagOnPreservesDuckAIHostMatrixWithoutConstructingCoordinator() throws {
+    func testWhenEnabledThenDuckAIHostMatrixIsPreservedWithoutConstructingCoordinator() throws {
         let sut = makeSUT()
         var didRequestDependencies = false
         sut.sitePermissionsDependenciesProvider = {
@@ -437,7 +437,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertFalse(didRequestDependencies)
     }
 
-    func testFlagOffPreservesLegacyRoutingForReplacedWebView() throws {
+    func testWhenUnsupportedOSThenReplacedWebViewKeepsLegacyRouting() throws {
         let sut = makeSUT(featureEnabled: false)
         let tabDelegate = MockTabDelegate()
         sut.delegate = tabDelegate
@@ -462,7 +462,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
     }
 
-    func testFlagOnRejectsBridgeRequestBeforeMainFrameCommit() async {
+    func testWhenEnabledThenBridgeRequestIsRejectedBeforeMainFrameCommit() async {
         let sut = makeSUT(hasCommittedMainFrame: false)
         var didPrompt = false
         sut.sitePermissionsPromptHandlerOverride = { _, _ in

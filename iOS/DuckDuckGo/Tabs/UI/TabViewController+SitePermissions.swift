@@ -402,7 +402,7 @@ extension TabViewController {
         }
 
         // Install before navigation, even when content-blocking assets are not ready.
-        // The bridge delegates to the legacy WebKit flow when site permissions is disabled.
+        // On iOS 15 the bridge hands every request back to WebKit's own flow.
         let userScript = MediaCaptureUserScript()
         sitePermissionsState.mediaCaptureUserScript = userScript
         userScript.delegate = self
@@ -502,7 +502,6 @@ extension TabViewController {
         }
 
         guard isSitePermissionsEnabled else {
-            sitePermissionsState.discardPreapprovals()
             decisionHandler(.prompt)
             return
         }
@@ -1255,7 +1254,6 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
         guard isSitePermissionsEnabled else {
-            sitePermissionsState.discardPreapprovals()
             return .bypass
         }
 

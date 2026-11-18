@@ -125,7 +125,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         }
     }
 
-    func testWhenFeatureIsDisabledThenRetainsNothingButRemovedRecordsStillDeleteTheirImages() async throws {
+    func testWhenSitePermissionsIsUnsupportedThenRetainsNothingButRemovedRecordsStillDeleteTheirImages() async throws {
         let site = try makeSite("disabled.example")
         let removedSite = try makeSite("removed-while-disabled.example")
         let store = makeStore(sites: [site, removedSite])

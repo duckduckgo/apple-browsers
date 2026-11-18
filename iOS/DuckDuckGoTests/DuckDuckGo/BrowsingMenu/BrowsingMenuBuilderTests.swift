@@ -197,7 +197,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
-    func testSitePermissionsEntryIsHiddenWithFlagOffInLegacyAndSheetMenus() {
+    func testWhenSitePermissionsIsUnsupportedThenEntryIsHiddenInLegacyAndSheetMenus() {
         assertSitePermissionsEntry(isPresent: false, featureEnabled: false, storedDecision: .allow)
     }
 
@@ -302,10 +302,10 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
-    func testManagementPresenterRefusesFlagOffAndStaleCommittedSite() {
-        let flagOff = makeTabViewController(featureEnabled: false, storedDecision: .allow)
-        flagOff.presentSitePermissionsManagement()
-        XCTAssertNil(flagOff.presentedViewController)
+    func testManagementPresenterRefusesUnsupportedOSAndStaleCommittedSite() {
+        let unsupportedOS = makeTabViewController(featureEnabled: false, storedDecision: .allow)
+        unsupportedOS.presentSitePermissionsManagement()
+        XCTAssertNil(unsupportedOS.presentedViewController)
 
         let staleCommittedSite = makeTabViewController(featureEnabled: true, storedDecision: .allow)
         staleCommittedSite.webView(staleCommittedSite.webView, didStartProvisionalNavigation: nil)

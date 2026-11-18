@@ -7,10 +7,10 @@
 // Swift owns the saved choices, dialogs, and OS authorization. It records a short-lived
 // approval before replying allow. We then call WebKit, and TabViewController consumes that
 // approval in the later WKUIDelegate callback. A bypass reply restores WebKit's
-// flow when the feature is off or the native handler selects the Duck.ai exception.
+// flow on iOS 15 or the native handler selects the Duck.ai exception.
 //
 // Keep message fields in sync with MediaCaptureUserScript.swift. Verify changes with
-// MediaCaptureUserScriptTests in the iOS Browser scheme, including flag transitions.
+// MediaCaptureUserScriptTests in the iOS Browser scheme.
 (() => {
     // Save native methods before page scripts can replace them.
     const apply = Reflect.apply;

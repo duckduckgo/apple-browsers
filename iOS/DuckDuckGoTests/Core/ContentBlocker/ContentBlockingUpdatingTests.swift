@@ -598,13 +598,13 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testGeolocationUserScriptRegistrationFollowsLaunchSnapshot() async throws {
+    func testGeolocationUserScriptIsRegisteredOnlyWhenSitePermissionsIsSupported() async throws {
         let sourceProvider = makeScriptSourceProvider()
         let geolocationUserScript = GeolocationUserScript()
 
         let disabledScripts = UserScripts(
             with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            featureFlagger: MockFeatureFlagger(),
             sitePermissionsEnabled: false,
             geolocationUserScript: geolocationUserScript,
             sponsorBlockPreferences: sponsorBlockPreferences
@@ -631,26 +631,6 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertEqual(wkScripts[pageIndex].source, geolocationUserScript.makeWKUserScriptSync().source)
         XCTAssertEqual(geolocationUserScript.policyScript.getContentWorld(), .defaultClient)
         XCTAssertEqual(geolocationUserScript.getContentWorld(), .page)
-
-        let tabEnabledWithDifferentGlobalFlag = UserScripts(
-            with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-            sitePermissionsEnabled: true,
-            geolocationUserScript: geolocationUserScript,
-            sponsorBlockPreferences: sponsorBlockPreferences
-        )
-        XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.geolocationUserScript === geolocationUserScript)
-        XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.userScripts.contains { $0 === geolocationUserScript.policyScript })
-
-        let tabDisabledWithDifferentGlobalFlag = UserScripts(
-            with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(),
-            sitePermissionsEnabled: false,
-            geolocationUserScript: geolocationUserScript,
-            sponsorBlockPreferences: sponsorBlockPreferences
-        )
-        XCTAssertNil(tabDisabledWithDifferentGlobalFlag.geolocationUserScript)
-        XCTAssertFalse(tabDisabledWithDifferentGlobalFlag.userScripts.contains { $0 is GeolocationPolicyUserScript })
 
         let nonTabScripts = UserScripts(
             with: sourceProvider,

@@ -98,7 +98,9 @@ struct WebExtensionBackgroundPagePatcher {
                 return installedExtensionURL
             }
 
-            try copyIfNeeded(installedExtensionURL, isArchive: isArchive, to: loadableURL)
+            // The Wasm patch depends on the OS, so a copy made before an OS upgrade must not be reused after it.
+            let stampSuffix = Self.patchedWasmPolicy(in: manifest) != nil ? "-wasm-pre-26-fix" : ""
+            try copyIfNeeded(installedExtensionURL, isArchive: isArchive, stampSuffix: stampSuffix, to: loadableURL)
             guard let extensionDirectory = extensionDirectory(in: loadableURL) else {
                 return installedExtensionURL
             }
@@ -113,12 +115,12 @@ struct WebExtensionBackgroundPagePatcher {
 
     /// Copies the installation into `loadableURL`, unless it already holds this version of it. A ZIP is
     /// unpacked; a folder is copied without the loadable folder itself, which sits inside a flat install.
-    private func copyIfNeeded(_ installedExtensionURL: URL, isArchive: Bool, to loadableURL: URL) throws {
+    private func copyIfNeeded(_ installedExtensionURL: URL, isArchive: Bool, stampSuffix: String, to loadableURL: URL) throws {
         // Read from disk each time: `URL` resource values are cached and would miss an update. A folder
         // install changes with its manifest.
         let sourceURL = isArchive ? installedExtensionURL : installedExtensionURL.appendingPathComponent(Self.manifestFilename)
         let sourceDate = try fileManager.attributesOfItem(atPath: sourceURL.path)[.modificationDate] as? Date
-        let dateStamp = sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? ""
+        let dateStamp = (sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? "") + stampSuffix
         let stampURL = loadableURL.appendingPathComponent(Self.sourceDateFilename)
         if let copiedStamp = try? String(contentsOf: stampURL, encoding: .utf8), copiedStamp == dateStamp {
             return

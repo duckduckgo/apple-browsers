@@ -65,6 +65,7 @@ final class ContextualOnboardingProgress: ContextualOnboardingProgressReading {
     }
 
     /// Clears everything a restarted onboarding must not inherit. The state itself is set by the caller.
+    /// Runs whenever onboarding starts again (`Tab.startOnboarding()` and the debug menu's reset), not only in debug builds.
     func reset() {
         storage.contextualDialogsSeen = []
         storage.fireButtonUsedOnce = false

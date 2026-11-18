@@ -19,7 +19,8 @@
 import Foundation
 
 /// The end of contextual onboarding, shared by every path: High Five, then the subscription upsell for eligible users.
-/// Methods return `nil` when the ending hasn't started, so the calling path applies its own rules.
+/// Methods return `nil` when the ending hasn't started: the decision isn't the ending's to make, and the calling path
+/// applies its own rules. That differs from `.none`, which is a decision to show nothing.
 final class OnboardingEndingSteps {
 
     private let progress: ContextualOnboardingProgressReading
@@ -46,6 +47,7 @@ final class OnboardingEndingSteps {
         return nil
     }
 
+    /// `nil` when `dialog` isn't part of the ending.
     func gotItPressed(after dialog: ContextualDialogType) -> ContextualOnboardingDecision? {
         switch dialog {
         case .highFive: return afterHighFive()

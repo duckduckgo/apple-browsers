@@ -19,18 +19,28 @@
 import Foundation
 import PrivacyDashboard
 
+/// What a path wants after a dialog request or a "Got it". The manager writes the state from it.
 enum ContextualOnboardingDecision: Equatable {
+    /// Show this dialog.
     case next(ContextualDialogType)
+    /// Show nothing for now; onboarding continues.
     case none
+    /// Onboarding is over.
     case completed
 }
 
+/// The path picked at the junction, saved so it survives a relaunch.
 enum ContextualOnboardingPathKind: String {
     case search
 }
 
+/// The dialog sequence of one junction path, from its first dialog to its ending.
+/// Paths read the saved progress but never write it.
 protocol ContextualOnboardingPath: AnyObject {
+    /// Whether the browser UI stays locked while this path runs.
     var isUILocked: Bool { get }
+    /// Called when a navigation finishes in `tab`.
     func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision
+    /// Called when the user presses "Got it" on `lastDialog`.
     func gotItPressed(lastDialog: ContextualDialogType) -> ContextualOnboardingDecision
 }

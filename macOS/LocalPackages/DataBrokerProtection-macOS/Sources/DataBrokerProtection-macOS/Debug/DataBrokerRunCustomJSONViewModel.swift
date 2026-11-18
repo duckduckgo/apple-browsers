@@ -190,6 +190,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     var profileQueryLabels: [Int64: String] = [:]
     /// Shows debug opt-outs for brokers that need the user in the same window the production feature uses.
     @MainActor private var assistedOptOutPresenter: AssistedOptOutWindowPresenter?
+    /// Debug results often lack IDs and can be opted out more than once, so each session is numbered to keep its window apart.
+    @MainActor private var assistedOptOutCount: Int64 = 0
 
     let brokerResources: [BrokerResource]
     var brokers: [DataBroker] { brokerResources.map(\.broker) }
@@ -384,9 +386,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private func presentAssistedOptOut(scanResult: DebugScanResult, dataBroker: DataBroker, steps: AssistedOptOutSteps, timeout: TimeInterval?) {
         let presenter = assistedOptOutPresenter ?? AssistedOptOutWindowPresenter()
         assistedOptOutPresenter = presenter
+        assistedOptOutCount += 1
         let session = AssistedOptOutSession(id: AssistedOptOutID(brokerId: dataBroker.id ?? 0,
                                                                  profileQueryId: scanResult.profileQuery.id ?? 0,
-                                                                 extractedProfileId: scanResult.extractedProfile.id ?? 0),
+                                                                 extractedProfileId: assistedOptOutCount),
                                             broker: .init(name: dataBroker.name, url: dataBroker.url),
                                             steps: steps)
         session.onUserTurnStarted = { presenter.userTurnStarted(in: $0) }

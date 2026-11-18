@@ -192,13 +192,17 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
             return
         }
         addHistoryEvent(.optOutStarted, runId: runId, profileQuery: label)
-        let assistanceObserver = await MainActor.run {
-            DebugAssistanceObserver(showsWebView: showWebView, onUserTurn: { [weak self] webView, step in
-                self?.addEvent(runId, kind: .history, profileQuery: label, summary: "Waiting for the user", details: step ?? "")
-                #if os(macOS)
-                webView?.window?.orderFrontRegardless()
-                #endif
-            })
+        // Without an observer, a headless run of an assisted broker fails at once with userAssistanceRequired.
+        var assistanceObserver: DebugAssistanceObserver?
+        if showWebView, scanResult.dataBroker.requiresUserAssistance {
+            assistanceObserver = await MainActor.run {
+                DebugAssistanceObserver(onUserTurn: { [weak self] webView, step in
+                    self?.addEvent(runId, kind: .history, profileQuery: label, summary: "Waiting for the user", details: step ?? "")
+                    #if os(macOS)
+                    webView?.window?.orderFrontRegardless()
+                    #endif
+                })
+            }
         }
         do {
             let requiresEmailConfirmation = try await runner.optOut(scanResult,

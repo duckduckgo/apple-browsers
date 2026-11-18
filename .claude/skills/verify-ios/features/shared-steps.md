@@ -35,3 +35,11 @@
   registers its undo with `ios.on_cleanup`. The iOS location alert belongs to SpringBoard and has three buttons, so
   `ios.alert` needs `button=`.
 - `open_duckai_new_chat`, `send_duckai_prompt`, `read_duckai_answer`: see [Duck.ai: full-tab chat](./duck-ai-tab.md).
+
+Duck.ai contextual chat (details in [Duck.ai: contextual chat](./duck-ai-contextual.md)):
+
+- `CONTEXTUAL_FLAGS`: the flags a contextual proof pins; `contextualDuckAIMode` is off by default.
+- `open_contextual_chat`, `attached_context`: entry button, then Ask About Page; the attached page's title or `None`.
+- `send_contextual_prompt`, `read_contextual_answer`: the input is `role=textview id=searchEntry` (the address bar
+  shares the id). The answer is read from the native tree, because the web channel reads the tab, not the sheet.
+- `fire_contextual_chat`, `expand_contextual_chat`: the controls differ by device (`CONTEXTUAL_IDS`).

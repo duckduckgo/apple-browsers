@@ -59,14 +59,6 @@ Keep implementation details out; name user paths, stable handles, required state
 [shared-steps.md](./shared-steps.md) documents the quirks each step in `lib/verify_ios/steps.py` handles. Read it
 before a proof uses a step, and update it when you change one.
 
-Duck.ai contextual chat (details in [Duck.ai: contextual chat](./duck-ai-contextual.md)):
-
-- `CONTEXTUAL_FLAGS`: the flags a contextual proof pins; `contextualDuckAIMode` is off by default.
-- `open_contextual_chat`, `attached_context`: entry button, then Ask About Page; the attached page's title or `None`.
-- `send_contextual_prompt`, `read_contextual_answer`: the input is `role=textview id=searchEntry` (the address bar
-  shares the id). The answer is read from the native tree, because the web channel reads the tab, not the sheet.
-- `fire_contextual_chat`, `expand_contextual_chat`: the controls differ by device (`CONTEXTUAL_IDS`).
-
 ## Features
 
 - Duck.ai

@@ -33,6 +33,7 @@ extension AssistedOptOut.DataBroker {
     }
 }
 
+/// Tracks the broker page in the attempt window: its address for the toolbar and whether a real page has loaded.
 @MainActor
 final class AssistedOptOutPageModel: ObservableObject {
     @Published private(set) var url: URL?
@@ -73,6 +74,7 @@ final class AssistedOptOutPageModel: ObservableObject {
     }
 }
 
+/// A hosting view sized by its Auto Layout constraints rather than by its SwiftUI content.
 final class AssistedOptOutHostingView<Content: View>: NSHostingView<Content> {
     required init(rootView: Content) {
         super.init(rootView: rootView)
@@ -191,6 +193,7 @@ struct AssistedOptOutStatus: View {
     }
 }
 
+/// Draws a colored glow around the page edge. It pulses yellow while the user has a step to do.
 @MainActor
 final class AssistedOptOutEdgeOverlayView: NSView {
     enum Edge {
@@ -304,6 +307,7 @@ final class AssistedOptOutEdgeOverlayView: NSView {
     }
 }
 
+/// Covers the broker page while DuckDuckGo is in control and swallows clicks, keys and scrolling.
 @MainActor
 final class AssistedOptOutInputBlocker: NSView {
     override var acceptsFirstResponder: Bool { true }
@@ -317,6 +321,7 @@ final class AssistedOptOutInputBlocker: NSView {
     }
 }
 
+/// Covers the page area until the broker page loads. It shows the intro before the user starts, then a loading placeholder.
 @MainActor
 struct AssistedOptOutPageCover: View {
     @Environment(\.designSystemPalette) private var palette

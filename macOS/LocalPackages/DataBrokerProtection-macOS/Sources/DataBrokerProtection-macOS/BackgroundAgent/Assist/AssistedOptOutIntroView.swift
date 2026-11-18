@@ -22,6 +22,7 @@ import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
+/// Shown in place of the broker page before the attempt starts. It explains where the user will need to help and lets them start.
 @MainActor
 struct AssistedOptOutIntroView: View {
     @Environment(\.designSystemPalette) private var palette

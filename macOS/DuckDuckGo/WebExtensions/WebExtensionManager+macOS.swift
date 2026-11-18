@@ -106,7 +106,14 @@ enum WebExtensionManagerFactory {
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
             windowTabProvider.updateActivityPublisher
         ).eraseToAnyPublisher()
-        let promptWindowProvider: () -> NSWindow? = { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }
+        // Prompts attach to the browser window the user works in, including an extension's popup window. A prompt on
+        // another window makes that window key, and extensions that later close `windows.getCurrent()` close it instead.
+        let promptWindowProvider: () -> NSWindow? = {
+            if let keyWindow = NSApp.keyWindow, keyWindow.windowController is MainWindowController {
+                return keyWindow
+            }
+            return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
+        }
         let permissionPrompt = WebExtensionPermissionPrompt(
             windowProvider: promptWindowProvider,
             themeManager: themeManager,

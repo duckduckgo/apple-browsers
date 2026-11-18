@@ -20,6 +20,6 @@
 
 import os.log
 
-extension Logger {
+public extension Logger {
     static let webPageTranslation = Logger(subsystem: "Web Page Translation", category: "")
 }

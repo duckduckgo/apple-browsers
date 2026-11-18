@@ -29,6 +29,7 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     public let excludeVpnTraffic: Bool
     public let brokerRemovalEnabled: Bool
     public let needBackgroundAppRefresh: Bool
+    /// Tells the dashboard whether to show the Needs you list.
     public let userAssistanceEnabled: Bool
 
     public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool, needBackgroundAppRefresh: Bool,
@@ -41,6 +42,7 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     }
 }
 
+/// Answers the dashboard's requests about brokers that need the user. On macOS the main app forwards them to the background agent.
 public protocol DBPUIAssistedOptOutsDelegate: AnyObject {
     var isUserAssistanceEnabled: Bool { get }
     func getAssistedOptOuts() async -> AssistedOptOutList

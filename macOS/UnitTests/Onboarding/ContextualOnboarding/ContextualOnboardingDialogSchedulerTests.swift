@@ -20,7 +20,6 @@ import Combine
 import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
-import PrivacyDashboard
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -230,7 +229,7 @@ private final class StubDialogProvider: ContextualOnboardingDialogTypeProviding,
     @Published var isContextualOnboardingCompleted = false
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
         dialogTypeForTabCallCount += 1
         return nextDialog
     }

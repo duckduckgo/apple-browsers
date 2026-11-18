@@ -319,7 +319,7 @@ class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Contextua
         return lastDialog
     }
 
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
         return lastDialog
     }
 

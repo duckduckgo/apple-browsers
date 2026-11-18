@@ -720,7 +720,7 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
 
     var dialog: ContextualDialogType?
 
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
         dialogTypeForTabExpectation?.fulfill()
         lastDialog = dialog
         return dialog

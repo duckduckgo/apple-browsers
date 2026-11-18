@@ -69,7 +69,7 @@ final class ContextualOnboardingDialogScheduler {
             onUpdate(.hide)
             return
         }
-        send(dialogProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo))
+        send(dialogProvider.dialogTypeForTab(tab))
     }
 
     /// The window became key; `displayed` is the dialog on screen, if any.

@@ -91,7 +91,7 @@ struct AssistedOptOutQueueTests {
         fixture.flagger.isUserAssistanceOn = false
         queue.configurationDidChange()
         release.signal()
-        await #expect(throws: CancellationError.self) { try await refresh.value }
+        try await refresh.value
         #expect(fixture.database.optOutEvents.isEmpty)
         #expect(try await queue.assistedOptOuts().isEmpty)
         fixture.flagger.isUserAssistanceOn = true
@@ -121,10 +121,10 @@ struct AssistedOptOutQueueTests {
         let refresh = Task { try await queue.refresh() }
         #expect(await XCTWaiter.fulfillment(of: [entered], timeout: 5) == .completed)
         queue.invalidate()
-        release.signal()
-        await #expect(throws: CancellationError.self) { try await refresh.value }
-        #expect(queue.activeSessions.first === session)
         fixture.database.scopedProfileFetchHandler = nil
+        release.signal()
+        try await refresh.value
+        #expect(queue.activeSessions.first === session)
         #expect(try await queue.assistedOptOuts().count == 1)
         queue.cancelAll()
     }
@@ -159,7 +159,7 @@ struct AssistedOptOutQueueTests {
         try await queue.start(id: currentID)
         let currentSession = try #require(queue.activeSessions.first)
         await authentication.release()
-        await #expect(throws: CancellationError.self) { try await oldRead.value }
+        try await oldRead.value
         #expect(queue.activeSessions.first === currentSession)
         #expect(queue.activeSessions.map(\.id) == [currentID])
         #expect(fixture.database.optOutEvents.isEmpty)

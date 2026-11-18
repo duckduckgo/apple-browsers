@@ -141,8 +141,28 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                     return
                 }
 
+                let modeActionsHandler: ActionsHandler? = context.dataBroker.optOutStep().flatMap { optOutStep in
+                    switch actionsHandlerMode {
+                    case .testing:
+                        if actionsHandler == nil {
+                            assertionFailure("Missing ActionsHandler")
+                        }
+                        return actionsHandler
+                    case .optOut:
+                        if actionsHandler != nil {
+                            assertionFailure("Use .testing actionsHandlerMode instead")
+                        }
+                        return ActionsHandler.forOptOut(optOutStep)
+                    case .emailConfirmation(let url):
+                        if actionsHandler != nil {
+                            assertionFailure("Use .testing actionsHandlerMode instead")
+                        }
+                        return ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: url)
+                    }
+                }
+
                 // Fail before loading the page: without a user to hand it to, this opt-out can't finish.
-                let needsUser = context.dataBroker.optOutStep()?.actions.contains(where: \.requiresUserAssistance) ?? false
+                let needsUser = modeActionsHandler?.actions.contains(where: \.requiresUserAssistance) ?? false
                 if needsUser, assistanceObserver == nil {
                     failed(with: DataBrokerProtectionError.userAssistanceRequired)
                     return
@@ -158,24 +178,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                         return
                     }
 
-                    if let optOutStep = context.dataBroker.optOutStep() {
-                        switch actionsHandlerMode {
-                        case .testing:
-                            if let actionsHandler {
-                                self.actionsHandler = actionsHandler
-                            } else {
-                                assertionFailure("Missing ActionsHandler")
-                            }
-                        case .optOut:
-                            if actionsHandler != nil {
-                                assertionFailure("Use .testing actionsHandlerMode instead")
-                            }
-                            self.actionsHandler = ActionsHandler.forOptOut(optOutStep)
-                        case .emailConfirmation(let url):
-                            if actionsHandler != nil {
-                                assertionFailure("Use .testing actionsHandlerMode instead")
-                            }
-                            self.actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: url)
+                    if context.dataBroker.optOutStep() != nil {
+                        if let modeActionsHandler {
+                            self.actionsHandler = modeActionsHandler
                         }
 
                         if self.shouldRunNextStep() {

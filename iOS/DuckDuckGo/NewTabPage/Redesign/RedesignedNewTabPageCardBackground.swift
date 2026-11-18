@@ -21,10 +21,21 @@ import DesignResourcesKit
 import SwiftUI
 
 /// Shared raised surface for controls on the redesigned New Tab Page. The border matches the unified toggle input card.
+/// With `usesLiquidGlass` on iOS 26 it is a Liquid Glass surface, like the focused unified toggle input.
 struct RedesignedNewTabPageCardBackground: View {
+    var usesLiquidGlass = false
     private let cornerRadius: CGFloat = Metrics.cornerRadius
 
+    @ViewBuilder
     var body: some View {
+        if #available(iOS 26, *), usesLiquidGlass {
+            Color.clear.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            raisedSurface
+        }
+    }
+
+    private var raisedSurface: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         let fill = Color(singleUseColor: .newTabPageSearchCardBackground)
         let shadowColor = Color(designSystemColor: .shadowSecondary)

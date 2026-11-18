@@ -27,6 +27,7 @@ struct NewTabPageSearchInputView: View {
     @ObservedObject var model: NewTabPageSearchInputModel
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
+    var usesLiquidGlass = false
     /// When non-nil, the Duck.ai button shows this menu instead of opening Duck.ai.
     var aiChatMenu: () -> UIMenu? = { nil }
 
@@ -52,7 +53,7 @@ struct NewTabPageSearchInputView: View {
                 .padding(.horizontal, Metrics.fieldHorizontalInset)
                 .frame(height: model.settings.isModeToggleShown ? Metrics.fieldHeightWithToggle : Metrics.fieldHeightWithoutToggle)
         }
-        .background(RedesignedNewTabPageCardBackground())
+        .background(RedesignedNewTabPageCardBackground(usesLiquidGlass: usesLiquidGlass))
         .padding(.horizontal, Metrics.horizontalMargin)
     }
 }

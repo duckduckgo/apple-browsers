@@ -221,12 +221,13 @@ struct BrowserToolPermissionRow: View {
 
             Spacer(minLength: 10)
 
-            Picker(selection: Binding(get: { model.state(of: row) }, set: { model.setState($0, of: row) }), label: EmptyView()) {
-                ForEach(row.asksEveryTime ? Self.states.filter { $0 != .allow } : Self.states, id: \.self) { state in
-                    Text(Self.title(for: state)).tag(state)
+            NSPopUpButtonView(selection: Binding(get: { model.state(of: row) }, set: { model.setState($0, of: row) })) {
+                let button = BrowserToolStatePopUpButton()
+                for state in Self.states where !(row.asksEveryTime && state == .allow) {
+                    button.menu?.addItem(withTitle: Self.title(for: state), action: nil, keyEquivalent: "").representedObject = state
                 }
+                return button
             }
-            .labelsHidden()
             .fixedSize()
             .accessibilityLabel(BrowserToolSettingsText.title(toolName: row.name))
             .accessibilityIdentifier("Preferences.AIChat.browserToolPermissions.\(row.name)")
@@ -251,7 +252,7 @@ struct BrowserToolPermissionRow: View {
         .padding(.vertical, 10)
     }
 
-    private static func title(for state: BrowserToolPermissionState) -> String {
+    fileprivate static func title(for state: BrowserToolPermissionState) -> String {
         switch state {
         case .ask: UserText.permissionCenterAlwaysAsk
         case .allow: UserText.permissionCenterAlwaysAllow
@@ -296,5 +297,19 @@ enum BrowserToolSettingsText {
         case "switchToTab": UserText.browserToolSettingsDetailSwitchToTab
         default: nil
         }
+    }
+}
+
+/// As wide as the longest option, so rows that leave out Allow line up with the rest.
+private final class BrowserToolStatePopUpButton: NSPopUpButton {
+
+    private static let width: CGFloat = {
+        let button = NSPopUpButton()
+        button.addItems(withTitles: [BrowserToolPermissionState.ask, .allow, .deny].map(BrowserToolPermissionRow.title(for:)))
+        return button.intrinsicContentSize.width
+    }()
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: Self.width, height: super.intrinsicContentSize.height)
     }
 }

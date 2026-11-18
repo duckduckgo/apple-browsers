@@ -2440,6 +2440,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Ça vaut le coup de regarder ? Donne-moi un avis sans spoiler.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "Nouvelle discussion";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Sélection de texte";
 
@@ -3039,6 +3042,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Quel site rencontre des problèmes ?";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Effacer la recherche";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d sur %2$d";
@@ -3774,6 +3780,63 @@
 
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Activer le routage strict (recommandé)";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "Demande-moi tout ce que tu veux.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "Coin coin, bonjour.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "Le week-end approche.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "Adieu, les publicités douteuses !";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "Salut.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "Comment puis-je t’aider aujourd’hui ?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "C’est parti !";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "Explorons.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "C’est lundi. C’est parti !";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "Bonjour, rayon de soleil.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "Nouveau jour, nouveaux onglets.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "Ça fait plaisir de te voir.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "Je suis vraiment du genre à veiller tard.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "Tu es prêt à faire une recherche privée ?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "Je suis prêt quand tu l’es.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "Je ne dors jamais.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "À quoi penses-tu ?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "On commence par où ?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "Où vas-tu aujourd’hui ?";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmer";
@@ -5595,6 +5658,9 @@
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "Ton abonnement %1$@ prendra fin immédiatement et tu recevras un remboursement de %2$@ sur ton moyen de paiement d’origine sous 14 jours.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Ton abonnement %@ prendra fin immédiatement et tu recevras un remboursement intégral sur ton moyen de paiement d’origine sous 14 jours.";
 
 /* Title of the alert confirming withdrawal from the subscription contract */
 "subscription.withdraw.confirm.title" = "Vous rétracter de votre abonnement ?";

@@ -391,7 +391,8 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
 
         XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
         let policies = try XCTUnwrap(loadManifest(in: loadableURL)["content_security_policy"] as? [String: Any])
-        XCTAssertEqual(policies["extension_pages"] as? String, isPolicyPatchedOnThisOS ? "object-src 'self'" : policy)
+        let patchedPolicy = "object-src 'self'; script-src-elem 'self'; script-src-attr 'self'; worker-src 'self'"
+        XCTAssertEqual(policies["extension_pages"] as? String, isPolicyPatchedOnThisOS ? patchedPolicy : policy)
 
         // The new copy is then reused.
         try Data().write(to: markerURL)

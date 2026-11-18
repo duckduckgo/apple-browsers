@@ -592,6 +592,8 @@ class MainViewController: UIViewController {
     /// Results-page colour per appearance, so a search from any page can hand off to it.
     let searchPageColorMemory = SearchPageColorMemory()
     let searchPageHeaderMemory = SearchPageHeaderMemory()
+    /// Set by a submit until its load is requested; cleared on the next runloop pass.
+    var pendingFirstPaintCover: PendingFirstPaintCover?
     private var siteThemeColorObservation: NSKeyValueObservation?
     private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
@@ -2690,6 +2692,23 @@ class MainViewController: UIViewController {
         return true
     }
 
+    /// A launch action left the drawn after-idle page in place: report it as an ordinary New Tab Page once seen.
+    func releaseHeldNewTabPage() {
+        guard isAfterIdlePresentationPending, let page = newTabPageViewController else { return }
+        isAfterIdlePresentationPending = false
+        if let tabModel = tabManager.currentTabsModel.currentTab, tabModel.openedAfterIdle {
+            tabModel.openedAfterIdle = false
+            // Saved like the attach saves it, so a relaunch doesn't restore the tab as after-idle.
+            tabManager.save()
+        }
+        clearEscapeHatch()
+        newTabPagePresentation.schedule(for: page, shown: { [weak self] in
+            guard let self else { return }
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: false, hatch: nil, focused: isInputFocused)
+        })
+    }
+
     func recordPendingNewTabPagePresentationIfVisible() {
         newTabPagePresentation.recordIfVisible()
     }
@@ -3493,6 +3512,7 @@ class MainViewController: UIViewController {
         lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         dismissOmniBar()
         transitionTo(tab: tab, from: nil)
+        armPendingFirstPaintCover(on: tab)
     }
 
     /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
@@ -4619,6 +4639,15 @@ class MainViewController: UIViewController {
             }
             completion()
         }
+    }
+
+    /// Opens the after-idle New Tab Page. With the keyboard on New Tab Page, the launch handling raises it.
+    func openNewTabPageAfterIdleReturn() {
+        currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
+        newTab(reuseExisting: true,
+               allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+               openedAfterIdle: true,
+               entrance: .fromOutsideTheApp)
     }
 
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.

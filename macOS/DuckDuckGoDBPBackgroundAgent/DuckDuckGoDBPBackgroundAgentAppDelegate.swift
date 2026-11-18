@@ -150,7 +150,12 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
 
         let configStore = ConfigurationStore()
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configStore, configurationURLProvider: DBPAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configStore)
+        let configurationURLProvider = ConfigurationURLProvider(
+            defaultProvider: DBPAgentConfigurationURLProvider(),
+            internalUserDecider: privacyConfigurationManager.internalUserDecider,
+            store: CustomConfigurationURLStorage(defaults: UserDefaults.config)
+        )
+        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configStore)
         configurationManager.start()
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))

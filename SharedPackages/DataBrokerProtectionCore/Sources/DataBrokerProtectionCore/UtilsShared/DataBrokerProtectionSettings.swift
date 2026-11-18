@@ -64,6 +64,18 @@ public final class DataBrokerProtectionSettings {
         self.defaults = defaults
     }
 
+    var debugTestBrokerURLs: [String]? {
+#if DEBUG
+        defaults.stringArray(forKey: "dbp.debug.testBrokerURLs")
+#else
+        nil
+#endif
+    }
+
+    func allowsBrokerForDebugTesting(_ brokerURL: String) -> Bool {
+        debugTestBrokerURLs?.contains(brokerURL) ?? true
+    }
+
     // MARK: - Environment
 
     public var selectedEnvironment: SelectedEnvironment {

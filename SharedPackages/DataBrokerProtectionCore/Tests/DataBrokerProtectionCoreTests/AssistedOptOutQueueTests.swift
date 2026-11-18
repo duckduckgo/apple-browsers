@@ -25,6 +25,25 @@ import XCTest
 
 @MainActor
 struct AssistedOptOutQueueTests {
+#if DEBUG
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func debugExcludedBrokerNeverEntersNeedsYou() async throws {
+        let fixture = Fixture(history: .optOutRequested)
+        let suite = "AssistedDebugBrokerSelectionTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        fixture.dependencies.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: defaults)
+        defaults.set(["beenverified.com"], forKey: "dbp.debug.testBrokerURLs")
+        let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
+        #expect(try await queue.assistedOptOuts().isEmpty)
+        #expect(fixture.database.scopedProfileFetchCount == 0)
+        defaults.set(["testbroker.com"], forKey: "dbp.debug.testBrokerURLs")
+        queue.invalidate()
+        #expect(try await queue.assistedOptOuts().count == 1)
+    }
+#endif
+
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [true, false])
     func interruptedOrNilDateRecordIsListedWithoutAWriteAndDashboardReadsReuseScopedSnapshot(interrupted: Bool) async throws {

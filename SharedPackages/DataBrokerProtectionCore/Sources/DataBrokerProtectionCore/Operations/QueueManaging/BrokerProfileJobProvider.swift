@@ -45,7 +45,8 @@ public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
         var visitedDataBrokerIDs: Set<Int64> = []
 
         for queryData in brokerProfileQueryData {
-            guard let dataBrokerID = queryData.dataBroker.id else { continue }
+            guard jobDependencies.dataBrokerProtectionSettings.allowsBrokerForDebugTesting(queryData.dataBroker.url),
+                  let dataBrokerID = queryData.dataBroker.id else { continue }
 
             if !visitedDataBrokerIDs.contains(dataBrokerID) {
                 let job = BrokerProfileJob(dataBrokerID: dataBrokerID,

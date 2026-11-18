@@ -111,6 +111,14 @@ def dispatch(args):
     if args.cmd == "selftest":
         from verify_ios import selftest
         evidence_dir = harness.evidence_root(evidence_dir=args.evidence_dir) if args.evidence_dir else None
+        if evidence_dir:
+            # fail now, not after the 10-25 minutes of setup, build and tests that come before the proof
+            try:
+                os.makedirs(evidence_dir, exist_ok=True)
+            except OSError as e:
+                raise Failed(f"cannot create --evidence-dir {args.evidence_dir}: {e.strerror}")
+            if not os.access(evidence_dir, os.W_OK):
+                raise Failed(f"--evidence-dir is not writable: {args.evidence_dir}")
         code, out = selftest.run(harness.check_devices(args.devices.split(",")), evidence_dir)
         if code:
             raise ProveExit(code, out)

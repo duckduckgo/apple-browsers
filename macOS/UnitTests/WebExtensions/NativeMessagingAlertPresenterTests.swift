@@ -61,7 +61,7 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
             "Bitwarden can’t connect to apps on your Mac",
             "1Password can’t connect to apps on your Mac"
         ])
-        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show this again for Bitwarden"))
+        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show again for Bitwarden"))
         XCTAssertEqual(limitation.suppressed, [bitwarden.uniqueIdentifier, onePassword.uniqueIdentifier])
     }
 

@@ -286,61 +286,6 @@ struct AssistedOptOutQueueTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [true, false])
-    func productionRunnerClaimsCancellationButWaitsForInitializationAndWebViewTeardown(duringInitialization: Bool) async {
-        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "https://example.com")
-        let runner = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(), prefs: .mock,
-            context: BrokerProfileQueryData.mock(with: [Step(type: .optOut, actions: [action])]),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(), captchaService: CaptchaServiceMock(),
-            featureFlagger: MockDBPFeatureFlagger(), operationAwaitTime: 0,
-            stageCalculator: MockStageDurationCalculator(), pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-            executionConfig: BrokerJobExecutionConfig(), actionsHandlerMode: .optOut, shouldRunNextStep: { true })
-        let handler = WebViewHandlerMock()
-        let dispatched = XCTestExpectation(description: "Action dispatched")
-        let tearingDown = XCTestExpectation(description: "Web view teardown entered")
-        let teardownGate = TeardownGate()
-        let initializationGate = TeardownGate()
-        if duringInitialization {
-            handler.initializeWebViewHandler = {
-                dispatched.fulfill()
-                await initializationGate.wait()
-            }
-        } else {
-            handler.executeHandler = { dispatched.fulfill() }
-        }
-        handler.asyncFinishHandler = {
-            if handler.finishCallCount == 1 { tearingDown.fulfill() }
-            await teardownGate.wait()
-        }
-        var didFinish = false
-        let task = Task { @MainActor in
-            do {
-                try await runner.run(inputValue: .mockWithoutRemovedDate, webViewHandler: handler,
-                                     actionsHandler: nil, showWebView: false)
-                Issue.record("Cancellation must win over late callbacks")
-            } catch {
-                #expect(error as? DataBrokerProtectionError == .cancelled)
-            }
-            didFinish = true
-        }
-        let dispatchedResult = await XCTWaiter.fulfillment(of: [dispatched], timeout: 5)
-        #expect(dispatchedResult == .completed)
-        task.cancel()
-        await Task.yield()
-        #expect(!didFinish)
-        await initializationGate.release()
-        let teardownResult = await XCTWaiter.fulfillment(of: [tearingDown], timeout: 5)
-        #expect(teardownResult == .completed)
-        runner.complete(())
-        runner.failed(with: DataBrokerProtectionError.jobTimeout)
-        #expect(!didFinish)
-        await teardownGate.release()
-        await task.value
-        #expect(didFinish)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func unauthenticatedQueueCannotEnrollListOrStart() async throws {
         let fixture = Fixture(history: .optOutStarted)

@@ -227,10 +227,11 @@ struct AssistedOptOutQueueTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func enablingAssistanceLeavesLiveRegularRecordOwnedUntilItsRunnerFinishes() async throws {
+    func brokerStartingToNeedTheUserLeavesLiveRegularRecordOwnedUntilItsRunnerFinishes() async throws {
         let fixture = Fixture(history: .optOutStarted)
-        fixture.flagger.isUserAssistanceOn = false
-        let data = try #require(fixture.database.brokerProfileQueryDataToReturn.first)
+        let assistedData = try #require(fixture.database.brokerProfileQueryDataToReturn.first)
+        let data = BrokerProfileQueryData(dataBroker: .mock, profileQuery: assistedData.profileQuery,
+                                          scanJobData: assistedData.scanJobData, optOutJobData: assistedData.optOutJobData)
         let entered = XCTestExpectation(description: "Regular runner entered")
         let regularGate = TeardownGate()
         fixture.dependencies.mockOptOutRunner.optOutHandler = {
@@ -244,7 +245,6 @@ struct AssistedOptOutQueueTests {
         }
         let enteredResult = await XCTWaiter.fulfillment(of: [entered], timeout: 5)
         #expect(enteredResult == .completed)
-        fixture.flagger.isUserAssistanceOn = true
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         try await queue.refresh()
         try await queue.start(id: fixture.id)
@@ -353,9 +353,6 @@ private struct Fixture {
     init(history: HistoryEvent.EventType = .optOutAwaitingUserAssistance, records: Int = 1, deprecated: Bool = false, preferredRunDate: Date? = .distantPast) {
         dependencies.database = database
         dependencies.featureFlagger = flagger
-        let privacyConfig = PrivacyConfigurationMock()
-        privacyConfig.subfeatureSettings = #"{"enabledBrokers":["testbroker.com"]}"#
-        manager.privacyConfig = privacyConfig
         dependencies.privacyConfig = manager
         let jobs = (1...records).map { index in
             OptOutJobData(brokerId: 1, profileQueryId: 1, createdDate: .distantPast, preferredRunDate: preferredRunDate,
@@ -364,8 +361,11 @@ private struct Fixture {
                           attemptCount: 0, extractedProfile: ExtractedProfile(id: Int64(index), name: "Name", profileUrl: "profile"))
         }
         let profile = ProfileQuery(id: 1, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1980, deprecated: deprecated)
-        database.brokerProfileQueryDataToReturn = [.init(dataBroker: .mock, profileQuery: profile, scanJobData: .mock, optOutJobData: jobs)]
-        database.dataBrokersToReturn = [.mock]
+        let broker = DataBroker(id: 1, name: "Test broker", url: "testbroker.com",
+                                steps: [Step(type: .scan, actions: []), Step(type: .optOut, actions: [UserAssistAction(id: "assist")])],
+                                version: "1.0", schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+        database.brokerProfileQueryDataToReturn = [.init(dataBroker: broker, profileQuery: profile, scanJobData: .mock, optOutJobData: jobs)]
+        database.dataBrokersToReturn = [broker]
         database.optOutToReturn = jobs.first
     }
 

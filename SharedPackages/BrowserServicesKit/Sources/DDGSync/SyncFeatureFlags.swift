@@ -114,8 +114,6 @@ public protocol SyncFeatureFlagProviding {
     func canSendExchangeChannelSecret() -> Bool
     /// Allows this client to create and register account_info keys for the unified device list.
     func canWriteUnifiedDeviceList() -> Bool
-    /// Allows legacy-only device renames to use PATCH so stale unified device info is cleared.
-    func canUsePatchEndpointForLegacyDeviceRename() -> Bool
     /// Allows this client to poll the account audit log.
     func isLoginAuditLogEnabled() -> Bool
     /// Allows this client to read decrypted metadata from the unified device list.
@@ -130,7 +128,6 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
     private let canUseExchangeV2Point1Callback: () -> Bool
     private let canSendExchangeChannelSecretCallback: () -> Bool
     private let canWriteUnifiedDeviceListCallback: () -> Bool
-    private let canUsePatchEndpointForLegacyDeviceRenameCallback: () -> Bool
     private let canReadUnifiedDeviceListCallback: () -> Bool
     private let isLoginAuditLogEnabledCallback: () -> Bool
 
@@ -140,7 +137,6 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
                 canUseExchangeV2Point1: @escaping () -> Bool,
                 canSendExchangeChannelSecret: @escaping () -> Bool,
                 canWriteUnifiedDeviceList: @escaping () -> Bool,
-                canUsePatchEndpointForLegacyDeviceRename: @escaping () -> Bool,
                 canReadUnifiedDeviceList: @escaping () -> Bool,
                 isLoginAuditLogEnabled: @escaping () -> Bool) {
         self.isScopedAccessCredentialsEnabledCallback = isScopedAccessCredentialsEnabled
@@ -149,7 +145,6 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
         self.canUseExchangeV2Point1Callback = canUseExchangeV2Point1
         self.canSendExchangeChannelSecretCallback = canSendExchangeChannelSecret
         self.canWriteUnifiedDeviceListCallback = canWriteUnifiedDeviceList
-        self.canUsePatchEndpointForLegacyDeviceRenameCallback = canUsePatchEndpointForLegacyDeviceRename
         self.canReadUnifiedDeviceListCallback = canReadUnifiedDeviceList
         self.isLoginAuditLogEnabledCallback = isLoginAuditLogEnabled
     }
@@ -176,10 +171,6 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
 
     public func canWriteUnifiedDeviceList() -> Bool {
         canWriteUnifiedDeviceListCallback()
-    }
-
-    public func canUsePatchEndpointForLegacyDeviceRename() -> Bool {
-        canUsePatchEndpointForLegacyDeviceRenameCallback()
     }
 
     public func canReadUnifiedDeviceList() -> Bool {

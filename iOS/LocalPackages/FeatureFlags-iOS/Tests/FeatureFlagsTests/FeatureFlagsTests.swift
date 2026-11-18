@@ -240,22 +240,6 @@ final class FeatureFlagsTests: XCTestCase {
         }
     }
 
-    func testLegacyDeviceRenamePatchFlagIsDefaultEnabledAndRemoteReleasable() {
-        let flag = FeatureFlag.syncCanUsePatchEndpointForLegacyDeviceRename
-        guard case let .remoteReleasable(subfeature) = flag.source else {
-            XCTFail("Expected remote-releasable source")
-            return
-        }
-
-        XCTAssertEqual((subfeature as? SyncSubfeature)?.rawValue,
-                       SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename.rawValue)
-        guard case .enabled = flag.defaultValue else {
-            XCTFail("Expected enabled default")
-            return
-        }
-        XCTAssertTrue(flag.supportsLocalOverriding)
-    }
-
     func testAlwaysShowKeyboardOnNewTabPageIsDefaultDisabledRemoteReleasableAndLocallyOverridable() {
         let flag = FeatureFlag.alwaysShowKeyboardOnNewTabPage
         guard case let .remoteReleasable(subfeature) = flag.source else {

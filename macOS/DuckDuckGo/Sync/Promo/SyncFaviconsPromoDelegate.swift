@@ -22,7 +22,6 @@ import Common
 import DDGSync
 import Foundation
 import Persistence
-import PrivacyConfig
 import SyncUI_macOS
 
 struct SyncFaviconsPromoSettings: StoringKeys {
@@ -34,7 +33,6 @@ struct SyncFaviconsPromoSettings: StoringKeys {
 /// automatic favicon fetching for bookmarks synced from other devices.
 final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
 
-    private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing?
     private let syncBookmarksAdapter: SyncBookmarksAdapter?
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -46,12 +44,10 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
     private var windowCloseObservers: [NSObjectProtocol] = []
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
 
-    init(featureFlagger: FeatureFlagger,
-         syncService: DDGSyncing?,
+    init(syncService: DDGSyncing?,
          syncBookmarksAdapter: SyncBookmarksAdapter?,
          windowControllersManager: WindowControllersManagerProtocol,
          storage: KeyedStorage<SyncFaviconsPromoSettings>? = nil) {
-        self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
         self.windowControllersManager = windowControllersManager
@@ -71,7 +67,6 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
 
     private func computeEligibility() -> Bool {
         guard AppVersion.runType != .uiTests,
-              featureFlagger.isFeatureOn(.promoQueueSyncFaviconsPromo),
               let syncService,
               let syncBookmarksAdapter else {
             return false

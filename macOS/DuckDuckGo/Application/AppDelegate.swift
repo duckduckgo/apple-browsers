@@ -1061,7 +1061,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
                                                               windowControllersManager: windowControllersManager,
-                                                              historyCoordinator: historyCoordinator)
+                                                              historyCoordinator: historyCoordinator,
+                                                              bookmarkManager: bookmarkManager)
         localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)

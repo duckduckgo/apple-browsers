@@ -1078,6 +1078,13 @@ final class BrowserTabViewController: NSViewController {
             self.contextualOnboardingScheduler.navigationDidFinish(in: self.tabViewModel?.tab)
         }.store(in: &tabViewModelCancellables)
 
+        tabViewModel?.tab.aiChat?.responseReceivedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.contextualOnboardingScheduler.firstAnswerReceived()
+            }
+            .store(in: &tabViewModelCancellables)
+
         // Same-document (SPA) navigations don't emit on webViewDidFinishNavigationPublisher,
         // so reconcile the web content layout for them here too.
         tabViewModel?.tab.webViewDidPerformSameDocumentNavigationPublisher.sink { [weak self] in

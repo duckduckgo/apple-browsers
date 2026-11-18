@@ -8,6 +8,7 @@ on:
   push:
     branches: [ main ]
     paths:
+      - 'SharedPackages/AttributedMetric/**'
       - 'SharedPackages/AutomationServer/**'
       - 'SharedPackages/BrowserServicesKit/**'
       - 'SharedPackages/Common/**'
@@ -22,6 +23,7 @@ on:
       - 'SharedPackages/PixelKit/**'
       - 'SharedPackages/ScreenTimeDataCleaner/**'
       - 'SharedPackages/SERPInstallOrigin/**'
+      - 'SharedPackages/UITestingSupport/**'
       - 'SharedPackages/URLPredictor/**'
       - 'SharedPackages/WideEvent/**'
       - '.github/shared-package-checks.json'
@@ -51,6 +53,7 @@ jobs:
         .github/workflows/should_run_pr_checks.yml
         .github/actions/**
         .xcode-version
+        SharedPackages/AttributedMetric/**
         SharedPackages/AutomationServer/**
         SharedPackages/BrowserServicesKit/**
         SharedPackages/Common/**
@@ -65,6 +68,7 @@ jobs:
         SharedPackages/PixelKit/**
         SharedPackages/ScreenTimeDataCleaner/**
         SharedPackages/SERPInstallOrigin/**
+        SharedPackages/UITestingSupport/**
         SharedPackages/URLPredictor/**
         SharedPackages/WideEvent/**
 
@@ -379,6 +383,7 @@ jobs:
           path: |
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
             SharedPackages/BrowserServicesKit/bsk-ios-unittests-crash-details.json
+            SharedPackages/AttributedMetric/ios-unittests.xml
             SharedPackages/AutomationServer/ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
@@ -396,6 +401,7 @@ jobs:
           check_name: BSK Test Report (iOS)
           report_paths: |
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
+            SharedPackages/AttributedMetric/ios-unittests.xml
             SharedPackages/AutomationServer/ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
@@ -427,6 +433,7 @@ jobs:
           name: ios-build-log.txt
           path: |
             SharedPackages/BrowserServicesKit/ios-build-log.txt
+            SharedPackages/AttributedMetric/ios-build-log.txt
             SharedPackages/AutomationServer/ios-build-log.txt
             SharedPackages/DDGError/ios-build-log.txt
             SharedPackages/ICSParser/ios-build-log.txt
@@ -436,6 +443,7 @@ jobs:
             SharedPackages/Infrastructure/DesignResourcesKitIcons/ios-build-log.txt
             SharedPackages/ScreenTimeDataCleaner/ios-build-log.txt
             SharedPackages/SERPInstallOrigin/ios-build-log.txt
+            SharedPackages/UITestingSupport/ios-build-log.txt
             SharedPackages/URLPredictor/ios-build-log.txt
 
       - name: Upload xcresult bundle
@@ -445,6 +453,7 @@ jobs:
           name: bsk-ios-xcresult
           path: |
             SharedPackages/BrowserServicesKit/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/AttributedMetric/DerivedData/Logs/Test/*.xcresult
             SharedPackages/AutomationServer/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
@@ -514,6 +523,16 @@ jobs:
       # One call per package: the action reads a single report, and this keeps a separate
       # job-summary table per package. test-outcome only gates crash injection, which is a no-op
       # when a package has no xcresult crashes, so passing the whole step's outcome is safe.
+      - name: Process test results (AttributedMetric)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/AttributedMetric
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: AttributedMetric (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
       - name: Process test results (AutomationServer)
         if: always()
         uses: ./.github/actions/process-test-results
@@ -650,6 +669,7 @@ jobs:
         with:
           name: shared-packages-macos-unittests.xml
           path: |
+            SharedPackages/AttributedMetric/package-tests.xml
             SharedPackages/AutomationServer/package-tests.xml
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
@@ -663,6 +683,7 @@ jobs:
             SharedPackages/SERPInstallOrigin/package-tests.xml
             SharedPackages/URLPredictor/package-tests.xml
             SharedPackages/WideEvent/package-tests.xml
+            SharedPackages/AttributedMetric/package-tests-crash-details.json
             SharedPackages/AutomationServer/package-tests-crash-details.json
             SharedPackages/Common/package-tests-crash-details.json
             SharedPackages/DDGError/package-tests-crash-details.json
@@ -684,6 +705,7 @@ jobs:
         with:
           check_name: Shared Packages Test Report (macOS)
           report_paths: |
+            SharedPackages/AttributedMetric/package-tests.xml
             SharedPackages/AutomationServer/package-tests.xml
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
@@ -724,6 +746,7 @@ jobs:
         with:
           name: shared-packages-build-logs
           path: |
+            SharedPackages/AttributedMetric/build-log.txt
             SharedPackages/AutomationServer/build-log.txt
             SharedPackages/Common/build-log.txt
             SharedPackages/DDGError/build-log.txt
@@ -737,6 +760,7 @@ jobs:
             SharedPackages/PixelKit/build-log.txt
             SharedPackages/ScreenTimeDataCleaner/build-log.txt
             SharedPackages/SERPInstallOrigin/build-log.txt
+            SharedPackages/UITestingSupport/build-log.txt
             SharedPackages/URLPredictor/build-log.txt
             SharedPackages/WideEvent/build-log.txt
           retention-days: 7
@@ -748,6 +772,7 @@ jobs:
         with:
           name: shared-packages-macos-xcresult
           path: |
+            SharedPackages/AttributedMetric/DerivedData/Logs/Test/*.xcresult
             SharedPackages/AutomationServer/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Common/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult

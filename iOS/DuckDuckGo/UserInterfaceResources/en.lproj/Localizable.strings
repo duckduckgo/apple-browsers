@@ -1507,6 +1507,15 @@
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Your report helps make DuckDuckGo better for everyone!";
 
+/* Browser tool permission reason */
+"browserTools.FindInPageBrowserTool.permission" = "Duck.ai wants to find text on this page.";
+
+/* Browser tool permission reason */
+"browserTools.ReadTabContentBrowserTool.permission" = "Duck.ai wants to read this tab's content.";
+
+/* Browser tool permission reason */
+"browserTools.SearchHistoryBrowserTool.permission" = "Duck.ai wants to search your browsing history.";
+
 /* Close All Tabs */
 "close.all.tabs" = "Close All Tabs";
 

@@ -63,18 +63,16 @@ struct ContextualOnboardingProgressTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Reset clears seen dialogs, Fire use, blocked trackers and the path", .timeLimit(.minutes(1)))
+    @Test("Reset clears seen dialogs, Fire use and the path", .timeLimit(.minutes(1)))
     func resetClearsEverything() throws {
         progress.markSeen(.tryASearch)
         progress.fireButtonUsedOnce = true
-        stateStorage.blockedTrackerSeen = true
         progress.pathKind = .search
 
         progress.reset()
 
         #expect(stateStorage.contextualDialogsSeen.isEmpty)
         #expect(!stateStorage.fireButtonUsedOnce)
-        #expect(!stateStorage.blockedTrackerSeen)
         #expect(progress.pathKind == nil)
         #expect(try store.object(forKey: "contextual-onboarding_path-kind") == nil)
     }

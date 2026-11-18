@@ -43,4 +43,6 @@ protocol ContextualOnboardingPath: AnyObject {
     func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision
     /// Called when the user presses "Got it" on `lastDialog`.
     func gotItPressed(lastDialog: ContextualDialogType) -> ContextualOnboardingDecision
+    /// Clears the state only this path saves. Called when onboarding restarts.
+    func reset()
 }

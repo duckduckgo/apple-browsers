@@ -171,7 +171,9 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
         case .cpmMessagingBreakage(let lastStage, let tabs):
-            fireCPMPixel(name: "web_extension_cpm_breakage", parameters: ["last_stage": lastStage.pixelValue, "tabs": tabs.rawValue])
+            var parameters = ["tabs": tabs.rawValue]
+            parameters["last_stage"] = lastStage.pixelValue
+            fireCPMPixel(name: "web_extension_cpm_breakage", parameters: parameters)
         case .cpmMessagingBreakagePersistent:
             fireCPMPixel(name: "web_extension_cpm_breakage_persistent", parameters: [:])
         case .enabled, .disabled, .remotelyDisabled:

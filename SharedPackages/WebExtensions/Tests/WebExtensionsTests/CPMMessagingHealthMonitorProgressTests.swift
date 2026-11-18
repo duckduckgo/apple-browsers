@@ -26,10 +26,12 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
 
     private var date = Date(timeIntervalSince1970: 1_000_000)
     private let pixels = StageCapturingPixels()
+    private var isInitProgressEnabled = true
     private lazy var monitor = CPMMessagingHealthMonitor(pixelFiring: pixels,
                                                          isUnmeasuredPage: { _ in false },
                                                          silenceWindow: 30,
                                                          messageTolerance: 2,
+                                                         isInitProgressEnabled: { [unowned self] in self.isInitProgressEnabled },
                                                          now: { [unowned self] in self.date })
 
     // MARK: - After the commit
@@ -40,14 +42,33 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         mark(.configRead, path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .configRead, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.configRead), tabs: .one)])
+    }
+
+    func testReportHasNoStageWhileTheSubfeatureIsOff() {
+        isInitProgressEnabled = false
+        commit("a", path: "a")
+        mark(.configRead, path: "a")
+        silence()
+
+        XCTAssertEqual(pixels.reports, [Report(stage: .notMeasured, tabs: .one)])
+    }
+
+    func testStageReturnsWhenTheSubfeatureIsTurnedOnAgain() {
+        isInitProgressEnabled = false
+        commit("a", path: "a")
+        mark(.configRead, path: "a")
+        isInitProgressEnabled = true
+        silence()
+
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.configRead), tabs: .one)])
     }
 
     func testReportWithoutMarksHasNoStage() {
         commit("a", path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .noMark, tabs: .one)])
     }
 
     func testLaterMarkOfAnEarlierStageDoesNotLowerTheStage() {
@@ -56,7 +77,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         mark(.backgroundReceived, path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .siteChecked, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.siteChecked), tabs: .one)])
     }
 
     func testMarksOfAnotherPageDoNotReachTheTab() {
@@ -65,7 +86,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         mark(.responseSent, path: "b")
         silence()
 
-        XCTAssertEqual(Set(pixels.reports), [Report(stage: nil, tabs: .many), Report(stage: .responseSent, tabs: .many)])
+        XCTAssertEqual(Set(pixels.reports), [Report(stage: .noMark, tabs: .many), Report(stage: .reached(.responseSent), tabs: .many)])
     }
 
     func testMarkOfAPageTwoTabsShowGoesToBoth() {
@@ -74,7 +95,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         mark(.settingsChecked, path: "same")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .settingsChecked, tabs: .many), Report(stage: .settingsChecked, tabs: .many)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.settingsChecked), tabs: .many), Report(stage: .reached(.settingsChecked), tabs: .many)])
     }
 
     func testMarkOfThePageBeforeIsNotCountedForTheNewPage() {
@@ -84,7 +105,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         mark(.responseSent, path: "old")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .noMark, tabs: .one)])
     }
 
     func testMarkIsNotAnAnswer() {
@@ -113,7 +134,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         monitor.handle(.dashboardResponse(url: url("a"), isAnswer: false))
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .siteChecked, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.siteChecked), tabs: .one)])
     }
 
     func testMarksFromAnOldExtensionAreIgnored() {
@@ -122,7 +143,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         monitor.handle(.initProgress(url: url("a"), stage: .backgroundReceived, extensionIdentifier: "old"))
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .noMark, tabs: .one)])
     }
 
     func testMarksDuringSimulationAreCountedAndAnswersAreDropped() {
@@ -132,7 +153,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         monitor.handle(.dashboardResponse(url: url("a"), isAnswer: true))
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .responseSent, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.responseSent), tabs: .one)])
     }
 
     func testClosedTabForgetsItsMarks() {
@@ -142,7 +163,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("a", path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .noMark, tabs: .one)])
     }
 
     func testStagesAreRankedInTheOrderTheChainRuns() {
@@ -159,7 +180,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("a", path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .configRead, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.configRead), tabs: .one)])
     }
 
     func testMarksBeforeTheCommitKeepTheFurthestStage() {
@@ -169,7 +190,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("a", path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .siteChecked, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.siteChecked), tabs: .one)])
     }
 
     func testMarkOlderThanTheToleranceBeforeTheCommitIsIgnored() {
@@ -178,7 +199,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("a", path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .noMark, tabs: .one)])
     }
 
     func testReloadOfAWaitingPageTakesTheMarkThatArrivesBeforeItsCommit() {
@@ -188,7 +209,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("a", path: "x")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .backgroundReceived, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.backgroundReceived), tabs: .one)])
     }
 
     func testSecondTabOnAWaitingPageTakesTheMarkThatArrivesBeforeItsCommit() {
@@ -198,7 +219,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("b", path: "x")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: .configRead, tabs: .many), Report(stage: .configRead, tabs: .many)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .reached(.configRead), tabs: .many), Report(stage: .reached(.configRead), tabs: .many)])
     }
 
     func testMarkBeforeTheCommitOfAnotherPageIsNotTaken() {
@@ -206,7 +227,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("a", path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .noMark, tabs: .one)])
     }
 
     func testExtensionReloadForgetsMarksThatWaitForACommit() {
@@ -215,7 +236,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         commit("a", path: "a")
         silence()
 
-        XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
+        XCTAssertEqual(pixels.reports, [Report(stage: .noMark, tabs: .one)])
     }
 
     // MARK: - Helpers
@@ -244,7 +265,7 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
 }
 
 private struct Report: Hashable {
-    let stage: CPMInitStage?
+    let stage: CPMLastStage
     let tabs: CPMSilentTabs
 }
 

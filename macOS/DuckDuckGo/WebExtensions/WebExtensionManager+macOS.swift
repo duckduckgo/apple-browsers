@@ -122,7 +122,10 @@ enum WebExtensionManagerFactory {
         }
 #endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
+        let isInitProgressEnabled = { privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AutoconsentSubfeature.cpmInitProgress) }
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring,
+                                                                  isUnmeasuredPage: { $0.isDuckPlayer },
+                                                                  isInitProgressEnabled: isInitProgressEnabled)
         let installationStore = InstalledWebExtensionStore()
         let permissionController = WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),

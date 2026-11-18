@@ -75,10 +75,22 @@ public enum CPMInitStage: String, CaseIterable, Sendable {
     }
 }
 
-extension Optional where Wrapped == CPMInitStage {
-    /// The value of the `last_stage` pixel parameter.
-    public var pixelValue: String {
-        self?.rawValue ?? "none"
+/// What a breakage report says about how far the page's init got.
+public enum CPMLastStage: Hashable, Sendable {
+    /// The `cpmInitProgress` subfeature is off, so nothing was measured and the parameter is left out.
+    case notMeasured
+    /// Measured, and the extension reported no step for the page.
+    case noMark
+    /// The furthest step the extension reported for the page.
+    case reached(CPMInitStage)
+
+    /// The value of the `last_stage` pixel parameter, nil when the parameter is left out.
+    public var pixelValue: String? {
+        switch self {
+        case .notMeasured: return nil
+        case .noMark: return "none"
+        case .reached(let stage): return stage.rawValue
+        }
     }
 }
 
@@ -166,6 +178,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private let isUnmeasuredPage: (URL) -> Bool
     private let silenceWindow: TimeInterval
     private let messageTolerance: TimeInterval
+    private let isInitProgressEnabled: () -> Bool
     private let now: () -> Date
 
     /// - Parameters:
@@ -174,15 +187,19 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     ///   - silenceWindow: How long a committed page may stay silent before its tab is reported.
     ///   - messageTolerance: How long before its page commits a mark still counts for that page: the mark travels
     ///     through the extension, while the commit is seen by the app directly.
+    ///   - isInitProgressEnabled: Whether the `cpmInitProgress` subfeature is on. While it is off the report has no
+    ///     `last_stage`, which tells a page nobody measured from a page whose init reported no step.
     public init(pixelFiring: WebExtensionPixelFiring,
                 isUnmeasuredPage: @escaping (URL) -> Bool,
                 silenceWindow: TimeInterval = 30,
                 messageTolerance: TimeInterval = 2,
+                isInitProgressEnabled: @escaping () -> Bool = { true },
                 now: @escaping () -> Date = CPMMessagingHealthMonitor.uptimeDate) {
         self.pixelFiring = pixelFiring
         self.isUnmeasuredPage = isUnmeasuredPage
         self.silenceWindow = silenceWindow
         self.messageTolerance = messageTolerance
+        self.isInitProgressEnabled = isInitProgressEnabled
         self.now = now
     }
 
@@ -307,6 +324,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         waitingTabs(showing: url).forEach { raiseStage(of: $0, to: stage) }
     }
 
+    private func lastStage(of tabIdentifier: String) -> CPMLastStage {
+        guard isInitProgressEnabled() else { return .notMeasured }
+        return lastStages[tabIdentifier].map { .reached($0) } ?? .noMark
+    }
+
     private func raiseStage(of tabIdentifier: String, to stage: CPMInitStage) {
         guard stage.rank > (lastStages[tabIdentifier]?.rank ?? -1) else { return }
         lastStages[tabIdentifier] = stage
@@ -336,7 +358,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         for (tabIdentifier, _) in silent {
             pendingCommits[tabIdentifier] = nil
             if cannotBeAnsweredTabs.remove(tabIdentifier) != nil {
-                pixelFiring.fire(.cpmMessagingBreakage(lastStage: lastStages[tabIdentifier], tabs: .one))
+                pixelFiring.fire(.cpmMessagingBreakage(lastStage: lastStage(of: tabIdentifier), tabs: .one))
             } else {
                 reportSilentTab(tabIdentifier)
             }
@@ -346,7 +368,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func reportSilentTab(_ tabIdentifier: String) {
         let otherTabsWereSilent = !silentTabs.subtracting([tabIdentifier]).isEmpty
         let tabs: CPMSilentTabs = otherTabsWereSilent ? .many : .one
-        pixelFiring.fire(.cpmMessagingBreakage(lastStage: lastStages[tabIdentifier], tabs: tabs))
+        pixelFiring.fire(.cpmMessagingBreakage(lastStage: lastStage(of: tabIdentifier), tabs: tabs))
         guard silentTabs.count >= 2, !didReportPersistentBreakage else { return }
         didReportPersistentBreakage = true
         pixelFiring.fire(.cpmMessagingBreakagePersistent)

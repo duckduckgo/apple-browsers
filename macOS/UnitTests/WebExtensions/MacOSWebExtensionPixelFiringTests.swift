@@ -25,7 +25,7 @@ import WebExtensions
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
     func testBreakageUsesCanonicalPixelKitContract() throws {
         let pixels = PixelKitMock()
-        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .configRead, tabs: .many))
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .reached(.configRead), tabs: .many))
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
         XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_macos")
@@ -37,9 +37,16 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         XCTAssertTrue(call.includeAppVersionParameter)
     }
 
+    func testBreakageWithoutMeasuringLeavesOutTheStage() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .notMeasured, tabs: .one))
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.parameters, ["tabs": "one"])
+    }
+
     func testBreakageWithoutAReportedStageSendsNone() throws {
         let pixels = PixelKitMock()
-        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: nil, tabs: .one))
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .noMark, tabs: .one))
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
         XCTAssertEqual(call.pixel.parameters, ["last_stage": "none", "tabs": "one"])
     }

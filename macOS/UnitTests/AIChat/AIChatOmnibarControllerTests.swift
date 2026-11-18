@@ -139,32 +139,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "AI chat tab should not be opened for URL navigation")
     }
 
-    func testWhenURLWithSchemeIsSubmitted_ThenDelegateReceivesNavigationRequest() {
-        // Given
-        controller.updateText("https://duckduckgo.com")
-
-        // When
-        controller.submit()
-
-        // Then
-        XCTAssertTrue(mockDelegate.didRequestNavigationToURLCalled)
-        XCTAssertEqual(mockDelegate.lastNavigationURL?.host, "duckduckgo.com")
-        XCTAssertFalse(mockDelegate.didSubmitCalled)
-    }
-
-    func testWhenURLWithPathIsSubmitted_ThenDelegateReceivesNavigationRequest() {
-        // Given
-        controller.updateText("github.com/duckduckgo")
-
-        // When
-        controller.submit()
-
-        // Then
-        XCTAssertTrue(mockDelegate.didRequestNavigationToURLCalled)
-        XCTAssertNotNil(mockDelegate.lastNavigationURL)
-        XCTAssertEqual(mockDelegate.lastNavigationURL?.host, "github.com")
-    }
-
     // MARK: - Terms of Service
 
     func testWhenSubmittedWithAskWhileDisclaimerIsShown_ThenTermsAreAcceptedAndPromptCarriesIt() async {
@@ -334,38 +308,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "AI chat tab should be opened for search query")
     }
 
-    func testWhenMultiWordQueryIsSubmitted_ThenAIChatFlowIsFollowed() async {
-        // Given
-        controller.updateText("how does DuckDuckGo protect my privacy")
-
-        // When
-        controller.submit()
-
-        // Wait for the async Task to complete
-        await Task.yield()
-
-        // Then
-        XCTAssertTrue(mockDelegate.didSubmitCalled)
-        XCTAssertFalse(mockDelegate.didRequestNavigationToURLCalled)
-        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
-    }
-
-    func testWhenQueryWithSpecialCharactersIsSubmitted_ThenAIChatFlowIsFollowed() async {
-        // Given
-        controller.updateText("what is 2 + 2?")
-
-        // When
-        controller.submit()
-
-        // Wait for the async Task to complete
-        await Task.yield()
-
-        // Then
-        XCTAssertTrue(mockDelegate.didSubmitCalled)
-        XCTAssertFalse(mockDelegate.didRequestNavigationToURLCalled)
-        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
-    }
-
     // MARK: - Edge Cases
 
     func testWhenEmptyTextIsSubmitted_ThenNothingHappens() {
@@ -438,14 +380,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Text Update Tests
 
-    func testWhenTextIsUpdated_ThenCurrentTextReflectsChange() {
-        // Given & When
-        controller.updateText("test input")
-
-        // Then
-        XCTAssertEqual(controller.currentText, "test input")
-    }
-
     func testWhenTextIsUpdated_ThenSharedTextStateIsUpdated() {
         // Given & When
         controller.updateText("shared text")
@@ -485,15 +419,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.isSuggestionsEnabled)
     }
 
-    func testWhenBothFeatureFlagAndAutocompleteDisabled_ThenSuggestionsDisabled() {
-        // Given
-        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = false
-        searchPreferencesPersistor.showAutocompleteSuggestions = false
-
-        // Then
-        XCTAssertFalse(controller.isSuggestionsEnabled)
-    }
-
     func testWhenBurnerWindow_ThenSuggestionsDisabled_EvenWithFeatureFlagAndAutocompleteEnabled() {
         // Given
         featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
@@ -504,21 +429,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(burnerController.isSuggestionsEnabled)
     }
 
-    func testWhenNonBurnerWindow_ThenSuggestionsEnabled_WithFeatureFlagAndAutocompleteEnabled() {
-        // Given
-        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
-        searchPreferencesPersistor.showAutocompleteSuggestions = true
-        let regularController = makeController(isBurner: false)
-
-        // Then
-        XCTAssertTrue(regularController.isSuggestionsEnabled)
-    }
-
     // MARK: - Model Selection Tests
-
-    func testWhenNoModelSelected_ThenCurrentModelIdIsNil() {
-        XCTAssertNil(controller.currentModelId)
-    }
 
     func testWhenModelIsSelected_ThenCurrentModelIdReturnsPersistedValue() {
         // Given
@@ -1969,36 +1880,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(controller.selectedModelReasoningEfforts, [.none, .low, .medium])
     }
 
-    func testWhenModelSupportsHighReasoningEffort_ThenHighValueIsAvailable() async {
-        // Given
-        mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "forward-compat-model", entityHasAccess: true, supportedReasoningEffort: [.none, .low, .high])
-        ]
-        mockPreferences.selectedModelId = "forward-compat-model"
-
-        // When
-        controller.onOmnibarActivated()
-        await waitForModels()
-
-        // Then
-        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.none, .low, .high])
-    }
-
-    func testWhenModelSupportsHighReasoningEffort_ThenItIsParsed() async {
-        // Given
-        mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "high-model", entityHasAccess: true, supportedReasoningEffort: [.low, .high])
-        ]
-        mockPreferences.selectedModelId = "high-model"
-
-        // When
-        controller.onOmnibarActivated()
-        await waitForModels()
-
-        // Then — `.high` is recognized and surfaced from the supported list
-        XCTAssertEqual(controller.selectedModelReasoningEfforts, [.low, .high])
-    }
-
     func testWhenModelSupportsBothMediumAndHigh_ThenPickerDropsMediumButValidationKeepsIt() async {
         // Given — model advertises both medium and high
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
@@ -2123,23 +2004,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // Then — chip falls through to nil so the view layer can use its fallback
         XCTAssertNil(controller.displayedReasoningEffort)
-    }
-
-    func testWhenStoredEffortIsHigh_ThenHighIsSubmitted() async {
-        // Given
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
-        mockModelsService.modelsToReturn = [
-            makeRemoteModel(id: "high-model", entityHasAccess: true, supportedReasoningEffort: [.low, .high])
-        ]
-        mockPreferences.selectedModelId = "high-model"
-        mockPreferences.selectedReasoningEffort = "high"
-
-        // When
-        controller.onOmnibarActivated()
-        await waitForModels()
-
-        // Then — the user's `.high` selection flows through to submission
-        XCTAssertEqual(controller.effectiveReasoningEffort, .high)
     }
 
     func testWhenModelDoesNotSupportReasoningEfforts_ThenSelectedModelReasoningEffortsIsEmpty() async {

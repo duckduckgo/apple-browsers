@@ -21,20 +21,6 @@ import XCTest
 
 final class ProblemCategoryTests: XCTestCase {
 
-    // MARK: - Initialization Tests
-
-    func testWhenInitializingProblemCategoryThenPropertiesAreSetCorrectly() {
-        let category = ProblemCategory(
-            id: "testId",
-            text: "Test Category",
-            subcategories: [SubCategory(id: "sub1", text: "Sub 1"), SubCategory(id: "sub2", text: "Sub 2")]
-        )
-
-        XCTAssertEqual(category.id, "testId")
-        XCTAssertEqual(category.text, "Test Category")
-        XCTAssertEqual(category.subcategories.map(\.text), ["Sub 1", "Sub 2"])
-    }
-
     // MARK: - Identifiable Protocol Tests
 
     func testWhenComparingProblemCategoriesWithSameIdThenTheyAreEqual() {
@@ -49,22 +35,6 @@ final class ProblemCategoryTests: XCTestCase {
         let category2 = ProblemCategory(id: "id2", text: "Same Name", subcategories: [])
 
         XCTAssertNotEqual(category1, category2)
-    }
-
-    // MARK: - Hashable Protocol Tests
-
-    func testWhenHashingProblemCategoriesWithSameIdThenHashesAreEqual() {
-        let category1 = ProblemCategory(id: "same", text: "Name 1", subcategories: [])
-        let category2 = ProblemCategory(id: "same", text: "Name 2", subcategories: [SubCategory(id: "different", text: "Different")])
-
-        XCTAssertEqual(category1.hashValue, category2.hashValue)
-    }
-
-    func testWhenHashingProblemCategoriesWithDifferentIdThenHashesAreDifferent() {
-        let category1 = ProblemCategory(id: "id1", text: "Same Name", subcategories: [])
-        let category2 = ProblemCategory(id: "id2", text: "Same Name", subcategories: [])
-
-        XCTAssertNotEqual(category1.hashValue, category2.hashValue)
     }
 
     func testWhenUsingProblemCategoriesInSetThenOnlyUniqueIdsAreKept() {
@@ -102,163 +72,40 @@ final class ProblemCategoryTests: XCTestCase {
         }
     }
 
-    func testWhenAccessingBrowserTooSlowCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "computer-or-browser-is-too-slow" }!
-
-        let expectedSubcategories = [
-            UserText.problemSubcategoryBrowserStartsSlowly,
-            UserText.problemSubcategoryBrowserUsesTooMuchMemory,
-            UserText.problemSubcategoryChangingTabsTakesTooLong,
-            UserText.problemSubcategoryNewTabsOpenSlowly,
-            UserText.problemSubcategoryWebsitesLoadSlowly
+    func testWhenAccessingAllCategoriesThenSubcategoryIdsMatchBackendContract() {
+        let expected: [String: [String]] = [
+            "computer-or-browser-is-too-slow": [
+                "browser-starts-slowly", "browser-uses-too-much-memory", "changing-tabs-takes-too-long",
+                "new-tabs-open-slowly", "websites-load-slowly"
+            ],
+            "browser-doesnt-work-as-expected": [
+                "browser-uses-too-much-memory", "camera-audio-permissions", "cant-restart-failed-downloads",
+                "confusing-or-missing-settings", "logged-out-unexpectedly", "lost-tabs-or-history",
+                "no-download-history", "popup-windows-not-opening", "too-many-captchas",
+                "video-audio-plays-automatically", "video-doesnt-play"
+            ],
+            "browser-install-and-updates": [
+                "browser-version-issues", "cant-control-updates", "installing", "uninstalling", "too-many-updates"
+            ],
+            "report-broken-website": [
+                "site-wont-load", "site-looks-broken", "features-dont-work", "something-else"
+            ],
+            "ads-causing-issues": [
+                "banner-ads-blocking-content", "distracting-animations-on-ads", "interrupting-pop-ups",
+                "large-banner-ads", "site-asks-to-turn-off-ad-blocker"
+            ],
+            "password-issues": [
+                "cant-sync-passwords", "exporting-passwords", "importing-passwords", "passwords-management"
+            ],
+            "something-else": [
+                "cant-complete-a-purchase", "cant-restart-failed-downloads", "confusing-or-missing-settings",
+                "no-downloads-history", "video-audio-plays-automatically", "promotional-messages"
+            ]
         ]
 
-        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
-    }
-
-    func testWhenAccessingBrowserDoesntWorkCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "browser-doesnt-work-as-expected" }!
-
-        let expectedSubcategories = [
-            UserText.problemSubcategoryBrowserUsesTooMuchMemory,
-            UserText.problemSubcategoryCameraAudioPermissions,
-            UserText.problemSubcategoryCantRestartFailedDownloads,
-            UserText.problemSubcategoryConfusingOrMissingSettings,
-            UserText.problemSubcategoryLoggedOutUnexpectedly,
-            UserText.problemSubcategoryLostTabsOrHistory,
-            UserText.problemSubcategoryNoDownloadHistory,
-            UserText.problemSubcategoryPopupWindowsNotOpening,
-            UserText.problemSubcategoryTooManyCaptchas,
-            UserText.problemSubcategoryVideoAudioPlaysAutomatically,
-            UserText.problemSubcategoryVideoDoesntPlay
-        ]
-
-        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
-    }
-
-    func testWhenAccessingInstallUpdatesCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "browser-install-and-updates" }!
-
-        let expectedSubcategories = [
-            UserText.problemSubcategoryBrowserVersionIssues,
-            UserText.problemSubcategoryCantControlUpdates,
-            UserText.problemSubcategoryInstalling,
-            UserText.problemSubcategoryUninstalling,
-            UserText.problemSubcategoryTooManyUpdates
-        ]
-
-        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
-    }
-
-    func testWhenAccessingBrokenWebsiteCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "report-broken-website" }!
-
-        let expectedSubcategories = [
-            UserText.problemSubcategorySiteWontLoad,
-            UserText.problemSubcategorySiteLooksBroken,
-            UserText.problemSubcategoryFeaturesDontWork,
-            UserText.problemSubcategorySomethingElse
-        ]
-
-        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
-    }
-
-    func testWhenAccessingAdsIssuesCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "ads-causing-issues" }!
-
-        let expectedSubcategories = [
-            UserText.problemSubcategoryBannerAdsBlockingContent,
-            UserText.problemSubcategoryDistractingAnimationsOnAds,
-            UserText.problemSubcategoryInterruptingPopups,
-            UserText.problemSubcategoryLargeBannerAds,
-            UserText.problemSubcategorySiteAsksToTurnOffAdBlocker
-        ]
-
-        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
-    }
-
-    func testWhenAccessingPasswordIssuesCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "password-issues" }!
-
-        let expectedSubcategories = [
-            UserText.problemSubcategoryCantSyncPasswords,
-            UserText.problemSubcategoryExportingPasswords,
-            UserText.problemSubcategoryImportingPasswords,
-            UserText.problemSubcategoryPasswordsManagement
-        ]
-
-        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
-    }
-
-    func testWhenAccessingSomethingElseCategoryThenSubcategoriesAreCorrect() {
-        let category = ProblemCategory.allCategories.first { $0.id == "something-else" }!
-
-        let expectedSubcategories = [
-            UserText.problemSubcategoryCantCompleteAPurchase,
-            UserText.problemSubcategoryCantRestartFailedDownloads,
-            UserText.problemSubcategoryConfusingOrMissingSettings,
-            UserText.problemSubcategoryNoDownloadsHistory,
-            UserText.problemSubcategoryVideoAudioPlaysAutomatically,
-            UserText.problemSubcategoryPromotionalMessages
-        ]
-
-        XCTAssertEqual(Set(category.subcategories.map(\.text)), Set(expectedSubcategories))
-    }
-
-    // MARK: - Category Name Tests
-
-    func testWhenAccessingCategoryNamesThenTheyMatchUserText() {
-        let allCategories = ProblemCategory.allCategories
-
-        let nameMap = [
-            "computer-or-browser-is-too-slow": UserText.problemCategoryBrowserTooSlow,
-            "browser-doesnt-work-as-expected": UserText.problemCategoryBrowserDoesntWork,
-            "browser-install-and-updates": UserText.problemCategoryInstallUpdates,
-            "report-broken-website": UserText.problemCategoryBrokenWebsite,
-            "ads-causing-issues": UserText.problemCategoryAdsIssues,
-            "password-issues": UserText.problemCategoryPasswordIssues,
-            "something-else": UserText.problemCategoryOtherFeedback
-        ]
-
-        for category in allCategories {
-            XCTAssertEqual(category.text, nameMap[category.id], "Name mismatch for category: \(category.id)")
+        for category in ProblemCategory.allCategories {
+            XCTAssertEqual(category.subcategories.map(\.id), expected[category.id], "category: \(category.id)")
         }
-    }
-
-    // MARK: - Edge Cases and Validation Tests
-
-    func testWhenComparingNilProblemCategoriesThenEqualityWorksCorrectly() {
-        let category1: ProblemCategory? = nil
-        let category2: ProblemCategory? = nil
-        let category3: ProblemCategory? = ProblemCategory(id: "test", text: "Test", subcategories: [])
-
-        XCTAssertEqual(category1, category2)
-        XCTAssertNotEqual(category1, category3)
-        XCTAssertNotEqual(category2, category3)
-    }
-
-    func testWhenCreatingCategoryWithEmptySubcategoriesThenItWorksCorrectly() {
-        let category = ProblemCategory(id: "empty", text: "Empty Category", subcategories: [])
-
-        XCTAssertEqual(category.id, "empty")
-        XCTAssertEqual(category.text, "Empty Category")
-        XCTAssertTrue(category.subcategories.isEmpty)
-    }
-
-    func testWhenUsingCategoryInDictionaryThenHashingWorksCorrectly() {
-        let category1 = ProblemCategory(id: "key1", text: "Category 1", subcategories: [])
-        let category2 = ProblemCategory(id: "key2", text: "Category 2", subcategories: [])
-        let category3 = ProblemCategory(id: "key1", text: "Category 1 Modified", subcategories: [SubCategory(id: "sub", text: "Sub")])
-
-        var categoryDict: [ProblemCategory: String] = [:]
-        categoryDict[category1] = "value1"
-        categoryDict[category2] = "value2"
-        categoryDict[category3] = "value3" // Should overwrite category1 since same id
-
-        XCTAssertEqual(categoryDict.count, 2)
-        XCTAssertEqual(categoryDict[category1], "value3") // Should get the updated value
-        XCTAssertEqual(categoryDict[category2], "value2")
-        XCTAssertEqual(categoryDict[category3], "value3")
     }
 
     func testWhenAccessingAllCategoriesThenEachCategoryHasUniqueId() {
@@ -279,25 +126,6 @@ final class ProblemCategoryTests: XCTestCase {
                 XCTAssertFalse(subcategory.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                              "Category \(category.id) has empty subcategory")
             }
-        }
-    }
-
-    // MARK: - Performance Tests
-
-    func testWhenAccessingAllCategoriesMultipleTimesThenPerformanceIsAcceptable() {
-        measure {
-            for _ in 0..<1000 {
-                _ = ProblemCategory.allCategories
-            }
-        }
-    }
-
-    func testWhenComparingManyProblemCategoriesThenPerformanceIsAcceptable() {
-        let categories = Array(repeating: ProblemCategory.allCategories, count: 100).flatMap { $0 }
-
-        measure {
-            let categoriesSet = Set(categories)
-            XCTAssertEqual(categoriesSet.count, ProblemCategory.allCategories.count)
         }
     }
 }

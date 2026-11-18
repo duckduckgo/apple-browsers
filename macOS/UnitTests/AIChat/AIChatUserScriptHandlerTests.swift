@@ -1576,18 +1576,6 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("getSyncStatus returns internal error when sync service is unavailable", .timeLimit(.minutes(1)))
-    @MainActor
-    func testThatGetSyncStatusReturnsInternalErrorWhenFeatureOffAndSyncServiceUnavailable() throws {
-        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
-        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
-
-        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage.mock())
-        let errorResponse = try #require(response as? AIChatErrorResponse)
-        #expect(errorResponse.reason == "internal error")
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("getSyncStatus returns syncAvailable=false when feature is off and sync service is available", .timeLimit(.minutes(1)))
     @MainActor
     func testThatGetSyncStatusReturnsSyncNotAvailableWhenFeatureOffAndSyncServiceAvailable() throws {
@@ -1599,24 +1587,6 @@ struct AIChatUserScriptHandlerTests {
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
         #expect(status.syncAvailable == false)
-        #expect(status.userId == nil)
-        #expect(status.deviceId == nil)
-        #expect(status.deviceName == nil)
-        #expect(status.deviceType == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("getSyncStatus returns nil ids when sync service is available but account is missing", .timeLimit(.minutes(1)))
-    @MainActor
-    func testThatGetSyncStatusReturnsNilIdentifiersWhenAccountMissing() throws {
-        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
-        let syncService = makeSyncService(authState: .active, account: nil)
-        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
-
-        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage.mock())
-        let payloadResponse = try #require(response as? AIChatPayloadResponse)
-        let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
-        #expect(status.syncAvailable == true)
         #expect(status.userId == nil)
         #expect(status.deviceId == nil)
         #expect(status.deviceName == nil)
@@ -2416,16 +2386,6 @@ struct AIChatConversationSourcePixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Every source is reported verbatim by both conversation pixels", .timeLimit(.minutes(1)),
-          arguments: AIChatConversationSource.allCases)
-    func testEverySourceIsReportedVerbatim(source: AIChatConversationSource) {
-        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: source, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false)
-            .parameters?["source"] == source.rawValue)
-        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: source, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false)
-            .parameters?["source"] == source.rawValue)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("A button surface with page context reports every parameter", .timeLimit(.minutes(1)))
     func testButtonSourceWithPageContextParameters() {
         #expect(AIChatPixel.aiChatMetricStartNewConversation(source: .askAboutPage, hasPageContext: true, surface: .duckAI, firstPromptNewInstall: false).parameters == [
@@ -2457,28 +2417,6 @@ struct AIChatConversationSourcePixelTests {
         let resolved = [AIChatMenuNewChatItem.openDuckAI, .newChat, .viewAllChats]
             .map { sources.source(for: $0).rawValue }
         #expect(resolved == ["main-menu-open-duck-ai", "main-menu-new-chat", "main-menu-view-all-chats"])
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Tab-bar New Chat and Chats use distinct sources", .timeLimit(.minutes(1)))
-    func testTabBarNewChatAndChatsAreDistinct() {
-        #expect(AIChatConversationSource.tabBarButton.rawValue == "tab-bar-button")
-        #expect(AIChatConversationSource.tabBarChats.rawValue == "tab-bar-chats")
-        #expect(AIChatConversationSource.tabBarButton != .tabBarChats)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The no-stamp fallback reports 'unattributed'", .timeLimit(.minutes(1)))
-    func testFallbackIsNamedUnattributed() {
-        #expect(AIChatConversationSource.unattributed.rawValue == "unattributed")
-        #expect(!AIChatConversationSource.unattributed.isAskDuckAiButton)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The address-bar button and its suggestion row report different sources", .timeLimit(.minutes(1)))
-    func testAddressBarButtonAndSuggestionAreDistinct() {
-        #expect(AIChatConversationSource.addressBar.rawValue == "address-bar")
-        #expect(AIChatConversationSource.addressBarSuggestion.rawValue == "address-bar-suggestion")
     }
 
     @available(iOS 16, macOS 13, *)

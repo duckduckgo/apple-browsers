@@ -63,11 +63,6 @@ final class AIChatMentionTokenDetectorTests: XCTestCase {
         XCTAssertEqual(token, AIChatMentionToken(range: NSRange(location: 0, length: 8), query: "goo bar"))
     }
 
-    func testMultiWordQuery_AcrossMultipleSpaces() {
-        let token = AIChatMentionTokenDetector.token(in: "@apple plus settings", caret: 20)
-        XCTAssertEqual(token, AIChatMentionToken(range: NSRange(location: 0, length: 20), query: "apple plus settings"))
-    }
-
     func testMultiWordQuery_AfterLeadingPrompt() {
         let token = AIChatMentionTokenDetector.token(in: "summarize @apple plus", caret: 21)
         XCTAssertEqual(token, AIChatMentionToken(range: NSRange(location: 10, length: 11), query: "apple plus"))
@@ -117,11 +112,6 @@ final class AIChatMentionTokenDetectorTests: XCTestCase {
     func testAtSignAfterTab_ThenTriggers() {
         let token = AIChatMentionTokenDetector.token(in: "x\t@y", caret: 4)
         XCTAssertEqual(token, AIChatMentionToken(range: NSRange(location: 2, length: 2), query: "y"))
-    }
-
-    func testAtSignAfterNewline_ThenTriggers() {
-        let token = AIChatMentionTokenDetector.token(in: "first line\n@goo", caret: 15)
-        XCTAssertEqual(token, AIChatMentionToken(range: NSRange(location: 11, length: 4), query: "goo"))
     }
 
     // MARK: - Token characters

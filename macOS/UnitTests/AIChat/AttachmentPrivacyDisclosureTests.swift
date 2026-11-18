@@ -80,62 +80,28 @@ final class AttachmentPrivacyDisclosureTests: XCTestCase {
 
     // MARK: - Taking over the web app's flag
 
-    func testWebFlagIsAdopted() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
+    /// The web app wrote a flag, an older count, or (what it mirrors from localStorage) a string.
+    func testWhenTheWebValueSaysShownThenItIsAdoptedOtherwiseItStaysUnshown() throws {
+        let rows: [(name: String, webValue: Any?, adopted: Bool)] = [
+            ("bool true", true, true),
+            ("bool false", false, false),
+            ("count", 2, true),
+            ("count of zero", 0, false),
+            ("string flag", "true", true),
+            ("false string flag", "false", false),
+            ("string count", "2", true),
+            ("unparseable type", ["unexpected": true], false),
+            ("absent", nil, false)
+        ]
 
-        XCTAssertFalse(makeDisclosure().canShow)
-        XCTAssertTrue(store.hasShown)
-    }
+        for row in rows {
+            store = AttachmentPrivacyDisclosureStore(keyValueStore: try MockKeyValueFileStore())
+            webStorage = FakeWebKeyStorage()
+            webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = row.webValue
 
-    func testAnUnsetWebFlagLeavesItUnshown() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = false
-
-        XCTAssertTrue(makeDisclosure().canShow)
-        XCTAssertFalse(store.hasShown)
-    }
-
-    /// The count the web app wrote before it settled on a flag.
-    func testAWebCountIsAdopted() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = 2
-
-        XCTAssertFalse(makeDisclosure().canShow)
-    }
-
-    func testAWebCountOfZeroLeavesItUnshown() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = 0
-
-        XCTAssertTrue(makeDisclosure().canShow)
-    }
-
-    /// What the web app actually mirrors: its localStorage value, so a string.
-    func testAWebFlagIsAdoptedFromAString() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = "true"
-
-        XCTAssertFalse(makeDisclosure().canShow)
-        XCTAssertTrue(store.hasShown)
-    }
-
-    func testAFalseWebFlagStringLeavesItUnshown() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = "false"
-
-        XCTAssertTrue(makeDisclosure().canShow)
-    }
-
-    func testAWebCountIsAdoptedFromAString() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = "2"
-
-        XCTAssertFalse(makeDisclosure().canShow)
-    }
-
-    func testAnUnparseableWebValueLeavesItUnshown() {
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = ["unexpected": true]
-
-        XCTAssertTrue(makeDisclosure().canShow)
-    }
-
-    func testAnAbsentWebFlagLeavesItUnshown() {
-        XCTAssertTrue(makeDisclosure().canShow)
-        XCTAssertFalse(store.hasShown)
+            XCTAssertEqual(makeDisclosure().canShow, !row.adopted, "row: \(row.name)")
+            XCTAssertEqual(store.hasShown, row.adopted, "row: \(row.name)")
+        }
     }
 
     /// The web app may show it at any point before the front end delegates to us, so a flag that

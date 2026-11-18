@@ -30,7 +30,7 @@ struct ContextualOnboardingSettings: StoringKeys {
 
 /// Saved contextual onboarding state. Paths read it through `ContextualOnboardingProgressReading`; only the manager writes.
 final class ContextualOnboardingProgress: ContextualOnboardingProgressReading {
-    private var storage: ContextualOnboardingStateStoring
+    private let storage: ContextualOnboardingStateStoring
     private let settings: any ThrowingKeyedStoring<ContextualOnboardingSettings>
 
     init(storage: ContextualOnboardingStateStoring,
@@ -68,7 +68,6 @@ final class ContextualOnboardingProgress: ContextualOnboardingProgressReading {
     func reset() {
         storage.contextualDialogsSeen = []
         storage.fireButtonUsedOnce = false
-        storage.blockedTrackerSeen = false
         try? settings.removeValue(for: \.pathKind)
     }
 }

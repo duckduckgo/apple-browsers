@@ -27,6 +27,7 @@ import Testing
 struct SearchOnboardingPathTests {
 
     let storage = MockContextualDialogStateStoring()
+    let pathStorage = MockBlockedTrackerStoring()
     let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
     let trackerProvider = MockTrackerMessageProvider()
     let progress: ContextualOnboardingProgress
@@ -35,7 +36,7 @@ struct SearchOnboardingPathTests {
     init() {
         progress = ContextualOnboardingProgress(storage: storage, settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
         sut = SearchOnboardingPath(progress: progress,
-                                   storage: storage,
+                                   storage: pathStorage,
                                    subscriptionUpsellExperiment: experiment,
                                    trackerMessageProvider: trackerProvider)
     }
@@ -82,7 +83,29 @@ struct SearchOnboardingPathTests {
             Issue.record("Expected the trackers dialog with the Fire follow-up")
             return
         }
+        #expect(pathStorage.blockedTrackerSeen)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Reset clears the blocked tracker flag", .timeLimit(.minutes(1)))
+    func resetClearsBlockedTrackers() {
+        pathStorage.blockedTrackerSeen = true
+
+        sut.reset()
+
+        #expect(!pathStorage.blockedTrackerSeen)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The blocked tracker flag saved under the old key is kept and moved to the new key", .timeLimit(.minutes(1)))
+    func blockedTrackersLegacyKeyIsMigrated() throws {
+        let store = InMemoryKeyValueStore()
+        store.set(true, forKey: "contextual.onboarding.blocked.trackers")
+        let storage = SearchOnboardingPathStorage(settings: store.keyedStoring())
+
         #expect(storage.blockedTrackerSeen)
+        #expect(store.object(forKey: "contextual-onboarding_blocked-trackers") as? Bool == true)
+        #expect(store.object(forKey: "contextual.onboarding.blocked.trackers") == nil)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -406,10 +406,14 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getAssistedOptOuts(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        await assistedOptOutsDelegate?.getAssistedOptOuts() ?? AssistedOptOutList(optOuts: [])
+        guard !isPaused else { return AssistedOptOutList(optOuts: []) }
+
+        return await assistedOptOutsDelegate?.getAssistedOptOuts() ?? AssistedOptOutList(optOuts: [])
     }
 
     func startAssistedOptOut(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard !isPaused else { return updateRequiredResponse }
+
         guard let data = try? JSONSerialization.data(withJSONObject: params),
               let request = try? JSONDecoder().decode(DBPUIStartAssistedOptOutRequest.self, from: data) else {
             throw DBPUIError.malformedRequest
@@ -419,6 +423,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     public func sendAssistedOptOutsDidChange(_ list: AssistedOptOutList, into webView: WKWebView) {
+        guard !isPaused else { return }
         outboundBroker.push(method: DBPUISendableMethodName.assistedOptOutsDidChange.rawValue, params: list, for: self, into: webView)
     }
 

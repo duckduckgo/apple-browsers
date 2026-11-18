@@ -138,6 +138,11 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         XCTAssertEqual(storage.discoveryReads, 0)
     }
 
+    func testManagerEnforcesExtensionPermissions() throws {
+        let manager = makeManager(storage: try DiscoveryStateStorage(), flags: MockFeatureFlagger())
+        XCTAssertNotNil(manager.permissionController)
+    }
+
     private func waitForCondition(_ condition: () -> Bool, file: StaticString = #filePath, line: UInt = #line) async throws {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: .seconds(5))

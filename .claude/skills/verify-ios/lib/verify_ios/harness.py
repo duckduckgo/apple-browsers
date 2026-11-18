@@ -1,8 +1,9 @@
 """The proof harness: the `ios` handle a proof receives, and `prove`, which runs a proof file and writes its evidence.
 
 A proof is a short Python file written for one change, saved with its evidence, never committed. It defines `run(ios)`
-and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services it depends on) and
-`FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS).
+and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services it depends on),
+`FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS) and
+`LANGUAGE = {"language": "fr", "locale": "fr_FR"}` (only to test localization: the default, env.LANGUAGE, is en-US).
 
 A run passes only when the proof returned, recorded at least one passing check and no failing one, and the app was
 still in the foreground at the end. Anything that goes wrong before the proof's own steps is an error, not a failure.
@@ -41,12 +42,13 @@ ABSENT = {"NOT_FOUND", "TIMEOUT"}
 class Ios:
     """The handle a proof receives: user actions, reads, waiting assertions, telemetry and evidence for one device."""
 
-    def __init__(self, device, evidence, flags=None, device_obj=None):
+    def __init__(self, device, evidence, flags=None, device_obj=None, language=None):
         self.device = device                     # "iphone" | "ipad"
         self.form_factor = "phone" if device == "iphone" else "tablet"   # pixel names end in _ios_<form_factor>
         self.d = device_obj or Device(device)
         self.evidence = evidence
         self.flags = dict(flags or {})
+        self.language = dict(language or env.LANGUAGE)
         self.checks, self.unverified_items, self.notes, self.warnings = [], [], [], []
         self.hosts = set()                       # non-local hosts the proof saw, to check LIVE
         self.cleanups = []                       # (what, fn) undo steps, run in reverse after the proof
@@ -77,15 +79,15 @@ class Ios:
     # session ---------------------------------------------------------------------
     def reset(self):
         """Reinstall and launch: no app data, one blank tab, per-site permissions and daily pixel state cleared."""
-        return self._session("reset", lambda: self.d.reset(flags=self.flags))
+        return self._session("reset", lambda: self.d.reset(flags=self.flags, language=self.language))
 
     def launch(self):
-        return self._session("launch", lambda: self.d.launch(flags=self.flags))
+        return self._session("launch", lambda: self.d.launch(flags=self.flags, language=self.language))
 
     def _session(self, action, fn):
         """A launch that fails is setup trouble (build identity, readiness, runner), not the behavior under proof."""
         try:
-            self.launched = self._log(action, [self.flags], fn)
+            self.launched = self._log(action, [self.flags, self.language], fn)
         except Failed as e:
             raise SetupFailed(f"{action}: {e}", **e.extra) from e
         return self.launched
@@ -423,6 +425,10 @@ def load(path):
     live = getattr(mod, "LIVE", [])
     if not isinstance(live, list) or not all(isinstance(s, str) for s in live):
         problems.append("LIVE must be a list of service names")
+    language = getattr(mod, "LANGUAGE", env.LANGUAGE)
+    if not isinstance(language, dict) or set(language) != {"language", "locale"} or not all(
+            isinstance(v, str) and v for v in language.values()):
+        problems.append('LANGUAGE must be {"language": "fr", "locale": "fr_FR"}')
     flags = getattr(mod, "FLAGS", {})
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map feature flag names to True/False")
@@ -519,7 +525,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
         return 2, dict(proof=path, ok=False, preflight=problems)
     devices = check_devices(devices or getattr(mod, "DEVICES", list(env.PORT_OFFSET)))
     attempt, proof_path = attempt_dir(path, evidence_root(decision_log, evidence_dir))
-    live, flags = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {})
+    live, flags, language = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {}), getattr(mod, "LANGUAGE", env.LANGUAGE)
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     results, build = [], None
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
@@ -530,7 +536,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
             results = [dict(device=d, status="error", reason=f"setup: {e}", checks=[], problems=[], evidence=None) for d in devices]
         else:
             for dev in devices:
-                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags, video=video))
+                results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags, language=language, video=video))
                 if results[-1]["status"] == "cancelled":
                     break
     except _Stop as e:   # between devices, or before the first one started
@@ -551,7 +557,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
                       results=[{k: r[k] for k in ("device", "status", "reason", "problems") if r.get(k)} for r in results])
 
 
-def _run_device(mod, device, evidence, keep, flags, device_obj=None, video=True):
+def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=None, video=True):
     lock = DeviceLock(device)
     try:
         lock.acquire(f"prove {os.path.basename(os.path.dirname(evidence))}")
@@ -562,7 +568,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, video=True)
     status, reason, ios, phase, recording, problems = "error", None, None, "setup", None, []
     try:
         try:
-            ios = Ios(device, evidence, flags, device_obj)
+            ios = Ios(device, evidence, flags, device_obj, language)
             ios.launch()
             if video:   # a recording that fails is an evidence problem, never a proof failure
                 try:
@@ -595,7 +601,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, video=True)
         handlers = _ignore_signals()   # a second Ctrl-C must not interrupt evidence collection or cleanup
         try:
             if ios:
-                problems += _collect(ios)          # the final state first, before anything is undone
+                problems += _collect(ios, since=t0)   # the final state first, before anything is undone
             if recording:
                 problems += recording.stop()       # after the final capture, so the video ends on the final state
             if ios:
@@ -614,6 +620,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, video=True)
                       notes=ios.notes if ios else [], warnings=ios.warnings if ios else [], problems=problems,
                       liveHostsSeen=sorted(ios.hosts) if ios else [], launched=ios.launched if ios else None,
                       capture=ios.capture if ios else {}, evidence=evidence,
+                      appLog=os.path.exists(f"{evidence}/app.log"),
                       video=Video.FILE if recording and recording.ok else None)
         with open(f"{evidence}/result.json", "w") as f:
             json.dump(result, f, indent=1, default=str)
@@ -642,11 +649,13 @@ def exit_code(statuses, problems=False):
     return 2 if problems else 0
 
 
-def _collect(ios):
-    """Final state, whatever happened: screenshot, native tree, decoded pixels, wide events. Returns problems."""
+def _collect(ios, since):
+    """Final state, whatever happened: screenshot, native tree, the app's log since `since` (epoch seconds), decoded
+    pixels, wide events. Returns problems."""
     problems = []
     steps = [("final screenshot", lambda: ios.d.screenshot(f"{ios.evidence}/final.png")),
-             ("final UI tree", lambda: _write(f"{ios.evidence}/final-snapshot.txt", ios.d.snapshot()["tree"]))]
+             ("final UI tree", lambda: _write(f"{ios.evidence}/final-snapshot.txt", ios.d.snapshot()["tree"])),
+             ("app log", lambda: ios.d.app_logs(f"{ios.evidence}/app.log", start=since))]
     if ios.pixels:
         steps.append(("pixels", lambda: _write(f"{ios.evidence}/pixels.json", json.dumps(ios.pixels.all(), indent=1))))
     if ios.wide_events:
@@ -711,6 +720,7 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         launched={r["device"]: ((r.get("launched") or {}).get("build") or {}).get("runningSha") for r in results if r.get("device") != "-"},
         flags={**env.PINNED_FLAGS, **flags},
         capture={r["device"]: r.get("capture") for r in results if r.get("device") != "-"},
+        appLogs={r["device"]: f"{r['device']}/app.log" if r.get("appLog") else None for r in results if r.get("device") != "-"},
         skillSha256=_skill_hash(), xcode=" ".join(xcode[:4]),
         simulators={r["device"]: dict(udid=(r.get("launched") or {}).get("udid"), type=env.DEVICE_TYPES[r["device"]], runtime=env.RUNTIME)
                     for r in results if r.get("device") in env.DEVICE_TYPES},
@@ -737,7 +747,7 @@ def _report(mod, m, results):
     runs = [r for r in results if r["device"] != "-"]
     lines = [f"# Proof: {doc.splitlines()[0]}", "", "## Verified", "", doc, "", "## Evidence", "",
              "Paths are relative to this report.", "",
-             "| Device | Video | Final screen | Screenshots (key frames) | Telemetry | Transcript |", "|---|---|---|---|---|---|"]
+             "| Device | Video | Final screen | Screenshots (key frames) | Telemetry | Transcript and app log |", "|---|---|---|---|---|---|"]
     for r in runs:
         lines.append(f"| {r['device']} | " + " | ".join(_evidence_links(r)) + " |")
     lines += ["", "## Outcome", ""]
@@ -779,7 +789,8 @@ def _evidence_links(r):
     shots = sorted(f for f in os.listdir(ev) if f.endswith(".png") and f != "final.png")
     telemetry = [x for x in (link("pixels.json"), link("wide-events.json")) if x != "-"]
     return [link(Video.FILE, "recording.mp4") if r.get("video") else "-", link("final.png"),
-            ", ".join(link(f) for f in shots) or "-", ", ".join(telemetry) or "-", link("transcript.jsonl")]
+            ", ".join(link(f) for f in shots) or "-", ", ".join(telemetry) or "-",
+            ", ".join(x for x in (link("transcript.jsonl"), link("app.log")) if x != "-") or "-"]
 
 
 def check_only(paths):

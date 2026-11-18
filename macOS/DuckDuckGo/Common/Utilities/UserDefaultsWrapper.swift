@@ -116,7 +116,6 @@ extension UserDefaults {
         case onboardingFinished = "onboarding.finished"
         case contextualOnboardingState = "contextual.onboarding.state"
         case contextualOnboardingSeenDialogs = "contextual.onboarding.seen.dialogs"
-        case contextualOnboardingBlockedTrackers = "contextual.onboarding.blocked.trackers"
         case contextualOnboardingFireButtonUsed = "contextual.onboarding.fire.button.used"
 
         // Home Page

@@ -5974,6 +5974,9 @@ extension MainViewController: BrowserChromeDelegate {
 
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
+        if isFloatingUIEnabled {
+            chromeManager.followFloatingChromeBottom { self.floatingWebViewObscuredInsets(for: percent).bottom }
+        }
         currentTab?.updateWebViewBottomAnchor(for: percent)
         updateFloatingTopNewTabPageInset(for: percent)
 

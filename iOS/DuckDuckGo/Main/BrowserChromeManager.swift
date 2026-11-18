@@ -170,6 +170,13 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
             return
         }
 
+        if let delegate, delegate.isFloatingChromeEnabled {
+            // A drag past the bottom mid-hide would otherwise show for a frame before the bar pulls it back.
+            let visibility = delegate.currentBarsVisibility
+            if visibility > 0, visibility < 1 {
+                followFloatingChromeBottom { delegate.floatingWebViewObscuredInsets(for: visibility).bottom }
+            }
+        }
         animator.didScroll(in: scrollView)
     }
     
@@ -284,7 +291,18 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     /// with them gone. A page that would fit once they hide keeps them: no collapse even starts.
     private func canHideBars(for scrollView: UIScrollView) -> Bool {
         guard delegate?.canHideBars ?? true else { return false }
+        // Chrome can't hold more than the scroll view's insets, so a page that scrolls past them is long
+        // enough without asking the delegate, whose inset lookup is too slow for every scroll event.
+        let scrollableHeightWithoutInsets = scrollView.contentSize.height - scrollView.bounds.height
+        if delegate?.isFloatingChromeEnabled == true, scrollableHeightWithoutInsets >= Constants.minimumScrollableHeight {
+            return true
+        }
         return hiddenChromeScrollableHeight(for: scrollView) >= Constants.minimumScrollableHeight
+    }
+
+    /// Whether the page is scrolled past its own end, into the space the bottom inset adds.
+    private func isPastContentEnd(_ scrollView: UIScrollView) -> Bool {
+        scrollView.contentOffset.y > scrollView.contentSize.height - scrollView.bounds.height
     }
 
     /// How far the page would scroll with the chrome fully hidden. Hiding hands the chrome's space to the
@@ -317,6 +335,29 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
 
     func reset(animated: Bool = true) {
         animator.revealBars(animated: animated)
+    }
+
+    /// Floating chrome holds the scroll view's insets until a hide ends, and WebKit then clamps the
+    /// offset into the smaller range in a single frame. At the page bottom, keep the offset inside the
+    /// range the hiding bar leaves, so the page follows the bar down instead of jumping once it settles.
+    /// `obscuredBottom` is only read once the page is past its end, as the inset lookup is slow.
+    func followFloatingChromeBottom(obscuredBottom: () -> CGFloat) {
+        guard delegate?.isFloatingChromeEnabled == true,
+              let scrollView = attachedScrollView,
+              !scrollView.isZooming,
+              isPastContentEnd(scrollView) else { return }
+        let obscuredBottom = obscuredBottom()
+        guard obscuredBottom < scrollView.contentInset.bottom else { return }
+
+        let pageTopY = -scrollView.adjustedContentInset.top
+        let bottomY = max(pageTopY, scrollView.contentSize.height - scrollView.bounds.height + obscuredBottom)
+        let shift = bottomY - scrollView.contentOffset.y
+        guard shift < 0 else { return }
+
+        // The page moves under the finger, so the drag's reference moves with it and the bars keep
+        // their progress.
+        animator.contentOffsetWillShift(by: shift)
+        scrollView.contentOffset.y = bottomY
     }
 }
 

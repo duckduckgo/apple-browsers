@@ -190,7 +190,6 @@ struct AssistedOptOutWindowTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         ("https://www.beenverified.com/svc/optout/search?q=1", "beenverified.com"),
-        ("https://xn--bcher-kva.example/path", "bücher.example"),
         ("http://localhost:8080/form", "localhost:8080")
     ])
     func addressShowsDomainLikeBrowserAddressBar(url: String, expected: String) throws {

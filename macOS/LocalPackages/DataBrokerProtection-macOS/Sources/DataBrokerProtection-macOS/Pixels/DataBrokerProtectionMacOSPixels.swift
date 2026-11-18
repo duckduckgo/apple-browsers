@@ -112,6 +112,7 @@ public enum DataBrokerProtectionMacOSPixels {
 }
 
 extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
+    /// The assisted opt-out pixel names are already complete, so they skip the usual platform prefix.
     public var namePrefix: PixelKitNamePrefix {
         switch self {
         case .assistedOptOutStarted, .assistedOptOutUserTurn, .assistedOptOutEnded: return .none

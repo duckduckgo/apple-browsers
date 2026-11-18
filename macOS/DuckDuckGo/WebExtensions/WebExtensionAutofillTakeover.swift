@@ -37,6 +37,8 @@ struct AutofillManagingExtension: Equatable {
 /// saving off through `chrome.privacy.services`, as Bitwarden does when the user makes it the default
 /// password manager. DuckDuckGo's built-in password manager then steps aside entirely, for passwords,
 /// addresses and cards, until the extension turns password saving back on, or is uninstalled or disabled.
+/// Password managers that never turn it off, such as LastPass, take autofill over while they are loaded
+/// (`ChromeWebStoreID.takingOverAutofillWhileLoaded`), so installing or enabling one is enough.
 ///
 /// Whether an extension manages autofill is saved in the autofill preferences, where every autofill
 /// decision reads it, from any thread. A change posts `.autofillUserSettingsDidChange`, which rebuilds the
@@ -101,7 +103,7 @@ final class WebExtensionAutofillTakeover {
     private func managingExtensionOfLoadedExtensions() -> AutofillManagingExtension? {
         guard #available(macOS 15.4, *),
               let manager = manager as? WebExtensionManager,
-              let identifier = manager.privacySettings?.identifierTurningOff(.passwordSavingEnabled),
+              let identifier = manager.autofillManagingIdentifier,
               let context = manager.context(for: identifier) else { return nil }
         return AutofillManagingExtension(identifier: identifier,
                                          name: context.webExtension.displayName ?? identifier,

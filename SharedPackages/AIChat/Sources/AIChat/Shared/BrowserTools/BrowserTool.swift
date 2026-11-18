@@ -28,8 +28,8 @@ public protocol BrowserTool: AnyObject {
     /// `auto` never prompts; `ask` is subject to a stored Always/Never decision.
     var permissionMode: BrowserToolPermissionMode { get }
 
-    /// Shown to the user when an `ask` tool needs consent. Not localized, mirroring Windows.
-    var permissionReason: String { get }
+    /// A tool that changes the browser: it prompts on every call and a stored Always is ignored.
+    var asksEveryTime: Bool { get }
 
     var inputSchema: JSONValue { get }
 
@@ -40,11 +40,15 @@ public protocol BrowserTool: AnyObject {
     /// Shapes a successful `execute` value into this capability's client-tools result: only the
     /// contract's fields, within its limits.
     func clientToolResult(from value: JSONValue) -> BrowserToolResult
+
+    /// The exact address the call acts on, shown in its prompt.
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String?
 }
 
 public extension BrowserTool {
-    var permissionReason: String { "Duck.ai wants to use a browser tool." }
+    var asksEveryTime: Bool { false }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { nil }
 }
 
 /// A tool's declared default. Distinct from the *stored* decision, which only Ask tools have.
@@ -69,12 +73,16 @@ public struct BrowserToolCallContext: Equatable, Sendable {
     /// token, so the front end cannot infer that the user is browsing privately.
     public let isBurner: Bool
 
+    public let isDetached: Bool
+
     public init(ownerTabID: String,
                 ownerWindowToken: String? = nil,
-                isBurner: Bool) {
+                isBurner: Bool,
+                isDetached: Bool = false) {
         self.ownerTabID = ownerTabID
         self.ownerWindowToken = ownerWindowToken
         self.isBurner = isBurner
+        self.isDetached = isDetached
     }
 }
 

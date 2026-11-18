@@ -1313,13 +1313,18 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenPermissionsAreDisabled_ThenDDGIdentityIsPreservedWithoutBundleLookup() async throws {
-        let manager = makeManager()
+    func testWhenPermissionsAreDisabled_ThenUnbundledManifestDoesNotSetEmbeddedIdentity() async throws {
+        var checkedBundle = false
+        let manager = makeManager(bundledExtensionURL: { _ in
+            checkedBundle = true
+            return nil
+        })
         let sourceURL = try makeTestExtensionDirectory(embeddedType: .embedded)
 
         try await manager.installExtension(from: sourceURL)
 
-        XCTAssertEqual(installedExtensionStoringMock.addedExtension?.embeddedType, .embedded)
+        XCTAssertTrue(checkedBundle)
+        XCTAssertNil(installedExtensionStoringMock.addedExtension?.embeddedType)
     }
 
     @MainActor

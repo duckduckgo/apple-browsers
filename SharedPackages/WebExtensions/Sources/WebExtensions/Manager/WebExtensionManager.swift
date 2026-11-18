@@ -167,6 +167,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Store identities available before a successful first load creates the installation record.
     var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
 
+    /// Verified bundled installations whose first load precedes their installation record.
+    var installingEmbeddedIdentifiers: Set<String> = []
+
     /// Tasks that keep background pages with open native messaging ports loaded, by extension identifier.
     var nativePortKeepAliveTasks: [String: NativePortKeepAlive] = [:]
 
@@ -552,18 +555,22 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let identifier = UUID().uuidString
         var embeddedType = storeIdentity == nil ? metadata.type : nil
 
-        if embeddedType != nil, let permissionController {
+        if embeddedType != nil {
             // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
             let isBundled = EmbeddedWebExtensionRegistry.all.contains {
                 bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
             }
             if isBundled {
-                permissionController.trustedInstallations.insert(identifier)
+                installingEmbeddedIdentifiers.insert(identifier)
+                permissionController?.trustedInstallations.insert(identifier)
             } else {
                 embeddedType = nil
             }
         }
-        defer { permissionController?.trustedInstallations.remove(identifier) }
+        defer {
+            installingEmbeddedIdentifiers.remove(identifier)
+            permissionController?.trustedInstallations.remove(identifier)
+        }
 
         let packageIdentifier = storeIdentity?.store == .chromeWebStore ? UUID() : nil
         let resourceIdentifier = InstalledWebExtension.resourceIdentifier(for: identifier, packageIdentifier: packageIdentifier)

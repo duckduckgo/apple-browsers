@@ -943,6 +943,19 @@ class SelftestTests(unittest.TestCase):
         finally:
             env.update_state(lambda st: st.get("devices", {}).pop("ipad", None))
 
+    def test_proofs_write_their_attempts_in_the_given_evidence_dir(self):
+        from verify_ios import selftest
+        calls, out_dir = [], tempfile.mkdtemp(dir=TMP)
+        passed = dict(proofs=[dict(proof="p.py", report="r.md", results=[dict(device="iphone", status="pass")])])
+        with mock.patch.object(selftest, "_cli", side_effect=lambda *a, **k: calls.append(a) or (0, passed, "")), \
+                mock.patch.object(selftest.Device, "check_build_current"), \
+                mock.patch.object(selftest.Device, "_all", return_value=[]), \
+                mock.patch.object(selftest.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "", "OK")):
+            code, out = selftest.run(["iphone"], out_dir)
+        self.assertEqual(code, 0, out)
+        prove = next(c for c in calls if c[0] == "prove")
+        self.assertEqual(prove[-2:], ("--evidence-dir", out_dir))
+
 
 class CliTests(unittest.TestCase):
     def test_check_rejects_a_bad_proof_with_exit_2(self):
@@ -952,6 +965,14 @@ class CliTests(unittest.TestCase):
         cli = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin", "verify-ios")
         p = subprocess.run([cli, "--json", "check", bad], capture_output=True, text=True, env={**os.environ, "VERIFY_IOS_HOME": TMP})
         self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+
+    def test_selftest_refuses_an_evidence_dir_inside_the_checkout_before_setup(self):
+        cli = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin", "verify-ios")
+        p = subprocess.run([cli, "--json", "selftest", "--evidence-dir", os.path.join(env.ROOT, "evidence")],
+                           capture_output=True, text=True, env={**os.environ, "VERIFY_IOS_HOME": TMP}, timeout=30)
+        self.assertEqual(p.returncode, 1, p.stdout + p.stderr)   # as new-proof and prove refuse it
+        self.assertIn("outside this checkout", p.stdout)
+        self.assertNotIn("simulator ready", p.stderr)
 
 
 if __name__ == "__main__":

@@ -269,8 +269,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                 jobType: jobType,
                                 priorityDate: priorityDate,
                                 sortPredicate: jobDependencies.jobSortPredicate)
-            .excludingOptOutsLeftToUserAssistance(jobDependencies.userAssistanceConfig,
-                                                 brokerProfileQueriesData: brokerProfileQueriesData,
+            .excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: brokerProfileQueriesData,
                                                  runningAttempts: jobDependencies.runningAssistedOptOuts)
             .filter { jobData in
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
@@ -326,8 +325,8 @@ private extension Array where Element == BrokerJobData {
 
 extension Array where Element == BrokerJobData {
     /// Drops opt-outs for brokers that need the user, and any record an assisted run is already working on.
-    func excludingOptOutsLeftToUserAssistance(_ config: UserAssistanceConfig,
-                                              brokerProfileQueriesData: [BrokerProfileQueryData],
+    /// A scheduled run can't finish them, so they wait for the user even while user assistance is off.
+    func excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: [BrokerProfileQueryData],
                                               runningAttempts: RunningAssistedOptOuts) -> [BrokerJobData] {
         filter { jobData in
             guard let optOut = jobData as? OptOutJobData else { return true }
@@ -336,7 +335,7 @@ extension Array where Element == BrokerJobData {
                                                         profileQueryId: optOut.profileQueryId,
                                                         extractedProfileId: extractedProfileId)) { return false }
             guard let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker else { return true }
-            return !config.isEnabled(forBrokerURL: broker.url)
+            return !broker.requiresUserAssistance
         }
     }
 }

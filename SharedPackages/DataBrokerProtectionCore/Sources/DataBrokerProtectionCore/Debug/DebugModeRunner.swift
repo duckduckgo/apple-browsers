@@ -26,6 +26,10 @@ import PrivacyConfig
 /// Nothing it runs is saved to the PIR database.
 public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
 
+    #if DEBUG
+    public let debugAuthentication: DebugModeAuthenticationManager
+    #endif
+
     public let debugEmailConfirmationStore = DebugEmailConfirmationStore()
     let captchaService: CaptchaService
     let privacyConfigManager: PrivacyConfigurationManaging
@@ -44,7 +48,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
 
     let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let emailConfirmationEvents: EmailConfirmationEvents
-    private let vault: any DataBrokerProtectionSecureVault
+    private let vault: (any DataBrokerProtectionSecureVault)?
     private let contentBlocking: DBPWebViewContentBlocking?
 
     public var emailConfirmationStore: EmailConfirmationSupporting {
@@ -55,9 +59,15 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                 featureFlagger: DBPFeatureFlagging,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                vault: any DataBrokerProtectionSecureVault,
+                vault: (any DataBrokerProtectionSecureVault)?,
                 settings dbpSettings: DataBrokerProtectionSettings,
                 contentBlocking: DBPWebViewContentBlocking? = nil) {
+        #if DEBUG
+        let dbpSettings = dbpSettings.isolatedDebugSettingsForLaunch()
+        let debugAuthentication = DebugModeAuthenticationManager(fallback: authenticationManager, settings: dbpSettings)
+        self.debugAuthentication = debugAuthentication
+        let authenticationManager: DataBrokerProtectionAuthenticationManaging = debugAuthentication
+        #endif
         self.featureFlagger = featureFlagger
         self.privacyConfigManager = privacyConfigManager
         self.pixelHandler = pixelHandler
@@ -108,7 +118,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
     }
 
     public func storedBrokerResources() throws -> [BrokerResource] {
-        try vault.fetchAllBrokerResources()
+        try vault?.fetchAllBrokerResources() ?? []
     }
 
     public func brokerProfileQueryData(for broker: DataBroker, profile: DataBrokerProtectionProfile) -> [BrokerProfileQueryData] {

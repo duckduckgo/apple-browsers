@@ -61,7 +61,17 @@ public final class DataBrokerProtectionDebugHTTPServer {
                 prerequisiteReader: (@MainActor @Sendable () async throws -> DebugPrerequisiteResult)? = nil) {
         self.port = port
         self.instanceID = instanceID
-        self.prerequisites = DebugPrerequisiteSnapshot(instanceID: instanceID, debugRunnerReady: runManager != nil, reader: prerequisiteReader)
+        #if DEBUG
+        let debugRunManager = runManager as? DebugModeRunManager
+        let reader: DebugPrerequisiteSnapshot.Reader = {
+            if let provided = debugRunManager?.providedCredentialPrerequisites { return provided }
+            let normal = try await prerequisiteReader?() ?? DebugPrerequisiteResult(status: .unavailable, backend: "subscription", environment: "unknown")
+            return debugRunManager?.applyingDebugPIRSettings(to: normal) ?? normal
+        }
+        #else
+        let reader = prerequisiteReader
+        #endif
+        self.prerequisites = DebugPrerequisiteSnapshot(instanceID: instanceID, debugRunnerReady: runManager != nil, reader: reader)
         self.logReader = logReader
         self.runManager = runManager
         self.server = DebugHTTPServer(port: port, loopbackOnly: true)
@@ -147,6 +157,15 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     private func registerDebugModeRoutes(runManager: UncheckedSendable<DataBrokerProtectionDebugModeRunning>) {
         let instanceID = instanceID
+        #if DEBUG
+        if let instanceID, UUID(uuidString: instanceID) != nil, let manager = runManager.value as? DebugModeRunManager {
+            server.addRoute("/api/debug/auth", method: .POST) { request in
+                try Self.configureAuthentication(request, instanceID: instanceID) { token, environment in
+                    try manager.configureAuthentication(token: token, environment: environment)
+                }
+            }
+        }
+        #endif
         server.addRoute("/api/debug/scans", method: .POST) { request in
             if !Self.isOwned(request, instanceID: instanceID) {
                 return .text("PIR debug instance mismatch", status: .forbidden)
@@ -190,6 +209,30 @@ public final class DataBrokerProtectionDebugHTTPServer {
             }
         }
     }
+
+    #if DEBUG
+    static func configureAuthentication(_ request: HTTPRequest, instanceID: String?,
+                                        configure: (String, String) throws -> DebugPrerequisiteResult) throws -> HTTPResponse {
+        guard let instanceID, UUID(uuidString: instanceID) != nil, isOwned(request, instanceID: instanceID) else {
+            return .text("PIR debug instance mismatch", status: .forbidden)
+        }
+        guard !isFromWebPage(request) else { return webPageRejection }
+        struct Credential: Decodable {
+            let token: String
+            let environment: String
+        }
+        guard let body = request.body, let credential = try? JSONDecoder().decode(Credential.self, from: body) else {
+            return .text("Invalid credential request", status: .badRequest)
+        }
+        do {
+            return try json(configure(credential.token, credential.environment))
+        } catch DebugModeAuthenticationManager.ConfigurationError.credentialLocked {
+            return .text("Credential is locked for this debug runner", status: .conflict)
+        } catch {
+            return .text("Invalid credential or PIR environment mismatch", status: .badRequest)
+        }
+    }
+    #endif
 
     static func isOwned(_ request: HTTPRequest, instanceID: String?) -> Bool {
         guard let instanceID else { return true }

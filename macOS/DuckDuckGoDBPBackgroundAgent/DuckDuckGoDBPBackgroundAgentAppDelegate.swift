@@ -49,7 +49,13 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
         }()
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
-        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+        let standaloneDebugLaunch: Bool
+        #if DEBUG
+        standaloneDebugLaunch = DebugModeLaunchConfiguration.isRequested()
+        #else
+        standaloneDebugLaunch = false
+        #endif
+        PixelKit.setUp(dryRun: standaloneDebugLaunch || PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "dbpBackgroundAgent",
                        session: "dbp-agent",
@@ -68,12 +74,12 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
         }
 
         let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
-        pixelHandler.fire(.backgroundAgentStarted)
+        if !standaloneDebugLaunch { pixelHandler.fire(.backgroundAgentStarted) }
 
         // prevent agent from running twice
-        if let anotherInstance = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier!).first(where: { $0 != .current }) {
+        if !standaloneDebugLaunch, let anotherInstance = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier!).first(where: { $0 != .current }) {
             Logger.dbpBackgroundAgent.error("Stopping: another instance is running: \(anotherInstance.processIdentifier, privacy: .public).")
-            pixelHandler.fire(.backgroundAgentStartedStoppingDueToAnotherInstanceRunning)
+            if !standaloneDebugLaunch { pixelHandler.fire(.backgroundAgentStartedStoppingDueToAnotherInstanceRunning) }
             exit(0)
         }
 
@@ -93,10 +99,20 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
-    private let subscriptionManager: any SubscriptionManager
+    private let subscriptionManager: (any SubscriptionManager)?
     private var manager: DataBrokerProtectionAgentManager?
+    #if DEBUG
+    private var standaloneDebugServer: StandalonePIRDebugServer?
+    #endif
 
     override init() {
+        #if DEBUG
+        if DebugModeLaunchConfiguration.isRequested() {
+            subscriptionManager = nil
+            super.init()
+            return
+        }
+        #endif
 
         // Configure Subscription
         Logger.dbpBackgroundAgent.log("Configuring subscription")
@@ -108,12 +124,40 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
                                                          userDefaults: subscriptionUserDefaults,
                                                          pixelHandlingSource: .dbp,
                                                          source: .pir)
+        super.init()
     }
 
     @MainActor
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
+        #if DEBUG
+        if DebugModeLaunchConfiguration.isRequested() {
+            do {
+                guard let configuration = try DebugModeLaunchConfiguration.parse() else {
+                    throw DebugModeLaunchConfiguration.ConfigurationError.invalidInstanceID
+                }
+                let privacy = DBPPrivacyConfigurationManager()
+                let store = ConfigurationStore()
+                let manager = ConfigurationManager(privacyConfigManager: privacy,
+                                                         fetcher: ConfigurationFetcher(store: store, configurationURLProvider: DBPAgentConfigurationURLProvider(),
+                                                                                       eventMapping: ConfigurationManager.configurationDebugEvents), store: store)
+                let flags = DBPFeatureFlagger(configurationManager: manager, privacyConfigurationManager: privacy)
+                standaloneDebugServer = try StandalonePIRDebugServer(featureFlagger: flags, configuration: configuration)
+            } catch let error as DebugModeLaunchConfiguration.ConfigurationError {
+                Logger.dbpBackgroundAgent.error("Standalone PIR debug launch rejected: \(error.rawValue, privacy: .public)")
+                NSApp.terminate(nil)
+            } catch {
+                Logger.dbpBackgroundAgent.error("Standalone PIR debug server failed to start: serverInitializationFailed")
+                NSApp.terminate(nil)
+            }
+            return
+        }
+        #endif
 
+        guard let subscriptionManager else {
+            NSApp.terminate(nil)
+            return
+        }
         let configStore = ConfigurationStore()
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configStore, configurationURLProvider: DBPAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configStore)

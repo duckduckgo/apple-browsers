@@ -604,9 +604,28 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
         do {
             let debugModeRunner = try DebugModeRunner(authenticationManager: authenticationManager, featureFlagger: jobDependencies.featureFlagger)
+            let authentication = authenticationManager
+            let settings = debugSettings
             let server = DataBrokerProtectionDebugHTTPServer(provider: self,
                                                              logReader: DataBrokerProtectionOSLogReader(),
-                                                             runManager: DebugModeRunManager(runner: debugModeRunner))
+                                                             runManager: DebugModeRunManager(runner: debugModeRunner),
+                                                             prerequisiteReader: {
+                let authenticated = await authentication.isUserAuthenticated
+                let status: DebugPrerequisiteResult.Status
+                if !authenticated {
+                    status = .unauthenticated
+                } else {
+                    status = try await authentication.hasValidEntitlement() ? .ready : .notEntitled
+                }
+                var endpoint = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: false)
+                endpoint?.user = nil
+                endpoint?.password = nil
+                endpoint?.query = nil
+                endpoint?.fragment = nil
+                return DebugPrerequisiteResult(status: status, backend: "subscription", environment: settings.selectedEnvironment.rawValue,
+                                               pirEnvironment: settings.selectedEnvironment.rawValue, pirEndpoint: endpoint?.string,
+                                               authenticated: authenticated)
+            })
             try server.start()
             debugServer = server
             return true

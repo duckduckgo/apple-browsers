@@ -20,7 +20,7 @@ import Foundation
 
 public struct DebugPrerequisiteResult: Encodable, Sendable {
     public enum Status: String, Encodable, Sendable {
-        case pending, ready, unauthenticated, notEntitled, error, bypass, unavailable
+        case pending, ready, credentialProvided, unauthenticated, notEntitled, error, bypass, unavailable
     }
 
     public let status: Status
@@ -31,6 +31,22 @@ public struct DebugPrerequisiteResult: Encodable, Sendable {
     public let authenticated: Bool?
     public let entitled: Bool?
     public let errorCode: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case status, backend, environment, pirEnvironment, pirEndpoint, authenticated, entitled, errorCode
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(status, forKey: .status)
+        try values.encode(backend, forKey: .backend)
+        try values.encode(environment, forKey: .environment)
+        try values.encodeIfPresent(pirEnvironment, forKey: .pirEnvironment)
+        try values.encodeIfPresent(pirEndpoint, forKey: .pirEndpoint)
+        try values.encodeIfPresent(authenticated, forKey: .authenticated)
+        try values.encode(entitled, forKey: .entitled)
+        try values.encodeIfPresent(errorCode, forKey: .errorCode)
+    }
 
     public init(status: Status, backend: String, environment: String, pirEnvironment: String? = nil,
                 pirEndpoint: String? = nil, authenticated: Bool? = nil, errorCode: String? = nil) {

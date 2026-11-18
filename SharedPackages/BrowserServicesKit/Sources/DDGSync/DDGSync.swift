@@ -278,24 +278,9 @@ public class DDGSync: DDGSyncing {
         }
 
         do {
-            if isUnifiedWriteEnabled {
-                return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name,
-                                                                                     for: account,
-                                                                                     mode: .unified)
-            }
-
-            if dependencies.syncFeatureFlags.canUsePatchEndpointForLegacyDeviceRename() {
-                return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name,
-                                                                                     for: account,
-                                                                                     mode: .legacyOnly)
-            }
-
-            let result = try await dependencies.account.refreshToken(account, deviceName: name)
-            try dependencies.secureStore.persistAccount(result.account)
-            persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
-            updateProtectedKeysCache(with: result.keys)
-            scheduleDeviceInfoMigration(for: result.account)
-            return result.devices
+            return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name,
+                                                                                 for: account,
+                                                                                 mode: isUnifiedWriteEnabled ? .unified : .legacyOnly)
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }

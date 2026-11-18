@@ -597,9 +597,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064249?focus=true
     case syncCanWriteUnifiedDeviceList
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217684925915706?focus=true
-    case syncCanUsePatchEndpointForLegacyDeviceRename
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true
     case syncCanReadUnifiedDeviceList
 
@@ -1102,10 +1099,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canSendExchangeChannelSecret), category: .sync)
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList), category: .sync)
-        case .syncCanUsePatchEndpointForLegacyDeviceRename:
-            Config(defaultValue: .enabled,
-                   source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename),
-                   category: .sync)
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .syncImprovedPairingFlow:

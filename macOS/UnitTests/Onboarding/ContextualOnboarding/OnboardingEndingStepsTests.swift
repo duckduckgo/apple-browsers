@@ -42,11 +42,11 @@ struct OnboardingEndingStepsTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Before High Five the ending leaves the decision to the path", .timeLimit(.minutes(1)))
-    func notStartedReturnsNil() {
+    func notStartedBeforeHighFive() {
         progress.markSeen(.tryASearch)
         progress.markSeen(.defaultTrackers)
 
-        #expect(sut.decisionForNextDialog() == nil)
+        #expect(sut.decisionForNextDialog() == .notStarted)
         #expect(experiment.enrollCallCount == 0)
     }
 
@@ -59,7 +59,7 @@ struct OnboardingEndingStepsTests {
         experiment.cohortStub = cohort
         progress.markSeen(.highFive)
 
-        #expect(sut.decisionForNextDialog() == expected)
+        #expect(sut.decisionForNextDialog() == .decided(expected))
         #expect(sut.gotItPressed(after: .highFive) == expected)
         #expect(experiment.enrollCallCount == 0)
     }
@@ -71,14 +71,14 @@ struct OnboardingEndingStepsTests {
         progress.markSeen(.highFive)
         progress.markSeen(.subscriptionUpsell)
 
-        #expect(sut.decisionForNextDialog() == .completed)
+        #expect(sut.decisionForNextDialog() == .decided(.completed))
         #expect(sut.gotItPressed(after: .subscriptionUpsell) == .completed)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Got it on a dialog before the ending is left to the path", .timeLimit(.minutes(1)),
+    @Test("Got it on a dialog that isn't part of the ending shows nothing", .timeLimit(.minutes(1)),
           arguments: [ContextualDialogType.tryASearch, .tryASite, .defaultTrackers, .tryFireButton, .defaultSearchDone])
-    func gotItBeforeEndingReturnsNil(dialog: ContextualDialogType) {
-        #expect(sut.gotItPressed(after: dialog) == nil)
+    func gotItOutsideEndingShowsNothing(dialog: ContextualDialogType) {
+        #expect(sut.gotItPressed(after: dialog) == .none)
     }
 }

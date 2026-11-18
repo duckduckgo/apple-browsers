@@ -17,11 +17,30 @@
 //
 
 import Foundation
+import Persistence
 import PrivacyDashboard
 
 /// The one value only the search path reads and writes.
 protocol BlockedTrackerStoring: AnyObject {
     var blockedTrackerSeen: Bool { get set }
+}
+
+struct SearchOnboardingPathSettings: StoringKeys {
+    let blockedTrackerSeen = StorageKey<Bool>(.contextualOnboardingBlockedTrackers,
+                                              migrateLegacyKey: "contextual.onboarding.blocked.trackers")
+}
+
+final class SearchOnboardingPathStorage: BlockedTrackerStoring {
+    private let settings: any KeyedStoring<SearchOnboardingPathSettings>
+
+    init(settings: any KeyedStoring<SearchOnboardingPathSettings> = UserDefaults.standard.keyedStoring()) {
+        self.settings = settings
+    }
+
+    var blockedTrackerSeen: Bool {
+        get { settings.blockedTrackerSeen ?? false }
+        set { settings.blockedTrackerSeen = newValue }
+    }
 }
 
 /// Today's contextual onboarding: Try a search → search done / Try a site → trackers → Fire → the shared ending.
@@ -33,7 +52,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
     private let trackerMessageProvider: TrackerMessageProviding
 
     init(progress: ContextualOnboardingProgressReading,
-         storage: BlockedTrackerStoring,
+         storage: BlockedTrackerStoring = SearchOnboardingPathStorage(),
          subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
          trackerMessageProvider: TrackerMessageProviding) {
         self.progress = progress
@@ -44,9 +63,13 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
 
     let isUILocked = false
 
+    func reset() {
+        storage.blockedTrackerSeen = false
+    }
+
     func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision {
         // 1. Once the final dialog was seen, the ending decides (upsell or completed).
-        if let decision = ending.decisionForNextDialog() { return decision }
+        if case .decided(let decision) = ending.decisionForNextDialog() { return decision }
         // 2. Otherwise pick today's dialog for this tab, without writing anything.
         let dialog: ContextualDialogType?
         switch tab.content {
@@ -83,7 +106,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
             // Skipping Fire reaches the ending.
             return ending.start()
         default:
-            return ending.gotItPressed(after: lastDialog) ?? .none
+            return ending.gotItPressed(after: lastDialog)
         }
     }
 }

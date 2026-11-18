@@ -375,9 +375,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             try archive.data.write(to: file, options: .atomic)
             let webExtension = try await WKWebExtension.makeCopyingErrors(at: file)
 
-            // macOS 15 WebKit flags MV3 extensions using `webRequest` with a non-fatal background persistence error.
-            let fatalErrors = webExtension.errors.map(NSError.webKitSafe).filter { !$0.isBackgroundPersistenceWarning }
-            guard fatalErrors.isEmpty else {
+            guard webExtension.errors.map(NSError.webKitSafe).allSatisfy(isIgnorableManifestError) else {
                 throw ChromeWebStoreError.unsupportedManifest
             }
 
@@ -415,6 +413,14 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     private func installedExtension(_ identifier: String, manager: WebExtensionManager) -> InstalledWebExtension? {
         manager.installationStore.installedExtensions(withStoreIdentity: .init(store: .chromeWebStore, id: identifier)).first
+    }
+
+    /// macOS 15 / iOS 18 WebKit flags MV3 extensions using `webRequest` with a non-fatal background persistence error.
+    private func isIgnorableManifestError(_ error: NSError) -> Bool {
+        if #unavailable(macOS 26.0, iOS 26.0) {
+            return error.isBackgroundPersistenceWarning
+        }
+        return false
     }
 
     private func isCancellation(_ error: Error) -> Bool {

@@ -62,6 +62,32 @@ the repository root before reporting.**
 A new Swift Testing test (`@Test`) must declare a timeout. The framework default
 is 60 minutes, which can outlast the CI workflow itself.
 
+Ask of every added test: **what realistic defect in production code makes it fail
+first?** A test earns its place by pinning a decision: a branch, a mapping, an
+ordering, an error path, a round-trip through a real store, a race, or a shipped
+bug's regression. A defect that some other test already catches first does not count.
+
+Report test value in one 🟡 Nit that lists the affected tests, with the shape
+and the smaller replacement:
+
+- **Permutations**: one scenario written as N functions → one parameterized
+  test holding only the rows that exercise different code paths.
+- **Redundant layer**: a rule re-tested through an adapter or forwarder whose
+  target already has its own suite → test only the adapter's own logic.
+- **Tautology**: reads back what was just set, or recomputes the production
+  formula in the test.
+- **Pinned constants**: copy compared to its `UserText` constant, a size, colour
+  or font compared to its literal → copy needs no test; snapshot tests own visuals.
+- **Framework behaviour**: Swift, Foundation, UIKit, AppKit or Combine doing
+  what they document.
+- **Over-specified fix**: a small fix arriving with tests for code it did not
+  change → one test for the fix, one for the branch where the fix doesn't apply.
+- **Fixed waits**: `sleep`, `RunLoop.run(until:)`, one-second predicate polls →
+  inject a clock or await a completion.
+
+A test that cannot fail is 🔴 Important: an assertion inside a closure that never
+runs, a file in no target, a suite skipped unconditionally.
+
 ## Platform API pitfalls
 
 Flag a `super` call from an override of an optional protocol method on a UIKit

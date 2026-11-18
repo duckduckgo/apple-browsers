@@ -8,6 +8,10 @@ something wrong and nothing catches it during the task. Procedures live in
   the files you changed. CI uses `--strict`, so any warning, including the
   file-header check, fails the PR; `--force-exclude` skips files CI doesn't
   lint, such as `Package.swift`.
+- A new test must name the realistic defect it catches first. Cover one
+  scenario's rows with one parameterized test, and test code you changed, not
+  its neighbours. Leave copy, design values and Apple framework behaviour to
+  snapshots or to nothing (the full list is in `REVIEW.md` → Unit tests).
 - Every new Swift Testing `@Test` needs `.timeLimit(.minutes(1))`, which
   requires `@available(iOS 16, macOS 13, *)`.
 - Adding, moving or deleting files in the Xcode projects: use the

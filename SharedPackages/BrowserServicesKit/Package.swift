@@ -624,6 +624,7 @@ let package = Package(
         .testTarget(
             name: "BrowserServicesKitTests",
             dependencies: [
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "WideEvent", package: "WideEvent"),
                 "SharedObjCTestsUtils",
                 "BrowserServicesKit",

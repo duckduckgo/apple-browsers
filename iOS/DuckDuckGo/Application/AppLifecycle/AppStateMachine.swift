@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import BrowserServicesKit
 import Core
 import PixelKit
 
@@ -89,14 +90,12 @@ protocol InitializingHandling {
 
     init()
 
-    func makeLaunchingState() throws -> any LaunchingHandling
+    func makeLaunchingState(startupFailureInstrumentation: any StartupFailureInstrumentation) throws -> any LaunchingHandling
 
 }
 
 @MainActor
 protocol LaunchingHandling {
-
-    init() throws
 
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
 
@@ -190,13 +189,16 @@ final class AppStateMachine {
 
     private let terminatingStateFactory: TerminatingStateFactory
     private let launchBreadcrumb: LaunchBreadcrumb
+    private let startupFailureInstrumentation: any StartupFailureInstrumentation
 
     init(initialState: AppState,
          terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory(),
-         launchBreadcrumb: LaunchBreadcrumb = LaunchBreadcrumb()) {
+         launchBreadcrumb: LaunchBreadcrumb = LaunchBreadcrumb(),
+         startupFailureInstrumentation: any StartupFailureInstrumentation = StartupFailureMetrics()) {
         self.currentState = initialState
         self.terminatingStateFactory = terminatingStateFactory
         self.launchBreadcrumb = launchBreadcrumb
+        self.startupFailureInstrumentation = startupFailureInstrumentation
     }
 
     func handle(_ event: AppEvent) {
@@ -237,10 +239,11 @@ final class AppStateMachine {
         } else {
             launchBreadcrumb.startLaunch()
             do {
-                let launching = try initializing.makeLaunchingState()
+                let launching = try initializing.makeLaunchingState(startupFailureInstrumentation: startupFailureInstrumentation)
                 launchBreadcrumb.mark(.launched)
                 currentState = .launching(launching)
             } catch {
+                startupFailureInstrumentation.recordFailure()
                 launchBreadcrumb.mark(.terminating)
                 currentState = .terminating(terminatingStateFactory.makeTerminatingState(error: error))
             }

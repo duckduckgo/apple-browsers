@@ -1,0 +1,39 @@
+{
+    "startup_failure": {
+        "description": "A known startup failure prevents the app from becoming usable. Sent once per failure episode; further failures are suppressed until a successful startup.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "startup_failure_returned": {
+        "description": "The first foreground launch attempt after a recorded startup failure. The attempt can still fail; it does not close the failure episode.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "days_since_first_failure",
+                "type": "string",
+                "description": "Whole elapsed 24-hour periods since the episode's first failure. 7+ caps all later returns; unknown covers a clock moving backwards. No failure date or timestamp is sent.",
+                "enum": ["0", "1", "2", "3", "4", "5", "6", "7+", "unknown"]
+            }
+        ]
+    },
+    "startup_failure_recovered": {
+        "description": "The app becomes ready for user interaction after a recorded startup failure. Sent once, closing the episode and allowing a subsequent failure to start a new one.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "days_since_first_failure",
+                "type": "string",
+                "description": "Whole elapsed 24-hour periods since the episode's first failure. 7+ caps all later recoveries; unknown covers a clock moving backwards. No failure date or timestamp is sent.",
+                "enum": ["0", "1", "2", "3", "4", "5", "6", "7+", "unknown"]
+            }
+        ]
+    }
+}

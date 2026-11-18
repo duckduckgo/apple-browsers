@@ -35,7 +35,7 @@ final class Database {
         static let databaseName = "Database"
     }
 
-    init() {
+    init(startupFailureInstrumentation: any StartupFailureInstrumentation) {
 #if DEBUG
         assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
             "Use CoreData.---Container() methods for testing purposes:\n" + Thread.callStackSymbols.description
@@ -72,6 +72,7 @@ final class Database {
                 NSData.self
             ], keyStore: keyStore)
         } catch {
+            startupFailureInstrumentation.recordFailure()
             PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
             Thread.sleep(forTimeInterval: 1)
             fatalError("Could not register value transformers: \(error.localizedDescription)")

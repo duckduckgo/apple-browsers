@@ -18,10 +18,12 @@
 //
 
 import HangMetrics
+import BrowserServicesKit
 import PrivacyConfig
 
 struct AppDependencies {
 
+    let startupFailureInstrumentation: any StartupFailureInstrumentation
     let mainCoordinator: MainCoordinator
     let services: AppServices
     let launchTaskManager: LaunchTaskManager

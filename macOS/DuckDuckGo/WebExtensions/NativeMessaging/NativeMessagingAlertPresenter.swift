@@ -54,13 +54,15 @@ final class NativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
               limitationProvider.hasHitNativeMessagingLimitation(identifier: identifier),
               !limitationProvider.isNativeMessagingAlertSuppressed(identifier: identifier) else { return }
 
-        switch await alertPresenter.present(.nativeMessagingUnavailable(for: context.webExtension)) {
-        case .confirmed(isChecked: true):
+        let response = await alertPresenter.present(.nativeMessagingUnavailable(for: context.webExtension))
+        switch response {
+        case .confirmed(isChecked: true), .secondary(isChecked: true):
             limitationProvider.suppressNativeMessagingAlert(identifier: identifier)
-        case .secondary:
-            windowControllersManager.show(url: .ddgLearnMore, tabId: nil, source: .ui, newTab: true, selected: true)
-        case .confirmed(isChecked: false), .cancelled:
+        case .confirmed(isChecked: false), .secondary(isChecked: false), .cancelled:
             break
+        }
+        if case .secondary = response {
+            windowControllersManager.show(url: .ddgLearnMore, tabId: nil, source: .ui, newTab: true, selected: true)
         }
     }
 

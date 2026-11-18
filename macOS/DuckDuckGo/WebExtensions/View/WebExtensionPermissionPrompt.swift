@@ -56,7 +56,8 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
         let asksForUnavailablePermissions = !permissions.unavailablePermissions.isEmpty
 
-        // Nothing to warn the user about, so nothing to ask: the alert would list no permissions above an Allow button.
+        // Unavailable permissions are never asked for: they're taken out of the request before it gets here and are
+        // only explained. If nothing else needs a warning, there's nothing to ask, so the rest is granted.
         if WebExtensionPermissionFormatter.messages(for: permissions).isEmpty {
             if asksForUnavailablePermissions {
                 await enqueue { [nativeMessagingAlertPresenter] in

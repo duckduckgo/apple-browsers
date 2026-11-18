@@ -52,7 +52,7 @@ struct WebExtensionAlert: View {
 
     enum Response {
         case cancelled
-        case secondary
+        case secondary(isChecked: Bool)
         case confirmed(isChecked: Bool)
     }
 
@@ -245,7 +245,7 @@ struct WebExtensionAlert: View {
             dismissStyleButton(title, response: .cancelled)
                 .keyboardShortcut(.cancelAction)
         case .secondary(let title):
-            dismissStyleButton(title, response: .secondary)
+            dismissStyleButton(title, response: .secondary(isChecked: isChecked))
         }
     }
 

@@ -47,10 +47,10 @@ extension WebExtensionAlert.Configuration {
         let name = webExtension.displayName ?? UserText.webExtensionUnnamedExtension
         return Self(
             icon: .illustration(NSImage(resource: .duckDuckGoResponseAlertFeature96)),
-            title: String(format: UserText.webExtensionNativeMessagingUnavailableTitle, name),
-            message: String(format: UserText.webExtensionNativeMessagingUnavailableMessage, name),
+            title: UserText.webExtensionNativeMessagingUnavailableTitle(name),
+            message: UserText.webExtensionNativeMessagingUnavailableMessage(name),
             messageColor: .textPrimary,
-            checkbox: .suppression(String(format: UserText.webExtensionNativeMessagingUnavailableDontShowAgain, name)),
+            checkbox: .suppression(UserText.webExtensionNativeMessagingUnavailableDontShowAgain(name)),
             confirmTitle: UserText.ok,
             leadingButton: .secondary(UserText.learnMore))
     }

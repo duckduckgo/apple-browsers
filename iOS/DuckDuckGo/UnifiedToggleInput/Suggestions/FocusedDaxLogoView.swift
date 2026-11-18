@@ -59,7 +59,11 @@ struct FocusedDaxLogoView: View {
         Lottie.LottieView(animation: LottieAnimation.named(animationName))
             .playbackMode(playbackMode)
             .animationSpeed(animationSpeed)
-            .animationDidFinish { if $0 { restingProgress = progress } }
+            // Lottie reports a zero-length morph as finished from inside the view update, so the write waits for the next turn.
+            .animationDidFinish { finished in
+                guard finished else { return }
+                DispatchQueue.main.async { restingProgress = progress }
+            }
             .frame(height: Self.size.height)
             .id(animationName)
             .onAppear { hasShown = hasShown || !freezes }

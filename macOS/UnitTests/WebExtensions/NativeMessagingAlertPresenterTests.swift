@@ -65,14 +65,15 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         XCTAssertEqual(limitation.suppressed, [bitwarden.uniqueIdentifier, onePassword.uniqueIdentifier])
     }
 
-    func testWhenLearnMoreIsPressedThenTheHelpPageOpensInANewTab() async throws {
-        alertPresenter.response = .secondary
+    func testWhenLearnMoreIsPressedWithTheCheckboxThenTheHelpPageOpensAndTheAlertIsSuppressed() async throws {
+        alertPresenter.response = .secondary(isChecked: true)
         let bitwarden = try await limitedContext(named: "Bitwarden")
 
         await presenter.explain(bitwarden)
 
         XCTAssertEqual(windowControllersManager.showCalled?.url, .ddgLearnMore)
         XCTAssertEqual(windowControllersManager.showCalled?.newTab, true)
+        XCTAssertEqual(limitation.suppressed, [bitwarden.uniqueIdentifier])
     }
 
     func testWhenTheActionIsClickedThenOnlyLimitedExtensionsThatRequireNativeMessagingShowTheAlert() async throws {

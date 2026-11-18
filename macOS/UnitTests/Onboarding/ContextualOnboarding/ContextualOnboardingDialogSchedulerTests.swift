@@ -226,8 +226,10 @@ extension ContextualOnboardingDialogSchedulerTests {
     @Test("A Duck.ai page doesn't ask on load; it waits up to 2 seconds for the first answer", .timeLimit(.minutes(1)))
     func duckAIPageWaits() async throws {
         provider.nextDialog = .thatsDuckAI
+        let tab = try await duckAITab()
+        let scheduler = makeScheduler()
 
-        makeScheduler().navigationDidFinish(in: try await duckAITab())
+        scheduler.navigationDidFinish(in: tab)
 
         #expect(sent.updates == [.hide])
         #expect(provider.dialogTypeForTabCallCount == 0)
@@ -238,8 +240,9 @@ extension ContextualOnboardingDialogSchedulerTests {
     @Test("The first answer asks once and stops the failsafe", .timeLimit(.minutes(1)))
     func firstAnswerAsksOnce() async throws {
         provider.nextDialog = .thatsDuckAI
+        let tab = try await duckAITab()
         let scheduler = makeScheduler()
-        scheduler.navigationDidFinish(in: try await duckAITab())
+        scheduler.navigationDidFinish(in: tab)
 
         scheduler.firstAnswerReceived()
         timer.fireAll()
@@ -252,8 +255,9 @@ extension ContextualOnboardingDialogSchedulerTests {
     @Test("Without an answer, the failsafe asks once", .timeLimit(.minutes(1)))
     func failsafeAsksOnce() async throws {
         provider.nextDialog = .thatsDuckAI
+        let tab = try await duckAITab()
         let scheduler = makeScheduler()
-        scheduler.navigationDidFinish(in: try await duckAITab())
+        scheduler.navigationDidFinish(in: tab)
 
         timer.fireAll()
         scheduler.firstAnswerReceived()
@@ -266,13 +270,15 @@ extension ContextualOnboardingDialogSchedulerTests {
     @Test("Leaving the Duck.ai page or switching tabs stops waiting", .timeLimit(.minutes(1)), arguments: [true, false])
     func leavingStopsWaiting(bySwitchingTabs: Bool) async throws {
         provider.nextDialog = nil
+        let tab = try await duckAITab()
+        let otherTab = await Tab(content: .newtab)
         let scheduler = makeScheduler()
-        scheduler.navigationDidFinish(in: try await duckAITab())
+        scheduler.navigationDidFinish(in: tab)
 
         if bySwitchingTabs {
             scheduler.selectedTabDidChange()
         } else {
-            scheduler.navigationDidFinish(in: await Tab(content: .newtab))
+            scheduler.navigationDidFinish(in: otherTab)
         }
         timer.fireAll()
         scheduler.firstAnswerReceived()
@@ -285,8 +291,9 @@ extension ContextualOnboardingDialogSchedulerTests {
     @Test("Once onboarding is completed, a Duck.ai page doesn't wait", .timeLimit(.minutes(1)))
     func completedOnboardingDoesNotWait() async throws {
         provider.state = .onboardingCompleted
+        let tab = try await duckAITab()
 
-        makeScheduler().navigationDidFinish(in: try await duckAITab())
+        makeScheduler().navigationDidFinish(in: tab)
 
         #expect(provider.dialogTypeForTabCallCount == 1)
         #expect(timer.pendingDelays.isEmpty)

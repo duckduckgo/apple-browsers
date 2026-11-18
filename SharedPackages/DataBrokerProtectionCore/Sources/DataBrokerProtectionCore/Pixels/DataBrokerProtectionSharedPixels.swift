@@ -93,6 +93,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let childParentRecordDifference = "child-parent-record-difference"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
         public static let actionTypeKey = "action_type"
+        public static let userAssistedKey = "user_assisted"
         public static let keystoreField = "keystore_field"
         public static let started = "num_started"
         public static let orphaned = "num_orphaned"
@@ -915,7 +916,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .serviceEmailConfirmationJobSuccess,
                     .updateDataBrokersSuccess:
 
-                pixelKit.fire(event.prefixed(platform.pixelNamePrefix))
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), withAdditionalParameters: parameters)
             case .mainFrameChallengeDetected,
                     .challengeClearanceObserved,
                     .challengeSolved,

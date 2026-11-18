@@ -25,7 +25,13 @@ import PixelKit
 
 class PasswordGenerationPromptViewController: UIViewController {
 
-    typealias PasswordGenerationPromptViewControllerCompletion = (_ useGeneratedPassword: Bool) -> Void
+    enum Selection {
+        case generatedPassword
+        case ownPassword
+        case cancelled
+    }
+
+    typealias PasswordGenerationPromptViewControllerCompletion = (_ selection: Selection) -> Void
     let completion: PasswordGenerationPromptViewControllerCompletion?
 
     private var viewModel: PasswordGenerationPromptViewModel?
@@ -66,14 +72,14 @@ class PasswordGenerationPromptViewController: UIViewController {
     }
 
     /// This is to handle cases where a webpage may have also presented a context menu, which ends up getting dismissed instead of this sheet
-    private func dismissSheetWithRetry(attempts: Int = 2, useGeneratedPassword: Bool) {
+    private func dismissSheetWithRetry(attempts: Int = 2, selection: Selection) {
         dismiss(animated: true) { [weak self] in
             if self?.presentingViewController != nil && attempts > 0 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    self?.dismissSheetWithRetry(attempts: attempts - 1, useGeneratedPassword: useGeneratedPassword)
+                    self?.dismissSheetWithRetry(attempts: attempts - 1, selection: selection)
                 }
             } else {
-                self?.completion?(useGeneratedPassword)
+                self?.completion?(selection)
             }
         }
     }
@@ -83,7 +89,7 @@ extension PasswordGenerationPromptViewController: UISheetPresentationControllerD
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptDismissed)
 
-        self.completion?(false)
+        self.completion?(.cancelled)
     }
 }
 
@@ -91,13 +97,19 @@ extension PasswordGenerationPromptViewController: PasswordGenerationPromptViewMo
     func passwordGenerationPromptViewModelDidSelect(_ viewModel: PasswordGenerationPromptViewModel) {
         PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptConfirmed)
 
-        dismissSheetWithRetry(useGeneratedPassword: true)
+        dismissSheetWithRetry(selection: .generatedPassword)
     }
 
     func passwordGenerationPromptViewModelDidCancel(_ viewModel: PasswordGenerationPromptViewModel) {
         PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptDismissed)
 
-        dismissSheetWithRetry(useGeneratedPassword: false)
+        dismissSheetWithRetry(selection: .cancelled)
+    }
+
+    func passwordGenerationPromptViewModelDidChooseOwnPassword(_ viewModel: PasswordGenerationPromptViewModel) {
+        PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptDismissed)
+
+        dismissSheetWithRetry(selection: .ownPassword)
     }
 
     func passwordGenerationPromptViewModelDidResizeContent(_ viewModel: PasswordGenerationPromptViewModel, contentHeight: CGFloat) {

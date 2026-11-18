@@ -21,6 +21,7 @@ import Foundation
 
 protocol PasswordGenerationPromptViewModelDelegate: AnyObject {
     func passwordGenerationPromptViewModelDidSelect(_ viewModel: PasswordGenerationPromptViewModel)
+    func passwordGenerationPromptViewModelDidChooseOwnPassword(_ viewModel: PasswordGenerationPromptViewModel)
     func passwordGenerationPromptViewModelDidCancel(_ viewModel: PasswordGenerationPromptViewModel)
     func passwordGenerationPromptViewModelDidResizeContent(_ viewModel: PasswordGenerationPromptViewModel, contentHeight: CGFloat)
 }
@@ -51,5 +52,9 @@ class PasswordGenerationPromptViewModel: ObservableObject {
 
     func cancelButtonPressed() {
         delegate?.passwordGenerationPromptViewModelDidCancel(self)
+    }
+
+    func useOwnPasswordPressed() {
+        delegate?.passwordGenerationPromptViewModelDidChooseOwnPassword(self)
     }
 }

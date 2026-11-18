@@ -3,7 +3,9 @@
 Every step uses only generic actions and the ids documented in ../../features/. Keep it that way: when the app gets
 an XCUITest target, these port to Swift mechanically, from the feature map, not from this code.
 """
+import ast
 import json
+import re
 import time
 
 from . import env
@@ -149,13 +151,24 @@ def open_duckai_new_chat(ios):
     ios.tap(ids(ios)["aichat"])
     ios.tap('label="New Chat"')
     # The first duck.ai load on a fresh iPad simulator sometimes fails with "Could not connect to the server"; a
-    # reload loads it. Reload once and say so, so a run that needed it is visible in the report.
-    error = 'label="Could not connect to the server."'
-    if ios.eventually("duck.ai loaded or failed to load", lambda: "duck.ai" in (ios.page_url() or "") and "loaded"
-                      or ios.exists(error, 0.2) and "failed", 20) == "failed":
+    # reload loads it. Reload once and say so, so a run that needed it is visible in the report. The URL already
+    # reads duck.ai while that first load is in flight, so "loaded" means the chat input is on screen.
+    if ios.eventually("duck.ai loaded or failed to load", lambda: _duckai_load_state(ios), 20) == "failed":
         ios.note("duck.ai failed its first load (Could not connect to the server); reloaded once")
         tap_first_present(ios, ["id=Browser.OmniBar.Button.RefreshExternal", "id=Browser.OmniBar.Button.Refresh"])
+        ios.eventually("duck.ai loaded after the reload", lambda: _duckai_load_state(ios) == "loaded", 20)
     ios.expect_url_contains("duck.ai", 15)
+
+
+DUCKAI_LOAD_ERROR = 'label="Could not connect to the server."'
+# Duck.ai's chat input: iPhone shows the app's native composer, iPad the page's own input box.
+DUCKAI_INPUT = ["id=AIChat.Toolbar.Button.Submit", 'label="Ask anything privately" nth=0']
+
+
+def _duckai_load_state(ios):
+    if ios.exists(DUCKAI_LOAD_ERROR, 0.2):
+        return "failed"
+    return "loaded" if any(ios.exists(loc, 0.2) for loc in DUCKAI_INPUT) else None
 
 
 def send_duckai_prompt(ios, prompt):
@@ -219,8 +232,7 @@ def new_duckai_chat_tab(ios):
     else:
         ios.tap(ids(ios)["aichat"])
         ios.tap('label="New Chat"')
-    ios.eventually("a new chat without a chat id",
-                   lambda: "duck.ai" in (ios.page_url() or "") and "chatID=" not in ios.page_url(), 15)
+    ios.eventually("a new chat without a chat id", lambda: _is_empty_duckai_chat(ios.page_url() or ""), 15)
 
 
 def duckai_history(ios):
@@ -250,8 +262,18 @@ def duckai_history(ios):
     return ios._log("duck.ai history", [], lambda: titles)
 
 
+def _is_empty_duckai_chat(url):
+    return "duck.ai" in url and "chatID=" not in url
+
+
+# Device.snapshot writes `label={label!r}`, so read the label back as the Python literal repr wrote: a title with an
+# apostrophe comes out double-quoted (label="Mango's chat").
+_LABEL = re.compile(r""" label=('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")""")
+
+
 def _label(tree_line):
-    return tree_line.split("label='", 1)[1].split("' value=", 1)[0] if "label='" in tree_line else ""
+    m = _LABEL.search(tree_line)
+    return ast.literal_eval(m.group(1)) if m else ""
 
 
 def delete_current_duckai_chat(ios, timeout=180):
@@ -264,8 +286,7 @@ def delete_current_duckai_chat(ios, timeout=180):
     ios.wait("id=Fire.Confirmation.Button.ThisTab", "visible", 10)
     ios.shot("fire-sheet")
     ios.tap("id=Fire.Confirmation.Button.ThisTab")
-    ios.eventually("tab shows an empty chat",
-                   lambda: "duck.ai" in (ios.page_url() or "") and "chatID=" not in ios.page_url(), 15)
+    ios.eventually("tab shows an empty chat", lambda: _is_empty_duckai_chat(ios.page_url() or ""), 15)
     ios.wait(DUCKAI_FIRE[ios.device], "visible", timeout)
 
 

@@ -9,7 +9,7 @@ os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import device, env, harness, telemetry, video  # noqa: E402
+from verify_ios import device, env, harness, steps, telemetry, video  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -221,6 +221,29 @@ class LocatorTests(unittest.TestCase):
         self.assertEqual(parse_locator('role=button label="New Tab" nth=1')["sel"], {"role": "button", "label": "New Tab", "nth": "1"})
         self.assertEqual(parse_locator("name=x")["sel"], {"label": "x"})
         self.assertEqual(parse_locator("web:css=#token"), {"web": "css", "value": "#token"})
+
+
+class DuckaiHistoryTests(unittest.TestCase):
+    """Chat titles are read back from the tree text Device.snapshot writes, where repr double-quotes a title that has
+    an apostrophe."""
+    TITLES = ["Mango's chat", 'Say "hi"', "Plain chat"]
+
+    def history(self, device_name, nodes):
+        driver = mock.Mock(tree=lambda: {"nodes": [dict(d=1, type=t, id=i, label=l, value="", enabled=True) for t, i, l in nodes]})
+        snap = device.Device.snapshot(mock.Mock(driver=driver))
+        ios = mock.Mock(device=device_name, snapshot=lambda: snap, _log=lambda action, args, fn: fn())
+        ios.exists.return_value = True
+        return steps.duckai_history(ios)
+
+    def test_iphone_reads_titles_with_quotes(self):
+        nodes = [(48, "Chats", "")]
+        for t in self.TITLES:
+            nodes += [(43, "Chat-24", ""), (48, "", t)]
+        self.assertEqual(self.history("iphone", nodes), self.TITLES)
+
+    def test_ipad_reads_titles_with_quotes(self):
+        nodes = [(9, "", "Search chats")] + [(9, "", t) for t in self.TITLES] + [(9, "", "Settings & More"), (9, "", "Later")]
+        self.assertEqual(self.history("ipad", nodes), self.TITLES)
 
 
 class PreflightTests(unittest.TestCase):

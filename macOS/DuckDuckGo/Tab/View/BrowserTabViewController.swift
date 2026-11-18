@@ -138,7 +138,6 @@ final class BrowserTabViewController: NSViewController {
 
     private var lastURL: URL?
     private weak var lastTab: Tab?
-    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private var wasContextualOnboardingDialogDismissed = false
     private var presentedContextualOnboardingDialogType: ContextualDialogType?
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -179,7 +178,6 @@ final class BrowserTabViewController: NSViewController {
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
-         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          newTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing = NSApp.delegateTyped.newTabPageCustomizationModel,
@@ -213,7 +211,6 @@ final class BrowserTabViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
-        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.featureFlagger = featureFlagger
         self.newTabPageActionsManager = newTabPageActionsManager
         self.newTabPageCustomizationModel = newTabPageCustomizationModel
@@ -689,7 +686,6 @@ final class BrowserTabViewController: NSViewController {
     private func abandonContextualOnboardingDialog() {
         if presentedContextualOnboardingDialogType == .subscriptionUpsell,
            onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
-            subscriptionUpsellMetrics.report(.upsellDismissed)
             onboardingDialogTypeProvider.gotItPressed()
         }
         removeExistingDialog()

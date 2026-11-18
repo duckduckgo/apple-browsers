@@ -26,14 +26,11 @@ protocol ContextualDaxDialogsFactory {
 
 struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     private let onboardingPixelReporter: OnboardingPixelReporting
-    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private let fireCoordinator: FireCoordinator
 
     init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
-         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          fireCoordinator: FireCoordinator) {
         self.onboardingPixelReporter = onboardingPixelReporter
-        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.fireCoordinator = fireCoordinator
     }
 
@@ -54,8 +51,7 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
             dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
             onboardingPixelReporter.measureLastDialogShown()
         case .subscriptionUpsell:
-            dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, metrics: subscriptionUpsellMetrics, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
-            subscriptionUpsellMetrics.report(.upsellShown)
+            dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         }
         onboardingPixelReporter.measureDialogShown(dialogType: type)
         let adjustedView = {
@@ -111,24 +107,20 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     }
 
     static func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate,
-                                         metrics: OnboardingSubscriptionUpsellMetricsReporting,
                                          onDismiss: @escaping () -> Void,
                                          onManualDismiss: @escaping () -> Void,
                                          onGotItPressed: @escaping () -> Void) -> OnboardingSubscriptionUpsellDialog {
         OnboardingSubscriptionUpsellDialog(
             acceptAction: {
-                metrics.report(.tryForFreeClick)
                 onGotItPressed()
                 onDismiss()
                 delegate.navigateToSubscriptionUpsellPurchasePage()
             },
             declineAction: {
-                metrics.report(.noThanksClick)
                 onGotItPressed()
                 onDismiss()
             },
             onManualDismiss: {
-                metrics.report(.upsellDismissed)
                 onGotItPressed()
                 onManualDismiss()
             }

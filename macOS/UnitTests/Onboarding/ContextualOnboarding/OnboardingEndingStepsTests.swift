@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 @_spi(Testing) import Persistence
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
@@ -24,20 +23,19 @@ import Testing
 @MainActor
 struct OnboardingEndingStepsTests {
 
-    let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
+    let eligibility = StubOnboardingSubscriptionUpsellEligibility()
     let progress = ContextualOnboardingProgress(storage: MockContextualDialogStateStoring(),
                                                 settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
     let sut: OnboardingEndingSteps
 
     init() {
-        sut = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: experiment)
+        sut = OnboardingEndingSteps(progress: progress, subscriptionUpsellEligibility: eligibility)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Starting the ending enrolls once and shows High Five", .timeLimit(.minutes(1)))
-    func startEnrollsAndShowsHighFive() {
+    @Test("Starting the ending shows High Five", .timeLimit(.minutes(1)))
+    func startShowsHighFive() {
         #expect(sut.start() == .next(.highFive))
-        #expect(experiment.enrollCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -47,27 +45,24 @@ struct OnboardingEndingStepsTests {
         progress.markSeen(.defaultTrackers)
 
         #expect(sut.decisionForNextDialog() == .notStarted)
-        #expect(experiment.enrollCallCount == 0)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("After High Five, the treatment cohort gets the upsell and the others complete", .timeLimit(.minutes(1)),
-          arguments: [(FeatureFlag.OnboardingSubscriptionUpsellCohort?.some(.treatment), ContextualOnboardingDecision.next(.subscriptionUpsell)),
-                      (.some(.control), .completed),
-                      (nil, .completed)])
-    func afterHighFive(cohort: FeatureFlag.OnboardingSubscriptionUpsellCohort?, expected: ContextualOnboardingDecision) {
-        experiment.cohortStub = cohort
+    @Test("After High Five, eligible users get the upsell and the others complete", .timeLimit(.minutes(1)),
+          arguments: [(true, ContextualOnboardingDecision.next(.subscriptionUpsell)),
+                      (false, .completed)])
+    func afterHighFive(isEligible: Bool, expected: ContextualOnboardingDecision) {
+        eligibility.isEligible = isEligible
         progress.markSeen(.highFive)
 
         #expect(sut.decisionForNextDialog() == .decided(expected))
         #expect(sut.gotItPressed(after: .highFive) == expected)
-        #expect(experiment.enrollCallCount == 0)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Once the upsell was seen, onboarding completes", .timeLimit(.minutes(1)))
     func upsellSeenCompletes() {
-        experiment.cohortStub = .treatment
+        eligibility.isEligible = true
         progress.markSeen(.highFive)
         progress.markSeen(.subscriptionUpsell)
 

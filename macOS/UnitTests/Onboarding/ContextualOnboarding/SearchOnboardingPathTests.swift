@@ -28,7 +28,7 @@ struct SearchOnboardingPathTests {
 
     let storage = MockContextualDialogStateStoring()
     let pathStorage = MockBlockedTrackerStoring()
-    let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
+    let eligibility = StubOnboardingSubscriptionUpsellEligibility()
     let trackerProvider = MockTrackerMessageProvider()
     let progress: ContextualOnboardingProgress
     let sut: SearchOnboardingPath
@@ -37,7 +37,7 @@ struct SearchOnboardingPathTests {
         progress = ContextualOnboardingProgress(storage: storage, settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
         sut = SearchOnboardingPath(progress: progress,
                                    storage: pathStorage,
-                                   subscriptionUpsellExperiment: experiment,
+                                   subscriptionUpsellEligibility: eligibility,
                                    trackerMessageProvider: trackerProvider)
     }
 
@@ -53,7 +53,7 @@ struct SearchOnboardingPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Once High Five was seen, the ending decides before the tab's own rules", .timeLimit(.minutes(1)))
     func endingDecidesFirst() async {
-        experiment.cohortStub = .treatment
+        eligibility.isEligible = true
         progress.markSeen(.highFive)
         let tab = await Tab(content: .newtab)
 
@@ -61,7 +61,7 @@ struct SearchOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Reaching High Five starts the ending, which enrolls once", .timeLimit(.minutes(1)))
+    @Test("Reaching High Five starts the ending", .timeLimit(.minutes(1)))
     func highFiveStartsTheEnding() async {
         progress.markSeen(.tryASearch)
         progress.markSeen(.defaultTrackers)
@@ -69,7 +69,6 @@ struct SearchOnboardingPathTests {
         let tab = await Tab(content: .newtab)
 
         #expect(sut.dialog(for: tab, privacyInfo: nil) == .next(.highFive))
-        #expect(experiment.enrollCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -120,13 +119,12 @@ struct SearchOnboardingPathTests {
           ])
     func gotIt(dialog: ContextualDialogType, expected: ContextualOnboardingDecision) {
         #expect(sut.gotItPressed(lastDialog: dialog) == expected)
-        #expect(experiment.enrollCallCount == (dialog == .tryFireButton ? 1 : 0))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Got it on High Five and the upsell is handled by the ending", .timeLimit(.minutes(1)))
     func gotItOnEndingDialogs() {
-        experiment.cohortStub = .treatment
+        eligibility.isEligible = true
 
         #expect(sut.gotItPressed(lastDialog: .highFive) == .next(.subscriptionUpsell))
         #expect(sut.gotItPressed(lastDialog: .subscriptionUpsell) == .completed)

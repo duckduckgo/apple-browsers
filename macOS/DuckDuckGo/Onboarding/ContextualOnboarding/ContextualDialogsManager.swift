@@ -127,7 +127,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     }
 
     init(trackerMessageProvider: TrackerMessageProviding,
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         subscriptionUpsellEligibility: OnboardingSubscriptionUpsellEligibilityChecking,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
          makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
@@ -138,7 +138,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             switch kind {
             case .search:
                 return SearchOnboardingPath(progress: progress,
-                                            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                            subscriptionUpsellEligibility: subscriptionUpsellEligibility,
                                             trackerMessageProvider: trackerMessageProvider)
             }
         }

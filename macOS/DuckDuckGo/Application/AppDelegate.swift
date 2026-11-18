@@ -1291,8 +1291,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
-            subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
-                featureFlagger: featureFlagger,
+            subscriptionUpsellEligibility: OnboardingSubscriptionUpsellEligibility(
                 subscriptionManager: subscriptionManager
             ),
             settings: keyValueStore.throwingKeyedStoring()

@@ -53,11 +53,11 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
 
     init(progress: ContextualOnboardingProgressReading,
          storage: BlockedTrackerStoring = SearchOnboardingPathStorage(),
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         subscriptionUpsellEligibility: OnboardingSubscriptionUpsellEligibilityChecking,
          trackerMessageProvider: TrackerMessageProviding) {
         self.progress = progress
         self.storage = storage
-        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
+        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellEligibility: subscriptionUpsellEligibility)
         self.trackerMessageProvider = trackerMessageProvider
     }
 

@@ -234,7 +234,7 @@
         }
 
         const isCrossOrigin = !isSameOriginAsTopLevel;
-        // Send ineligible requests too: Swift checks rollback before denying custom-flow requests.
+        // Send ineligible requests too: Swift returns them to WebKit when site permissions is off.
         const isEligibleContext = this === mediaDevices && hasNonOpaqueOrigin && (isDuckAIHost || (isSecureContext &&
             !isSyntheticDocument &&
             (isCrossOrigin || ((!video || policyAllows("camera")) &&

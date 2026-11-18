@@ -103,7 +103,6 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
             var undo: (() -> Void)?
             var viewModel: SettingsSitePermissionsViewModel? = SettingsSitePermissionsViewModel(
                 store: store,
-                isEnabled: { true },
                 favicons: favicons,
                 openSystemSettings: {},
                 presentUndoToast: { _, action in undo = action },

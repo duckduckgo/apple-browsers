@@ -105,7 +105,6 @@ final class SitePermissionsState {
     fileprivate var isGeolocationBackgrounded = false
     fileprivate var geolocationActivitySubscription: AnyCancellable?
     fileprivate var retiredGeolocationUserScripts = [GeolocationUserScript]()
-    fileprivate var shouldRetireGeolocationOnProcessReplacement = false
     fileprivate var storeChangeCancellable: AnyCancellable?
     fileprivate var isCommittedGeolocationPolicyBlocked = false
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
@@ -260,7 +259,6 @@ final class SitePermissionsState {
         geolocationProvider = nil
         geolocationUserScript = nil
         storeChangeCancellable = nil
-        shouldRetireGeolocationOnProcessReplacement = false
     }
 
     fileprivate func discardRetiredGeolocationUserScripts() {
@@ -285,10 +283,6 @@ final class SitePermissionsState {
         geolocationProvider?.cancelPageActivity()
         geolocationUserScript?.cancelAllWatches()
         discardRetiredGeolocationUserScripts()
-        if pageChange == .webContentProcessReplacement,
-           shouldRetireGeolocationOnProcessReplacement {
-            retireGeolocation()
-        }
         coordinator?.pageDidChange(pageChange)
         dismissRecovery()
     }
@@ -297,13 +291,6 @@ final class SitePermissionsState {
         let continuations = pendingBridgeRequests.values.map(\.continuation)
         pendingBridgeRequests.removeAll()
         continuations.forEach { $0.resume(returning: .deny) }
-    }
-
-    fileprivate func bypassPendingBridgeRequests() {
-        let pendingRequests = pendingBridgeRequests
-        pendingBridgeRequests.removeAll()
-        handledBridgeRequestIDs.subtract(pendingRequests.keys)
-        pendingRequests.values.forEach { $0.continuation.resume(returning: .bypass) }
     }
 
     fileprivate func discardPreapprovals() {
@@ -887,17 +874,12 @@ extension TabViewController {
     }
 
     func configureSitePermissionsGeolocation(with userScript: GeolocationUserScript?, notificationCenter: NotificationCenter = .default) {
-        guard let userScript else {
-            // Cached documents keep their injected shim when restored by back/forward navigation.
-            // Retain the bridge until process replacement or tab teardown; navigation still cancels page activity.
-            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = sitePermissionsState.geolocationUserScript != nil
-            return
-        }
+        // iOS 15 installs no geolocation script and keeps WebKit's own prompt.
+        guard let userScript else { return }
         userScript.activationHandler = { [weak self] frame in
             self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
         }
         if sitePermissionsState.geolocationUserScript === userScript {
-            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = false
             if let provider = sitePermissionsState.geolocationProvider {
                 userScript.delegate = provider
                 return
@@ -907,7 +889,6 @@ extension TabViewController {
                 sitePermissionsState.retiredGeolocationUserScripts.append(currentScript)
             }
             sitePermissionsState.geolocationUserScript = userScript
-            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = false
         }
         if let provider = sitePermissionsState.geolocationProvider {
             userScript.delegate = provider
@@ -1262,19 +1243,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         isSitePermissionsEnabled
     }
 
-    func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript?) {
-        guard let userScript else {
-            sitePermissionsState.cancelGrantAnimation()
-            // Existing geolocation documents remain managed, including back/forward-cache restores.
-            sitePermissionsState.bypassPendingBridgeRequests()
-            sitePermissionsState.discardPreapprovals()
-            sitePermissionsState.dismissManagement()
-            sitePermissionsState.coordinator?.resetMediaPermissions {
-                sitePermissionsState.dismissDialog()
-                sitePermissionsState.dismissRecovery()
-            }
-            return
-        }
+    func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript) {
         sitePermissionsState.mediaCaptureUserScript = userScript
         userScript.delegate = self
     }

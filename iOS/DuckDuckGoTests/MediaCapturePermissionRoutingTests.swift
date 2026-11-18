@@ -617,7 +617,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let sut = makeSUT()
         var userScript: MediaCaptureUserScript? = MediaCaptureUserScript()
         weak let retainedUserScript = userScript
-        sut.configureSitePermissionsMediaCapture(with: userScript)
+        sut.configureSitePermissionsMediaCapture(with: try XCTUnwrap(userScript))
         userScript = nil
 
         sut.webViewWebContentProcessDidTerminate(sut.webView)

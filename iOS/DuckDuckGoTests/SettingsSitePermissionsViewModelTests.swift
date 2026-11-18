@@ -427,7 +427,7 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         store.resetDecision(for: .location, at: site)
         store.setPersistentDecision(.deny, for: .microphone, at: otherSite)
         store.setGlobalDefault(.deny, for: .camera)
-        let settings = makeSUT(store: store, isEnabled: { true })
+        let settings = makeSUT(store: store)
         var removal: SitePermissionsRemoval?
         let sheet = SitePermissionsSheetViewModel(
             snapshot: SitePermissionsManagementSnapshot(
@@ -488,12 +488,10 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
     }
 
     private func makeSUT(store: SitePermissionsStore? = nil,
-                         isEnabled: @escaping () -> Bool = { true },
                          openSystemSettings: @escaping () -> Void = {},
                          presentUndoToast: @escaping SettingsSitePermissionsViewModel.UndoToastPresenter = { _, _ in },
                          callbacks: SettingsSitePermissionsViewModel.Callbacks = .init()) -> SettingsSitePermissionsViewModel {
         SettingsSitePermissionsViewModel(store: store ?? makeStore(),
-                                         isEnabled: isEnabled,
                                          openSystemSettings: openSystemSettings,
                                          presentUndoToast: presentUndoToast,
                                          callbacks: callbacks)

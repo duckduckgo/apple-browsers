@@ -65,7 +65,6 @@ protocol AccountManaging {
     func deleteAccount(_ account: SyncAccount) async throws
 
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult
-    func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult
 
     func logout(deviceId: String, token: String) async throws
 

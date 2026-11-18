@@ -328,15 +328,6 @@ struct AccountManager: AccountManaging {
                                                               isUnifiedReadEnabled: isUnifiedReadEnabled)
     }
 
-    func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
-        let info = try crypter.extractLoginInfo(recoveryKey: SyncCode.RecoveryKey(userId: account.userId,
-                                                                                  primaryKey: account.primaryKey))
-        return try await login(info,
-                               deviceId: account.deviceId,
-                               deviceName: deviceName,
-                               deviceType: account.deviceType)
-    }
-
     func deleteAccount(_ account: SyncAccount) async throws {
         guard let token = account.token else {
             throw SyncError.noToken

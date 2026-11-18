@@ -18,6 +18,7 @@
 
 import ConcurrencyExtensions
 import Foundation
+import os.log
 
 @MainActor
 /// Shows and closes the window where the user works through an assisted opt-out.
@@ -127,11 +128,15 @@ public final class AssistedOptOutQueue {
         }
         for candidate in candidates where entersNeedsYou(candidate) {
             guard config.isEnabled(forBrokerURL: candidate.data.dataBroker.url) else { continue }
-            try dependencies.database.add(HistoryEvent(extractedProfileId: candidate.id.extractedProfileId,
-                                                       brokerId: candidate.id.brokerId,
-                                                       profileQueryId: candidate.id.profileQueryId,
-                                                       type: .optOutAwaitingUserAssistance))
-            awaitingIDs.insert(candidate.id)
+            do {
+                try dependencies.database.add(HistoryEvent(extractedProfileId: candidate.id.extractedProfileId,
+                                                           brokerId: candidate.id.brokerId,
+                                                           profileQueryId: candidate.id.profileQueryId,
+                                                           type: .optOutAwaitingUserAssistance))
+                awaitingIDs.insert(candidate.id)
+            } catch {
+                Logger.dataBrokerProtection.error("Failed to mark opt-out as awaiting user assistance: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 

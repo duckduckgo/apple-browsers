@@ -140,6 +140,10 @@ public final class AssistedOptOutQueue {
     /// `droppingSubmitted` closes finished attempts first.
     public func assistedOptOuts(droppingSubmitted: Bool = false) async throws -> [AssistedOptOut] {
         cancelAttemptsNotEnabled()
+        guard !dependencies.isPausedForRevokedSigningKey else {
+            cancelAll()
+            return []
+        }
         guard try await isAuthenticated() else {
             cancelAll()
             return []
@@ -151,7 +155,7 @@ public final class AssistedOptOutQueue {
             }
         }
         let loaded = try await loadSnapshot()
-        guard try await isAuthenticated(for: loaded) else {
+        guard try await isAuthenticated(for: loaded), !dependencies.isPausedForRevokedSigningKey else {
             cancelAll()
             return []
         }

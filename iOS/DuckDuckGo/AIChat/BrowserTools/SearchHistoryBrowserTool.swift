@@ -129,7 +129,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
                 guard let term, !term.isEmpty else { return true }
                 return BrowserToolOutputLimits.clip(displayTitle(title: entry.title, url: entry.url), to: BrowserToolOutputLimits.title)
                     .range(of: term, options: .caseInsensitive) != nil
-                    || redactedURL(entry.url.absoluteString).range(of: term, options: .caseInsensitive) != nil
+                    || ReadTabContentBrowserTool.redactedURL(entry.url.absoluteString).range(of: term, options: .caseInsensitive) != nil
             }
             .sorted { $0.0.date > $1.0.date }
             .prefix(limit)
@@ -191,20 +191,9 @@ final class SearchHistoryBrowserTool: BrowserTool {
             var fields = result.objectValue ?? [:]
             fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
             if let url = fields["url"]?.stringValue {
-                fields["url"] = .string(Self.redactedURL(url))
+                fields["url"] = .string(ReadTabContentBrowserTool.redactedURL(url))
             }
             return .object(fields)
         })])
-    }
-
-    private static func redactedURL(_ url: String) -> String {
-        var redacted = String(url[..<(url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex)])
-        if let scheme = redacted.range(of: "://") {
-            let authorityEnd = redacted[scheme.upperBound...].firstIndex(of: "/") ?? redacted.endIndex
-            if let at = redacted[scheme.upperBound..<authorityEnd].lastIndex(of: "@") {
-                redacted.removeSubrange(scheme.upperBound...at)
-            }
-        }
-        return BrowserToolOutputLimits.clip(redacted, to: BrowserToolOutputLimits.url)
     }
 }

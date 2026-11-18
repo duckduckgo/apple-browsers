@@ -328,6 +328,10 @@ platform :mac do
     # Apple can take up to a day to make a released version downloadable, so prompting for it now could
     # point users at an update the App Store doesn't serve yet.
     if release[:version_state] == Spaceship::ConnectAPI::AppStoreVersion::AppVersionState::PROCESSING_FOR_DISTRIBUTION
+      unless is_critical.nil?
+        UI.user_error!("#{release[:version]} is still processing for distribution, so is_critical can't be set yet. " \
+                       "Run this workflow again once App Store Connect shows it as Ready for Distribution.")
+      end
       UI.important("#{release[:version]} is still processing for distribution: not updating release_metadata.json")
       next
     end

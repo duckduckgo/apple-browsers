@@ -45,11 +45,12 @@ defaults:
 
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.dry_run && 'dry-run' || 'upload' }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 jobs:
   upload-metadata:
     name: Upload Release Metadata to CDN
+    if: github.event_name != 'schedule' || vars.MACOS_AUTOMATIC_VERSION_METADATA == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

@@ -99,6 +99,23 @@ class ProcessOwnershipTests(unittest.TestCase):
             bystander.wait()
 
 
+    def test_runner_starts_outside_the_terminal_process_group(self):
+        # A terminal Ctrl-C signals the whole foreground group; the runner must survive it so a cancelled proof can
+        # still capture the final UI tree.
+        from unittest import mock
+        from verify_ios import driver
+        with tempfile.TemporaryDirectory() as dd:
+            os.makedirs(f"{dd}/Build/Products")
+            open(f"{dd}/Build/Products/VRunner-iOS_x.xctestrun", "w").close()
+            out = subprocess.CompletedProcess([], 0, stdout='{"ok":true,"xcodebuildPid":0,"hubPids":[]}\n', stderr="")
+            with mock.patch.object(driver, "RUNNER_DD", dd), mock.patch.object(driver, "port_listening", return_value=False), \
+                    mock.patch.object(driver.XCUITestRunner, "alive", return_value=False), \
+                    mock.patch.object(driver.subprocess, "run", return_value=out) as run:
+                driver.XCUITestRunner("-", 1, "t").start()
+        start = next(c for c in run.call_args_list if c.args[0][0].endswith("vrunner_start.sh"))
+        self.assertTrue(start.kwargs.get("start_new_session"))
+
+
 class SimulatorLifecycleTests(unittest.TestCase):
     """Simulators are found by name and deleted by cleanup; nothing else on the Mac is touched."""
 

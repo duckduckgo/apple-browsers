@@ -119,8 +119,8 @@ Preconditions:
 - **Data Clearing "Delete Duck.ai Chats"** (off by default) decides whether Fire's "Delete All", from any tab, also
   deletes chats; "Delete This Chat" and "Delete This Tab" ignore it.
 - **Other ways to delete chats**, not driven: the iPhone Chats sheet (swipe a row for its fire icon, "Select Chats"
-  then Delete, or its fire button for all), the fire button on a recent chat listed under the Duck.ai input, and
-  the iPad menu bar's "Delete All Chats".
+  then Delete, or its fire button for all), the fire button on a recent chat listed under the Duck.ai input, the
+  iPad Duck.ai sidebar's fire icons (one per chat, one beside "Chats"), and the iPad menu bar's "Delete All Chats".
 
 ### Already covered elsewhere
 

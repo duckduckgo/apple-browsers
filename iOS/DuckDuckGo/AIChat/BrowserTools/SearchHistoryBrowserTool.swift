@@ -31,7 +31,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
 
     let name = "searchHistory"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = NotLocalizedString("browserTools.SearchHistoryBrowserTool.permission", value: "Duck.ai wants to search your browsing history.", comment: "Browser tool permission reason")
+    let permissionReason = NSLocalizedString("browserTools.SearchHistoryBrowserTool.permission", value: "Duck.ai wants to search your browsing history.", comment: "Browser tool permission reason")
 
     let inputSchema: JSONValue = [
         "type": "object",

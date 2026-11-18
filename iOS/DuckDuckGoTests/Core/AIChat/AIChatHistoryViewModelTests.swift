@@ -305,6 +305,31 @@ final class AIChatHistoryViewModelTests: XCTestCase {
                        "totalChatCount must reflect all chats so the Fire confirmation can't understate the delete scope during a search")
     }
 
+    func testStoredChatIds_listEveryChat_whileASearchFiltersTheRows() {
+        let sut = makeSUT(chats: [
+            chat(id: "a", title: "alpha", pinned: true),
+            chat(id: "b", title: "beta", pinned: false)
+        ])
+
+        sut.updateQuery("alpha")
+        waitForDebounce()
+
+        XCTAssertEqual(sut.pinned.count + sut.recent.count, 1)
+        XCTAssertEqual(sut.storedChatIds, ["a", "b"])
+    }
+
+    func testStoredChatIds_areUnknownAfterAFailedRead() {
+        let reader = MockChatHistoryReader(chats: [chat(id: "p1", pinned: true)])
+        let sut = AIChatHistoryViewModel(reader: reader)
+        processMainQueue()
+        XCTAssertEqual(sut.storedChatIds, ["p1"])
+
+        reader.subject.send(completion: .failure(NSError(domain: "test", code: 1)))
+        processMainQueue()
+
+        XCTAssertNil(sut.storedChatIds, "A failed read says nothing about which chats exist, so it must not read as every chat deleted")
+    }
+
     func testDownloadChat_onSuccess_notifiesDelegateWithWrittenFilename() {
         let downloader = StubDownloader()
         downloader.stubbedResult = .success(URL(fileURLWithPath: "/tmp/duck.ai_2026-01-01_00-00-00.txt"))

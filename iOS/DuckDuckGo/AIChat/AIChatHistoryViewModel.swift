@@ -60,6 +60,9 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// currently shown in `pinned`/`recent`.
     private(set) var totalChatCount: Int = 0
 
+    /// Every stored chat, unfiltered by search; nil until the first read and after a failed one, when nothing is known.
+    @Published private(set) var storedChatIds: Set<String>?
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
@@ -129,6 +132,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
             totalChatCount = allChats.count
+            storedChatIds = Set(allChats.map(\.chatId))
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure(let error):
@@ -137,6 +141,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             }
             loadFailed = true
             totalChatCount = 0
+            storedChatIds = nil
             pinned = []
             recent = []
         }

@@ -35,12 +35,22 @@ extension MainViewController {
 
     func installIPadChatListSidebar(in tab: TabViewController) {
         guard isIPadChatListSidebarAvailable else { return }
+        openIPadChatListSidebarIfRequested(by: tab)
         let sidebar = iPadChatListSidebar(isFireMode: tab.tabModel.fireTab)
         tab.installChatListSidebar(sidebar.navigationController,
                                    isOpen: iPadChatListSidebarState.isOpen,
                                    onToggle: { [weak self] in self?.toggleIPadChatListSidebar() },
                                    onNewChat: { [weak self] in self?.startNewChatFromIPadChatListSidebar() })
         sidebar.followCurrentChat(of: tab)
+    }
+
+    /// The "Chats" entry points (address bar menu, app menu, contextual "View all") load `sidebar=open`; on iPad that's this list.
+    private func openIPadChatListSidebarIfRequested(by tab: TabViewController) {
+        let requestsChatList = (tab.url ?? tab.link?.url)?.getParameter(named: AIChatURLParameters.sidebarName)
+            == AIChatURLParameters.sidebarOpenValue
+        defer { tab.hasOpenedChatListSidebarFromURL = requestsChatList }
+        guard requestsChatList, !tab.hasOpenedChatListSidebarFromURL else { return }
+        iPadChatListSidebarState.isOpen = true
     }
 
     func detachIPadChatListSidebar() {
@@ -83,8 +93,17 @@ extension MainViewController {
     fileprivate func startNewChatFromIPadChatListSidebar() {
         guard let tab = currentTab, tab.isAITab else { return }
         duckAIInputFocus.forget()
+        // Before focusing, or the keyboard rises for an input the list still covers.
+        closeIPadChatListSidebarIfCoveringTab()
         beginNewChatFromHistory(in: tab)
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+    }
+
+    /// A list over the whole tab hides what the user just picked, so it closes like the iPhone sheet; a column stays.
+    private func closeIPadChatListSidebarIfCoveringTab() {
+        guard let tab = iPadChatListSidebarState.sidebar?.navigationController.parent as? TabViewController,
+              tab.chatListSidebarContainer?.isOverlay == true else { return }
+        setIPadChatListSidebarOpen(false)
     }
 
     /// Deleting the open chat from the list leaves the tab on a fresh chat rather than on a chat that's gone.
@@ -96,6 +115,7 @@ extension MainViewController {
 
     /// Duck.ai opens the chat in place; the URL load is the fallback when the page can't.
     fileprivate func openChatFromIPadChatListSidebar(chatId: String) {
+        closeIPadChatListSidebarIfCoveringTab()
         guard let tab = currentTab, tab.openChatID(in: tab.url) != chatId else { return }
         duckAIInputFocus.forget()
         iPadChatListSidebarState.pendingChatOpen?.cancel()
@@ -147,8 +167,8 @@ final class IPadChatListSidebar {
     private let viewModel: AIChatHistoryViewModel
     private weak var host: MainViewController?
     private var currentChatCancellable: AnyCancellable?
-    private var listedChatsCancellable: AnyCancellable?
-    private var listedChatIds: Set<String> = []
+    private var storedChatsCancellable: AnyCancellable?
+    private var storedChatIds: Set<String> = []
 
     fileprivate init(viewModel: AIChatHistoryViewModel, fireButtonAnimator: FireButtonAnimator, isFireMode: Bool, host: MainViewController) {
         self.viewModel = viewModel
@@ -160,20 +180,19 @@ final class IPadChatListSidebar {
         navigationController = UINavigationController(rootViewController: historyViewController)
         viewModel.delegate = self
         historyViewController.sidebarDelegate = self
-        // Debounced so a pin toggle, which updates both sections one after the other, reads as one change.
-        listedChatsCancellable = Publishers.CombineLatest(viewModel.$pinned, viewModel.$recent)
-            .debounce(for: .milliseconds(50), scheduler: DispatchQueue.main)
-            .sink { [weak self] pinned, recent in
-                self?.listedChatsDidChange(Set((pinned + recent).map(\.chatId)))
+        // Every stored chat, not the rows a search leaves; a failed read is skipped, since it says nothing was deleted.
+        storedChatsCancellable = viewModel.$storedChatIds
+            .compactMap { $0 }
+            .removeDuplicates()
+            .sink { [weak self] chatIds in
+                self?.storedChatsDidChange(chatIds)
             }
     }
 
-    private func listedChatsDidChange(_ chatIds: Set<String>) {
-        defer { listedChatIds = chatIds }
-        // A search narrows the list without deleting anything.
-        guard viewModel.query.isEmpty,
-              let currentChatId = historyViewController.currentChatId,
-              listedChatIds.contains(currentChatId),
+    private func storedChatsDidChange(_ chatIds: Set<String>) {
+        defer { storedChatIds = chatIds }
+        guard let currentChatId = historyViewController.currentChatId,
+              storedChatIds.contains(currentChatId),
               !chatIds.contains(currentChatId) else { return }
         host?.leaveDeletedChatFromIPadChatListSidebar()
     }

@@ -432,6 +432,20 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertTrue(delegate.didCallHighlightFireButton)
     }
 
+    func testWhenThatsDuckAIIsShownThenAskDelegateToHighlightFireButton() throws {
+        // GIVEN
+        dialogProvider.dialog = .thatsDuckAI
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+
+        // WHEN
+        tab.navigateFromOnboarding(to: URL.duckDuckGo)
+
+        // THEN
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertTrue(delegate.didCallHighlightFireButton)
+    }
+
     func testWhenNavigationCompletedAndStateIsShowBlockedTrackersThenAskDelegateToHighlightPrivacyShield() throws {
         // GIVEN
         dialogProvider.dialog = .trackers(message: .init(string: ""), shouldFollowUp: true)

@@ -851,7 +851,7 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.layoutSubtreeIfNeeded()
         webViewContainer?.layoutSubtreeIfNeeded()
 
-        if dialogType == .tryFireButton {
+        if dialogType == .tryFireButton || dialogType == .thatsDuckAI {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()

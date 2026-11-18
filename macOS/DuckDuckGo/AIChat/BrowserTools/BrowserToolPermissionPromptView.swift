@@ -172,6 +172,8 @@ struct BrowserToolPermissionPromptView: View {
             }
         }
         .background(boxed ? RoundedRectangle(cornerRadius: 8).fill(Color(designSystemColor: .controlsFillPrimary, palette: themeManager.designColorPalette)) : nil)
+        // A container of its own, so its identifier doesn't replace each row's and X's.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("BrowserToolPermissionPrompt.accessTools")
 
         if !selection.removed.isEmpty {

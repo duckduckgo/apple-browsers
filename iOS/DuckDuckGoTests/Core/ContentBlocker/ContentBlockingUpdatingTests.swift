@@ -148,7 +148,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             resumed.fulfill()
         }
 
-        // Longer than any compile the old deadline allowed in tests: the wait must simply keep going.
+        // The wait must not end by itself before the assets arrive.
         try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertTrue(decisions.isEmpty)
         XCTAssertFalse(tab.isError)
@@ -520,7 +520,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             controller.onDeinit { controllerReleased.fulfill() }
             tab.specialErrorPageNavigationHandler.delegate = nil
             defer { tab.prepareForDataClearing() }
-                tab.contentBlockingWaitPixelTimeout = 3600
+            tab.contentBlockingWaitPixelTimeout = 3600
             try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock).enabledFeaturesForVersions = [:]
             let request = URLRequest(url: URL(string: "https://example.com/stopped")!)
             let action = MockNavigationAction(request: request, navigationType: .other,

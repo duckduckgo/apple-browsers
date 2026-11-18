@@ -4285,8 +4285,7 @@ extension TabViewController: WKNavigationDelegate {
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
             }
             // The assets publisher never finishes, so this returns nil only when the wait is cancelled.
-            var readiness = geolocationInstalled.values.makeAsyncIterator()
-            let isReady = await readiness.next() != nil
+            let isReady = await geolocationInstalled.values.first { _ in true } != nil
             // Remove before completion: success re-enters the navigation policy delegate.
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
             guard isReady, !Task.isCancelled, isCurrentWait else {

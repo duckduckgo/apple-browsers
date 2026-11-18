@@ -177,7 +177,7 @@ enum WebExtensionManagerFactory {
             manager: manager,
             catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager,
                                            isAppStoreBuild: buildType.isAppStoreBuild,
-                                           hiddenExtensionIDs: unsupportedExtensionIDs),
+                                           unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

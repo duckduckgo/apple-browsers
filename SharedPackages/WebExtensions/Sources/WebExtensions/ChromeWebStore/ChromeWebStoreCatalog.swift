@@ -23,6 +23,11 @@ public enum ChromeWebStoreID: String {
     case bitwarden = "nngceckbapebfimnlniiiahkandclblb"
     case onePassword = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
     case iCloudPasswords = "pejdijmoenmkgeppbflobdenhhabjlaj"
+    case lastPass = "hdokiejnpimakedhajhdlcegeplioahd"
+
+    /// Password managers that take over DuckDuckGo autofill while they are loaded, because they never
+    /// turn `chrome.privacy.services.passwordSavingEnabled` off to become the default password manager.
+    public static let takingOverAutofillWhileLoaded: Set<ChromeWebStoreID> = [.lastPass]
 }
 
 public struct ChromeWebStoreListing: Equatable, Identifiable {

@@ -44,9 +44,9 @@ public final class BrowserToolInvoker {
             return .failure(callId: request.callId, error: .invalidArguments)
         }
         let targetsOtherTab = request.input["tabId"]?.stringValue.map { $0 != context.ownerTabID } ?? false
+        let target = tool.permissionTarget(arguments: request.input, context: context)
         let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, targetsOtherTab: targetsOtherTab,
-                                                                  target: tool.permissionTarget(arguments: request.input, context: context),
-                                                                  prompter: permissionPrompter)
+                                                                  target: target, prompter: permissionPrompter)
         switch authorization {
         case .refused(.cancelled):
             return .failure(callId: request.callId, error: .cancelled)
@@ -63,6 +63,8 @@ public final class BrowserToolInvoker {
               let executionResult = await performExecution({
                   guard let currentTool else { return .failure(.unavailable) }
                   guard !Task.isCancelled else { return .failure(.cancelled) }
+                  // The user approved what the prompt showed, e.g. a page that has since navigated away.
+                  guard currentTool.permissionTarget(arguments: request.input, context: context) == target else { return .failure(.notFound) }
                   let result = await currentTool.execute(arguments: request.input, context: context)
                   return Task.isCancelled ? .failure(.cancelled) : result
               }) else {

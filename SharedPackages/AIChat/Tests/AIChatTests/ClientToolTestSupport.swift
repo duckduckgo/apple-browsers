@@ -92,7 +92,10 @@ final class ClientToolTestTool: BrowserTool {
     var clientResult: ((JSONValue) -> BrowserToolResult)?
     var calls: [(JSONValue?, BrowserToolCallContext)] = []
     var onExecute: (() async -> Void)?
+    var asksEveryTime = false
+    var target: String?
     init(name: String) { self.name = name }
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { target }
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         calls.append((arguments, context))
         await onExecute?()

@@ -226,6 +226,32 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
         XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
         XCTAssertTrue(isOnboardingFinished.wrappedValue)
+        // Without the junction no path is saved, so contextual onboarding runs as before.
+        XCTAssertTrue(pathStarter.startedPaths.isEmpty)
+    }
+
+    func testSubmitQuery_Search_StartsSearchPathAndOpensResults() {
+        // Given
+        let isOnboardingFinished = UserDefaultsWrapper(key: .onboardingFinished, defaultValue: true)
+        isOnboardingFinished.wrappedValue = false
+
+        // When
+        manager.submitQuery(.init(mode: .search, query: "best pizza", source: .typed))
+
+        // Then
+        XCTAssertEqual(pathStarter.startedPaths, [.search])
+        XCTAssertEqual(navigationDelegate.tab?.url, URL.makeSearchUrl(from: "best pizza"))
+        XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
+        XCTAssertTrue(isOnboardingFinished.wrappedValue)
+    }
+
+    func testSubmitQuery_Search_DoesNotFocusAddressBar() {
+        // When
+        manager.submitQuery(.init(mode: .search, query: "best pizza", source: .typed))
+        navigationDelegate.fireNavigationDidEnd()
+
+        // Then
+        XCTAssertFalse(navigationDelegate.focusOnAddressBarCalled)
     }
 
     func testGoToAddressBar_NavigatesToSearch_AndFocusOnBar() {

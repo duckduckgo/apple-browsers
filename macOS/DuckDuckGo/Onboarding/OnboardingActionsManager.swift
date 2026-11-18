@@ -310,6 +310,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     func submitQuery(_ query: OnboardingUserScript.SubmitQuery) {
+        switch query.mode {
+        case .search:
+            // Before the tab changes, so the results page already gets the search path's dialogs.
+            pathStarter.startPath(.search)
+            _ = leaveOnboarding(content: .url(URL.makeSearchUrl(from: query.query) ?? .duckDuckGo, source: .ui))
+        case .duckAi:
+            break
+        }
     }
 
     @MainActor

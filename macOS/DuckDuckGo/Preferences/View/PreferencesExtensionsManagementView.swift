@@ -489,6 +489,7 @@ extension Preferences {
                     Text(UserText.webExtensionNativeMessagingUnavailableTitle(entry.listing.name))
                         .font(.system(size: Const.titleFontSize, weight: .regular))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(UserText.extensionsSettingsNativeMessagingMessage)
                         .font(.system(size: Const.detailsFontSize, weight: .regular))
                         .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))

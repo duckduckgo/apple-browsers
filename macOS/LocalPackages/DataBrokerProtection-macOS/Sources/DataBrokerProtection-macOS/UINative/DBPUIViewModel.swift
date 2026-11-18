@@ -159,8 +159,7 @@ extension DBPUIViewModel: DBPUIScanOps {
 
 extension DBPUIViewModel: DBPUIAssistedOptOutsDelegate {
     public var isUserAssistanceEnabled: Bool {
-        guard userAssistanceFlagger?.isUserAssistanceOn == true, let privacyConfig else { return false }
-        return UserAssistanceConfig(privacyConfig: privacyConfig.privacyConfig).isEnabled
+        userAssistanceFlagger?.isUserAssistanceOn == true
     }
 
     public func getAssistedOptOuts() async -> AssistedOptOutList {

@@ -683,7 +683,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
         let queue = AssistedOptOutQueue(dependencies: jobDependencies)
         queue.presenter = assistedOptOutPresenter
         assistedOptOutQueue = queue
-        // A config update can turn the feature off or change which brokers need the user, so recheck the list.
+        // A config update can turn the feature on or off, so recheck the list.
         privacyConfigurationManager.updatesPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in

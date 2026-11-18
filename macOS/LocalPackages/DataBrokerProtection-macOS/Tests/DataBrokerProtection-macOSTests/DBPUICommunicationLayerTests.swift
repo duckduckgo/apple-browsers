@@ -526,12 +526,6 @@ private final class AssistedDashboardFixture {
     lazy var dataManager = DataBrokerProtectionDataManager(database: database)
     lazy var model = makeModel()
 
-    init() {
-        let config = PrivacyConfigurationMock()
-        config.subfeatureSettings = #"{"enabledBrokers":["testbroker.com"]}"#
-        privacyConfig.privacyConfig = config
-    }
-
     func makeModel() -> DBPUIViewModel {
         DBPUIViewModel(dataManager: dataManager, agentInterface: agent, webUISettings: MockWebSettings(),
                        pixelHandler: MockDataBrokerProtectionPixelsHandler(), privacyConfig: privacyConfig, prefs: .mock,

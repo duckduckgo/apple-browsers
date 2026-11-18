@@ -63,7 +63,7 @@ public class Tab: NSObject, NSCoding {
     
     let uid: String
     private(set) var linkPreviewDomains = Set<String>()
-    let favoritesExpansionState = FavoritesExpansionState()
+    let favoritesExpansionState = FavoritesExpansionState(store: FavoritesExpansionStore())
     /// Set only for decoded tabs and cleared when their restoring main-frame navigation commits.
     ///
     /// Deliberately outlives the provisional load that starts it: a provisional load replaced before

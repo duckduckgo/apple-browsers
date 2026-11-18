@@ -1928,6 +1928,22 @@ struct AIChatUserScriptHandlerTests {
         SubscriptionTestingUtilities.MockWKWebView(url: URL(string: url)!)
     }
 
+    // MARK: - First answer
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The first answer from Duck.ai is published", .timeLimit(.minutes(1)))
+    @MainActor
+    func testResponseReceivedPublishes() {
+        var received = 0
+        let cancellable = handler.responseReceivedPublisher.sink { received += 1 }
+
+        _ = handler.responseReceived(params: [:], message: WKScriptMessage.mock())
+
+        withExtendedLifetime(cancellable) {
+            #expect(received == 1)
+        }
+    }
+
     // MARK: - Page context added / removed
 
     @available(iOS 16, macOS 13, *)

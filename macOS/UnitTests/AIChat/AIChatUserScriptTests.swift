@@ -51,6 +51,13 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didOpenSettings, "openSettings should be called")
     }
 
+    @MainActor func testResponseReceivedMessageReachesHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.responseReceived.rawValue))
+        _ = try await handler([:], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didReceiveResponse)
+    }
+
     @MainActor func testGetAIChatNativeConfigValues() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
         let result = try await handler([""], WKScriptMessage.mock())
@@ -614,6 +621,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didGetAIChatSelectionContext = false
     var didSubmitAIChatSelectionContext = false
     var didTogglePageContextTelemetry = false
+    var didReceiveResponse = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
@@ -806,6 +814,13 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didTogglePageContextTelemetry = true
         return nil
     }
+
+    func responseReceived(params: Any, message: UserScriptMessage) -> Encodable? {
+        didReceiveResponse = true
+        return nil
+    }
+
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
     // MARK: - Sync stubs
 

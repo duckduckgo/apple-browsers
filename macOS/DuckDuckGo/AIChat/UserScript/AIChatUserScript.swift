@@ -253,6 +253,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.reportMetric
         case .togglePageContextTelemetry:
             return handler.togglePageContextTelemetry
+        case .responseReceived:
+            return handler.responseReceived
         case .storeMigrationData:
             return handler.storeMigrationData
         case .getMigrationDataByIndex:

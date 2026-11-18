@@ -137,6 +137,7 @@ final class AIChatTabExtension {
         pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
         pageContextAddedPublisher = pageContextAddedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
+        responseReceivedPublisher = responseReceivedSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -238,6 +239,12 @@ final class AIChatTabExtension {
                 self?.chatRestorationDataSubject.send(data)
             }
             .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.responseReceivedPublisher
+            .sink { [weak self] in
+                self?.responseReceivedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
     }
 
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
@@ -254,6 +261,10 @@ final class AIChatTabExtension {
 
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
+
+    private let responseReceivedSubject = PassthroughSubject<Void, Never>()
+    /// The first Duck.ai answer in onboarding mode finished, failed or was blocked.
+    let responseReceivedPublisher: AnyPublisher<Void, Never>
 
     private var temporaryAIChatNativeHandoffData: AIChatPayload?
     func setAIChatNativeHandoffData(payload: AIChatPayload) {
@@ -619,6 +630,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextAddedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { get }
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

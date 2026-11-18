@@ -47,7 +47,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let pixelFiring: (any PixelKitFiring)?
-    private let onboardingExperiment: OnboardingNonBlockingExperiment
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -64,8 +63,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          newTabPageNavigator: NewTabPageNavigator,
          syncLauncher: SyncDeviceFlowLaunching? = nil,
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -76,7 +74,6 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
         self.pixelFiring = pixelFiring
-        self.onboardingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -115,7 +112,6 @@ private extension NewTabPageNextStepsCardsActionHandler {
     }
 
     func performImportBookmarksAndPasswordsAction(completion: (() -> Void)?) {
-        onboardingExperiment.fireMetric(.importRequested)
         dataImportProvider.showImportWindow(completion: completion)
     }
 
@@ -134,7 +130,6 @@ private extension NewTabPageNextStepsCardsActionHandler {
     }
 
     func performDockAction(completion: (() -> Void)?) {
-        onboardingExperiment.fireMetric(.addToDockRequested)
         pixelHandler.fireAddedToDockPixel()
         if dockCustomizer.addToDock() {
             completion?()

@@ -27,23 +27,24 @@ final class TabSuggestionsUITests: UITestCase {
         ]) { _, new in new }
     }
 
-    func testWhenOpenTabSuggestionIsSelectedThenExistingTabIsShown() {
+    func testWhenOpenTabSuggestionIsSelectedThenExistingTabIsShown() throws {
+        let site = try localWebsite()
         XCTContext.runActivity(named: "Create two tabs") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openNewTab()
-            app.openURL("https://www.search-company.site", expecting: "Search engine")
+            site.open(.second, in: app)
         }
 
         XCTContext.runActivity(named: "Switch to the first tab from autocomplete") { _ in
-            app.enterSearchText("privacy")
-            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable(in: app)
-            app.assertPageContains("Privacy Test Pages")
+            app.enterSearchText("first")
+            openSuggestion(for: .first, on: site)
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
 
         XCTContext.runActivity(named: "Switch to the second tab from autocomplete") { _ in
-            app.enterSearchText("ad click")
-            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-search-company.site"].tapWhenHittable(in: app)
-            app.assertPageContains("Search engine")
+            app.enterSearchText("second")
+            openSuggestion(for: .second, on: site)
+            app.assertPageContains(LocalUITestWebsite.Page.second.title)
         }
 
         XCTContext.runActivity(named: "Verify switching did not create another tab") { _ in
@@ -52,23 +53,29 @@ final class TabSuggestionsUITests: UITestCase {
         }
     }
 
-    func testWhenOpenTabSuggestionIsSelectedFromNewTabThenEmptyTabIsRemoved() {
+    func testWhenOpenTabSuggestionIsSelectedFromNewTabThenEmptyTabIsRemoved() throws {
+        let site = try localWebsite()
         XCTContext.runActivity(named: "Open an empty tab beside the test page") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            site.open(.first, in: app)
             app.openNewTab()
         }
 
         XCTContext.runActivity(named: "Switch from the empty tab using autocomplete") { _ in
-            app.enterSearchText("privacy")
-            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable(in: app)
-            app.assertPageContains("Privacy Test Pages")
+            app.enterSearchText("first")
+            openSuggestion(for: .first, on: site)
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
 
         XCTContext.runActivity(named: "Verify the empty tab was removed") { _ in
             app.openTabSwitcher()
             app.assertTabCount(1)
             app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable(in: app)
-            app.assertPageContains("Privacy Test Pages")
+            app.assertPageContains(LocalUITestWebsite.Page.first.title)
         }
+    }
+
+    private func openSuggestion(for page: LocalUITestWebsite.Page, on site: LocalUITestWebsite, file: StaticString = #filePath, line: UInt = #line) {
+        let identifier = "Autocomplete.Suggestions.ListItem.OpenTab-\(site.hostAndPort)\(page.path)"
+        app.descendants(matching: .any)[identifier].tapWhenHittable(in: app, file: file, line: line)
     }
 }

@@ -101,6 +101,7 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     var recordNewTabPageDrawnAtLaunchResult: IdleReturnNewTabPageResult = .openedNewTab
     var recordOrdinaryReturnCalled = false
     var lastTimeAwayMs: Int?
+    var releaseHeldNewTabPageCalled = false
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
         recordOrdinaryReturnCalled = true
@@ -127,6 +128,10 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
         markLastUsedTabAsResumedAfterIdleCalled = true
         lastTimeAwayMs = timeAwayMs
+    }
+
+    func releaseHeldNewTabPage() {
+        releaseHeldNewTabPageCalled = true
     }
 }
 
@@ -575,6 +580,7 @@ final class LaunchActionHandlerTests {
         #expect(idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
         #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(!idleReturnDelegate.recordOrdinaryReturnCalled)
+        #expect(!idleReturnDelegate.releaseHeldNewTabPageCalled)
         #expect(idleReturnDelegate.lastTimeAwayMs == 42_000)
     }
 
@@ -604,9 +610,9 @@ final class LaunchActionHandlerTests {
     }
 
     @available(iOS 16, *)
-    @Test("A launch action handled first records the drawn New Tab Page without the keyboard", .timeLimit(.minutes(1)),
+    @Test("A launch action handled first releases the drawn New Tab Page as ordinary, without the keyboard", .timeLimit(.minutes(1)),
           arguments: ["url", "shortcut", "activity"])
-    func launchActionRecordsTheDrawnNewTabPage(kind: String) {
+    func launchActionReleasesTheDrawnNewTabPage(kind: String) {
         let action: LaunchAction = switch kind {
         case "url": .openURL(URL(string: "https://example.com")!)
         case "shortcut": .handleShortcutItem(UIApplicationShortcutItem(type: "test", localizedTitle: "Test"))
@@ -617,8 +623,8 @@ final class LaunchActionHandlerTests {
 
         handler.handleLaunchAction(action)
 
-        #expect(idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
-        #expect(idleReturnDelegate.lastTimeAwayMs == 42_000)
+        #expect(idleReturnDelegate.releaseHeldNewTabPageCalled)
+        #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
     }
 
@@ -636,11 +642,12 @@ final class LaunchActionHandlerTests {
     }
 
     @available(iOS 16, *)
-    @Test("A launch action records nothing when the launch didn't draw the New Tab Page", .timeLimit(.minutes(1)))
+    @Test("A launch action records and releases nothing when the launch didn't draw the New Tab Page", .timeLimit(.minutes(1)))
     func launchActionWithoutDrawnNewTabPageRecordsNothing() {
         launchActionHandler.handleLaunchAction(.openURL(URL(string: "https://example.com")!))
 
         #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
+        #expect(!idleReturnDelegate.releaseHeldNewTabPageCalled)
     }
 
 }

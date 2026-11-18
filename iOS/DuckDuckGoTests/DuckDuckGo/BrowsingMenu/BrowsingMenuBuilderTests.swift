@@ -25,12 +25,61 @@ import CoreLocation
 @_spi(Testing) import Persistence
 import PrivacyDashboard
 @testable import SitePermissions
+import SubscriptionTestingUtilities
 import UIKit
 import WebKit
 import XCTest
 @testable import DuckDuckGo
 
 final class BrowsingMenuBuilderTests: XCTestCase {
+
+    @MainActor
+    func testVPNVisibilityMatchesBrowserInBothAIChatLayoutsAndPresentations() throws {
+        let dependencies = try XCTUnwrap(AppDependencyProvider.shared as? AppDependencyProvider)
+        let originalSubscriptionManager = dependencies.subscriptionManager
+        let subscriptionManager = SubscriptionManagerMock()
+        dependencies.subscriptionManager = subscriptionManager
+        let originalIdiom = MockUIDevice.mockUserInterfaceIdiom
+        UIDevice.swizzleCurrent()
+        defer {
+            dependencies.subscriptionManager = originalSubscriptionManager
+            MockUIDevice.mockUserInterfaceIdiom = originalIdiom
+            UIDevice.unswizzleCurrent()
+        }
+
+        let states: [(featureEnabled: Bool, productsAvailable: Bool)] = [
+            (true, true), (false, true), (true, true), (true, false), (false, false), (true, true)
+        ]
+
+        for idiom in [UIUserInterfaceIdiom.phone, .pad] {
+            MockUIDevice.mockUserInterfaceIdiom = idiom
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+            let sut = TabViewController.fake(featureFlagger: featureFlagger)
+
+            for state in states {
+                featureFlagger.enabledFeatureFlags = state.featureEnabled ? [.vpnMenuItem] : []
+                subscriptionManager.hasAppStoreProductsAvailable = state.productsAvailable
+                let expectedCount = state.featureEnabled && state.productsAvailable ? 1 : 0
+
+                let legacyMenus = [sut.buildShortcutsMenu(), sut.buildAITabMenu()]
+                for menu in legacyMenus {
+                    XCTAssertEqual(menu.compactMap(\.name).filter { $0 == UserText.actionVPN }.count, expectedCount)
+                }
+
+                for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
+                    let model = try XCTUnwrap(sut.buildSheetBrowsingMenu(
+                        context: context,
+                        with: MockMenuBookmarksInteractor(),
+                        mobileCustomization: makeMobileCustomization(),
+                        browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
+                        clearTabsAndData: {}
+                    ))
+                    let vpnEntries = model.sections.flatMap(\.items).filter { $0.name == UserText.actionVPN }
+                    XCTAssertEqual(vpnEntries.count, expectedCount)
+                }
+            }
+        }
+    }
 
     func testNewTabPageMenuOmitsChatsWhenFallbackChatsEntryIsUnavailable() {
         let entryBuilder = MockBrowsingMenuEntryBuilder(chatsEntry: nil)

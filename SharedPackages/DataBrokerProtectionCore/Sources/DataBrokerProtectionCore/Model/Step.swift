@@ -127,6 +127,13 @@ public struct Step: Codable, Sendable {
             }
         }
 
+#if os(iOS)
+        // iOS can't hand a page to the user, so it keeps its stored broker version as it did before userAssist existed.
+        if actionList.contains(where: \.requiresUserAssistance) {
+            throw DecodingError.unsupportedActionType
+        }
+#endif
+
         return actionList
     }
 }

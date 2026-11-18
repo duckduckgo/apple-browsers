@@ -655,6 +655,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
             .sink { [weak self] in
                 Task { @MainActor [weak self] in
                     self?.assistedOptOutQueue?.configurationDidChange()
+                    self?.updateAssistedOptOutRefreshTimer()
                     await self?.refreshAssistedOptOuts()
                 }
             }.store(in: &assistedOptOutSubscriptions)
@@ -664,6 +665,17 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
         ).sink { [weak self] _ in
             Task { await self?.invalidateAssistedOptOuts() }
         }.store(in: &assistedOptOutSubscriptions)
+        updateAssistedOptOutRefreshTimer()
+    }
+
+    @MainActor
+    private func updateAssistedOptOutRefreshTimer() {
+        guard jobDependencies.userAssistanceConfig.isEnabled else {
+            assistedOptOutRefreshTimer?.invalidate()
+            assistedOptOutRefreshTimer = nil
+            return
+        }
+        guard assistedOptOutRefreshTimer == nil else { return }
         let timer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
             Task { await self?.refreshAssistedOptOuts() }
         }

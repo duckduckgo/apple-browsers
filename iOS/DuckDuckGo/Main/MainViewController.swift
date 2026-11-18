@@ -26,7 +26,6 @@ import Combine
 import Common
 import FoundationExtensions
 import Configuration
-import GameController
 import Core
 import CoreData
 import DataBrokerProtection_iOS
@@ -1707,6 +1706,9 @@ class MainViewController: UIViewController {
     private var isKeyboardOverlappingContent = false
     private var didSendGestureDismissPixel: Bool = false
     var latestKeyboardFrame: CGRect = .zero
+    /// The full on-screen keyboard was up, not just the bar iPadOS shows above a hardware keyboard.
+    private var isOnScreenKeyboardShown = false
+    private static let onScreenKeyboardMinimumHeight: CGFloat = 150
 
     @objc
     private func keyboardDidShow() {
@@ -1761,10 +1763,22 @@ class MainViewController: UIViewController {
         // the collapse — otherwise the expanded bar collapses on every focus, making it
         // impossible to type.
         if coordinator.viewController.isInputFirstResponder {
-            // iPad's keyboard can be put away with the input still focused, which leaves it nothing to type with.
-            guard isIPadFullTabChatInput, GCKeyboard.coalesced == nil, presentedViewController == nil else { return }
+            return
         }
         coordinator.showCollapsed()
+    }
+
+    /// iPad's keyboard can be put away with the input still focused, and with a hardware keyboard paired it only shrinks to
+    /// the shortcut bar, so no hide is sent. Losing the full keyboard is what leaves the input nothing to type with.
+    private func updateOnScreenKeyboardVisibility(_ visibleHeight: CGFloat) {
+        let isShown = visibleHeight >= Self.onScreenKeyboardMinimumHeight
+        defer { isOnScreenKeyboardShown = isShown }
+        guard isOnScreenKeyboardShown, !isShown, isIPadFullTabChatInput, currentTab?.isAITab == true else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator,
+                  coordinator.isAITabExpanded, !coordinator.isEditing, self.presentedViewController == nil else { return }
+            coordinator.showCollapsed()
+        }
     }
 
     @objc
@@ -2294,6 +2308,7 @@ class MainViewController: UIViewController {
         let keyboardVisible = intersection.height > 0
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
+        updateOnScreenKeyboardVisibility(view.bounds.intersection(keyboardFrameInView).height)
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
         updateDuckAIKeyboardEdgeSweep(keyboardTargetFrame: keyboardTargetFrame)
         updateWebInputChromeVisibility()

@@ -104,6 +104,9 @@ extension MainViewController {
 
         let tabsToRemove = tabManager.currentTabsModel.tabs.filter { $0 !== tabToKeep.tabModel }
         for tab in tabsToRemove {
+            if #available(iOS 18.4, *) {
+                webExtensionEventsCoordinator?.didCloseTab(tab)
+            }
             tabManager.remove(tab: tab, clearTabHistory: false)
         }
         tabManager.select(tabToKeep.tabModel, dismissCurrent: false)

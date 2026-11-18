@@ -486,7 +486,8 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
     func testPrivacyConfigReplacementsRoundTripCharactersThatNeedEscaping() throws {
         // GIVEN
-        let json = #"{"quote":"\"","backslash":"\\","script":"</script>","separators":"\#u{2028}\#u{2029}","emoji":"🦆","slash":"a/b"}"#
+        let json = #"{"quote":"\"","backslash":"\\","script":"</script>","separators":"\#u{2028}\#u{2029}","#
+            + #""combined":"\#u{2028}\#u{0301}","nearSeparator":"\#u{2027}\#u{202A}\#u{20AC}","emoji":"🦆","slash":"a/b"}"#
         let expected = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? NSDictionary
 
         // WHEN

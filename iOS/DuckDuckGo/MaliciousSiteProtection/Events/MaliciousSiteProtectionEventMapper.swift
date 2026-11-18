@@ -22,28 +22,37 @@ import Common
 import FoundationExtensions
 import Core
 import MaliciousSiteProtection
+import PixelKit
 
 enum MaliciousSiteProtectionEventMapper {
 
-    static let debugEvents = EventMapping<MaliciousSiteProtection.Event> { event, _, _, _ in
-        switch event {
-        case .errorPageShown:
-            Pixel.fireDailyAndStandard(event)
-        case .visitSite,
-             .leaveSite,
-             .iframeLoaded,
-             .settingToggled,
-             .matchesApiTimeout,
-             .singleDataSetUpdatePerformance,
-             .singleDataSetUpdateDiskUsage,
-             .aggregateDataSetUpdatePerformance,
-             .aggregateDataSetUpdateDiskUsage:
-            Pixel.fire(event)
-        case .failedToDownloadInitialDataSets:
-            Pixel.fireDailyAndCount(event)
-        case .matchesApiFailure(let error):
-            Logger.MaliciousSiteProtection.manager.error("Error fetching matches from API: \(error)")
+    static func debugEvents(pixelFiring: @escaping () -> PixelFiring? = { PixelKit.shared }) -> EventMapping<MaliciousSiteProtection.Event> {
+        EventMapping<MaliciousSiteProtection.Event> { event, _, _, _ in
+            switch event {
+            case .errorPageShown:
+                Pixel.fireDailyAndStandard(event)
+            case .visitSite,
+                 .leaveSite,
+                 .iframeLoaded,
+                 .settingToggled,
+                 .matchesApiTimeout:
+                Pixel.fire(event)
+            case .failedToDownloadInitialDataSets:
+                Pixel.fireDailyAndCount(event)
+            case .matchesApiFailure(let error):
+                Logger.MaliciousSiteProtection.manager.error("Error fetching matches from API: \(error)")
+            case .dataSetUpdateTime(let category, let type, let bucket):
+                pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.updateTime(category: category, type: type, bucket: bucket), frequency: .dailyAndCount)
+            case .dataSetSize(let category, let type, let bucket):
+                pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.datasetSize(category: category, type: type, bucket: bucket), frequency: .dailyAndCount)
+            case .dataSetLoadTime(let category, let type, let bucket):
+                pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.loadTime(category: category, type: type, bucket: bucket), frequency: .dailyAndCount)
+            case .dataSetAggregateUpdateTime(let type, let bucket):
+                pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.aggregateUpdateTime(type: type, bucket: bucket), frequency: .dailyAndCount)
+            case .dataSetAggregateSize(let type, let bucket):
+                pixelFiring()?.fire(MaliciousSiteProtectionDebugPixel.aggregateDatasetSize(type: type, bucket: bucket), frequency: .dailyAndCount)
+            }
         }
     }
-    
+
 }

@@ -66,11 +66,13 @@ extension TabViewController {
         webViewContainer.translatesAutoresizingMaskIntoConstraints = false
 
         outerContainer.addSubview(webViewContainer)
+        let webViewContainerBottom = webViewContainer.bottomAnchor.constraint(equalTo: outerContainer.bottomAnchor)
+        webViewContainerBottomConstraint = webViewContainerBottom
         NSLayoutConstraint.activate([
             webViewContainer.topAnchor.constraint(equalTo: outerContainer.topAnchor),
             webViewContainer.leadingAnchor.constraint(equalTo: outerContainer.leadingAnchor),
             webViewContainer.trailingAnchor.constraint(equalTo: outerContainer.trailingAnchor),
-            webViewContainer.bottomAnchor.constraint(equalTo: outerContainer.bottomAnchor)
+            webViewContainerBottom
         ])
 
         containerStackView.addArrangedSubview(outerContainer)

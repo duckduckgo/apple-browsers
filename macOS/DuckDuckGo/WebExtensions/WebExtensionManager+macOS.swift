@@ -19,29 +19,12 @@
 import AppKit
 import AppKitExtensions
 import Combine
+import DuckPlayer
 import EventHub
 import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
 import WebExtensions
-
-@available(macOS 15.4, *)
-@MainActor
-private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
-    private let featureFlagger: FeatureFlagger
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var isBackgroundDelegateProxyEnabled: Bool {
-        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
-    }
-
-    var updatesPublisher: AnyPublisher<Void, Never> {
-        featureFlagger.updatesPublisher
-    }
-}
 
 // MARK: - macOS-specific WebExtensionManager Extensions
 
@@ -140,29 +123,15 @@ enum WebExtensionManagerFactory {
         }
 #endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
-            tabResolver: { tabIdentifier in
-                for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
-                    let viewModel = windowController.mainViewController.tabCollectionViewModel
-                    if let tab = (viewModel.loadedPinnedTabs + viewModel.loadedTabs).first(where: { $0.uuid == tabIdentifier }) {
-                        return (webView: tab.webView, extensionTab: tab)
-                    }
-                }
-                return nil
-            },
-            featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
-            appSession: Application.appDelegate.cpmAppSessionDiagnostics
-        ) : nil
-
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
         let installationStore = InstalledWebExtensionStore()
-        let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
+        let permissionController = WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
             installationStore: installationStore,
             prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
-        ) : nil
+        )
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
-        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+        let nativeMessagingHandler = buildType.isSparkleBuild
             ? NativeMessagingHandler(installationStore: installationStore)
             : nil
         let manager = WebExtensionManager(
@@ -171,10 +140,10 @@ enum WebExtensionManagerFactory {
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             installationStore: installationStore,
             permissionController: permissionController,
+            isPermissionEnforcementEnabled: { featureFlagger.isFeatureOn(.webExtensionsPermissions) },
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             isCPMNetworkProcessRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
@@ -202,7 +171,7 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

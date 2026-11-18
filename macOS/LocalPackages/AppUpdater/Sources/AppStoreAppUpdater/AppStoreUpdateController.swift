@@ -45,6 +45,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                                    pixelFiring: PixelFiring?,
                                    notificationPresenter: any UpdateNotificationPresenting,
                                    keyValueStore: any ThrowingKeyValueStoring,
+                                   applicationUpdateDetector: any ApplicationUpdateDetecting,
                                    isOnboardingFinished: @escaping () -> Bool) -> any UpdateController {
         AppStoreUpdateController(internalUserDecider: internalUserDecider,
                                  featureFlagger: featureFlagger,
@@ -52,6 +53,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                                  pixelFiring: pixelFiring,
                                  notificationPresenter: notificationPresenter,
                                  keyValueStore: keyValueStore,
+                                 applicationUpdateDetector: applicationUpdateDetector,
                                  isOnboardingFinished: isOnboardingFinished)
     }
 }
@@ -63,8 +65,11 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     @Published public private(set) var hasPendingUpdate = false
     public var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
-    public var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    public var mustShowUpdateIndicators: Bool {
+        hasPendingUpdate && (!isMoreProminentUpdatesOn || promptStage.showsMenuUpdate)
+    }
     public var clearsNotificationDotOnMenuOpen: Bool { !isMoreProminentUpdatesOn }
+    private var promptStage: UpdatePromptStage = .none
 
     @Published public var needsNotificationDot: Bool = false
     private let notificationDotSubject = CurrentValueSubject<Bool, Never>(false)
@@ -112,6 +117,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: any ApplicationUpdateDetecting,
                             isOnboardingFinished: @escaping () -> Bool) {
         let promptSettings = {
             MoreProminentUpdatesSettings(privacyConfig: privacyConfigurationManager.privacyConfig,
@@ -137,6 +143,9 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                 self?.notificationDotSubject.send(value)
             }
             .store(in: &cancellables)
+
+        reportCompletedUpdate(status: applicationUpdateDetector.isApplicationUpdated(),
+                              promptAttribution: UpdatePromptAttribution(settings: keyValueStore.throwingKeyedStoring()))
 
         // Start automatic update checking
         checkForUpdateAutomatically()
@@ -287,6 +296,24 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
         }
     }
 
+    /// Fires the update success pixel on the first launch after the App Store installs a newer version.
+    /// The App Store doesn't tell the app how the update started, so only the prompt surface is known.
+    func reportCompletedUpdate(status: AppUpdateStatus, promptAttribution: UpdatePromptAttribution) {
+        guard status == .updated else { return }
+
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        pixelFiring?.fire(UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "unknown",
+            sourceBuild: "unknown",
+            targetVersion: appVersion.versionNumber,
+            targetBuild: appVersion.buildNumber,
+            initiationType: "unknown",
+            updateConfiguration: "unknown",
+            osVersion: "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)",
+            promptSurface: promptAttribution.consumePromptSurface()
+        ), frequency: .dailyAndCount)
+    }
+
     @objc public func openUpdatesPage() {
         appStoreOpener?.openAppStore()
     }
@@ -297,9 +324,9 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
     // MARK: - Private Methods
 
-    /// With more prominent updates on, the dot shows only at the first prompt. The toolbar button takes over at the second.
     private func updateNotificationDot(for stage: UpdatePromptStage) {
-        needsNotificationDot = hasPendingUpdate && (!isMoreProminentUpdatesOn || stage == .firstPrompt)
+        promptStage = stage
+        needsNotificationDot = hasPendingUpdate && (!isMoreProminentUpdatesOn || stage.showsNotificationDot)
     }
 
     /// The rolling-out release once it's past the buffer, otherwise the latest release.

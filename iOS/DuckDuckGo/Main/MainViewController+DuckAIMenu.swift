@@ -53,7 +53,7 @@ extension MainViewController {
         let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage),
               let observer = storageHandler as? DuckAiNativeChatsObserving else { return nil }
-        return try? await ChatHistoryReader(observer: observer).chatsPublisher().values.first { _ in true }
+        return await ChatHistoryReader(observer: observer).chatsPublisher().firstValue(within: .seconds(1))
     }
 
     /// The menu bar reports the browsing menu's entry sources for the page it opens from.

@@ -17,6 +17,7 @@
 //
 
 import CoreGraphics
+import DesignResourcesKit
 import SnapshotTestingSupport
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
@@ -28,6 +29,10 @@ final class DefaultBrowserAndDockPromptInactiveUserViewTests {
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testDefaultBrowserAndDockPromptInactiveUserViewSnapshot() {
+        let palette = DesignSystemPalette.current
+        DesignSystemPalette.current = .default
+        defer { DesignSystemPalette.current = palette }
+
         assertImageSnapshots(
             DefaultBrowserAndDockPromptInactiveUserView_Previews.snapshots,
             size: .fixed(CGSize(width: 868, height: 508))

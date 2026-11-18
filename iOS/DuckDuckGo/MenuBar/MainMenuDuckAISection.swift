@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import DesignResourcesKitIcons
 import UIKit
 
@@ -81,4 +82,13 @@ struct DuckAIRecentChatsMenuContent: MainMenuDeferredContent {
                                options: .displayInline, children: [deleteAllChats]))
         return elements
     }
+}
+
+extension Publisher {
+
+    /// The first value sent within `timeout`, or `nil` when the publisher fails, finishes or sends nothing by then.
+    func firstValue(within timeout: DispatchQueue.SchedulerTimeType.Stride) async -> Output? {
+        try? await self.timeout(timeout, scheduler: DispatchQueue.main).values.first { _ in true }
+    }
+
 }

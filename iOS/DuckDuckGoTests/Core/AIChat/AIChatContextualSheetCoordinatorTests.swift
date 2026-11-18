@@ -29,6 +29,50 @@ import WebKit
 
 final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
+    @MainActor
+    func testRetainedContextualSourceSurvivesTabLeaveAndParkingButClearActiveChatDetachesIt() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sheet.loadViewIfNeeded()
+        let webController = try XCTUnwrap(sut.browserToolsWebViewController)
+        webController.configureContentHandler(with: fixture.script)
+        fixture.script.webView = fixture.webView
+        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
+        }
+        sut.tabWillLeaveScreen()
+        sut.parkSurfaceForResize(animated: false)
+        sut.tabDidReturnToScreen(presentedFrom: host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        let retained = await performExecution { .success([:]) }
+        XCTAssertEqual(retained, .success([:]))
+        let allowed = await fixture.invoke()
+        XCTAssertEqual(allowed, fixture.success)
+        guard case .granted(let performAfterClearing) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected automatic authorization")
+        }
+        sut.clearActiveChat()
+        let cancelled = await performAfterClearing {
+            XCTFail("Cleared chat must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(cancelled)
+        let detached = await fixture.invoke()
+        XCTAssertEqual(detached, .failure(callId: "call", error: .unavailable))
+        let lateScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        webController.configureContentHandler(with: lateScript)
+        lateScript.webView = fixture.webView
+        let lateInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: lateScript)
+        XCTAssertEqual(lateInvocation, .failure(callId: "call", error: .unavailable))
+        XCTAssertNil(webController.browserToolScopeFactory)
+    }
+
     // MARK: - Mocks
 
     private final class MockPageContextHandler: AIChatPageContextHandling {
@@ -101,6 +145,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {
             didRequestToLoadURLs.append(url)
+        }
+
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoadClosingSheet url: URL) -> Bool {
+            didRequestToLoadURLs.append(url)
+            return true
         }
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL,
@@ -328,6 +377,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             duckAiNativeStorageHandler: mockNativeStorage,
             usageContextProvider: UsageContextProvider(),
             onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             pixelHandler: pixelHandler,
             selectionJourneyInstrumentation: mockSelectionJourneyInstrumentation
         )
@@ -982,7 +1032,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
             usageContextProvider: UsageContextProvider(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         mockSettings.isAutomaticContextAttachmentEnabled = true
 
@@ -2013,7 +2064,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testNavigatingWithAnActiveChatAndAutoAttachOffOffersTheNewPage() async throws {
         // Given
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         let host = try XCTUnwrap(sut.persistentUTIHost)
@@ -2039,7 +2090,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testAcceptingTheOfferAttachesThePageWithoutCollectingItAgain() async throws {
         // Given
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         let host = try XCTUnwrap(sut.persistentUTIHost)
@@ -2060,27 +2111,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.chipViewModel.pendingAttachedContextData?.title, "Tokamak")
         XCTAssertNil(host.chipViewModel.suggestedContext)
         XCTAssertNotNil(host.chipViewModel.attachedContext)
-    }
-
-    @MainActor
-    func testNavigatingWithThePlaceholderFlagOffOffersNothing() async throws {
-        // Given
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
-        mockSettings.isAutomaticContextAttachmentEnabled = false
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-        sut.sessionState.beginChatForUTISubmission()
-        sut.sessionState.updateUnifiedToggleInputActive(true)
-        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
-        mockPageContextHandler.triggerContextCollectionCallCount = 0
-
-        // When
-        await sut.notifyPageChanged()
-
-        // Then
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0, "The page must not be read at all")
-        XCTAssertNil(host.chipViewModel.suggestedContext)
     }
 
     // MARK: - Recent chats storage
@@ -2150,7 +2180,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
             usageContextProvider: UsageContextProvider(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         coordinator.delegate = mockDelegate
         return coordinator

@@ -24,29 +24,41 @@ import WebExtensions
 
 @available(iOS 18.4, *)
 final class WebExtensionPixelFiringTests: XCTestCase {
-    func testBackgroundLoadRestartOutcomesUseCanonicalPixelKitContract() throws {
-        for outcome in CPMBackgroundLoadRestartOutcome.allCases {
-            let pixels = PixelKitMock()
-            iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmBackgroundLoadRestart(outcome))
-            XCTAssertEqual(pixels.actualFireCalls.count, 1)
-            let call = try XCTUnwrap(pixels.actualFireCalls.first)
-            XCTAssertEqual(call.pixel.name, "web_extension_cpm_background_load_restart")
-            XCTAssertEqual(call.pixel.namePrefix, .none)
-            XCTAssertEqual(call.frequency, .dailyAndCount)
-            XCTAssertEqual(call.pixel.parameters, ["outcome": outcome.rawValue])
-            XCTAssertNil(call.pixel.standardParameters)
-            XCTAssertNil(call.additionalParameters)
-            XCTAssertTrue(call.includeAppVersionParameter)
-        }
+    func testBreakageUsesCanonicalPixelKitContract() throws {
+        let pixels = PixelKitMock()
+        iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .reached(.configRead), tabs: .many))
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage")
+        XCTAssertEqual(call.pixel.namePrefix, .none)
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.parameters, ["last_stage": "config_read", "tabs": "many"])
+        XCTAssertNil(call.pixel.standardParameters)
+        XCTAssertNil(call.additionalParameters)
+        XCTAssertTrue(call.includeAppVersionParameter)
     }
 
-    func testRecoveryApplicationUsesDailyAndCountWithoutCustomParameters() throws {
+    func testBreakageWithoutMeasuringLeavesOutTheStage() throws {
         let pixels = PixelKitMock()
-        iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)
+        iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .notMeasured, tabs: .one))
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.parameters, ["tabs": "one"])
+    }
+
+    func testBreakageWithoutAReportedStageSendsNone() throws {
+        let pixels = PixelKitMock()
+        iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .noMark, tabs: .one))
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.parameters, ["last_stage": "none", "tabs": "one"])
+    }
+
+    func testPersistentBreakageUsesDailyAndCountWithoutCustomParameters() throws {
+        let pixels = PixelKitMock()
+        iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakagePersistent)
 
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
-        XCTAssertEqual(call.pixel.name, "web_extension_cpm_network_process_recovery_applied")
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_persistent")
         XCTAssertEqual(call.frequency, .dailyAndCount)
         XCTAssertEqual(call.pixel.namePrefix, .none)
         XCTAssertEqual(call.pixel.parameters, [:])
@@ -55,11 +67,11 @@ final class WebExtensionPixelFiringTests: XCTestCase {
         XCTAssertTrue(call.includeAppVersionParameter)
     }
 
-    func testRecoveryApplicationWireNamesMatchDefinitions() throws {
+    func testPersistentBreakageWireNamesMatchDefinitions() throws {
         let sources: [(PixelKit.Source, String)] = [(.iOS, "ios_phone"), (.iPadOS, "ios_tablet")]
         for (source, suffix) in sources {
             let pixels = PixelKitMock()
-            iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)
+            iOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakagePersistent)
             let call = try XCTUnwrap(pixels.actualFireCalls.first)
             let suite = "\(#function)-\(UUID().uuidString)"
             let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -75,7 +87,7 @@ final class WebExtensionPixelFiringTests: XCTestCase {
                 completion(true, nil)
             }
             pixelKit.fire(call.pixel, frequency: call.frequency)
-            XCTAssertEqual(names, ["web_extension_cpm_network_process_recovery_applied_daily_\(suffix)", "web_extension_cpm_network_process_recovery_applied_count_\(suffix)"])
+            XCTAssertEqual(names, ["web_extension_cpm_breakage_persistent_daily_\(suffix)", "web_extension_cpm_breakage_persistent_count_\(suffix)"])
         }
     }
 }

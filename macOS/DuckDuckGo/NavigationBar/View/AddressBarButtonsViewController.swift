@@ -1432,7 +1432,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
         switch tabViewModel.tab.content {
         case .url(let url, _, _), .identityTheftRestoration(let url), .subscription(let url), .aiChat(let url, _):
-            guard let host = url.host else { break }
+            guard let host = url.host else {
+                shieldAnimationView.isHidden = true
+                shieldDotAnimationView.isHidden = true
+                return
+            }
 
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue
             let isCertificateInvalid = tabViewModel.tab.isCertificateInvalid
@@ -1786,7 +1790,7 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatMenuConfig.shouldDisplayAddressBarShortcut
         && !isChromeSidebarFeatureEnabled
         && !shouldSkipShowingAnyAIChatButton()
-        && (tabViewModel?.tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking)
+        && tabViewModel?.tab.content != .onboarding
     }
 
     private func shouldShowAskAIChatButton() -> Bool {

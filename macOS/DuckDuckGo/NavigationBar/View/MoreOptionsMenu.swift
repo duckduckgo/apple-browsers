@@ -31,7 +31,6 @@ import DesignResourcesKitIcons
 import Freemium
 import History
 import os.log
-import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -191,7 +190,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func setupMenuItems() {
-        if !addMoreProminentUpdatesDebugPromptItem() {
+        if !addUpdatePromptItem() {
             addUpdateItem()
         }
 
@@ -524,30 +523,34 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(releaseNotes)
     }
 
-    /// Adds the prominent update prompt selected in `Debug → Updates → More Prominent Updates`, in place of the regular update item,
-    /// while `moreProminentUpdates` is on.
+    /// Adds the prominent update row or card in place of the regular update item at the stages that call for it.
     /// - Returns: Whether a prompt was added.
     @MainActor
-    private func addMoreProminentUpdatesDebugPromptItem() -> Bool {
-        guard featureFlagger.isFeatureOn(.moreProminentUpdates) else { return false }
-
-        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
-        let style: UpdateBannerView.Style
-        switch debugSettings.menuPromptStyle {
-        case .none:
+    private func addUpdatePromptItem() -> Bool {
+        guard AppVersion.runType != .uiTests,
+              let updateController = Application.appDelegate.updateController,
+              let update = updateController.latestUpdate,
+              let menuPrompt = updateController.pendingUpdatePromptStage.prominentMenuPrompt else {
             return false
-        case .row:
-            style = .row
-        case .card:
-            style = .card
         }
 
-        let updateController = Application.appDelegate.updateController
+        let style: UpdateBannerView.Style
+        let surface: UpdatePromptSurface
+        switch menuPrompt {
+        case .row:
+            style = .row(title: updateController.updateBannerRowTitle)
+            surface = .menuRow
+        case .card:
+            style = .card
+            surface = .menuCard
+        }
+
         let banner = UpdateBannerView(style: style,
-                                      version: updateController?.latestUpdate?.version ?? AppVersion.shared.versionNumber,
-                                      buttonTitle: UserText.updateBannerOpenAppStoreButton) { [weak self] in
+                                      version: update.version,
+                                      buttonTitle: updateController.updateBannerButtonTitle) { [weak self] in
             self?.cancelTracking()
-            updateController?.runUpdate()
+            UpdateClickReporter().reportClick(on: surface)
+            updateController.runUpdateFromPrompt()
         }
 
         let item = NSMenuItem()
@@ -856,7 +859,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         if let item = item(at: index), item == updateMenuItem {
-            PixelKit.fire(MoreOptionsMenuPixel.updateActionClicked, frequency: .daily)
+            UpdateClickReporter().reportClick(on: .menuItem)
         }
         super.performActionForItem(at: index)
     }

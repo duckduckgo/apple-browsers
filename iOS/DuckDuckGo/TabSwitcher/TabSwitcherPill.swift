@@ -29,14 +29,16 @@ struct TabSwitcherPill: View {
     let count: Int
     let isExpanded: Bool
     let showsBackground: Bool
+    let backdropFrame: CGRect?
     let onTap: () -> Void
 
     @StateObject private var tabCountModel: TabCountModel
 
-    init(count: Int, isExpanded: Bool = false, showsBackground: Bool = true, onTap: @escaping () -> Void) {
+    init(count: Int, isExpanded: Bool = false, showsBackground: Bool = true, backdropFrame: CGRect? = nil, onTap: @escaping () -> Void) {
         self.count = count
         self.isExpanded = isExpanded
         self.showsBackground = showsBackground
+        self.backdropFrame = backdropFrame
         self.onTap = onTap
         // Seed the model with the correct count up front so the badge
         // renders with the number on the first frame instead of flashing empty.
@@ -56,6 +58,7 @@ struct TabSwitcherPill: View {
                     Capsule()
                         .fill(showsBackground ? Color(designSystemColor: .controlsFillSecondary) : Color.clear)
                 )
+                .modifier(EscapeHatchBackdropBlur(backdropFrame: backdropFrame))
         }
         .buttonStyle(.plain)
         .onChange(of: count) { newValue in tabCountModel.count = newValue }

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import WebExtensions
 import WebKit
 
@@ -25,20 +26,26 @@ import WebKit
 final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     private let windowProvider: () -> NSWindow?
     private let themeManager: ThemeManager
+    private let nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
     private var pendingPrompt: Task<Void, Never>?
 
-    init(windowProvider: @escaping () -> NSWindow?, themeManager: ThemeManager) {
+    init(
+        windowProvider: @escaping () -> NSWindow?,
+        themeManager: ThemeManager,
+        nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
+    ) {
         self.windowProvider = windowProvider
         self.themeManager = themeManager
+        self.nativeMessagingAlertPresenter = nativeMessagingAlertPresenter
     }
 
     func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
-        let configuration = WebExtensionAlert.Configuration.installation(of: webExtension, permissionEntries: permissionEntries(for: permissions))
+        let configuration = WebExtensionAlert.Configuration.installation(of: webExtension, permissionEntries: WebExtensionPermissionFormatter.messages(for: permissions))
 
         let response = await enqueue { [windowProvider, themeManager] in
             guard let window = windowProvider() else { return WebExtensionAlert.Response.cancelled }
             return await withCheckedContinuation { continuation in
-                WebExtensionAlert(configuration: configuration, themeManager: themeManager, onResponse: continuation.resume(returning:))
+                WebExtensionAlert(configuration: configuration, themeManager: themeManager, onResponse: { continuation.resume(returning: $0) })
                     .show(in: window)
             }
         }
@@ -47,7 +54,26 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        let asksForUnavailablePermissions = !permissions.unavailablePermissions.isEmpty
+
+        // Unavailable permissions are never asked for: they're taken out of the request before it gets here and are
+        // only explained. If nothing else needs a warning, there's nothing to ask, so the rest is granted.
+        if WebExtensionPermissionFormatter.messages(for: permissions).isEmpty {
+            if asksForUnavailablePermissions {
+                await enqueue { [nativeMessagingAlertPresenter] in
+                    await nativeMessagingAlertPresenter.explain(context)
+                }
+            }
+            return .granted
+        }
+
         let alert = makeAlert(for: context.webExtension, permissions: permissions)
+        if asksForUnavailablePermissions, let stack = alert.accessoryView as? NSStackView {
+            let note = NSTextField(wrappingLabelWithString: UserText.webExtensionNativeMessagingUnavailablePermission)
+            note.textColor = NSColor(designSystemColor: .textSecondary, palette: themeManager.designColorPalette)
+            note.preferredMaxLayoutWidth = 380
+            stack.addArrangedSubview(note)
+        }
         return await present(alert) == .alertFirstButtonReturn ? .granted : .denied
     }
 
@@ -86,7 +112,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     private func makeAlert(for webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) -> NSAlert {
         let alert = NSAlert()
         let iconSize = NSSize(width: 64, height: 64)
-        if let icon = webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize) {
+        if let icon = webExtension.displayIcon(for: iconSize) {
             alert.icon = icon
         }
         alert.messageText = String(format: UserText.webExtensionPermissionTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension)
@@ -97,7 +123,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         alert.buttons[0].keyEquivalent = ""
         alert.buttons[1].keyEquivalent = "\r"
 
-        let entries = permissionEntries(for: permissions)
+        let entries = WebExtensionPermissionFormatter.messages(for: permissions)
         let label = NSTextField(wrappingLabelWithString: entries.isEmpty ? UserText.webExtensionNoPermissions : entries.map { "• \($0)" }.joined(separator: "\n"))
         label.isSelectable = true
         label.frame.size.width = 360
@@ -123,46 +149,4 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         return alert
     }
 
-    private func permissionEntries(for permissions: WebExtensionPermissionRequest) -> [String] {
-        var entries = (permissions.permissions.map(\.rawValue) + permissions.appPermissions.map(\.rawValue))
-            .map { permissionDescription($0) }.uniqued().sorted()
-        entries += permissions.matchPatterns.map { String(format: UserText.webExtensionWebsiteAccess, $0.string) }.sorted()
-        entries += permissions.urls.map { String(format: UserText.webExtensionWebsiteAccess, $0.host ?? $0.absoluteString) }.sorted()
-        return entries
-    }
-
-    private func permissionDescription(_ permission: String) -> String {
-        switch permission {
-        case "tabs": return UserText.webExtensionTabsPermission
-        case "activeTab": return UserText.webExtensionActiveTabPermission
-        case "clipboardRead": return UserText.webExtensionClipboardReadPermission
-        case "clipboardWrite": return UserText.webExtensionClipboardWritePermission
-        case "cookies": return UserText.webExtensionCookiesPermission
-        case "downloads": return UserText.webExtensionDownloadsPermission
-        case "history": return UserText.webExtensionHistoryPermission
-        case "webNavigation": return UserText.webExtensionNavigationPermission
-        case "storage", "unlimitedStorage": return UserText.webExtensionStoragePermission
-        case "nativeMessaging": return UserText.webExtensionNativeMessagingPermission
-        case "privacy": return UserText.webExtensionPrivacyPermission
-        default: return String(format: UserText.webExtensionOtherPermission, permission)
-        }
-    }
-
-}
-
-@available(macOS 15.4, *)
-private extension WebExtensionAlert.Configuration {
-
-    static func installation(of webExtension: WKWebExtension, permissionEntries entries: [String]) -> Self {
-        let iconSize = NSSize(width: 64, height: 64)
-        return Self(
-            icon: webExtension.icon(for: iconSize) ?? webExtension.actionIcon(for: iconSize),
-            title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
-            message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
-            details: entries,
-            checkbox: UserText.webExtensionAllowFireWindows,
-            checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
-            confirmTitle: UserText.webExtensionInstall,
-            cancelTitle: UserText.cancel)
-    }
 }

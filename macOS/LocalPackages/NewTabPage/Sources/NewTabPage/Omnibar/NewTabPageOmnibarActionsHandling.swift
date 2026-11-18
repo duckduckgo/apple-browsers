@@ -36,6 +36,7 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
                     reasoningEffort: String?,
                     pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
                     files: [NewTabPageDataModel.OmnibarPromptFile]?,
+                    textPasted: [NewTabPageDataModel.OmnibarPromptPastedText]?,
                     aiTermsAccepted: Bool)
 
     /// Called alongside `submitChat` when the prompt came from a suggested-prompt chip.

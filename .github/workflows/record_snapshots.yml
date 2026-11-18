@@ -1,0 +1,168 @@
+name: macOS - Record Snapshots
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+jobs:
+  record-snapshots:
+    if: github.event.label.name == 'Record snapshots (macOS)' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Record CI's macOS snapshot renderings
+    concurrency:
+      group: record-snapshots-${{ github.event.pull_request.number }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Check out trusted automation
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: scripts/record-snapshots.sh
+
+      - name: Wait for the latest macOS PR checks run
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          deadline=$((SECONDS + 180 * 60))
+          while true; do
+            run_id="" status=""
+            read -r run_id status < <(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/macos_pr_checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&per_page=100" \
+              --jq "[.workflow_runs[] | select(any(.pull_requests[]; .number == $PR_NUMBER))][0] | \"\(.id // \"\") \(.status // \"\")\"") || true
+            if [ -n "$run_id" ] && [ "$status" = "completed" ]; then
+              break
+            fi
+            current_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')" || current_sha="$HEAD_SHA"
+            if [ "$current_sha" != "$HEAD_SHA" ]; then
+              echo "::error::The PR moved past $HEAD_SHA after the label was added. Re-add the label to record the new commit's renderings."
+              exit 1
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::macOS PR checks for $HEAD_SHA didn't finish within 3 hours. Re-add the label once they finish."
+              exit 1
+            fi
+            echo "Waiting for macOS PR checks on $HEAD_SHA (run: ${run_id:-not started}, status: ${status:-none})..."
+            sleep 60
+          done
+          echo "id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Check the references CI compared against
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          merge_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.merge_commit_sha // ""')"
+          if [ -z "$merge_sha" ]; then
+            echo "::error::GitHub has no merge commit for this PR, so the references CI compared against are unknown. Resolve any conflicts with the base branch, then re-add the label once the macOS PR checks finish."
+            exit 1
+          fi
+          head_pointer="$(gh api "repos/$GITHUB_REPOSITORY/contents/SnapshotReferences?ref=$HEAD_SHA" --jq '.sha')"
+          merge_pointer="$(gh api "repos/$GITHUB_REPOSITORY/contents/SnapshotReferences?ref=$merge_sha" --jq '.sha')"
+          if [ "$head_pointer" != "$merge_pointer" ]; then
+            echo "::error::The base branch moved SnapshotReferences to $merge_pointer, but this PR points at $head_pointer, so CI compared against references the PR doesn't have. Merge or rebase the base branch, then re-add the label once the macOS PR checks finish."
+            exit 1
+          fi
+
+      - name: Download rendered snapshots
+        id: download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ steps.run.outputs.id }}
+        run: |
+          read -r job_started tests_conclusion < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
+            --jq '[.jobs[] | select(.name | startswith("Test (Non-Sandbox"))][0] // {} | "\(.started_at // "-") \([.steps[]? | select(.name == "Run unit tests")][0].conclusion // "-")"')
+          if [ "$job_started" = "-" ]; then
+            echo "::error::Run $RUN_ID has no started Test (Non-Sandbox) job, the job that renders the snapshots."
+            exit 1
+          fi
+          read -r artifact_id artifact_created artifact_expired < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=macos-rendered-snapshots&per_page=100" \
+            --jq '.artifacts | max_by(.id) // {} | "\(.id // "-") \(.created_at // "-") \(.expired // false)"')
+          if [ "$artifact_expired" = "true" ]; then
+            echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact has expired. Re-run its Test (Non-Sandbox) job or push again, then re-add the label once the macOS PR checks finish."
+            exit 1
+          fi
+          if [ "$artifact_id" = "-" ] || [[ "$artifact_created" < "$job_started" ]]; then
+            if [ "$tests_conclusion" != "success" ] && [ "$tests_conclusion" != "failure" ]; then
+              echo "::error::Run $RUN_ID's latest Test (Non-Sandbox) attempt didn't run the unit tests, so it rendered no snapshots. Fix the job, then re-add the label once the macOS PR checks finish."
+              exit 1
+            fi
+            echo "no_mismatches=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$artifact_id" = "-" ]; then
+            echo "::error::Run $RUN_ID has no macos-rendered-snapshots artifact. Every snapshot matched its reference."
+            exit 1
+          fi
+          if [[ "$artifact_created" < "$job_started" ]]; then
+            echo "::error::Run $RUN_ID's macos-rendered-snapshots artifact comes from an earlier attempt of Test (Non-Sandbox), and its latest attempt rendered no mismatches. Every snapshot matched its reference."
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/rendered.zip"
+          mkdir -p "$RUNNER_TEMP/rendered"
+          unzip -q "$RUNNER_TEMP/rendered.zip" -d "$RUNNER_TEMP/rendered"
+
+      - name: Check out the PR branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: pull-request
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+
+      - name: Record rendered snapshots
+        id: record
+        env:
+          GH_TOKEN: ${{ secrets.SNAPSHOTS_REPO_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        working-directory: pull-request
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then
+            echo "::error::'$PR_BRANCH' moved past $HEAD_SHA after the label was added. Re-add the label once its macOS PR checks finish."
+            exit 1
+          fi
+          ../trusted/scripts/record-snapshots.sh "$RUNNER_TEMP/rendered" "$PR_BRANCH"
+
+      - name: Comment on the PR
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OUTCOME: ${{ steps.record.outcome }}
+          NO_MISMATCHES: ${{ steps.download.outputs.no_mismatches }}
+          COUNT: ${{ steps.record.outputs.count }}
+          SNAPSHOTS_PR: ${{ steps.record.outputs.snapshots_pr }}
+          POINTER_COMMIT: ${{ steps.record.outputs.pointer_commit }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$NO_MISMATCHES" = "true" ] || { [ "$OUTCOME" = "success" ] && [ "$COUNT" = "0" ]; }; then
+            body="### ℹ️ No macOS snapshots to record"$'\n\n'"Every snapshot CI rendered already matches its reference. [Workflow run]($RUN_URL)"
+          elif [ "$OUTCOME" != "success" ]; then
+            body="### ❌ Couldn't record the macOS snapshots"$'\n\n'"See [the workflow run]($RUN_URL) for why."
+          else
+            body="### 📸 Recorded $COUNT macOS snapshot rendering(s)"$'\n\n'"Review them in $SNAPSHOTS_PR before adding the \`Merge snapshots\` label."
+            if [ -n "$POINTER_COMMIT" ]; then
+              body+=$'\n\n'"$POINTER_COMMIT points \`SnapshotReferences\` at them and re-runs the macOS PR checks."
+            fi
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$body"
+
+      - name: Remove the label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/Record%20snapshots%20%28macOS%29" 2>/dev/null || true

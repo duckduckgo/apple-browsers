@@ -39,13 +39,44 @@ class Device:
         os.environ["AUTOMATION_TOKEN"] = self.token
         self.web = Web(self.web_port, self.token)
         self._driver = None
+        self._udid = None
+        self.language = None   # what the last launch pinned (env.LANGUAGE or a proof's own), for capture_conditions
+
+    @property
+    def name(self):
+        return f"verify-ios-{KEY}-{self.device}"
+
+    def _all(self):
+        """Every simulator with this worktree's name, including unavailable ones (their runtime was removed).
+        Looked up by name, never remembered across commands: each proof deletes its simulator when it ends."""
+        devs = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"]).stdout)["devices"]
+        return [d for ds in devs.values() for d in ds if d["name"] == self.name]
+
+    def _find(self):
+        """This worktree's usable simulator for the device, or None."""
+        return next((d for d in self._all() if d.get("isAvailable", True)), None)
 
     @property
     def udid(self):
-        u = env.load_state().get("sims", {}).get(self.device)
-        if not u:
-            raise Failed(f"no {self.device} simulator for this worktree: run `setup --device {self.device}`")
-        return u
+        if self._udid is None:
+            found = self._find()
+            if not found:
+                raise Failed(f"no {self.device} simulator for this worktree (each proof deletes its own when it ends): "
+                             f"run `--device {self.device} launch`")
+            self._udid = found["udid"]
+        return self._udid
+
+    def _ensure(self):
+        """Find or create the simulator without booting it. True if it was created."""
+        found = self._find()
+        if found:
+            self._udid = found["udid"]
+            return False
+        p = run(["xcrun", "simctl", "create", self.name, DEVICE_TYPES[self.device], RUNTIME])
+        if p.returncode:
+            raise Failed("simctl create failed", stderr=p.stderr.strip())
+        self._udid = p.stdout.strip()
+        return True
 
     @property
     def driver(self):
@@ -58,33 +89,24 @@ class Device:
 
     # setup / build -------------------------------------------------------------
     def setup(self):
-        """Create (or adopt) this worktree's dedicated simulator for the device, and boot it."""
-        name = f"verify-ios-{KEY}-{self.device}"
-        devs = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"]).stdout)["devices"]
-        found = [d for ds in devs.values() for d in ds if d["name"] == name and d.get("isAvailable", True)]
-        created = False
-        if found:
-            udid = found[0]["udid"]
-        else:
-            p = run(["xcrun", "simctl", "create", name, DEVICE_TYPES[self.device], RUNTIME])
-            if p.returncode:
-                raise Failed("simctl create failed", stderr=p.stderr.strip())
-            udid, created = p.stdout.strip(), True
-        env.update_state(lambda st: st.setdefault("sims", {}).__setitem__(self.device, udid))
+        """Create (or adopt) this worktree's simulator for the device, and boot it."""
+        created = self._ensure()
+        udid = self.udid
         run(["xcrun", "simctl", "boot", udid])
         p = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300)
         if p.returncode:
             raise Failed("simulator did not finish booting", stderr=p.stderr.strip())
         self._driver = None
-        return dict(udid=udid, name=name, created=created, ports=dict(web=self.web_port, runner=self.runner_port, fixture=env.fixture_port()))
+        return dict(udid=udid, name=self.name, created=created, ports=dict(web=self.web_port, runner=self.runner_port, fixture=env.fixture_port()))
 
     def booted(self):
-        u = env.load_state().get("sims", {}).get(self.device)
-        return bool(u) and "(Booted)" in run(["xcrun", "simctl", "list", "devices", u]).stdout
+        found = self._find()
+        return bool(found) and found.get("state") == "Booted"
 
     def build(self, app=True, runner=True):
         """Build this worktree's app and the runner against this device's simulator (generic destinations fail)."""
         os.makedirs(f"{HOME}/logs", exist_ok=True)
+        self._ensure()   # xcodebuild needs a concrete destination; it need not be booted
         out, jobs = {}, []
         if app:
             jobs.append(("app", ["xcodebuild", "-project", f"{ROOT}/iOS/DuckDuckGo-iOS.xcodeproj", "-scheme", "iOS Browser",
@@ -168,14 +190,16 @@ class Device:
         except (IndexError, ValueError):
             return dict(ok=False, reason=(p.stdout[-200:] + p.stderr[-200:]).strip())
 
-    def launch(self, fresh=False, flags=None):
+    def launch(self, fresh=False, flags=None, language=None):
         """Install this worktree's build if it changed, start the runner, launch, and wait for a real ready signal.
 
         `flags` pins remote feature flags for this launch ({"newTabPageRedesign": True}) on top of env.PINNED_FLAGS, so
-        a proof never depends on what the live privacy configuration currently says.
+        a proof never depends on what the live privacy configuration currently says. `language` ({"language": "fr",
+        "locale": "fr_FR"}) replaces env.LANGUAGE, the en-US the text locators assume.
         """
         t0 = time.time()
         flags = {**env.PINNED_FLAGS, **(flags or {})}
+        language = language or env.LANGUAGE
         if not self.booted():
             self.setup()
         if env.port_listening(self.web_port, "::1") and not self.web.ready_now():
@@ -190,8 +214,10 @@ class Device:
             raise Failed(problem)
         # The app applies -ff. overrides only for internal users or in UI-test mode (AppDependencyProvider's
         # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features.
-        args = ["isRunningUITests"] + [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
+        args = ["isRunningUITests", "-AppleLanguages", f"({language['language']})", "-AppleLocale", language["locale"]]
+        args += [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
         self.driver.launch({"AUTOMATION_TOKEN": self.token}, args)
+        self.language = dict(language)
         if self.web.wait_ready(60) is None:
             raise Failed(f"AutomationServer on [::1]:{self.web_port} never reported /contentBlockerReady true")
         self.driver.wait({"id": "searchEntry"}, "exists", 20)
@@ -199,7 +225,7 @@ class Device:
         if not ident.get("ok"):
             raise Failed("running app is not this worktree's build", build=ident)
         return dict(device=self.device, udid=self.udid, bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
-                    ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
+                    language=language, ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
                     runnerStarted=bool(started))
 
     # capture conditions -----------------------------------------------------------
@@ -220,21 +246,22 @@ class Device:
             raise Failed("simctl status_bar failed", stderr=p.stderr.strip())
 
     def capture_conditions(self):
-        """What a screenshot taken now depends on, beyond the device type and runtime."""
+        """What a screenshot taken now depends on, beyond the device type and runtime: the simulator's settings and the
+        language the app was launched in."""
         o = self.driver.orientation().get("orientation")
         overrides = run(["xcrun", "simctl", "status_bar", self.udid, "list"]).stdout
         return dict(appearance=self.ui("appearance"), textSize=self.ui("content_size"),
                     orientation=o if o and o != "unknown" else "portrait",
-                    statusBar="fixed (9:41)" if "9:41" in overrides else "live")
+                    statusBar="fixed (9:41)" if "9:41" in overrides else "live", **(self.language or {}))
 
     def foreground(self):
         """True if the app is running in the foreground (not crashed, not backgrounded)."""
         from .driver import APP_FOREGROUND
         return self.driver.state() == APP_FOREGROUND
 
-    def reset(self, flags=None):
+    def reset(self, flags=None, language=None):
         """Known state: reinstall (clears app data, per-site permissions and pixel frequency state), launch, one blank tab."""
-        return self.launch(fresh=True, flags=flags)
+        return self.launch(fresh=True, flags=flags, language=language)
 
     def terminate(self):
         self.driver.terminate()
@@ -242,8 +269,8 @@ class Device:
 
     def doctor(self):
         checks = []
-        udid = env.load_state().get("sims", {}).get(self.device)
-        checks.append(dict(name="simulator-recorded", ok=bool(udid), detail=udid))
+        found = self._find()
+        checks.append(dict(name="simulator-exists", ok=bool(found), detail=found and found["udid"]))
         booted = self.booted()
         checks.append(dict(name="simulator-booted", ok=booted))
         checks.append(dict(name="app-build-present", ok=os.path.exists(APP), detail=APP))
@@ -260,7 +287,9 @@ class Device:
         """Stop what this worktree started for the device, by recorded and re-checked process identity."""
         removed, survivors = [], []
         st = env.load_state()
-        udid = st.get("sims", {}).get(self.device)
+        sims = self._all()
+        usable = next((d for d in sims if d.get("isAvailable", True)), None)
+        udid = usable and usable["udid"]
         for s in st.get("devices", {}).get(self.device, {}).get("started", []):
             res = XCUITestRunner(udid or "-", s["port"], self.token).stop(s.get("processes", []))
             removed.append(res)
@@ -272,10 +301,14 @@ class Device:
             if shutdown or delete_sim:
                 run(["xcrun", "simctl", "shutdown", udid])
                 removed.append(f"shutdown:{udid}")
-            if delete_sim:
-                run(["xcrun", "simctl", "delete", udid])
-                env.update_state(lambda st: st.get("sims", {}).pop(self.device, None))
-                removed.append(f"deleted:{udid}")
+        if delete_sim:
+            for sim in sims:
+                p = run(["xcrun", "simctl", "delete", sim["udid"]])
+                if p.returncode:
+                    removed.append(dict(problems=[f"simctl delete {sim['udid']} failed: {p.stderr.strip()}"]))
+                else:
+                    removed.append(f"deleted:{sim['udid']}")
+            self._udid, self._driver = None, None
         out = dict(removed=removed, evidenceKept=env.EVIDENCE)
         if survivors:
             out["left"] = [p["pid"] for s in survivors for p in s["processes"]]
@@ -369,11 +402,23 @@ class Device:
             raise Failed("screenshot failed", stderr=p.stderr.strip())
         return path
 
-    def app_logs(self, path, since="5m"):
-        out = run(["xcrun", "simctl", "spawn", self.udid, "log", "show", "--last", since, "--style", "compact",
-                   "--predicate", 'process == "DuckDuckGo"']).stdout
+    APP_LOG_LIMIT = 5_000_000   # characters, about 5 minutes of a proof; past it the end is kept, where a failure shows
+    # The UI-test runner's accessibility queries are logged inside the app process (com.apple.dt.xctest), most of a
+    # proof's log; the transcript already records every action, so they are left out.
+    APP_LOG_PREDICATE = 'process == "DuckDuckGo" AND subsystem != "com.apple.dt.xctest"'
+
+    def app_logs(self, path, since="5m", start=None):
+        """The app's own log (`log show`, APP_LOG_PREDICATE) for the last `since`, or from `start` (epoch seconds)."""
+        window = ["--start", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))] if start else ["--last", since]
+        p = run(["xcrun", "simctl", "spawn", self.udid, "log", "show", *window, "--style", "compact",
+                 "--predicate", self.APP_LOG_PREDICATE], timeout=120)
+        if p.returncode:
+            raise Failed("log show failed", stderr=p.stderr.strip())
+        out = p.stdout
+        if len(out) > self.APP_LOG_LIMIT:
+            out = f"[verify-ios: kept the last {self.APP_LOG_LIMIT} of {len(out)} characters]\n" + out[-self.APP_LOG_LIMIT:]
         with open(path, "w") as f:
-            f.write(out[-500000:])
+            f.write(out)
         return path
 
     def data_container(self):
@@ -448,6 +493,6 @@ def fixture_release(user):
 
 
 def info():
-    st = env.load_state()
-    return dict(worktree=ROOT, key=KEY, home=HOME, app=APP, evidence=env.EVIDENCE, sims=st.get("sims", {}),
+    sims = {d: (Device(d)._find() or {}).get("udid") for d in env.PORT_OFFSET}
+    return dict(worktree=ROOT, key=KEY, home=HOME, app=APP, evidence=env.EVIDENCE, sims=sims,
                 ports={d: dict(zip(("web", "runner"), env.ports(d))) for d in env.PORT_OFFSET} | {"fixture": env.fixture_port()})

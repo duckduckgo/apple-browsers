@@ -93,7 +93,7 @@ private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) 
 private func safariArchiveInstructionsWithHistory(for dataTypes: Set<DataImport.DataType>) -> String {
     switch (dataTypes.contains(.bookmarks), dataTypes.contains(.passwords)) {
     case (true, false):
-        NotLocalizedString("import.zip.instructions.safari.bookmarks.with-history", value: """
+        NSLocalizedString("import.zip.instructions.safari.bookmarks.with-history", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
         %d Select from **Bookmarks, Credit Cards,** and **History** → **Export** and save the file
         %d Upload the exported ZIP or HTML file to DuckDuckGo
@@ -104,7 +104,7 @@ private func safariArchiveInstructionsWithHistory(for dataTypes: Set<DataImport.
         **bold text**; _italic text_
         """)
     case (false, true):
-        NotLocalizedString("import.zip.instructions.safari.passwords.with-history", value: """
+        NSLocalizedString("import.zip.instructions.safari.passwords.with-history", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
         %d Select from **Passwords, Credit Cards,** and **History** → **Export** and save the file
         %d Upload the exported ZIP or CSV file to DuckDuckGo
@@ -115,7 +115,7 @@ private func safariArchiveInstructionsWithHistory(for dataTypes: Set<DataImport.
         **bold text**; _italic text_
         """)
     case (false, false):
-        NotLocalizedString("import.zip.instructions.safari.history", value: """
+        NSLocalizedString("import.zip.instructions.safari.history", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
         %d Select **History** → **Export** and save the file
         %d Upload the exported ZIP file to DuckDuckGo
@@ -126,7 +126,7 @@ private func safariArchiveInstructionsWithHistory(for dataTypes: Set<DataImport.
         **bold text**; _italic text_
         """)
     case (true, true):
-        NotLocalizedString("import.zip.instructions.safari.with-history", value: """
+        NSLocalizedString("import.zip.instructions.safari.with-history", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
         %d Select from **Bookmarks, Passwords, Credit Cards,** and **History** → **Export** and save the file
         %d Upload the exported ZIP or CSV file to DuckDuckGo

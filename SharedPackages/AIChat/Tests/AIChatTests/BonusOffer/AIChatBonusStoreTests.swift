@@ -105,7 +105,7 @@ struct AIChatBonusStoreTests {
     @Test("Check record fields that do not decode make the read throw", .timeLimit(.minutes(1)))
     func recordFieldsThatDoNotDecodeMakeReadThrow() {
         // GIVEN
-        fileSystem.files[fileURL] = Data(#"{"schemaVersion":1,"record":{"dismissed":"yes"}}"#.utf8) // wrong type for `dismissed`, should be `true` or `false`
+        fileSystem.files[fileURL] = Data(#"{"schemaVersion":1,"record":{"dismissedCampaignName":1}}"#.utf8) // wrong type for `dismissedCampaignName`, should be a string
 
         // WHEN / THEN
         #expect(throws: AIChatBonusStoreError.decodingFailed) {
@@ -129,7 +129,7 @@ struct AIChatBonusStoreTests {
     @Test("Check a stored record that breaks the invariant makes the read throw", .timeLimit(.minutes(1)))
     func storedRecordThatBreaksTheInvariantMakesReadThrow() {
         // GIVEN
-        fileSystem.files[fileURL] = Data(#"{"schemaVersion":1,"record":{"bonusId":"id","dismissed":false}}"#.utf8)
+        fileSystem.files[fileURL] = Data(#"{"schemaVersion":1,"record":{"bonusId":"id"}}"#.utf8)
 
         // WHEN / THEN
         #expect(throws: AIChatBonusStoreError.invariantViolated) {
@@ -153,7 +153,7 @@ struct AIChatBonusStoreTests {
     @Test("Check every write prepares the directory", .timeLimit(.minutes(1)))
     func everyWritePreparesTheDirectory() throws {
         // GIVEN
-        try sut.write(AIChatBonusRecord(dismissed: true))
+        try sut.write(AIChatBonusRecordMock.dismissedOnly)
 
         // WHEN
         try sut.write(claimedRecord)

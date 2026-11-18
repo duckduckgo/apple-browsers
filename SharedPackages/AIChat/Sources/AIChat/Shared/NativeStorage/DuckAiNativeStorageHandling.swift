@@ -76,6 +76,8 @@ public extension DuckAiNativeStorageHandling {
 public enum DuckAiMigrationKey {
     public static let chats = "chats"
     public static let files = "files"
+    /// Marked by the web app itself once it has copied its localStorage entries over.
+    public static let entries = "entries"
 
     static let allKeys = [chats, files]
 }

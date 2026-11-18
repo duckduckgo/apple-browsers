@@ -69,7 +69,7 @@ class BookmarksTestData {
             let tld = baseStringsSet[it]
             it += 1
             
-            var title = tld
+            let title = tld
             
             var path = "/"
             var addSuffixes = pathSuffixes

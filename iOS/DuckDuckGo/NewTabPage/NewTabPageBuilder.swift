@@ -92,6 +92,7 @@ struct NewTabPageBuilder {
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             },
+            usesLiquidGlass: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
             aiChatMenu: {
                 newTabPage?.duckAIMenu()
             })
@@ -161,7 +162,6 @@ struct NewTabPageBuilder {
                                        daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         NewTabPageViewController(isFocussedState: false,
                                  openedAfterIdle: openedAfterIdle,
-                                 dismissKeyboardOnScroll: true,
                                  tab: tab,
                                  interactionModel: favoritesInteractionModel,
                                  homePageMessagesConfiguration: homePageMessagesConfiguration,

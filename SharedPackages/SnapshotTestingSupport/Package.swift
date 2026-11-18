@@ -51,7 +51,10 @@ let package = Package(
         ),
         .testTarget(
             name: "SnapshotTestingSupportTests",
-            dependencies: ["SnapshotTestingSupport"]
+            dependencies: [
+                "SnapshotTestingSupport",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+            ]
         ),
     ],
     swiftLanguageVersions: [.v5]

@@ -32,6 +32,7 @@ enum PromoTestHelpers {
         respectsGlobalCooldown: Bool = true,
         setsGlobalCooldown: Bool = true,
         canShowDuringOnboarding: Bool = false,
+        showsOverVisiblePromos: Bool = false,
         delegate: InternalPromoDelegate? = nil
     ) -> Promo {
         InternalPromo(
@@ -44,6 +45,7 @@ enum PromoTestHelpers {
             respectsGlobalCooldown: respectsGlobalCooldown,
             setsGlobalCooldown: setsGlobalCooldown,
             canShowDuringOnboarding: canShowDuringOnboarding,
+            showsOverVisiblePromos: showsOverVisiblePromos,
             delegate: delegate
         )
     }

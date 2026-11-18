@@ -27,7 +27,6 @@ enum PromoCoordinationMode: Equatable {
 final class PromoQueueRemoteMessageLease {
     let messageID: String
     let acquisitionIdentity: PromoQueueAcquisitionIdentity
-    private(set) var didConfirmAppearance = false
 
     private let arbiterLease: PromoQueueRemoteMessageArbiterLease
     private let cooldownPolicy: PromoQueueCooldownPolicying
@@ -47,7 +46,6 @@ final class PromoQueueRemoteMessageLease {
             return false
         }
 
-        didConfirmAppearance = true
         cooldownPolicy.recordConfirmedRemoteMessageAppearance()
         return true
     }

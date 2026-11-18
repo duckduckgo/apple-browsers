@@ -96,7 +96,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
-                                                    localBrokerProvider: localBrokerService)
+                                                    localBrokerProvider: localBrokerService,
+                                                    privacyConfigurationManager: privacyConfigurationManager)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
@@ -462,6 +463,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
                     case BrokerProfileJobQueueError.interrupted:
                         self.pixelHandler.fire(.ipcServerImmediateScansInterrupted)
                         Logger.dataBrokerProtection.error("Interrupted during DataBrokerProtectionAgentManager.profileSaved in queueManager.startImmediateOperationsIfPermitted(), error: \(oneTimeError.localizedDescription, privacy: .public)")
+                    case BrokerProfileJobQueueError.pausedForRevokedSigningKey:
+                        Logger.dataBrokerProtection.log("Paused during DataBrokerProtectionAgentManager.profileSaved because a broker bundle signing key was revoked")
                     default:
                         self.pixelHandler.fire(.ipcServerImmediateScansFinishedWithError(error: oneTimeError))
                         Logger.dataBrokerProtection.error("Error during DataBrokerProtectionAgentManager.profileSaved in queueManager.startImmediateOperationsIfPermitted, error: \(oneTimeError.localizedDescription, privacy: .public)")
@@ -505,6 +508,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
                     case BrokerProfileJobQueueError.cannotInterrupt:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansBlocked)
                         Logger.dataBrokerProtection.log("Cannot interrupt during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted()")
+                    case BrokerProfileJobQueueError.pausedForRevokedSigningKey:
+                        Logger.dataBrokerProtection.log("Paused during DataBrokerProtectionAgentManager.appLaunched because a broker bundle signing key was revoked")
                     default:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansFinishedWithError(error: oneTimeError))
                         Logger.dataBrokerProtection.log("Error during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted, error: \(oneTimeError.localizedDescription, privacy: .public)")
@@ -597,8 +602,11 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
             self.debugServer = nil
         }
 
-        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader())
         do {
+            let debugModeRunner = try DebugModeRunner(authenticationManager: authenticationManager, featureFlagger: jobDependencies.featureFlagger)
+            let server = DataBrokerProtectionDebugHTTPServer(provider: self,
+                                                             logReader: DataBrokerProtectionOSLogReader(),
+                                                             runManager: DebugModeRunManager(runner: debugModeRunner))
             try server.start()
             debugServer = server
             return true

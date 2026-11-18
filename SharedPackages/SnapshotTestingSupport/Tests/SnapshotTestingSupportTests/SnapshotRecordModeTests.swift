@@ -89,4 +89,13 @@ struct SnapshotRecordModeTests {
             ) == .all
         )
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func compareFlagForcesComparison() {
+        #expect(SnapshotRecordMode.forcesComparison(environment: ["COMPARE_SNAPSHOTS": "1"]))
+        #expect(SnapshotRecordMode.forcesComparison(environment: ["COMPARE_SNAPSHOTS": "true"]))
+        #expect(!SnapshotRecordMode.forcesComparison(environment: [:]))
+        #expect(!SnapshotRecordMode.forcesComparison(environment: ["COMPARE_SNAPSHOTS": "0"]))
+    }
 }

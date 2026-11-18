@@ -149,6 +149,7 @@
                     "deep_link_other",
                     "browsing_menu_duckai",
                     "duck_ai_new_chat",
+                    "swipe_up_new_chat",
                     "tab_switcher_existing_chat",
                     "tabs_bar_existing_chat",
                     "return_to_chat_card",
@@ -227,6 +228,12 @@
                 "key": "feature.data.ext.device.hardware_keyboard",
                 "type": "boolean",
                 "description": "Whether a hardware keyboard was connected when the prompt was submitted."
+            },
+            {
+                "key": "feature.data.ext.device.address_bar_position",
+                "type": "string",
+                "description": "The iPhone address bar position setting when the prompt was submitted. Absent on iPad.",
+                "enum": ["top", "bottom"]
             },
 
             // Latency milestones (ms since prompt submission). Bucketed (round-up) into one of:

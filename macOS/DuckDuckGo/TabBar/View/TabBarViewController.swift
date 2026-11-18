@@ -1203,9 +1203,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             canToggleSidebar = true
         } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
             canToggleSidebar = true
-        } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .onboarding = tab.content,
-                  NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-            canToggleSidebar = true
         }
 
         return canToggleSidebar
@@ -1221,7 +1218,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var isDuckAIChromeButtonsEnabled: Bool {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
-        return tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
+        return tab.content != .onboarding
     }
 
     private func updateDuckAIChromeSegmentedControlState() {
@@ -2102,6 +2099,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 guard let self, let childWindows, childWindows.contains(where: {
                     !(
                         $0.windowController is TabPreviewWindowController
+                        || $0 is HoveredLinkTooltipWindow
                         || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
                     )
                 }) else { return }
@@ -2116,7 +2114,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         // don‘t show tab previews when a child window is shown (Suggestions, Bookmarks etc…)
-        guard view.window?.childWindows?.contains(where: { !($0.windowController is TabPreviewWindowController) }) != true,
+        guard view.window?.childWindows?.contains(where: { !($0.windowController is TabPreviewWindowController || $0 is HoveredLinkTooltipWindow) }) != true,
               let collectionView,
               let tabIndex = tabIndex(forTabBarViewItem: tabBarViewItem)
         else {

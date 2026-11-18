@@ -33,8 +33,10 @@ import Subscription
 /// See `UpdateControllerFactory` in `UpdateController.swift` for details on
 /// how `instantiate` is consumed.
 extension UpdateControllerFactory: SparkleUpdateControllerFactory {
+    @MainActor
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
+                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                    pixelFiring: PixelFiring?,
                                    notificationPresenter: any UpdateNotificationPresenting,
                                    keyValueStore: any ThrowingKeyValueStoring,
@@ -50,6 +52,7 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
         )
         return SparkleUpdateController(internalUserDecider: internalUserDecider,
                                        featureFlagger: featureFlagger,
+                                       privacyConfigurationManager: privacyConfigurationManager,
                                        manualUpdateRemovalHandler: manualUpdateRemovalHandler,
                                        pixelFiring: pixelFiring,
                                        notificationPresenter: notificationPresenter,

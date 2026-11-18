@@ -77,7 +77,9 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - port: The TCP port to listen on. Defaults to `8473`.
-    ///   - loopbackOnly: Restrict the listener to IPv4 loopback for local tooling.
+    ///   - loopbackOnly: When `true`, the listener binds to `127.0.0.1` only, so the server is
+    ///     unreachable from the LAN. Defaults to `false`, preserving the original all-interfaces
+    ///     behavior for existing callers.
     public init(port: UInt16 = 8473, loopbackOnly: Bool = false) {
         self.port = port
         self.loopbackOnly = loopbackOnly
@@ -101,9 +103,11 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
 
             let parameters = NWParameters.tcp
             let nwPort = NWEndpoint.Port(rawValue: port)!
+
             let listener: NWListener
             if loopbackOnly {
-                parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: nwPort)
+                // Bind to the loopback address so the server is unreachable from other interfaces.
+                parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: .ipv4(.loopback), port: nwPort)
                 listener = try NWListener(using: parameters)
             } else {
                 listener = try NWListener(using: parameters, on: nwPort)
@@ -301,6 +305,7 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
     private func processRequest(_ data: Data) -> HTTPResponse {
         do {
             let request = try parser.parse(data)
+
             let key = RouteKey(method: request.method, path: request.path)
 
             if let handler = routes[key] {

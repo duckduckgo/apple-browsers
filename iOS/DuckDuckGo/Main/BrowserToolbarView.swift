@@ -145,8 +145,6 @@ final class BrowserToolbarView: UIView {
     static let floatingButtonsHeight: CGFloat = 62
     /// Button row height when the address field is hosted in the bottom floating chrome.
     static let floatingEmbeddedButtonsHeight: CGFloat = 44
-    static let buttonRowCollapseScaleAmount: CGFloat = 0.2
-    static let buttonRowCollapseTranslationY: CGFloat = 8
 
     /// Non-floating (legacy) buttons-only bar height, matching the original `UIToolbar` on `main`.
     /// The floating style uses the taller `buttonsHeight`.
@@ -173,7 +171,15 @@ final class BrowserToolbarView: UIView {
     /// Inner side inset of the standalone (top address bar) floating toolbar.
     static let floatingStandaloneButtonRowHorizontalPadding: CGFloat = 16
     // This is only used in floating UI
-    private static let floatingUICornerRadius: CGFloat = 40
+    static let floatingUICornerRadius: CGFloat = 40
+    /// Layer shadow under the floating glass. None on iOS 26+: Liquid Glass draws its own, and
+    /// compositing another dynamic shadow on top of it doubles it up.
+    static var floatingShadowOpacity: CGFloat {
+        if #available(iOS 26.0, *) { return 0 }
+        return 0.12
+    }
+    static let floatingShadowRadius: CGFloat = 10
+    static let floatingShadowOffset = CGSize(width: 0, height: 4)
 
     static let floatingEmbeddedHorizontalInset: CGFloat = 16
     /// Fallback inset before the concentric safe-area guide resolves.
@@ -336,12 +342,14 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
+    var onFloatingBottomOffsetChange: (() -> Void)?
     /// Extra translation applied while the split (top address bar) pill hides. The layout slot stays
     /// put so we can slide a plain container instead of moving `UIVisualEffectView` via Auto Layout.
     private var standaloneHideProgress: CGFloat = 0
-    /// 0 = button row fully in layout, 1 = button row and field-to-buttons gap collapsed out of layout
-    /// so the address field keeps its height while the chrome shrinks around it.
-    private var buttonRowCollapseProgress: CGFloat = 0
+    /// Maps the resting panel onto the domain pill's pose while the two hand over.
+    private var morphTransform: CGAffineTransform = .identity
+    /// True while the domain pill draws the glass and this bar only contributes its content.
+    private var isGlassHandedOff = false
     private enum CornerStyle {
         case square, concentric, capsule
     }
@@ -352,6 +360,11 @@ final class BrowserToolbarView: UIView {
     private var toolbarButtonViews: [UIView] = []
     private var horizontalOuterInsetsOverride: (left: CGFloat, right: CGFloat)?
     private(set) var usesCompactStandaloneHeight = false
+    /// Resolves the safe area and corner guides from this view instead of the superview, for copies laid out away from where they'll show.
+    weak var layoutReferenceView: UIView? {
+        didSet { setNeedsLayout() }
+    }
+    private var layoutHost: UIView? { layoutReferenceView ?? superview }
 
     private var hasEmbeddedOmnibar: Bool {
         omnibarHeightConstraint.constant > 0
@@ -382,7 +395,7 @@ final class BrowserToolbarView: UIView {
                                 bottom: 0,
                                 right: Self.floatingEmbeddedHorizontalInset)
         }
-        guard let host = superview, host.bounds.width > 0 else {
+        guard let host = layoutHost, host.bounds.width > 0 else {
             return UIEdgeInsets(
                 top: 0,
                 left: Self.floatingEmbeddedConcentricInset,
@@ -412,6 +425,13 @@ final class BrowserToolbarView: UIView {
         return max(0, view.bounds.maxY - layoutFrame.maxY)
     }
 
+    /// Floating offset of a buttons-only toolbar in `host`, whatever this toolbar currently hosts.
+    @available(iOS 26.0, *)
+    static func standaloneFloatingBottomOffset(in host: UIView) -> CGFloat {
+        embeddedRestStateBottomOffset(guideBottomGap: verticalGuideBottomInset(in: host),
+                                      physicalInset: floatingPhysicalInset(guideInsets: horizontalGuideInsets(in: host)))
+    }
+
     /// Shift that puts the bottom `physicalInset` from the physical edge, matching the sides.
     static func embeddedRestStateBottomOffset(guideBottomGap: CGFloat, physicalInset: CGFloat = floatingEmbeddedConcentricInset) -> CGFloat {
         guideBottomGap - physicalInset
@@ -423,7 +443,7 @@ final class BrowserToolbarView: UIView {
         if usesEmbeddedBottomChromeMetrics {
             return Self.floatingEmbeddedHorizontalInset
         }
-        guard let host = superview, host.bounds.width > 0 else { return Self.floatingEmbeddedConcentricInset }
+        guard let host = layoutHost, host.bounds.width > 0 else { return Self.floatingEmbeddedConcentricInset }
         return Self.floatingPhysicalInset(guideInsets: Self.horizontalGuideInsets(in: host))
     }
 
@@ -500,10 +520,6 @@ final class BrowserToolbarView: UIView {
         return (defaultVerticalContentPadding * 2) + legacyButtonsHeight + omnibarHeight + defaultOmnibarToButtonsSpacing
     }
 
-    static func singleRowHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
-        floatingEmbeddedTopContentPadding + floatingEmbeddedBottomContentPadding + omnibarHeight
-    }
-
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .clear
@@ -524,9 +540,9 @@ final class BrowserToolbarView: UIView {
 
         materialBackgroundView.contentView.clipsToBounds = true
         materialBackgroundView.layer.shadowColor = UIColor.black.cgColor
-        materialBackgroundView.layer.shadowOpacity = 0.12
-        materialBackgroundView.layer.shadowRadius = 10
-        materialBackgroundView.layer.shadowOffset = CGSize(width: 0, height: 4)
+        materialBackgroundView.layer.shadowOpacity = Float(Self.floatingShadowOpacity)
+        materialBackgroundView.layer.shadowRadius = Self.floatingShadowRadius
+        materialBackgroundView.layer.shadowOffset = Self.floatingShadowOffset
 
         materialBackgroundLeadingConstraint = chromeContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.legacyBarOuterInsets.left)
         materialBackgroundTrailingConstraint = chromeContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.legacyBarOuterInsets.right)
@@ -609,13 +625,12 @@ final class BrowserToolbarView: UIView {
         if !hasExpandedContent {
             contentStackBottomConstraint.constant = -currentBottomContentPadding
         }
-        let collapse = usesEmbeddedBottomChromeMetrics ? buttonRowCollapseProgress.clamped(to: 0...1) : 0
-        let spacing = currentOmnibarToButtonsSpacing * (1 - collapse)
+        let spacing = currentOmnibarToButtonsSpacing
         if contentStack.spacing != spacing {
             contentStack.spacing = spacing
         }
         if usesEmbeddedBottomChromeMetrics {
-            buttonRowHeightConstraint.constant = Self.floatingEmbeddedButtonsHeight * (1 - collapse)
+            buttonRowHeightConstraint.constant = Self.floatingEmbeddedButtonsHeight
             buttonRowHeightConstraint.isActive = true
         } else {
             buttonRowHeightConstraint.isActive = false
@@ -652,7 +667,6 @@ final class BrowserToolbarView: UIView {
     func setOmnibarView(_ view: UIView?, height: CGFloat) -> Bool {
         endOmnibarSwipe()
         isOmnibarMorphing = false
-        buttonRowCollapseProgress = 0
 
         guard let view else {
             hostedOmnibarView?.removeFromSuperview()
@@ -701,7 +715,6 @@ final class BrowserToolbarView: UIView {
     }
 
     func applyOmnibarDetachmentPose() {
-        buttonRowCollapseProgress = 0
         omnibarHeightConstraint.constant = 0
         buttonsHeightConstraint.constant = buttonsOnlyHeight
         // Settled into the buttons-only pose now, so drop the embedded (bottom omnibar) metrics.
@@ -713,7 +726,6 @@ final class BrowserToolbarView: UIView {
     func prepareForOmnibarAttachment(height: CGFloat) {
         guard isFloatingStyleEnabled, hostedOmnibarView == nil else { return }
         isOmnibarMorphing = true
-        buttonRowCollapseProgress = 0
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
         applyContentStackMetrics()
@@ -740,7 +752,7 @@ final class BrowserToolbarView: UIView {
                 chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
             }
             materialBackgroundView.effect = nil
-            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.effect = visibleMaterialEffect
             materialBackgroundView.setNeedsLayout()
         }
     }
@@ -1000,10 +1012,10 @@ final class BrowserToolbarView: UIView {
     }
 
     var floatingBottomMargin: CGFloat {
-        if usesCompactStandaloneHeight, isFloatingStyleEnabled, let host = superview {
+        if usesCompactStandaloneHeight, isFloatingStyleEnabled, let host = layoutHost {
             return host.safeAreaInsets.bottom + DefaultOmniBarView.bottomPositionFieldBottomPadding
         }
-        if usesRedesignedNewTabPageLayout, let host = superview, host.bounds.width > host.bounds.height {
+        if usesRedesignedNewTabPageLayout, let host = layoutHost, host.bounds.width > host.bounds.height {
             // The cutout widens the horizontal guide in landscape; it should not lift the toolbar.
             return Self.floatingEmbeddedBottomMargin
         }
@@ -1023,9 +1035,7 @@ final class BrowserToolbarView: UIView {
     func restingCapsuleFrame(in view: UIView) -> CGRect {
         guard isFloatingStyleEnabled else { return .zero }
         let bounds = view.bounds
-        let height = hasEmbeddedOmnibar
-            ? Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
-            : buttonsHeightConstraint.constant
+        let height = hasEmbeddedOmnibar ? panelHeight : buttonsHeightConstraint.constant
 
         let left: CGFloat
         let right: CGFloat
@@ -1055,39 +1065,18 @@ final class BrowserToolbarView: UIView {
         return CGRect(x: bounds.minX + left, y: bottom - height, width: width, height: height)
     }
 
-    @discardableResult
-    func setButtonRowCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) -> CGFloat {
-        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant,
-                                          isFloating: isFloatingStyleEnabled,
-                                          isCompact: usesCompactStandaloneHeight)
+    /// The glass panel's height at rest.
+    var panelHeight: CGFloat {
+        Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant,
+                         isFloating: isFloatingStyleEnabled,
+                         isCompact: usesCompactStandaloneHeight)
+    }
 
-        guard isFloatingStyleEnabled, hasEmbeddedOmnibar, !hasExpandedContent, !reduceMotion else {
-            guard buttonRowCollapseProgress != 0 || buttonsHeightConstraint.constant != fullHeight
-                    || buttonStack.alpha != 1 || buttonStack.transform != .identity else { return fullHeight }
-            buttonRowCollapseProgress = 0
-            buttonStack.alpha = 1
-            buttonStack.transform = .identity
-            buttonsHeightConstraint.constant = fullHeight
-            applyContentStackMetrics()
-            return fullHeight
-        }
-
-        let progress = collapseProgress.clamped(to: 0...1)
-        let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
-        let height = fullHeight - (fullHeight - singleRowHeight) * progress
-        let scale = 1 - Self.buttonRowCollapseScaleAmount * progress
-        let transform = CGAffineTransform(scaleX: scale, y: scale)
-            .concatenating(CGAffineTransform(translationX: 0, y: Self.buttonRowCollapseTranslationY * progress))
-        guard buttonRowCollapseProgress != progress || buttonsHeightConstraint.constant != height
-                || buttonStack.alpha != 1 - progress || buttonStack.transform != transform else { return height }
-        buttonRowCollapseProgress = progress
-        applyContentStackMetrics()
-        buttonStack.alpha = 1 - progress
-        buttonStack.transform = transform
-
-        buttonsHeightConstraint.constant = height
-        updateCornerStyle()
-        return height
+    /// Scales and moves the panel, content included, without touching its layout.
+    func setMorphTransform(_ transform: CGAffineTransform) {
+        guard morphTransform != transform else { return }
+        morphTransform = transform
+        applyMaterialBackgroundTransform()
     }
 
     /// Shrinks the buttons-only floating bar to a single button row, the height of the minimal chrome bar.
@@ -1108,12 +1097,13 @@ final class BrowserToolbarView: UIView {
     }
 
     private var standaloneHideTranslation: CGFloat {
-        let slideDistance = bounds.height + (superview?.safeAreaInsets.bottom ?? 0)
+        let slideDistance = bounds.height + (layoutHost?.safeAreaInsets.bottom ?? 0)
         return slideDistance * standaloneHideProgress
     }
 
     private func applyMaterialBackgroundTransform() {
-        chromeContainer.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset + standaloneHideTranslation)
+        chromeContainer.transform = morphTransform
+            .concatenating(CGAffineTransform(translationX: 0, y: floatingBottomOffset + standaloneHideTranslation))
     }
 
     /// Shifts the glass so it keeps the same physical inset as the sides (iOS 26), or leaves
@@ -1121,19 +1111,20 @@ final class BrowserToolbarView: UIView {
     private func updateFloatingBottomOffset() {
         let target: CGFloat
         if #available(iOS 26.0, *), isFloatingStyleEnabled {
-            if let host = superview, host.bounds.height > 0 {
+            if let host = layoutHost, host.bounds.height > 0 {
                 let guideBottomGap = Self.verticalGuideBottomInset(in: host)
                 target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: floatingBottomMargin)
             } else {
                 target = 0
             }
         } else {
-            let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
+            let hostBottomInset = layoutHost?.safeAreaInsets.bottom ?? 0
             target = isFloatingStyleEnabled ? hostBottomInset - floatingBottomMargin : 0
         }
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
         applyMaterialBackgroundTransform()
+        onFloatingBottomOffsetChange?()
     }
 
     private func updateCornerStyle() {
@@ -1175,13 +1166,8 @@ final class BrowserToolbarView: UIView {
         appliedMaterialInterfaceStyle = nil
         let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
-            if #available(iOS 26.0, *) {
-                // Liquid Glass already provides a shadow; avoid compositing another dynamic shadow.
-                self.materialBackgroundView.layer.shadowOpacity = 0
-            } else {
-                self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
-            }
-            self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
+            self.materialBackgroundView.layer.shadowOpacity = self.visibleShadowOpacity
+            self.materialBackgroundView.effect = self.visibleMaterialEffect
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.applyContentStackMetrics()
@@ -1208,8 +1194,26 @@ final class BrowserToolbarView: UIView {
         guard isFloatingStyleEnabled else { return }
         UIView.performWithoutAnimation {
             materialBackgroundView.effect = nil
-            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.effect = visibleMaterialEffect
             materialBackgroundView.layoutIfNeeded()
+        }
+    }
+
+    private var visibleMaterialEffect: UIVisualEffect? {
+        isFloatingStyleEnabled && !isGlassHandedOff ? materialEffect() : nil
+    }
+
+    private var visibleShadowOpacity: Float {
+        isFloatingStyleEnabled && !isGlassHandedOff ? Float(Self.floatingShadowOpacity) : 0
+    }
+
+    /// Hands the glass and its shadow to the domain pill (or takes them back), leaving the content.
+    func setGlassHandedOff(_ handedOff: Bool) {
+        guard isGlassHandedOff != handedOff else { return }
+        isGlassHandedOff = handedOff
+        UIView.performWithoutAnimation {
+            materialBackgroundView.effect = visibleMaterialEffect
+            materialBackgroundView.layer.shadowOpacity = visibleShadowOpacity
         }
     }
 

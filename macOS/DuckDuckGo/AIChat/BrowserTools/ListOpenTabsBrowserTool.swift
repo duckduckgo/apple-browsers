@@ -29,8 +29,6 @@ final class ListOpenTabsBrowserTool: BrowserTool {
 
     /// Matches `AIChatBrowserToolsSubfeature.listOpenTabs`, which is how the catalog gates it.
     let name = "listOpenTabs"
-    let title = "List open tabs"
-    let description = "List open tabs in the current window (title and URL only)."
     let permissionMode = BrowserToolPermissionMode.ask
     let permissionReason = "Duck.ai wants to see your open tabs."
 
@@ -40,32 +38,6 @@ final class ListOpenTabsBrowserTool: BrowserTool {
             "limit": ["type": "integer", "minimum": 1, "maximum": 50]
         ]
     ]
-
-    let outputSchema: JSONValue? = [
-        "type": "object",
-        "properties": [
-            "tabs": [
-                "type": "array",
-                "items": [
-                    "type": "object",
-                    "properties": [
-                        "tabId": ["type": "string"],
-                        "title": ["type": "string"],
-                        "url": ["type": "string"],
-                        "isCurrentTab": ["type": "boolean"],
-                        "isAttachable": ["type": "boolean"]
-                    ],
-                    "required": ["tabId", "title", "url", "isCurrentTab", "isAttachable"]
-                ]
-            ]
-        ],
-        "required": ["tabs"]
-    ]
-
-    let annotations: MCPToolAnnotations? = MCPToolAnnotations(readOnlyHint: true,
-                                                              destructiveHint: false,
-                                                              idempotentHint: true,
-                                                              openWorldHint: false)
 
     private let windowControllersManager: WindowControllersManagerProtocol
 
@@ -94,7 +66,7 @@ final class ListOpenTabsBrowserTool: BrowserTool {
         let selectedTabID = collection.selectedTabViewModel?.tab.uuid
         // Only pages with a URL are listed, and never Duck.ai itself.
         let pages: [JSONValue] = tabs.compactMap { tab in
-            guard case .url(let url, _, _) = tab.content, !url.isDuckAIURL else { return nil }
+            guard BrowserToolTargetTab.isListed(tab), case .url(let url, _, _) = tab.content else { return nil }
             return [
                 "tabId": .string(tab.uuid),
                 "title": .string(tab.title ?? url.host ?? ""),
@@ -105,5 +77,15 @@ final class ListOpenTabsBrowserTool: BrowserTool {
         }
 
         return .success(["tabs": .array(Array(pages.prefix(limit)))])
+    }
+
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+        guard let tabs = value["tabs"]?.arrayValue else { return .failure(.unavailable) }
+        return .success(["tabs": .array(tabs.map { tab in
+            var fields = tab.objectValue ?? [:]
+            fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
+            fields["url"] = BrowserToolOutputLimits.redactedURL(fields["url"])
+            return .object(fields)
+        })])
     }
 }

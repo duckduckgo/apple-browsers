@@ -67,6 +67,16 @@ final class UpdatesDebugSettingsTests: XCTestCase {
         XCTAssertFalse(debugSettings.forceUpdateAvailable)
     }
 
+    func testForcedUpdatePromptStage_persistsAndResets() {
+        XCTAssertNil(debugSettings.forcedUpdatePromptStage)
+
+        debugSettings.forcedUpdatePromptStage = .firstPrompt
+        XCTAssertEqual(UpdatesDebugSettings(persistor: persistor).forcedUpdatePromptStage, .firstPrompt)
+
+        debugSettings.reset()
+        XCTAssertNil(debugSettings.forcedUpdatePromptStage)
+    }
+
     func testReset() {
         // Given - settings with force update enabled
         debugSettings.forceUpdateAvailable = true

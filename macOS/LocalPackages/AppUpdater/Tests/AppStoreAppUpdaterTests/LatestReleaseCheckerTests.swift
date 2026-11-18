@@ -80,7 +80,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         }
 
         // When
-        let result = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+        let result = try await checker.getAppStoreReleases().latest
 
         // Then
         XCTAssertEqual(result.latestVersion, expectedMetadata.latestVersion)
@@ -113,7 +113,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         }
 
         // When
-        let result = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+        let result = try await checker.getAppStoreReleases().latest
 
         // Then
         XCTAssertEqual(result.latestVersion, "1.157.0")
@@ -132,7 +132,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected network error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -156,7 +156,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected timeout error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -188,7 +188,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected HTTP error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -216,7 +216,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected HTTP error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -244,7 +244,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected HTTP error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -276,7 +276,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected parsing error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -312,7 +312,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected parsing error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -351,7 +351,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected parsing error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -379,7 +379,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected parsing error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -420,7 +420,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected parsing error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -461,7 +461,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
         // When & Then
         do {
-            _ = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+            _ = try await checker.getAppStoreReleases().latest
             XCTFail("Expected parsing error to be thrown")
         } catch let error as LatestReleaseError {
             switch error {
@@ -500,13 +500,62 @@ final class LatestReleaseCheckerTests: XCTestCase {
         }
 
         // When
-        let result = try await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+        let result = try await checker.getAppStoreReleases().latest
 
         // Then
         XCTAssertEqual(result.latestVersion, longVersionString)
         XCTAssertEqual(result.buildNumber, 540)
         XCTAssertEqual(result.releaseDate, "2025-09-11T10:30:00Z")
         XCTAssertFalse(result.isCritical)
+    }
+
+    // MARK: - Available Release Tests
+
+    func testGetAppStoreReleases_whenAvailableReleaseIsPresent_returnsBothReleases() async throws {
+        respond(with: """
+        {
+            "latest_appstore_version": {"latest_version": "1.156.0", "build_number": 540, "release_date": "2025-09-11T10:30:00Z", "is_critical": false},
+            "available_appstore_version": {"latest_version": "1.157.0", "build_number": 541, "release_date": "2025-09-18T10:30:00Z", "is_critical": true}
+        }
+        """)
+
+        let releases = try await checker.getAppStoreReleases()
+
+        XCTAssertEqual(releases.latest.latestVersion, "1.156.0")
+        XCTAssertEqual(releases.available?.latestVersion, "1.157.0")
+        XCTAssertEqual(releases.available?.isCritical, true)
+    }
+
+    func testGetAppStoreReleases_whenAvailableReleaseIsMissing_returnsLatestOnly() async throws {
+        respond(with: """
+        {"latest_appstore_version": {"latest_version": "1.156.0", "build_number": 540, "release_date": "2025-09-11T10:30:00Z", "is_critical": false}}
+        """)
+
+        let releases = try await checker.getAppStoreReleases()
+
+        XCTAssertEqual(releases.latest.latestVersion, "1.156.0")
+        XCTAssertNil(releases.available)
+    }
+
+    func testGetAppStoreReleases_whenAvailableReleaseIsMalformed_stillReturnsLatest() async throws {
+        respond(with: """
+        {
+            "latest_appstore_version": {"latest_version": "1.156.0", "build_number": 540, "release_date": "2025-09-11T10:30:00Z", "is_critical": false},
+            "available_appstore_version": {"latest_version": "1.157.0"}
+        }
+        """)
+
+        let releases = try await checker.getAppStoreReleases()
+
+        XCTAssertEqual(releases.latest.latestVersion, "1.156.0")
+        XCTAssertNil(releases.available)
+    }
+
+    private func respond(with json: String) {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, json.data(using: .utf8)!)
+        }
     }
 
     // MARK: - URL Construction Tests
@@ -538,7 +587,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
         }
 
         // When
-        _ = try? await checker.getLatestReleaseAvailable(for: .macOSAppStore)
+        _ = try? await checker.getAppStoreReleases().latest
 
         // Then
         XCTAssertNotNil(capturedRequest)

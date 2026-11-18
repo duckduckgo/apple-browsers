@@ -134,6 +134,7 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
+            privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
             searchPreferences: NSApp.delegateTyped.searchPreferences,
             windowControllersManager: windowControllersManager,
@@ -148,7 +149,8 @@ extension NewTabPageActionsManager {
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
             availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] },
-            isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false }
+            isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false },
+            allowsSubscriptionUpsellProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.allowsSubscriptionUpsell ?? false }
         )
         omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
             omnibarConfigProvider?.notifyCustomizeResponsesChanged()

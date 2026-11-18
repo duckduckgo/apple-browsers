@@ -198,13 +198,30 @@ struct AIChatBonusHandlerTests {
 
     // MARK: - aiChatBonusDismiss
 
-    @Test("Check aiChatBonusDismiss dismisses the offer")
-    func dismissDismissesTheOffer() {
+    @Test("Check aiChatBonusDismiss dismisses the offer for the campaign")
+    func dismissDismissesTheOfferForTheCampaign() throws {
         // WHEN
-        sut.aiChatBonusDismiss()
+        sut.aiChatBonusDismiss(params: try Self.params(#"{ "campaignName": "launch" }"#))
 
         // THEN
-        #expect(service.dismissCallCount == 1)
+        #expect(service.dismissedCampaignNames == ["launch"])
+    }
+
+    @Test(
+        "Check aiChatBonusDismiss drops invalid params without dismissing",
+        arguments: [
+            #"{}"#,
+            #"{ "campaignName": 1 }"#,
+            #"{ "campaignName": null }"#,
+            #"{ "campaignName": "" }"#
+        ]
+    )
+    func dismissDropsInvalidParams(json: String) throws {
+        // WHEN
+        sut.aiChatBonusDismiss(params: try Self.params(json))
+
+        // THEN
+        #expect(service.dismissedCampaignNames.isEmpty)
     }
 
     // MARK: - aiChatBonusEnd
@@ -244,6 +261,22 @@ struct AIChatBonusHandlerTests {
 
         // THEN
         #expect(published.values == [AIChatBonusRecordPayload(record: AIChatBonusRecordMock.ended, isNewInstall: false, aiChatEnabled: false)])
+    }
+
+    @Test("Check a record change builds one payload however many subscribers listen")
+    func recordChangeBuildsOnePayloadForAllSubscribers() {
+        // GIVEN
+        let first = PublishedValues(sut.recordPayloadPublisher)
+        let second = PublishedValues(sut.recordPayloadPublisher)
+        let expectedPayload = AIChatBonusRecordPayload(record: AIChatBonusRecordMock.active, isNewInstall: true, aiChatEnabled: true)
+
+        // WHEN
+        service.recordSubject.send(AIChatBonusRecordMock.active)
+
+        // THEN
+        #expect(first.values == [expectedPayload])
+        #expect(second.values == [expectedPayload])
+        #expect(factsProvider.isNewInstallReadCount == 1)
     }
 
     // MARK: - Params that aren't JSON objects

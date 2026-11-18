@@ -22,7 +22,6 @@ import Foundation
 
 private struct DaxGreetingActivity {
     var lastForegroundDate: Date?
-    var foregroundOpenCount = 0
     var isFirstOpenOfDay = false
 }
 
@@ -51,14 +50,9 @@ final class DaxGreetingActivityStore {
         guard isEnabled() else { return }
         let date = now()
         let calendar = calendarProvider()
-        if let previous = activity.lastForegroundDate, calendar.isDate(previous, inSameDayAs: date), previous <= date {
-            activity.foregroundOpenCount = min(activity.foregroundOpenCount, Int.max - 1) + 1
-        } else {
-            activity.foregroundOpenCount = 1
-        }
         let previousActiveDate = activity.lastForegroundDate ?? lastActiveDateAtLaunch
         let wasActiveToday = previousActiveDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false
-        activity.isFirstOpenOfDay = activity.foregroundOpenCount == 1 && !wasActiveToday
+        activity.isFirstOpenOfDay = !wasActiveToday
         activity.lastForegroundDate = date
         changesSubject.send()
     }
@@ -68,8 +62,6 @@ final class DaxGreetingActivityStore {
             guard let eventDate, eventDate <= date else { return false }
             return calendar.isDate(eventDate, inSameDayAs: date)
         }
-        let opens = happenedToday(activity.lastForegroundDate) ? activity.foregroundOpenCount : 0
-        return DaxGreetingContext(isFirstOpenOfDay: opens > 0 && activity.isFirstOpenOfDay,
-                                  foregroundOpenCount: opens)
+        return DaxGreetingContext(isFirstOpenOfDay: happenedToday(activity.lastForegroundDate) && activity.isFirstOpenOfDay)
     }
 }

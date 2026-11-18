@@ -24,6 +24,7 @@ import os.log
 import Combine
 import UserScript
 import BrowserServicesKit
+import FeatureFlags_iOS
 import PrivacyConfig
 
 struct DuckPlayerWebView: UIViewRepresentable {
@@ -32,6 +33,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
     let contentController: WKUserContentController
     let scriptSourceProvider: ScriptSourceProviding
     let duckPlayerUserScript: DuckPlayerUserScriptPlayer
+    let sponsorBlockSubfeature: SponsorBlockSubfeature
     let contentScopeUserScripts: ContentScopeUserScript
     
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
@@ -65,6 +67,8 @@ struct DuckPlayerWebView: UIViewRepresentable {
    init(viewModel: DuckPlayerViewModel,
         contentController: WKUserContentController = WKUserContentController(),
         scriptSourceProviderDependencies: DefaultScriptSourceProvider.Dependencies,
+        sponsorBlockPreferences: SponsorBlockPreferences,
+        sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
         duckPlayerUserScript: DuckPlayerUserScriptPlayer? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator? = nil,
@@ -75,6 +79,10 @@ struct DuckPlayerWebView: UIViewRepresentable {
        self.scriptSourceProvider = DefaultScriptSourceProvider(dependencies: scriptSourceProviderDependencies)
               
        self.duckPlayerUserScript = duckPlayerUserScript ?? DuckPlayerUserScriptPlayer(viewModel: viewModel)
+       // Duck Player loads youtube-nocookie.com in its own web view, so the tab's SponsorBlock subfeature never sees it.
+       self.sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
+                                                            preferences: sponsorBlockPreferences,
+                                                            isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
 
        let jsonGenerator = privacyConfigurationJSONGenerator ??
             ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: featureFlagger,
@@ -112,6 +120,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
 
        // Add the scripts directly to the WKUserContentController
        contentScopeUserScripts.registerSubfeature(delegate: duckPlayerUserScript)
+       contentScopeUserScripts.registerSubfeature(delegate: sponsorBlockSubfeature)
        contentController.addHandler(contentScopeUserScripts)
        contentController.addUserScript(contentScopeUserScripts.makeWKUserScriptSync())
        configuration.userContentController = contentController
@@ -145,16 +154,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
    }
 
    func updateUIView(_ webView: WKWebView, context: Context) {
-       guard let url = viewModel.getVideoURL() else { return }
-       Logger.duckplayer.debug("Loading video with URL: \(url)")
-       var request = URLRequest(url: url)
-       request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
-       
-       // Optimize for slow connections       
-       request.timeoutInterval = 30.0
-       request.networkServiceType = .video
-       
-       webView.load(request)
+       // SwiftUI calls this on unrelated updates such as rotation; reloading would restart the video.
+       guard let url = viewModel.getVideoURL(), url != context.coordinator.loadedURL else { return }
+       context.coordinator.load(url, in: webView)
    }
 
    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
@@ -162,6 +164,20 @@ struct DuckPlayerWebView: UIViewRepresentable {
        weak var webView: WKWebView?
        weak var duckPlayerUserScript: DuckPlayerUserScriptPlayer?
        weak var contentScopeUserScripts: ContentScopeUserScript?
+       private(set) var loadedURL: URL?
+
+       func load(_ url: URL, in webView: WKWebView) {
+           Logger.duckplayer.debug("Loading video with URL: \(url)")
+           var request = URLRequest(url: url)
+           request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
+
+           // Optimize for slow connections
+           request.timeoutInterval = 30.0
+           request.networkServiceType = .video
+
+           loadedURL = url
+           webView.load(request)
+       }
 
        init(viewModel: DuckPlayerViewModel) {
            self.viewModel = viewModel
@@ -240,6 +256,13 @@ struct DuckPlayerWebView: UIViewRepresentable {
            // Loading failed during provisional navigation
            viewModel?.isLoading = false
            Logger.duckplayer.error("[DuckPlayer] Provisional loading failed with error: \(error)")
+       }
+
+       func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+           // Without this, WebKit reloads the original URL and the video starts over.
+           Logger.duckplayer.error("[DuckPlayer] Web content process terminated, resuming playback")
+           guard let url = viewModel?.getResumeVideoURL() else { return }
+           load(url, in: webView)
        }
        
    }

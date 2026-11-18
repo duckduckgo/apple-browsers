@@ -505,8 +505,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: .app,
-            processStartedAt: processStartedAt,
-            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
+            processStartedAt: processStartedAt)
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -610,6 +609,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: .dataProtection(.unspecified),
                    tokenHandlerProvider: tokenHandler,
+                   tokenSource: .fromKeychain,
                    debugEvents: Self.networkProtectionDebugEvents(controllerErrorStore: errorStore),
                    providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,
@@ -617,6 +617,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
+                   reportWakeConnectivityFailure: { VPNWakeConnectivityPixel.fireFailure() },
                    sessionHealth: sessionHealth)
         startMonitoringMemoryPressureEvents()
 

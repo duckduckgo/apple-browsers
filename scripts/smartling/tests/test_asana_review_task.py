@@ -6,7 +6,7 @@ import io
 import sys
 import unittest
 from argparse import Namespace
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -76,9 +76,11 @@ class PagedAsanaClient(ASANA_REVIEW_TASK.AsanaClient):
     def __init__(self):
         super().__init__('token')
         self.requested_offsets = []
+        self.requested_params = []
 
     def _send(self, method, path, params=None, body=None):  # pylint: disable=unused-argument
         self.requested_offsets.append(params.get('offset'))
+        self.requested_params.append(dict(params))
         if params.get('offset') is None:
             return {'data': ROTATION[:2], 'next_page': {'offset': 'page-2'}}
         return {'data': ROTATION[2:], 'next_page': None}
@@ -93,6 +95,15 @@ class AsanaClientTests(unittest.TestCase):
 
         self.assertEqual(tasks, ROTATION)
         self.assertEqual(client.requested_offsets, [None, 'page-2'])
+
+    def testProjectTasksAskForChangesSinceThatTimeInUTC(self):
+        client = PagedAsanaClient()
+        since = datetime(2026, 11, 3, 3, 0, tzinfo=timezone(timedelta(hours=2)))
+
+        client.project_tasks('ios-app-development', since)
+
+        self.assertEqual(client.requested_params[0]['modified_since'], '2026-11-03T01:00:00Z')
+        self.assertEqual(client.requested_params[0]['completed_since'], '2026-11-03T01:00:00Z')
 
 
 class NotesHTMLTests(unittest.TestCase):
@@ -118,6 +129,12 @@ class NotesHTMLTests(unittest.TestCase):
             "⏸️ Jobs awaiting authorization:\n"
             "- <a href=\"https://dashboard.smartling.com/app/projects/p/account-jobs/p:k\">feature/x</a> (created 2026-10-20)</body>"
         ))
+
+
+    def testWhenAURLIsQuotedThenTheQuoteStaysOutOfTheLink(self):
+        html_notes = ASANA_REVIEW_TASK.notes_html('Should "https://example.com" be translated?')
+
+        self.assertEqual(html_notes, '<body>Should "<a href="https://example.com">https://example.com</a>" be translated?</body>')
 
 
 class ReviewTaskTests(unittest.TestCase):
@@ -162,6 +179,56 @@ class ReviewTaskTests(unittest.TestCase):
         task = self.review_task(client, args)
 
         self.assertNotIn('assignee', task)
+
+
+class RejectingAsanaClient:
+    """Rejects tasks for some assignees, as Asana does for deactivated users."""
+
+    def __init__(self, rejected, error='Asana POST /tasks failed with HTTP 400: assignee: Not a recognized ID'):
+        self.rejected = rejected
+        self.error = error
+        self.created = []
+
+    def create_task(self, body):
+        if body.get('assignee') in self.rejected:
+            raise RuntimeError(self.error)
+        self.created.append(body)
+        return {'gid': '1'}
+
+
+class CreateTaskTests(unittest.TestCase):
+
+    def create_task(self, client, fallback_assignee):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return ASANA_REVIEW_TASK.create_task(client, {'name': 'Task', 'assignee': 'author'}, fallback_assignee)
+
+    def testWhenAsanaRejectsTheAssigneeThenTheTaskGoesToTheFallbackOrNoOne(self):
+        forbidden = 'Asana POST /tasks failed with HTTP 403: Forbidden'
+        cases = (
+            ('owner', None, {'name': 'Task', 'assignee': 'owner'}),
+            (None, None, {'name': 'Task'}),
+            ('owner', forbidden, {'name': 'Task', 'assignee': 'owner'}),
+        )
+        for fallback, error, expected in cases:
+            with self.subTest(fallback=fallback, error=error):
+                client = RejectingAsanaClient(rejected={'author'}, **({'error': error} if error else {}))
+
+                self.create_task(client, fallback)
+
+                self.assertEqual(client.created, [expected])
+
+    def testWhenAsanaFailsForAnotherReasonOrRejectsTheFallbackTooThenTheErrorIsRaised(self):
+        clients = {
+            'server error': RejectingAsanaClient(rejected={'author'}, error='Asana POST /tasks failed with HTTP 500: Server Error'),
+            'rate limit': RejectingAsanaClient(rejected={'author'}, error='Asana POST /tasks failed with HTTP 429: Too Many Requests'),
+            'fallback rejected': RejectingAsanaClient(rejected={'author', 'owner'}),
+        }
+        for case, client in clients.items():
+            with self.subTest(case):
+                with self.assertRaises(RuntimeError):
+                    self.create_task(client, 'owner')
+
+                self.assertEqual(client.created, [])
 
 
 if __name__ == '__main__':

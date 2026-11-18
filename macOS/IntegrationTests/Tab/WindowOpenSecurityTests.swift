@@ -515,7 +515,7 @@ final class WindowOpenSecurityTests: XCTestCase {
 
     @MainActor
     private func loadMainDocument() async throws {
-        try await withTimeout(5) { [self] in
+        try await withTimeout(5) { @MainActor [self] in
             try await tab.setContent(.url(mainURL, source: .link))?.result.get()
         }
     }

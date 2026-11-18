@@ -188,6 +188,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     var selectedDataBroker: DataBroker?
     var error: Error?
     var profileQueryLabels: [Int64: String] = [:]
+    /// Shows debug opt-outs for brokers that need the user in the same window the production feature uses.
     @MainActor private var assistedOptOutPresenter: AssistedOptOutWindowPresenter?
 
     let brokerResources: [BrokerResource]

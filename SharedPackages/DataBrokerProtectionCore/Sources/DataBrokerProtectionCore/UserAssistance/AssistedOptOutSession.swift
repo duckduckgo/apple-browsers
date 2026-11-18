@@ -89,6 +89,7 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
         onCancelRequested?(self)
     }
 
+    /// Called by the queue when it cancels the attempt, so late reports from the page are ignored.
     public func markCancelled() { isCancelled = true }
 
     func finish(outcome: AssistedOptOutOutcome) {

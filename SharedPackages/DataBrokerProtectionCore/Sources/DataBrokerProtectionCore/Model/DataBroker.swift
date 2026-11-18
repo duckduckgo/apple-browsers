@@ -402,6 +402,7 @@ extension DataBroker {
         return false
     }
 
+    /// The opt-out steps, or nil when the opt-out has no top-level `userAssist` action.
     public func assistedOptOutSteps() -> AssistedOptOutSteps? {
         guard let actions = optOutStep()?.actions, actions.contains(where: { $0 is UserAssistAction }) else { return nil }
         return AssistedOptOutSteps(actions: actions)

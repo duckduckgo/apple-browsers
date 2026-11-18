@@ -28,12 +28,14 @@ struct ContextualOnboardingDialogSchedulerTests {
 
     private let provider = StubDialogProvider()
     private let sent = SentUpdates()
+    private let timer = FakeTimer()
     let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.contextualOnboarding.rawValue: true])
 
     func makeScheduler(isInPopUpWindow: Bool = false) -> ContextualOnboardingDialogScheduler {
         let scheduler = ContextualOnboardingDialogScheduler(dialogProvider: provider,
                                                             featureFlagger: featureFlagger,
-                                                            isInPopUpWindow: { isInPopUpWindow })
+                                                            isInPopUpWindow: { isInPopUpWindow },
+                                                            runAfter: { [timer] in timer.runAfter($0, $1) })
         scheduler.onUpdate = { [sent] in sent.updates.append($0) }
         return scheduler
     }
@@ -209,6 +211,106 @@ struct ContextualOnboardingDialogSchedulerTests {
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil)
 
         #expect(sent.updates.isEmpty)
+    }
+}
+
+// MARK: - Waiting for Duck.ai's first answer
+
+extension ContextualOnboardingDialogSchedulerTests {
+
+    private func duckAITab() async throws -> Tab {
+        await Tab(content: .aiChat(try #require(URL(string: "https://duck.ai/chat"))))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A Duck.ai page doesn't ask on load; it waits up to 2 seconds for the first answer", .timeLimit(.minutes(1)))
+    func duckAIPageWaits() async throws {
+        provider.nextDialog = .thatsDuckAI
+
+        makeScheduler().navigationDidFinish(in: try await duckAITab())
+
+        #expect(sent.updates == [.hide])
+        #expect(provider.dialogTypeForTabCallCount == 0)
+        #expect(timer.pendingDelays == [2])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The first answer asks once and stops the failsafe", .timeLimit(.minutes(1)))
+    func firstAnswerAsksOnce() async throws {
+        provider.nextDialog = .thatsDuckAI
+        let scheduler = makeScheduler()
+        scheduler.navigationDidFinish(in: try await duckAITab())
+
+        scheduler.firstAnswerReceived()
+        timer.fireAll()
+
+        #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
+        #expect(provider.dialogTypeForTabCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without an answer, the failsafe asks once", .timeLimit(.minutes(1)))
+    func failsafeAsksOnce() async throws {
+        provider.nextDialog = .thatsDuckAI
+        let scheduler = makeScheduler()
+        scheduler.navigationDidFinish(in: try await duckAITab())
+
+        timer.fireAll()
+        scheduler.firstAnswerReceived()
+
+        #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
+        #expect(provider.dialogTypeForTabCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving the Duck.ai page or switching tabs stops waiting", .timeLimit(.minutes(1)), arguments: [true, false])
+    func leavingStopsWaiting(bySwitchingTabs: Bool) async throws {
+        provider.nextDialog = nil
+        let scheduler = makeScheduler()
+        scheduler.navigationDidFinish(in: try await duckAITab())
+
+        if bySwitchingTabs {
+            scheduler.selectedTabDidChange()
+        } else {
+            scheduler.navigationDidFinish(in: await Tab(content: .newtab))
+        }
+        timer.fireAll()
+        scheduler.firstAnswerReceived()
+
+        #expect(provider.dialogTypeForTabCallCount == (bySwitchingTabs ? 0 : 1))
+        #expect(timer.pendingDelays.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Once onboarding is completed, a Duck.ai page doesn't wait", .timeLimit(.minutes(1)))
+    func completedOnboardingDoesNotWait() async throws {
+        provider.state = .onboardingCompleted
+
+        makeScheduler().navigationDidFinish(in: try await duckAITab())
+
+        #expect(provider.dialogTypeForTabCallCount == 1)
+        #expect(timer.pendingDelays.isEmpty)
+    }
+}
+
+/// Runs the scheduler's delayed actions only when a test says so.
+private final class FakeTimer {
+    private var actions: [(id: Int, delay: TimeInterval, action: @MainActor () -> Void)] = []
+    private var nextID = 0
+
+    var pendingDelays: [TimeInterval] { actions.map(\.delay) }
+
+    func runAfter(_ delay: TimeInterval, _ action: @escaping @MainActor () -> Void) -> AnyCancellable {
+        let id = nextID
+        nextID += 1
+        actions.append((id, delay, action))
+        return AnyCancellable { [weak self] in self?.actions.removeAll { $0.id == id } }
+    }
+
+    @MainActor func fireAll() {
+        let due = actions
+        actions = []
+        due.forEach { $0.action() }
     }
 }
 

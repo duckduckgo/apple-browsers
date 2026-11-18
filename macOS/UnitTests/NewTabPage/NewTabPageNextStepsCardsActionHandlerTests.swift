@@ -171,12 +171,13 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         var cardsRefreshed = false
 
         handler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
+        XCTAssertFalse(cardsRefreshed)
         videoPresenter.complete(with: .done)
 
         XCTAssertEqual(videoPresenter.presentations, [.done])
         XCTAssertTrue(pixelHandler.fireAddedToDockPixelCalled)
         XCTAssertFalse(appStoreDockCustomizer.isAddedToDock)
-        XCTAssertFalse(cardsRefreshed)
+        XCTAssertTrue(cardsRefreshed)
     }
 
     @MainActor func testWhenAppStoreBuildCannotShowVideoThenDockActionPresentsNothing() {

@@ -145,7 +145,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
         } else if featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) {
             let presenter = videoPresenter ?? AddToDockVideoPresenter()
             videoPresenter = presenter
-            presenter.present(primaryAction: .done)
+            presenter.present(primaryAction: .done) { _ in completion?() }
         }
     }
 

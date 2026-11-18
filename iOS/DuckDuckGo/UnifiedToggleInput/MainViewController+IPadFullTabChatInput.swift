@@ -144,8 +144,8 @@ final class FullTabChatInputContainerView: UIView {
     /// Pins the web view container's bottom to this container's top while the input is visible.
     var webViewContainerBottomConstraint: NSLayoutConstraint?
 
-    /// The web view's color before the chat repainted it, restored when the input leaves the tab.
-    var webViewBackgroundBeforeInput: UIColor?
+    /// The web view's colors before the chat repainted them, restored when the input leaves the tab.
+    var webViewColorsBeforeInput: (background: UIColor?, scrollView: UIColor?, underPage: UIColor?)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -202,13 +202,19 @@ extension TabViewController {
         UIView.performWithoutAnimation { view.layoutIfNeeded() }
     }
 
-    /// Until Duck.ai paints, the web view shows its anti-flash and page-derived colors, a second surface above the input.
+    /// The chat's color for every surface the web view shows before and around Duck.ai's page, while the input is in this tab.
+    var fullTabChatInputPageColor: UIColor? {
+        fullTabChatInputContainer == nil ? nil : UIColor(singleUseColor: .duckAIWebViewBackground)
+    }
+
+    /// Until Duck.ai paints, the web view shows its anti-flash and theme colors, a second surface above the input.
     private func paintWebViewForChatInput(_ container: FullTabChatInputContainerView) {
-        container.webViewBackgroundBeforeInput = webView.backgroundColor
+        container.webViewColorsBeforeInput = (webView.backgroundColor, webView.scrollView.backgroundColor,
+                                              webView.underPageBackgroundColor)
         let color = UIColor(singleUseColor: .duckAIWebViewBackground)
         webView.backgroundColor = color
-        // The adapter owns the scroll view's color and repaints it whenever the page color changes.
-        pullToRefreshViewAdapter?.backgroundColorOverride = color
+        webView.scrollView.backgroundColor = color
+        webView.underPageBackgroundColor = color
     }
 
     func removeFullTabChatInput() {
@@ -218,8 +224,11 @@ extension TabViewController {
             child.view.removeFromSuperview()
             child.removeFromParent()
         }
-        webView.backgroundColor = container.webViewBackgroundBeforeInput
-        pullToRefreshViewAdapter?.backgroundColorOverride = nil
+        if let colors = container.webViewColorsBeforeInput {
+            webView.backgroundColor = colors.background
+            webView.scrollView.backgroundColor = colors.scrollView
+            webView.underPageBackgroundColor = colors.underPage
+        }
         container.removeFromSuperview()
         fullTabChatInputContainer = nil
         webViewContainerBottomConstraint?.isActive = true

@@ -134,56 +134,13 @@ final class DebugPrerequisiteSnapshotTests: XCTestCase {
         XCTAssertTrue(DataBrokerProtectionDebugHTTPServer.isOwned(missing, instanceID: nil))
     }
 
-    #if DEBUG
-    func testAuthRequiresLaunchUUIDExactOwnershipAndNoOrigin() throws {
-        let instance = UUID().uuidString
-        let body = Data(#"{"token":"test-secret","environment":"staging"}"#.utf8)
-        let cases: [(String?, [String: String])] = [
-            (nil, ["X-PIR-Debug-Instance": instance]),
-            ("not-a-uuid", ["X-PIR-Debug-Instance": "not-a-uuid"]),
-            (instance, [:]),
-            (instance, ["X-PIR-Debug-Instance": "other"]),
-            (instance, ["X-PIR-Debug-Instance": instance, "oRiGiN": "null"])
-        ]
-        for (owner, headers) in cases {
-            let request = HTTPRequest(method: .POST, path: "/api/debug/auth", headers: headers, body: body)
-            let response = try DataBrokerProtectionDebugHTTPServer.configureAuthentication(request, instanceID: owner) { _, _ in
-                XCTFail("Unauthorized request reached credential provider")
-                return DebugPrerequisiteResult(status: .credentialProvided, backend: "provided-token", environment: "staging")
-            }
-            XCTAssertEqual(response.status, .forbidden)
-        }
-    }
-
-    func testProvidedCredentialResponseDoesNotSerializeTokenOrClaimEntitlement() throws {
-        let instance = UUID().uuidString
-        let request = HTTPRequest(method: .POST, path: "/api/debug/auth", headers: ["X-PIR-Debug-Instance": instance],
-                                  body: Data(#"{"token":"test-secret","environment":"staging"}"#.utf8))
-        let response = try DataBrokerProtectionDebugHTTPServer.configureAuthentication(request, instanceID: instance) { token, environment in
-            XCTAssertEqual(token, "test-secret")
-            XCTAssertEqual(environment, "staging")
-            return DebugPrerequisiteResult(status: .credentialProvided, backend: "provided-token", environment: environment, authenticated: true)
-        }
-        XCTAssertEqual(response.status, .ok)
-        let body = try XCTUnwrap(response.body)
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    func testProvidedCredentialSnapshotDoesNotClaimEntitlement() throws {
+        let result = DebugPrerequisiteResult(status: .credentialProvided, backend: "provided-token", environment: "staging", authenticated: true)
+        let data = try JSONEncoder().encode(result)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(object["status"] as? String, "credentialProvided")
         XCTAssertTrue(object["entitled"] is NSNull)
-        XCTAssertFalse(try XCTUnwrap(String(data: body, encoding: .utf8)).contains("test-secret"))
     }
-
-    func testAuthConfigurationErrorsAreSafeAndLockedCredentialsConflict() throws {
-        let instance = UUID().uuidString
-        let request = HTTPRequest(method: .POST, path: "/api/debug/auth", headers: ["X-PIR-Debug-Instance": instance],
-                                  body: Data(#"{"token":"test-secret","environment":"staging"}"#.utf8))
-        for (error, status) in [(DebugModeAuthenticationManager.ConfigurationError.credentialLocked, HTTPStatusCode.conflict),
-                                (.environmentMismatch, .badRequest), (.invalidCredential, .badRequest)] {
-            let response = try DataBrokerProtectionDebugHTTPServer.configureAuthentication(request, instanceID: instance) { _, _ in throw error }
-            XCTAssertEqual(response.status, status)
-            XCTAssertFalse(try XCTUnwrap(String(data: try XCTUnwrap(response.body), encoding: .utf8)).contains("test-secret"))
-        }
-    }
-    #endif
 
     @MainActor
     private func completed(_ owner: DebugPrerequisiteSnapshot, id: String) async throws -> DebugPrerequisiteSnapshot.Snapshot {

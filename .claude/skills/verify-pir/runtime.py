@@ -102,7 +102,7 @@ def _info(bundle, platform="macos"):
 
 
 def _child_environment():
-    # Credentials reach the native runner only through HTTP, never inherited launch variables.
+    # Only explicitly supplied credentials reach the native launch.
     names = ("PATH", "HOME", "TMPDIR", "USER", "LOGNAME", "LANG", "LC_ALL", "SHELL", "DEVELOPER_DIR", "TOOLCHAINS")
     return {name: os.environ[name] for name in names if name in os.environ}
 
@@ -392,7 +392,11 @@ class Runtime:
             time.sleep(.2)
         raise RuntimeError("The owned PIR debug runner did not become ready")
 
-    def launch(self):
+    def launch(self, access_token=None):
+        if access_token is not None and (not isinstance(access_token, str) or not access_token
+                or len(access_token.encode("utf-8")) > 65_536
+                or any(c.isspace() or ord(c) < 32 or 127 <= ord(c) <= 159 for c in access_token)):
+            raise RuntimeError("Invalid supplied PIR credential")
         if self.app is not None or self._closed:
             raise RuntimeError("A Runtime instance supports one launch")
         self._acquire(False)
@@ -412,6 +416,8 @@ class Runtime:
                 raise RuntimeError("The PIR debug port is unavailable or already in use") from error
         environment = {"PIR_DEBUG_SERVER": "true", "PIR_DEBUG_PORT": str(self.port),
                        "PIR_DEBUG_INSTANCE_ID": self.instance, "PIR_DEBUG_ENVIRONMENT": self.pir_environment}
+        if access_token is not None:
+            environment["PIR_DEBUG_ACCESS_TOKEN"] = access_token
         for path in (self.stdout, self.stderr):
             with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"):
                 pass

@@ -59,11 +59,16 @@ evidence files, and do not ask the user to paste it into chat. Existing staging 
 used by `PRIVACYPRO_STAGING_ACCESS_TOKEN_V2`, can be supplied this way if still accepted by the backend. The issuer
 controls token lifetime; the runner does not mint tokens, extend expiry or refresh them.
 
-The credential is sent to a launch-bound, DEBUG-only local endpoint and used by the native captcha and email clients.
-It is not written to normal subscription storage. The configured PIR environment applies only to this debug runner.
-Token authentication requires matching subscription and PIR environments. Prerequisites report `credentialProvided`,
-which establishes credential injection, not server acceptance or a verified subscription entitlement. Backend
-authentication failures fail the flow. Reports identify token authentication and leave normal sign-in unverified.
+The runner supplies the credential only in the app or agent launch environment as `PIR_DEBUG_ACCESS_TOKEN`, using
+`SIMCTL_CHILD_PIR_DEBUG_ACCESS_TOKEN` for the simulator. It never puts the token in process arguments or evidence.
+The existing PIR subscription adapter captures this DEBUG override once and uses it for the native captcha and email
+clients. It takes precedence over integration-test and saved-account tokens, without adopting or persisting it.
+An invalid override fails closed. Without an override, normal subscription authentication applies. The configured PIR
+environment applies only to this debug runner.
+Token authentication requires matching subscription and PIR environments. Prerequisites report `credentialProvided`
+on the first check, which establishes launch credential availability. Server acceptance and subscription entitlement
+remain unverified. Backend authentication failures fail the flow. Reports identify token authentication and leave normal
+sign-in unverified.
 
 ## 3. Build and run
 

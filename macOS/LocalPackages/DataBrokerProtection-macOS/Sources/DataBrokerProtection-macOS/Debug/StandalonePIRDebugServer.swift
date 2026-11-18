@@ -20,6 +20,7 @@
 import DataBrokerProtectionCore
 import DataBrokerProtectionDebugServer
 import Foundation
+import Subscription
 
 /// A launch-owned host with no scheduler, XPC service, or access to the saved PIR profile.
 public final class StandalonePIRDebugServer: DataBrokerProtectionDebugReadProviding {
@@ -27,14 +28,17 @@ public final class StandalonePIRDebugServer: DataBrokerProtectionDebugReadProvid
     private let settings: DataBrokerProtectionSettings
 
     @MainActor
-    public init(featureFlagger: DBPFeatureFlagging, configuration: DebugModeLaunchConfiguration) throws {
+    public init(subscriptionManager: any SubscriptionManager, featureFlagger: DBPFeatureFlagging, configuration: DebugModeLaunchConfiguration) throws {
         settings = DataBrokerProtectionSettings(defaults: .dbp, debugEnvironment: configuration.environment)
-        let runner = try DebugModeRunner(authenticationManager: UnauthenticatedDebugAccount(), featureFlagger: StandaloneFeatureFlagger(fallback: featureFlagger),
+        let settings = self.settings
+        let subscription = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, runTypeProvider: settings)
+        let authentication = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscription)
+        let runner = try DebugModeRunner(authenticationManager: authentication, featureFlagger: StandaloneFeatureFlagger(fallback: featureFlagger),
                                          isolated: true)
         let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader(),
                                                          runManager: DebugModeRunManager(runner: runner), port: configuration.port, instanceID: configuration.instanceID,
                                                          prerequisiteReader: {
-            DebugPrerequisiteResult(status: .unauthenticated, backend: "subscription", environment: "unavailable", authenticated: false)
+            await DebugPrerequisiteResult.subscription(subscription, settings: settings)
         })
         self.server = server
         try server.start()
@@ -49,14 +53,6 @@ public final class StandalonePIRDebugServer: DataBrokerProtectionDebugReadProvid
     public var lastBrokerJSONUpdateCheck: Date { .distantPast }
     public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] { [] }
 }
-private struct UnauthenticatedDebugAccount: DataBrokerProtectionAuthenticationManaging {
-    var isUserAuthenticated: Bool { get async { false } }
-    var isUserEligibleForFreeTrial: Bool { false }
-    func accessToken() async -> String? { nil }
-    func hasValidEntitlement() async throws -> Bool { false }
-    func getAuthHeader() async -> String? { nil }
-}
-
 private struct StandaloneFeatureFlagger: DBPFeatureFlagging {
     let fallback: DBPFeatureFlagging
     var isForegroundRunningOnAppActiveFeatureOn: Bool { false }

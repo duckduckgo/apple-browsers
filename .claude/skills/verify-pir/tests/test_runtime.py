@@ -237,6 +237,33 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual([s["udid"] for s in self.tools.simulators], ["USER-SIM"])
         self.assertFalse(self.tools.processes)
 
+    def test_supplied_token_is_only_in_native_launch_environment_on_both_platforms(self):
+        token = "private-launch-credential"
+        for platform in ("ios", "macos"):
+            with self.subTest(platform=platform):
+                instance = self.make_runtime(platform, pir_environment="staging")
+                build = instance.build()
+                with patch.dict(os.environ, {"PIR_DEBUG_ACCESS_TOKEN": "unrelated-parent-secret",
+                                             "SIMCTL_CHILD_PIR_DEBUG_ACCESS_TOKEN": "unrelated-child-secret"}):
+                    launched = instance.launch(access_token=token)
+                command, options = next((c, o) for c, o in reversed(self.tools.calls)
+                                        if c[:3] == ["xcrun", "simctl", "launch"] or c[0].endswith("Contents/MacOS/PIRAgent"))
+                key = "SIMCTL_CHILD_PIR_DEBUG_ACCESS_TOKEN" if platform == "ios" else "PIR_DEBUG_ACCESS_TOKEN"
+                self.assertEqual(options["env"][key], token)
+                self.assertNotIn(token, " ".join(command))
+                self.assertNotIn("unrelated-parent-secret", str(options))
+                self.assertNotIn("unrelated-child-secret", str(options))
+                for metadata in (build, launched, json.loads(instance.state.read_text())):
+                    self.assertNotIn(token, json.dumps(metadata))
+                instance.stop()
+
+    def test_invalid_supplied_token_is_rejected_before_native_launch(self):
+        instance = self.make_runtime()
+        for token in ("", "white space", "control\x00", "a" * 65_537):
+            with self.subTest(token_length=len(token)), self.assertRaisesRegex(runtime.RuntimeError, "Invalid supplied PIR credential"):
+                instance.launch(access_token=token)
+        self.assertFalse(any(c[:3] == ["xcrun", "simctl", "launch"] for c, _ in self.tools.calls))
+
     def test_keep_stops_app_and_preserves_simulator(self):
         instance = self.make_runtime(keep=True)
         instance.build()

@@ -51,7 +51,7 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
             dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
             onboardingPixelReporter.measureLastDialogShown()
         case .subscriptionUpsell:
-            dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+            dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         }
         onboardingPixelReporter.measureDialogShown(dialogType: type)
         let adjustedView = {
@@ -107,16 +107,19 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     }
 
     static func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate,
+                                         pixelReporter: OnboardingDialogsReporting,
                                          onDismiss: @escaping () -> Void,
                                          onManualDismiss: @escaping () -> Void,
                                          onGotItPressed: @escaping () -> Void) -> OnboardingSubscriptionUpsellDialog {
         OnboardingSubscriptionUpsellDialog(
             acceptAction: {
+                pixelReporter.measureSubscriptionUpsellAccepted()
                 onGotItPressed()
                 onDismiss()
                 delegate.navigateToSubscriptionUpsellPurchasePage()
             },
             declineAction: {
+                pixelReporter.measureSubscriptionUpsellDeclined()
                 onGotItPressed()
                 onDismiss()
             },

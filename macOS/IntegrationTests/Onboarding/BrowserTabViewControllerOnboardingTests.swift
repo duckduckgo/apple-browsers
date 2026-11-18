@@ -849,6 +849,12 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     func measureGotItPressed(dialogType: ContextualDialogType) {
         gotItPressedDialog = dialogType
     }
+
+    func measureSubscriptionUpsellAccepted() {
+    }
+
+    func measureSubscriptionUpsellDeclined() {
+    }
 }
  private class DockCustomizerMock: DockCustomization {
 

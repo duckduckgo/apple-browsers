@@ -122,7 +122,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .subscriptionUpsell:
-            return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+            return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         }
     }
 
@@ -238,16 +238,19 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     static func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate,
+                                         pixelReporter: OnboardingDialogsReporting,
                                          onDismiss: @escaping () -> Void,
                                          onManualDismiss: @escaping () -> Void,
                                          onGotItPressed: @escaping () -> Void) -> OnboardingRebranding.OnboardingSubscriptionUpsellDialog {
         OnboardingRebranding.OnboardingSubscriptionUpsellDialog(
             acceptAction: {
+                pixelReporter.measureSubscriptionUpsellAccepted()
                 onGotItPressed()
                 onDismiss()
                 delegate.navigateToSubscriptionUpsellPurchasePage()
             },
             declineAction: {
+                pixelReporter.measureSubscriptionUpsellDeclined()
                 onGotItPressed()
                 onDismiss()
             },

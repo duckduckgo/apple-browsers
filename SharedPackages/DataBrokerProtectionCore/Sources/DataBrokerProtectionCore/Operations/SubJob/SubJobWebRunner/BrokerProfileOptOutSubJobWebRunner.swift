@@ -200,7 +200,8 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
             Task { @MainActor [weak self] in
                 guard let self, self.runnerCancellation.markCancelled() else { return }
 
-                await self.failAsCancelledAndTearDown(after: task)
+                task?.cancel()
+                await self.failAsCancelledAndTearDown()
             }
         }
     }

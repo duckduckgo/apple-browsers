@@ -351,7 +351,6 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
     public var wasFinishCalled = false
     public var finishCallCount = 0
     public var finishHandler: (() -> Void)?
-    public var asyncFinishHandler: (() async -> Void)?
     public var executeCallCount = 0
     public var executeHandler: (() -> Void)?
     public var initializeWebViewHandler: (() async -> Void)?
@@ -381,7 +380,6 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
         wasFinishCalled = true
         finishCallCount += 1
         finishHandler?()
-        await asyncFinishHandler?()
     }
 
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {

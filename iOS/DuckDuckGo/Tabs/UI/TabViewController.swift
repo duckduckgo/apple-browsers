@@ -177,6 +177,7 @@ class TabViewController: UIViewController {
         didSet {
             // Floating UI reserves the obscured top region while a dialog is up, so relayout on both.
             updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+            updateOuterContainerClippingForFloatingUI()
         }
     }
     var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
@@ -1526,6 +1527,13 @@ class TabViewController: UIViewController {
         applyWebViewLayout(for: lastAppliedBarsVisibilityPercent)
     }
 
+    /// Floating UI lets the page draw outside its container so it shows behind the glass chrome.
+    /// While a contextual onboarding dialog sits above the page clip it.
+    private func updateOuterContainerClippingForFloatingUI() {
+        guard floatingUIManager.isFloatingUIEnabled, outerContainer != nil else { return }
+        outerContainer.clipsToBounds = daxContextualOnboardingController != nil
+    }
+
     /// Offsets the content stack so the dialog — its first arranged subview — clears the floating
     /// chrome. Uses the top constraint, not stack layout margins: UIKit clamps those to the safe area.
     private func applyContextualOnboardingTopInset(_ inset: CGFloat) {
@@ -1713,8 +1721,8 @@ class TabViewController: UIViewController {
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
-            outerContainer.clipsToBounds = false
             webViewContainer.clipsToBounds = false
+            updateOuterContainerClippingForFloatingUI()
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)

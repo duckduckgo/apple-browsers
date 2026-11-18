@@ -15,6 +15,7 @@ jobs:
         env:
           MAESTRO_API_KEY: ${{ secrets.ROBIN_API_KEY }}
           PROJECT_ID: ${{ vars.ROBIN_PROJECT_KEY }}
+          GH_TOKEN: unused
           GH_ENTERPRISE_TOKEN: unused
         run: |
           mkdir diagnostics
@@ -33,9 +34,8 @@ jobs:
               "https://api.copilot.mobile.dev/v2/runs/$run_id?includeArchive=true" \
               > run.json
             archive_url=$(jq -er '.artifacts[] | select(.type == "artifactsArchive") | .url' run.json)
-            gh api --method GET --header "Authorization:" \
-              --header "Accept: application/zip" "$archive_url" \
-              > "diagnostics/$run_id.zip"
+            curl --fail --silent --show-error "$archive_url" \
+              --output "diagnostics/$run_id.zip"
             jq 'del(.artifacts[].url)' run.json > "diagnostics/$run_id.json"
           done < diagnostics/failed-runs.txt
 

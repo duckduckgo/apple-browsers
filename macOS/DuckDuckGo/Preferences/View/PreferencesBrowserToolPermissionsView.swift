@@ -236,7 +236,7 @@ struct BrowserToolPermissionRow: View {
                 model.reset(row)
                 onReset?()
             } label: {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.undo)
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.replay)
                     .renderingMode(.template)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .frame(width: 24, height: 24)

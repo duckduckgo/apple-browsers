@@ -177,18 +177,24 @@ struct BrowserToolPermissionPromptView: View {
         if !selection.removed.isEmpty {
             let titles = selection.removed.map { BrowserToolSettingsText.title(toolName: $0) }
             let names = titles.count > 2 ? titles.dropLast().joined(separator: ", ") + ", or " + titles[titles.count - 1] : titles.joined(separator: " or ")
-            VStack(alignment: .leading, spacing: 2) {
-                Text(UserText.browserToolAccessRemovedNote(toolNames: names))
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .fixedSize(horizontal: false, vertical: true)
-                Button(UserText.browserToolAccessUndo) { selection.removed = [] }
-                    .buttonStyle(PlainButtonStyle())
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(designSystemColor: .textLink))
-                    .accessibilityIdentifier("BrowserToolPermissionPrompt.undo")
-            }
+            // Undo follows the note on the same line, wrapping with it.
+            Text(AttributedString(UserText.browserToolAccessRemovedNote(toolNames: names) + " ") + undoLink)
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .environment(\.openURL, OpenURLAction { _ in
+                    selection.removed = []
+                    return .handled
+                })
+                .accessibilityIdentifier("BrowserToolPermissionPrompt.removedNote")
         }
+    }
+
+    private var undoLink: AttributedString {
+        var link = AttributedString(UserText.browserToolAccessUndo)
+        link.link = URL(string: "duck://undo")
+        link.foregroundColor = Color(designSystemColor: .textLink)
+        return link
     }
 
     private func accessRow(_ toolName: String, removable: Bool) -> some View {

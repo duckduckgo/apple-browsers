@@ -219,7 +219,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var browserToolPermissionsPanelClose: AnyCancellable?
     private var browserToolUseSlideOut: DispatchWorkItem?
     private let browserToolPermissionCloseIcon: NSImage = {
-        let icon = DesignSystemImages.Glyphs.Size16.close
+        let icon = DesignSystemImages.Glyphs.Size16.closeSmall
         icon.isTemplate = true
         return icon
     }()

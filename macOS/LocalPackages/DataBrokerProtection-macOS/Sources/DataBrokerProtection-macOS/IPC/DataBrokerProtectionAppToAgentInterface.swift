@@ -41,9 +41,11 @@ public protocol DataBrokerProtectionAgentDebugCommands {
     func stopDebugServer()
 }
 
+/// Requests the main app sends over IPC to the background agent, which owns the assisted opt-out attempts and their windows.
 public protocol DataBrokerProtectionAgentAssistedOptOutCommands {
     /// `droppingSubmitted` clears submitted attempts first; the dashboard passes it when it (re)loads the list.
     func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList?
+    /// Sent when the user edits their profile or removes a match on the dashboard, so the agent rebuilds the list of brokers that need them.
     func assistedOptOutDataDidChange()
     func startAssistedOptOut(id: String)
 }

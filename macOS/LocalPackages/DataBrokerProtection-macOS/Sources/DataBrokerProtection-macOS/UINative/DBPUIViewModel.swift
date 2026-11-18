@@ -46,6 +46,7 @@ public final class DBPUIViewModel {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let userAssistanceFlagger: UserAssistanceFeatureFlagging?
     @MainActor private var assistedOptOutsPolling: Task<Void, Never>?
+    /// The list last sent to the dashboard. Polling pushes only when it changes, and a failed fetch falls back to it.
     @MainActor private var lastAssistedOptOuts: AssistedOptOutList?
     private let dbpSettings: DataBrokerProtectionSettings
     @MainActor private var freeScanEntryPoint: String?
@@ -177,6 +178,7 @@ extension DBPUIViewModel: DBPUIAssistedOptOutsDelegate {
         agentInterface.startAssistedOptOut(id: id)
     }
 
+    /// Keeps the dashboard's Needs you list current while it's open, since attempts start and finish in the agent process.
     @MainActor func startAssistedOptOutsPolling(in webView: WKWebView) {
         stopAssistedOptOutsPolling()
         assistedOptOutsPolling = Task { @MainActor [weak self, weak webView] in

@@ -211,6 +211,7 @@ public final class DataBrokerProtectionAgentManager {
     private lazy var browserWindowManager = BrowserWindowManager()
 
     private var debugServer: DataBrokerProtectionDebugHTTPServer?
+    /// Runs the user's assisted opt-out attempts one at a time. Created on first use once the user is signed in.
     @MainActor private var assistedOptOutQueue: AssistedOptOutQueue?
     private let assistedOptOutPresenter: AssistedOptOutPresenting?
     private var assistedOptOutRefreshTimer: Timer?
@@ -682,6 +683,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
         let queue = AssistedOptOutQueue(dependencies: jobDependencies)
         queue.presenter = assistedOptOutPresenter
         assistedOptOutQueue = queue
+        // A config update can turn the feature off or change which brokers need the user, so recheck the list.
         privacyConfigurationManager.updatesPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in

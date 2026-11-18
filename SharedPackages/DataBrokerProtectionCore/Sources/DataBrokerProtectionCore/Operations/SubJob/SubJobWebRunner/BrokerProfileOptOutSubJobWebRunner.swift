@@ -141,8 +141,8 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                     return
                 }
 
-                guard assistanceObserver != nil
-                        || context.dataBroker.optOutStep()?.actions.contains(where: \.requiresUserAssistance) != true else {
+                let needsUser = context.dataBroker.optOutStep()?.actions.contains(where: \.requiresUserAssistance) ?? false
+                guard !needsUser || assistanceObserver != nil else {
                     failed(with: DataBrokerProtectionError.userAssistanceRequired)
                     return
                 }

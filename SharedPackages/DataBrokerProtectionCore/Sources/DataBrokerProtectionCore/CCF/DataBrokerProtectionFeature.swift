@@ -178,8 +178,13 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     @MainActor
     private func isStale(actionID: String) -> Bool {
+#if os(iOS)
+        // iOS never runs userAssist, so it keeps accepting every reply as it did before.
+        return false
+#else
         guard let currentActionID else { return false }
         return actionID != currentActionID
+#endif
     }
 
     @MainActor

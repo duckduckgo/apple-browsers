@@ -56,9 +56,10 @@ Driven live on both devices unless marked otherwise.
 
 Preconditions:
 
-- `FLAGS = steps.CONTEXTUAL_FLAGS`. `contextualDuckAIMode` is off by default; the set also pins the iPad tabs-bar menu
-  button and docked chat (`ipadAIChatContextSidebar`), the iPhone floating native input, and manual attachment, so the
-  paths below are the ones a run gets.
+- `FLAGS = {**steps.CONTEXTUAL_FLAGS}`, a copy so an override stays in its own proof. `contextualDuckAIMode` is off by
+  default; the set also pins the iPad tabs-bar menu button and docked chat (`ipadAIChatContextSidebar`), the iPhone
+  floating native input, Fire beside the iPhone's collapsed input (`aiChatTabHandoffImprovements`), and manual
+  attachment, so the paths below are the ones a run gets.
 - `steps.fresh_start(ios)`, then `steps.open_fixture(ios, token)`: a web page with a known title ("verify-ios
   fixture") to attach.
 - `LIVE = ["duck.ai"]`: sending needs the live Duck.ai service.
@@ -82,8 +83,8 @@ Steps:
 
 Reaching each state:
 
-- Manual attachment: the default with `CONTEXTUAL_FLAGS`. Auto attachment: override
-  `aiChatAutoAttachContextByDefault: True` in `FLAGS` (the setting follows it until toggled).
+- Manual attachment: the default with `CONTEXTUAL_FLAGS`. Auto attachment:
+  `FLAGS = {**steps.CONTEXTUAL_FLAGS, "aiChatAutoAttachContextByDefault": True}` (the setting follows it until toggled).
 - A chat to reopen, close, Fire or expand: send one prompt first.
 - Re-attach after navigation: send, close the sheet, follow the fixture's `external link` to `target.html` (title
   "verify-ios target"), then tap the Duck.ai button. With auto, `attached_context` is "verify-ios target" (seen on both
@@ -133,8 +134,9 @@ Already covered elsewhere, so a proof needn't repeat it:
 - **Two `searchEntry` ids.** The contextual input is a text view with id `searchEntry`, like the address bar (a search
   field). Always use `role=textview id=searchEntry`.
 - **The iPhone sheet's Fire shares its label** with the toolbar Fire button, which stays in the tree under the sheet
-  (not hittable): `nth=0` is the sheet's. It sits beside the collapsed input, so it is covered while the keyboard is up
-  (for example right after reopening); fire from the state just after an answer.
+  (not hittable): `nth=0` is the sheet's. It sits beside the collapsed input only with `aiChatTabHandoffImprovements`
+  (pinned; without it Fire moves to the header and the selector matches only the toolbar's), so it is covered while
+  the keyboard is up (for example right after reopening); fire from the state just after an answer.
 - **The web channel reads the tab, never the sheet.** `ios.eval` and `ios.url()` see the page behind the sheet; read the
   chat from the native tree.
 - **Page-context timing.** The page is read the moment the chat opens, from whatever has loaded, and read again each

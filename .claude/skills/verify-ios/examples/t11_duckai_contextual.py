@@ -3,7 +3,7 @@ deletes the chat and keeps the page, and a new chat expands to its own Duck.ai t
 from verify_ios import steps
 
 LIVE = ["duck.ai"]
-FLAGS = steps.CONTEXTUAL_FLAGS
+FLAGS = {**steps.CONTEXTUAL_FLAGS}   # a copy: overrides stay in this proof
 
 
 def run(ios):

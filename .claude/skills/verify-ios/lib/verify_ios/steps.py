@@ -190,10 +190,13 @@ def read_duckai_answer(ios, timeout=90, settle=2.0):
 import re  # noqa: E402  (kept with the block that uses it)
 
 # Flags every contextual proof pins: the feature is off by default, the iPad entry is the tabs-bar menu button and the
-# chat docks beside the page, iPhone uses the floating native input, and page attachment is manual (the default).
+# chat docks beside the page, iPhone uses the floating native input with Fire beside it (`aiChatTabHandoffImprovements`,
+# which CONTEXTUAL_IDS["iphone"]["fire"] relies on), and page attachment is manual (the default).
+# Proofs copy it (`FLAGS = {**steps.CONTEXTUAL_FLAGS}`) so an override never leaks into another proof in the same run.
 CONTEXTUAL_FLAGS = {"contextualDuckAIMode": True, "aiChatChromeShortcutIPad": True, "aiChatChromeMenuButtonIPad": True,
                     "ipadAIChatContextSidebar": True, "aiChatContextualUnifiedToggleInput": True,
-                    "aiChatContextualFloatingInput": True, "aiChatAutoAttachContextByDefault": False}
+                    "aiChatContextualFloatingInput": True, "aiChatTabHandoffImprovements": True,
+                    "aiChatAutoAttachContextByDefault": False}
 CONTEXTUAL_INPUT = "role=textview id=searchEntry"   # shares `searchEntry` with the address bar (a search field)
 CONTEXTUAL_IDS = {
     # iPhone: the sheet's Fire sits beside the collapsed input and shares its label with the toolbar Fire button, which
@@ -227,8 +230,8 @@ def send_contextual_prompt(ios, prompt):
     return ios.wait("id=AIChat.ContextualSheet", "exists", 20)
 
 
-def _contextual_answer_text(ios):
-    """Static texts after the last "Duck.ai said" heading in the native tree, up to the first button ("" if none)."""
+def _contextual_answer_texts(ios):
+    """Static texts after the last "Duck.ai said" heading in the native tree, up to the first button ([] if none)."""
     lines = ios.snapshot().get("tree", "").splitlines()
     heads = [i for i, line in enumerate(lines) if (m := _TREE_LINE.match(line)) and m.group(1) == "48"
              and m.group(3) == "Duck.ai said"]
@@ -239,19 +242,21 @@ def _contextual_answer_text(ios):
             break
         if m and m.group(1) == "48":
             texts.append(m.group(3))
-    return " ".join(texts)
+    return texts
 
 
 def read_contextual_answer(ios, timeout=90, settle=2.0):
     """The last answer in the sheet (model name first), once it has stopped changing for `settle` seconds.
 
     The web channel reads the tab, not the sheet, so this reads the sheet's chat from the native tree. Relies on Duck.ai's
-    "Duck.ai said" heading (its own wording): if that changes this fails loudly, never passes."""
+    "Duck.ai said" heading (its own wording): if that changes this fails loudly, never passes. Never settles on the model
+    name alone or while Duck.ai shows "Generating"."""
     prev, since, last = None, None, ""
     end = time.time() + timeout
     while time.time() < end:
-        last = _contextual_answer_text(ios)
-        if last and last == prev:
+        texts = _contextual_answer_texts(ios)
+        last = " ".join(texts)
+        if len(texts) > 1 and last == prev and "Generating" not in last:
             since = since or time.time()
             if time.time() - since >= settle:
                 return ios._log("contextual answer", [], lambda: last)

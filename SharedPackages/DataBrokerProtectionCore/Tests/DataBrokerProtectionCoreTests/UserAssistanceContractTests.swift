@@ -233,7 +233,7 @@ struct UserAssistanceContractTests {
     @Test(.timeLimit(.minutes(1)))
     func debugObserverReportsTheUserTurnWithItsStep() async throws {
         var userTurns: [String?] = []
-        let observer = DebugAssistanceObserver(showsWebView: false, onUserTurn: { _, step in userTurns.append(step) })
+        let observer = DebugAssistanceObserver(onUserTurn: { _, step in userTurns.append(step) })
         let action = UserAssistAction(id: "assist", json: Data(#"{"step":"Prove you're human"}"#.utf8))
         let runner = Self.makeRunner(actions: [action], observer: observer)
         runner.webViewHandler = WebViewHandlerMock()

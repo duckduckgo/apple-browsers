@@ -349,7 +349,6 @@ extension DebugModeRunner {
 @MainActor
 /// Lets a debug opt-out pause for the user at a `userAssist` step, in a plain window instead of the assisted opt-out window.
 public final class DebugAssistanceObserver: OptOutAssistanceObserving {
-    private let showsWebView: Bool
     private let onUserTurn: @MainActor (WKWebView?, String?) -> Void
     private weak var webView: WKWebView?
     private var step: String?
@@ -360,9 +359,7 @@ public final class DebugAssistanceObserver: OptOutAssistanceObserving {
     private var keepAliveUntilWindowCloses: DebugAssistanceObserver?
 #endif
 
-    public init(showsWebView: Bool,
-                onUserTurn: @escaping @MainActor (WKWebView?, String?) -> Void) {
-        self.showsWebView = showsWebView
+    public init(onUserTurn: @escaping @MainActor (WKWebView?, String?) -> Void) {
         self.onUserTurn = onUserTurn
     }
 
@@ -370,7 +367,6 @@ public final class DebugAssistanceObserver: OptOutAssistanceObserving {
     public func attemptDidCreate(webView: WKWebView) {
         self.webView = webView
 #if os(macOS)
-        guard showsWebView else { return }
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered, defer: false)

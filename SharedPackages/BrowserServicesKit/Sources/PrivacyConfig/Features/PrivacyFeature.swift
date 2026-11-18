@@ -227,12 +227,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
-    /// Allows browsing before completing onboarding.
-    case onboardingAsync
-
-    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlockingV2
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
@@ -248,6 +242,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220580902953934
+    case fastTrackingParameterFilter
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -716,10 +713,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case showCopyDiagnosticsButton
-
-    /// VPN Session Health Telemetry
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
-    case sessionHealthTelemetry
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -764,6 +757,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case heuristicHitTest
+    case popupMutationObserver
     case cookiePopupOptInDialog
 }
 
@@ -949,8 +943,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
-    /// Controls permission prompts and persistence on macOS.
-    case permissions
     /// Controls Chrome Web Store update discovery on macOS.
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery
@@ -972,8 +964,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Failsafe for upgrading only CPM before launch load and carrying its origin to the replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
     case cpmUpgradeBeforeLoad
-    /// Controls native messaging between web extensions and host apps on macOS.
-    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -1010,12 +1000,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
-
-    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
-    case bookmarkToolbarPromo
-
-    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
-    case syncFaviconsPromo
 
     /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
     case autofillToolbarPinningPromo

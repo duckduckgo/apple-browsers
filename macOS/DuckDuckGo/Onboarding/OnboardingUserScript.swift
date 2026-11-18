@@ -95,19 +95,19 @@ final class OnboardingUserScript: NSObject, Subfeature {
 extension OnboardingUserScript {
     @MainActor
     private func setInit(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        onboardingActionsManager.onboardingStarted(from: original.webView)
+        onboardingActionsManager.onboardingStarted()
         return onboardingActionsManager.configuration
     }
 
     @MainActor
     private func dismissToAddressBar(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        onboardingActionsManager.goToAddressBar(from: original.webView)
+        onboardingActionsManager.goToAddressBar()
         return nil
     }
 
     @MainActor
     private func dismissToSettings(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        onboardingActionsManager.goToSettings(from: original.webView)
+        onboardingActionsManager.goToSettings()
         return nil
     }
 

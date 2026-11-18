@@ -171,6 +171,14 @@ struct SearchResultsSkeletonTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Any submit that loads a new document is covered, from a page or the New Tab Page", .timeLimit(.minutes(1)))
+    func coverArming() {
+        #expect(MainViewController.coversSubmit(isAITab: false, isSameDocument: false))
+        #expect(!MainViewController.coversSubmit(isAITab: true, isSameDocument: false))
+        #expect(!MainViewController.coversSubmit(isAITab: false, isSameDocument: true))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A Fire tab's results never teach the header", .timeLimit(.minutes(1)))
     func fireTabNeverTeachesHeader() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.searchSubmitPageCover])

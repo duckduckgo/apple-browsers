@@ -20,6 +20,12 @@ DRIVING = {"setup", "launch", "reset", "terminate", "cleanup", "tap", "long-pres
 LOCK_BOTH = {"build"}
 
 
+def add_evidence_options(a):
+    where = a.add_mutually_exclusive_group()
+    where.add_argument("--decision-log", help="a decisions.tsv outside the checkout; attempt folders go in proofs/ next to it")
+    where.add_argument("--evidence-dir", help="a directory outside the checkout; each run writes a fresh attempt folder in it")
+
+
 def build_parser():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--device", default="iphone", choices=list(env.PORT_OFFSET))
@@ -31,12 +37,13 @@ def build_parser():
     a.add_argument("--devices", default="iphone,ipad", help="iphone,ipad (default: both)")
     a = sp.add_parser("new-proof", help="create a fresh evidence folder with a proof template; prints its path")
     a.add_argument("name")
-    a.add_argument("--decision-log", help="decisions.tsv of an AStack show-me-your-work log: evidence goes in its proofs/")
+    add_evidence_options(a)
     a = sp.add_parser("prove", help="check, run on each device, write evidence, always clean up")
     a.add_argument("proofs", nargs="+")
     a.add_argument("--devices", help="iphone,ipad (default: the proof's DEVICES)")
     a.add_argument("--keep", action="store_true", help="leave the simulator, runner and app running afterwards (to explore or debug a failure)")
-    a.add_argument("--decision-log", help="decisions.tsv of an AStack show-me-your-work log: evidence goes in its proofs/")
+    a.add_argument("--no-video", action="store_true", help="don't record each device's screen to <device>/recording.mp4")
+    add_evidence_options(a)
     a = sp.add_parser("check", help="compile and import proofs without touching a device")
     a.add_argument("proofs", nargs="+")
     sp.add_parser("setup", help="create/adopt and boot this worktree's simulator for --device (each proof deletes it when it ends)")
@@ -107,7 +114,7 @@ def dispatch(args):
             raise ProveExit(code, out)
         return out
     if args.cmd == "new-proof":
-        return dict(proof=harness.new_proof(args.name, harness.evidence_root(args.decision_log)))
+        return dict(proof=harness.new_proof(args.name, harness.evidence_root(args.decision_log, args.evidence_dir)))
     if args.cmd == "check":
         checked = harness.check_only(args.proofs)
         if not all(c["ok"] for c in checked):
@@ -115,7 +122,7 @@ def dispatch(args):
         return dict(proofs=checked)
     if args.cmd == "prove":
         code, out = harness.run_proofs(args.proofs, args.devices.split(",") if args.devices else None, args.keep,
-                                       args.decision_log)
+                                       args.decision_log, args.evidence_dir, not args.no_video)
         if code:
             raise ProveExit(code, out)
         return out

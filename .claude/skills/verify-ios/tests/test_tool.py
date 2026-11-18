@@ -1,14 +1,15 @@
 """Tests for verify-ios's own logic that need no simulator: locks, process ownership, state, preflight, telemetry
 parsing, evidence. Run: python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'
 """
-import json, multiprocessing, os, subprocess, sys, tempfile, textwrap, time, unittest
+import json, multiprocessing, os, shlex, signal, subprocess, sys, tempfile, textwrap, time, unittest
+from unittest import mock
 
 TMP = tempfile.mkdtemp(prefix="verify-ios-test-")
 os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives in this temp dir
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import device, env, harness, telemetry  # noqa: E402
+from verify_ios import device, env, harness, telemetry, video  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -98,6 +99,23 @@ class ProcessOwnershipTests(unittest.TestCase):
             bystander.wait()
 
 
+    def test_runner_starts_outside_the_terminal_process_group(self):
+        # A terminal Ctrl-C signals the whole foreground group; the runner must survive it so a cancelled proof can
+        # still capture the final UI tree.
+        from unittest import mock
+        from verify_ios import driver
+        with tempfile.TemporaryDirectory() as dd:
+            os.makedirs(f"{dd}/Build/Products")
+            open(f"{dd}/Build/Products/VRunner-iOS_x.xctestrun", "w").close()
+            out = subprocess.CompletedProcess([], 0, stdout='{"ok":true,"xcodebuildPid":0,"hubPids":[]}\n', stderr="")
+            with mock.patch.object(driver, "RUNNER_DD", dd), mock.patch.object(driver, "port_listening", return_value=False), \
+                    mock.patch.object(driver.XCUITestRunner, "alive", return_value=False), \
+                    mock.patch.object(driver.subprocess, "run", return_value=out) as run:
+                driver.XCUITestRunner("-", 1, "t").start()
+        start = next(c for c in run.call_args_list if c.args[0][0].endswith("vrunner_start.sh"))
+        self.assertTrue(start.kwargs.get("start_new_session"))
+
+
 class SimulatorLifecycleTests(unittest.TestCase):
     """Simulators are found by name and deleted by cleanup; nothing else on the Mac is touched."""
 
@@ -156,6 +174,40 @@ class SimulatorLifecycleTests(unittest.TestCase):
         self.assertEqual(sum(c[2] == "create" for c in self.calls), 1)
 
 
+class AppLogTests(unittest.TestCase):
+    """`app_logs` reads the app's log for a window and keeps the end of a long one."""
+
+    def setUp(self):
+        self.saved, self.calls, self.out = device.run, [], ""
+        device.run = lambda cmd, **_: self.calls.append(cmd) or subprocess.CompletedProcess(cmd, 0, self.out, "")
+        self.d = device.Device("iphone")
+        self.d._udid = "UDID"
+        self.path = os.path.join(TMP, "app.log")
+
+    def tearDown(self):
+        device.run = self.saved
+
+    def test_reads_from_the_start_of_the_run(self):
+        start = time.mktime((2026, 11, 15, 10, 4, 5, 0, 0, -1))
+        self.d.app_logs(self.path, start=start)
+        self.assertIn(["--start", "2026-11-15 10:04:05"], [self.calls[-1][i:i + 2] for i in range(len(self.calls[-1]))])
+        self.assertIn(device.Device.APP_LOG_PREDICATE, self.calls[-1])
+
+    def test_keeps_the_end_of_a_long_log_and_says_so(self):
+        self.out = "early\n" + "x" * device.Device.APP_LOG_LIMIT + "LAST LINE\n"
+        with open(self.d.app_logs(self.path, start=time.time())) as f:
+            text = f.read()
+        self.assertTrue(text.startswith("[verify-ios: kept the last"), text[:80])
+        self.assertTrue(text.endswith("LAST LINE\n"))
+        self.assertNotIn("early", text)
+
+    def test_a_failed_read_raises_instead_of_writing_an_empty_log(self):
+        device.run = lambda cmd, **_: subprocess.CompletedProcess(cmd, 1, "", "no such device")
+        with self.assertRaises(env.Failed):
+            self.d.app_logs(self.path + ".missing", start=time.time())
+        self.assertFalse(os.path.exists(self.path + ".missing"))
+
+
 class BuildLocationTests(unittest.TestCase):
     def test_builds_live_in_the_worktree_and_git_ignores_them(self):
         for path in (env.APP_DD, env.RUNNER_DD):
@@ -196,11 +248,17 @@ class PreflightTests(unittest.TestCase):
             "docstring": ('def run(ios): pass\n', "docstring"),
             "unknown flag": ('"""x"""\nFLAGS = {"newTabPageRedesgin": True}\ndef run(ios): pass\n', "not feature flags"),
             "flag the app won't override": ('"""x"""\nFLAGS = {"duckPlayer": True}\ndef run(ios): pass\n', "local overrides"),
+            "language without a locale": ('"""x"""\nLANGUAGE = {"language": "fr"}\ndef run(ios): pass\n', "LANGUAGE"),
+            "language as a string": ('"""x"""\nLANGUAGE = "fr"\ndef run(ios): pass\n', "LANGUAGE"),
         }
         for name, (body, expected) in cases.items():
             with self.subTest(name):
                 _, problems = harness.load(self.write(body))
                 self.assertTrue(any(expected in p for p in problems), problems)
+
+    def test_language_override_is_accepted(self):
+        _, problems = harness.load(self.write('"""x"""\nLANGUAGE = {"language": "fr", "locale": "fr_FR"}\ndef run(ios): pass\n'))
+        self.assertEqual(problems, [])
 
     def test_overridable_flag_is_accepted(self):
         _, problems = harness.load(self.write('"""x"""\nFLAGS = {"newTabPageRedesign": False}\ndef run(ios): pass\n'))
@@ -343,16 +401,18 @@ class FakeDevice:
         self.udid, self.web = "-", FakeWeb()
         self.fail_launch, self.fg, self.left, self.fail_screenshot = fail_launch, foreground, left, fail_screenshot
         self.cleaned = 0
+        self.language = None
 
-    def launch(self, flags=None):
+    def launch(self, flags=None, language=None):
         if self.fail_launch:
             raise env.Failed("running app is not this worktree's build")
-        return dict(build=dict(runningSha="a" * 64), flags=flags)
+        self.language = dict(language or env.LANGUAGE)
+        return dict(build=dict(runningSha="a" * 64), flags=flags, language=self.language)
 
-    def reset(self, flags=None):
+    def reset(self, flags=None, language=None):
         if getattr(self, "fail_reset", False):
             raise env.Failed("AutomationServer never reported /contentBlockerReady true")
-        return self.launch(flags)
+        return self.launch(flags, language)
 
     def foreground(self):
         return self.fg
@@ -370,7 +430,16 @@ class FakeDevice:
 
     def capture_conditions(self):
         fixed = getattr(self, "status_fixed", False) and not getattr(self, "status_ignored", False)
-        return dict(appearance="light", textSize="large", orientation="portrait", statusBar="fixed (9:41)" if fixed else "live")
+        return dict(appearance="light", textSize="large", orientation="portrait", statusBar="fixed (9:41)" if fixed else "live",
+                    **(self.language or {}))
+
+    def app_logs(self, path, since="5m", start=None):
+        if getattr(self, "fail_app_logs", False):
+            raise env.Failed("log show failed")
+        self.app_log_start = start
+        with open(path, "w") as f:
+            f.write("DuckDuckGo: a line\n")
+        return path
 
     def ui(self, option, value=None):
         if value is None:
@@ -406,10 +475,89 @@ class FakePixels:
         return []
 
 
+class FakeVideo:
+    """Stands in for Video: writes the file on stop, or fails to start or stop when told to."""
+    FILE = harness.Video.FILE
+    fail_start, stop_problem, made = False, None, []
+
+    def __init__(self, udid, path):
+        self.path, self.ok, self.stopped = path, False, False
+        FakeVideo.made.append(self)
+
+    def start(self):
+        if FakeVideo.fail_start:
+            raise RuntimeError("recordVideo exited 1: no display")
+        return self
+
+    def stop(self):
+        self.stopped = True
+        if FakeVideo.stop_problem:
+            return [FakeVideo.stop_problem]
+        open(self.path, "w").close()
+        self.ok = True
+        return []
+
+
+class FakeRecorder:
+    """Stands in for the `simctl io recordVideo` process."""
+    def __init__(self, exit_on_sigint=0, writes=b"movie"):
+        self.returncode, self.signals, self.exit_on_sigint, self.writes = None, [], exit_on_sigint, writes
+
+    def poll(self):
+        return self.returncode
+
+    def send_signal(self, sig):
+        self.signals.append(sig)
+
+    def wait(self, timeout=None):
+        self.returncode = self.exit_on_sigint
+        return self.returncode
+
+    def kill(self):
+        self.returncode = -9
+
+
+class VideoTests(unittest.TestCase):
+    def recorder(self, proc, said=""):
+        path = os.path.join(tempfile.mkdtemp(dir=TMP), video.Video.FILE)
+        with open(path, "wb") as f:
+            f.write(proc.writes)
+        v = video.Video("udid", path)
+        p = mock.patch.object(video.subprocess, "Popen", side_effect=lambda *a, **k: (open(v.log, "w").write(said), proc)[1])
+        p.start()
+        self.addCleanup(p.stop)
+        return v
+
+    def test_stopped_with_sigint_and_kept(self):
+        proc = FakeRecorder()
+        v = self.recorder(proc, said="Recording started").start()
+        self.assertEqual(v.stop(), [])
+        self.assertEqual(proc.signals, [signal.SIGINT])
+        self.assertTrue(v.ok)
+
+    def test_failed_finish_is_a_problem_even_with_a_file(self):
+        v = self.recorder(FakeRecorder(exit_on_sigint=1), said="Recording started").start()
+        problems = v.stop()
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("failed to finish", problems[0])
+        self.assertFalse(v.ok)
+
+    def test_interrupted_start_stops_the_recorder(self):
+        proc = FakeRecorder()
+        v = self.recorder(proc)
+        with mock.patch.object(video.time, "sleep", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                v.start()
+        self.assertEqual(proc.signals, [signal.SIGINT], "the caller never gets the object, so start() must stop it")
+
+
 class HarnessTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeDevice()
-        self.saved = (harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release)
+        self.saved = (harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release,
+                      harness.Video)
+        FakeVideo.fail_start, FakeVideo.stop_problem, FakeVideo.made = False, None, []
+        harness.Video = FakeVideo
         harness.Device = lambda device: self.fake
         harness.Device.check_build_current = staticmethod(lambda: {})
         harness.fixture = lambda stop=False, user=None: dict(url="http://127.0.0.1:1/index.html?token=")
@@ -418,13 +566,74 @@ class HarnessTests(unittest.TestCase):
         harness.WideEvents = lambda container: telemetry.WideEvents(container)
 
     def tearDown(self):
-        harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release = self.saved
+        harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release, \
+            harness.Video = self.saved
 
-    def run_proof(self, run, keep=False, **fake):
+    def run_proof(self, run, keep=False, video=True, **fake):
         self.fake.__dict__.update(fake)
         mod = type("Proof", (), {"run": staticmethod(run)})
         ev = tempfile.mkdtemp(dir=TMP)
-        return harness._run_device(mod, "iphone", ev, keep=keep, flags={}, device_obj=self.fake)
+        return harness._run_device(mod, "iphone", ev, keep=keep, flags={}, device_obj=self.fake, video=video)
+
+    def test_video_is_stopped_and_kept_on_pass_fail_and_cancel(self):
+        def cancel(ios):
+            raise harness._Stop("SIGINT")
+        for status, run in (("pass", lambda ios: ios.check("ok", True)), ("fail", lambda ios: ios.check("broken", False)),
+                            ("cancelled", cancel)):
+            FakeVideo.made = []
+            r = self.run_proof(run)
+            self.assertEqual(r["status"], status, r)
+            self.assertTrue(FakeVideo.made[0].stopped, f"the recording was left running after {status}")
+            self.assertEqual(r["video"], "recording.mp4")
+            self.assertTrue(os.path.isfile(os.path.join(r["evidence"], "recording.mp4")))
+
+    def test_recording_failure_is_an_evidence_problem_not_a_failed_proof(self):
+        FakeVideo.fail_start = True
+        r = self.run_proof(lambda ios: ios.check("ok", True))
+        self.assertEqual(r["status"], "pass", r)
+        self.assertIsNone(r["video"])
+        self.assertTrue(any("screen recording" in p for p in r["problems"]), r["problems"])
+        self.assertEqual(harness.exit_code([r["status"]], bool(r["problems"])), 2)
+        FakeVideo.fail_start, FakeVideo.stop_problem = False, "screen recording wrote no recording.mp4"
+        r = self.run_proof(lambda ios: ios.check("ok", True))
+        self.assertEqual((r["status"], r["video"]), ("pass", None), r)
+        self.assertIn("screen recording wrote no recording.mp4", r["problems"])
+
+    def test_no_video_records_nothing(self):
+        r = self.run_proof(lambda ios: ios.check("ok", True), video=False)
+        self.assertEqual((r["status"], r["video"], r["problems"]), ("pass", None, []), r)
+        self.assertEqual(FakeVideo.made, [])
+
+    def test_report_is_one_scenario_with_relative_evidence_links(self):
+        proof = os.path.join(tempfile.mkdtemp(dir=TMP), "scenario.py")
+        with open(proof, "w") as f:
+            f.write('"""The thing works.\n\nMore about what it covers."""\nDEVICES = ["iphone"]\n\n'
+                    'def run(ios):\n    ios.shot("after-tap")\n    ios.check("the thing", True)\n'
+                    '    ios.unverified("the other thing", "needs a live service")\n')
+        out_dir = os.path.join(tempfile.mkdtemp(dir=TMP), "my evidence")   # a space: the rerun must quote it
+        code, out = harness.prove(proof, evidence_dir=out_dir)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(os.path.dirname(out["evidence"]), os.path.realpath(out_dir))
+        with open(out["report"]) as f:
+            report = f.read()
+        sections = [line for line in report.splitlines() if line.startswith("## ")]
+        self.assertEqual(sections, ["## Verified", "## Evidence", "## Outcome", "## Details", "## Unverified"])
+        for link in ("[recording.mp4](iphone/recording.mp4)", "[final.png](iphone/final.png)",
+                     "[after-tap.png](iphone/after-tap.png)", "[transcript.jsonl](iphone/transcript.jsonl)"):
+            self.assertIn(link, report)
+        self.assertIn("More about what it covers.", report)
+        self.assertIn("- iphone: the other thing: needs a live service", report)
+        with open(os.path.join(out["evidence"], "manifest.json")) as f:
+            manifest = json.load(f)
+        self.assertEqual(manifest["video"], {"iphone": "iphone/recording.mp4"})
+        self.assertEqual(manifest["evidenceDir"], os.path.realpath(out_dir))
+        self.assertTrue(manifest["rerun"].startswith(f"cd {shlex.quote(env.ROOT)} && "), "the rerun proves the same checkout")
+        argv = shlex.split(manifest["rerun"].split(" && ", 1)[1])
+        self.assertEqual(argv[1], "prove")
+        self.assertTrue(argv[2].startswith(out["evidence"] + os.sep), argv)   # the attempt's copy, space and all
+        self.assertEqual(argv[-2:], ["--evidence-dir", os.path.realpath(out_dir)], manifest["rerun"])
+        code, again = harness.prove(proof, evidence_dir=out_dir)
+        self.assertNotEqual(again["evidence"], out["evidence"], "each run gets a fresh attempt folder")
 
     def test_passes_with_a_passing_check(self):
         r = self.run_proof(lambda ios: ios.check("something", True))
@@ -557,6 +766,37 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(self.fake.cleaned, 1)
         env.DeviceLock("iphone").acquire("lock was released").release()
 
+    def test_app_log_is_kept_whatever_the_outcome(self):
+        outcomes = {"pass": lambda ios: ios.check("ok", True), "fail": lambda ios: ios.check("broken", False),
+                    "cancelled": lambda ios: (_ for _ in ()).throw(harness._Stop("SIGINT"))}
+        for status, run in outcomes.items():
+            with self.subTest(status):
+                self.fake = FakeDevice()
+                t0 = time.time()
+                r = self.run_proof(run)
+                self.assertEqual(r["status"], status, r)
+                self.assertTrue(r["appLog"])
+                self.assertTrue(os.path.exists(os.path.join(r["evidence"], "app.log")))
+                self.assertLessEqual(abs(self.fake.app_log_start - t0), 1, "the log covers the run's own window")
+
+    def test_app_log_that_cannot_be_read_is_a_problem_not_a_failure(self):
+        r = self.run_proof(lambda ios: ios.check("something", True), fail_app_logs=True)
+        self.assertEqual(r["status"], "pass")
+        self.assertFalse(r["appLog"])
+        self.assertTrue(any("app log" in p for p in r["problems"]), r["problems"])
+
+    def test_language_is_pinned_and_recorded(self):
+        r = self.run_proof(lambda ios: (ios.reset(), ios.default_capture_conditions(), ios.check("ok", True)))
+        self.assertEqual((r["launched"]["language"], r["capture"]["language"], r["capture"]["locale"]),
+                         (env.LANGUAGE, "en", "en_US"))
+
+    def test_a_proof_can_choose_another_language(self):
+        mod = type("Proof", (), {"run": staticmethod(lambda ios: (ios.reset(), ios.check("ok", True)))})
+        fr = {"language": "fr", "locale": "fr_FR"}
+        r = harness._run_device(mod, "iphone", tempfile.mkdtemp(dir=TMP), keep=False, flags={}, device_obj=self.fake,
+                                language=fr)
+        self.assertEqual((r["launched"]["language"], r["capture"]["locale"]), (fr, "fr_FR"))
+
     def test_capture_failure_and_cleanup_survivors_are_reported(self):
         r = self.run_proof(lambda ios: ios.check("something", True), fail_screenshot=True, left=[123])
         self.assertEqual(r["status"], "pass")
@@ -623,6 +863,37 @@ class DecisionLogTests(unittest.TestCase):
         finally:
             os.remove(log)
             os.rmdir(inside)
+
+
+    def test_proofs_symlink_into_the_checkout_is_refused(self):
+        audit = tempfile.mkdtemp(dir=TMP)
+        log = os.path.join(audit, "decisions.tsv")
+        open(log, "w").close()
+        inside = tempfile.mkdtemp(dir=os.path.join(env.ROOT, ".claude"))
+        os.symlink(inside, os.path.join(audit, "proofs"))
+        try:
+            with self.assertRaises(env.Failed):
+                harness.evidence_root(log)
+        finally:
+            os.rmdir(inside)
+
+
+class EvidenceDirTests(unittest.TestCase):
+    def test_attempts_go_in_the_given_directory_created_if_missing(self):
+        out = os.path.join(tempfile.mkdtemp(dir=TMP), "not", "yet")
+        path = harness.new_proof("given", harness.evidence_root(evidence_dir=out))
+        self.assertEqual(os.path.dirname(os.path.dirname(path)), os.path.realpath(out))
+
+    def test_directory_inside_the_checkout_is_refused(self):
+        for inside in (env.ROOT, os.path.join(env.ROOT, ".claude", "evidence")):
+            with self.assertRaises(env.Failed):
+                harness.evidence_root(evidence_dir=inside)
+
+    def test_decision_log_and_evidence_dir_together_are_refused(self):
+        log = os.path.join(tempfile.mkdtemp(dir=TMP), "decisions.tsv")
+        open(log, "w").close()
+        with self.assertRaises(env.Failed):
+            harness.evidence_root(log, TMP)
 
 
 class BuildCurrentTests(unittest.TestCase):

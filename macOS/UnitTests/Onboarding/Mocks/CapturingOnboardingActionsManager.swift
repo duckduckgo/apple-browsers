@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 class CapturingOnboardingActionsManager: OnboardingActionsManaging {
@@ -35,7 +34,6 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
         platform: .init(name: "")
     )
 
-    var sourceWebView: WKWebView?
     var goToAddressBarCalled = false
     var goToSettingsCalled = false
     var addToDockCalled = false
@@ -57,18 +55,15 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var duckAiInAddressBarEnabled: Bool?
     var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
 
-    func onboardingStarted(from webView: WKWebView?) {
-        sourceWebView = webView
+    func onboardingStarted() {
         onboardingStartedCalled = true
     }
 
-    func goToAddressBar(from webView: WKWebView?) {
-        sourceWebView = webView
+    func goToAddressBar() {
         goToAddressBarCalled = true
     }
 
-    func goToSettings(from webView: WKWebView?) {
-        sourceWebView = webView
+    func goToSettings() {
         goToSettingsCalled = true
     }
 

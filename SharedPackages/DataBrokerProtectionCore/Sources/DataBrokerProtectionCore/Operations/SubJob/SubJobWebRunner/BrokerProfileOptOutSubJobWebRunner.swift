@@ -142,7 +142,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 }
 
                 let needsUser = context.dataBroker.optOutStep()?.actions.contains(where: \.requiresUserAssistance) ?? false
-                guard !needsUser || assistanceObserver != nil else {
+                if needsUser, assistanceObserver == nil {
                     failed(with: DataBrokerProtectionError.userAssistanceRequired)
                     return
                 }

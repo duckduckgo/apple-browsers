@@ -889,16 +889,18 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
                 instanceID = value
             }
             #endif
-            let subscriptionManager = subscriptionManager
-            let settings = settings
             let server = DataBrokerProtectionDebugHTTPServer(provider: self,
                                                              logReader: DataBrokerProtectionIOSLogReader(),
                                                              runManager: DebugModeRunManager(runner: try makeDebugModeRunner(contentBlocking: contentBlocking)),
                                                              port: port,
-                                                             instanceID: instanceID,
-                                                             prerequisiteReader: {
+                                                             instanceID: instanceID)
+            #if DEBUG
+            let subscriptionManager = debugRunnerSubscriptionManager
+            let settings = settings
+            server.prerequisiteReader = {
                 await Self.readDebugPrerequisites(subscriptionManager: subscriptionManager, settings: settings)
-            })
+            }
+            #endif
             try server.start()
             debugServer = server
             return true
@@ -908,43 +910,34 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         }
     }
 
+    #if DEBUG
     @MainActor
     private static func readDebugPrerequisites(subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                                settings: DataBrokerProtectionSettings) async -> DebugPrerequisiteResult {
         guard let manager = subscriptionManager as? DataBrokerProtectionSubscriptionManager else {
             return DebugPrerequisiteResult(status: .unavailable, backend: "subscription", environment: "unknown")
         }
-        guard !manager.isEntitlementCheckBypassed else {
-            return DebugPrerequisiteResult(status: .bypass, backend: "subscription", environment: "integrationTests")
-        }
-        let authenticated = manager.isSubscriptionAuthenticated
-        let status: DebugPrerequisiteResult.Status
-        var errorCode: String?
-        if !authenticated {
-            status = .unauthenticated
-        } else {
-            do {
-                status = try await manager.debugEntitlement() ? .ready : .notEntitled
-            } catch {
-                status = .error
-                errorCode = "entitlementCheckFailed"
-            }
-        }
-        var endpoint = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: false)
-        endpoint?.user = nil
-        endpoint?.password = nil
-        endpoint?.query = nil
-        endpoint?.fragment = nil
-        return DebugPrerequisiteResult(status: status, backend: "subscription-auth-v2",
-                                       environment: manager.entitlementEnvironment,
-                                       pirEnvironment: settings.selectedEnvironment.rawValue,
-                                       pirEndpoint: endpoint?.string, authenticated: authenticated, errorCode: errorCode)
+        return await DebugPrerequisiteResult.subscription(manager, settings: settings)
     }
+
+    private var debugRunnerSubscriptionManager: DataBrokerProtectionSubscriptionManaging {
+        (subscriptionManager as? DataBrokerProtectionSubscriptionManager)?.debugRunnerManager() ?? subscriptionManager
+    }
+
+    private var debugRunnerAuthenticationManager: DataBrokerProtectionAuthenticationManaging {
+        guard let manager = subscriptionManager as? DataBrokerProtectionSubscriptionManager else { return authenticationManager }
+        let debugManager = manager.debugRunnerManager()
+        return debugManager === manager ? authenticationManager : DataBrokerProtectionAuthenticationManager(subscriptionManager: debugManager)
+    }
+    #endif
 
     public func makeDebugModeRunner(contentBlocking: DBPWebViewContentBlocking?) throws -> DebugModeRunner {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        #if DEBUG
+        let authenticationManager = debugRunnerAuthenticationManager
+        #endif
         return DebugModeRunner(authenticationManager: authenticationManager,
                                featureFlagger: featureFlagger,
                                privacyConfigManager: privacyConfigManager,

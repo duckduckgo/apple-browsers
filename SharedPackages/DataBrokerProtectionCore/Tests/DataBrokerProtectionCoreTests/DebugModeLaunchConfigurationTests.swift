@@ -1,5 +1,5 @@
 //
-//  DebugModeAuthenticationManagerTests.swift
+//  DebugModeLaunchConfigurationTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,79 +21,20 @@ import XCTest
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
-final class DebugModeAuthenticationManagerTests: XCTestCase {
+final class DebugModeLaunchConfigurationTests: XCTestCase {
     private var defaults: UserDefaults!
     private var suite: String!
     private var settings: DataBrokerProtectionSettings!
-    private var fallback: MockAuthenticationManager!
 
     override func setUpWithError() throws {
-        suite = "DebugModeAuthenticationManagerTests.\(UUID().uuidString)"
+        suite = "DebugModeLaunchConfigurationTests.\(UUID().uuidString)"
         defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         settings = DataBrokerProtectionSettings(defaults: defaults)
-        fallback = MockAuthenticationManager()
         settings.selectedEnvironment = .staging
     }
 
     override func tearDownWithError() throws {
         defaults.removePersistentDomain(forName: suite)
-    }
-
-    func testNoProvidedTokenPreservesSubscriptionAuthentication() async throws {
-        fallback.accessTokenValue = "subscription-token"
-        fallback.authHeaderValue = "subscription-header"
-        fallback.hasValidEntitlementValue = true
-        let authentication = DebugModeAuthenticationManager(fallback: fallback, settings: settings)
-        let token = await authentication.accessToken()
-        let header = await authentication.getAuthHeader()
-        let entitled = try await authentication.hasValidEntitlement()
-        XCTAssertEqual(token, "subscription-token")
-        XCTAssertEqual(header, "subscription-header")
-        XCTAssertTrue(entitled)
-    }
-
-    func testProvidedCredentialChangesOnlyRunnerAndDoesNotAssertEntitlement() async throws {
-        fallback.accessTokenValue = "subscription-token"
-        let authentication = DebugModeAuthenticationManager(fallback: fallback, settings: settings)
-        try authentication.configure(token: "provided-token", environment: "staging")
-        let header = await authentication.getAuthHeader()
-        let entitled = try await authentication.hasValidEntitlement()
-        XCTAssertEqual(header, "bearer provided-token")
-        XCTAssertFalse(entitled)
-        XCTAssertEqual(fallback.accessTokenValue, "subscription-token")
-        XCTAssertEqual(authentication.providedEnvironment, "staging")
-        XCTAssertEqual(authentication.endpointURL.absoluteString, "https://dbp-staging.duckduckgo.com")
-    }
-
-    func testCredentialCannotChangeOrBeAddedAfterRunStarts() throws {
-        let configured = DebugModeAuthenticationManager(fallback: fallback, settings: settings)
-        try configured.configure(token: "first", environment: "staging")
-        XCTAssertThrowsError(try configured.configure(token: "second", environment: "staging"))
-        let unconfigured = DebugModeAuthenticationManager(fallback: fallback, settings: settings)
-        unconfigured.freeze()
-        XCTAssertThrowsError(try unconfigured.configure(token: "first", environment: "staging"))
-    }
-
-    func testRejectsMalformedCredentialsAndWrongEffectiveEndpoint() throws {
-        let authentication = DebugModeAuthenticationManager(fallback: fallback, settings: settings)
-        for token in ["", "token with space", "token\n", String(repeating: "a", count: 65_537)] {
-            XCTAssertThrowsError(try authentication.configure(token: token, environment: "staging"))
-        }
-        XCTAssertThrowsError(try authentication.configure(token: "token", environment: "production"))
-        settings.serviceRoot = "https://example.com"
-        XCTAssertThrowsError(try authentication.configure(token: "token", environment: "staging"))
-        settings.serviceRoot = "https://dbp-staging.duckduckgo.com?secret=value"
-        XCTAssertThrowsError(try authentication.configure(token: "token", environment: "staging"))
-    }
-
-    func testEnvironmentChangeFailsClosedWithoutFallingBackToSubscription() async throws {
-        let authentication = DebugModeAuthenticationManager(fallback: fallback, settings: settings)
-        try authentication.configure(token: "token", environment: "staging")
-        settings.selectedEnvironment = .production
-        let token = await authentication.accessToken()
-        let authenticated = await authentication.isUserAuthenticated
-        XCTAssertNil(token)
-        XCTAssertFalse(authenticated)
     }
 
     func testLaunchSettingsOverrideEnvironmentWithoutWritingPreferences() {

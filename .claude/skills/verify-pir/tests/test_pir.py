@@ -58,7 +58,9 @@ class WorkflowTests(unittest.TestCase):
             def build(self):
                 return dict(source="source-sha", app="build-path", platform=self.platform)
 
-            def launch(self):
+            def launch(self, access_token=None):
+                self.access_token = access_token
+                test.authenticated = access_token is not None
                 if test.launch_error:
                     raise RuntimeError(test.launch_error)
                 return dict(instanceID=self.instance, source="source-sha", app="build-path", pid=42)
@@ -128,11 +130,6 @@ class WorkflowTests(unittest.TestCase):
             auth.update(self.auth_diagnostics)
             return 200, dict(checkID=check_id, instanceID="foreign" if self.foreign else instance,
                              checkedAt="now", debugRunnerReady=True, result=auth)
-        if path == "/api/debug/auth":
-            self.assertFalse(self.authenticated)
-            self.assertEqual(body, dict(token=self.token, environment="staging"))
-            self.authenticated = True
-            return 200, dict(accepted=True, accidentalEcho=self.token, quoted=json.dumps(self.token))
         if path == "/api/debug/scans":
             if self.config["optOut"]:
                 self.assertTrue(self.authenticated)
@@ -193,11 +190,12 @@ class WorkflowTests(unittest.TestCase):
         result = self.execute(*self.auth_options(), "--keep", "--platform", "macos")
         self.assertEqual(result["status"], "pass", result)
         mutations = [path for method, path, _, _ in self.calls if method == "POST"]
-        self.assertEqual(mutations, ["/api/debug/auth", "/api/debug/scans", "/api/debug/runs/run/optouts/record",
+        self.assertEqual(mutations, ["/api/debug/scans", "/api/debug/runs/run/optouts/record",
                                      "/api/debug/runs/run/email-confirmation/check", "/api/debug/runs/run/optouts/record/continue"])
         checks = [path for _, path, _, _ in self.calls if path.startswith("/api/debug/prerequisites")]
-        self.assertEqual(len(checks), 2)
-        self.assertNotEqual(checks[0], checks[1])
+        self.assertEqual(len(checks), 1)
+        self.assertEqual(self.instances[-1].access_token, self.token)
+        self.assertTrue(all(self.token not in json.dumps(body) for _, _, _, body in self.calls))
         self.assertTrue(self.instances[-1].kwargs["keep"])
         self.assertEqual(self.instances[-1].kwargs["pir_environment"], "staging")
         self.assertTrue(self.instances[-1].stopped)
@@ -229,7 +227,8 @@ class WorkflowTests(unittest.TestCase):
     def test_scan_can_supply_token_for_captcha(self):
         result = self.execute(*self.auth_options(opt_out=False))
         self.assertEqual(result["status"], "pass")
-        self.assertTrue(any(path == "/api/debug/auth" for _, path, _, _ in self.calls))
+        self.assertEqual(self.instances[-1].access_token, self.token)
+        self.assertFalse(any(path == "/api/debug/auth" for _, path, _, _ in self.calls))
         self.assertFalse(any("/optouts/" in path for _, path, _, _ in self.calls))
 
     def test_missing_or_invalid_inputs_never_create_runtime(self):

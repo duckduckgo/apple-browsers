@@ -302,11 +302,8 @@ def workflow(context, inputs, client, token=None, interactive=False):
     snapshots = {"before": client.prerequisite()}
     context.write("pir-prerequisites.json", snapshots)
     if token:
-        client.request("POST", "/api/debug/auth", dict(token=token, environment=config["subscriptionEnvironment"]))
-        snapshots["after"] = client.prerequisite()
-        context.write("pir-prerequisites.json", snapshots)
-        verify_auth(snapshots["after"], config, provided=True)
-        context.check("run-scoped credential supplied for configured backend", True)
+        verify_auth(snapshots["before"], config, provided=True)
+        context.check("launch credential supplied for configured backend", True)
         context.unverified("subscription entitlement", "credentialProvided confirms injection; backend acceptance is exercised by broker work")
     context.unverified("PIR UI and production scheduler", "debug jobs run directly through the PIR debug server")
     context.unverified("PIR worker and backend traffic", "this workflow records debug-server responses and application logs, without network interception")
@@ -392,8 +389,8 @@ def read_token(args):
         token = os.environ.get(args.token_env, "").strip()
     else:
         return None
-    if not token or any(c.isspace() for c in token):
-        raise ValueError("token source must contain one nonempty credential without whitespace")
+    if not token or len(token.encode("utf-8")) > 65_536 or any(c.isspace() or ord(c) < 32 or 127 <= ord(c) <= 159 for c in token):
+        raise ValueError("token source must contain one nonempty credential of at most 65536 bytes without whitespace or control characters")
     return token
 
 
@@ -483,7 +480,7 @@ def execute(args, runtime_factory=None):
             context.result["build"] = runtime.build()
             context.write("build.json", context.result["build"])
         else:
-            context.result["launch"] = runtime.launch()
+            context.result["launch"] = runtime.launch(access_token=token)
             context.write("launch.json", context.result["launch"])
             client = Client(evidence, port, instance, redactor)
             workflow(context, inputs, client, token, args.interactive_subscription)

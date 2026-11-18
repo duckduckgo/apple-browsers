@@ -135,7 +135,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var resultTokenContainer: Networking.TokenContainer?
     public var resultCreateAccountTokenContainer: Networking.TokenContainer?
+    public private(set) var getTokenContainerCallCount = 0
     public func getTokenContainer(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
+        getTokenContainerCallCount += 1
         switch policy {
         case .local, .localValid, .localForceRefresh:
             guard let resultTokenContainer else {
@@ -227,8 +229,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         resultFeatures.contains(feature)
     }
 
+    public private(set) var isFeatureEnabledCallCount = 0
     public func isFeatureEnabled(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
-        resultFeatures.contains(feature)
+        isFeatureEnabledCallCount += 1
+        return resultFeatures.contains(feature)
     }
 
     public func getAllEntitlementStatus() async -> EntitlementStatus {
@@ -237,7 +241,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     // MARK: - Subscription Token Provider
 
+    public private(set) var getAccessTokenCallCount = 0
     public func getAccessToken() async throws -> String {
+        getAccessTokenCallCount += 1
         guard let accessToken = resultTokenContainer?.accessToken else {
             throw SubscriptionManagerError.noTokenAvailable
         }

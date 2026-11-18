@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DataBrokerProtectionCore
 
 public struct DebugPrerequisiteResult: Encodable, Sendable {
     public enum Status: String, Encodable, Sendable {
@@ -58,6 +59,50 @@ public struct DebugPrerequisiteResult: Encodable, Sendable {
         self.authenticated = authenticated
         self.entitled = status == .ready ? true : status == .notEntitled ? false : nil
         self.errorCode = errorCode
+    }
+
+    @MainActor
+    public static func subscription(_ manager: DataBrokerProtectionSubscriptionManager,
+                                    settings: DataBrokerProtectionSettings) async -> DebugPrerequisiteResult {
+        #if DEBUG
+        let settings = settings.isolatedDebugSettingsForLaunch()
+        #endif
+        let status: Status
+        let backend: String
+        let environment: String
+        let authenticated: Bool
+        var errorCode: String?
+        if manager.isDebugAccessTokenProvided {
+            authenticated = manager.isDebugAccessTokenValid
+            status = authenticated ? .credentialProvided : .error
+            backend = "provided-token"
+            environment = settings.selectedEnvironment.rawValue
+            errorCode = authenticated ? nil : "invalidProvidedCredential"
+        } else if manager.isEntitlementCheckBypassed {
+            return DebugPrerequisiteResult(status: .bypass, backend: "subscription", environment: "integrationTests")
+        } else {
+            authenticated = manager.isSubscriptionAuthenticated
+            backend = "subscription-auth-v2"
+            environment = manager.entitlementEnvironment
+            if !authenticated {
+                status = .unauthenticated
+            } else {
+                do {
+                    status = try await manager.debugEntitlement() ? .ready : .notEntitled
+                } catch {
+                    status = .error
+                    errorCode = "entitlementCheckFailed"
+                }
+            }
+        }
+        var endpoint = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: false)
+        endpoint?.user = nil
+        endpoint?.password = nil
+        endpoint?.query = nil
+        endpoint?.fragment = nil
+        return DebugPrerequisiteResult(status: status, backend: backend, environment: environment,
+                                       pirEnvironment: settings.selectedEnvironment.rawValue, pirEndpoint: endpoint?.string,
+                                       authenticated: authenticated, errorCode: errorCode)
     }
 }
 

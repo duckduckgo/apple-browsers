@@ -99,21 +99,13 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
-    private let subscriptionManager: (any SubscriptionManager)?
+    private let subscriptionManager: any SubscriptionManager
     private var manager: DataBrokerProtectionAgentManager?
     #if DEBUG
     private var standaloneDebugServer: StandalonePIRDebugServer?
     #endif
 
     override init() {
-        #if DEBUG
-        if DebugModeLaunchConfiguration.isRequested() {
-            subscriptionManager = nil
-            super.init()
-            return
-        }
-        #endif
-
         // Configure Subscription
         Logger.dbpBackgroundAgent.log("Configuring subscription")
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
@@ -141,8 +133,10 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
                 let manager = ConfigurationManager(privacyConfigManager: privacy,
                                                          fetcher: ConfigurationFetcher(store: store, configurationURLProvider: DBPAgentConfigurationURLProvider(),
                                                                                        eventMapping: ConfigurationManager.configurationDebugEvents), store: store)
+                privacy.reload(etag: store.loadEtag(for: .privacyConfiguration), data: store.loadData(for: .privacyConfiguration))
                 let flags = DBPFeatureFlagger(configurationManager: manager, privacyConfigurationManager: privacy)
-                standaloneDebugServer = try StandalonePIRDebugServer(featureFlagger: flags, configuration: configuration)
+                standaloneDebugServer = try StandalonePIRDebugServer(subscriptionManager: subscriptionManager, featureFlagger: flags,
+                                                                     privacyConfigManager: privacy, configuration: configuration)
             } catch let error as DebugModeLaunchConfiguration.ConfigurationError {
                 Logger.dbpBackgroundAgent.error("Standalone PIR debug launch rejected: \(error.rawValue, privacy: .public)")
                 NSApp.terminate(nil)
@@ -154,10 +148,6 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         }
         #endif
 
-        guard let subscriptionManager else {
-            NSApp.terminate(nil)
-            return
-        }
         let configStore = ConfigurationStore()
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         let configurationURLProvider = ConfigurationURLProvider(

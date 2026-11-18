@@ -63,35 +63,17 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
         }
     }
 
-    #if DEBUG
-    public func configureAuthentication(token: String, environment: String) throws -> DebugPrerequisiteResult {
-        try locked {
-            guard runs.isEmpty else { throw DebugModeAuthenticationManager.ConfigurationError.credentialLocked }
-            try runner.debugAuthentication.configure(token: token, environment: environment)
-            return credentialPrerequisites(environment: environment)
-        }
-    }
-
     public func applyingDebugPIRSettings(to result: DebugPrerequisiteResult) -> DebugPrerequisiteResult {
-        let authentication = runner.debugAuthentication
+        let settings = runner.settings
+        var endpoint = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: false)
+        endpoint?.user = nil
+        endpoint?.password = nil
+        endpoint?.query = nil
+        endpoint?.fragment = nil
         return DebugPrerequisiteResult(status: result.status, backend: result.backend, environment: result.environment,
-                                       pirEnvironment: authentication.pirEnvironment, pirEndpoint: authentication.endpointURL.absoluteString,
+                                       pirEnvironment: settings.selectedEnvironment.rawValue, pirEndpoint: endpoint?.string,
                                        authenticated: result.authenticated, errorCode: result.errorCode)
     }
-
-    public var providedCredentialPrerequisites: DebugPrerequisiteResult? {
-        let authentication = runner.debugAuthentication
-        guard let environment = authentication.providedEnvironment else { return nil }
-        return credentialPrerequisites(environment: environment)
-    }
-
-    private func credentialPrerequisites(environment: String) -> DebugPrerequisiteResult {
-        let authentication = runner.debugAuthentication
-        return DebugPrerequisiteResult(status: .credentialProvided, backend: "provided-token", environment: environment,
-                                       pirEnvironment: authentication.pirEnvironment, pirEndpoint: authentication.endpointURL.absoluteString,
-                                       authenticated: true)
-    }
-    #endif
 
     // MARK: - DataBrokerProtectionDebugModeRunning
 
@@ -103,9 +85,6 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
 
         let run = try locked {
             try claim(runId)
-            #if DEBUG
-            runner.debugAuthentication.freeze()
-            #endif
             runner.debugEmailConfirmationStore.reset()
             runs[runId] = state
             return snapshot(of: state)

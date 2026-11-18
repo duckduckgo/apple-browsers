@@ -30,9 +30,7 @@ import WebKit
 /// Nothing it runs is saved to the PIR database.
 public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
 
-    #if DEBUG
-    public let debugAuthentication: DebugModeAuthenticationManager
-    #endif
+    public let settings: DataBrokerProtectionSettings
 
     public let debugEmailConfirmationStore = DebugEmailConfirmationStore()
     let captchaService: CaptchaService
@@ -68,10 +66,8 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                 contentBlocking: DBPWebViewContentBlocking? = nil) {
         #if DEBUG
         let dbpSettings = dbpSettings.isolatedDebugSettingsForLaunch()
-        let debugAuthentication = DebugModeAuthenticationManager(fallback: authenticationManager, settings: dbpSettings)
-        self.debugAuthentication = debugAuthentication
-        let authenticationManager: DataBrokerProtectionAuthenticationManaging = debugAuthentication
         #endif
+        self.settings = dbpSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigManager = privacyConfigManager
         self.pixelHandler = pixelHandler

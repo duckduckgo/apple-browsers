@@ -100,9 +100,9 @@ Preconditions:
   prompt per chat it needs (about 10 s each). Titles are generated after the answer; read them with
   `duckai_storage` before matching history rows, and use prompts that give different titles.
 - **History search and reopen**: from the Chats sheet (iPhone), `Search` filters by title; tapping a row opens that
-  chat in the tab. On iPad, `Search chats` in the sidebar; a result's label is "<title> <date>", and the tab bar's
-  buttons also contain the title, so pick the `contains=` match whose label starts with the title. Rows have no
-  ids on either device.
+  chat in the tab (driven on iPhone). On iPad, `Search chats` in the sidebar filters the list, and a result's label
+  is "<title> <date>". Tapping a result is not driven yet: `find` lists it, but the runner's tap fails with "No
+  matches found for Element at index …" every time, even by exact label. Rows have no ids on either device.
 - **An image attached** (iPhone): a new chat's input is focused, so `Attach` shows; then `Add Image`, a sample photo
   (`id=PXGGridLayout-Info nth=0`, the simulator's built-in library) and `Done`. Proof: the
   `AIChat.Footer.Card.attachmentPrivacy` card and Submit enabled with no text. After an answer the input collapses

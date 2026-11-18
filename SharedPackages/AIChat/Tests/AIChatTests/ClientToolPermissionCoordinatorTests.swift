@@ -47,6 +47,45 @@ struct ClientToolPermissionCoordinatorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func onlyCallsThatRunReportTheirUse() async throws {
+        let harness = ClientToolTestHarness()
+        harness.otherTool.permissionMode = .auto
+
+        _ = await (try harness.start(callID: "auto", name: "searchHistory")).value
+        #expect(harness.source.uses == ["start searchHistory", "end"])
+
+        let dismissed = try harness.start(callID: "dismissed")
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: .dismiss)
+        _ = await dismissed.value
+        #expect(harness.source.uses == ["start searchHistory", "end"])
+
+        let allowed = try harness.start(callID: "allowed")
+        await harness.source.waitForPrompts(2)
+        harness.answer(harness.source.prompts[1], decision: .allowOnce)
+        _ = await allowed.value
+        #expect(harness.source.uses == ["start searchHistory", "end", "start readTabContent", "end"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func cancellingARunningCallEndsItsUseAsCancelled() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.permissionMode = .auto
+        var release: CheckedContinuation<Void, Never>?
+        harness.tool.onExecute = { await withCheckedContinuation { release = $0 } }
+
+        let task = try harness.start()
+        while harness.tool.calls.isEmpty { await Task.yield() }
+        task.cancel()
+        _ = await task.value
+        release?.resume()
+
+        #expect(harness.source.uses == ["start readTabContent", "end cancelled"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.always, .never])
     func queuedCallsReusePersistentDecision(decision: ClientToolPermissionDecision) async throws {
         let harness = ClientToolTestHarness()
@@ -284,6 +323,18 @@ struct ClientToolPermissionCoordinatorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: zip([JSONValue.object([:]), ["tabId": "owner"], ["tabId": "other"]], [false, false, true]))
+    func promptSaysWhetherTheCallTargetsAnotherTab(input: JSONValue, targetsOtherTab: Bool) async throws {
+        let harness = ClientToolTestHarness()
+        let request = try harness.request(input: input)
+        let task = Task { await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source) }
+        await harness.source.waitForPrompts(1)
+        #expect(harness.source.prompts[0].targetsOtherTab == targetsOtherTab)
+        harness.answer(harness.source.prompts[0], decision: .dismiss)
+        _ = await task.value
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func prompterCanCancelReentrantlyWhilePresenting() async throws {
         let harness = ClientToolTestHarness()
@@ -294,6 +345,42 @@ struct ClientToolPermissionCoordinatorTests {
         let request = try harness.request()
         let result = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source)
         #expect(result == .failure(callId: "call", error: .cancelled))
+        #expect(harness.tool.calls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func toolThatAsksEveryTimeIgnoresAndNeverStoresAlways() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.asksEveryTime = true
+        harness.permissions.storedDecisions["readTabContent"] = .allow
+
+        let first = try harness.start(callID: "first")
+        await harness.source.waitForPrompts(1)
+        #expect(!harness.source.prompts[0].offersAlways)
+        harness.answer(harness.source.prompts[0], decision: .always)
+        #expect(await first.value == .success(callId: "first", value: ["content": "page"]))
+        #expect(harness.permissions.writes == 0)
+
+        let second = try harness.start(callID: "second")
+        await harness.source.waitForPrompts(2)
+        harness.answer(harness.source.prompts[1], decision: .dismiss)
+        _ = await second.value
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func targetChangedSinceConsentDoesNotRun() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.target = "https://a.example/"
+
+        let task = try harness.start()
+        await harness.source.waitForPrompts(1)
+        #expect(harness.source.prompts[0].target == "https://a.example/")
+        harness.tool.target = "https://b.example/"
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
+
+        #expect(await task.value == .failure(callId: "call", error: .notFound))
         #expect(harness.tool.calls.isEmpty)
     }
 }

@@ -75,6 +75,12 @@ extension WebExtensionManager {
 @available(macOS 15.4, *)
 enum WebExtensionManagerFactory {
 
+    /// Catalog extensions this macOS version can't run.
+    private static var unsupportedExtensionIDs: Set<String> {
+        if #available(macOS 26, *) { return [] }
+        return [ChromeWebStoreID.iCloudPasswords.rawValue]
+    }
+
     private static var extensionsDirectory: URL {
         URL.sandboxApplicationSupportURL.appendingPathComponent("WebExtensions", isDirectory: true)
     }
@@ -106,7 +112,14 @@ enum WebExtensionManagerFactory {
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
             windowTabProvider.updateActivityPublisher
         ).eraseToAnyPublisher()
-        let promptWindowProvider: () -> NSWindow? = { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }
+        // Prompts attach to the browser window the user works in, including an extension's popup window. A prompt on
+        // another window makes that window key, and extensions that later close `windows.getCurrent()` close it instead.
+        let promptWindowProvider: () -> NSWindow? = {
+            if let keyWindow = NSApp.keyWindow, keyWindow.windowController is MainWindowController {
+                return keyWindow
+            }
+            return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
+        }
         let permissionPrompt = WebExtensionPermissionPrompt(
             windowProvider: promptWindowProvider,
             themeManager: themeManager,
@@ -131,7 +144,10 @@ enum WebExtensionManagerFactory {
         }
 #endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
+        let isInitProgressEnabled = { privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AutoconsentSubfeature.cpmInitProgress) }
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring,
+                                                                  isUnmeasuredPage: { $0.isDuckPlayer },
+                                                                  isInitProgressEnabled: isInitProgressEnabled)
         let installationStore = InstalledWebExtensionStore()
         let permissionController = WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
@@ -180,7 +196,9 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager,
+                                           isAppStoreBuild: buildType.isAppStoreBuild,
+                                           unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

@@ -57,11 +57,15 @@ final class MockConfigurationURLProvider: ConfigurationURLProviding {
     var urlsByConfiguration = [Configuration: URL]()
     var capturedConfiguration: Configuration?
     var capturedConfigurations: [Configuration] = []
+    private let lock = NSLock()
 
+    // ConfigurationFetcher.fetch(all:) calls this from concurrent child tasks.
     func url(for configuration: Configuration) -> URL {
-        capturedConfiguration = configuration
-        capturedConfigurations.append(configuration)
-        return urlsByConfiguration[configuration] ?? url
+        lock.withLock {
+            capturedConfiguration = configuration
+            capturedConfigurations.append(configuration)
+            return urlsByConfiguration[configuration] ?? url
+        }
     }
 }
 #endif

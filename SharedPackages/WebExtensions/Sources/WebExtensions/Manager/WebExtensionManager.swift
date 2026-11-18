@@ -183,6 +183,26 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// The `chrome.privacy.services` values extensions set, which let one take over DuckDuckGo autofill.
     /// `nil` without a key-value store.
     public let privacySettings: WebExtensionPrivacySettingsStore?
+
+    private let isAutofillTakeoverEnabled: @MainActor () -> Bool
+
+    /// The installation that DuckDuckGo leaves autofill to, if any: the one that turned
+    /// `passwordSavingEnabled` off, or else the first loaded extension in
+    /// `ChromeWebStoreID.takingOverAutofillWhileLoaded`.
+    @MainActor
+    public var autofillManagingIdentifier: String? {
+        guard isAutofillTakeoverEnabled() else { return nil }
+        if let identifier = privacySettings?.identifierTurningOff(.passwordSavingEnabled) {
+            return identifier
+        }
+        let takingOver = Set(ChromeWebStoreID.takingOverAutofillWhileLoaded.map {
+            WebExtensionStoreIdentity(store: .chromeWebStore, id: $0.rawValue)
+        })
+        return installationStore.installedExtensions.first { installedExtension in
+            installedExtension.storeIdentity.map(takingOver.contains) == true
+                && context(for: installedExtension.uniqueIdentifier) != nil
+        }?.uniqueIdentifier
+    }
 #endif
 
     private let storePixelsReporter: WebExtensionStorePixelsReporter?
@@ -350,6 +370,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
         self.privacySettings = keyValueStore.map { WebExtensionPrivacySettingsStore(keyValueStore: $0) }
+        self.isAutofillTakeoverEnabled = isAutofillTakeoverEnabled
 #endif
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
@@ -586,7 +607,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
             if storeIdentity?.store == .chromeWebStore,
                let oldIdentifier, let oldContext = context(for: oldIdentifier) {
-                // Both versions use the same origin, so only one can be loaded at a time.
                 await unloadGuard.awaitSettled(oldContext)
                 try loader.unloadExtension(identifier: oldIdentifier, from: controller)
                 replacedContext = oldContext
@@ -1487,6 +1507,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
               let key = nativeMessagingLimitationKey(for: extensionContext.uniqueIdentifier),
               !nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key) else { return }
         nativeMessagingLimitationStore.recordLimitation(extensionKey: key)
+        NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
     }
 
     /// The store ID, so the state survives updates, or the installation ID for extensions from elsewhere.
@@ -1692,6 +1713,9 @@ public extension Notification.Name {
     /// this notification reaches every observer. Per-window UI needs that, because each
     /// browser window keeps its own set of extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
+
+    /// Posted by `WebExtensionManager` when an extension first tries native messaging where it's unavailable.
+    static let webExtensionNativeMessagingLimitationDidChange = Notification.Name("webExtensionNativeMessagingLimitationDidChange")
 
     /// Posted by `WebExtensionManager` when an extension changes its toolbar action, such as its icon,
     /// from JavaScript. The object is the extension's `WKWebExtensionContext`.

@@ -122,7 +122,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - CPM messaging breakage
 
-    case cpmMessagingBreakage(tabs: String)
+    case cpmMessagingBreakage(lastStage: String?, tabs: String)
     case cpmMessagingBreakagePersistent
 
     // MARK: - PixelKit.Event
@@ -330,8 +330,10 @@ enum WebExtensionPixel: PixelKit.Event {
                     "unsupported_url_count": String(unsupportedURLCount)]
         case .bitwardenDailyActive(let isDefault):
             return ["is_default": isDefault ? "true" : "false"]
-        case .cpmMessagingBreakage(let tabs):
-            return ["tabs": tabs]
+        case .cpmMessagingBreakage(let lastStage, let tabs):
+            var parameters = ["tabs": tabs]
+            parameters["last_stage"] = lastStage
+            return parameters
         case .reloadError(let parameters):
             return parameters
         default:
@@ -474,8 +476,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmMessagingBreakage(let tabs):
-            pixel = .cpmMessagingBreakage(tabs: tabs.rawValue)
+        case .cpmMessagingBreakage(let lastStage, let tabs):
+            pixel = .cpmMessagingBreakage(lastStage: lastStage.pixelValue, tabs: tabs.rawValue)
         case .cpmMessagingBreakagePersistent:
             pixel = .cpmMessagingBreakagePersistent
         case .defaultPasswordManagerSet(let pixelExtension):

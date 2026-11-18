@@ -26,6 +26,7 @@ import WebKit
 
 typealias AssistedOptOutStopConfirmation = @MainActor (NSWindow, AssistedOptOut.DataBroker, @escaping @MainActor (Bool) -> Void) -> Void
 
+/// Opens one window per assisted opt-out attempt. Runs in the background agent when the user starts an attempt from the dashboard.
 @MainActor
 final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
     private var controllers: [AssistedOptOutID: AssistedOptOutWindowController] = [:]
@@ -68,6 +69,7 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
         if window.isMiniaturized {
             window.deminiaturize(nil)
         }
+        // When the user's turn arrives while they're in another app, bounce the Dock icon instead of taking focus from what they're typing.
         if requestingAttention, !applicationIsActive {
             window.orderFrontRegardless()
             requestUserAttention()
@@ -96,6 +98,7 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
     }
 }
 
+/// The window for one attempt, with the broker page beside the steps panel. While DuckDuckGo is in control it blocks input to the page.
 @MainActor
 final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate {
     private static let addressItem = NSToolbarItem.Identifier("AssistedOptOutAddress")
@@ -237,6 +240,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     }
 
     private func update(phase: AssistedAttemptPhase, hasLoadedPage: Bool) {
+        // Keep the window above other apps while the user has a step to do, so the broker page can't get buried.
         window?.level = phase == .userTurn ? .floating : .normal
         let showsPage = hasLoadedPage || phase == .userTurn || phase == .submitted
         if showsPage, !hasLoadedPage { page.revealPage() }
@@ -246,6 +250,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
             edgeView.setEdge(.none)
             inputBlocker.isHidden = true
         case .queued, .agentInControl:
+            // The user can watch but not type or click into the page while DuckDuckGo fills it in.
             edgeView.setEdge(.agent)
             inputBlocker.isHidden = false
             window?.makeFirstResponder(inputBlocker)
@@ -291,6 +296,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         case .submitted:
             return true
         case .ready:
+            // Nothing has started yet, so cancel without asking.
             session.requestCancel()
             return false
         case .queued, .agentInControl, .userTurn:

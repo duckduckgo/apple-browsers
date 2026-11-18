@@ -97,6 +97,18 @@ struct SearchOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("The blocked tracker flag saved under the old key is kept and moved to the new key", .timeLimit(.minutes(1)))
+    func blockedTrackersLegacyKeyIsMigrated() throws {
+        let store = InMemoryKeyValueStore()
+        store.set(true, forKey: "contextual.onboarding.blocked.trackers")
+        let storage = SearchOnboardingPathStorage(settings: store.keyedStoring())
+
+        #expect(storage.blockedTrackerSeen)
+        #expect(store.object(forKey: "contextual-onboarding_blocked-trackers") as? Bool == true)
+        #expect(store.object(forKey: "contextual.onboarding.blocked.trackers") == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Got it continues with the in-place follow-up or the ending", .timeLimit(.minutes(1)),
           arguments: [
             (ContextualDialogType.searchDone(shouldFollowUp: true), ContextualOnboardingDecision.next(.tryASite)),

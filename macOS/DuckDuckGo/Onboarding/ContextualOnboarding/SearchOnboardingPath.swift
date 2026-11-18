@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Persistence
 import PrivacyDashboard
 
 /// The one value only the search path reads and writes.
@@ -24,9 +25,22 @@ protocol BlockedTrackerStoring: AnyObject {
     var blockedTrackerSeen: Bool { get set }
 }
 
+struct SearchOnboardingPathSettings: StoringKeys {
+    let blockedTrackerSeen = StorageKey<Bool>(.contextualOnboardingBlockedTrackers,
+                                              migrateLegacyKey: "contextual.onboarding.blocked.trackers")
+}
+
 final class SearchOnboardingPathStorage: BlockedTrackerStoring {
-    @UserDefaultsWrapper(key: .contextualOnboardingBlockedTrackers, defaultValue: false)
-    var blockedTrackerSeen: Bool
+    private let settings: any KeyedStoring<SearchOnboardingPathSettings>
+
+    init(settings: any KeyedStoring<SearchOnboardingPathSettings> = UserDefaults.standard.keyedStoring()) {
+        self.settings = settings
+    }
+
+    var blockedTrackerSeen: Bool {
+        get { settings.blockedTrackerSeen ?? false }
+        set { settings.blockedTrackerSeen = newValue }
+    }
 }
 
 /// Today's contextual onboarding: Try a search → search done / Try a site → trackers → Fire → the shared ending.

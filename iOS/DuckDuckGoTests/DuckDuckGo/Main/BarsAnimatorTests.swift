@@ -1214,6 +1214,38 @@ class BarsAnimatorShortPageTests: XCTestCase {
         withExtendedLifetime(delegate) {}
     }
 
+    func testWhenAFloatingCollapseReversesThenThePageFollowsTheBarBackToTheBottom() {
+        let (manager, delegate, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 100)
+        manager.followFloatingChromeBottom { 70 }
+        manager.followFloatingChromeBottom { 40 }
+        XCTAssertEqual(scrollView.contentOffset.y, 140)
+
+        manager.followFloatingChromeBottom { 70 }
+        XCTAssertEqual(scrollView.contentOffset.y, 170)
+
+        manager.followFloatingChromeBottom { 100 }
+        XCTAssertEqual(scrollView.contentOffset.y, 200)
+
+        // Fully revealed, so following is over and a later reveal leaves the user's offset alone.
+        scrollView.contentOffset.y = 150
+        manager.followFloatingChromeBottom { 100 }
+        XCTAssertEqual(scrollView.contentOffset.y, 150)
+        withExtendedLifetime(delegate) {}
+    }
+
+    func testWhenTheUserScrollsAwayMidCollapseThenAReversalLeavesThePageWhereTheyPutIt() {
+        let (manager, delegate, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 100)
+        manager.followFloatingChromeBottom { 40 }
+        XCTAssertEqual(scrollView.contentOffset.y, 140)
+
+        scrollView.contentOffset.y = 60
+        manager.followFloatingChromeBottom { 70 }
+        manager.followFloatingChromeBottom { 100 }
+
+        XCTAssertEqual(scrollView.contentOffset.y, 60)
+        withExtendedLifetime(delegate) {}
+    }
+
     func testWhenFloatingChromeIsRevealingThenThePageIsNotMoved() {
         let (manager, delegate, scrollView) = makeFloatingManagerAtPageBottom(contentInsetBottom: 40)
 

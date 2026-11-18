@@ -116,6 +116,8 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     /// Tracks an in-flight user drag/deceleration so passive WebKit scroll settling during page load
     /// does not drive floating chrome morph updates.
     private var isFloatingUserScrollActive = false
+    /// The offset `followFloatingChromeBottom` last pinned the page to, while it follows a hiding bar.
+    private var followedFloatingChromeBottomY: CGFloat?
 
     func attach(to scrollView: UIScrollView) {
         detach()
@@ -138,6 +140,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         observation = nil
         pendingFloatingScrollEndVelocity = 0
         isFloatingUserScrollActive = false
+        followedFloatingChromeBottomY = nil
     }
     
     private func scrollViewDidResizeContent(_ scrollView: UIScrollView) {
@@ -303,11 +306,6 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         return hiddenChromeScrollableHeight(for: scrollView) >= Constants.minimumScrollableHeight
     }
 
-    /// Whether the page is scrolled past its own end, into the space the bottom inset adds.
-    private func isPastContentEnd(_ scrollView: UIScrollView) -> Bool {
-        scrollView.contentOffset.y > scrollView.contentSize.height - scrollView.bounds.height
-    }
-
     /// How far the page would scroll with the chrome fully hidden. Hiding hands the chrome's space to the
     /// page, so the space the chrome still holds comes off the current range.
     private func hiddenChromeScrollableHeight(for scrollView: UIScrollView) -> CGFloat {
@@ -345,19 +343,36 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     /// Floating chrome holds the scroll view's insets until a hide ends, and WebKit then clamps the
     /// offset into the smaller range in a single frame. At the page bottom, keep the offset inside the
     /// range the hiding bar leaves, so the page follows the bar down instead of jumping once it settles.
-    /// `obscuredBottom` is only read once the page is past its end, as the inset lookup is slow.
+    /// If the collapse reverses, the page follows the bar back up so it doesn't cover the last line.
+    /// `obscuredBottom` is only read at the page end or while following, as the inset lookup is slow.
     func followFloatingChromeBottom(obscuredBottom: () -> CGFloat) {
         guard delegate?.isFloatingChromeEnabled == true,
               let scrollView = attachedScrollView,
-              !scrollView.isZooming,
-              isPastContentEnd(scrollView) else { return }
-        let obscuredBottom = obscuredBottom()
-        guard obscuredBottom < scrollView.contentInset.bottom else { return }
+              !scrollView.isZooming else { return }
+        let contentEndY = scrollView.contentSize.height - scrollView.bounds.height
+        guard followedFloatingChromeBottomY != nil || scrollView.contentOffset.y > contentEndY else { return }
 
+        let obscuredBottom = min(obscuredBottom(), scrollView.contentInset.bottom)
         let pageTopY = -scrollView.adjustedContentInset.top
-        let bottomY = max(pageTopY, scrollView.contentSize.height - scrollView.bounds.height + obscuredBottom)
+        let bottomY = max(pageTopY, contentEndY + obscuredBottom)
         let shift = bottomY - scrollView.contentOffset.y
-        guard shift < 0 else { return }
+
+        if let followedY = followedFloatingChromeBottomY, abs(scrollView.contentOffset.y - followedY) < 0.5 {
+            // The page is still where following left it, so it tracks the bar in either direction.
+            if obscuredBottom >= scrollView.contentInset.bottom {
+                followedFloatingChromeBottomY = nil
+            }
+        } else if shift < 0, obscuredBottom < scrollView.contentInset.bottom {
+            // Past the bottom the hiding bar leaves.
+        } else {
+            // Above that bottom, or the chrome is revealed: the user's offset stands.
+            followedFloatingChromeBottomY = nil
+            return
+        }
+        if obscuredBottom < scrollView.contentInset.bottom {
+            followedFloatingChromeBottomY = bottomY
+        }
+        guard shift != 0 else { return }
 
         // The page moves under the finger, so the drag's reference moves with it and the bars keep
         // their progress.

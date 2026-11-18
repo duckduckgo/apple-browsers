@@ -477,7 +477,7 @@ class FakePixels:
         pass
 
     def fired(self, name, occurrence=0, timeout=10):
-        raise env.Failed(f"pixel {name} did not fire")
+        raise env.Missed(f"pixel {name} did not fire")
 
     def all(self):
         return []
@@ -1033,8 +1033,81 @@ class BaseExpectationTests(HarnessTests):
             ios.check("never reached", True)
         self.fake.wait = wait
         r = self.run_base(run)
-        self.assertEqual(r["status"], "fail", r)
-        self.assertNotIn("never reached", [c["check"] for c in r["checks"]])
+        self.assertEqual(r["status"], "error", r)
+        self.assertIn("not observed on the base build", r["reason"])
+        self.assertEqual(r["checks"], [], "a refused check was never observed, so it is not recorded as failed")
+
+    def judge_base_run(self, run, **fake):
+        """The device's `prove --base` verdict when this checkout passes every check the base run was meant to make."""
+        before = self.run_base(run, **fake)
+        after = [dict(c, ok=True) for c in before["checks"]] or [check("expected miss", True, "fail")]
+        return before, compare.verdict(before["status"], "pass", compare.judge(before["checks"], after))[0]
+
+    @staticmethod
+    def live_pixel_stream(ios, dead=False):
+        ios.pixels = telemetry.Pixels("-", os.path.join(tempfile.mkdtemp(dir=TMP), "pixels.ndjson"))
+        ios.pixels.proc = subprocess.Popen(["true" if dead else "sleep", *([] if dead else ["30"])])
+        if dead:
+            ios.pixels.proc.wait()
+        ios.pixels.since = 0
+
+    def test_a_dead_pixel_stream_on_the_base_run_is_inconclusive_not_the_expected_failure(self):
+        def run(ios):
+            self.live_pixel_stream(ios, dead=True)
+            with ios.on_base("fail"):
+                ios.expect_pixel("m_new_pixel", timeout=0)
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual(before["status"], "error", before)
+        self.assertIn("pixel log stream is not running", before["reason"])
+        self.assertEqual(verdict, "INCONCLUSIVE")
+
+    def test_a_harness_error_inside_on_base_fail_is_inconclusive_too(self):
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_wide_event("data-clearing", timeout=0)   # no ios.mark(): a proof bug, not a miss
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual((before["status"], verdict), ("error", "INCONCLUSIVE"), before)
+
+    def test_a_pixel_that_really_did_not_fire_on_the_base_run_is_as_expected(self):
+        def run(ios):
+            self.live_pixel_stream(ios)
+            try:
+                with ios.on_base("fail"):
+                    ios.expect_pixel("m_new_pixel", timeout=0)
+                ios.check("after the pixel", True)
+            finally:
+                ios.pixels.stop()
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual(before["status"], "fail", before)
+        self.assertEqual([(c["check"], c["ok"]) for c in before["checks"]][:2],
+                         [("pixel m_new_pixel fired", False), ("after the pixel", True)])
+        self.assertEqual(verdict, "AS EXPECTED")
+
+    def test_eventually_keeps_the_last_errors_runner_code(self):
+        def read(code):
+            def fn():
+                raise env.Failed(code, runner={"code": code})
+            return fn
+        raised = []
+
+        def run(ios):
+            try:
+                ios.eventually("reads the token", read("AMBIGUOUS"), timeout=0)
+            except env.Failed as e:
+                raised.append(e)
+        self.run_proof(run)
+        self.assertEqual(harness._code(raised[0]), "AMBIGUOUS")
+        self.assertNotIsInstance(raised[0], env.Missed)
+
+        def on_base(code):
+            def run(ios):
+                with ios.on_base("fail"):
+                    ios.eventually("reads the token", read(code), timeout=0)
+                ios.check("after", True)
+            return self.run_base(run)
+        self.assertEqual(on_base("AMBIGUOUS")["status"], "error")
+        absent = on_base("NOT_FOUND")
+        self.assertEqual([(c["check"], c["ok"]) for c in absent["checks"]][:2], [("reads the token", False), ("after", True)])
 
     def test_base_run_carries_on_past_an_expected_alert(self):
         def alert(action, button=None, timeout=5):
@@ -1179,6 +1252,32 @@ class ProveAgainstBaseTests(unittest.TestCase):
             problems = compare._remove_worktree(worktree, log)
         self.assertEqual(step.call_count, 1, "only the cleanup ran: the worktree was not removed")
         self.assertIn("in use", problems[0])
+
+    def test_ctrl_c_during_the_worktree_cleanup_does_not_cut_it_short(self):
+        """The cleanup child runs in its own session (the terminal's Ctrl-C can't reach it) and the parent ignores
+        signals from the first step to the last, then puts its handlers back."""
+        worktree, scripts = tempfile.mkdtemp(dir=TMP), tempfile.mkdtemp(dir=TMP)
+        log, seen, cleanup = os.path.join(worktree, "log"), os.path.join(scripts, "seen"), os.path.join(scripts, "cleanup")
+        with open(cleanup, "w") as f:   # stands in for `verify-ios cleanup`: Ctrl-C reaches the parent while it runs
+            f.write(f"import os, signal, time\nopen({seen!r}, 'w').write(str(os.getsid(0)))\n"
+                    "os.kill(os.getppid(), signal.SIGINT)\ntime.sleep(0.2)\n")
+        runs = []
+        real_step = compare._step
+
+        def step(cmd, cwd, log, interruptible=True):
+            runs.append(cmd)
+            if cmd[-1] == "--delete-sims":
+                return real_step([sys.executable, cleanup], cwd, log, interruptible)
+            os.kill(os.getpid(), signal.SIGINT)   # between the steps and during the second
+            return 0, ""
+        before = signal.getsignal(signal.SIGINT)
+        with mock.patch.object(compare, "_step", step):
+            problems = compare._remove_worktree(worktree, log)
+        self.assertEqual(problems, [])
+        self.assertEqual(len(runs), 2, "the worktree was removed after its simulators")
+        with open(seen) as f:
+            self.assertNotEqual(int(f.read()), os.getsid(0), "the cleanup child shares the terminal's session")
+        self.assertIs(signal.getsignal(signal.SIGINT), before)
 
     def test_without_a_base_run_the_verdict_is_inconclusive_and_this_checkout_is_not_proved(self):
         with mock.patch.object(compare.Device, "check_build_current", staticmethod(lambda: {})), \

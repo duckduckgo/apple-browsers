@@ -328,7 +328,7 @@ class Device:
         loc = parse_locator(locator)
         matches = [m for m in [self.web.find(loc["web"], loc["value"])] if m] if "web" in loc else self.driver.find(loc["sel"])
         if not matches:
-            raise Failed("no match")
+            raise Failed("no match", runner=dict(code="NOT_FOUND"))
         return dict(matches=matches)
 
     def get(self, locator, attr="value"):
@@ -336,7 +336,7 @@ class Device:
         if "web" in loc:
             m = self.web.find(loc["web"], loc["value"])
             if not m:
-                raise Failed("no web match")
+                raise Failed("no web match", runner=dict(code="NOT_FOUND"))
             return dict(value=m["text"])
         el = self.driver.get(loc["sel"])
         return dict(value=el.get(attr or "value"), element=el)

@@ -209,7 +209,8 @@ $V prove "$proof" --base "$(git merge-base HEAD origin/main)"   # adds a full ap
 
 This builds the base revision in its own worktree (own simulators, removed afterwards), proves it there with this
 checkout's skill and proof, then proves this checkout. On the base run a check expected to fail is recorded and the
-proof carries on. `report.md` judges each check against both runs and pairs the key frames Before | After; each run's
+proof carries on, but only for an absent element or a failed assertion; any other error makes that run
+inconclusive. `report.md` judges each check against both runs and pairs the key frames Before | After; each run's
 own report is under `before/` and `after/`. Checks line up across runs by name, with tokens left out. Exit `0` as
 expected · `1` unexpected · `2` inconclusive (a run didn't finish, a check wasn't seen on both, or capture conditions
 differ).

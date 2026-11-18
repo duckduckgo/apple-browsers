@@ -121,9 +121,11 @@ def prove_against_base(path, ref, devices=None, decision_log=None, evidence_dir=
     except harness._Stop:
         pass
     finally:
-        for s, h in old.items():
-            signal.signal(s, h)
-        problems += _remove_worktree(worktree, log)
+        harness._ignore_signals()   # first: a Ctrl-C now must not cut the worktree cleanup short
+        try:
+            problems += _remove_worktree(worktree, log)
+        finally:
+            harness._restore(old)
     devices_out = {}
     for dev in devices:
         b = _result(before, dev) if before else skipped
@@ -173,7 +175,8 @@ def _prove_base(worktree, sha, proof, devices, evidence_dir, video, log, problem
 def _step(cmd, cwd, log, interruptible=True):
     """Run `cmd` in `cwd`, appending its command line and output to `log`; returns (exit code, stdout). The child is
     always waited for, so it can clean up its simulators: SIGTERM is passed on to it (Ctrl-C from the terminal reaches it
-    directly), and a signal raises harness._Stop once it has exited. Not `interruptible`: signals are ignored."""
+    directly), and a signal raises harness._Stop once it has exited. Not `interruptible`: the child runs in its own
+    session, out of reach of the terminal's Ctrl-C, and signals are ignored."""
     stopped = []
 
     def on_signal(signum, _frame):
@@ -183,7 +186,8 @@ def _step(cmd, cwd, log, interruptible=True):
     with open(log, "a") as f:
         f.write(f"\n$ (cd {shlex.quote(cwd)} && {shlex.join(cmd)})\n")
         f.flush()
-        p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=f, text=True)
+        p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=f, text=True,
+                             start_new_session=not interruptible)
         handler = on_signal if interruptible else signal.SIG_IGN
         old = {s: signal.signal(s, handler) for s in (signal.SIGINT, signal.SIGTERM)}
         try:
@@ -198,20 +202,25 @@ def _step(cmd, cwd, log, interruptible=True):
 
 
 def _remove_worktree(worktree, log):
-    """Delete the base worktree's simulators and the worktree (its build goes with it), ignoring signals so it
-    finishes. Returns problems. A worktree another `--base` run is using (its devices are busy) is left alone."""
+    """Delete the base worktree's simulators and the worktree (its build goes with it), ignoring signals from the
+    first step to the last so it finishes. Returns problems. A worktree another `--base` run is using (its devices are
+    busy) is left alone."""
     if not os.path.isdir(worktree):
         return []
-    problems = []
-    code = _step([sys.executable, VERIFY_IOS, "cleanup", "--all", "--delete-sims"], worktree, log, interruptible=False)[0]
-    if code == env.EXIT_BUSY:
-        return [f"the base worktree {worktree} is in use by another --base run: left in place"]
-    if code:
-        problems.append(f"could not clean up the base worktree's simulators (see base-run.log): {worktree}")
-    # --force: the build leaves untracked files behind
-    if _step(["git", "-C", ROOT, "worktree", "remove", "--force", worktree], ROOT, log, interruptible=False)[0]:
-        problems.append(f"could not remove the base worktree {worktree} (see base-run.log)")
-    return problems
+    handlers, problems = harness._ignore_signals(), []
+    try:
+        code = _step([sys.executable, VERIFY_IOS, "cleanup", "--all", "--delete-sims"], worktree, log,
+                     interruptible=False)[0]
+        if code == env.EXIT_BUSY:
+            return [f"the base worktree {worktree} is in use by another --base run: left in place"]
+        if code:
+            problems.append(f"could not clean up the base worktree's simulators (see base-run.log): {worktree}")
+        # --force: the build leaves untracked files behind
+        if _step(["git", "-C", ROOT, "worktree", "remove", "--force", worktree], ROOT, log, interruptible=False)[0]:
+            problems.append(f"could not remove the base worktree {worktree} (see base-run.log)")
+        return problems
+    finally:
+        harness._restore(handlers)
 
 
 def _result(attempt, device, missing="error"):

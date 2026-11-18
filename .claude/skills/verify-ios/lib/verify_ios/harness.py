@@ -14,7 +14,7 @@ import contextlib, importlib.util, inspect, json, os, re, shlex, shutil, signal,
 
 from . import env
 from .device import Device, fixture, fixture_release
-from .env import APP, EVIDENCE, ROOT, SKILL, Busy, DeviceLock, Failed, SetupFailed, Unsupported, run
+from .env import APP, EVIDENCE, ROOT, SKILL, Busy, DeviceLock, Failed, Missed, SetupFailed, Unsupported, run
 from .telemetry import Pixels, WideEvents
 from .video import Video
 
@@ -271,7 +271,7 @@ class Ios:
         try:
             return self.d.find(locator)["matches"]
         except Failed as e:
-            if str(e) in ("no match", "no web match") or _code(e) in ABSENT:
+            if _code(e) in ABSENT:
                 return []
             raise
 
@@ -311,24 +311,29 @@ class Ios:
     # assertions ------------------------------------------------------------------
     def eventually(self, what, fn, timeout=8, every=0.3):
         """Poll `fn` until it returns a truthy value; return it, or fail naming `what` and the last value.
-        A Failed raised by `fn` counts as "not yet"; anything else (a driver error, a bug) stops the proof."""
+        A Failed raised by `fn` counts as "not yet"; on timeout the failure keeps the last one's runner code, so a
+        refusal is never taken for a miss. Setup trouble and anything else (a driver error, a bug) stop the proof."""
         end, last = time.time() + timeout, None
         while True:
+            error = None
             try:
                 last = fn()
-                ok = bool(last)
+            except SetupFailed:
+                raise
             except Failed as e:
-                last, ok = f"<{e}>", False
-            if ok:
+                last, error = f"<{e}>", e
+            if last and not error:
                 return self._record(what, True, last)
             if time.time() > end:
-                return self._fail(what, last, Failed(f"{what}: not true within {timeout}s (last: {_trim(last)})"))
+                missed = error is None or _expectable(error)
+                return self._fail(what, last, (Missed if missed else Failed)(
+                    f"{what}: not true within {timeout}s (last: {_trim(last)})", **(error.extra if error else {})))
             time.sleep(every)
 
     def check(self, what, ok, detail=None):
         """Record a named check; fail the proof if it is false."""
         if not ok:
-            return self._fail(what, detail, Failed(f"check failed: {what}", detail=_trim(detail)))
+            return self._fail(what, detail, Missed(f"check failed: {what}", detail=_trim(detail)))
         self._record(what, True, detail)
         return True
 
@@ -417,18 +422,21 @@ class Ios:
         except SetupFailed:
             raise
         except Failed as e:
-            # only "absent" or a failed assertion can be the expected failure; a runner refusal or error is not
-            return self._fail(what, getattr(e, "extra", None) or str(e), e, expectable=_code(e) in ABSENT | {None})
+            return self._fail(what, getattr(e, "extra", None) or str(e), e)
         if record:
             self._record(what, True, out)
         return out or True
 
-    def _fail(self, what, detail, error, expectable=True):
-        """Record failed check `what` and raise `error`, except on the base run inside on_base("fail"): there the
-        failure is what the proof expects, so it is recorded and the proof carries on."""
-        self._record(what, False, detail)
-        if expectable and self.as_base and self.base_outcome == "fail":
+    def _fail(self, what, detail, error):
+        """Record failed check `what` and raise `error`, except on the base run inside on_base("fail"). There a miss
+        or an absent element is what the proof expects, so it is recorded and the proof carries on; any other failure
+        (a refusal, a driver or harness error) means the check was never observed, so the base run is inconclusive."""
+        if self.as_base and self.base_outcome == "fail":
+            if not _expectable(error):
+                raise SetupFailed(f"{what}: not observed on the base build: {error}", **error.extra) from error
+            self._record(what, False, detail)
             return False
+        self._record(what, False, detail)
         raise error
 
     def _record(self, what, ok, detail=None):
@@ -441,6 +449,11 @@ class Ios:
 
 def _code(e):
     return ((getattr(e, "extra", None) or {}).get("runner") or {}).get("code")
+
+
+def _expectable(e):
+    """Only a miss or an absent element can be the base build's expected failure; a refusal or an error can't."""
+    return isinstance(e, Missed) or _code(e) in ABSENT
 
 
 def _trim(v, n=600):

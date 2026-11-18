@@ -347,4 +347,40 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(result == .failure(callId: "call", error: .cancelled))
         #expect(harness.tool.calls.isEmpty)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func toolThatAsksEveryTimeIgnoresAndNeverStoresAlways() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.asksEveryTime = true
+        harness.permissions.storedDecisions["readTabContent"] = .allow
+
+        let first = try harness.start(callID: "first")
+        await harness.source.waitForPrompts(1)
+        #expect(!harness.source.prompts[0].offersAlways)
+        harness.answer(harness.source.prompts[0], decision: .always)
+        #expect(await first.value == .success(callId: "first", value: ["content": "page"]))
+        #expect(harness.permissions.writes == 0)
+
+        let second = try harness.start(callID: "second")
+        await harness.source.waitForPrompts(2)
+        harness.answer(harness.source.prompts[1], decision: .dismiss)
+        _ = await second.value
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func targetChangedSinceConsentDoesNotRun() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.target = "https://a.example/"
+
+        let task = try harness.start()
+        await harness.source.waitForPrompts(1)
+        #expect(harness.source.prompts[0].target == "https://a.example/")
+        harness.tool.target = "https://b.example/"
+        harness.answer(harness.source.prompts[0], decision: .allowOnce)
+
+        #expect(await task.value == .failure(callId: "call", error: .notFound))
+        #expect(harness.tool.calls.isEmpty)
+    }
 }

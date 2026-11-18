@@ -177,9 +177,7 @@ extension TabViewController {
 
             entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
 
-            if let vpnEntry = buildVPNEntry(useSmallIcon: useSmallIcon,
-                                            showStatusStringInDetail: !useSmallIcon,
-                                            showPromoBadge: !useSmallIcon) {
+            if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon) {
                 entries.append(.separator)
                 entries.append(vpnEntry)
             }
@@ -208,9 +206,7 @@ extension TabViewController {
             entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
         }
 
-        if let vpnEntry = buildVPNEntry(useSmallIcon: useSmallIcon,
-                                        showStatusStringInDetail: !useSmallIcon,
-                                        showPromoBadge: !useSmallIcon) {
+        if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon) {
             entries.append(.separator)
             entries.append(vpnEntry)
         }
@@ -327,7 +323,7 @@ extension TabViewController {
 
         entries.append(buildDownloadsEntry())
 
-        if state == .newTab, let vpnEntry = buildVPNEntry(showPromoBadge: false) {
+        if state == .newTab, let vpnEntry = makeVPNEntry(useSmallIcon: true) {
             entries.append(vpnEntry)
         }
 
@@ -993,11 +989,7 @@ extension TabViewController {
     /// Only the sheet menu can render badges; the legacy popover cell falls back to the notification dot.
     private func buildVPNEntry(useSmallIcon: Bool = true,
                                showStatusStringInDetail: Bool = false,
-                               showPromoBadge: Bool) -> BrowsingMenuEntry? {
-        guard featureFlagger.isFeatureOn(.vpnMenuItem),
-              AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
-            return nil
-        }
+                               showPromoBadge: Bool) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
         let promoStatus = vpnPromoHelper.subscriptionPromoStatus
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
@@ -1194,7 +1186,17 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeVPNEntry() -> BrowsingMenuEntry? {
-        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true, showPromoBadge: true)
+        makeVPNEntry(useSmallIcon: false)
+    }
+
+    private func makeVPNEntry(useSmallIcon: Bool) -> BrowsingMenuEntry? {
+        guard featureFlagger.isFeatureOn(.vpnMenuItem),
+              AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
+            return nil
+        }
+        return buildVPNEntry(useSmallIcon: useSmallIcon,
+                             showStatusStringInDetail: !useSmallIcon,
+                             showPromoBadge: !useSmallIcon)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {

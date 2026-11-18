@@ -85,7 +85,6 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     private let wideEvent: WideEventManaging
     private let extensionType: VPNConnectionWideEventData.ExtensionType
 
-    private let isTelemetryEnabled: @Sendable () -> Bool
     private let now: @Sendable () -> Date
     private let processStartedAt: Date
     private let processIdentifier: @Sendable () -> Int32
@@ -109,7 +108,6 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     public init(wideEvent: WideEventManaging,
                 extensionType: VPNConnectionWideEventData.ExtensionType,
                 processStartedAt: Date,
-                isTelemetryEnabled: @escaping @Sendable () -> Bool,
                 now: @escaping @Sendable () -> Date = { Date() },
                 processIdentifier: @escaping @Sendable () -> Int32 = { ProcessInfo.processInfo.processIdentifier },
                 appVersion: @escaping @Sendable () -> String = { AppVersion.shared.versionNumber },
@@ -117,7 +115,6 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
                 bootTime: @escaping @Sendable () -> Date? = { SystemStatusProvider.bootTime }) {
         self.wideEvent = wideEvent
         self.extensionType = extensionType
-        self.isTelemetryEnabled = isTelemetryEnabled
         self.now = now
         self.processStartedAt = processStartedAt
         self.processIdentifier = processIdentifier
@@ -281,10 +278,6 @@ private extension DefaultVPNSessionHealthInstrumentation {
 
         completeOrphanedEvents(reason: reason)
 
-        guard isTelemetryEnabled() else {
-            return
-        }
-
         let nextEvent = VPNSessionHealthWideEventData(startReason: reason,
                                                       startedAt: now(),
                                                       extensionType: extensionType,
@@ -342,11 +335,6 @@ private extension DefaultVPNSessionHealthInstrumentation {
 
     @discardableResult
     func completeEvent(event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome) -> Bool {
-        guard isTelemetryEnabled() else {
-            wideEvent.discardFlow(event)
-            return true
-        }
-
         let status = outcome.status
         Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
         logPixelDetails(event)

@@ -21,6 +21,7 @@ import Testing
 import SharedTestUtilities
 import FeatureFlags_macOS
 import PrivacyDashboard
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -28,17 +29,25 @@ class ContextualDialogsManagerTests {
     var manager: ContextualDialogsManager!
     var trackerProvider: MockTrackerMessageProvider!
     var stateStorage: MockContextualDialogStateStoring!
+    var searchPathStorage: MockBlockedTrackerStoring!
+    let store = InMemoryThrowingKeyValueStore()
     var subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling!
     let expectation = XCTestExpectation()
 
     init() {
         stateStorage = MockContextualDialogStateStoring()
+        searchPathStorage = MockBlockedTrackerStoring()
         trackerProvider = MockTrackerMessageProvider(expectation: expectation)
         subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
-        manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                           subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                           stateStorage: stateStorage)
-        trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
+        manager = makeManager()
+    }
+
+    private func makeManager() -> ContextualDialogsManager {
+        .withSearchPath(trackerMessageProvider: trackerProvider,
+                        subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                        stateStorage: stateStorage,
+                        searchPathStorage: searchPathStorage,
+                        settings: store.throwingKeyedStoring())
     }
 
     @available(iOS 16, macOS 13, *)
@@ -119,10 +128,7 @@ class ContextualDialogsManagerTests {
             stateStorage = MockContextualDialogStateStoring()
             subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
             subscriptionUpsellExperiment.cohortStub = cohort
-            manager = ContextualDialogsManager(
-                trackerMessageProvider: trackerProvider,
-                subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                stateStorage: stateStorage)
+            manager = makeManager()
             manager.state = .ongoing
             manager.lastDialog = .highFive
 
@@ -169,10 +175,7 @@ class ContextualDialogsManagerTests {
         manager.lastDialog = .highFive
         manager.gotItPressed()
 
-        let relaunched = ContextualDialogsManager(
-            trackerMessageProvider: trackerProvider,
-            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-            stateStorage: stateStorage)
+        let relaunched = makeManager()
         let tab = await Tab(content: .newtab)
 
         #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == nil)
@@ -270,7 +273,7 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsHighFive(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = true
+        searchPathStorage.blockedTrackerSeen = true
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
         #expect(dialog == .highFive)
@@ -281,7 +284,7 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsTryFireButton(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = true
+        searchPathStorage.blockedTrackerSeen = true
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
         #expect(dialog == .tryFireButton)
@@ -292,7 +295,7 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsTrackersFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
@@ -303,7 +306,7 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsTrackersNoFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: false))
@@ -314,7 +317,7 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitIfItHasSeenTrackersBlockedItDoesNotShowItAgain() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
 
         // First Site Visit
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
@@ -331,7 +334,7 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitIfItHasNotSeenTrackersBlockedItDoesNotShowOtherTrackerDialogWithNoTeckersBlocked() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
 
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
@@ -349,7 +352,7 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitIfItHasNotSeenTrackersBlockedItShowsTrackerDialogAgainIfTrackersBlocked() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
 
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
@@ -523,9 +526,31 @@ class SpyOnboardingSubscriptionUpsellEnrolling: OnboardingSubscriptionUpsellEnro
 class MockContextualDialogStateStoring: ContextualOnboardingStateStoring {
     var fireButtonUsedOnce: Bool = false
 
-    var blockedTrackerSeen: Bool = false
-
     var contextualDialogsSeen: [String] = []
 
     var stateString: String = ""
+}
+
+class MockBlockedTrackerStoring: BlockedTrackerStoring {
+    var blockedTrackerSeen: Bool = false
+}
+
+extension ContextualDialogsManager {
+    /// The manager with the real search path, backed by storage the test controls instead of UserDefaults.
+    static func withSearchPath(trackerMessageProvider: TrackerMessageProviding,
+                               subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+                               stateStorage: ContextualOnboardingStateStoring,
+                               searchPathStorage: BlockedTrackerStoring,
+                               settings: any ThrowingKeyedStoring<ContextualOnboardingSettings>) -> ContextualDialogsManager {
+        ContextualDialogsManager(trackerMessageProvider: trackerMessageProvider,
+                                 subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                 stateStorage: stateStorage,
+                                 settings: settings,
+                                 makePath: { _, progress in
+                                     SearchOnboardingPath(progress: progress,
+                                                          storage: searchPathStorage,
+                                                          subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                          trackerMessageProvider: trackerMessageProvider)
+                                 })
+    }
 }

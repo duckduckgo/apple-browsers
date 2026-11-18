@@ -106,13 +106,21 @@ enum WebExtensionManagerFactory {
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
             windowTabProvider.updateActivityPublisher
         ).eraseToAnyPublisher()
+        let promptWindowProvider: () -> NSWindow? = { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }
+        let permissionPrompt = WebExtensionPermissionPrompt(
+            windowProvider: promptWindowProvider,
+            themeManager: themeManager,
+            nativeMessagingAlertPresenter: NativeMessagingAlertPresenter(
+                limitationProvider: { Application.appDelegate.webExtensionManager },
+                alertPresenter: WebExtensionAlertPresenter(windowProvider: promptWindowProvider, themeManager: themeManager),
+                windowControllersManager: Application.appDelegate.windowControllersManager
+            )
+        )
 #if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         if buildType.isDebugBuild, buildType.isSparkleBuild, ChromeWebStoreManualUpdateTesting.isEnabled {
             let manager = ChromeWebStoreManualUpdateTesting().makeManager(
                 configuration: WebExtensionConfigurationProvider(), windowTabProvider: windowTabProvider,
-                permissionPrompter: WebExtensionPermissionPrompt(
-                    windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
-                enforcesPermissions: featureFlagger.isFeatureOn(.webExtensionsPermissions),
+                permissionPrompter: permissionPrompt,
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
                 internalSiteHandler: internalSiteHandler,
                 isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
@@ -125,11 +133,11 @@ enum WebExtensionManagerFactory {
         let pixelFiring = MacOSWebExtensionPixelFiring()
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
         let installationStore = InstalledWebExtensionStore()
-        let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
+        let permissionController = WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
             installationStore: installationStore,
-            prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
-        ) : nil
+            prompter: permissionPrompt
+        )
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
         let nativeMessagingHandler = buildType.isSparkleBuild
             ? NativeMessagingHandler(installationStore: installationStore)
@@ -162,6 +170,8 @@ enum WebExtensionManagerFactory {
                 eventHub: eventHub
             ),
             nativeMessagingHandler: nativeMessagingHandler,
+            unavailablePermissions: buildType.isAppStoreBuild ? [.nativeMessaging] : [],
+            nativeMessagingLimitationStore: buildType.isAppStoreBuild ? NativeMessagingLimitationStore(keyValueStore: keyValueStore) : nil,
             keyValueStore: keyValueStore,
             retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration

@@ -32,9 +32,7 @@ final class StartupOptionsTests: XCTestCase {
         let rawOptions = [String: Any]()
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .useExisting)
-#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)
@@ -56,9 +54,7 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .reset)
-#endif
         XCTAssertEqual(options.enableTester, .reset)
         XCTAssertEqual(options.vpnSettings, .reset)
         XCTAssertFalse(options.simulateCrash)
@@ -79,9 +75,7 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
-#if os(macOS)
         XCTAssertEqual(options.tokenContainer, .useExisting)
-#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)
@@ -91,6 +85,28 @@ final class StartupOptionsTests: XCTestCase {
     }
 
     // MARK: - VPN Settings Tests
+
+    func testVPNSettingsSnapshotIgnoresLegacySessionHealthEnablement() throws {
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(86400),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var payload = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertNil(payload["sessionHealthTelemetryEnabled"])
+
+        for enabled in [false, true] {
+            payload["sessionHealthTelemetryEnabled"] = enabled
+            let legacyData = try JSONSerialization.data(withJSONObject: payload)
+            let options = StartupOptions(options: [NetworkProtectionOptionKey.settings: legacyData])
+
+            XCTAssertEqual(options.vpnSettings, .set(snapshot))
+        }
+    }
 
     func testVPNSettingsCanBeEncodedAndParsed() throws {
         // Create a VPN settings snapshot

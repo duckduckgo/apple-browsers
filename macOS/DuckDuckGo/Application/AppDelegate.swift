@@ -1296,7 +1296,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
-            )
+            ),
+            settings: keyValueStore.throwingKeyedStoring()
         )
 
         let onboardingManager = onboardingContextualDialogsManager

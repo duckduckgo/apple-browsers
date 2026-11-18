@@ -188,7 +188,7 @@ extension XCUIApplication {
         dismissAddressBarEditing(file: file, line: line)
         browserWindow.buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(in: self, file: file, line: line)
         XCTAssertTrue(
-            browserWindow.buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.elementExistence),
+            browserWindow.buttons["TabSwitcher.Button.Done"].waitForHittableInAppWindow(in: self, timeout: UITestTimeouts.navigation),
             "Tab switcher did not appear.", file: file, line: line)
     }
 
@@ -217,7 +217,7 @@ extension XCUIApplication {
         let tabs = collection.cells.matching(NSPredicate(format: "identifier BEGINSWITH %@", "TabSwitcher.Tab."))
         let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == %d", count), object: tabs)
         XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.elementExistence), .completed,
+            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation), .completed,
             "Expected \(count) tabs, found \(tabs.count).", file: file, line: line)
     }
 
@@ -285,8 +285,10 @@ extension XCUIElement {
         return (false, lastReason, passes)
     }
 
-    func tapWhenHittable(in application: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        let timeout = UITestTimeouts.elementExistence
+    func tapWhenHittable(in application: XCUIApplication,
+                         timeout: TimeInterval = UITestTimeouts.elementExistence,
+                         file: StaticString = #filePath,
+                         line: UInt = #line) {
         let startedAt = ProcessInfo.processInfo.systemUptime
         let observation = waitForAppWindowReadiness(in: application, timeout: timeout)
         let elapsed = ProcessInfo.processInfo.systemUptime - startedAt

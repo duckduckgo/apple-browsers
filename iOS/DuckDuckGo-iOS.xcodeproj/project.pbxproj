@@ -205,6 +205,7 @@
 		F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */; };
 		1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 028550FF94FC586352ECCAB2 /* UITestingSupport */; };
 		F486D31D2506980E002D07D7 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F486D31C2506980E002D07D7 /* Swifter */; };
+		9C37B55E8694CE00EAC8DF25 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = 005EA9165C9636A4E0BD4261 /* Swifter */; };
 		F486D33425069BBB002D07D7 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F486D33325069BBB002D07D7 /* Kingfisher */; };
 		F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3352506A037002D07D7 /* OHHTTPStubs */; };
 		F486D3382506A225002D07D7 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3372506A225002D07D7 /* OHHTTPStubsSwift */; };
@@ -937,6 +938,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A91A00033031000100000003 /* UITestingSupport in Frameworks */,
+				9C37B55E8694CE00EAC8DF25 /* Swifter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1143,6 +1145,7 @@
 			name = "UI Tests";
 			packageProductDependencies = (
 				A91A00023031000100000002 /* UITestingSupport */,
+				005EA9165C9636A4E0BD4261 /* Swifter */,
 			);
 			productName = "UI Tests";
 			productReference = 7F6EEC9D78144B7DA2E63C91 /* UI Tests.xctest */;
@@ -5725,6 +5728,11 @@
 			productName = UITestingSupport;
 		};
 		F486D31C2506980E002D07D7 /* Swifter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */;
+			productName = Swifter;
+		};
+		005EA9165C9636A4E0BD4261 /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */;
 			productName = Swifter;

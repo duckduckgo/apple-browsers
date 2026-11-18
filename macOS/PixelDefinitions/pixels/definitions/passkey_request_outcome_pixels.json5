@@ -7,6 +7,7 @@
         "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             {
                 "key": "style",
                 "type": "string",
@@ -33,6 +34,7 @@
         "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             {
                 "key": "style",
                 "type": "string",
@@ -59,6 +61,7 @@
         "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             {
                 "key": "style",
                 "type": "string",
@@ -87,13 +90,13 @@
         "owners": ["diegoreymendez"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "passkey_stuck_macos": {
         "description": "The user asked for the passkey sheet on a web page and the system refused it instantly because another passkey request from the app is still open, which is what passkeys being stuck looks like. Refused passkey suggestions in sign-in fields don't fire, since they also happen once in a while without being stuck.",
         "owners": ["diegoreymendez"],
         "triggers": ["exception"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     }
 }

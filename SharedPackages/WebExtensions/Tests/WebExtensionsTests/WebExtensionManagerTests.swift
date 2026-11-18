@@ -2563,6 +2563,47 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
     }
 
+    @MainActor
+    func testWhenPermissionEnforcementIsTurnedOnAndOff_ThenThePermissionControllerFollows() {
+        var isEnforcementEnabled = false
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
+                                          isPermissionEnforcementEnabled: { isEnforcementEnabled },
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock)
+        XCTAssertNil(manager.permissionController)
+
+        isEnforcementEnabled = true
+        XCTAssertNotNil(manager.permissionController)
+
+        isEnforcementEnabled = false
+        XCTAssertNil(manager.permissionController)
+    }
+
+    @MainActor
+    func testWhenNativeMessagingIsTurnedOnAndOff_ThenTheNativeMessagingHandlerFollows() {
+        var isNativeMessagingEnabled = false
+        let host = SlowStartingNativeMessagingHandler(startupDelay: .zero)
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          nativeMessagingHandler: host,
+                                          isNativeMessagingEnabled: { isNativeMessagingEnabled })
+        XCTAssertNil(manager.nativeMessagingHandler)
+
+        isNativeMessagingEnabled = true
+        XCTAssertTrue(manager.nativeMessagingHandler === host)
+
+        isNativeMessagingEnabled = false
+        XCTAssertNil(manager.nativeMessagingHandler)
+    }
+
     /// Without the permissions system nothing is granted, so no extension can take over autofill.
     @MainActor
     func testWhenThereIsNoPermissionController_ThenNoExtensionCanTakeOverAutofill() async throws {

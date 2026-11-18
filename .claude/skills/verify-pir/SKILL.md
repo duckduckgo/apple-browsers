@@ -1,45 +1,38 @@
 ---
 name: verify-pir
-description: Run a live Personal Information Removal broker scan, and optionally the opt-out, on the iOS app through its debug server, built on verify-ios. Invoke explicitly; it submits real broker requests, and an opt-out needs a person to set up the subscription.
+description: Run a live PIR broker scan and optional opt-out through the shared debug API on iOS or macOS. Supports supplied subscription service tokens for unattended captcha and email flows. Invoke explicitly because it submits real broker requests.
 disable-model-invocation: true
 ---
 
 # verify-pir
 
-Checks that the scan and opt-out flows work correctly against a live broker. The proof scans one exact broker with a
-test profile and, unless the run is scan-only, completes the opt-out for one matched record. It starts each job
-through the PIR debug server (`POST /api/debug/...`), which runs scans and opt-outs independently of the scheduler, so a failure points at the broker flow itself, not at when or whether the scheduler
-picked the job up. That is why it lives apart from verify-ios proofs, which act like a user. It does not verify the PIR
-dashboard, profile editor, production scheduler or their entry points; report those as unverified when relevant.
+Run one broker against a test profile on iOS or macOS. The standalone Python runner starts jobs through the PIR debug
+API, checks their results and history, saves evidence, and stops its app or agent. It needs Python 3 and Xcode's command
+line tools. Builds and simulator operations use `xcodebuild` and `xcrun simctl` directly.
+It has no dependency on verify-ios, a UI runner, or a Python proof file.
 
-A confirmed opt-out proves the submission and confirmation flow only. Removal needs a later scan.
+This verifies the broker flow through the shared native `DebugModeRunner`. It does not verify the dashboard, profile
+editor, subscription sign-in, production scheduler or their entry points. Confirmed opt-out means submission and
+confirmation completed. Removal requires a later scan.
 
 ## 1. Choose the scenario
 
-Every scan result is a record the app's own matching (content-scope-scripts' broker protection: name with middle
-names and nicknames, age, address, phone) accepted for the profile. The proof does no matching of its own.
+- **Scan only**, `"optOut": false`: pass when the app matches at least one record. No match is inconclusive. Supply a
+  token if the broker's scan needs the captcha service.
+- **Scan and opt-out**, `"optOut": true`: scan, select one matched record, submit its opt-out and, when configured,
+  complete email confirmation. A supplied token removes the manual subscription login step.
 
-- **Scan only** (`"optOut": false`): pass when the app matches at least one record, with the opt-out reported as
-  unverified. Scans need no subscription, so nobody has to step in. A broker that shows a captcha during the scan may
-  still need one, because solving it goes through the backend.
-- **Scan and opt-out** (`"optOut": true`): scan, pick one matched record, pause for a person to set up the
-  subscription, then opt out that record. With one match it is picked; with several, `expectedFile` must name the
-  `profileUrl` to opt out, because opting out the wrong one would remove a stranger.
+Before submitting an opt-out, obtain the user's authorization for the broker, profile, selected record and scenario.
+An opt-out sends real broker requests and cannot be undone. A scan-only run can identify the record first. With several
+matches, `expectedFile` must name the exact `profileUrl` to select. The app performs profile matching; this runner does
+not implement another matcher.
 
-An opt-out sends real requests to a broker and cannot be undone. Before running one, confirm the broker, profile,
-record and scenario with the user, and use only ones they authorized for this attempt.
+## 2. Prepare inputs and credentials
 
-## 2. Prepare
-
-Get a current Debug app and runner with verify-ios: `.claude/skills/verify-ios/bin/verify-ios build` (or
-`build --app-only` after app changes). `prove` refuses a stale build.
-
-Write a configuration outside the checkout, one file per scenario, in a folder that lasts, such as
-`~/pir-proof/<broker>/`, not a session scratchpad: the report's rerun command points at it. Paths in it are relative
-to the file. Supply the
-complete broker JSON and the profile JSON accepted by `-pirProfileJSON`. `expectedFile` is optional:
-`{"profileUrl": "..."}` picks the record to opt out, and in a scan-only run checks that record was found. Take the URL
-from the scan results in a previous run's `pir-final-run.json` or `pir-http-*.json`. Keep credentials out of these files.
+Keep a configuration, complete broker JSON and profile JSON in a durable folder outside the checkout, such as
+`~/pir-runs/example/`. Paths in the configuration are relative to that file. The profile uses the `-pirProfileJSON`
+shape. `expectedFile` is optional and contains only `{"profileUrl": "..."}`. For scan-only runs it checks that the
+expected record was found.
 
 ```json
 {
@@ -51,55 +44,83 @@ from the scan results in a previous run's `pir-final-run.json` or `pir-http-*.js
   "subscriptionEnvironment": "staging",
   "pirEnvironment": "staging",
   "pirEndpoint": "https://dbp-staging.duckduckgo.com",
-  "checkpointTimeout": 900,
   "activityTimeout": 600,
   "emailTimeout": 300
 }
 ```
 
-A scan-only configuration needs only `brokerFile`, `profileFile` and `"optOut": false`; the other fields apply to the
-opt-out.
+A scan-only run without a token needs only `brokerFile`, `profileFile` and `"optOut": false`. A token-authenticated run
+also needs the environment and endpoint fields, including when scan-only. An opt-out needs `emailConfirmation` explicitly
+set to `true` or `false`.
 
-## 3. Run
+Supply an existing subscription service access token with `--token-file /local/path/to/token` or
+`--token-env ENVIRONMENT_VARIABLE_NAME`. The file contains only the token. Keep the token outside configuration and
+evidence files, and do not ask the user to paste it into chat. Existing staging test credentials, including the token
+used by `PRIVACYPRO_STAGING_ACCESS_TOKEN_V2`, can be supplied this way if still accepted by the backend. The issuer
+controls token lifetime; the runner does not mint tokens, extend expiry or refresh them.
+
+The credential is sent to a launch-bound, DEBUG-only local endpoint and used by the native captcha and email clients.
+It is not written to normal subscription storage. The configured PIR environment applies only to this debug runner.
+Token authentication requires matching subscription and PIR environments. Prerequisites report `credentialProvided`,
+which establishes credential injection, not server acceptance or a verified subscription entitlement. Backend
+authentication failures fail the flow. Reports identify token authentication and leave normal sign-in unverified.
+
+## 3. Build and run
+
+From the worktree root:
 
 ```sh
-export PIR_PROOF_INPUT=/absolute/path/to/config.json
-V=.claude/skills/verify-ios/bin/verify-ios
-$V check .claude/skills/verify-pir/pir.py
-$V prove .claude/skills/verify-pir/pir.py --devices iphone --no-video
+P=.claude/skills/verify-pir/pir.py
+python3 "$P" build --platform ios
+python3 "$P" run --platform ios --config ~/pir-runs/example/config.json \
+  --token-file /local/path/to/token --evidence-dir ~/pir-runs/evidence
 ```
 
-Run `prove` in the background and follow its output: a scan and opt-out can take many minutes, and the subscription
-pause alone can last up to `checkpointTimeout` seconds, longer than a foreground command may run. It prints each PIR
-history event as it happens. Keep `--no-video` unless the user asks for a recording, because the subscription step can
-show account details.
+Use `--platform macos` for the macOS PIR agent. Use `--device ipad` on the iOS build and run commands for an iPad run.
+Run each platform separately; success on one does not establish success on the other. The broker workflow and checks
+are shared, while native WebKit behavior and broker user agents can differ.
 
-## 4. Hand the subscription step to the user (opt-out only)
+`build` records the app's source fingerprint and executable hash. `run` rejects a stale or changed build. Each run uses
+an isolated debug launch and correlated server instance. iOS uses a dedicated simulator. macOS builds a private DEBUG
+browser bundle and launches only its embedded PIR agent, without starting production scheduling or registering a login
+item. Existing browser and agent processes stay running.
+Before a macOS build, the runner enables debug deployment with `scripts/toggle-macos-debug-deployment.sh on`, then builds
+the browser into a private deployment root under `DerivedData/verify-pir/macos/` and discovers its embedded PIR agent.
+It preserves unrelated local overrides, leaves `/Applications/DEBUG` intact, and does not change a saved simulator
+selection.
 
-After the scan, the proof prints an instruction with an acknowledge path and a cancel path. Pass the instruction to the
-user: in the simulator the proof opened, activate or restore the test subscription through Settings, without
-resetting or relaunching the app. When they say it is active, `touch` the acknowledge path; if they want to stop,
-`touch` the cancel path (the run ends inconclusive). Ctrl-C also cancels. No launch argument or fixture can grant a
-real PIR entitlement, which is why this step needs a person.
+Add `--check-config` to a run command to validate inputs without building, launching or submitting requests. Run long
+scans in the background and follow their printed history events. Tokens are excluded from saved HTTP responses and logs.
+No UI screenshots, recordings or foreground assertions are required.
 
-The proof then checks that the subscription is authenticated and entitled, and that the environments and endpoint match
-the configuration. Only then does it submit the picked result ID, poll the run, and check status and history events.
-With `emailConfirmation: true`, it waits for the confirmation link before continuing that result.
+## 4. Use interactive subscription setup only when requested
 
-## 5. Report
+For an iOS run that must use normal subscription authentication, replace the token option with
+`--interactive-subscription`. After the scan, pass the printed checkpoint instruction to the user. They activate or
+restore the test subscription in that same simulator, without resetting or relaunching. Acknowledge only after they
+report it ready, using the printed acknowledge path. The cancel path or Ctrl-C ends the attempt inconclusive.
+`checkpointTimeout` controls this wait and defaults to 900 seconds.
 
-Tell the user the verdict (pass, fail or inconclusive), the `report.md` path `prove` prints, any failed checks, the
-Unverified items, and whether the run was human-assisted. Evidence next to the report includes the exact broker bytes,
-input hashes, prerequisite snapshots, every debug-server HTTP response, and the app logs.
+This mode checks normal authentication and entitlement after acknowledgement. An opt-out without a supplied token or
+explicit interactive mode is rejected before launch. macOS unattended runs use supplied tokens; its agent has no
+subscription sign-in UI.
 
-Tests, no simulator: `python3 -m unittest discover -s .claude/skills/verify-pir/tests -p 'test_*.py'`.
+## 5. Report the result
 
-## Gotchas
+Report pass, fail or inconclusive, the printed `report.md` path, failed checks, cleanup problems and unverified items.
+The attempt folder also contains machine-readable results, build and launch identity, input hashes, the exact broker
+bytes, changed HTTP responses, final run state and application logs. It records a rerun command using credential
+references rather than secret values.
 
-- No matched record is inconclusive in both scenarios. Site, authentication, rate-limit, email and opt-out errors cannot turn
-  into a no-match pass.
-- Host observation covers browser traffic only, so PIR worker and backend traffic is listed as unverified.
-- The debug server listens on this worktree's debug server port and refuses mutations with another launch's
-  `X-PIR-Debug-Instance`. Do not run another debug client against a run in progress.
-- Cleanup stops the test app when the proof ends, including with `--keep`, which stops scans or opt-outs still
-  running. It cannot undo a request already submitted to a broker.
+No match remains inconclusive in either scenario. Site, rate-limit, captcha, authentication and email errors cannot
+become a successful empty scan. An accepted HTTP request is not job completion; the runner polls the same run ID and
+checks the selected result and history.
+
+Cleanup stops the owned app or agent even with `--keep`. That option preserves the simulator for inspection. Cleanup
+cannot undo a broker request already submitted. Do not run another debug client against an attempt in progress.
+
+Tests without a simulator or live backend:
+
+```sh
+python3 -m unittest discover -s .claude/skills/verify-pir/tests -p 'test_*.py'
+```

@@ -72,6 +72,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
     public let featureFlagger: DBPFeatureFlagging
     public let wideEvent: WideEventManaging?
+    /// Shared by every job, so scheduled and assisted runs see which records the other is working on.
     public let runningAssistedOptOuts: RunningAssistedOptOuts
     public let contentBlocking: DBPWebViewContentBlocking?
     public let isAuthenticatedUserProvider: () async -> Bool

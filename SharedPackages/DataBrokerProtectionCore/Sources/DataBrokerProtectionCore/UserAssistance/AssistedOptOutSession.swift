@@ -21,6 +21,8 @@ import Foundation
 import WebKit
 
 @MainActor
+/// One assisted opt-out from the moment its window opens until it closes. The window observes it, and the running
+/// opt-out reports each action to it so it knows whose turn it is on the broker page.
 public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObserving, Identifiable {
     public let id: AssistedOptOutID
     public let broker: AssistedOptOut.DataBroker
@@ -30,6 +32,7 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
     @Published public private(set) var currentStepIndex = 0
     @Published public private(set) var webView: WKWebView?
 
+    /// Whether the attempt's window is in front, meaning the user is looking at it.
     @Published public var isWindowKey = false
 
     var onBeginRequested: ((AssistedOptOutSession) -> Void)?
@@ -71,6 +74,7 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
                               step: step)
     }
 
+    /// Called when the user presses start in the window.
     public func begin() {
         guard phase == .ready, !isCancelled else { return }
         startedAt = now()
@@ -79,6 +83,7 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
         onBeginRequested?(self)
     }
 
+    /// Called when the user stops the attempt. The queue then cancels it.
     public func requestCancel() {
         guard !isCancelled, phase != .submitted else { return }
         isCancelled = true

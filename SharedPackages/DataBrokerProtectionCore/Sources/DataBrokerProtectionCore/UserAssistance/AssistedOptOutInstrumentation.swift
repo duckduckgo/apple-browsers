@@ -18,11 +18,13 @@
 
 import Foundation
 
+/// How an assisted attempt ended. `cancelled` covers the user closing the window as well as the app stopping it.
 public enum AssistedOptOutOutcome: String, Sendable {
     case submitted, cancelled, timedOut, failed
 }
 
 @MainActor
+/// Reports how long assisted attempts take and how much of that time the user spends on their part.
 public protocol AssistedOptOutInstrumentation {
     func started()
     func reachedUserTurn(after duration: TimeInterval)

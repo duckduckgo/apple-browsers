@@ -52,7 +52,7 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", revision: "1e79c93394352b28feaa710ab1166a75ae9ae0a7"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", revision: "60b66d00edb9fcbbdee447e8d548d973c029f07c"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),

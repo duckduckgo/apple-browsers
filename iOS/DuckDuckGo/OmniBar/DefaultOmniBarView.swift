@@ -973,7 +973,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 setFieldBackgroundColor(.clear)
             }
 
-            searchAreaContainerView.setNeedsLayout()
+            // The host was just re-parented, so the trailing buttons must be laid out before their
+            // visibility next changes. A deferred layout leaves a button shown later on top of its neighbour.
+            searchAreaContainerView.layoutIfNeeded()
         }
     }
 

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Subscription
 
 /// What the ending answers when a path asks for the next dialog.
 enum OnboardingEndingDecision: Equatable {
@@ -29,12 +30,12 @@ enum OnboardingEndingDecision: Equatable {
 final class OnboardingEndingSteps {
 
     private let progress: ContextualOnboardingProgressReading
-    private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
+    private let subscriptionManager: any SubscriptionManager
 
     init(progress: ContextualOnboardingProgressReading,
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling) {
+         subscriptionManager: any SubscriptionManager) {
         self.progress = progress
-        self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
+        self.subscriptionManager = subscriptionManager
     }
 
     /// Called when a path reaches the end.
@@ -60,6 +61,7 @@ final class OnboardingEndingSteps {
     }
 
     private func afterHighFive() -> ContextualOnboardingDecision {
-        subscriptionUpsellExperiment.isEligible ? .next(.subscriptionUpsell) : .completed
+        subscriptionManager.isSubscriptionPurchaseEligible && !subscriptionManager.isUserAuthenticated
+            ? .next(.subscriptionUpsell) : .completed
     }
 }

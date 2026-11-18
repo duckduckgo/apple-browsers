@@ -16,20 +16,22 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import Networking
 @_spi(Testing) import Persistence
+import SubscriptionTestingUtilities
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 struct OnboardingEndingStepsTests {
 
-    let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
+    let subscriptionManager = SubscriptionManagerMock.notUpsellEligible()
     let progress = ContextualOnboardingProgress(storage: MockContextualDialogStateStoring(),
                                                 settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
     let sut: OnboardingEndingSteps
 
     init() {
-        sut = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: experiment)
+        sut = OnboardingEndingSteps(progress: progress, subscriptionManager: subscriptionManager)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -52,7 +54,7 @@ struct OnboardingEndingStepsTests {
           arguments: [(true, ContextualOnboardingDecision.next(.subscriptionUpsell)),
                       (false, .completed)])
     func afterHighFive(isEligible: Bool, expected: ContextualOnboardingDecision) {
-        experiment.isEligible = isEligible
+        subscriptionManager.hasAppStoreProductsAvailable = isEligible
         progress.markSeen(.highFive)
 
         #expect(sut.decisionForNextDialog() == .decided(expected))
@@ -60,9 +62,19 @@ struct OnboardingEndingStepsTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("After High Five, a signed-in subscriber completes onboarding", .timeLimit(.minutes(1)))
+    func afterHighFiveSubscriberCompletes() {
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        progress.markSeen(.highFive)
+
+        #expect(sut.gotItPressed(after: .highFive) == .completed)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Once the upsell was seen, onboarding completes", .timeLimit(.minutes(1)))
     func upsellSeenCompletes() {
-        experiment.isEligible = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         progress.markSeen(.highFive)
         progress.markSeen(.subscriptionUpsell)
 

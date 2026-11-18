@@ -20,7 +20,9 @@ import XCTest
 import Testing
 import SharedTestUtilities
 import PrivacyDashboard
+import SubscriptionTestingUtilities
 @_spi(Testing) import Persistence
+import Subscription
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -30,20 +32,20 @@ class ContextualDialogsManagerTests {
     var stateStorage: MockContextualDialogStateStoring!
     var searchPathStorage: MockBlockedTrackerStoring!
     let store = InMemoryThrowingKeyValueStore()
-    var subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling!
+    var subscriptionManager: SubscriptionManagerMock!
     let expectation = XCTestExpectation()
 
     init() {
         stateStorage = MockContextualDialogStateStoring()
         searchPathStorage = MockBlockedTrackerStoring()
         trackerProvider = MockTrackerMessageProvider(expectation: expectation)
-        subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
+        subscriptionManager = .notUpsellEligible()
         manager = makeManager()
     }
 
     private func makeManager() -> ContextualDialogsManager {
         .withSearchPath(trackerMessageProvider: trackerProvider,
-                        subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                        subscriptionManager: subscriptionManager,
                         stateStorage: stateStorage,
                         searchPathStorage: searchPathStorage,
                         settings: store.throwingKeyedStoring())
@@ -68,7 +70,7 @@ class ContextualDialogsManagerTests {
     @Test("Navigation after High Five advances to the upsell", .timeLimit(.minutes(1)),
           arguments: [26, 28, 30, 32])
     func testWhenHighFiveIsShownThenNavigationAdvancesToUpsell(contextualDialogsSeenKey: Int) async {
-        subscriptionUpsellExperiment.isEligible = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         manager.state = .ongoing
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let tab = await Tab(content: .newtab)
@@ -92,7 +94,7 @@ class ContextualDialogsManagerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Eligible users get the one-shot upsell queued after High Five", .timeLimit(.minutes(1)))
     func testWhenEligibleUserCompletesHighFiveThenUpsellIsQueued() {
-        subscriptionUpsellExperiment.isEligible = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         manager.state = .ongoing
         manager.lastDialog = .highFive
 
@@ -132,7 +134,7 @@ class ContextualDialogsManagerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Navigation away from a shown upsell completes onboarding", .timeLimit(.minutes(1)))
     func testWhenNavigatingAwayFromUpsellThenOnboardingCompletes() async {
-        subscriptionUpsellExperiment.isEligible = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         manager.state = .ongoing
         manager.lastDialog = .highFive
         manager.gotItPressed()
@@ -146,7 +148,7 @@ class ContextualDialogsManagerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Relaunch after the upsell was queued does not show it again", .timeLimit(.minutes(1)))
     func testWhenRelaunchingAfterUpsellWasQueuedThenOnboardingCompletes() async {
-        subscriptionUpsellExperiment.isEligible = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         manager.state = .ongoing
         manager.lastDialog = .highFive
         manager.gotItPressed()
@@ -486,8 +488,14 @@ class MockTrackerMessageProvider: TrackerMessageProviding {
     }
 }
 
-class SpyOnboardingSubscriptionUpsellEnrolling: OnboardingSubscriptionUpsellEnrolling {
-    var isEligible = false
+extension SubscriptionManagerMock {
+    /// App Store products unavailable, so the user can't buy and the onboarding upsell isn't offered.
+    /// Tests set `hasAppStoreProductsAvailable = true` to make the user eligible.
+    static func notUpsellEligible() -> SubscriptionManagerMock {
+        let mock = SubscriptionManagerMock()
+        mock.hasAppStoreProductsAvailable = false
+        return mock
+    }
 }
 
 class MockContextualDialogStateStoring: ContextualOnboardingStateStoring {
@@ -505,18 +513,18 @@ class MockBlockedTrackerStoring: BlockedTrackerStoring {
 extension ContextualDialogsManager {
     /// The manager with the real search path, backed by storage the test controls instead of UserDefaults.
     static func withSearchPath(trackerMessageProvider: TrackerMessageProviding,
-                               subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+                               subscriptionManager: any SubscriptionManager,
                                stateStorage: ContextualOnboardingStateStoring,
                                searchPathStorage: BlockedTrackerStoring,
                                settings: any ThrowingKeyedStoring<ContextualOnboardingSettings>) -> ContextualDialogsManager {
         ContextualDialogsManager(trackerMessageProvider: trackerMessageProvider,
-                                 subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                 subscriptionManager: subscriptionManager,
                                  stateStorage: stateStorage,
                                  settings: settings,
                                  makePath: { _, progress in
                                      SearchOnboardingPath(progress: progress,
                                                           storage: searchPathStorage,
-                                                          subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                          subscriptionManager: subscriptionManager,
                                                           trackerMessageProvider: trackerMessageProvider)
                                  })
     }

@@ -18,6 +18,7 @@
 
 import Foundation
 @_spi(Testing) import Persistence
+import SubscriptionTestingUtilities
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -28,7 +29,7 @@ struct SearchOnboardingPathTests {
 
     let storage = MockContextualDialogStateStoring()
     let pathStorage = MockBlockedTrackerStoring()
-    let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
+    let subscriptionManager = SubscriptionManagerMock.notUpsellEligible()
     let trackerProvider = MockTrackerMessageProvider()
     let progress: ContextualOnboardingProgress
     let sut: SearchOnboardingPath
@@ -37,7 +38,7 @@ struct SearchOnboardingPathTests {
         progress = ContextualOnboardingProgress(storage: storage, settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
         sut = SearchOnboardingPath(progress: progress,
                                    storage: pathStorage,
-                                   subscriptionUpsellExperiment: experiment,
+                                   subscriptionManager: subscriptionManager,
                                    trackerMessageProvider: trackerProvider)
     }
 
@@ -53,7 +54,7 @@ struct SearchOnboardingPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Once High Five was seen, the ending decides before the tab's own rules", .timeLimit(.minutes(1)))
     func endingDecidesFirst() async {
-        experiment.isEligible = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         progress.markSeen(.highFive)
         let tab = await Tab(content: .newtab)
 
@@ -124,7 +125,7 @@ struct SearchOnboardingPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Got it on High Five and the upsell is handled by the ending", .timeLimit(.minutes(1)))
     func gotItOnEndingDialogs() {
-        experiment.isEligible = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
 
         #expect(sut.gotItPressed(lastDialog: .highFive) == .next(.subscriptionUpsell))
         #expect(sut.gotItPressed(lastDialog: .subscriptionUpsell) == .completed)

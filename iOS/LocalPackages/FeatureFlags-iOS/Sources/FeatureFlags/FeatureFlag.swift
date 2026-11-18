@@ -701,7 +701,7 @@ public enum FeatureFlag: String {
 
     /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
     /// Internal-only for the first version.
-    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
 }
 

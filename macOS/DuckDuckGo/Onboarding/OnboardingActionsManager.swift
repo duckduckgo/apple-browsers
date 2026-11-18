@@ -122,6 +122,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    /// Read on submit: the remote settings aren't ready when the onboarding scripts are created.
+    private let aiChatURL: () -> URL
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
@@ -263,6 +265,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        aiChatURL: @escaping () -> URL = { AIChatRemoteSettings().aiChatURL },
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
@@ -276,6 +279,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.aiChatURL = aiChatURL
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
@@ -310,13 +314,21 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     func submitQuery(_ query: OnboardingUserScript.SubmitQuery) {
+        let text = query.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Nothing to search or send: leave onboarding as without the junction.
+        guard !text.isEmpty else {
+            goToAddressBar()
+            return
+        }
         switch query.mode {
         case .search:
             // Before the tab changes, so the results page already gets the search path's dialogs.
             pathStarter.startPath(.search)
-            _ = leaveOnboarding(content: .url(URL.makeSearchUrl(from: query.query) ?? .duckDuckGo, source: .ui))
+            _ = leaveOnboarding(content: .url(URL.makeSearchUrl(from: text) ?? .duckDuckGo, source: .ui))
         case .duckAi:
-            break
+            // After the tab changes: the Duck.ai path will lock the UI, and a locked window can't replace its tab.
+            _ = leaveOnboarding(content: .aiChat(AIChatURLParameters.desktopOnboardingPromptURL(from: aiChatURL(), prompt: text)))
+            pathStarter.startPath(.duckAI)
         }
     }
 

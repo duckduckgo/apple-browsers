@@ -21,8 +21,11 @@ import Foundation
 
 final class CapturingPathStarter: ContextualOnboardingPathStarting {
     private(set) var startedPaths: [ContextualOnboardingPathKind] = []
+    /// Lets a test check what else had happened when the path started.
+    var onStart: ((ContextualOnboardingPathKind) -> Void)?
 
     func startPath(_ kind: ContextualOnboardingPathKind) {
         startedPaths.append(kind)
+        onStart?(kind)
     }
 }

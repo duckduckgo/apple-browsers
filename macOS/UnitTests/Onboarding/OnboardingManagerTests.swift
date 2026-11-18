@@ -83,6 +83,7 @@ class OnboardingManagerTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
+            aiChatURL: { URL(string: "https://duckduckgo.com/?ia=chat&duckai=5")! },
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
@@ -234,15 +235,50 @@ class OnboardingManagerTests: XCTestCase {
         // Given
         let isOnboardingFinished = UserDefaultsWrapper(key: .onboardingFinished, defaultValue: true)
         isOnboardingFinished.wrappedValue = false
+        var tabReplacedWhenPathStarted: Bool?
+        pathStarter.onStart = { [navigationDelegate] _ in tabReplacedWhenPathStarted = navigationDelegate?.replaceTabCalled }
 
         // When
         manager.submitQuery(.init(mode: .search, query: "best pizza", source: .typed))
 
         // Then
         XCTAssertEqual(pathStarter.startedPaths, [.search])
+        XCTAssertEqual(tabReplacedWhenPathStarted, false)
         XCTAssertEqual(navigationDelegate.tab?.url, URL.makeSearchUrl(from: "best pizza"))
         XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
         XCTAssertTrue(isOnboardingFinished.wrappedValue)
+    }
+
+    func testSubmitQuery_DuckAI_OpensDuckAIInOnboardingModeThenStartsDuckAIPath() throws {
+        // Given
+        let isOnboardingFinished = UserDefaultsWrapper(key: .onboardingFinished, defaultValue: true)
+        isOnboardingFinished.wrappedValue = false
+        var tabReplacedWhenPathStarted: Bool?
+        pathStarter.onStart = { [navigationDelegate] _ in tabReplacedWhenPathStarted = navigationDelegate?.replaceTabCalled }
+
+        // When
+        manager.submitQuery(.init(mode: .duckAi, query: "Plan a day in London", source: .suggestion))
+
+        // Then
+        guard case .aiChat(let url, _) = navigationDelegate.tab?.content else {
+            return XCTFail("Expected a Duck.ai tab")
+        }
+        let queryItems = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "Plan a day in London")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "flow", value: "desktop-app-onboarding")))
+        XCTAssertEqual(pathStarter.startedPaths, [.duckAI])
+        XCTAssertEqual(tabReplacedWhenPathStarted, true)
+        XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
+        XCTAssertTrue(isOnboardingFinished.wrappedValue)
+    }
+
+    func testSubmitQuery_EmptyQuery_LeavesOnboardingWithoutStartingAPath() {
+        // When
+        manager.submitQuery(.init(mode: .duckAi, query: "   ", source: .typed))
+
+        // Then
+        XCTAssertTrue(pathStarter.startedPaths.isEmpty)
+        XCTAssertEqual(navigationDelegate.tab?.url, URL.duckDuckGo)
     }
 
     func testSubmitQuery_Search_DoesNotFocusAddressBar() {

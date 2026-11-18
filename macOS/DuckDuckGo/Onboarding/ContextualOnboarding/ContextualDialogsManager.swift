@@ -155,6 +155,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
                 return SearchOnboardingPath(progress: progress,
                                             subscriptionUpsellExperiment: subscriptionUpsellExperiment,
                                             trackerMessageProvider: trackerMessageProvider)
+            case .duckAI:
+                return DuckAIOnboardingPath()
             }
         }
         // Compares the raw value, as before: an unreadable saved value counts as not completed here.
@@ -203,6 +205,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .search:
             // The user has just searched from the junction, so Try a search is skipped.
             progress.markSeen(.tryASearch)
+        case .duckAI:
+            break
         }
     }
 

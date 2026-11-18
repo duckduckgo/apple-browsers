@@ -536,7 +536,7 @@ class MockBlockedTrackerStoring: BlockedTrackerStoring {
 }
 
 extension ContextualDialogsManager {
-    /// The manager with the real search path, backed by storage the test controls instead of UserDefaults.
+    /// The manager with the real paths, the search path backed by storage the test controls instead of UserDefaults.
     static func withSearchPath(trackerMessageProvider: TrackerMessageProviding,
                                subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
                                stateStorage: ContextualOnboardingStateStoring,
@@ -546,11 +546,16 @@ extension ContextualDialogsManager {
                                  subscriptionUpsellExperiment: subscriptionUpsellExperiment,
                                  stateStorage: stateStorage,
                                  settings: settings,
-                                 makePath: { _, progress in
-                                     SearchOnboardingPath(progress: progress,
-                                                          storage: searchPathStorage,
-                                                          subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                                          trackerMessageProvider: trackerMessageProvider)
+                                 makePath: { kind, progress in
+                                     switch kind {
+                                     case .search:
+                                         SearchOnboardingPath(progress: progress,
+                                                              storage: searchPathStorage,
+                                                              subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                              trackerMessageProvider: trackerMessageProvider)
+                                     case .duckAI:
+                                         DuckAIOnboardingPath()
+                                     }
                                  })
     }
 }

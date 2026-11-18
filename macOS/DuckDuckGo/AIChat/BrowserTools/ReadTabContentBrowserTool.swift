@@ -26,7 +26,6 @@ final class ReadTabContentBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.readTabContent`, which is how the catalog gates it.
     let name = "readTabContent"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "Duck.ai wants to read this tab's content."
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -90,7 +89,7 @@ final class ReadTabContentBrowserTool: BrowserTool {
         let fullContentLength = value["fullContentLength"]?.intValue ?? 0
         return .success([
             "title": .string(BrowserToolOutputLimits.clip(value["title"]?.stringValue ?? "", to: BrowserToolOutputLimits.title)),
-            "url": .string(BrowserToolOutputLimits.clip(value["url"]?.stringValue ?? "", to: BrowserToolOutputLimits.url)),
+            "url": .string(BrowserToolOutputLimits.redactedURL(value["url"]?.stringValue ?? "")),
             "content": .string(clippedContent),
             "truncated": .bool(value["truncated"]?.boolValue == true || clippedContent != content),
             "fullContentLength": .int(max(fullContentLength, content.unicodeScalars.count)),

@@ -20,10 +20,8 @@
 import DesignResourcesKit
 import SwiftUI
 
+/// The focused layer's own content over the redesigned New Tab Page.
 struct RedesignedFocusedSearchModulesView: View {
-    let favoritesModel: FavoritesViewModel?
-    let messagesModel: NewTabPageMessagesModel?
-    var showsSearchModules = true
     var recentChats: SuggestionsListViewModel?
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -36,17 +34,11 @@ struct RedesignedFocusedSearchModulesView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
-                    RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(height: showsSearchModules ? nil : 0)
-                        .opacity(showsSearchModules ? 1 : 0)
-                        .allowsHitTesting(showsSearchModules)
-                        .accessibilityHidden(!showsSearchModules)
                     if let escapeHatch {
                         RedesignedEscapeHatchView(model: escapeHatch)
                             .modifier(EmbeddedEscapeHatchGeometryReader())
                             .frame(maxWidth: .infinity)
-                            .padding(.top, hatchTopPadding)
+                            .padding(.top, RedesignedNewTabPageModulesView.topPadding)
                             .padding(.horizontal, 16)
                     }
                     if let recentChats {
@@ -54,20 +46,12 @@ struct RedesignedFocusedSearchModulesView: View {
                             if let syncPromo {
                                 syncPromo
                             }
-                            LegacyRecentChatsView(viewModel: recentChats, isAddressBarAtBottom: isAddressBarAtBottom)
+                            LegacyRecentChatsView(viewModel: recentChats, isAddressBarAtBottom: isAddressBarAtBottom, usesCardSurface: true)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, FocusedChromeView.Metrics.bottomInset)
                     }
-                    if let messagesModel {
-                        RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
-                            .frame(height: showsSearchModules ? nil : 0)
-                            .opacity(showsSearchModules ? 1 : 0)
-                            .allowsHitTesting(showsSearchModules)
-                            .accessibilityHidden(!showsSearchModules)
-                    }
                 }
-                .animation(nil, value: showsSearchModules)
                 .animation(nil, value: recentChats != nil)
                 .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
                 .modifier(FocusedContentTopInset(topInset: contentTopInset,
@@ -82,10 +66,5 @@ struct RedesignedFocusedSearchModulesView: View {
             .modifier(FocusedContentVerticalBounce(isEnabled: usesScrollableEscapeHatch))
             .scrollDismissesKeyboardIfAvailable()
         }
-    }
-
-    private var hatchTopPadding: CGFloat {
-        guard !showsSearchModules else { return 0 }
-        return RedesignedNewTabPageModulesView.topPadding
     }
 }

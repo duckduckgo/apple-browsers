@@ -29,12 +29,14 @@ final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
 
     var viewController: UIViewController { hostingController }
 
-    init(id: NewTabPageBlockID, rootView: Content) {
+    /// - Parameter usesLiquidGlass: Draws the block's redesigned surfaces as Liquid Glass, like the search input.
+    init(id: NewTabPageBlockID, rootView: Content, usesLiquidGlass: Bool = false) {
         self.id = id
 
         // The page already positions blocks inside its own safe area, so a hosting controller
         // applying the safe area again would inset the block a second time.
-        hostingController = UIHostingController(rootView: NewTabPageBlockContent(content: rootView), ignoreSafeArea: true)
+        hostingController = UIHostingController(rootView: NewTabPageBlockContent(content: rootView, usesLiquidGlass: usesLiquidGlass),
+                                                ignoreSafeArea: true)
         hostingController.view.backgroundColor = .clear
         if #available(iOS 16.0, *) {
             // The UIKit stack must resize when SwiftUI content changes, including See All/See Less.
@@ -52,10 +54,12 @@ final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
 
 private struct NewTabPageBlockContent<Content: View>: View {
     let content: Content
+    let usesLiquidGlass: Bool
     var onHeightChanged: (() -> Void)?
 
     var body: some View {
         content
+            .environment(\.redesignedNewTabPageUsesLiquidGlass, usesLiquidGlass)
             .fixedSize(horizontal: false, vertical: true)
             .background {
                 GeometryReader { geometry in

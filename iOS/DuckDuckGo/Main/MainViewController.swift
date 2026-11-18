@@ -181,7 +181,6 @@ class MainViewController: UIViewController {
     var isAddressBarHandOffInProgress = false
     var isPerformingOnboardingInputHandoff = false
     var isPresentingNewTabInputDirectly = false
-    var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private let daxGreetingActivity: DaxGreetingActivityStore?
     lazy var daxGreetingService = DaxGreetingServiceFactory.makeService(
@@ -1516,8 +1515,12 @@ class MainViewController: UIViewController {
     private var remoteMessageSurfaceRoot: UIViewController? {
         if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
             // The focused NTP stays mounted even while Duck.ai or suggestions cover it.
-            guard coordinator.inputMode == .search,
-                  coordinator.contentViewController.isShowingFavoritesContent else { return nil }
+            guard coordinator.inputMode == .search else { return nil }
+            if coordinator.contentViewController.usesRedesignedNewTabPageLayout {
+                // The redesigned page draws its own messages beneath the focused input.
+                return coordinator.contentViewController.isShowingRedesignedSearchModules ? newTabPageViewController : nil
+            }
+            guard coordinator.contentViewController.isShowingFavoritesContent else { return nil }
             return coordinator.contentViewController
         }
         guard !isModeToggleInAIChatMode else { return nil }
@@ -2982,7 +2985,6 @@ class MainViewController: UIViewController {
         newTabPagePresentation.cancel()
         isAfterIdlePresentationPending = false
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
-        restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
@@ -9888,8 +9890,6 @@ extension MainViewController {
         // Unrelated trait changes must preserve that hierarchy.
         if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle
             || traitCollection.accessibilityContrast != previousTraitCollection?.accessibilityContrast {
-            // A raster captured before editing cannot follow a later appearance change.
-            restingNewTabPageSnapshot = nil
             refreshSettledFloatingGlassAppearance()
         }
         updateFindInPage()

@@ -112,6 +112,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             guard oldValue != redesignedFocusedSurface else { return }
             unifiedSuggestionsHost?.setRedesignedFocusedSurface(redesignedFocusedSurface)
             if (oldValue == .newTabPage) != usesRedesignedNewTabPageLayout, isViewLoaded {
+                applyBackgroundColor()
                 view.setNeedsLayout()
                 applyRequestedContentInset()
             }
@@ -119,6 +120,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     var usesRedesignedNewTabPageLayout: Bool { redesignedFocusedSurface == .newTabPage }
+
+    /// Called when the redesigned search modules should appear or disappear.
+    var onRedesignedSearchModulesVisibilityChange: ((Bool) -> Void)? {
+        didSet { unifiedSuggestionsHost?.onSearchModulesVisibilityChange = onRedesignedSearchModulesVisibilityChange }
+    }
+
+    var isShowingRedesignedSearchModules: Bool { unifiedSuggestionsHost?.isShowingRedesignedSearchModules ?? false }
 
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
@@ -586,8 +594,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.updateLayoutForCurrentOrientation()
     }
 
+    private func applyBackgroundColor() {
+        view.backgroundColor = usesRedesignedNewTabPageLayout ? .clear : Metrics.backgroundColor
+    }
+
     private func setupView() {
-        view.backgroundColor = Metrics.backgroundColor
+        applyBackgroundColor()
         setUpContentContainer()
         setUpSwipeDownGesture()
         modeSwitchSwipeController.install(on: view)
@@ -729,6 +741,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let host = UnifiedSuggestionsHost(config: config, usesScrollableEscapeHatch: usesScrollableEscapeHatch)
         host.setEscapeHatch(escapeHatchModel)
         host.setRedesignedFocusedSurface(redesignedFocusedSurface)
+        host.onSearchModulesVisibilityChange = onRedesignedSearchModulesVisibilityChange
         host.onContentChanged = { [weak self] in
             self?.updateFocusedContent()
             self?.refreshVisibleContent(animateContentUpdates: true)
@@ -762,6 +775,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.start(in: containerView,
                    parentViewController: self,
                    isFloatingUIEnabled: isFloatingUIEnabled,
+                   usesLiquidGlass: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
                    textPublisher: searchTextPublisher)
         host.setAdditionalTopInset(0)
         host.setIsFireTab(switchBarHandler.isFireTab)

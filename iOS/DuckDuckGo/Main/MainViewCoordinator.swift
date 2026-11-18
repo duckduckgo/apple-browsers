@@ -719,7 +719,9 @@ class MainViewCoordinator {
             case .omnibar:
                 self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             case .inlineInput:
-                self?.unifiedToggleInputContainer.alpha = 0
+                UIView.animateOnOwnTiming(duration: NewTabPageInputPresentation.inlineInputCardSwapDuration, options: .curveEaseOut) {
+                    self?.unifiedToggleInputContainer.alpha = 0
+                }
                 if self?.isFloatingUIEnabled == true {
                     self?.focusedStateBackground.alpha = 0
                 }

@@ -222,6 +222,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             lastStages[tabIdentifier] = eligible ? earlyStage(for: url) : nil
             if eligible && extensionIsLoaded { pendingCommits[tabIdentifier] = now() }
         case .tabClosed(let tabIdentifier):
+            // The marks of the closed page must not be taken by a page that commits next on the same URL.
+            if let page = committedPages[tabIdentifier] {
+                recentMarks.removeAll { $0.url.matchesCPMDashboardStatePage(page) }
+            }
             committedPages.removeValue(forKey: tabIdentifier)
             pendingCommits.removeValue(forKey: tabIdentifier)
             cannotBeAnsweredTabs.remove(tabIdentifier)
@@ -297,12 +301,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// The Debug simulation drops only the answers, so the marks of a simulated silent tab are still recorded.
     private func receiveProgress(url: URL, stage: CPMInitStage, extensionIdentifier: String?) {
         if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
-        let tabs = waitingTabs(showing: url)
-        guard !tabs.isEmpty else {
-            keepForCommit(RecentMark(url: url, stage: stage, date: now()))
-            return
-        }
-        tabs.forEach { raiseStage(of: $0, to: stage) }
+        // Kept for a page that commits next even when a tab already waits on this page: a reload or a second tab
+        // starts a new wait that this mark belongs to.
+        keepForCommit(RecentMark(url: url, stage: stage, date: now()))
+        waitingTabs(showing: url).forEach { raiseStage(of: $0, to: stage) }
     }
 
     private func raiseStage(of tabIdentifier: String, to stage: CPMInitStage) {

@@ -181,6 +181,26 @@ final class CPMMessagingHealthMonitorProgressTests: XCTestCase {
         XCTAssertEqual(pixels.reports, [Report(stage: nil, tabs: .one)])
     }
 
+    func testReloadOfAWaitingPageTakesTheMarkThatArrivesBeforeItsCommit() {
+        commit("a", path: "x")
+        advance(10)
+        mark(.backgroundReceived, path: "x")
+        commit("a", path: "x")
+        silence()
+
+        XCTAssertEqual(pixels.reports, [Report(stage: .backgroundReceived, tabs: .one)])
+    }
+
+    func testSecondTabOnAWaitingPageTakesTheMarkThatArrivesBeforeItsCommit() {
+        commit("a", path: "x")
+        advance(10)
+        mark(.configRead, path: "x")
+        commit("b", path: "x")
+        silence()
+
+        XCTAssertEqual(pixels.reports, [Report(stage: .configRead, tabs: .many), Report(stage: .configRead, tabs: .many)])
+    }
+
     func testMarkBeforeTheCommitOfAnotherPageIsNotTaken() {
         mark(.siteChecked, path: "other")
         commit("a", path: "a")

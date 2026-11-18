@@ -151,6 +151,7 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
 
     func startAssistedOptOut(id: String) {
         if #available(macOS 14.0, *) {
+            // The attempt window belongs to the background agent, so let it come in front of the browser.
             NSApp.yieldActivation(toApplicationWithBundleIdentifier: Bundle.main.dbpBackgroundAgentBundleId)
         }
         ipcClient.startAssistedOptOut(id: id)

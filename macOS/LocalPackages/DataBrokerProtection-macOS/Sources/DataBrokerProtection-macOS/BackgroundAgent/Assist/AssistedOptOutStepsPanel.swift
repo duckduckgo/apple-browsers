@@ -25,6 +25,7 @@ import SwiftUIExtensions
 enum AssistedOptOutStepState: Equatable {
     case done
     case running
+    /// A step only the user can do on the page, such as a CAPTCHA.
     case userTurn
     case upcoming
 
@@ -56,6 +57,7 @@ extension AssistedOptOutSession {
     }
 }
 
+/// The side panel of the attempt window. It lists the broker's steps with their progress and holds the Stop and close buttons.
 @MainActor
 struct AssistedOptOutStepsPanel: View {
     @Environment(\.designSystemPalette) private var palette

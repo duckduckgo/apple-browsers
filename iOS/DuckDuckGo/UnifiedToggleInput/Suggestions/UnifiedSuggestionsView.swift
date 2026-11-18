@@ -31,6 +31,8 @@ struct UnifiedSuggestionsView: View {
     var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    /// Draws the redesigned surfaces as Liquid Glass, like the focused input.
+    var usesLiquidGlass = false
     var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -46,6 +48,7 @@ struct UnifiedSuggestionsView: View {
             }
             fireLayer
         }
+        .environment(\.redesignedNewTabPageUsesLiquidGlass, usesLiquidGlass)
         // UIKit already bounds this host with its keyboard layout guide. Keep container
         // safe areas and the input-bar inset, without a second SwiftUI keyboard adjustment.
         .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -70,6 +73,9 @@ struct UnifiedSuggestionsView: View {
         }
     }
 
+    /// The escape hatch this layer draws. The page draws its own while its modules show beneath this layer.
+    private var focusedLayerEscapeHatch: EscapeHatchModel? { showsRedesignedSearchModules ? nil : escapeHatch }
+
     /// The active typing states (the search / duck.ai suggestion lists); recents and empty states aren't.
     private var isTypingList: Bool {
         if case .list(let kind) = viewModel.content { return kind == .search || kind == .duckAI }
@@ -83,17 +89,14 @@ struct UnifiedSuggestionsView: View {
         ZStack {
             listLayer
             if usesRedesignedNewTabPageLayout {
-                RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
-                                                   messagesModel: favoritesPresentation.viewController?.messagesModel,
-                                                   showsSearchModules: !usesScrollableEscapeHatch || showsRedesignedSearchModules,
-                                                   recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
-                                                   escapeHatch: escapeHatch,
+                RedesignedFocusedSearchModulesView(recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                                                   escapeHatch: focusedLayerEscapeHatch,
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom,
                                                    contentTopInset: viewModel.contentTopInset,
                                                    usesScrollableEscapeHatch: usesScrollableEscapeHatch,
                                                    onEscapeHatchGeometryChange: { viewModel.setEmbeddedEscapeHatchGeometry($0) })
-                    .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
+                    .background(usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsEmbeddedContent ? 1 : 0)
@@ -149,7 +152,8 @@ struct UnifiedSuggestionsView: View {
                                isAddressBarAtBottom: isAddressBarAtBottom,
                                isVisible: isShowingList,
                                isFadingOut: viewModel.isFadingOut,
-                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
+                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout,
+                               usesCardSurface: usesRedesignedNewTabPageLayout)
             .if(usesScrollableEscapeHatch) {
                 $0.safeAreaInset(edge: .top, spacing: 0) {
                     Color.clear.frame(height: viewModel.contentTopInset)
@@ -186,6 +190,7 @@ struct UnifiedSuggestionsView: View {
             let isFadingLogo = viewModel.logoModeChange?.isFadingOut == true
             let retainedSource = !usesRedesignedNewTabPageLayout && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
             let showsLogo = (isPreparingLogo || (viewModel.isShowingLogo && !isFadingLogo)) && !viewModel.isFireTab && !viewModel.isLandscape
+                && !usesRedesignedNewTabPageLayout
             let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil

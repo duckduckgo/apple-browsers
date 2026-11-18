@@ -40,8 +40,4 @@ final class FocusedFavoritesPresentation {
     func updateOpenedAfterIdle(_ openedAfterIdle: Bool) {
         cachedViewController?.setOpenedAfterIdle(openedAfterIdle)
     }
-
-    func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
-        cachedViewController?.hasAppearedRemoteMessage(withID: messageID) == true
-    }
 }

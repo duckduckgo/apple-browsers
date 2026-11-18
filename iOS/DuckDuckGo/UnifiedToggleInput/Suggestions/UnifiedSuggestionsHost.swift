@@ -63,6 +63,11 @@ final class UnifiedSuggestionsHost {
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
     var isShowingRedesignedSearchModules: Bool { showsRedesignedSearchModules }
+    /// Draws the redesigned surfaces as Liquid Glass, like the focused input.
+    private var usesLiquidGlass = false
+
+    /// Reports whether the redesigned search modules should show, as the input mode and text change.
+    var onSearchModulesVisibilityChange: ((Bool) -> Void)?
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         guard escapeHatch !== model else { return }
@@ -125,8 +130,10 @@ final class UnifiedSuggestionsHost {
     func start<P: Publisher>(in containerView: UIView,
                              parentViewController: UIViewController,
                              isFloatingUIEnabled: Bool = false,
+                             usesLiquidGlass: Bool = false,
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
+        self.usesLiquidGlass = usesLiquidGlass
 
         config.source.start(textPublisher: textPublisher.eraseToAnyPublisher())
 
@@ -147,6 +154,7 @@ final class UnifiedSuggestionsHost {
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
+            usesLiquidGlass: usesLiquidGlass,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
@@ -256,6 +264,7 @@ final class UnifiedSuggestionsHost {
                     guard let self else { return }
                     self.showsRedesignedSearchModules = showsSearchModules
                     self.rebuildRootView()
+                    self.onSearchModulesVisibilityChange?(showsSearchModules)
                     self.onContentChanged?()
                 }
         } else {
@@ -640,16 +649,14 @@ final class UnifiedSuggestionsHost {
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
+            usesLiquidGlass: usesLiquidGlass,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
-        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
     }
 }
 
-/// The redesigned modules use the favorites controller's models without mounting that controller.
-/// Report visibility from their actual host, so hierarchy and modal checks still apply.
-private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
+private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView> {
 
     var isFloatingUIEnabled = false
     /// Fires when the keyboard starts lowering, which can precede its notifications during an interactive dismiss.
@@ -694,13 +701,5 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         viewport.size.height = max(0, keyboardTop - viewport.minY - view.safeAreaInsets.bottom)
         guard rootView.viewModel.logoViewportFrame != viewport else { return }
         rootView.viewModel.logoViewportFrame = viewport
-    }
-
-    func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        rootView.usesRedesignedNewTabPageLayout &&
-        rootView.showsRedesignedSearchModules &&
-        !rootView.viewModel.isFireTab &&
-        !rootView.viewModel.isFadingOut &&
-        rootView.favoritesPresentation.hasAppearedRemoteMessage(withID: messageID)
     }
 }

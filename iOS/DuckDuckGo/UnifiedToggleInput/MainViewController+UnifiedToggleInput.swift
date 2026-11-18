@@ -1221,8 +1221,20 @@ extension MainViewController {
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
         let surface = presentation.redesignedFocusedSurface(isOnAITab: isOnAITab, isOnWebPage: currentTab?.link != nil)
         let isWebPageSurfaceAvailable = NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable
-        unifiedToggleInputCoordinator?.contentViewController.redesignedFocusedSurface =
+        let contentViewController = unifiedToggleInputCoordinator?.contentViewController
+        contentViewController?.redesignedFocusedSurface =
             surface == .webPage && !isWebPageSurfaceAvailable ? nil : surface
+        let usesRedesignedLayout = contentViewController?.usesRedesignedNewTabPageLayout == true
+        unifiedToggleInputCoordinator?.viewController.setUsesNewTabPageCardBackground(usesRedesignedLayout)
+        viewCoordinator.focusedStateBackground.backgroundColor = usesRedesignedLayout ? .clear : UIColor(designSystemColor: .panel)
+        let contentContainer = viewCoordinator.unifiedInputContentContainer as? MainViewFactory.UnifiedInputContentContainer
+        contentContainer?.passesTouchThrough = usesRedesignedLayout ? { [weak self, weak contentContainer] point in
+            guard let contentContainer, let page = self?.newTabPageViewController as? NewTabPageInputTransitionSource else { return false }
+            return page.focusedModulesContain(point, in: contentContainer)
+        } : nil
+        contentViewController?.onRedesignedSearchModulesVisibilityChange = { [weak self] _ in
+            self?.refreshFocusedNewTabPagePose()
+        }
     }
 
     func installDuckAIKeyboardEdgeSweep() {
@@ -1689,6 +1701,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidChangeHeight() {
         recomputeNavigationBarContainerHeightIfNeeded()
+        refreshFocusedNewTabPagePose()
     }
 
     func unifiedToggleInputDidRequestFire() {

@@ -27,14 +27,6 @@ import XCTest
 
 struct UserAssistanceSchedulingTests {
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [nil, "not json", #"{"enabledBrokers":["*"]}"#] as [String?])
-    func missingMalformedOrWildcardSettingsEnableNoBrokers(settings: String?) {
-        let privacyConfig = PrivacyConfigurationMock()
-        privacyConfig.subfeatureSettings = settings
-        #expect(UserAssistanceConfig(privacyConfig: privacyConfig).enabledBrokers.isEmpty)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [Date?.none, Date(timeIntervalSince1970: 1234), Date.distantFuture])
     func awaitingAssistancePreservesPreferredRunDate(preferredRunDate: Date?) throws {
         let date = try OperationPreferredDateCalculator().dateForOptOutOperation(
@@ -58,35 +50,24 @@ struct UserAssistanceSchedulingTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [RegularScheduling.assistanceEnabled, .flagDisabledDuringAttempt, .flagDisabledAfterAttempt])
-    func regularJobKeepsScansAndResumesWaitingOptOutAfterFlagAndAttemptEnd(state: RegularScheduling) async throws {
+    @Test(.timeLimit(.minutes(1)), arguments: [RegularScheduling.needsUserWithFlagOn, .needsUserWithFlagOff, .needsNoUser])
+    func regularJobKeepsScansAndLeavesOptOutsThatNeedTheUser(state: RegularScheduling) async throws {
         let dependencies = MockBrokerProfileJobDependencies()
         let database = MockDatabase()
         dependencies.database = database
-        let flagger = MockDBPFeatureFlagger(isUserAssistanceOn: true)
-        dependencies.featureFlagger = flagger
-        let manager = PrivacyConfigurationManagingMock()
-        let privacyConfig = PrivacyConfigurationMock()
-        privacyConfig.subfeatureSettings = #"{"enabledBrokers":["testbroker.com"]}"#
-        manager.privacyConfig = privacyConfig
-        dependencies.privacyConfig = manager
+        dependencies.featureFlagger = MockDBPFeatureFlagger(isUserAssistanceOn: state == .needsUserWithFlagOn)
+        let optOutActions: [Action] = state == .needsNoUser ? [] : [UserAssistAction(id: "assist")]
+        let broker = DataBroker(id: 1, name: "Test broker", url: "testbroker.com",
+                                steps: [Step(type: .scan, actions: []), Step(type: .optOut, actions: optOutActions)],
+                                version: "1.0", schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
         let history = [HistoryEvent.mock(type: .optOutAwaitingUserAssistance)]
         let optOut = OptOutJobData.mock(with: .mockWithoutRemovedDate, preferredRunDate: .distantPast, historyEvents: history)
-        let data = BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock, optOutJobData: [optOut])
+        let data = BrokerProfileQueryData(dataBroker: broker, profileQuery: .mock, scanJobData: .mock, optOutJobData: [optOut])
         database.brokerProfileQueryDataToReturn = [data]
         database.optOutToReturn = optOut
         database.optOutEvents = history
         database.extractedProfilesFromBroker = [optOut.extractedProfile]
         dependencies.mockScanRunner.scanResults = [optOut.extractedProfile]
-        let id = AssistedOptOutID(brokerId: optOut.brokerId, profileQueryId: optOut.profileQueryId,
-                                  extractedProfileId: try #require(optOut.extractedProfile.id))
-        if state != .assistanceEnabled {
-            dependencies.runningAssistedOptOuts.insert(id)
-            flagger.isUserAssistanceOn = false
-            if state == .flagDisabledAfterAttempt {
-                dependencies.runningAssistedOptOuts.remove(id)
-            }
-        }
         let delegate = MockBrokerProfileJobStatusReportingDelegate()
         let job = BrokerProfileJob(dataBrokerID: optOut.brokerId, jobType: .all, showWebView: false,
                                    statusReportingDelegate: delegate, jobDependencies: dependencies)
@@ -99,7 +80,7 @@ struct UserAssistanceSchedulingTests {
         #expect(job.isFinished)
         #expect(dependencies.mockScanRunner.wasScanCalled)
         #expect(database.scanEvents.contains { $0.type == .scanStarted })
-        let shouldRunOptOut = state == .flagDisabledAfterAttempt
+        let shouldRunOptOut = state == .needsNoUser
         #expect(dependencies.mockOptOutRunner.wasOptOutCalled == shouldRunOptOut)
         if shouldRunOptOut {
             #expect(database.optOutEvents.map(\.type) == [.optOutAwaitingUserAssistance, .optOutStarted, .optOutRequested])
@@ -179,7 +160,7 @@ struct UserAssistanceSchedulingTests {
     }
 
     enum RegularScheduling: Sendable {
-        case assistanceEnabled, flagDisabledDuringAttempt, flagDisabledAfterAttempt
+        case needsUserWithFlagOn, needsUserWithFlagOff, needsNoUser
     }
 
     enum AssistedEnd: Sendable {

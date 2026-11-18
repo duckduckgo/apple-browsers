@@ -101,14 +101,9 @@ public extension SubJobWebRunning {
     }
 
     /// Claims the terminal result before teardown can trigger more callbacks.
-    func failAsCancelledAndTearDown(after task: Task<Void, Never>? = nil) async {
-        let continuation = runnerContinuation.take()
-        task?.cancel()
-        await task?.value
+    func failAsCancelledAndTearDown() async {
+        failed(with: DataBrokerProtectionError.cancelled)
         await webViewHandler?.finish()
-        guard let continuation else { return }
-        firePostLoadingDurationPixel(hasError: true)
-        continuation.resume(throwing: DataBrokerProtectionError.cancelled)
     }
 
     // MARK: - Shared functions

@@ -137,14 +137,18 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
     private let configurationManager: PrivacyConfigurationManaging
     private let isAppStoreBuild: Bool
+    private let hiddenExtensionIDs: Set<String>
 
     /// - Parameter isAppStoreBuild: Whether the app is the App Store build, which also leaves out `appStoreHiddenExtensionIds`.
+    /// - Parameter hiddenExtensionIDs: Extensions to leave out whatever the configuration says, such as ones the OS can't run.
     public init(
         configurationManager: PrivacyConfigurationManaging,
-        isAppStoreBuild: Bool = false
+        isAppStoreBuild: Bool = false,
+        hiddenExtensionIDs: Set<String> = []
     ) {
         self.configurationManager = configurationManager
         self.isAppStoreBuild = isAppStoreBuild
+        self.hiddenExtensionIDs = hiddenExtensionIDs
     }
 
     public var extensionIDs: [String] {
@@ -159,6 +163,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         let featureSettings = config.settings(for: .extensionManagement)
         var excluded = Set(featureSettings["hiddenExtensionIds"] as? [String] ?? [])
             .union(featureSettings["disabledExtensionIds"] as? [String] ?? [])
+            .union(hiddenExtensionIDs)
         // Extensions that need what the App Store sandbox doesn't allow, such as iCloud Passwords and its
         // native messaging host. Only macOS reads this key, so the Windows browser ignores it.
         if isAppStoreBuild {

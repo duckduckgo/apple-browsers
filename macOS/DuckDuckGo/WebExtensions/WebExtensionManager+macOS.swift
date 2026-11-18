@@ -75,6 +75,12 @@ extension WebExtensionManager {
 @available(macOS 15.4, *)
 enum WebExtensionManagerFactory {
 
+    /// Catalog extensions this macOS version can't run.
+    private static var unsupportedExtensionIDs: Set<String> {
+        if #available(macOS 26, *) { return [] }
+        return [ChromeWebStoreID.iCloudPasswords.rawValue]
+    }
+
     private static var extensionsDirectory: URL {
         URL.sandboxApplicationSupportURL.appendingPathComponent("WebExtensions", isDirectory: true)
     }
@@ -169,7 +175,9 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager,
+                                           isAppStoreBuild: buildType.isAppStoreBuild,
+                                           hiddenExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
             supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },

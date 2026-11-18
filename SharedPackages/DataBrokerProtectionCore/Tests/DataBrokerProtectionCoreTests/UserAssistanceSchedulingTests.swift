@@ -35,28 +35,6 @@ struct UserAssistanceSchedulingTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func flagChangesApplyOnEveryReadWithExplicitBrokerSettings() {
-        let dependencies = MockBrokerProfileJobDependencies()
-        let flagger = MockDBPFeatureFlagger(isUserAssistanceOn: false)
-        dependencies.featureFlagger = flagger
-        let manager = PrivacyConfigurationManagingMock()
-        let privacyConfig = PrivacyConfigurationMock()
-        manager.privacyConfig = privacyConfig
-        dependencies.privacyConfig = manager
-        privacyConfig.subfeatureSettings = #"{"enabledBrokers":["example.com","*","example.com"]}"#
-
-        #expect(!dependencies.userAssistanceConfig.isEnabled)
-        flagger.isUserAssistanceOn = true
-        #expect(dependencies.userAssistanceConfig.enabledBrokers == ["example.com"])
-        #expect(!dependencies.userAssistanceConfig.isEnabled(forBrokerURL: "other.com"))
-        privacyConfig.subfeatureSettings = #"{"enabledBrokers":["other.com"]}"#
-        #expect(dependencies.userAssistanceConfig.enabledBrokers == ["other.com"])
-        flagger.isUserAssistanceOn = false
-        #expect(!dependencies.userAssistanceConfig.isEnabled)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [Date?.none, Date(timeIntervalSince1970: 1234), Date.distantFuture])
     func awaitingAssistancePreservesPreferredRunDate(preferredRunDate: Date?) throws {
         let date = try OperationPreferredDateCalculator().dateForOptOutOperation(

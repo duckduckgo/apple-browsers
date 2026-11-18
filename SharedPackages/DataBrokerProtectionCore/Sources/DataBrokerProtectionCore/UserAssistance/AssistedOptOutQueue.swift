@@ -171,21 +171,25 @@ public final class AssistedOptOutQueue {
     }
 
     /// Opens the window for an opt-out the user picked from the dashboard. Brings an already open window to the front,
-    /// and does nothing while another attempt is in progress.
+    /// and while another attempt is in progress brings that attempt's window to the front instead.
     public func start(id: AssistedOptOutID) async throws {
         cancelAttemptsNotEnabled()
         guard try await isAuthenticated(), config.isEnabled, !dependencies.isPausedForRevokedSigningKey else {
             cancelAll()
             return
         }
-        if let session = sessions[id] {
+        if let session = sessions[id] ?? sessions.values.first(where: { $0.phase != .submitted }) {
             presenter?.present(session)
             return
         }
-        guard runningID == nil, !sessions.values.contains(where: { $0.phase != .submitted }) else { return }
+        guard runningID == nil else { return }
         let loaded = try await loadSnapshot()
-        guard try await isAuthenticated(for: loaded), loaded.config.isEnabled, !dependencies.isPausedForRevokedSigningKey,
-              runningID == nil, !sessions.values.contains(where: { $0.phase != .submitted }),
+        guard try await isAuthenticated(for: loaded), loaded.config.isEnabled, !dependencies.isPausedForRevokedSigningKey else { return }
+        if let blocking = sessions.values.first(where: { $0.phase != .submitted }) {
+            presenter?.present(blocking)
+            return
+        }
+        guard runningID == nil,
               let candidate = loaded.candidates.first(where: { $0.id == id && isAwaiting($0) }),
               let actions = candidate.data.dataBroker.optOutStep()?.actions else { return }
         let session = AssistedOptOutSession(id: id,

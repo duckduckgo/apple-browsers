@@ -290,10 +290,10 @@ public final class AssistedOptOutQueue {
     /// Throws if the cache was cleared or the config changed while waiting for the sign-in check,
     /// so the caller drops what it loaded.
     private func isAuthenticated(for loaded: LoadedSnapshot? = nil) async throws -> Bool {
-        let expectedGeneration = loaded?.generation ?? generation
-        let expectedConfig = loaded?.config ?? config
         let authenticated = await dependencies.isAuthenticatedUser()
-        guard expectedGeneration == generation, expectedConfig == config else { throw CancellationError() }
+        if let loaded {
+            guard loaded.generation == generation, loaded.config == config else { throw CancellationError() }
+        }
         return authenticated
     }
 

@@ -112,7 +112,6 @@ enum WebExtensionManagerFactory {
                 configuration: WebExtensionConfigurationProvider(), windowTabProvider: windowTabProvider,
                 permissionPrompter: WebExtensionPermissionPrompt(
                     windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
-                enforcesPermissions: featureFlagger.isFeatureOn(.webExtensionsPermissions),
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
                 internalSiteHandler: internalSiteHandler,
                 isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
@@ -140,7 +139,6 @@ enum WebExtensionManagerFactory {
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             installationStore: installationStore,
             permissionController: permissionController,
-            isPermissionEnforcementEnabled: { featureFlagger.isFeatureOn(.webExtensionsPermissions) },
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,

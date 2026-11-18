@@ -34,7 +34,7 @@ public protocol AssistedOptOutPresenting: AnyObject {
 public final class AssistedOptOutQueue {
     public static let defaultAttemptTimeout: TimeInterval = .minutes(10)
 
-    /// An opt-out record the queue might ask the user about, read from the database for a broker on the remote list.
+    /// An opt-out record the queue might ask the user about, read from the database for a broker whose opt-out needs the user.
     /// Being a candidate doesn't put it on the "Needs you" list; `entersNeedsYou` and `isAwaiting` decide that.
     private struct Candidate: Sendable {
         let data: BrokerProfileQueryData
@@ -120,14 +120,12 @@ public final class AssistedOptOutQueue {
             cancelAll()
             return
         }
-        let config = loaded.config
         let candidates = loaded.candidates
         let candidateIDs = Set(candidates.map(\.id))
         for session in activeSessions where session.phase != .submitted && !candidateIDs.contains(session.id) {
             cancel(session.id)
         }
         for candidate in candidates where entersNeedsYou(candidate) {
-            guard config.isEnabled(forBrokerURL: candidate.data.dataBroker.url) else { continue }
             do {
                 try dependencies.database.add(HistoryEvent(extractedProfileId: candidate.id.extractedProfileId,
                                                            brokerId: candidate.id.brokerId,
@@ -164,7 +162,7 @@ public final class AssistedOptOutQueue {
         }
         let config = loaded.config
         guard config.isEnabled else { return [] }
-        let live = activeSessions.filter { config.isEnabled(forBrokerURL: $0.broker.url) }.map(\.dashboardItem)
+        let live = activeSessions.map(\.dashboardItem)
         let waiting = loaded.candidates.filter { sessions[$0.id] == nil && isAwaiting($0) }.map {
             AssistedOptOut(id: $0.id.description,
                            dataBroker: .init(name: $0.data.dataBroker.name, url: $0.data.dataBroker.url),
@@ -225,15 +223,15 @@ public final class AssistedOptOutQueue {
     }
 
     private func cancelAttemptsNotEnabled() {
-        let config = config
-        for session in activeSessions where !config.isEnabled(forBrokerURL: session.broker.url) {
+        guard !config.isEnabled else { return }
+        for session in activeSessions {
             cancel(session.id)
         }
     }
 
     private func begin(_ session: AssistedOptOutSession, candidate: Candidate) {
         guard sessions[session.id] === session, runningID == nil,
-              config.isEnabled(forBrokerURL: session.broker.url), !dependencies.isPausedForRevokedSigningKey,
+              config.isEnabled, !dependencies.isPausedForRevokedSigningKey,
               dependencies.runningAssistedOptOuts.tryInsertAssisted(session.id) else {
             cancel(session.id)
             return
@@ -260,15 +258,14 @@ public final class AssistedOptOutQueue {
     private func run(_ session: AssistedOptOutSession, candidate: Candidate,
                      cancellation: AttemptCancellation) async -> AssistedOptOutOutcome {
         guard !Task.isCancelled, !cancellation.isCancelled,
-              config.isEnabled(forBrokerURL: session.broker.url),
+              config.isEnabled,
               !dependencies.isPausedForRevokedSigningKey else { return .cancelled }
         let subJob = BrokerProfileOptOutSubJob(dependencies: dependencies)
         let dependencies = self.dependencies
-        let brokerURL = session.broker.url
         do {
             let submitted = try await withTimeout(attemptTimeout, throwing: DataBrokerProtectionError.jobTimeout) {
                 guard await dependencies.isAuthenticatedUser(),
-                      dependencies.userAssistanceConfig.isEnabled(forBrokerURL: brokerURL),
+                      dependencies.userAssistanceConfig.isEnabled,
                       !dependencies.isPausedForRevokedSigningKey else { throw DataBrokerProtectionError.cancelled }
                 try Task.checkCancellation()
                 return try await subJob.runAssistedOptOut(for: candidate.job.extractedProfile,
@@ -324,7 +321,7 @@ public final class AssistedOptOutQueue {
             let database = dependencies.database
             task = Task.detached(priority: .utility) {
                 let brokers = try database.fetchAllDataBrokers().filter {
-                    requestedConfig.isEnabled(forBrokerURL: $0.url) && !$0.isRemoved && !$0.performsOptOutWithinParent()
+                    $0.requiresUserAssistance && !$0.isRemoved && !$0.performsOptOutWithinParent()
                 }
                 return try brokers.compactMap(\.id).sorted().flatMap { brokerID in
                     try database.fetchBrokerProfileQueryData(forBrokerId: brokerID).flatMap { data in

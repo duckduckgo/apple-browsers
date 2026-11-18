@@ -27,6 +27,7 @@ import WebKit
 @testable import DataBrokerProtectionCore
 
 struct UserAssistanceContractTests {
+#if os(macOS)
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func parsedUserAssistPreservesCompleteWhenAndStepInRequestsAndSteps() throws {
@@ -108,6 +109,7 @@ struct UserAssistanceContractTests {
         #expect(delegate.successIDs == ["current"])
         #expect(acceptedResponses == 1)
     }
+#endif
 
     @MainActor
     @available(iOS 16, macOS 13, *)

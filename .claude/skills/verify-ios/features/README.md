@@ -92,16 +92,25 @@ Keep implementation details out; name user paths, stable handles, required state
   `ios.alert` needs `button=`.
 - `open_duckai_new_chat`, `send_duckai_prompt`, `read_duckai_answer`: see [Duck.ai: full-tab chat](./duck-ai-tab.md).
 
+Duck.ai contextual chat (details in [Duck.ai: contextual chat](./duck-ai-contextual.md)):
+
+- `CONTEXTUAL_FLAGS`: the flags a contextual proof pins; `contextualDuckAIMode` is off by default.
+- `open_contextual_chat`, `attached_context`: entry button, then Ask About Page; the attached page's title or `None`.
+- `send_contextual_prompt`, `read_contextual_answer`: the input is `role=textview id=searchEntry` (the address bar
+  shares the id). The answer is read from the native tree, because the web channel reads the tab, not the sheet.
+- `fire_contextual_chat`, `expand_contextual_chat`: the controls differ by device (`CONTEXTUAL_IDS`).
+
 ## Features
 
 - Duck.ai
   - [Full-tab chat](./duck-ai-tab.md): open Duck.ai, send a prompt, read the answer; native input on iPhone, web
     input on iPad (example t8).
-  - [Contextual chat](./duck-ai-contextual.md): Duck.ai in a sheet over a web page. Not mapped yet.
+  - [Contextual chat](./duck-ai-contextual.md): Duck.ai over a web page with the page attached; floating
+    input then sheet on iPhone, sheet on iPad (example t11).
 
 ## Worked examples
 
 `examples/t<n>_*.py` show how to drive the harness, not how to verify a feature: t1 launch and build identity, t2,
 t3 and t9 the address bar, page reads and focus, t4 tabs, t5 a long-press menu, t6 a permission sheet and an iOS
 alert, t7 the Fire button with pixels and a wide event, t10 capture conditions. `selftest` runs t7 on each device
-because it needs no live service. t8 is the Duck.ai proof.
+because it needs no live service. t8 is the Duck.ai proof, t11 the contextual chat proof.

@@ -37,17 +37,22 @@ public struct WebExtensionPermissionRequest {
     public let appPermissions: Set<WebExtensionAppPermission>
     /// The manifest's required permissions, including the ones WebKit doesn't support. Set on installation; listed, never granted.
     public let manifestPermissions: Set<WebExtensionManifestPermission>
+    /// Permissions the extension asked for that this build can't grant, such as `nativeMessaging` in the
+    /// App Store build. The prompt explains them; they are never granted.
+    public let unavailablePermissions: Set<WKWebExtension.Permission>
 
     public init(permissions: Set<WKWebExtension.Permission> = [],
                 matchPatterns: Set<WKWebExtension.MatchPattern> = [],
                 urls: Set<URL> = [],
                 appPermissions: Set<WebExtensionAppPermission> = [],
-                manifestPermissions: Set<WebExtensionManifestPermission> = []) {
+                manifestPermissions: Set<WebExtensionManifestPermission> = [],
+                unavailablePermissions: Set<WKWebExtension.Permission> = []) {
         self.permissions = permissions
         self.matchPatterns = matchPatterns
         self.urls = urls
         self.appPermissions = appPermissions
         self.manifestPermissions = manifestPermissions
+        self.unavailablePermissions = unavailablePermissions
     }
 
     var asksWebKit: Bool {
@@ -242,8 +247,15 @@ public final class WebExtensionPermissionController {
         let prompt = WebExtensionPermissionRequest(permissions: request.permissions,
                                                    matchPatterns: request.matchPatterns,
                                                    urls: request.urls,
-                                                   appPermissions: missingAppPermissions)
-        guard prompt.asksWebKit || !prompt.appPermissions.isEmpty else { return true }
+                                                   appPermissions: missingAppPermissions,
+                                                   unavailablePermissions: request.unavailablePermissions)
+        let asksForGrantablePermissions = prompt.asksWebKit || !prompt.appPermissions.isEmpty
+        guard asksForGrantablePermissions || !prompt.unavailablePermissions.isEmpty else { return true }
+        guard asksForGrantablePermissions else {
+            // Nothing the user could allow, so the prompt only explains why the extension can't have it.
+            _ = await prompter.confirmPermissions(prompt, for: context)
+            return false
+        }
         guard await prompter.confirmPermissions(prompt, for: context) == .granted,
               contexts[identifier] === context else { return false }
 

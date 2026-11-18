@@ -393,9 +393,6 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
-    // Accessibility label - DO NOT LOCALISE
-    public static let bookmarkAllTabs = NotLocalizedString("bookmarkAll.tabs.label", value: "Add all tabs as bookmarks", comment: "Accessibility label")
-
     public static let themeStyleNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
     public static let themeStyleNameLight = NSLocalizedString("theme.name.light", value: "Light", comment: "Light Theme entry")
     public static let themeStyleNameDark = NSLocalizedString("theme.name.dark", value: "Dark", comment: "Dark Theme entry")
@@ -441,11 +438,9 @@ public struct UserText {
 
     public static let deselectAllTabs = NSLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
 
-    // Needs to be localised later.
-    public static let tabSwitcherGridViewMenuTitle = NotLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
+    public static let tabSwitcherGridViewMenuTitle = NSLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
 
-    // Needs to be localised later.
-    public static let tabSwitcherListViewMenuTitle = NotLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
+    public static let tabSwitcherListViewMenuTitle = NSLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
 
     public static func alertTitleBookmarkSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkSelectedTabs.withCount", value: nil, table: nil)
@@ -1827,7 +1822,7 @@ public struct UserText {
     public static let settingsLastTabShortcutSubtitle = NSLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to return to the last used tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the ‘Return to’ Shortcut option")
 
     // Escape Hatch (Return to Tab Card)
-    public static let escapeHatchShowAllTabs = NotLocalizedString("escapeHatch.showAllTabs.label", value: "Show All Tabs", comment: "Button in the Return to module header that opens the tab switcher")
+    public static let escapeHatchShowAllTabs = NSLocalizedString("escapeHatch.showAllTabs.label", value: "Show All Tabs", comment: "Button in the Return to module header that opens the tab switcher")
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
     public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")
@@ -2003,17 +1998,17 @@ public struct UserText {
 
     // MARK: - New Tab Page customization
 
-    public static let newTabPageFavoritesSeeAll = NotLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
-    public static let newTabPageFavoritesSeeLess = NotLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
+    public static let newTabPageFavoritesSeeAll = NSLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
+    public static let newTabPageFavoritesSeeLess = NSLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
 
-    public static let newTabPageFavoriteName = NotLocalizedString("new-tab-page.favorite.name", value: "Name", comment: "Name field placeholder in the Add Favorite sheet")
-    public static let newTabPageFavoriteURL = NotLocalizedString("new-tab-page.favorite.url", value: "URL", comment: "URL field placeholder in the Add Favorite sheet")
-    public static let newTabPageFavoriteSaveFailed = NotLocalizedString("new-tab-page.favorite.save-failed", value: "Couldn't save favorite.", comment: "Error shown when saving a favorite fails")
+    public static let newTabPageFavoriteName = NSLocalizedString("new-tab-page.favorite.name", value: "Name", comment: "Name field placeholder in the Add Favorite sheet")
+    public static let newTabPageFavoriteURL = NSLocalizedString("new-tab-page.favorite.url", value: "URL", comment: "URL field placeholder in the Add Favorite sheet")
+    public static let newTabPageFavoriteSaveFailed = NSLocalizedString("new-tab-page.favorite.save-failed", value: "Couldn't save favorite.", comment: "Error shown when saving a favorite fails")
 
-    public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
-    public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
-    public static let newTabPageCustomizationAlwaysShowKeyboard = NotLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
-    public static let newTabPageCustomizationAllSettings = NotLocalizedString("new-tab-page.customization.all-settings", value: "All Settings", comment: "Opens the app settings from the New Tab Page customization sheet")
+    public static let newTabPageCustomizationTitle = NSLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
+    public static let newTabPageCustomizationMessages = NSLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
+    public static let newTabPageCustomizationAlwaysShowKeyboard = NSLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
+    public static let newTabPageCustomizationAllSettings = NSLocalizedString("new-tab-page.customization.all-settings", value: "All Settings", comment: "Opens the app settings from the New Tab Page customization sheet")
     public static let settingsKeyboard = NSLocalizedString("settings.keyboard", value: "Keyboard", comment: "Settings screen cell for Keyboard")
     public static let settingsKeyboardShowOn = NSLocalizedString("settings.keyboard.show-on", value: "Show keyboard on", comment: "Header for settings that control when to show the keyboard")
     public static let settingsKeyboardNewTab = NSLocalizedString("settings.keyboard.new-tab", value: "New Tab", comment: "Keyboard setting to show the keyboard on a New Tab page")
@@ -2417,7 +2412,7 @@ public struct UserText {
     public static let duckPlayerOptInPillSubtitle = NSLocalizedString("duckplayer.opt-in.pill.subtitle", value: "Watch without targeted ads", comment: "Subtitle explaining Duck Player blocks targeted ads")
 
     // Opt-in mode - Floating Entry Pill
-    public static let duckPlayerFloatingPillTitle = NotLocalizedString("duckplayer.floating.pill.title", value: "Play in Duck Player", comment: "Button text to play a video in Duck Player")
+    public static let duckPlayerFloatingPillTitle = NSLocalizedString("duckplayer.floating.pill.title", value: "Play in Duck Player", comment: "Button text to play a video in Duck Player")
 
     // Opt-in mode - Welcome message
     public static let duckPlayerOptInWelcomeMessageTitle = NSLocalizedString("duckplayer.opt-in.message.title", value: "YouTube, but with fewer ads and more privacy", comment: "Title for Duck Player opt-in message")

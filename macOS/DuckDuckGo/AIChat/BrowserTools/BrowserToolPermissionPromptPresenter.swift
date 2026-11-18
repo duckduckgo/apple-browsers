@@ -178,7 +178,7 @@ final class BrowserToolPermissionPromptPresenter {
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(answering: prompt.requestID, primary: primary, popover: popover))
+                           keyMonitor: keyMonitor(answering: prompt.requestID, primary: primary, popover: popover, ownerWindow: tabBar.view.window))
         // A waiting prompt shows the AI icon; only tools that run without asking show their own.
         tabBar.showBrowserToolPermissionButton(icon: DesignSystemImages.Glyphs.Size16.aiGeneral,
                                                title: BrowserToolPermissionPromptText.title(toolName: prompt.toolName,
@@ -187,10 +187,14 @@ final class BrowserToolPermissionPromptPresenter {
                                                shown: open)
     }
 
-    // Only key presses in the popover answer it.
-    private func keyMonitor(answering requestID: String, primary: @escaping () -> ClientToolPermissionDecision, popover: NSPopover) -> Any? {
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover] event in
-            guard let self, let popover, popover.isShown, event.window === popover.contentViewController?.view.window else { return event }
+    // The browser window takes focus back from the popover, so its key presses answer too,
+    // unless a text field such as the address bar has focus.
+    private func keyMonitor(answering requestID: String, primary: @escaping () -> ClientToolPermissionDecision, popover: NSPopover,
+                            ownerWindow: NSWindow?) -> Any? {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover, weak ownerWindow] event in
+            guard let self, let popover, popover.isShown, let window = event.window,
+                  window === popover.contentViewController?.view.window || (window === ownerWindow && !(window.firstResponder is NSText))
+            else { return event }
             let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
             switch (event.keyCode, modifiers) {
             case (53, []): // Esc

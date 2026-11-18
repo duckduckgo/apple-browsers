@@ -81,8 +81,10 @@ class XCUITestRunner:
             raise Failed("runner not built: run `build --runner-only`")
         pidfile = f"{HOME}/logs/runner-{self.udid}.pid"
         try:
+            # Own session: a Ctrl-C at the terminal signals the whole foreground process group, and the runner must
+            # outlive it so the cancelled proof can still collect the final UI state. stop() ends it by recorded pid.
             p = subprocess.run([f"{SKILL}/lib/vrunner_start.sh", self.udid, str(self.port), f"{products}/{xtr[0]}", f"{HOME}/logs", pidfile],
-                               capture_output=True, text=True, env={**os.environ, "VRUNNER_TOKEN": self.token})
+                               capture_output=True, text=True, env={**os.environ, "VRUNNER_TOKEN": self.token}, start_new_session=True)
         except BaseException:
             # Cancelled while waiting for the runner: stop the xcodebuild it already started, then re-raise.
             self.stop(self._from_pidfile(pidfile))

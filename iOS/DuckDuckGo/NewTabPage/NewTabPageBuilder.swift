@@ -92,6 +92,7 @@ struct NewTabPageBuilder {
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             },
+            usesLiquidGlass: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
             aiChatMenu: {
                 newTabPage?.duckAIMenu()
             })

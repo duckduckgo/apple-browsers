@@ -1,6 +1,6 @@
 ---
 name: verify-macos-browser
-description: Prove a change works in the DuckDuckGo macOS browser built from this worktree by driving the real Debug app, on this Mac or inside a local macOS VM, through the accessibility tree and real mouse and keyboard events, and capturing os_log, pixel and wide-event evidence. Use it to verify a macOS UI, behavior, layout or pixel change before opening a pull request, or to reproduce a macOS bug. Not for writing XCUITests; those come after verification.
+description: Prove a macOS browser change works by driving the real Debug app built from this worktree, on this Mac or in a local VM, and capturing accessibility, pixel, wide-event and log evidence. Use before opening a PR or to reproduce a bug.
 disable-model-invocation: true
 ---
 
@@ -19,26 +19,18 @@ start a task ("… and verify it with verify-macos-browser"), or invoke `/verify
 
 - **Ask the user where to run it**, unless they already said:
   - **On this Mac:** drives the user's screen; they can't use the Mac meanwhile.
-  - **In a VM:** runs inside a macOS VM over ssh and never touches their screen. Offer it only when one is
-    set up (`ssh vm-1 true` works); otherwise mention `VM-SETUP.md` once and run on this Mac.
-  In a VM, run `verify.sh vm <topic>` first; every later step of the topic then runs there, and the points
-  below about the screen, computer use and the grants on this Mac don't apply. See "Running in a VM".
-- On this Mac, tell the user you're about to take over the screen, and wait for an OK. Driving the app moves
-  the mouse and keyboard. Exception: a harness whose approved plan already covers it.
-- On this Mac, check you can drive the app before you build. The process that runs `verify.sh ax` needs the
-  Accessibility and Screen Recording grants:
-  - With computer-use tools in the session, drive with them and use `verify.sh ax` for reads.
-  - Otherwise run `verify.sh ax` from a terminal that holds both grants. An agent's own shell often has
-    neither: `osascript` fails with "not allowed assistive access" and `screencapture` with "could not create
-    image from display". Put the `verify.sh ax` steps in a script under the evidence folder, run it in that
-    terminal in one call, redirect its output to a file and read the file.
-  - `build`, `doctor`, `flag`, `mark`, `expect-*`, `web`, `logs` and `cleanup` need neither grant:
-    they work from the agent's shell.
-- Ask the user not to switch apps while you drive: screenshots capture whatever is in front.
-- Pick a short `<topic>` (e.g. `ntp-promo`). It names the build, the log filter and the evidence
-  folder.
-- Read `features/README.md`, then `features/<feature>.md` for the area you're touching. List every
-  entry point it names that your change touches: each one needs its own check or an Unverified line.
+  - **In a VM:** runs in a macOS VM over ssh, never touching their screen. Offer it only when one is set up
+    (`ssh vm-1 true` works); otherwise mention `VM-SETUP.md` once. In a VM, run `verify.sh vm <topic>` first;
+    every later step then runs there, and the screen and grant points below don't apply.
+- On this Mac, tell the user you're about to take over the screen and wait for an OK (unless a harness's
+  approved plan covers it). Ask them not to switch apps while you drive.
+- On this Mac, the process that runs `verify.sh ax` needs the Accessibility and Screen Recording grants. An
+  agent's own shell often has neither (`osascript`: "not allowed assistive access"; `screencapture`: "could not
+  create image from display"): drive with computer use, or put the `ax` steps in a script and run it from a
+  terminal that holds both grants, output to a file. The other commands need no grant.
+- Pick a short `<topic>` (e.g. `ntp-promo`): it names the build, the log filter and the evidence folder.
+- Read `features/README.md`, then `features/<feature>.md` for the area you're touching. Every entry point your
+  change touches needs its own check or an Unverified line.
 
 ## 1. Instrument (only if needed)
 
@@ -89,24 +81,19 @@ the script can't do, add a subcommand to it instead of a one-off command. Eviden
 verify.sh build <topic> <path-to-checkout> [--automation]
 ```
 
-- Quits the previous build of this topic, builds with the runner (`--worktree`, includes
-  uncommitted edits, `--no-open`), records the source fingerprint and the binaries' sha256, then
-  launches the app itself with `-AppleLanguages (en) -AppleLocale en_US -isInternalUser true`.
-  Locators match English text; pass `--language <l> --locale <l>` only to test localization.
-  `-isInternalUser true` persists in the Debug app's store; local flag overrides need it.
-- Waits until the app is ready (a main window, or with `--automation` the content blocker), no
-  fixed sleeps, and starts the PixelKit stream. Full build output is in `build.log`.
-- `--automation` starts the app's AutomationServer (`-automationPort`, token-protected) so `web` can
-  read the page URL, run JS, and `web navigate <url>` to set up a page (never the action under proof). It **turns off popup blocking and the quit survey**: never use it to
-  verify either of those.
-- DerivedData is found, not configured: Xcode's folder for this checkout's workspace, else the main
-  checkout's (worktrees share it), else a new `<checkout>/.build/DerivedData` (full build). `build` prints
-  which one and why, and records it in `build.json`. `VERIFY_DERIVED_DATA=<path>` forces one.
-- About 23–40 s incremental, 160 s on a stale cache. Don't build in Xcode at the same time.
-- On a build failure, report the first error and stop. Don't "fix" unrelated build issues.
-- Exception: after switching branches, "type X has no member Y" for code that is there is a stale
-  module in DerivedData (seen: `Build/Products/Debug/PrivacyConfig.swiftmodule`). Move that one
-  module out of DerivedData and rebuild. `rm` may be blocked; `mv` to the scratchpad works.
+- Quits this topic's previous build, builds with `xcodebuild` (uncommitted edits included), records the source
+  fingerprint and the binaries' sha256, and launches with `-AppleLanguages (en) -AppleLocale en_US
+  -isInternalUser true`. Locators match English; pass `--language <l> --locale <l>` only to test localization.
+- Waits until the app is ready (a main window, or the content blocker with `--automation`) and starts the
+  PixelKit stream. Full output in `build.log`.
+- `--automation` starts the AutomationServer so `web` can read the URL, run JS and `web navigate <url>` for
+  setup (never the action under proof). It **turns off popup blocking and the quit survey**: never use it to
+  verify either.
+- DerivedData is found, not configured: this checkout's Xcode folder, else the main checkout's, else a new
+  `<checkout>/.build/DerivedData` (full build). `VERIFY_DERIVED_DATA=<path>` forces one.
+- About 23–40 s incremental. Don't build in Xcode at the same time. On a build failure, report the first error
+  and stop; don't fix unrelated build issues. Exception: after switching branches, "type X has no member Y"
+  for code that is there is a stale module in DerivedData: move that module out and rebuild.
 
 ## 4. Doctor (always, before driving)
 
@@ -124,26 +111,21 @@ stale build; rebuild.
 
 ## 5. Drive and capture
 
-- Use computer use on the `DuckDuckGo - verify-<topic>` window only. Without it, drive with
-  `verify.sh ax <topic> …` (`dump`, `find`, `press`, `clickel`, `click`, `type`, `key`); see
-  `scripts/ax.swift`. `click <x> <y> [cmd] [shift] [opt] [ctrl] [middle]` takes modifiers and the middle button.
-  `find` matches several elements across windows: pick the one inside the window and web area you mean by its
-  frame, never just the first match.
-- Prefer the accessibility tree and element names over coordinates. The identifiers in
-  `macOS/UITests/Common/XCUIApplicationExtension.swift` (`AccessibilityIdentifiers`) name the
-  main controls.
-- Take the user's real path: menus, clicks, shortcuts. `web` reads back (URL, page values) and never
-  stands in for the action being proved. Never debug setters or internal URLs.
+- Drive the `DuckDuckGo - verify-<topic>` window only: computer use, or `verify.sh ax <topic> …` (`dump`,
+  `find`, `press`, `clickel`, `click <x> <y> [cmd|shift|opt|ctrl|middle]`, `type`, `key`; see
+  `scripts/ax.swift`). `find` matches across windows: pick the element inside the window you mean by its frame.
+- Prefer AX ids (`AccessibilityIdentifiers` in `macOS/UITests/Common/XCUIApplicationExtension.swift`) over
+  titles, and titles over coordinates.
+- Take the user's real path: menus, clicks, shortcuts. `web` reads back and never stands in for the action
+  being proved. Never debug setters or internal URLs.
 - Confirm every end state with a second, independent read. An action that returned ok proves nothing.
-- Take a screenshot only for visual or layout claims, with `verify.sh shot <topic> NN-<step>`. It
-  captures the app's window only, and refuses when another app is in front (it could capture the
-  user's private content). Use AX text for everything else.
-- Keyboard shortcuts inside an `NSPopover` (Esc, Return) only fire when the popover's window is key.
-  Test them explicitly; a clickable X proves nothing about Esc.
-- For deadlines (a minute or more), `verify.sh wait <topic> <seconds>`, then read AX state and logs.
-- Capture before and after the action.
-- Logs: `verify.sh logs <topic>` writes the run's `[VERIFY]` lines to `log.txt` and the app's whole
-  log since launch to `app.log` (capped at 5 MB, keeps the end).
+  `ax press` prints AX's code, which isn't the outcome: a press on `NewTabButton` reports `-25200` and still
+  opens the tab.
+- Screenshots only for visual or layout claims: `verify.sh shot <topic> NN-<step>`, the app's window only;
+  it refuses when another app is in front. Capture before and after the action.
+- Shortcuts inside an `NSPopover` (Esc, Return) only fire when its window is key: test them explicitly.
+- Deadlines: `verify.sh wait <topic> <seconds>`, then read AX state and logs.
+- `verify.sh logs <topic>`: the run's `[VERIFY]` lines to `log.txt`, the app's log since launch to `app.log`.
 
 ### Telemetry
 
@@ -162,7 +144,6 @@ verify.sh expect-wide-event <topic> <feature> [--status SUCCESS]
 - Select by name and order, never by the params you expect. `Skipped` is not `Fired`; a failed
   `expect-pixel` lists the skipped ones.
 - Raw payloads are kept: `pixels.ndjson`, `pixels.json`, `wide-events.json`.
-- Definitions, validators and unit tests for the pixel: `verify-pixel`.
 
 ## 6. Cleanup
 

@@ -320,7 +320,17 @@ build)
     fi
     kill -0 "$(cat "$RUN_DIR/pixel_stream.pid")" 2>/dev/null || { echo "PIXEL STREAM FAILED: $(head -3 "$RUN_DIR/pixel_stream.err")"; exit 2; }
     if [[ -n "$VM" ]] && (( skip_onboarding )); then
-        ax press MainMenu.skipOnboarding >/dev/null || { echo "SKIP ONBOARDING FAILED"; exit 2; }
+        # A press right after launch can land too early, and a background app gets no key events: bring the app
+        # to the front, press, and confirm a regular tab replaced the onboarding one before going on.
+        skipped=0
+        for _ in 1 2 3 4 5; do
+            ax activate >/dev/null 2>&1 || true
+            ax press MainMenu.skipOnboarding >/dev/null 2>&1 || true
+            sleep 2
+            tabs=$(ax dump 8 | grep 'id=TabBarViewItem title=' || true)
+            if [[ -n "$tabs" && "$tabs" != *'title="Welcome"'* && "$(ax front)" == yes ]]; then skipped=1; break; fi
+        done
+        (( skipped )) || { echo "ONBOARDING NOT SKIPPED: no regular tab, a Welcome tab left, or the app isn't frontmost"; exit 2; }
         echo "onboarding skipped"
     fi
     echo "pid=$pid language=$language locale=$locale automation=$automation${VM:+ vm=$VM}"
@@ -427,7 +437,8 @@ cleanup)
     fi
     if [[ -f "$RUN_DIR/build.json" ]]; then
         worktree=$(json_get "$RUN_DIR/build.json" 'd["worktree"]')
-        leftovers=$(git -C "$worktree" grep -n "\[VERIFY\]" || true)
+        # This skill's own files mention the tag; only the app's code matters here.
+        leftovers=$(git -C "$worktree" grep -n "\[VERIFY\]" -- . ':(exclude).claude' || true)
         if [[ -n "$leftovers" ]]; then echo "[VERIFY] lines left:"; echo "$leftovers"; exit 1; fi
     fi
     echo "evidence: $RUN_DIR"

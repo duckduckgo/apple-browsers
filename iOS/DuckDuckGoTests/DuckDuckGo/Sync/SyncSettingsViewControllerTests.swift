@@ -109,6 +109,181 @@ final class SyncSettingsViewControllerTests: XCTestCase {
     }
 
     @MainActor
+    private func setPendingLoginEvents(_ events: [SyncLoginEvent]) async {
+        let updated = expectation(description: "Pending login events updated")
+        vc.viewModel.$pendingLoginEvents.filter { $0.map(\.id) == events.map(\.id) }.prefix(1)
+            .sink { _ in updated.fulfill() }
+            .store(in: &cancellables)
+        ddgSyncing.pendingLoginEventsStub = events
+        await fulfillment(of: [updated], timeout: 1)
+    }
+
+    @MainActor
+    func testNewDeviceCardUsesPendingNamesAndOnlyRequiresAuditLogFlag() async {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        vc = makeNotificationDestinationController()
+        await setPendingLoginEvents([.init(id: "first", occurredAt: Date(), deviceName: "Dave’s iPhone")])
+        XCTAssertTrue(vc.viewModel.isNewDevicesCardVisible)
+        XCTAssertEqual(vc.viewModel.newDevicesCardTitle, "New synced device")
+        XCTAssertEqual(vc.viewModel.newDevicesCardMessage, "Dave’s iPhone has been added to Sync & Backup.")
+        await setPendingLoginEvents([
+            .init(id: "first", occurredAt: Date(), deviceName: "Dave’s iPhone"),
+            .init(id: "second", occurredAt: Date(), deviceName: "MacBook Pro"),
+            .init(id: "third", occurredAt: Date(), deviceName: "iPad")])
+        XCTAssertEqual(vc.viewModel.newDevicesCardTitle, "New synced devices")
+        for name in ["Dave’s iPhone", "MacBook Pro", "iPad"] {
+            XCTAssertTrue(vc.viewModel.newDevicesCardMessage.contains(name))
+        }
+        XCTAssertTrue(vc.viewModel.newDevicesCardMessage.hasSuffix("have been added to Sync & Backup."))
+    }
+
+    @MainActor
+    func testCardDeduplicatesNamesAndLimitsDisplayButDismissesAllEvents() async {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        vc = makeNotificationDestinationController()
+        await setPendingLoginEvents((0..<2).map { .init(id: "duplicate-\($0)", occurredAt: Date(), deviceName: "Phone") })
+        XCTAssertEqual(vc.viewModel.newDevicesCardTitle, "New synced device")
+        XCTAssertEqual(vc.viewModel.newDevicesCardMessage, "Phone has been added to Sync & Backup.")
+        let events = (0..<10).map { SyncLoginEvent(id: "event-\($0)", occurredAt: Date(), deviceName: "Device \($0)") }
+        await setPendingLoginEvents(Array(events.prefix(8)))
+        XCTAssertFalse(vc.viewModel.newDevicesCardMessage.contains("more"))
+        await setPendingLoginEvents(events + [.init(id: "duplicate", occurredAt: Date(), deviceName: "Device 0")])
+        XCTAssertTrue(vc.viewModel.newDevicesCardMessage.contains("2 more"))
+        XCTAssertFalse(vc.viewModel.newDevicesCardMessage.contains("Device 8"))
+        let ids = Set(vc.viewModel.pendingLoginEvents.map(\.id))
+        vc.viewModel.dismissPendingLoginEvents(withIDs: ids)
+        XCTAssertEqual(ddgSyncing.dismissedPendingLoginEventIDs, [ids])
+        XCTAssertTrue(ddgSyncing.pendingLoginEventsStub.isEmpty)
+    }
+
+    @MainActor
+    func testNewDeviceCardTracksRuntimeAuditFlagAndEmptyState() async {
+        await setPendingLoginEvents([.init(id: "first", occurredAt: Date(), deviceName: "Phone")])
+        XCTAssertFalse(vc.viewModel.isNewDevicesCardVisible)
+        let enabled = expectation(description: "Audit flag enabled")
+        vc.viewModel.$isDeviceActivityAvailable.filter { $0 }.prefix(1)
+            .sink { _ in enabled.fulfill() }.store(in: &cancellables)
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        featureFlagger.triggerUpdate()
+        await fulfillment(of: [enabled], timeout: 1)
+        XCTAssertTrue(vc.viewModel.isNewDevicesCardVisible)
+
+        let disabled = expectation(description: "Audit flag disabled")
+        vc.viewModel.$isDeviceActivityAvailable.filter { !$0 }.prefix(1)
+            .sink { _ in disabled.fulfill() }.store(in: &cancellables)
+        featureFlagger.enabledFeatureFlags = [.syncLoginNotification]
+        featureFlagger.triggerUpdate()
+        await fulfillment(of: [disabled], timeout: 1)
+        XCTAssertFalse(vc.viewModel.isNewDevicesCardVisible)
+        await setPendingLoginEvents([])
+        XCTAssertTrue(vc.viewModel.pendingLoginEvents.isEmpty)
+    }
+
+    @MainActor
+    func testCardDismissalRemovesOnlyDisplayedIDsWithoutReviewingActivity() async throws {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        vc = makeNotificationDestinationController()
+        let first = SyncLoginEvent(id: "first", occurredAt: Date(timeIntervalSince1970: 100), deviceName: "Phone")
+        let later = SyncLoginEvent(id: "later", occurredAt: first.occurredAt, deviceName: "Another phone")
+        await setPendingLoginEvents([first])
+        let displayedIDs = Set(vc.viewModel.pendingLoginEvents.map(\.id))
+        await setPendingLoginEvents([first, later])
+        let updated = expectation(description: "Only the later login remains")
+        vc.viewModel.$pendingLoginEvents.filter { $0.map(\.id) == ["later"] }.prefix(1)
+            .sink { _ in updated.fulfill() }.store(in: &cancellables)
+        vc.viewModel.dismissPendingLoginEvents(withIDs: displayedIDs)
+        await fulfillment(of: [updated], timeout: 1)
+        XCTAssertEqual(ddgSyncing.dismissedPendingLoginEventIDs, [["first"]])
+        XCTAssertNil(try ddgSyncing.auditLogReviewState(for: "account")?.reviewedThrough)
+        XCTAssertFalse(vc.viewModel.isDeviceActivityPresented)
+    }
+
+    @MainActor
+    func testOpeningDeviceActivityDismissesCardWithoutReviewingActivity() async {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        vc = makeNotificationDestinationController()
+        await setPendingLoginEvents([.init(id: "first", occurredAt: Date(), deviceName: "Phone")])
+        vc.viewModel.showDeviceActivity()
+        XCTAssertTrue(vc.viewModel.isDeviceActivityPresented)
+        vc.viewModel.deviceActivityDidOpen()
+        await setPendingLoginEvents([.init(id: "later", occurredAt: Date(), deviceName: "Later phone")])
+        XCTAssertEqual(ddgSyncing.dismissedPendingLoginEventIDs, [["first"]])
+        XCTAssertEqual(vc.viewModel.pendingLoginEvents.map(\.id), ["later"])
+        XCTAssertNil(try? ddgSyncing.auditLogReviewState(for: "account"))
+    }
+
+    @MainActor
+    func testReviewActivityNavigatesFromTheVisibleCard() async throws {
+        try await assertOpeningDeviceActivityDismissesCard(fromNotification: false)
+    }
+
+    @MainActor
+    func testNotificationNavigationDismissesCardWhenDestinationAppears() async throws {
+        try await assertOpeningDeviceActivityDismissesCard(fromNotification: true)
+    }
+
+    @MainActor
+    private func assertOpeningDeviceActivityDismissesCard(fromNotification: Bool) async throws {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        ddgSyncing.account = SyncAccount(deviceId: "this", deviceName: "Phone", deviceType: "phone", userId: "account",
+                                         primaryKey: Data(), secretKey: Data(), token: "token", state: .active)
+        vc = makeNotificationDestinationController()
+        await setPendingLoginEvents([.init(id: "first", occurredAt: Date(), deviceName: "Phone")])
+        let appeared = expectation(description: "Settings appeared")
+        let host = UIHostingController(rootView: NavigationView {
+            vc.rootView.onAppear { appeared.fulfill() }
+        }.navigationViewStyle(.stack))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            previousKeyWindow?.makeKey()
+        }
+        await fulfillment(of: [appeared], timeout: 3)
+        XCTAssertEqual(ddgSyncing.auditLogPageReadCount, 0)
+        XCTAssertTrue(ddgSyncing.dismissedPendingLoginEventIDs.isEmpty)
+        let loaded = expectation(description: "Device Activity appeared and loaded its page")
+        let activityModel = try XCTUnwrap(vc.viewModel.deviceActivityViewModel)
+        activityModel.$hasLoaded.filter { $0 }.prefix(1)
+            .sink { _ in loaded.fulfill() }.store(in: &cancellables)
+        if fromNotification {
+            vc.showDeviceActivity()
+        } else {
+            // The card and the settings row use the same presentation action.
+            vc.viewModel.showDeviceActivity()
+        }
+        await fulfillment(of: [loaded], timeout: 3)
+        XCTAssertEqual(ddgSyncing.auditLogPageReadCount, 1)
+        XCTAssertEqual(ddgSyncing.dismissedPendingLoginEventIDs, [["first"]])
+        XCTAssertNil(try ddgSyncing.auditLogReviewState(for: "account")?.reviewedThrough)
+        await setPendingLoginEvents([.init(id: "later", occurredAt: Date(), deviceName: "Later phone")])
+        XCTAssertEqual(vc.viewModel.pendingLoginEvents.map(\.id), ["later"])
+    }
+
+    @MainActor
+    func testFailedDismissalKeepsCardAndLogoutHidesIt() async {
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        vc = makeNotificationDestinationController()
+        await setPendingLoginEvents([.init(id: "first", occurredAt: Date(), deviceName: "Phone")])
+        ddgSyncing.dismissPendingLoginEventsError = URLError(.cannotWriteToFile)
+        vc.viewModel.dismissPendingLoginEvents(withIDs: ["first"])
+        XCTAssertTrue(vc.viewModel.isNewDevicesCardVisible)
+        XCTAssertEqual(ddgSyncing.pendingLoginEventsStub.count, 1)
+        let loggedOut = expectation(description: "Sync disabled")
+        vc.viewModel.$isSyncEnabled.filter { !$0 }.prefix(1)
+            .sink { _ in loggedOut.fulfill() }.store(in: &cancellables)
+        ddgSyncing.authState = .inactive
+        await fulfillment(of: [loggedOut], timeout: 1)
+        XCTAssertFalse(vc.viewModel.isNewDevicesCardVisible)
+        await setPendingLoginEvents([])
+        XCTAssertTrue(vc.viewModel.pendingLoginEvents.isEmpty)
+    }
+
+    @MainActor
     func testNotificationDestinationOpensImmediatelyAfterInitializationWithFlagEnabled() {
         featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
         let controller = makeNotificationDestinationController()

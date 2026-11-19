@@ -24,6 +24,8 @@ import Combine
 /// To be fleshed out when UI is settled
 class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate {
 
+    func dismissPendingLoginEvents(withIDs ids: Set<String>) {}
+
     fileprivate var monitor = Monitor<SyncManagementViewModelDelegate>()
     var syncBookmarksPausedTitle: String? = "syncBookmarksPausedTitle"
     var syncCredentialsPausedTitle: String? = "syncCredentialsPausedTitle"

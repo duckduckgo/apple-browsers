@@ -37,9 +37,29 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
     var duckAIQueryContent: OnboardingDuckAIQueryContent = .mock
     var tryVPNContent: OnboardingTryVPNContent = .mock
+    var vpnActivationContent: OnboardingVPNActivationContent = .mock
+    var subscriptionReminderContent: OnboardingSubscriptionReminderContent = .mock
 }
 
 // MARK: - Helpers
+
+extension OnboardingVPNActivationContent {
+    static let mock = OnboardingVPNActivationContent(
+        offTitle: "Off",
+        turnOnCTA: "Turn On",
+        skipCTA: "Skip",
+        daxAnimation: nil
+    )
+}
+
+extension OnboardingSubscriptionReminderContent {
+    static let mock = OnboardingSubscriptionReminderContent(
+        title: "Reminder",
+        message: AttributedString("Message"),
+        cta: "Next",
+        daxAnimation: nil
+    )
+}
 
 extension OnboardingTryVPNContent {
     static let mock = OnboardingTryVPNContent(

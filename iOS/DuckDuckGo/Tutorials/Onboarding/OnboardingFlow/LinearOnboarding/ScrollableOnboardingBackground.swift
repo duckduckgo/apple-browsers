@@ -219,7 +219,7 @@ private extension OnboardingIntroViewState.Intro.IntroType {
             return OnboardingRebrandingImages.Linear.introBackground
         case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
             return OnboardingRebrandingImages.Linear.browsersComparisonBackground
-        case .aiSearchSettingsDialog, .aiModelDialog, .adBlockingDialog, .tryVPNDialog:
+        case .aiSearchSettingsDialog, .aiModelDialog, .adBlockingDialog, .tryVPNDialog, .vpnActivationDialog, .subscriptionReminderDialog:
             return OnboardingRebrandingImages.Linear.addToDockBackground
         case .toggleInputModeDialog, .keepDuckAIDialog:
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
@@ -246,7 +246,7 @@ private extension OnboardingIntroViewState.Intro.IntroType {
             return 404
         case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
             return 216
-        case .addToDockPromoDialog, .aiSearchSettingsDialog, .aiModelDialog, .adBlockingDialog, .tryVPNDialog:
+        case .addToDockPromoDialog, .aiSearchSettingsDialog, .aiModelDialog, .adBlockingDialog, .tryVPNDialog, .vpnActivationDialog, .subscriptionReminderDialog:
             return 286
         case .chooseAppIconDialog:
             return 272
@@ -276,7 +276,7 @@ private extension OnboardingIntroViewState.Intro.IntroType {
             return 320
         case .downloadReasonDialog,
              .aiSearchSettingsDialog, .aiModelDialog,
-             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog, .tryVPNDialog,
+             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog, .tryVPNDialog, .vpnActivationDialog, .subscriptionReminderDialog,
              .setDefaultBrowserDialog, .aiIntroDialog:
             return 380
         case .addToDockPromoDialog:

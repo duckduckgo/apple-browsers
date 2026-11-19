@@ -35,6 +35,10 @@
   registers its undo with `ios.on_cleanup`. The iOS location alert belongs to SpringBoard and has three buttons, so
   `ios.alert` needs `button=`.
 - `open_duckai_new_chat`, `send_duckai_prompt`, `read_duckai_answer`: see [Duck.ai: full-tab chat](./duck-ai-tab.md).
+- `duckai_chat_id`, `new_duckai_chat_tab`, `duckai_history`, `delete_current_duckai_chat`, `duckai_storage`: see
+  [Duck.ai: full-tab chat](./duck-ai-tab.md). After any manual Fire, the app covers its window with an invisible
+  overlay until clearing finishes, so every control reads as not hittable until then; wait for a control to be
+  `visible` again rather than retrying taps.
 
 Duck.ai contextual chat (details in [Duck.ai: contextual chat](./duck-ai-contextual.md)):
 

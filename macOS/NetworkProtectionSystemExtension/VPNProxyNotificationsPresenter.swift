@@ -55,6 +55,10 @@ final class VPNProxyNotificationsPresenter: VPNNotificationsPresenting {
         notificationCenter.post(.showExpiredEntitlementNotification)
     }
 
+    func showSignedOutNotification() {
+        notificationCenter.post(.showSignedOutNotification)
+    }
+
     func showTestNotification() {
         notificationCenter.post(.showTestNotification)
     }

@@ -107,6 +107,7 @@ private final class MockNotificationsPresenter: VPNNotificationsPresenting {
     func showSupersededNotification() {}
     func showTestNotification() { showTestNotificationCalled = true }
     func showEntitlementNotification() {}
+    func showSignedOutNotification() {}
     func showDebugEventNotification(message: String) {}
 }
 

@@ -93,8 +93,10 @@ extension MainViewController {
     fileprivate func startNewChatFromIPadChatListSidebar() {
         guard let tab = currentTab, tab.isAITab else { return }
         duckAIInputFocus.forget()
-        // Before focusing, or the keyboard rises for an input the list still covers.
-        closeIPadChatListSidebarIfCoveringTab()
+        // A new chat starts the conversation on screen, so the list gets out of the way before the input takes focus.
+        if iPadChatListSidebarState.isOpen {
+            setIPadChatListSidebarOpen(false)
+        }
         beginNewChatFromHistory(in: tab)
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
     }
@@ -251,10 +253,6 @@ extension IPadChatListSidebar: AIChatHistorySidebarDelegate {
 
     func chatHistorySidebarDidRequestClose() {
         host?.setIPadChatListSidebarOpen(false)
-    }
-
-    func chatHistorySidebarDidRequestFeedback() {
-        host?.segueToFeedback()
     }
 
     func chatHistorySidebarDidRequestSyncSettings() {

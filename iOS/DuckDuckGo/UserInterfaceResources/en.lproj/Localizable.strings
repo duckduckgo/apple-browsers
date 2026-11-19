@@ -409,9 +409,6 @@
 /* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
 "aiChat.history.menu.selectChats" = "Select Chats";
 
-/* Menu item in the iPad Duck.ai chats sidebar that opens the app's feedback form. */
-"aiChat.history.menu.sendFeedback" = "Send Feedback";
-
 /* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
 "aiChat.history.noSearchResults.title" = "No matches found";
 

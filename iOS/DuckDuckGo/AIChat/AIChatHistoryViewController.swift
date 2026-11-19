@@ -28,7 +28,6 @@ import DesignResourcesKitIcons
 protocol AIChatHistorySidebarDelegate: AnyObject {
     var chatHistorySidebarIsSyncEnabled: Bool { get }
     func chatHistorySidebarDidRequestClose()
-    func chatHistorySidebarDidRequestFeedback()
     func chatHistorySidebarDidRequestSyncSettings()
     func chatHistorySidebarDidRequestDuckAISettings()
 }
@@ -326,12 +325,6 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func makeSidebarMenuActions() -> [UIMenuElement] {
-        let feedback = UIAction(
-            title: UserText.aiChatHistoryMenuSendFeedback,
-            image: DesignSystemImages.Glyphs.Size16.feedback
-        ) { [weak self] _ in
-            self?.sidebarDelegate?.chatHistorySidebarDidRequestFeedback()
-        }
         let isSyncEnabled = sidebarDelegate?.chatHistorySidebarIsSyncEnabled ?? false
         let sync = UIAction(
             title: UserText.settingsSync,
@@ -346,7 +339,7 @@ final class AIChatHistoryViewController: UIViewController {
         ) { [weak self] _ in
             self?.sidebarDelegate?.chatHistorySidebarDidRequestDuckAISettings()
         }
-        return [feedback, sync, settings]
+        return [sync, settings]
     }
 
     /// Pre-iOS 26 sheets default bar button items to the system accent (blue). Match Bookmarks

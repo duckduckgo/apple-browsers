@@ -101,14 +101,17 @@ struct NewTabPageFocusedPose: Equatable {
     /// How far the modules below the search input move, to sit under the focused input.
     var modulesOffset: CGFloat
     var showsModules: Bool
+    /// How much of the bottom the focused input covers above the keyboard, so the modules can scroll clear of it. Zero for a top input.
+    var bottomInputHeight: CGFloat
 
     /// Space between the status bar and the modules while a bottom input is focused.
     static let bottomInputModulesTopMargin: CGFloat = 8
 
-    init(inputOffset: CGFloat, modulesOffset: CGFloat, showsModules: Bool) {
+    init(inputOffset: CGFloat, modulesOffset: CGFloat, showsModules: Bool, bottomInputHeight: CGFloat = 0) {
         self.inputOffset = inputOffset
         self.modulesOffset = modulesOffset
         self.showsModules = showsModules
+        self.bottomInputHeight = bottomInputHeight
     }
 
     /// The pose for a resting card at `restingInputFrame` and a focused card at `focusedInputFrame`, both untransformed.
@@ -116,6 +119,7 @@ struct NewTabPageFocusedPose: Equatable {
          focusedInputFrame: CGRect,
          cardPosition: UnifiedToggleInputCardPosition,
          safeAreaTop: CGFloat,
+         bottomInputHeight: CGFloat = 0,
          showsModules: Bool) {
         switch cardPosition {
         case .top:
@@ -125,7 +129,10 @@ struct NewTabPageFocusedPose: Equatable {
         case .bottom:
             // The keyboard carries a bottom input, so the resting input stays put and the modules rise to the top.
             let modulesTop = safeAreaTop + Self.bottomInputModulesTopMargin
-            self.init(inputOffset: 0, modulesOffset: modulesTop - restingInputFrame.maxY, showsModules: showsModules)
+            self.init(inputOffset: 0,
+                      modulesOffset: modulesTop - restingInputFrame.maxY,
+                      showsModules: showsModules,
+                      bottomInputHeight: bottomInputHeight)
         }
     }
 

@@ -190,6 +190,7 @@ extension MainViewController {
                                      focusedInputFrame: focusedFrame,
                                      cardPosition: coordinator.cardPosition,
                                      safeAreaTop: view.safeAreaInsets.top,
+                                     bottomInputHeight: coordinator.editingHeight(),
                                      showsModules: coordinator.contentViewController.isShowingRedesignedSearchModules)
     }
 }

@@ -535,7 +535,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     /// Ends the scrollable area at the last module above the keyboard.
     private func updateFocusedScrollInset(keyboardTop: CGFloat) {
         let keyboardOverlap = max(0, view.bounds.maxY - keyboardTop)
-        scrollView.contentInset.bottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0)
+        scrollView.contentInset.bottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0) + (focusedPose?.bottomInputHeight ?? 0)
     }
 
     private var focusedModuleViews: [UIView] {

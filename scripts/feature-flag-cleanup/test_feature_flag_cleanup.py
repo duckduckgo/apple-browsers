@@ -70,7 +70,7 @@ class RenderPromptTests(unittest.TestCase):
         prompt = ffc.render_prompt(removal, TEMPLATE)
 
         self.assertNotIn("$", prompt)
-        self.assertIn("The flag was rejected", prompt)
+        self.assertIn("the flag was rejected", prompt)
         self.assertIn("runs when the flag is disabled", prompt)
         self.assertIn("ddg-remove-feature-flag/SKILL.md", prompt)
 

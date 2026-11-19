@@ -96,6 +96,11 @@ def label(rec):
     return "PASS", 2 if rec.problems else 0
 
 
+def _line(text):
+    """Multi-line command output on one Markdown line."""
+    return " ".join(str(text).split())
+
+
 def _short(sha):
     return f"`{sha[:16]}…`" if sha else "?"
 
@@ -117,9 +122,9 @@ def report(doc, rec, manifest, evidence):
              f"- App log: {link('app.log') or '(not captured)'}" + (f", {link('log.txt')}" if link("log.txt") else ""),
              "", "## Outcome", "",
              f"**{verdict}**" + (" with problems (exit 2)" if verdict == "PASS" and code else "")
-             + (f" ({rec.error})" if rec.error else ""), ""]
+             + (f" ({_line(rec.error)})" if rec.error else ""), ""]
     passed = [name for name, ok, _ in rec.checks if ok]
-    failed = [f"{name}" + (f": {detail}" if detail else "") for name, ok, detail in rec.checks if not ok]
+    failed = [f"{name}" + (f": {_line(detail)}" if detail else "") for name, ok, detail in rec.checks if not ok]
     if rec.app_running is not None:
         (passed if rec.app_running else failed).append("app still running at the end")
     lines += ["Passed:"] + [f"- {c}" for c in passed or ["(none)"]]
@@ -132,7 +137,12 @@ def report(doc, rec, manifest, evidence):
     launch, vm, hashes = m.get("launch") or {}, m.get("vm"), m.get("build_hashes") or {}
     running = m.get("running_hashes") or {}
     dylib = next((k for k in hashes if k.endswith(".debug.dylib")), None)
-    target = f"VM {vm.get('host')} (macOS {vm.get('macos')})" if vm else f"this Mac (macOS {m.get('macos') or '?'})"
+    if vm:
+        target = f"VM {vm.get('host')} (macOS {vm.get('macos')})"
+    elif m.get("target", "mac") != "mac":
+        target = f"{m['target']} (no VM was reserved)"
+    else:
+        target = f"this Mac (macOS {m.get('macos') or '?'})"
     lines += ["", "## Details", "",
               f"- Revision: `{(m.get('revision') or '?')[:12]}`"
               + {True: " (uncommitted changes)", False: " (clean)"}.get(m.get("dirty"), ""),
@@ -415,7 +425,7 @@ def prove(path, target):
             signal.signal(s, signal.SIG_IGN)
     try:
         _finish(mac, rec, evidence)
-        manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []))
+        manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target)
         with open(os.path.join(evidence, "report.md"), "w") as f:
             f.write(report(mod.__doc__.strip(), rec, manifest, evidence))
     finally:
@@ -452,7 +462,7 @@ def _finish(mac, rec, evidence):
         rec.problems.append(f"VM {host} not released: its lock still names this run")
 
 
-def _manifest(evidence, rec, proof, rerun, running, live):
+def _manifest(evidence, rec, proof, rerun, running, live, target):
     """Extend the manifest verify.sh cleanup wrote with the proof's own fields."""
     path = os.path.join(evidence, "manifest.json")
     try:
@@ -462,7 +472,7 @@ def _manifest(evidence, rec, proof, rerun, running, live):
         rec.problems.append(f"manifest.json not written by cleanup: {e}")
         m = {}
     verdict, code = label(rec)
-    m.update(proof=os.path.relpath(proof, evidence), rerun=rerun, running_hashes=running, live=live,
+    m.update(proof=os.path.relpath(proof, evidence), target=target, rerun=rerun, running_hashes=running, live=live,
              verdict=verdict, exit=code, reason=rec.error, phase_reached=rec.phase,
              checks=[dict(check=n, ok=ok, detail=d) for n, ok, d in rec.checks], problems=rec.problems,
              unverified=[dict(what=w, why=y) for w, y in rec.unverified])

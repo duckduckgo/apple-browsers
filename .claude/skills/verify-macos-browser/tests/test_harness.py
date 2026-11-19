@@ -102,6 +102,14 @@ class ReportTests(unittest.TestCase):
                      "`bbbbbbbbbbbbbbbb…`", "same binary", "--target vm-1"):
             self.assertIn(want, details)
 
+    def test_a_vm_never_reserved_is_not_reported_as_this_mac(self):
+        manifest = dict(self.MANIFEST, vm=None, target="vm-1")
+        text = harness.report("x", record([], app_running=None, error="setup: NO VM FREE\n  vm-1: reserved"),
+                              manifest, tempfile.mkdtemp())
+        self.assertIn("- Target: vm-1 (no VM was reserved)", text)
+        self.assertNotIn("this Mac", text)
+        self.assertIn("**INCONCLUSIVE** (setup: NO VM FREE vm-1: reserved)\n", text)
+
     def test_unverified_items_are_listed(self):
         rec = record([("t", True, None)])
         rec.unverified = [("menu entry point", "menu bar not reachable in the VM")]

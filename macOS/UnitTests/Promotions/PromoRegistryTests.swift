@@ -129,7 +129,6 @@ final class PromoRegistryTests: XCTestCase {
                 recordResult: { _, _ in }
             ),
             autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 isAnyCategoryEmptyProvider: { true },
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
                 syncService: nil,

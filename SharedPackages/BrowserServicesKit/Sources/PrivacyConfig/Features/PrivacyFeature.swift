@@ -1061,9 +1061,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     /// Kill switch for the import/sync promo on the Bookmarks "No bookmarks yet" empty state.
     case bookmarksEmptyStatePromo
 
-    /// Kill switch for the import/sync promo on the Passwords panel empty states.
-    case autofillEmptyStatePromo
-
     /// Kill switch for the default browser win-back modal.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo

@@ -28,7 +28,7 @@ public protocol BrowserTool: AnyObject {
     /// The default when the user hasn't chosen one in the prompt or in settings.
     var permissionMode: BrowserToolPermissionMode { get }
 
-    /// A tool that changes the browser: it prompts on every call and a stored Always is ignored.
+    /// A tool that changes the browser: it prompts on every call, a stored Always is ignored, and `requestAccess` never grants it.
     var asksEveryTime: Bool { get }
 
     var inputSchema: JSONValue { get }
@@ -100,4 +100,11 @@ public protocol BrowserToolsConfiguration: AnyObject {
 
     /// The tool's own sub-feature, already combined with the parent.
     func isToolEnabled(named name: String) -> Bool
+
+    /// The `requestAccess` sub-feature, already combined with the parent.
+    var isRequestAccessEnabled: Bool { get }
+}
+
+public extension BrowserToolsConfiguration {
+    var isRequestAccessEnabled: Bool { false }
 }

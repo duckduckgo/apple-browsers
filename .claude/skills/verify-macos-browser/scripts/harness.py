@@ -191,7 +191,7 @@ class Mac:
         t0 = time.time()
         p = subprocess.run([VERIFY_SH, command, self.topic, *map(str, args)], cwd=ROOT, text=True,
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={**os.environ, "VERIFY_WORKTREE": ROOT,
-                                                       "VERIFY_RUNS": os.path.dirname(self.evidence)})
+                                                       "VERIFY_RUN_DIR": self.evidence})
         with open(os.path.join(self.evidence, "transcript.jsonl"), "a") as f:
             f.write(json.dumps(dict(t=time.strftime("%Y-%m-%dT%H:%M:%S%z"), cmd=[command, *map(str, args)],
                                     exit=p.returncode, secs=round(time.time() - t0, 1), out=p.stdout[-2000:])) + "\n")
@@ -369,7 +369,14 @@ def load(path):
 
 
 # ---------------------------------------------------------------- evidence folders
-ATTEMPT = re.compile(r"\d{8}-\d{6}-[a-z0-9-]+-[0-9a-f]{4}")   # <stamp>-<name>-<id>, also verify.sh's topic
+ATTEMPT = re.compile(r"\d{8}-\d{6}-([a-z0-9-]+)-([0-9a-f]{4})")   # <stamp>-<name>-<id>
+
+
+def topic_of(folder):
+    """verify.sh's topic for an attempt folder: `<name>-<id>`, name cut to 9 characters. The topic is part of the
+    app's name, and in the VM (macOS 27.2.1) an app named after a 16-character topic never opened a window; 14 did."""
+    name, uid = ATTEMPT.fullmatch(os.path.basename(folder)).groups()
+    return f"{name[:9].strip('-')}-{uid}"
 
 
 def evidence_root(evidence_dir=None):
@@ -404,7 +411,7 @@ def new_proof(name, root):
 def attempt_dir(path, root):
     """The proof's own folder if it is an untouched attempt folder in `root` (only the proof in it); otherwise a new
     attempt folder in `root` with a copy. A folder that holds anything else (a finished or crashed attempt), or whose
-    name isn't an attempt name (so not a valid verify.sh topic, like `_lead`), is never reused."""
+    name isn't an attempt name (like `_lead`, which has no valid topic), is never reused."""
     path = os.path.realpath(path)
     parent = os.path.dirname(path)
     if os.path.dirname(parent) == root and ATTEMPT.fullmatch(os.path.basename(parent)) \
@@ -442,7 +449,7 @@ def prove(path, target, evidence_dir=None):
     if target not in TARGETS:
         return 2, dict(proof=path, ok=False, problems=[f"--target must be one of {TARGETS}"])
     evidence, proof = attempt_dir(path, root)
-    topic = os.path.basename(evidence)
+    topic = topic_of(evidence)
     rec = Record()
     mac = Mac(topic, evidence, rec, automation=getattr(mod, "AUTOMATION", False))
     vm = None if target == "mac" else ("auto" if target == "vm" else target)

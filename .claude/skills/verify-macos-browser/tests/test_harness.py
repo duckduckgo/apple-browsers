@@ -282,8 +282,13 @@ class AttemptFolderTests(unittest.TestCase):
         with open(os.path.join(lead, "proof.py"), "w") as f:
             f.write(harness.TEMPLATE)
         folder, _ = harness.attempt_dir(os.path.join(lead, "proof.py"), self.root)
-        self.assertRegex(os.path.basename(folder), r"^[a-z0-9-]+$")   # verify.sh's topic rule
-        self.assertIn("-lead-", os.path.basename(folder))
+        self.assertRegex(harness.topic_of(folder), r"^lead-[0-9a-f]{4}$")   # verify.sh accepts ^[a-z0-9-]+$
+
+    def test_a_long_name_still_gets_a_topic_short_enough_to_open_a_window(self):
+        folder = os.path.dirname(harness.new_proof("Duck.ai sidebar keeps its chat", self.root))
+        self.assertRegex(os.path.basename(folder), r"^\d{8}-\d{6}-duck-ai-sidebar-keeps-it-[0-9a-f]{4}$")
+        self.assertRegex(harness.topic_of(folder), r"^duck-ai-s-[0-9a-f]{4}$")
+        self.assertLessEqual(len(harness.topic_of(folder)), 14)
 
 
 class PublishablePathTests(unittest.TestCase):

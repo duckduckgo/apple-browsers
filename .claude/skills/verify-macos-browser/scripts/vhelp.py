@@ -303,7 +303,7 @@ def cmd_web(run_dir, what, *rest):
         die("web: url | eval '<js returning a value>' | navigate <url> (setup only)")
 
 
-def cmd_manifest(run_dir, skill_dir):
+def cmd_manifest(run_dir, skill_dir, topic):
     def maybe(name):
         try:
             return read_json(os.path.join(run_dir, name))
@@ -331,7 +331,7 @@ def cmd_manifest(run_dir, skill_dir):
             return None
 
     manifest = dict(
-        topic=os.path.basename(run_dir),
+        topic=topic,
         worktree=build.get("worktree"),
         revision=build.get("source", {}).get("head"),
         dirty=build.get("source", {}).get("dirty"),
@@ -347,8 +347,8 @@ def cmd_manifest(run_dir, skill_dir):
         vm=vm,
         skill_sha256=skill.hexdigest(),
         rerun=f"cd {build.get('worktree')} && "
-              + (f"{VERIFY_SH} vm {os.path.basename(run_dir)} {vm['host']} && " if vm else "")
-              + f"{VERIFY_SH} build {os.path.basename(run_dir)} ."
+              + (f"{VERIFY_SH} vm {topic} {vm['host']} && " if vm else "")
+              + f"{VERIFY_SH} build {topic} ."
               + (" --automation" if launch.get("automation_port") else ""),
     )
     with open(os.path.join(run_dir, "manifest.json"), "w") as f:

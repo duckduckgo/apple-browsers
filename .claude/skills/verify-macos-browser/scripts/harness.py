@@ -4,7 +4,8 @@ A proof is a short Python file written for one change, saved with its evidence, 
 claim; it defines `run(mac)` and may set `FLAGS = {"caseName": True}` (FeatureFlag cases to pin), `LIVE = ["duck.ai"]`
 (live services it depends on: any other non-local host the app loaded is flagged in the report) and
 `AUTOMATION = True` (start the AutomationServer for `url()` and `navigate()`, and collect the hosts the app loaded;
-it turns off popup blocking and the quit survey, so never use it to verify either).
+it turns off popup blocking and the quit survey, so never use it to verify either) and `CONDITIONS` (what screenshots
+depend on: set before the proof, undone after it; see CONDITION_KEYS).
 
 Every action goes through verify.sh, the low-level layer. The harness keeps one run record (the checks in the order
 they ran, problems, warnings, notes, unverified items, the phase reached); the verdict and report.md come from it alone.
@@ -50,6 +51,7 @@ TEMPLATE = '''"""What this proves, in one sentence: what the user sees, under wh
 FLAGS = {}          # FeatureFlag cases to pin, e.g. {"someFlag": True}; every flag the behavior depends on
 LIVE = []           # live services this proof depends on, e.g. ["duck.ai"]
 AUTOMATION = False  # True for url()/navigate(); turns off popup blocking and the quit survey
+CONDITIONS = {}     # what screenshots depend on, e.g. dict(appearance="dark", window=(40, 60, 1280, 800), language="en")
 
 
 def run(mac):
@@ -67,6 +69,46 @@ KEYS = dict(zip("asdfhgzxcv", range(10)), b=11, q=12, w=13, e=14, r=15, y=16, t=
             **{"return": 36, "tab": 48, "space": 49, "delete": 51, "escape": 53,
                "left": 123, "right": 124, "down": 125, "up": 126})
 MODIFIERS = ("cmd", "shift", "opt", "ctrl")
+
+
+# CONDITIONS a proof may declare, so screenshots compare between runs and with a base build. Each is set before the proof,
+# read back, recorded in the manifest and report, and undone after it. Undeclared ones are recorded too: the appearance
+# (a VM starts light; on this Mac the app's own setting, never the system's), the window the app opened, en/en_US.
+CONDITION_KEYS = dict(appearance="light or dark", window="(x, y, width, height) in points, top-left origin, below the "
+                  "menu bar", language="e.g. en, pt-BR, zh-Hans", locale="e.g. en_US, de_DE")
+LANGUAGE, LOCALE = re.compile(r"[a-z]{2,3}(-[A-Za-z0-9]{2,8})*"), re.compile(r"[a-z]{2,3}(_[A-Za-z0-9]{2,8})*")
+
+
+def condition_problems(c):
+    """What is wrong with a proof's CONDITIONS; [] when nothing is. `check` and `prove` refuse a proof with any."""
+    if not isinstance(c, dict):
+        return ["CONDITIONS must be a dict, e.g. dict(appearance=\"dark\")"]
+    problems = [f"CONDITIONS: unknown {k!r} (one of {', '.join(CONDITION_KEYS)})" for k in c if k not in CONDITION_KEYS]
+    if "appearance" in c and c["appearance"] not in ("light", "dark"):
+        problems.append("CONDITIONS: appearance must be \"light\" or \"dark\"")
+    w = c.get("window", (0, 0, 1, 1))
+    if not (isinstance(w, (tuple, list)) and len(w) == 4 and all(type(n) is int for n in w)
+            and min(w) >= 0 and min(w[2:]) > 0):
+        problems.append("CONDITIONS: window must be (x, y, width, height) in whole points, width and height above 0")
+    for key, pattern in (("language", LANGUAGE), ("locale", LOCALE)):
+        if key in c and not (isinstance(c[key], str) and pattern.fullmatch(c[key])):
+            problems.append(f"CONDITIONS: {key} must look like {CONDITION_KEYS[key][5:]}")
+    return problems
+
+
+def conditions_line(m):
+    """The conditions a run's screenshots were taken under, as report.md shows them; declared ones are marked."""
+    c, declared = m.get("conditions") or {}, m.get("conditions_declared") or []
+    shown = [f"{k} {c[k]}" + (" (declared)" if k in declared else "") for k in CONDITION_KEYS if k in c]
+    return ", ".join(shown) or "(not recorded)"
+
+
+def conditions_differ(a, b):
+    """The conditions that differ between two runs' manifests: every recorded one, except a window neither run
+    declared (the app picks it, and the change under proof may move it)."""
+    ca, cb = a.get("conditions") or {}, b.get("conditions") or {}
+    declared = set(a.get("conditions_declared") or []) | set(b.get("conditions_declared") or [])
+    return [k for k in CONDITION_KEYS if (k != "window" or k in declared) and ca.get(k) != cb.get(k)]
 
 
 class Refused(Exception):
@@ -101,6 +143,7 @@ class Record:
         self.cancelled = False
         self.video = {}         # None when off (--no-video); else path, seconds, bytes once written, error if it failed
         self.hosts = None       # hosts the app loaded pages or resources from; None when not collected (AUTOMATION off)
+        self.conditions = {}    # appearance and window as read back from the target, for the manifest
 
 
 # ---------------------------------------------------------------- hosts the app loaded
@@ -208,8 +251,7 @@ def report(doc, rec, manifest, evidence):
               + (" (same binary, checked by doctor)" if dylib and running.get(dylib) == hashes.get(dylib) else ""),
               f"- Target: {target}",
               f"- Pinned flags: {', '.join(m.get('flags') or []) or '(none)'}",
-              f"- Language: {launch.get('language', '?')}, locale {launch.get('locale', '?')}; automation "
-              + ("on" if launch.get("automation_port") else "off"),
+              f"- Conditions: {conditions_line(m)}; automation " + ("on" if launch.get("automation_port") else "off"),
               f"- Evidence: {evidence_kind(live, rec.hosts)}",
               "- Hosts the app loaded: " + ((", ".join(sorted(rec.hosts)) or "(none)") if rec.hosts is not None
                                             else "(not collected: AUTOMATION is off)"),
@@ -242,6 +284,7 @@ class Mac:
         self.base_outcome = "unchanged"   # what checks made now should do on the base build (on_base)
         self._marked = False
         self._fixture = None
+        self.undo = []           # (what, verify.sh args) per condition set: run last first after the proof, always
         if automation:
             rec.hosts = set()
 
@@ -534,6 +577,7 @@ def load(path, checkout=ROOT):
         problems.append("LIVE must be a list of service names")
     if not isinstance(getattr(mod, "AUTOMATION", False), bool):
         problems.append("AUTOMATION must be True or False")
+    problems += condition_problems(getattr(mod, "CONDITIONS", {}))
     return mod, problems
 
 
@@ -647,14 +691,18 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
     vm = None if target == "mac" else ("auto" if target == "vm" else target)
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     running = None
+    conditions = getattr(mod, "CONDITIONS", {})
     try:
         if vm:
             mac._do("vm", vm)
+        set_conditions(mac, conditions, target, launched=False)
         for name, on in getattr(mod, "FLAGS", {}).items():
             mac._do("flag", name, "on" if on else "off")
-        mac._do("build", checkout, *(["--automation"] if mac.automation else []))
+        mac._do("build", checkout, *(["--automation"] if mac.automation else []),
+                "--language", conditions.get("language", "en"), "--locale", conditions.get("locale", "en_US"))
         doctor = mac._do("doctor")
         running = json.loads(re.search(r"^running_hashes=(.*)$", doctor, re.M).group(1))
+        set_conditions(mac, conditions, target, launched=True)
         if video:
             _record(mac, rec, "start")
         rec.phase = "proof"
@@ -675,7 +723,8 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
             signal.signal(s, signal.SIG_IGN)
     try:
         _finish(mac, rec, evidence)
-        manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target, shown_dir)
+        manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target, shown_dir,
+                             sorted(conditions))
         with open(os.path.join(evidence, "report.md"), "w") as f:
             f.write(report(mod.__doc__.strip(), rec, manifest, evidence))
     finally:
@@ -690,6 +739,38 @@ def rerun_command(proof, target, evidence_dir=None, video=True, checkout=ROOT):
     return f"cd {_sh_path(checkout)} && {_sh_path(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
            f"{_sh_path(proof)} --target {target}" + (f" --checkout {_sh_path(checkout)}" if checkout != ROOT else "") \
            + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "") + ("" if video else " --no-video")
+
+
+def _readback(out, key):
+    """The value verify.sh read back, from its last `key=value` line."""
+    return re.findall(rf"^{key}=(.*)$", out, re.M)[-1]
+
+
+def set_conditions(mac, conditions, target, launched):
+    """Before launch: put the appearance back to the default (whatever a killed run left), then set a declared one, so
+    the app starts in it. After launch: set a declared window. Each is read back and recorded, and its undo is
+    registered before the change, so a change that fails halfway is still undone."""
+    rec = mac.rec
+    if not launched:
+        rec.conditions["appearance"] = _readback(mac._do("appearance", "restore"), "appearance")
+        if "appearance" in conditions:
+            mac.undo.append(("appearance", ("appearance", "restore")))
+            rec.conditions["appearance"] = _readback(mac._do("appearance", conditions["appearance"]), "appearance")
+        return
+    if "window" in conditions:
+        if target == "mac":   # this Mac's Debug app keeps its window frame; a VM's app data is wiped at reservation
+            mac.undo.append(("window", ("window", *mac._do("ax", "winrect").split(","))))
+        mac._do("window", *conditions["window"])
+    rec.conditions["window"] = mac._do("ax", "winrect")
+
+
+def undo_conditions(mac, rec):
+    """Undo every condition set, last first. One that fails is a Problem, and the rest still run."""
+    while mac.undo:
+        what, args = mac.undo.pop()
+        code, out = mac._sh(*args)
+        if code:
+            rec.problems.append(f"{what} not undone (exit {code}): {_line(out[-300:])}")
 
 
 def _record(mac, rec, step):
@@ -726,6 +807,7 @@ def _finish(mac, rec, evidence):
         code, out = mac._sh("logs")
         if code:
             rec.problems.append(f"log.txt not written: {out[-300:]}")
+    undo_conditions(mac, rec)   # after the final screenshot and recording; before cleanup quits the app and frees the VM
     if mac._fixture:   # before cleanup releases the VM
         rec.problems += mac._fixture.stop()
     host = (open(os.path.join(evidence, "vm")).read().strip() if os.path.exists(os.path.join(evidence, "vm")) else None)
@@ -737,7 +819,7 @@ def _finish(mac, rec, evidence):
         rec.problems.append(f"VM {host} not released: its lock still names this run")
 
 
-def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=None):
+def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=None, declared=()):
     """Extend the manifest verify.sh cleanup wrote with the proof's own fields."""
     path = os.path.join(evidence, "manifest.json")
     try:
@@ -753,7 +835,9 @@ def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=N
              verdict=verdict, exit=code, reason=rec.error, phase_reached=rec.phase,
              checks=[dict(check=n, ok=ok, detail=d, base=b) for n, ok, d, b in rec.checks], problems=rec.problems,
              unverified=[dict(what=w, why=y) for w, y in rec.unverified],
-             video=dict(off=True) if rec.video is None else rec.video)
+             video=dict(off=True) if rec.video is None else rec.video, conditions_declared=list(declared),
+             conditions={**rec.conditions, **{k: v for k, v in (m.get("launch") or {}).items()
+                                              if k in ("language", "locale")}})
     with open(path, "w") as f:
         f.write(_tilde(json.dumps(m, indent=1)))
     return m

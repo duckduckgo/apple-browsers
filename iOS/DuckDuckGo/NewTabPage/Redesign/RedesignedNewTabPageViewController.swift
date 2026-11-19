@@ -77,11 +77,13 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         self?.onFocusedModeSwitchSwipe?(mode)
     }
     private var stickySearchInputTranslation: CGFloat = 0
+    private var focusedScrollInsetBottom: CGFloat = 0
 
     private struct InputEditingLayout {
         let contentOffset: CGPoint
         let inputFrameInWindow: CGRect?
         let windowBounds: CGRect?
+        let bottomSafeAreaInset: CGFloat
         var isGeometryValid = true
     }
 
@@ -161,6 +163,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         focusedModeSwitchSwipeController.install(on: view)
         focusedModeSwitchSwipeController.isEnabled = false
         scrollView.delegate = self
+        if isStickyInputEnabled {
+            // The bottom safe area is applied by hand, so it cannot change under the scroll view while the input is focused.
+            scrollView.contentInsetAdjustmentBehavior = .never
+            applyScrollBottomInset()
+        }
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -188,6 +195,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         onboardingCoordinator?.refreshContextualOnboardingDialogLayout()
+        applyScrollBottomInset()
         // Reattachment and keyboard transitions temporarily change the viewport and safe area.
         // Keep those layouts from changing the loaded page's resting scroll position.
         if let preservedOffset = pinnedEditingContentOffset ?? detachedContentOffset,
@@ -244,10 +252,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.layoutIfNeeded()
         // Favorites or messages may have been removed while the page was detached or the input was focused.
         // Clamp once the resting viewport and content size are available.
+        scrollView.setContentOffset(clampedContentOffset(savedOffset), animated: false)
+    }
+
+    /// The offset moved into the scrollable range, so a rubber band overscroll has no distance left to travel.
+    private func clampedContentOffset(_ offset: CGPoint) -> CGPoint {
         let minimumY = -scrollView.adjustedContentInset.top
         let maximumY = max(minimumY, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
-        let restoredY = min(max(savedOffset.y, minimumY), maximumY)
-        scrollView.setContentOffset(CGPoint(x: savedOffset.x, y: restoredY), animated: false)
+        return CGPoint(x: offset.x, y: min(max(offset.y, minimumY), maximumY))
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -352,9 +364,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     /// Keeps the search input just below the top of the visible page once scrolling would carry it offscreen.
-    /// The pinned position is held while the input is focused, because the focused pose is measured from it.
+    /// It keeps following the viewport while the input is focused, because a viewport change during focus,
+    /// such as the bottom inset shrinking, moves the content and would strand the page's input away from the focused card.
     private func updateStickySearchInput() {
-        guard isStickyInputEnabled, inputEditingLayout == nil, focusedPose == nil, let searchInputView else { return }
+        guard isStickyInputEnabled, let searchInputView else { return }
         // Center and bounds ignore the pinning transform, so they give the resting position.
         let pinning = StickyInputPinning(restingMinY: searchInputView.center.y - searchInputView.bounds.height / 2,
                                          height: searchInputView.bounds.height,
@@ -564,7 +577,8 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         isFocusedPoseSettled = false
         focusedKeyboardObserver.map(NotificationCenter.default.removeObserver)
         focusedKeyboardObserver = nil
-        scrollView.contentInset.bottom = 0
+        focusedScrollInsetBottom = 0
+        applyScrollBottomInset()
         scrollView.keyboardDismissMode = .none
         scrollView.isScrollEnabled = inputEditingLayout == nil
     }
@@ -583,8 +597,31 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
     private func updateFocusedScrollInset(keyboardTop: CGFloat) {
         let keyboardOverlap = max(0, view.bounds.maxY - keyboardTop)
-        scrollView.contentInset.bottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0) + (focusedPose?.bottomInputHeight ?? 0)
+        focusedScrollInsetBottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0) + (focusedPose?.bottomInputHeight ?? 0)
+        applyScrollBottomInset()
     }
+
+    /// The bottom safe area, such as the floating toolbar's, held at its pre-focus value while the input is focused.
+    /// Letting it follow the live value shrinks the scroll view's inset, which clamps the offset and makes the page jump.
+    private var scrollBottomSafeAreaInset: CGFloat {
+        guard isStickyInputEnabled else { return 0 }
+        if let inputEditingLayout, inputEditingLayout.isGeometryValid {
+            return inputEditingLayout.bottomSafeAreaInset
+        }
+        return view.safeAreaInsets.bottom
+    }
+
+    private func applyScrollBottomInset() {
+        let bottomInset = focusedScrollInsetBottom + scrollBottomSafeAreaInset
+        guard scrollView.contentInset.bottom != bottomInset else { return }
+        scrollView.contentInset.bottom = bottomInset
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        applyScrollBottomInset()
+    }
+
 
     private var focusedModuleViews: [UIView] {
         blocks.filter { Self.focusedModuleIDs.contains($0.id) }.compactMap { $0.viewController.view }
@@ -650,13 +687,17 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         if isEditing, inputEditingLayout == nil {
             finishEntranceAnimation()
             view.layoutIfNeeded()
-            scrollView.setContentOffset(scrollView.contentOffset, animated: false)
+            // Focusing mid-bounce must not leave a rubber band release to move the page after the input frame is captured.
+            scrollView.setContentOffset(clampedContentOffset(scrollView.contentOffset), animated: false)
+            updateStickySearchInput()
             inputEditingLayout = InputEditingLayout(contentOffset: scrollView.contentOffset,
                                                     inputFrameInWindow: visibleSearchInputFrameInWindow(),
-                                                    windowBounds: view.window?.bounds)
+                                                    windowBounds: view.window?.bounds,
+                                                    bottomSafeAreaInset: view.safeAreaInsets.bottom)
         } else if !isEditing, let savedLayout = inputEditingLayout {
             setFocusedPose(nil)
             inputEditingLayout = nil
+            applyScrollBottomInset()
             restoreScrollPosition(savedLayout.isGeometryValid ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1

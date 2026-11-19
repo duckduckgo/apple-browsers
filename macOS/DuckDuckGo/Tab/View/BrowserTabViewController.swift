@@ -694,7 +694,7 @@ final class BrowserTabViewController: NSViewController {
         if presentedContextualOnboardingDialogType == .subscriptionUpsell,
            onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
             subscriptionUpsellMetrics.report(.upsellDismissed)
-            onboardingDialogTypeProvider.gotItPressed()
+            contextualOnboardingScheduler.gotItPressed(displayed: presentedContextualOnboardingDialogType, in: tabViewModel?.tab)
         }
         removeExistingDialog()
     }
@@ -875,7 +875,7 @@ final class BrowserTabViewController: NSViewController {
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
         if displayedDialogType == .subscriptionUpsell,
            onboardingDialogTypeProvider.lastDialog == displayedDialogType {
-            onboardingDialogTypeProvider.gotItPressed()
+            contextualOnboardingScheduler.gotItPressed(displayed: presentedContextualOnboardingDialogType, in: tabViewModel?.tab)
         }
         handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }

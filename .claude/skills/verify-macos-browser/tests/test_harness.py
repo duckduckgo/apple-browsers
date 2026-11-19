@@ -1,6 +1,7 @@
 """Tests for the harness's pure parts: the verdict, report.md, and check. No app, build or VM.
 Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
 """
+import glob
 import json
 import os
 import subprocess
@@ -274,6 +275,14 @@ BIN = os.path.join(harness.SKILL, "bin", "verify-macos-browser")
 def read(path):
     with open(path) as f:
         return f.read()
+
+
+class ExamplesTests(unittest.TestCase):
+    def test_check_accepts_every_example(self):
+        examples = sorted(glob.glob(os.path.join(harness.SKILL, "examples", "*.py")))
+        self.assertTrue(examples)
+        p = subprocess.run([sys.executable, "-I", BIN, "check", *examples], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
 
 
 class EvidenceDirTests(unittest.TestCase):

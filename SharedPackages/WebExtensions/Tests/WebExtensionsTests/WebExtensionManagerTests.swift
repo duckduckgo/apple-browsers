@@ -3396,7 +3396,6 @@ final class CatalogNamingWebStore: ChromeWebStoreManaging {
         self.catalogExtensionIDs = catalogExtensionIDs
     }
 
-    var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }

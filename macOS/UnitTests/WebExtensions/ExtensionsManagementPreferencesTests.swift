@@ -102,7 +102,49 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         XCTAssertEqual(settings.detailsEntry?.hasHitNativeMessagingLimitation, true)
     }
 
+    func testWhenLearnMoreIsClicked_ThenTheConfiguredPageOpens() {
+        let settings = makeModel(featureSettings: ["learnMoreUrl": "https://duckduckgo.com/duckduckgo-help-pages/extensions"])
+
+        settings.openLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages/extensions"))
+    }
+
+    func testWhenTheConfigurationHasNoLearnMoreURL_ThenLearnMoreOpensTheHelpPages() {
+        makeModel(featureSettings: [:]).openLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages"))
+    }
+
+    func testWhenTheLearnMoreURLIsNotAbsolute_ThenLearnMoreOpensTheHelpPages() {
+        makeModel(featureSettings: ["learnMoreUrl": "duckduckgo-help-pages/extensions"]).openLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages"))
+    }
+
+    func testWhenRemoteDisableLearnMoreIsClicked_ThenTheConfiguredPageOpens() {
+        let settings = makeModel(featureSettings: ["learnMoreUrlRemoteDisable": "https://duckduckgo.com/duckduckgo-help-pages/extensions/disabled"])
+
+        settings.openRemoteDisableLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages/extensions/disabled"))
+    }
+
+    func testWhenTheConfigurationHasNoRemoteDisableLearnMoreURL_ThenItOpensTheHelpPages() {
+        makeModel(featureSettings: ["learnMoreUrl": "https://duckduckgo.com/duckduckgo-help-pages/extensions"]).openRemoteDisableLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages"))
+    }
+
     // MARK: - Helpers
+
+    private func makeModel(featureSettings: [String: Any]) -> ExtensionsManagementPreferences {
+        let configuration = MockPrivacyConfiguration()
+        configuration.featureSettings = featureSettings
+        return ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration),
+                                               windowControllersManager: windowControllersManager,
+                                               pixelFiring: pixels)
+    }
 
     private func makeModel(webExtensionManager: WebExtensionManaging) -> ExtensionsManagementPreferences {
         ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManager(),
@@ -152,7 +194,6 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
 @available(macOS 15.4, *)
 private final class StubChromeWebStore: ChromeWebStoreManaging {
     let catalogExtensionIDs: [String]
-    let learnMoreURL: URL? = nil
     private let storeListing: ChromeWebStoreListing
 
     init(storeID: String, listing: ChromeWebStoreListing) {

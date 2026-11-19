@@ -151,22 +151,19 @@ struct AssistedOptOutWindowTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func pageTakesInputOnlyOutsideDuckDuckGosTurn() throws {
+    func pageTakesInputOnlyOutsideDuckDuckGosTurn() {
         let session = makeSession()
         let window = makeOffscreenWindow()
         let controller = AssistedOptOutWindowController(session: session, window: window, loadFavicon: { _ in nil }, onClose: {})
         defer { controller.close() }
-        let webView = WKWebView()
+        let webView = InputIgnoringWebView()
         session.begin()
         session.attemptDidCreate(webView: webView)
+        #expect(webView.ignoresUserInput)
         session.attemptWillRun(userAction)
-        let content = try #require(window.contentView)
-        content.layoutSubtreeIfNeeded()
-        let pagePoint = NSPoint(x: 100, y: 100)
-        #expect(content.hitTest(pagePoint) is AssistedOptOutInputBlocker)
-        #expect(window.firstResponder is AssistedOptOutInputBlocker)
+        #expect(webView.ignoresUserInput)
         session.attemptNeedsUser(actionID: userAction.id)
-        #expect(!(content.hitTest(pagePoint) is AssistedOptOutInputBlocker))
+        #expect(!webView.ignoresUserInput)
         #expect(window.firstResponder === webView)
     }
 
@@ -223,6 +220,10 @@ struct AssistedOptOutWindowTests {
     private func descendants(of view: NSView) -> [NSView] {
         view.subviews.flatMap { [$0] + descendants(of: $0) }
     }
+}
+
+private final class InputIgnoringWebView: WKWebView, UserInputIgnoring {
+    var ignoresUserInput = false
 }
 
 @MainActor

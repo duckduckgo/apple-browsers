@@ -325,7 +325,8 @@ extension TabExtensionsBuilder {
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                isTabBurner: args.isTabBurner,
-                               burnerMode: args.burnerMode)
+                               burnerMode: args.burnerMode,
+                               tabsPreferences: dependencies.tabsPreferences)
         }
 
         add {

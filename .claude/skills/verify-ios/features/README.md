@@ -3,6 +3,7 @@
 The maintained source for verifying user-facing behavior of the DuckDuckGo iOS browser with `verify-ios`. Read this
 index, then the feature file for what you are proving. Each feature lists every user entry point on iPhone and iPad;
 a proof that drives one convenient entry point is incomplete when the file lists others that the change touches.
+The map holds only features someone keeps current: add a file only when you will maintain it.
 
 This map is also the specification for `lib/verify_ios/steps.py`: every quirk a step handles is written down here,
 so the steps can be ported to Swift from this map when the app's XCUITest UI tests want them.
@@ -44,7 +45,8 @@ so the steps can be ported to Swift from this map when the app's XCUITest UI tes
 - Record the device, the feature sub-ID and the entry point in the proof's docstring or `ios.note`.
 - Report an entry point you could not reach with `ios.unverified(what, why)`. Never report it as verified through
   another path.
-- Environment failures (see each file's Gotchas) are reported as environment, not as product bugs.
+- Environment failures (see each file's Gotchas and SKILL.md's known environment issues) are reported as
+  environment, not as product bugs.
 
 ## Feature entry contract
 
@@ -52,13 +54,22 @@ Each file: an H1, one paragraph of user-visible behavior, then exactly these H2s
 `How to get to it (user POV)`, `Driving it with verify-ios` (starting with `Preconditions:`), `Gotchas`.
 Keep implementation details out; name user paths, stable handles, required state, steps and observable proof.
 
+## Shared steps
+
+[shared-steps.md](./shared-steps.md) documents the quirks each step in `lib/verify_ios/steps.py` handles. Read it
+before a proof uses a step, and update it when you change one.
+
 ## Features
 
-- [Address bar](./address-bar.md): typing a URL, loading it, reading the page, focus and keyboard (examples t2, t3, t9).
-- [Tabs](./tabs.md): new tab, switch, close, tab count, both tab-switcher layouts (t4).
-- [Link context menu](./link-context-menu.md): long-press a link, open in a new tab (t5).
-- [Fire button](./fire-button.md): close tabs and clear data, with its pixels and wide event (t7).
-- [Duck.ai](./duck-ai.md): open Duck.ai, send a prompt, read the answer; native input on iPhone, web input on iPad (t8).
-- [Site permissions: location](./site-permissions-location.md): DuckDuckGo's permission sheet, then the iOS alert (t6).
+- Duck.ai
+  - [Full-tab chat](./duck-ai-tab.md): open Duck.ai, send a prompt, read the answer; native input on iPhone, web
+    input on iPad (example t8).
+  - [Contextual chat](./duck-ai-contextual.md): Duck.ai over a web page with the page attached; floating
+    input then sheet on iPhone, sheet on iPad (example t11).
 
-Example ids refer to `examples/t<n>_*.py`.
+## Worked examples
+
+`examples/t<n>_*.py` show how to drive the harness, not how to verify a feature: t1 launch and build identity, t2,
+t3 and t9 the address bar, page reads and focus, t4 tabs, t5 a long-press menu, t6 a permission sheet and an iOS
+alert, t7 the Fire button with pixels and a wide event, t10 capture conditions. `selftest` runs t7 on each device
+because it needs no live service. t8 is the Duck.ai proof, t11 the contextual chat proof.

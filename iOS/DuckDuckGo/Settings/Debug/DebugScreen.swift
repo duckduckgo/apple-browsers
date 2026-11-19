@@ -29,6 +29,7 @@ import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
+import WebPageTranslation
 
 protocol RemoteMessagingDebugHandling {
     func refreshRemoteMessages()
@@ -61,6 +62,7 @@ enum DebugScreen: Identifiable {
         let aiChatBonusMessageLog: AIChatBonusMessageLog?
         let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
         let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+        let translationModels: TranslationModels?
         let daxGreetingDebugging: DaxGreetingDebugging
 
     }

@@ -1,7 +1,8 @@
-# Duck.ai
+# Duck.ai: full-tab chat
 
-The user opens Duck.ai from the browser, starts a new chat, sends a prompt and reads the streamed answer. iPhone uses
-the app's native input; iPad uses Duck.ai's own web input.
+The user opens Duck.ai in its own tab, starts a new chat, sends a prompt and reads the streamed answer. iPhone uses
+the app's native input; iPad uses Duck.ai's own web input. Duck.ai in a sheet over a web page is
+[contextual chat](./duck-ai-contextual.md).
 
 ## Sub-features
 

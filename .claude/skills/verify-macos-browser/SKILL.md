@@ -80,7 +80,7 @@ $V prove <proof> --target vm-1 --base "$(git merge-base HEAD origin/main)" [--ev
 ```
 
 It proves the base in a worktree kept at `~/.ddg-verify-macos/base/<sha12>` (its own DerivedData: the first build is
-cold, 20+ min; later runs on that revision are incremental; `$V clean-base` removes them), then this checkout, with
+cold, 5 to 20+ min; later runs on that revision are incremental; `$V clean-base` removes them), then this checkout, with
 the same target, flags and language. On the base a check declared `fail` is recorded and the proof carries on; any
 other error there is INCONCLUSIVE. **PASS** needs this checkout to pass and the base to do what each check declares,
 with at least one declared `fail`; a `fail` check that passes on the base is **FAIL**: the proof doesn't reproduce

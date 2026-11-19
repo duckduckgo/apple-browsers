@@ -197,7 +197,7 @@ def report(doc, base, change, base_m, change_m, m, evidence):
              f"| Recording | {link('base', harness.VIDEO)} | {link('change', harness.VIDEO)} |"]
     lines += [f"| {name[:-4]} | {image('base', name, 'Before')} | {image('change', name, 'After')} |" for name in shots]
     lines += ["", f"Each run's own report: {link('base', 'report.md')} (before), {link('change', 'report.md')} (after).",
-              "", "## Outcome", "", f"**{m['verdict']}**" + (f" ({m['reason']})" if m["reason"] else ""), "",
+              "", "## Outcome", "", f"**{m['verdict']}**" + (f" ({harness._line(m['reason'])})" if m["reason"] else ""), "",
               "| Check | Base build should | Before | After | Judged |", "|---|---|---|---|---|"]
     lines += [f"| {r['check'].replace('|', '/')} | {r['base']} | {r['before']} | {r['after']} | {r['judged']} |"
               for r in m["rows"]] or ["| (no checks ran) | | | | |"]

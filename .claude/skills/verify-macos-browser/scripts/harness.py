@@ -79,6 +79,7 @@ class Record:
         self.shots = []         # screenshot files the proof took, in order
         self.phase = "setup"    # setup | proof | cleanup: how far the run got
         self.error = None       # why the run stopped early, prefixed with the phase it stopped in
+        self.action_errors = []  # actions or reads that failed, even if the proof caught the error
         self.app_running = None  # at the end of the proof; None when the proof never started
         self.cancelled = False
 
@@ -91,7 +92,7 @@ def label(rec):
         return "FAIL", 1
     if rec.app_running is False:
         return "FAIL", 1
-    if rec.error or not any(ok for _, ok, _ in rec.checks) or rec.app_running is not True:
+    if rec.error or rec.action_errors or not any(ok for _, ok, _ in rec.checks) or rec.app_running is not True:
         return "INCONCLUSIVE", 2
     return "PASS", 2 if rec.problems else 0
 
@@ -130,6 +131,8 @@ def report(doc, rec, manifest, evidence):
     lines += ["Passed:"] + [f"- {c}" for c in passed or ["(none)"]]
     lines += ["", "Failed:"] + [f"- {c}" for c in failed or (["(the run stopped: see above)"] if verdict != "PASS" else ["(none)"])]
     lines += ["", "Problems (cleanup or evidence):"] + [f"- {p}" for p in rec.problems or ["(none)"]]
+    if rec.action_errors:
+        lines += ["", "Actions or reads that failed (the run can't tell):"] + [f"- {_line(e)}" for e in rec.action_errors]
     if rec.warnings:
         lines += ["", "Warnings:"] + [f"- {w}" for w in rec.warnings]
     if rec.notes:
@@ -178,11 +181,16 @@ class Mac:
                                     exit=p.returncode, secs=round(time.time() - t0, 1), out=p.stdout[-2000:])) + "\n")
         return p.returncode, p.stdout.strip()
 
+    def _error(self, msg):
+        """A failed action or read: recorded first, so a proof that catches it still can't pass."""
+        self.rec.action_errors.append(msg)
+        return ProofError(msg)
+
     def _do(self, command, *args):
         """An action or setup step: any nonzero exit stops the run (the run can't tell)."""
         code, out = self._sh(command, *args)
         if code:
-            raise ProofError(f"{command} {' '.join(map(str, args))}: exit {code}: {out[-600:]}")
+            raise self._error(f"{command} {' '.join(map(str, args))}: exit {code}: {out[-600:]}")
         return out
 
     # act --------------------------------------------------------------------
@@ -201,7 +209,7 @@ class Mac:
         """A key with modifiers, e.g. "cmd+t", "escape", "cmd+shift+n"."""
         *mods, key = combo.lower().split("+")
         if key not in KEYS or any(m not in MODIFIERS for m in mods):
-            raise ProofError(f"key({combo!r}): unknown key or modifier (keys: {sorted(KEYS)}, modifiers: {MODIFIERS})")
+            raise self._error(f"key({combo!r}): unknown key or modifier (keys: {sorted(KEYS)}, modifiers: {MODIFIERS})")
         return self._do("ax", "key", KEYS[key], *mods)
 
     # read -------------------------------------------------------------------
@@ -232,11 +240,14 @@ class Mac:
             try:
                 last = fn()
             except ProofError as e:
-                last = f"<{e}>"
+                self.rec.action_errors.remove(str(e))   # a read that fails now may work on the next poll
+                last = e
             else:
                 if last:
                     return self.check(what, True) and last
             if time.time() > end:
+                if isinstance(last, ProofError):
+                    raise self._error(f"{what}: can't tell within {timeout}s: {last}")
                 self.check(what, False, f"not true within {timeout}s (last: {last})")
             time.sleep(every)
 
@@ -254,10 +265,10 @@ class Mac:
 
     def _telemetry(self, what, command, *args):
         if not self._marked:
-            raise ProofError(f"{what}: call mark() first, right before the action under test (setup fires pixels too)")
+            raise self._error(f"{what}: call mark() first, right before the action under test (setup fires pixels too)")
         code, out = self._sh(command, *args)
         if code == 2:
-            raise ProofError(f"{what}: can't tell: {out[-600:]}")
+            raise self._error(f"{what}: can't tell: {out[-600:]}")
         return self.check(what, code == 0, out[-600:])
 
     def expect_pixel(self, name, params=None, timeout=10):
@@ -277,7 +288,7 @@ class Mac:
     def shot(self, name):
         """Screenshot of the app's window. One that can't be taken is a Problem, not a failed check."""
         if not re.fullmatch(r"[A-Za-z0-9_-]+", name) or name == "final":
-            raise ProofError(f"shot({name!r}): use letters, digits, - and _; 'final' is taken by prove")
+            raise self._error(f"shot({name!r}): use letters, digits, - and _; 'final' is taken by prove")
         code, out = self._sh("shot", name)
         if code:
             self.rec.problems.append(f"screenshot {name} not taken: {out[-300:]}")
@@ -411,11 +422,13 @@ def prove(path, target):
         running = json.loads(re.search(r"^running_hashes=(.*)$", doctor, re.M).group(1))
         rec.phase = "proof"
         mod.run(mac)
+        if not rec.checks:
+            rec.error = "proof: nothing was checked"
     except _Stop as e:
         rec.cancelled, rec.error = True, f"{rec.phase}: cancelled by {e}"
     except CheckFailed as e:
         rec.error = f"proof: check failed: {e}"
-    except Exception as e:
+    except BaseException as e:   # SystemExit too: a proof's exit() must not skip cleanup and the report
         rec.error = f"{rec.phase}: {type(e).__name__}: {e}"
         if not isinstance(e, ProofError):
             with open(os.path.join(evidence, "traceback.txt"), "w") as f:
@@ -442,9 +455,11 @@ def _finish(mac, rec, evidence):
     rec.phase = "cleanup"
     if started:
         code, out = mac._sh("ax", "front")
-        rec.app_running = out in ("yes", "no")
-        if not rec.app_running:
-            rec.notes.append(f"app not running at the end: {out[-200:]}")
+        last = out.splitlines()[-1] if out else ""
+        # Only ax's own answer decides; an ssh blip or other error leaves it unknown (INCONCLUSIVE, not FAIL).
+        rec.app_running = True if last in ("yes", "no") else False if last.startswith("APP NOT RUNNING") else None
+        if rec.app_running is not True:
+            rec.notes.append(f"app {'not running' if rec.app_running is False else 'state unknown'} at the end: {out[-200:]}")
         code, out = mac._sh("shot", "final") if rec.app_running else (1, "app not running")
         if code:
             rec.problems.append(f"final screenshot not taken: {out[-300:]}")

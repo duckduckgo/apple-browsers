@@ -171,5 +171,52 @@ class TelemetryNeedsMarkTests(unittest.TestCase):
             mac.expect_pixel("m_mac_any")
 
 
+class ActionErrorTests(unittest.TestCase):
+    def mac(self, *outputs):
+        mac = harness.Mac("t", tempfile.mkdtemp(), harness.Record())
+        it = iter(outputs)
+        mac._sh = lambda *a: next(it)
+        return mac
+
+    def test_a_failed_action_the_proof_catches_still_blocks_a_pass(self):
+        mac = self.mac((2, "AMBIGUOUS: 2 matches"))
+        try:
+            mac.press("New Tab")
+        except harness.ProofError:
+            pass
+        mac.check("tabs", True)
+        mac.rec.app_running = True
+        self.assertEqual(harness.label(mac.rec), ("INCONCLUSIVE", 2))
+
+    def test_a_read_that_fails_once_then_works_passes(self):
+        mac = self.mac((255, "ssh: timed out"), (0, "AXButton id=X @1,1 1x1"))
+        mac.eventually("X shown", lambda: mac.find("X"), timeout=5, every=0)
+        self.assertEqual(mac.rec.action_errors, [])
+
+    def test_a_read_that_never_works_is_cant_tell_not_a_failed_check(self):
+        mac = harness.Mac("t", tempfile.mkdtemp(), harness.Record())
+        mac._sh = lambda *a: (255, "ssh: timed out")
+        with self.assertRaises(harness.ProofError):
+            mac.eventually("X shown", lambda: mac.find("X"), timeout=0, every=0)
+        self.assertEqual(mac.rec.checks, [])
+
+
+class FinalAppStateTests(unittest.TestCase):
+    def state(self, front):
+        rec = harness.Record()
+        rec.phase = "proof"
+        mac = harness.Mac("t", tempfile.mkdtemp(), rec)
+        mac._sh = lambda command, *a: front if command == "ax" else (0, "")
+        harness._finish(mac, rec, mac.evidence)
+        return rec.app_running
+
+    def test_ax_answer_decides(self):
+        self.assertIs(self.state((0, "a warning line\nno")), True)
+        self.assertIs(self.state((1, "APP NOT RUNNING: com.duckduckgo.macos.browser.debug")), False)
+
+    def test_an_ssh_failure_leaves_it_unknown(self):
+        self.assertIsNone(self.state((255, "ssh: connect to host vm-1 port 22: Operation timed out")))
+
+
 if __name__ == "__main__":
     unittest.main()

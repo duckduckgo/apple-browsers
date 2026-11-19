@@ -84,6 +84,7 @@ protocol DockCustomization: AnyObject {
 final class DockCustomizer: DockCustomization {
     enum Keys {
         static let wasNotificationShownToUser = "was-dock-notification.show-to-users"
+        static let wasAppStoreNotificationShownToUser = "was-dock-notification.app-store.show-to-users"
     }
 
     var supportsAddingToDock: Bool {
@@ -136,8 +137,12 @@ final class DockCustomizer: DockCustomization {
             .store(in: &cancellables)
     }
 
+    private var notificationShownKey: String {
+        supportsAddingToDock ? Keys.wasNotificationShownToUser : Keys.wasAppStoreNotificationShownToUser
+    }
+
     private var didWeShowNotificationToUser: Bool {
-        keyValueStore.object(forKey: Keys.wasNotificationShownToUser) as? Bool ?? false
+        keyValueStore.object(forKey: notificationShownKey) as? Bool ?? false
     }
 
     var shouldShowNotification: Bool {
@@ -153,14 +158,13 @@ final class DockCustomizer: DockCustomization {
     }
 
     func didCloseMoreOptionsMenu() {
-        if AppDelegate.twoDaysPassedSinceFirstLaunch {
-            shouldShowNotificationPrivate = false
-            keyValueStore.set(true, forKey: Keys.wasNotificationShownToUser)
-        }
+        guard shouldShowNotificationPrivate else { return }
+        shouldShowNotificationPrivate = false
+        keyValueStore.set(true, forKey: notificationShownKey)
     }
 
     func resetData() {
-        keyValueStore.set(false, forKey: Keys.wasNotificationShownToUser)
+        keyValueStore.set(false, forKey: notificationShownKey)
         shouldShowNotificationPrivate = shouldShowNotification
     }
 

@@ -171,6 +171,50 @@ final class DockCustomizerTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowNotification)
     }
 
+    func testWhenAppStoreBuildHasDirectDownloadDotKeySavedThenNotificationIsStillShown() {
+        setFirstLaunchDateThreeDaysAgo()
+        keyValueStore.set(true, forKey: DockCustomizer.Keys.wasNotificationShownToUser)
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        let sut = makeSUT(isAppStoreBuild: true)
+
+        XCTAssertTrue(sut.shouldShowNotification)
+    }
+
+    func testWhenNotAppStoreBuildHasDotKeySavedThenNotificationIsNotShown() {
+        setFirstLaunchDateThreeDaysAgo()
+        keyValueStore.set(true, forKey: DockCustomizer.Keys.wasNotificationShownToUser)
+        let sut = makeSUT(isAppStoreBuild: false)
+
+        XCTAssertFalse(sut.shouldShowNotification)
+    }
+
+    func testWhenMoreOptionsMenuClosesWithoutDotThenDotIsShownWhenFlagTurnsOn() {
+        setFirstLaunchDateThreeDaysAgo()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        let sut = makeSUT(isAppStoreBuild: true)
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+
+        sut.didCloseMoreOptionsMenu()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+
+        XCTAssertTrue(sut.shouldShowNotification)
+    }
+
+    func testWhenMoreOptionsMenuClosesWithDotThenDotIsHidden() {
+        setFirstLaunchDateThreeDaysAgo()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        let sut = makeSUT(isAppStoreBuild: true)
+        var receivedValues: [Bool] = []
+        let cancellable = sut.shouldShowNotificationPublisher.sink { receivedValues.append($0) }
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+
+        sut.didCloseMoreOptionsMenu()
+
+        XCTAssertEqual(receivedValues.last, false)
+        XCTAssertFalse(sut.shouldShowNotification)
+        cancellable.cancel()
+    }
+
     /// Without a stored `firstLaunchDate`, `AppDelegate` falls back to a default “old” date so computed dock notification eligibility is `true`,
     /// but the published value must stay `false` until `synchronizeNotificationVisibilityWithFirstLaunchDate()` runs (after real install date is written).
     func testWhenNotAppStoreBuildWithoutSynchronizeThenPublisherDoesNotMirrorStaleFirstLaunchEligibility() {
@@ -305,6 +349,27 @@ final class DockCustomizerTests: XCTestCase {
 
         XCTAssertEqual(receivedValues.last, false)
         cancellable.cancel()
+    }
+
+    private func setFirstLaunchDateThreeDaysAgo() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(Date().addingTimeInterval(.days(-3)), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+    }
+
+    private func makeSUT(isAppStoreBuild: Bool) -> DockCustomizer {
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = isAppStoreBuild
+        return DockCustomizer(
+            applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            dockMembershipProvider: dockMembershipProvider
+        )
     }
 
 }

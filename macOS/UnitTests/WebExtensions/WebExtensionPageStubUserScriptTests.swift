@@ -67,4 +67,14 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
     func testThatScriptIsNotCreatedForOtherUsers() {
         XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false))
     }
+
+    func testGestureScriptRunsAtDocumentStartInAllFramesInTheIsolatedWorld() {
+        let gestureScript = WebExtensionPermissionUserGestureUserScript()
+
+        XCTAssertEqual(gestureScript.source, WebExtensionPermissionUserGestureScript.source)
+        XCTAssertEqual(gestureScript.injectionTime, .atDocumentStart)
+        XCTAssertFalse(gestureScript.forMainFrameOnly)
+        XCTAssertFalse(gestureScript.requiresRunInPageContentWorld)
+        XCTAssertEqual(gestureScript.messageNames, [WebExtensionPermissionUserGestureScript.messageHandlerName])
+    }
 }

@@ -89,3 +89,16 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
         }
     }
 }
+
+/// The companion isolated script records input without exposing its handler to extension code.
+@available(macOS 15.4, *)
+final class WebExtensionPermissionUserGestureUserScript: NSObject, UserScript {
+    let source = WebExtensionPermissionUserGestureScript.source
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly = false
+    let messageNames = [WebExtensionPermissionUserGestureScript.messageHandlerName]
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handlePermissionUserGestureMessage(message)
+    }
+}

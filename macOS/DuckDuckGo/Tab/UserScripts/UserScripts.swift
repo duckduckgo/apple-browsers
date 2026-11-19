@@ -266,6 +266,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         if let webExtensionPageStubUserScript {
+            if #available(macOS 15.4, *) {
+                userScripts.append(WebExtensionPermissionUserGestureUserScript())
+            }
             userScripts.append(webExtensionPageStubUserScript)
         }
 

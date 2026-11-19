@@ -37,7 +37,7 @@ extension WatchdogDetectionState {
     ///
     static func nextState(currentState: WatchdogDetectionState, settings: WatchdogSettings, secondsSinceLastTick: TimeInterval, secondsSinceLastHeartbeat: TimeInterval, secondsSinceHangStarted: TimeInterval) -> WatchdogDetectionState {
         /// # Late Tick: the watchdog itself was stalled (e.g. App Nap), so a stale heartbeat isn't a hang
-        if secondsSinceLastTick > settings.checkInterval * 2 {
+        if secondsSinceLastTick > settings.lateTickThreshold {
             return currentState
         }
 

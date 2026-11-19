@@ -31,6 +31,11 @@ public struct WatchdogSettings {
     let requiredRecoveryHeartbeats: Int
     let timeoutRepeatCooldown: TimeInterval
 
+    /// A tick arriving later than this means the watchdog itself was stalled (e.g. App Nap)
+    var lateTickThreshold: TimeInterval {
+        checkInterval * 2
+    }
+
     public static let `default` = WatchdogSettings(checkInterval: 0.5, minimumHangDuration: 2.0, maximumHangDuration: 5.0, requiredRecoveryHeartbeats: 4, timeoutRepeatCooldown: 60.0)
 }
 
@@ -216,6 +221,13 @@ private extension Watchdog {
 
     func performHangDetection() {
         let secondsSinceLastTick = timestamps.signalTick()
+        if secondsSinceLastTick > settings.lateTickThreshold {
+            /// Late tick: the watchdog was stalled (e.g. App Nap), so no heartbeat was requested meanwhile.
+            /// The last heartbeat is old because of us, not because the main thread was blocked.
+            /// Restart the baseline now: otherwise, the next tick would count the stalled time as a hang.
+            timestamps.signalHeartbeat()
+        }
+
         let secondsSinceLastHeartbeat = timestamps.secondsSinceLastHeartbeat
         let secondsSinceHangStarted = timestamps.secondsSinceHangStarted
 

@@ -66,9 +66,9 @@ final class AIChatDebugMenu: NSMenu {
 
         buildItems {
             NSMenuItem(title: "Web Communication") {
-                NSMenuItem(title: "Set Custom URL", action: #selector(setCustomURL))
+                NSMenuItem(title: "Set Custom URL", action: AIChatDebugURLSettings.forcedURL == nil ? #selector(setCustomURL) : nil)
                     .targetting(self)
-                NSMenuItem(title: "Reset Custom URL", action: #selector(resetCustomURL))
+                NSMenuItem(title: "Reset Custom URL", action: AIChatDebugURLSettings.forcedURL == nil ? #selector(resetCustomURL) : nil)
                     .targetting(self)
                 customURLLabelMenuItem
             }
@@ -439,7 +439,8 @@ final class AIChatDebugMenu: NSMenu {
     }
 
     private func updateWebUIMenuItemsState() {
-        customURLLabelMenuItem.title = "Custom URL: [\(debugStorage.customURL ?? "")]"
+        let forced = AIChatDebugURLSettings.forcedURL == nil ? "" : " (set by this build)"
+        customURLLabelMenuItem.title = "Custom URL: [\(debugStorage.effectiveCustomURL ?? "")]\(forced)"
     }
 
     private func showCustomURLAlert(callback: @escaping (String?) -> Bool) {

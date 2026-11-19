@@ -17,16 +17,29 @@
 //
 
 import AppKit
+import Common
 import Persistence
 
 struct AIChatDebugURLSettings: StoringKeys {
     let customURL = StorageKey<String>(.aiChatDebugURLSettings)
+
+    /// Testing builds of the local model select POC must reach the Duck.ai build that sends `select`,
+    /// without anyone setting it in the Debug menu. Branch only: remove before merging.
+    /// Tests keep their own custom URLs.
+    static var forcedURL: String? {
+        [.unitTests, .integrationTests].contains(AppVersion.runType) ? nil : "https://euw-serp-dev-testing3.duck.ai/"
+    }
 }
 
 extension KeyedStoring where Keys == AIChatDebugURLSettings {
 
+    /// The Debug menu's custom URL, unless this build forces one.
+    var effectiveCustomURL: String? {
+        AIChatDebugURLSettings.forcedURL ?? self.customURL
+    }
+
     var customURLHostname: String? {
-        if let customURL = self.customURL,
+        if let customURL = effectiveCustomURL,
             let url = URL(string: customURL) {
             return url.host
         }

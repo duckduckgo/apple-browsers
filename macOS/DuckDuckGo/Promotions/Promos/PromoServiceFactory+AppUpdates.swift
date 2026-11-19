@@ -46,8 +46,7 @@ extension PromoServiceFactory {
         guard let bridge = dependencies.updateNotificationBridge else { return nil }
 
         let delegate = BrowserUpdatedPromoDelegate(bridge: bridge,
-                                                   windowControllersManager: dependencies.windowControllersManager,
-                                                   featureFlagger: dependencies.featureFlagger)
+                                                   windowControllersManager: dependencies.windowControllersManager)
         bridge.browserUpdatedDelegate = delegate
 
         return InternalPromo(id: browserUpdatedPromoID,

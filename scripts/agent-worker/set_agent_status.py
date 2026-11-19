@@ -7,8 +7,9 @@ When the run ends:
 - Needs attention otherwise, with what to look at and how to try again
 
 Env: ASANA_APP_CLIENT_ID, ASANA_APP_CLIENT_SECRET, ASANA_APP_REFRESH_TOKEN, TASK_GID, RUN_URL,
-EVIDENCE_URL, VERIFY_URL, STATUS_FIELD (Agent Status field gid), STATUS_OPTIONS (JSON map of status to option
-gid), and at the end AGENT and PUBLISH (job results), CANCELLED, VERIFY_OK, FAILURE and PR_URL
+EVIDENCE_URL, DECISION_LOG_URL (auto's, when it kept one), STATUS_FIELD (Agent Status field gid), STATUS_OPTIONS
+(JSON map of status to option gid), and at the end AGENT and PUBLISH (job results), CANCELLED, BUILD_OK, FAILURE
+and PR_URL
 """
 
 import html
@@ -36,6 +37,17 @@ def evidence(e):
     return ev, (a(ev + "/summary.md", "summary") if ev else "the summary linked in the run summary")
 
 
+def how(e):
+    """Where to see how the agent worked: auto's decision log and the full session, behind SSO"""
+    ev, log = e.get("EVIDENCE_URL", "").rstrip("/"), e.get("DECISION_LOG_URL", "")
+    links = []
+    if re.fullmatch(r"https://artifacts\.go\.duckduckgo\.com/view/[^\s\"<>]+", log):
+        links.append("its " + a(log, "decision log") + " with its proofs")
+    if ev:
+        links.append("the " + a(ev + "/transcript.md", "full session transcript"))
+    return " or ".join(links)
+
+
 AGAIN = ("<li>Set Agent Status back to <strong>Ready</strong> to try again with a new plan, "
          "or mark the task complete to drop it.</li>")
 ATTENTION = "<body>⚠️ "
@@ -47,10 +59,10 @@ def failure(e):
     if e["AGENT"] != "success":
         _, summary = evidence(e)
         return "The agent failed or made no change", f"the agent's {summary}"
-    if e.get("VERIFY_OK") != "true":
-        vu = e.get("VERIFY_URL", "").rstrip("/")
-        what = e.get("FAILURE") or "the build and test job didn't finish"
-        return f"The agent's fix didn't pass: {what}", ("the " + a(vu + "/verify.md", "summary") if vu else "the summary linked in the run summary")
+    if e.get("BUILD_OK") != "true":
+        _, summary = evidence(e)
+        what = e.get("FAILURE") or "the build and test check didn't finish"
+        return f"The agent's fix didn't pass: {what}", f"the agent's {summary}"
     return None
 
 
@@ -58,17 +70,21 @@ def outcome(e):
     """The end status and its comment"""
     run = a(e["RUN_URL"], "worker run")
     if e["PUBLISH"] == "success" and re.fullmatch(r"https://github\.com/[^\s]+/pull/[0-9]+", e.get("PR_URL", "")):
+        _, summary = evidence(e)
+        steps = f"<li>Review the PR. The agent's {summary} has the problem, the fix and its build and test results.</li>"
+        if how(e):
+            steps += f"<li>To see how the agent worked, open {how(e)}.</li>"
         return "pr_open", (f"{REVIEW}<strong>The agent opened a PR ready for review:</strong> {a(e['PR_URL'], e['PR_URL'])}\n"
-                           f"<ol><li>Review the PR. The worker's build and test results are on the {a(e.get('VERIFY_URL', '').rstrip('/') + '/verify.md', 'verify page')}.</li>"
-                           "<li>When it merges, set Agent Status to <strong>Done</strong>.</li></ol></body>")
+                           f"<ol>{steps}</ol></body>")
     if e.get("CANCELLED") == "true":
         return "needs_attention", (f"{ATTENTION}<strong>The worker run was cancelled.</strong>\n"
                                    f"<ol><li>Open the {run} to see who cancelled it or why it timed out.</li>" + AGAIN + "</ol></body>")
     failed = failure(e)
     if failed:
         what, page = failed
+        more = f" You can also open {how(e)}." if how(e) else ""
         return "needs_attention", (f"{ATTENTION}<strong>{esc(what)}.</strong>\n"
-                                   f"<ol><li>Open {page} and the {run} to see why.</li>"
+                                   f"<ol><li>Open {page} and the {run} to see why.{more}</li>"
                                    "<li>Fix the cause, or add what the agent needs as a comment.</li>" + AGAIN + "</ol></body>")
     return "needs_attention", (f"{ATTENTION}<strong>The agent's change wasn't published.</strong> The publish step failed or was skipped.\n"
                                f"<ol><li>Open the {run} to see why.</li>" + AGAIN + "</ol></body>")

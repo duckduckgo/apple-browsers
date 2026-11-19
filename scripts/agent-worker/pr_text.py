@@ -92,7 +92,7 @@ def render(pr_md, out, template=None):
     found.setdefault(SECTIONS[0], "Change from the agent worker, for a person to review.")
     parts = [f"Task/Issue URL: https://app.asana.com/0/0/{e['TASK_GID']}/f"]
     parts += [f"{h}\n{found[h]}" for h in SECTIONS if h in found]
-    parts.append(f"Opened by the agent worker after the change built and its tests passed on a clean runner. Run: {e['RUN_URL']}")
+    parts.append(f"Opened by the agent worker after its build and tests passed. Run: {e['RUN_URL']}")
     end = footer(template)
     if end:
         parts.append(end)

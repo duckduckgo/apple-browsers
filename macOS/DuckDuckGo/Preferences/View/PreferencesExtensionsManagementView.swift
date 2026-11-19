@@ -628,11 +628,13 @@ extension Preferences {
 private struct WarningIcon: View {
     let size: CGFloat
 
+    @Environment(\.designSystemPalette) private var palette
+
     var body: some View {
         Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationSolid)
             .renderingMode(.template)
             .resizable()
-            .foregroundColor(Color(designSystemColor: .statusYellowTertiary))
+            .foregroundColor(Color(designSystemColor: .statusYellowTertiary, palette: palette))
             .background(Circle().fill(Color.black).padding(size / 8))
             .frame(width: size, height: size)
     }

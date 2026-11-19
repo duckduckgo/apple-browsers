@@ -351,6 +351,7 @@ doctor)
     started=$(epoch_of_pid "$pid")
     verify_lines=$(grep -a -c "\[VERIFY\]" "$exe.debug.dylib" || true)
     echo "pid=$pid started=$started since=$since verify_strings=$verify_lines${VM:+ vm=$VM}"
+    echo "running_hashes=$have_hashes"
     [[ "$have_source" == "$want_source" ]] || { echo "STALE SOURCE: the worktree changed since the build; rebuild"; exit 2; }
     [[ "$have_hashes" == "$want_hashes" && "$have_hashes" != *null* ]] || { echo "REBUILT: the binaries changed since this build (Xcode?); rebuild"; exit 2; }
     (( started >= since - 1 )) || { echo "OLD PROCESS: started before this build's launch; rebuild"; exit 2; }

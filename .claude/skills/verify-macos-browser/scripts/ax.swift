@@ -25,11 +25,15 @@ import ApplicationServices
 // Target: the app whose name contains $VERIFY_APP (e.g. "verify-tool-prompt").
 // Usage: ax dump [depth] [web] | find <text> | press <idOrText> [nth=<n>] | clickel <idOrText> [nth=<n>]
 //        | hover <idOrText> [nth=<n>] | click x y [cmd]
-//        | type <text> | key <code> [cmd|shift|opt|ctrl]... | activate | frame | front | winrect
+//        | type <text> | key <code> [cmd|shift|opt|ctrl]... | activate | frame | front | winrect | grants
 let args = CommandLine.arguments.dropFirst()
 let cmd = args.first ?? "dump"
 let rest = Array(args.dropFirst())
 
+// grants: whether this process holds Accessibility and Screen Recording. Reads only: never prompts, needs no app.
+if cmd == "grants" {
+    print("accessibility=\(AXIsProcessTrusted()) screen-recording=\(CGPreflightScreenCaptureAccess())"); exit(0)
+}
 guard let target = ProcessInfo.processInfo.environment["VERIFY_APP"], !target.isEmpty else {
     print("Set VERIFY_APP to the app name, e.g. verify-<topic>"); exit(1)
 }

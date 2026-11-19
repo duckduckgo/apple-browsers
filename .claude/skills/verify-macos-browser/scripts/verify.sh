@@ -4,10 +4,10 @@
 # Usage: verify.sh <command> <topic> [args...]
 #   vm      <topic> [vm-1|vm-2|auto]    run this topic in a VM (see VM-SETUP.md): reserve a free one, wipe the
 #                                       app's data there; first, before flag/set-default/build
-#   build   <topic> [worktree] [--automation] [--language <l> --locale <l>] [--keep-onboarding]
+#   build   <topic> [worktree] [--automation] [--language <l> --locale <l>] [--keep-onboarding] [--no-launch]
 #                                       build, record source fingerprint + hashes, launch (en-US, internal user),
 #                                       wait until ready, start the PixelKit stream; in a VM, copy the app there
-#                                       and skip onboarding unless --keep-onboarding
+#                                       and skip onboarding unless --keep-onboarding; --no-launch stops after the build
 #   doctor  <topic>                     fail if the source, the binaries or the process don't match the build
 #   ax      <topic> <ax-args...>        drive the app through the accessibility tree (see ax.swift)
 #   shot    <topic> <name>              screenshot of the app's window only, if the app is frontmost
@@ -214,7 +214,7 @@ vm)
     echo "vm=$VM macOS ${info%%$'\t'*} (app data wiped)"
     ;;
 build)
-    worktree="."; automation=0; language="en"; locale="en_US"; skip_onboarding=1
+    worktree="."; automation=0; language="en"; locale="en_US"; skip_onboarding=1; launch=1
     if [[ $# -gt 0 && "$1" != --* ]]; then worktree=$1; shift; fi
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -222,6 +222,7 @@ build)
             --language) language=$2; shift ;;
             --locale) locale=$2; shift ;;
             --keep-onboarding) skip_onboarding=0 ;;
+            --no-launch) launch=0 ;;
             *) echo "build: unknown option $1"; exit 64 ;;
         esac
         shift
@@ -268,6 +269,7 @@ build)
     hashes_json=$(helper hash "$exe" "$exe.debug.dylib")
     printf '{"worktree": "%s", "build_start": %s, "build_end": %s, "derived_data": "%s", "app": "%s", "source": %s, "hashes": %s}\n' \
         "$worktree" "$build_start" "$build_end" "$DERIVED_DATA" "$app" "$source_json" "$hashes_json" > "$RUN_DIR/build.json"
+    (( launch )) || { echo "built $app"; exit 0; }
 
     target_app="$app"
     if [[ -n "$VM" ]]; then

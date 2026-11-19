@@ -82,6 +82,16 @@ struct DuckAIOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("The UI is locked until Fire is used", .timeLimit(.minutes(1)))
+    func uiLockedUntilFire() {
+        #expect(sut.isUILocked)
+
+        progress.fireButtonUsedOnce = true
+
+        #expect(!sut.isUILocked)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Got it is handled by the ending; That's Duck.ai! has nothing after it", .timeLimit(.minutes(1)))
     func gotIt() {
         experiment.cohortStub = .treatment

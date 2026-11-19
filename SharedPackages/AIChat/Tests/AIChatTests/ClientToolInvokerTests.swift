@@ -226,15 +226,29 @@ struct ClientToolInvokerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func automaticToolIgnoresStoredDenialWithoutPermissionPusher() async throws {
+    @Test(.timeLimit(.minutes(1)), arguments: [BrowserToolPermissionState.ask, .deny])
+    func automaticToolFollowsAStoredChoice(state: BrowserToolPermissionState) async throws {
         let harness = ClientToolTestHarness()
         harness.tool.permissionMode = .auto
-        harness.permissions.storedDecisions[harness.tool.name] = .deny
-        let request = try harness.request()
-        let response = await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: nil)
+        harness.permissions.storedDecisions[harness.tool.name] = state
+        let task = try harness.start()
+        if state == .ask {
+            await harness.source.waitForPrompts(1)
+            harness.answer(harness.source.prompts[0], decision: .allowOnce)
+            #expect(await task.value == .success(callId: "call", value: ["content": "page"]))
+        } else {
+            #expect(await task.value == .failure(callId: "call", error: .denied))
+            #expect(harness.source.prompts.isEmpty)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func automaticToolRunsWithoutAStoredChoice() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.permissionMode = .auto
+        let response = await harness.invoker.invokeClientTool(try harness.request(), context: harness.context, permissionPrompter: nil)
         #expect(response == .success(callId: "call", value: ["content": "page"]))
-        #expect(harness.source.prompts.isEmpty)
         #expect(harness.permissions.writes == 0)
     }
 

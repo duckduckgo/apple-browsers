@@ -115,6 +115,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     private var cancellables = Set<AnyCancellable>()
     private var isClosed = false
     private var isConfirmingStop = false
+    private weak var statusToolbarItem: NSToolbarItem?
 
     init(session: AssistedOptOutSession, window: NSWindow,
          loadFavicon: @escaping @MainActor (AssistedOptOut.DataBroker) async -> Data?,
@@ -245,13 +246,14 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         let showsPage = hasLoadedPage || phase == .userTurn || phase == .submitted
         if showsPage, !hasLoadedPage { page.revealPage() }
         coverView.isHidden = phase != .ready && showsPage
+        styleStatusItem(for: phase)
         switch phase {
         case .ready, .submitted:
             edgeView.setEdge(.none)
             inputBlocker.isHidden = true
         case .queued, .agentInControl:
             // The user can watch but not type or click into the page while DuckDuckGo fills it in.
-            edgeView.setEdge(.agent)
+            edgeView.setEdge(.none)
             inputBlocker.isHidden = false
             window?.makeFirstResponder(inputBlocker)
         case .userTurn:
@@ -259,6 +261,13 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
             inputBlocker.isHidden = true
             if let webView = session.webView { window?.makeFirstResponder(webView) }
         }
+    }
+
+    private func styleStatusItem(for phase: AssistedAttemptPhase) {
+        guard #available(macOS 26.0, *), let statusToolbarItem else { return }
+        let isAgentInControl = phase == .queued || phase == .agentInControl
+        statusToolbarItem.style = isAgentInControl ? .prominent : .plain
+        statusToolbarItem.backgroundTintColor = isAgentInControl ? .black : nil
     }
 
     override func close() {
@@ -287,6 +296,10 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         }
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
         item.view = view
+        if itemIdentifier == Self.statusItem {
+            statusToolbarItem = item
+            styleStatusItem(for: session.phase)
+        }
         return item
     }
 

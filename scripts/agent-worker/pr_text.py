@@ -9,12 +9,17 @@ Usage:
                                                  shape of the repo's PR template (env: TASK_GID, RUN_URL, RUN_ID)
 
 The PR is public and opens without an approval step, so lines with links are dropped from the agent's
-text and the title is one plain line. Only the template sections below are kept, in the template's order
+text and the title is one plain line. Lines that copy the agent's instructions (auto's skills and the worker
+prompts, from LEAK_CORPUS) are dropped too. Only the template sections below are kept, in the template's order
 """
 
 import os
 import re
 import sys
+
+# -I leaves the script's directory off sys.path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import leak_check  # noqa: E402
 
 AGENT_FILE = ".agent-pr.md"
 MAX_TITLE = 100
@@ -42,6 +47,15 @@ def extract(repo, evidence):
     with open(src, errors="replace") as f:
         title, body = clean(f.read(20000))
     os.remove(src)
+    known = leak_check.corpus()
+    if title and leak_check.leaks(title, known):
+        title = None
+    kept = [line for line in body if not leak_check.leaks(line, known)]
+    if len(kept) < len(body):
+        print(f"dropped {len(body) - len(kept)} PR text line(s) copied from the agent's instructions")
+        with open(os.path.join(evidence, "plan-notes.txt"), "a") as f:
+            f.write(f"- Dropped {len(body) - len(kept)} PR text line(s) that copied the agent's instructions.\n")
+    body = kept
     if not title:
         print("the agent's PR text had no title")
         return

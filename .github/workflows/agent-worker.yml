@@ -257,29 +257,33 @@ jobs:
             "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence" "$rc" || true
           echo "rc=$rc" >> "$GITHUB_ENV"
 
-      # How the agent's last xc build and xc test ended, recorded by xc.sh. A failed or missing build, or failed tests,
-      # send the task to Needs attention instead of a PR. Tests are optional, since not every change has one to run
-      - name: Result
-        id: result
-        if: env.rc == '0'
-        run: |
-          s="$RUNNER_TEMP/xc-logs/status"
-          failure=""
-          if ! grep -qx "build=passed" "$s" 2> /dev/null; then failure="its last build failed or it never built"
-          elif grep -qx "tests=failed" "$s"; then failure="its last test run failed"
-          fi
-          build=$(sed -n 's/^build=//p' "$s" 2> /dev/null); tests=$(sed -n 's/^tests=//p' "$s" 2> /dev/null)
-          printf '\n## Build and tests\n\nFrom the last xc build and xc test the agent ran. Build: %s. Tests: %s.\n' \
-            "${build:-not run}" "${tests:-not run}" >> "$RUNNER_TEMP/evidence/summary.md"
-          { echo "ok=$([[ -z $failure ]] && echo true || echo false)"; echo "failure=$failure"; } | tee -a "$GITHUB_OUTPUT"
-
       - name: Export changes as a patch
         id: export
         if: env.rc == '0'
         working-directory: target
         run: |
+          # What the agent was told, so text copied from it is kept out of the PR and the patch
+          export LEAK_CORPUS="$GITHUB_WORKSPACE/worker/scripts/agent-worker/prompts${AUTO_DIR:+:$AUTO_DIR}"
           "$GITHUB_WORKSPACE/worker/scripts/agent-worker/export_patch.sh" "$RUNNER_TEMP/evidence"
           echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # How the agent's last xc build and xc test ended, recorded by xc.sh. A failed or missing build, failed tests, or a
+      # patch that copies the agent's instructions send the task to Needs attention instead of a PR. Tests are optional,
+      # since not every change has one to run
+      - name: Result
+        id: result
+        if: steps.export.outcome == 'success'
+        run: |
+          s="$RUNNER_TEMP/xc-logs/status"
+          failure=""
+          if ! grep -qx "build=passed" "$s" 2> /dev/null; then failure="its last build failed or it never built"
+          elif grep -qx "tests=failed" "$s"; then failure="its last test run failed"
+          elif [[ -s "$RUNNER_TEMP/evidence/instruction-text.txt" ]]; then failure="its change copies text from its instructions (see instruction-text.txt)"
+          fi
+          build=$(sed -n 's/^build=//p' "$s" 2> /dev/null); tests=$(sed -n 's/^tests=//p' "$s" 2> /dev/null)
+          printf '\n## Build and tests\n\nFrom the last xc build and xc test the agent ran. Build: %s. Tests: %s.\n' \
+            "${build:-not run}" "${tests:-not run}" >> "$RUNNER_TEMP/evidence/summary.md"
+          { echo "ok=$([[ -z $failure ]] && echo true || echo false)"; echo "failure=$failure"; } | tee -a "$GITHUB_OUTPUT"
 
       - name: Azure login again (GitHub OIDC)
         if: always() && steps.anthropic.outcome == 'success'

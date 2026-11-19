@@ -4,7 +4,8 @@
 # scripts/agent-worker/
 #
 # Usage: export_patch.sh <evidence dir>   (run from the checkout)
-# Env: BASE_SHA, the commit the agent started from, so commits the agent made are part of the patch
+# Env: BASE_SHA, the commit the agent started from, so commits the agent made are part of the patch, and
+# LEAK_CORPUS for leak_check.py, which writes instruction-text.txt when the patch copies the agent's instructions
 
 set -euo pipefail
 evidence=$1
@@ -15,6 +16,7 @@ base=${BASE_SHA:-HEAD}
 git add -A
 git diff --cached --binary "$base" > "$evidence/changes.patch"
 python3 -I "$here/evidence_plan.py" excluded "$evidence"
+python3 -I "$here/leak_check.py" patch "$evidence/changes.patch" "$evidence/instruction-text.txt" || true
 if [[ ! -s "$evidence/changes.patch" ]]; then
   printf '\n## Changes\n\nNone, so nothing will be published.\n' >> "$evidence/summary.md"
   echo "::error::agent made no changes"

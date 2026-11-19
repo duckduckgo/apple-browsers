@@ -1181,8 +1181,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockWebsiteDataManager.clearCalledWithFireMode, false)
     }
 
-    func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {
-        XCTAssertFalse(mockFeatureFlagger.enabledFeatureFlags.contains(.sitePermissions))
+    func testWhenBurningDataThenSitePermissionsAreCleared() async {
         storePermission(for: "cleared.example")
         let executor = makeFireExecutor()
 

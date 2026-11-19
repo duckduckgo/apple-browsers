@@ -38,6 +38,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         defer { sut.detachBrowserTools() }
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         var scopeCreations = 0
         sut.browserToolScopeFactory = { [weak fixture] in
             scopeCreations += 1
@@ -73,6 +74,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         defer { sut.detachBrowserTools() }
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         var scopeCreations = 0
         sut.browserToolScopeFactory = { [weak fixture] in
             scopeCreations += 1
@@ -103,24 +105,25 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testBrowserToolsRetainGrantedListingAcrossHiddenViewAndFailedProvisionalNavigation() async throws {
+    func testBrowserToolsCancelOnSurfaceDepartureButKeepDocumentAfterFailedNavigation() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         let sut = makeAttachmentSubmissionController()
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
         guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+            return XCTFail("Expected native authorization")
         }
-        sut.viewDidDisappear(false)
+        sut.viewWillDisappear(false)
         sut.webView(actualWebView, didStartProvisionalNavigation: nil)
         sut.webView(actualWebView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
         let retained = await performExecution { .success([:]) }
-        XCTAssertEqual(retained, .success([:]))
+        XCTAssertNil(retained)
         let result = await fixture.invoke()
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)
@@ -136,6 +139,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             defer { sut.detachBrowserTools() }
             sut.browserToolsOwner = fixture.owner
             sut.browserToolsService = fixture.service
+            sut.browserToolsPermissionPresenter = fixture.presenter
             sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
             sut.configureContentHandler(with: fixture.script)
             let navigationDelegate = try XCTUnwrap(fixture.script.webView?.navigationDelegate)
@@ -150,12 +154,13 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let sut = makeAttachmentSubmissionController()
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
         guard case .granted(let performAfterForeignCommit) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+            return XCTFail("Expected native authorization")
         }
         sut.webView(WKWebView(), didCommit: nil)
         let retained = await performAfterForeignCommit { .success([:]) }
@@ -163,7 +168,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let unaffected = await fixture.invoke()
         XCTAssertEqual(unaffected, fixture.success)
         guard case .granted(let performAfterOwnCommit) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+            return XCTFail("Expected native authorization")
         }
         sut.webView(actualWebView, didCommit: nil)
         let cancelled = await performAfterOwnCommit {
@@ -187,6 +192,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let freshController = makeAttachmentSubmissionController()
         freshController.browserToolsOwner = fixture.owner
         freshController.browserToolsService = fixture.service
+        freshController.browserToolsPermissionPresenter = fixture.presenter
         freshController.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
         let freshScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
         freshController.configureContentHandler(with: freshScript)

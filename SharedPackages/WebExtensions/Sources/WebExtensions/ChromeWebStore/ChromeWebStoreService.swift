@@ -91,7 +91,6 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     public convenience init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
                             downloader: ChromeWebStoreDownloading = ChromeWebStoreDownloader(), presenter: ChromeWebStorePresenting,
-                            supportsUpdateDiscovery: Bool = false,
                             isUpdateDiscoveryEnabled: @escaping @MainActor @Sendable () -> Bool = { true },
                             updateDiscoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                             canApplyUpdatesWhileInactive: (@MainActor (String) -> Bool)? = nil,
@@ -99,15 +98,14 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
                             keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                             pendingUpdates: (any ChromeWebStorePendingUpdateStoring)? = nil) {
-        let pending = pendingUpdates ?? (supportsUpdateDiscovery
-            ? ChromeWebStorePendingUpdateStore(persistentDirectory: manager.storageProvider.extensionsDirectory.appendingPathComponent(".pending-updates"))
-            : ChromeWebStorePendingUpdateStore())
-        let installer = supportsUpdateDiscovery ? ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: pending,
-                                                                               isEnabled: isUpdateDiscoveryEnabled,
-                                                                               isCatalogExtension: { catalog.contains($0) },
-                                                                               canApplyWhileInactive: canApplyUpdatesWhileInactive) : nil
+        let pending = pendingUpdates
+            ?? ChromeWebStorePendingUpdateStore(persistentDirectory: manager.storageProvider.extensionsDirectory.appendingPathComponent(".pending-updates"))
+        let installer = ChromeWebStoreUpdateInstaller(manager: manager, pendingUpdates: pending,
+                                                      isEnabled: isUpdateDiscoveryEnabled,
+                                                      isCatalogExtension: { catalog.contains($0) },
+                                                      canApplyWhileInactive: canApplyUpdatesWhileInactive)
         self.init(manager: manager, catalog: catalog, downloader: downloader, presenter: presenter,
-                  verifier: ChromeWebStorePackageVerifier(), supportsUpdateDiscovery: supportsUpdateDiscovery,
+                  verifier: ChromeWebStorePackageVerifier(),
                   isUpdateDiscoveryEnabled: isUpdateDiscoveryEnabled, updateDiscoveryFeatureFlagUpdates: updateDiscoveryFeatureFlagUpdates,
                   updateApplicationActivityUpdates: updateApplicationActivityUpdates,
                   keyValueStore: keyValueStore, pixelFiring: pixelFiring, pendingUpdates: pending, updateInstaller: installer, updateCheck: { identifier, version in
@@ -117,7 +115,6 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     init(manager: WebExtensionManager, catalog: ChromeWebStoreCatalogProviding,
          downloader: ChromeWebStoreDownloading, presenter: ChromeWebStorePresenting, verifier: ChromeWebStorePackageVerifier,
-         supportsUpdateDiscovery: Bool = true,
          isUpdateDiscoveryEnabled: @escaping @MainActor @Sendable () -> Bool = { true },
          updateDiscoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
          updateApplicationActivityUpdates: AnyPublisher<Void, Never>? = nil,
@@ -146,7 +143,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             self?.clearUpdateVersionOverride(for: installed, consumedIdentifier: identifier) ?? false
         }
         configureUpdateInstaller(manager: manager, activityUpdates: updateApplicationActivityUpdates)
-        if supportsUpdateDiscovery, let updateCheck {
+        if let updateCheck {
             let updater = ChromeWebStoreUpdater(pendingUpdates: pendingUpdates, verifier: verifier, download: updateDownload,
                                                  installation: { [weak self] identifier in
                 guard let self, self.isUpdateDiscoveryEnabled(), let version = self.eligibleInstalledVersions()?[identifier] else { return nil }

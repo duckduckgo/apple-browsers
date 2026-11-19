@@ -10,7 +10,7 @@
 """
 import json, os, re, subprocess, time
 
-from .env import Failed
+from .env import Failed, Missed, SetupFailed
 
 PIXEL = re.compile(r"👾\[(?P<frequency>.+?)-(?P<status>Fired\(dryRun\)|Fired|Skipped)\] (?P<name>\S+)(?: \[(?P<params>.*)\])?\s*$")
 PARAM = re.compile(r'"((?:[^"\\]|\\.)*)": "((?:[^"\\]|\\.)*)"')
@@ -66,7 +66,7 @@ class Pixels:
     def healthy(self):
         """Fail if the stream has died: a dead stream sees no pixels, which would make "not fired" pass vacuously."""
         if not self.proc or self.proc.poll() is not None:
-            raise Failed("the pixel log stream is not running; pixel results would be meaningless",
+            raise SetupFailed("the pixel log stream is not running; pixel results would be meaningless",
                          stderr=_tail(self.path + ".stderr"))
 
     def mark(self):
@@ -124,7 +124,7 @@ class Pixels:
             if len(hits) > occurrence:
                 return hits[occurrence]
             if time.time() > end:
-                raise Failed(f"pixel {name} not fired (occurrence {occurrence}) within {timeout}s of the mark",
+                raise Missed(f"pixel {name} not fired (occurrence {occurrence}) within {timeout}s of the mark",
                              skipped=[p for p in seen if p["name"] in (name, base) and p["status"] == "Skipped"],
                              similar=sorted({p["name"] for p in seen if base.split("_")[0] in p["name"]})[:20])
             time.sleep(0.25)
@@ -136,7 +136,7 @@ class Pixels:
             self.healthy()
             hits = [p for p in self._after_mark() if p["name"] == name and p["status"] == "Fired"]
             if hits:
-                raise Failed(f"pixel {name} fired but should not have", pixel=hits[0])
+                raise Missed(f"pixel {name} fired but should not have", pixel=hits[0])
             time.sleep(0.25)
         self.healthy()
 
@@ -192,6 +192,6 @@ class WideEvents:
             if len(hits) > occurrence:
                 return hits[occurrence]
             if time.time() > end:
-                raise Failed(f"wide event {feature} not written (occurrence {occurrence}) within {timeout}s",
+                raise Missed(f"wide event {feature} not written (occurrence {occurrence}) within {timeout}s",
                              seen=[e.get("feature", {}).get("name") for e in self.all()])
             time.sleep(0.25)

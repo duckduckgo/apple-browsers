@@ -84,6 +84,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        tld: TLD(),
                                        featureFlagger: featureFlagger,
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+                                       onboardingPathStarter: { CapturingPathStarter() },
                                        appearancePreferences: appearancePreferences,
                                        themeManager: MockThemeManager(),
                                        startupPreferences: startupPreferences,

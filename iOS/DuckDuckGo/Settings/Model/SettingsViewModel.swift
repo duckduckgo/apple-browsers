@@ -196,7 +196,6 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
-        isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
         favicons: sitePermissionsFavicons,
         callbacks: makeSitePermissionsCallbacks()
     )

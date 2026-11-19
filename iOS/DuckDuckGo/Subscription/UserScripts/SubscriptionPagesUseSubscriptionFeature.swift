@@ -946,7 +946,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 extension DefaultSubscriptionPagesUseSubscriptionFeature {
 
     enum NotificationsPermissionStatus: String, Encodable {
-        case granted, denied, notDetermined
+        case granted, denied, notDetermined, provisional
     }
 
     struct UserSettingsResponse: Encodable {
@@ -987,13 +987,12 @@ extension DefaultSubscriptionPagesUseSubscriptionFeature {
     }
 
     /// Any status that requires a Settings change to become `.authorized` is reported as `.denied`.
-    /// `.provisional` is bucketed with `.denied` because there's no programmatic upgrade path.
-    /// iOS won't show a prompt from `requestAuthorization` when state is `.provisional`.
     private static func permissionStatus(from status: UNAuthorizationStatus) -> NotificationsPermissionStatus {
         switch status {
         case .authorized, .ephemeral: return .granted
         case .notDetermined: return .notDetermined
-        case .denied, .provisional: return .denied
+        case .provisional: return .provisional
+        case .denied: return .denied
         @unknown default: return .denied
         }
     }

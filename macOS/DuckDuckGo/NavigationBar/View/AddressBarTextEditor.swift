@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AddressBarPerformance
 import AppKit
 import Common
 import FoundationExtensions
@@ -23,6 +24,15 @@ import Foundation
 import QuickLookUI
 
 final class AddressBarTextEditor: NSTextView {
+
+    override func draw(_ dirtyRect: NSRect) {
+        let coordinator = addressBar?.performanceCoordinator
+        let drawID = coordinator?.pendingCharacterDrawID
+        super.draw(dirtyRect)
+        if let drawID {
+            coordinator?.charactersDidDraw(through: drawID)
+        }
+    }
 
     fileprivate var addressBar: AddressBarTextField? {
         guard let delegate else { return nil }

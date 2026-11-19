@@ -1337,7 +1337,7 @@ struct OnboardingIntroContentProviderTests {
             // GIVEN
             let expected = OnboardingAIModelContent(
                 title: "Your chats, your way.",
-                message: "Change your default AI now, or anytime during chat.",
+                message: "Choose an AI to start with, change anytime during chat.",
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
             )

@@ -91,19 +91,3 @@ struct ContextualDialogsManagerPathTests {
         #expect(!searchPathStorage.blockedTrackerSeen)
     }
 }
-
-struct ContextualOnboardingPathStarterProxyTests {
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The stand-in forwards a path once its target is set, and drops earlier calls", .timeLimit(.minutes(1)))
-    func forwardsOnlyOnceTargetIsSet() {
-        let proxy = ContextualOnboardingPathStarterProxy()
-        let target = CapturingPathStarter()
-
-        proxy.startPath(.search)
-        proxy.target = target
-        proxy.startPath(.search)
-
-        #expect(target.startedPaths == [.search])
-    }
-}

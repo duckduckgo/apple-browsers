@@ -77,7 +77,7 @@ class OnboardingManagerTests: XCTestCase {
         chromeExtensionInstaller = MockThirdPartyBrowserExtensionInstalling()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            pathStarter: pathStarter,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -173,7 +173,7 @@ class OnboardingManagerTests: XCTestCase {
         dockCustomization.supportsAddingToDock = false
         let appStoreManager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            pathStarter: pathStarter,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -729,7 +729,7 @@ class OnboardingManagerTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         let manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            pathStarter: pathStarter,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -798,7 +798,7 @@ class OnboardingManagerTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = enabledFlags
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            pathStarter: pathStarter,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -865,7 +865,7 @@ private extension OnboardingManagerTests {
         chromeExtensionInstaller.canInstallDDGExtension = canInstall
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
-            pathStarter: pathStarter,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,

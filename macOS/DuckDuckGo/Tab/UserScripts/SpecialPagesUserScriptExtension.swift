@@ -56,7 +56,7 @@ extension SpecialPagesUserScript {
     private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: Application.appDelegate.windowControllersManager,
-            pathStarter: Application.appDelegate.contextualOnboardingPathStarter,
+            pathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
             dockCustomization: Application.appDelegate.dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: NSApp.delegateTyped.appearancePreferences,

@@ -115,7 +115,8 @@ protocol OnboardingNavigating: AnyObject {
 final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private let navigation: OnboardingNavigating
-    private let pathStarter: ContextualOnboardingPathStarting
+    /// Looked up when used: the dialogs manager is created after the onboarding scripts.
+    private let pathStarter: () -> ContextualOnboardingPathStarting
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let appearancePreferences: AppearancePreferences
@@ -217,7 +218,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     convenience init(
         navigationDelegate: OnboardingNavigating,
-        pathStarter: ContextualOnboardingPathStarting,
+        pathStarter: @escaping () -> ContextualOnboardingPathStarting,
         dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
@@ -258,7 +259,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     init(
         navigationDelegate: OnboardingNavigating,
-        pathStarter: ContextualOnboardingPathStarting,
+        pathStarter: @escaping () -> ContextualOnboardingPathStarting,
         dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
@@ -323,12 +324,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         switch query.mode {
         case .search:
             // Before the tab changes, so the results page already gets the search path's dialogs.
-            pathStarter.startPath(.search)
+            pathStarter().startPath(.search)
             _ = leaveOnboarding(content: .url(URL.makeSearchUrl(from: text) ?? .duckDuckGo, source: .ui))
         case .duckAi:
             // After the tab changes: the Duck.ai path will lock the UI, and a locked window can't replace its tab.
             _ = leaveOnboarding(content: .aiChat(AIChatURLParameters.desktopOnboardingPromptURL(from: aiChatURL(), prompt: text)))
-            pathStarter.startPath(.duckAI)
+            pathStarter().startPath(.duckAI)
         }
     }
 

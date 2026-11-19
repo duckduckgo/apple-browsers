@@ -403,9 +403,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
 
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
-    /// Passed to the onboarding scripts, which are created before the dialogs manager; points at it once it exists.
-    let contextualOnboardingPathStarter = ContextualOnboardingPathStarterProxy()
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater & ContextualOnboardingPathStarting
 
     @MainActor
     var isOnboardingReadyForPrompts: Bool {
@@ -1217,7 +1215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 configurationStore: configurationStore,
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
-                onboardingPathStarter: contextualOnboardingPathStarter,
+                onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
                 appearancePreferences: appearancePreferences,
                 themeManager: themeManager,
                 startupPreferences: startupPreferences,
@@ -1254,7 +1252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configurationStore: configurationStore,
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,
-            onboardingPathStarter: contextualOnboardingPathStarter,
+            onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
             appearancePreferences: appearancePreferences,
             themeManager: themeManager,
             startupPreferences: startupPreferences,
@@ -1293,7 +1291,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             httpsUpgrade: privacyFeatures.httpsUpgrade
         )
 
-        let contextualDialogsManager = ContextualDialogsManager(
+        onboardingContextualDialogsManager = ContextualDialogsManager(
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
@@ -1303,8 +1301,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ),
             settings: keyValueStore.throwingKeyedStoring()
         )
-        onboardingContextualDialogsManager = contextualDialogsManager
-        contextualOnboardingPathStarter.target = contextualDialogsManager
 
         let onboardingManager = onboardingContextualDialogsManager
         let notificationPresenter = DefaultBrowserAndDockPromptNotificationPresenter(reportABrowserProblemPresenter: Self.openReportABrowserProblem)

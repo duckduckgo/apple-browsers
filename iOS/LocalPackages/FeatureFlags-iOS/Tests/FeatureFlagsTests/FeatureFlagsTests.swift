@@ -25,6 +25,22 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testDebounceLogic2026UsesIOSBrowserConfigAndIsEnabledByDefault() {
+        let flag = FeatureFlag.debounceLogic2026
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .debounceLogic2026)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "debounceLogic2026")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testContextualOnboardingTimeLimitUsesIOSBrowserConfigAndInternalOnlyDefault() {
         let flag = FeatureFlag.contextualOnboardingTimeLimit
         guard case let .remoteReleasable(subfeature) = flag.source else {

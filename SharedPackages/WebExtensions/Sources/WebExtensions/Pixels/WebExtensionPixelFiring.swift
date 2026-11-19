@@ -130,6 +130,12 @@ public enum WebExtensionPixelEvent {
     case scriptletInstalled(type: DuckDuckGoWebExtensionType, version: String)
     case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 
+    /// One report for each tab that stayed silent after a page loaded, with the furthest init step the extension
+    /// reported for the page. The step is left out while the `cpmInitProgress` subfeature is off.
+    case cpmMessagingBreakage(lastStage: CPMLastStage, tabs: CPMSilentTabs)
+    /// Sent once when a second tab goes silent without any answer from the extension in between.
+    case cpmMessagingBreakagePersistent
+
     /// An extension turned password saving off, which makes it the default password manager.
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     /// Bitwarden is installed and loaded. Fired once a day.
@@ -144,6 +150,14 @@ public enum WebExtensionPixelEvent {
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
+}
+
+/// How many tabs have been silent since the extension last answered anything.
+public enum CPMSilentTabs: String, Equatable, Sendable {
+    /// Only this tab: the page, not the extension, is the likely cause.
+    case one
+    /// Another tab was already silent: the extension itself is the likely cause.
+    case many
 }
 
 /// PII-free metadata shared by the iOS and macOS reload-error pixel adapters.

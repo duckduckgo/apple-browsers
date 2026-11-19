@@ -33,6 +33,7 @@ import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
 import PixelKit
+import WebPageTranslation
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -66,6 +67,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
     let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+    let translationModels: TranslationModels?
     let aiChatLocalModel: AIChatLocalModelDependencies?
     let daxGreetingDebugging: DaxGreetingDebugging
 
@@ -95,6 +97,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
          promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
          promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil,
+         translationModels: TranslationModels? = nil,
          aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
@@ -121,6 +124,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
         self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
+        self.translationModels = translationModels
         self.aiChatLocalModel = aiChatLocalModel
         self.daxGreetingDebugging = daxGreetingDebugging
     }
@@ -178,6 +182,7 @@ class SettingsLegacyViewProvider: ObservableObject {
             aiChatBonusMessageLog: self.aiChatBonusMessageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
             promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter,
+            translationModels: self.translationModels,
             daxGreetingDebugging: self.daxGreetingDebugging,
             aiChatLocalModel: self.aiChatLocalModel))
     }

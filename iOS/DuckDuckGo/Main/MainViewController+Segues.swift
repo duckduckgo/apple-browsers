@@ -532,6 +532,7 @@ extension MainViewController {
                                                             aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService,
+                                                            translationModels: translationModels,
                                                             aiChatLocalModel: userScriptsDependencies.aiChatLocalModel)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
@@ -667,6 +668,7 @@ extension MainViewController {
             aiChatBonusMessageLog: self.userScriptsDependencies.aiChatBonusOffer.messageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
+            translationModels: self.translationModels,
             daxGreetingDebugging: self.daxGreetingService,
             aiChatLocalModel: self.userScriptsDependencies.aiChatLocalModel))
 

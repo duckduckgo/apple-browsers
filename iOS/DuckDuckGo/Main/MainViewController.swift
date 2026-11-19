@@ -56,6 +56,7 @@ import WebExtensions
 import WebKit
 import WidgetKit
 import FeatureFlags_iOS
+import WebPageTranslation
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
@@ -592,6 +593,8 @@ class MainViewController: UIViewController {
     /// Results-page colour per appearance, so a search from any page can hand off to it.
     let searchPageColorMemory = SearchPageColorMemory()
     let searchPageHeaderMemory = SearchPageHeaderMemory()
+    /// Set by a submit until its load is requested; cleared on the next runloop pass.
+    var pendingFirstPaintCover: PendingFirstPaintCover?
     private var siteThemeColorObservation: NSKeyValueObservation?
     private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
@@ -611,6 +614,7 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     private let promptExposureReporter: PromptExposureReporting
+    let translationModels: TranslationModels?
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let promoCoordinationService:
@@ -820,9 +824,11 @@ class MainViewController: UIViewController {
             & AppRatingPromptGating)? = nil,
         usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-        promptExposureReporter: PromptExposureReporting
+        promptExposureReporter: PromptExposureReporting,
+        translationModels: TranslationModels? = nil
     ) {
         self.pixelFiring = pixelFiring
+        self.translationModels = translationModels
         self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -2690,6 +2696,23 @@ class MainViewController: UIViewController {
         return true
     }
 
+    /// A launch action left the drawn after-idle page in place: report it as an ordinary New Tab Page once seen.
+    func releaseHeldNewTabPage() {
+        guard isAfterIdlePresentationPending, let page = newTabPageViewController else { return }
+        isAfterIdlePresentationPending = false
+        if let tabModel = tabManager.currentTabsModel.currentTab, tabModel.openedAfterIdle {
+            tabModel.openedAfterIdle = false
+            // Saved like the attach saves it, so a relaunch doesn't restore the tab as after-idle.
+            tabManager.save()
+        }
+        clearEscapeHatch()
+        newTabPagePresentation.schedule(for: page, shown: { [weak self] in
+            guard let self else { return }
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: false, hatch: nil, focused: isInputFocused)
+        })
+    }
+
     func recordPendingNewTabPagePresentationIfVisible() {
         newTabPagePresentation.recordIfVisible()
     }
@@ -3493,6 +3516,7 @@ class MainViewController: UIViewController {
         lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         dismissOmniBar()
         transitionTo(tab: tab, from: nil)
+        armPendingFirstPaintCover(on: tab)
     }
 
     /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
@@ -4619,6 +4643,15 @@ class MainViewController: UIViewController {
             }
             completion()
         }
+    }
+
+    /// Opens the after-idle New Tab Page. With the keyboard on New Tab Page, the launch handling raises it.
+    func openNewTabPageAfterIdleReturn() {
+        currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
+        newTab(reuseExisting: true,
+               allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+               openedAfterIdle: true,
+               entrance: .fromOutsideTheApp)
     }
 
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
@@ -6642,6 +6675,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if isPad {
+            guard omniBar.isTextFieldEditing || areSuggestionsVisible else { return }
             // iPad: the single authority decides search content for the typed text.
             refreshPopoverSuggestions()
             return
@@ -7917,6 +7951,9 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didCloseTab(tab)
+        }
         tabManager.remove(tab: tab, in: targetTabsModel)
         refreshTabIcon()
         refreshTabBar()
@@ -9794,7 +9831,10 @@ extension MainViewController: FireExecutorDelegate {
         if syncService.authState != .inactive {
             syncService.scheduler.requestSyncImmediately()
         }
-        if #available(iOS 18.4, *) {
+        // Auto-clear on launch finishes before the app starts its deferred extension load, which waits for the
+        // app to be active and protected data to be available, and then loads everything. Reloading here would
+        // load WebKit extensions on the main thread at launch, ahead of that gate, and risk a watchdog kill.
+        if #available(iOS 18.4, *), webExtensionLifecycleCoordinator?.hasRequestedInitialLoadAndSync == true {
             Task { @MainActor [weak self] in
                 guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
                 if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {

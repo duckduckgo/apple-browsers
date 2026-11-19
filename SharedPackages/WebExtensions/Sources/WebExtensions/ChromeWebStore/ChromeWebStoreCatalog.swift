@@ -23,6 +23,11 @@ public enum ChromeWebStoreID: String {
     case bitwarden = "nngceckbapebfimnlniiiahkandclblb"
     case onePassword = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
     case iCloudPasswords = "pejdijmoenmkgeppbflobdenhhabjlaj"
+    case lastPass = "hdokiejnpimakedhajhdlcegeplioahd"
+
+    /// Password managers that take over DuckDuckGo autofill while they are loaded, because they never
+    /// turn `chrome.privacy.services.passwordSavingEnabled` off to become the default password manager.
+    public static let takingOverAutofillWhileLoaded: Set<ChromeWebStoreID> = [.lastPass]
 }
 
 public struct ChromeWebStoreListing: Equatable, Identifiable {
@@ -136,9 +141,19 @@ public extension ChromeWebStoreCatalogProviding {
 public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
     private let configurationManager: PrivacyConfigurationManaging
+    private let isAppStoreBuild: Bool
+    private let unsupportedExtensionIDs: Set<String>
 
-    public init(configurationManager: PrivacyConfigurationManaging) {
+    /// - Parameter isAppStoreBuild: Whether the app is the App Store build, which also leaves out `appStoreHiddenExtensionIds`.
+    /// - Parameter unsupportedExtensionIDs: Extensions to leave out whatever the configuration says, such as ones the OS can't run.
+    public init(
+        configurationManager: PrivacyConfigurationManaging,
+        isAppStoreBuild: Bool = false,
+        unsupportedExtensionIDs: Set<String> = []
+    ) {
         self.configurationManager = configurationManager
+        self.isAppStoreBuild = isAppStoreBuild
+        self.unsupportedExtensionIDs = unsupportedExtensionIDs
     }
 
     public var extensionIDs: [String] {
@@ -151,8 +166,14 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
               config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) else { return [] }
 
         let featureSettings = config.settings(for: .extensionManagement)
-        let excluded = Set(featureSettings["hiddenExtensionIds"] as? [String] ?? [])
+        var excluded = Set(featureSettings["hiddenExtensionIds"] as? [String] ?? [])
             .union(featureSettings["disabledExtensionIds"] as? [String] ?? [])
+            .union(unsupportedExtensionIDs)
+        // Extensions that need what the App Store sandbox doesn't allow, such as iCloud Passwords and its
+        // native messaging host. Only macOS reads this key, so the Windows browser ignores it.
+        if isAppStoreBuild {
+            excluded.formUnion(featureSettings["appStoreHiddenExtensionIds"] as? [String] ?? [])
+        }
 
         // Each extension is its own subfeature, so Privacy Config evaluates its state,
         // rollout and minimum version. Subfeatures this build doesn't know are ignored.

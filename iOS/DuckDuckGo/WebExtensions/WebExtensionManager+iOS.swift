@@ -19,6 +19,7 @@
 
 import Combine
 import Core
+import DuckPlayer
 import EventHub
 import FeatureFlags_iOS
 import PrivacyConfig
@@ -65,7 +66,10 @@ public enum WebExtensionManagerFactory {
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor()
+        let isInitProgressEnabled = { privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AutoconsentSubfeature.cpmInitProgress) }
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring,
+                                                                  isUnmeasuredPage: { $0.isDuckPlayer },
+                                                                  isInitProgressEnabled: isInitProgressEnabled)
         return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),

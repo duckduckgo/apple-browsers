@@ -24,7 +24,7 @@ import XCTest
 @MainActor
 final class CPMMessagingHealthMonitorAttributionTests: XCTestCase {
 
-    private let monitor = CPMMessagingHealthMonitor()
+    private let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring(), isUnmeasuredPage: { _ in false })
     private let pageURL = URL(string: "https://example.com/a")!
     private var healthyResponses = 0
 

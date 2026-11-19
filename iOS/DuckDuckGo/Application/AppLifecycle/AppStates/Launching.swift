@@ -32,6 +32,7 @@ import RemoteMessaging
 import ScreenTimeDataCleaner
 import WebExtensions
 import FeatureFlags_iOS
+import WebPageTranslation
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -210,6 +211,12 @@ struct Launching: LaunchingHandling {
             keyValueStore: eventHubStore,
             consentStore: appKeyValueFileStoreService.keyValueFilesStore
         )
+
+        let translationModels = Self.makeTranslationModels(featureFlagger: featureFlagger)
+        WebPageTranslationCapability.resolve(translationModels: translationModels)
+        if let translationModels {
+            Task { _ = await translationModels.refreshManifest() }
+        }
 
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
@@ -411,7 +418,8 @@ struct Launching: LaunchingHandling {
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub,
                                               usageContextProvider: usageContextProvider,
-                                              promptExposureReporter: promptExposureReporter
+                                              promptExposureReporter: promptExposureReporter,
+                                              translationModels: translationModels
         )
         launchBreadcrumb.mark(.mainCoordinator)
 
@@ -609,6 +617,26 @@ struct Launching: LaunchingHandling {
             Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
             return nil
         }
+    }
+
+    /// Nil when web page translation is off, or when its store or models folder can't be opened:
+    /// translation is then unavailable rather than failing launch.
+    private static func makeTranslationModels(featureFlagger: FeatureFlagger) -> TranslationModels? {
+        guard featureFlagger.isFeatureOn(.webPageTranslation) else {
+            return nil
+        }
+
+        guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        // Translation gets its own store, so its cached manifest never shares a file with app settings.
+        guard let keyValueStore = try? KeyValueFileStore(location: applicationSupport, name: "WebPageTranslationStore") else {
+            return nil
+        }
+
+        let modelsDirectory = applicationSupport.appendingPathComponent("WebPageTranslation")
+        return try? TranslationModels(directory: modelsDirectory, keyValueStore: keyValueStore)
     }
 
     private func logAppLaunchTime() {

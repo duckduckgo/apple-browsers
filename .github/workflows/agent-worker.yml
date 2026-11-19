@@ -249,6 +249,9 @@ jobs:
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
           # auto's local decision log and snapshots go with the evidence
           if [[ -d "$HOME/.auto" ]]; then cp -R "$HOME/.auto" "$RUNNER_TEMP/evidence/auto" || true; fi
+          # The full session as Markdown, so reviewers can see how the agent worked and tune auto or the prompt
+          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/transcript_md.py" \
+            "$RUNNER_TEMP/evidence/result.json" "$HOME/.claude/projects" "$RUNNER_TEMP/evidence" || true
           python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/summary_md.py" \
             "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence" "$rc" || true
           echo "rc=$rc" >> "$GITHUB_ENV"
@@ -280,7 +283,7 @@ jobs:
           url=$(worker/scripts/agent-worker/blobs.sh put "$ev" "$EVIDENCE_PREFIX")
           echo "Evidence (SSO): $url/"
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "- Agent (SSO): [summary.md]($url/summary.md), [changes.patch]($url/changes.patch), [result.json]($url/result.json)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Agent (SSO): [summary.md]($url/summary.md), [changes.patch]($url/changes.patch), [result.json]($url/result.json), [transcript.md]($url/transcript.md)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail if the agent failed
         if: env.rc != '0'

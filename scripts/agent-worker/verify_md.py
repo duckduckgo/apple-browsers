@@ -106,6 +106,8 @@ def main():
     md += cost_rows(plan, cost) + [""]
     if ev:
         md += [f"Raw output: [result.json]({ev}/result.json)", ""]
+        if r.get("session_id"):
+            md += [f"Full session: [transcript.md]({ev}/transcript.md)", ""]
 
     with open(os.path.join(out, "verify.md"), "w") as f:
         f.write("\n".join(md))

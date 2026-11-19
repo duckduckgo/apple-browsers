@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import PixelKit
 import PrivacyStats
@@ -53,37 +54,19 @@ final class UnavailablePrivacyStats: PrivacyStatsProviding {
 /// Calls made while the store loads wait for it, except the total count, which reads zero until the store has loaded.
 final class DeferredPrivacyStats: PrivacyStatsProviding {
 
-    /// Lets the count read the loaded store without waiting for the load. All access goes through the lock.
-    private final class LoadedStats: @unchecked Sendable {
-        private let lock = NSLock()
-        private var stats: PrivacyStatsProviding?
-
-        var value: PrivacyStatsProviding? {
-            get {
-                lock.lock()
-                defer { lock.unlock() }
-                return stats
-            }
-            set {
-                lock.lock()
-                stats = newValue
-                lock.unlock()
-            }
-        }
-    }
-
     private let loadTask: Task<PrivacyStatsProviding, Never>
-    private let loaded: LoadedStats
+    /// Lets the count read the loaded store without waiting for the load.
+    private let loaded: Locked<PrivacyStatsProviding?>
 
     init(load: @escaping () -> PrivacyStatsProviding = { DeferredPrivacyStats.loadStore() }) {
-        let loaded = LoadedStats()
+        let loaded = Locked<PrivacyStatsProviding?>(wrappedValue: nil)
         self.loaded = loaded
         // The load blocks on Core Data, so it runs on a GCD queue rather than a Swift concurrency thread.
         loadTask = Task {
             await withCheckedContinuation { continuation in
                 DispatchQueue.global(qos: .utility).async {
                     let stats = load()
-                    loaded.value = stats
+                    loaded.wrappedValue = stats
                     continuation.resume(returning: stats)
                 }
             }
@@ -106,7 +89,7 @@ final class DeferredPrivacyStats: PrivacyStatsProviding {
 
     /// The tab switcher awaits this before it opens, so it reads zero rather than wait for a slow load.
     func fetchPrivacyStatsTotalCount() async -> Int64 {
-        await loaded.value?.fetchPrivacyStatsTotalCount() ?? 0
+        await loaded.wrappedValue?.fetchPrivacyStatsTotalCount() ?? 0
     }
 
     func clearPrivacyStats() async -> Result<Void, Error> {

@@ -512,7 +512,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         BookmarksEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             hasTopLevelEntitiesProvider: { [bookmarkManager] in
                 bookmarkManager.hasTopLevelEntities()
             },

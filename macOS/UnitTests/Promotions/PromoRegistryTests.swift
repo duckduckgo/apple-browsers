@@ -121,7 +121,6 @@ final class PromoRegistryTests: XCTestCase {
                 recordResult: { _, _ in }
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),

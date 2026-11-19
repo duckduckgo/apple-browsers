@@ -4007,7 +4007,7 @@ https://duckduckgo.com/mac";
 "onboarding.personalization.aiModel.cta" = "Next";
 
 /* Message of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.message" = "Change your default AI now, or anytime during chat.";
+"onboarding.personalization.aiModel.message" = "Choose an AI to start with, change anytime during chat.";
 
 /* Title of the onboarding AI model personalization screen. */
 "onboarding.personalization.aiModel.title" = "Your chats, your way.";

@@ -103,9 +103,18 @@ final class ContextualOnboardingDialogScheduler {
         showLastDialog(in: tab)
     }
 
+    /// The user pressed Got it. `displayed` is the dialog still on screen, if any.
+    func gotItPressed(displayed: ContextualDialogType?, in tab: Tab?) {
+        dialogProvider.gotItPressed()
+        // Legacy dialogs are already removed here; rebranded ones hand over to the upsell when they're dismissed.
+        if dialogProvider.lastDialog == .subscriptionUpsell, displayed == nil {
+            showLastDialog(in: tab)
+        }
+    }
+
     /// Shows again the last dialog of this tab, without moving onboarding forward.
     /// Only the tab it was shown on gets it back, so a new window doesn't repeat it.
-    func showLastDialog(in tab: Tab?) {
+    private func showLastDialog(in tab: Tab?) {
         guard canShowDialog(), let tab else {
             onUpdate(.hide)
             return
@@ -119,9 +128,13 @@ final class ContextualOnboardingDialogScheduler {
         stopWaitingForFirstAnswer()
     }
 
-    /// The user dismissed the dialog on screen.
-    func dialogDismissed() {
+    /// The user dismissed `dialog`, and it's no longer on screen.
+    func dialogDismissed(_ dialog: ContextualDialogType, in tab: Tab?) {
         wasDismissed = true
+        // High Five hands over to the upsell in a new dialog. Both facts matter, or dismissing the upsell would show it again.
+        if dialog == .highFive, dialogProvider.lastDialog == .subscriptionUpsell {
+            showLastDialog(in: tab)
+        }
     }
 
     private func waitForFirstAnswer(in tab: Tab) {

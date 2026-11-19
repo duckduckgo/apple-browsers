@@ -26,10 +26,14 @@ import Testing
 @MainActor
 struct ContextualOnboardingDialogSchedulerTests {
 
-    private let provider = StubDialogProvider()
+    private let provider = MockContextualOnboardingState()
     private let sent = SentUpdates()
     private let timer = FakeTimer()
     let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.contextualOnboarding.rawValue: true])
+
+    init() {
+        provider.state = .ongoing
+    }
 
     func makeScheduler(isInPopUpWindow: Bool = false) -> ContextualOnboardingDialogScheduler {
         let scheduler = ContextualOnboardingDialogScheduler(dialogProvider: provider,
@@ -119,18 +123,54 @@ struct ContextualOnboardingDialogSchedulerTests {
         #expect(provider.turnOffFeatureCallCount == 1)
     }
 
-    // MARK: - Showing the last dialog
+    // MARK: - High Five hands over to the upsell
 
     @available(iOS 16, macOS 13, *)
-    @Test("Showing the last dialog doesn't move onboarding forward", .timeLimit(.minutes(1)))
-    func showLastDialogDoesNotAdvance() async {
-        provider.lastDialogForTabStub = .subscriptionUpsell
+    @Test("Dismissing High Five shows the upsell next, without moving onboarding forward", .timeLimit(.minutes(1)))
+    func dismissingHighFiveShowsUpsell() async {
+        provider.lastDialog = .subscriptionUpsell
         let tab = await Tab(content: .newtab)
 
-        makeScheduler().showLastDialog(in: tab)
+        makeScheduler().dialogDismissed(.highFive, in: tab)
 
         #expect(sent.updates == [.show(.subscriptionUpsell)])
         #expect(provider.dialogTypeForTabCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Dismissing any other dialog shows nothing, including the upsell itself", .timeLimit(.minutes(1)),
+          arguments: [ContextualDialogType.subscriptionUpsell, .tryASite])
+    func dismissingOtherDialogsShowsNothing(dialog: ContextualDialogType) async {
+        provider.lastDialog = .subscriptionUpsell
+        let tab = await Tab(content: .newtab)
+
+        makeScheduler().dialogDismissed(dialog, in: tab)
+
+        #expect(sent.updates.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Got it with nothing left on screen shows the upsell (legacy layout)", .timeLimit(.minutes(1)))
+    func gotItWithNothingOnScreenShowsUpsell() async {
+        provider.lastDialog = .subscriptionUpsell
+        let tab = await Tab(content: .newtab)
+
+        makeScheduler().gotItPressed(displayed: nil, in: tab)
+
+        #expect(provider.gotItPressedCallCount == 1)
+        #expect(sent.updates == [.show(.subscriptionUpsell)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Got it with High Five still on screen leaves the upsell to the dismiss (rebranded layout)", .timeLimit(.minutes(1)))
+    func gotItWithHighFiveOnScreenWaitsForDismiss() async {
+        provider.lastDialog = .subscriptionUpsell
+        let tab = await Tab(content: .newtab)
+
+        makeScheduler().gotItPressed(displayed: .highFive, in: tab)
+
+        #expect(provider.gotItPressedCallCount == 1)
+        #expect(sent.updates.isEmpty)
     }
 
     // MARK: - Window became key
@@ -138,7 +178,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("When the window becomes key, the last dialog of the tab comes back", .timeLimit(.minutes(1)))
     func windowKeyShowsLastDialog() async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil)
@@ -149,7 +189,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("When the window becomes key with the same dialog on screen, it is kept", .timeLimit(.minutes(1)))
     func windowKeyKeepsSameDialog() async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite)
@@ -160,7 +200,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("When the window becomes key with an outdated dialog on screen, it is replaced", .timeLimit(.minutes(1)))
     func windowKeyReplacesOutdatedDialog() async {
-        provider.lastDialogForTabStub = .tryFireButton
+        provider.lastDialog = .tryFireButton
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite)
@@ -172,14 +212,14 @@ struct ContextualOnboardingDialogSchedulerTests {
     @Test("A dismissed dialog or a tab switch keeps the dialog away when the window becomes key", .timeLimit(.minutes(1)),
           arguments: [true, false])
     func dismissKeepsDialogAway(byTabSwitch: Bool) async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
         let scheduler = makeScheduler()
 
         if byTabSwitch {
             scheduler.selectedTabDidChange()
         } else {
-            scheduler.dialogDismissed()
+            scheduler.dialogDismissed(.tryASite, in: tab)
         }
 
         scheduler.windowDidBecomeKey(tab: tab, displayed: nil)
@@ -190,22 +230,22 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Showing a dialog again lets the window bring it back after a dismiss", .timeLimit(.minutes(1)))
     func showingResetsDismissed() async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .subscriptionUpsell
         let tab = await Tab(content: .newtab)
         let scheduler = makeScheduler()
-        scheduler.dialogDismissed()
 
-        scheduler.showLastDialog(in: tab)
+        // Dismissing High Five counts as a dismiss, then shows the upsell.
+        scheduler.dialogDismissed(.highFive, in: tab)
         scheduler.windowDidBecomeKey(tab: tab, displayed: nil)
 
-        #expect(sent.updates == [.show(.tryASite), .show(.tryASite)])
+        #expect(sent.updates == [.show(.subscriptionUpsell), .show(.subscriptionUpsell)])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("When onboarding is completed, the window becoming key changes nothing", .timeLimit(.minutes(1)))
     func windowKeyAfterCompletion() async {
         provider.state = .onboardingCompleted
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil)
@@ -324,33 +364,4 @@ private final class FakeTimer {
 /// Collects what the scheduler sends through `onUpdate`.
 private final class SentUpdates {
     var updates: [ContextualOnboardingDialogUpdate] = []
-}
-
-/// Keeps "next dialog" and "last dialog for this tab" apart, so tests can tell which one was asked.
-private final class StubDialogProvider: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
-    var nextDialog: ContextualDialogType?
-    var lastDialogForTabStub: ContextualDialogType?
-    private(set) var dialogTypeForTabCallCount = 0
-    private(set) var turnOffFeatureCallCount = 0
-
-    var lastDialog: ContextualDialogType?
-    var state: ContextualOnboardingState = .ongoing
-    @Published var isContextualOnboardingCompleted = false
-    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
-
-    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
-        dialogTypeForTabCallCount += 1
-        return nextDialog
-    }
-
-    func lastDialogForTab(_ tab: Tab) -> ContextualDialogType? {
-        lastDialogForTabStub
-    }
-
-    func gotItPressed() {}
-    func fireButtonUsed() {}
-
-    func turnOffFeature() {
-        turnOffFeatureCallCount += 1
-    }
 }

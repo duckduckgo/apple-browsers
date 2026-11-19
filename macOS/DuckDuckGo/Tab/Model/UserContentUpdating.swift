@@ -98,7 +98,7 @@ final class UserContentUpdating {
          tld: TLD,
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
-         onboardingPathStarter: ContextualOnboardingPathStarting,
+         onboardingPathStarter: @escaping () -> ContextualOnboardingPathStarting,
          appearancePreferences: AppearancePreferences,
          themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,

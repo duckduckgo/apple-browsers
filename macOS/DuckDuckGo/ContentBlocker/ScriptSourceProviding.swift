@@ -73,7 +73,7 @@ protocol ScriptSourceProviding {
         tld: Application.appDelegate.tld,
         featureFlagger: Application.appDelegate.featureFlagger,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
-        onboardingPathStarter: Application.appDelegate.contextualOnboardingPathStarter,
+        onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
         appearancePreferences: Application.appDelegate.appearancePreferences,
         themeManager: Application.appDelegate.themeManager,
         startupPreferences: Application.appDelegate.startupPreferences,
@@ -138,7 +138,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          tld: TLD,
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
-         onboardingPathStarter: ContextualOnboardingPathStarting,
+         onboardingPathStarter: @escaping () -> ContextualOnboardingPathStarting,
          appearancePreferences: AppearancePreferences,
          themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
@@ -234,7 +234,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
     private func buildOnboardingActionsManager(
         _ navigationDelegate: OnboardingNavigating,
-        _ pathStarter: ContextualOnboardingPathStarting,
+        _ pathStarter: @escaping () -> ContextualOnboardingPathStarting,
         _ appearancePreferences: AppearancePreferences,
         _ startupPreferences: StartupPreferences,
         _ reinstallUserDetection: ReinstallingUserDetecting,

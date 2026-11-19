@@ -65,16 +65,6 @@ protocol ContextualOnboardingPathStarting: AnyObject {
     func startPath(_ kind: ContextualOnboardingPathKind)
 }
 
-/// Stands in for the dialogs manager, which is created after the onboarding scripts that need it.
-/// Calls before `target` is set do nothing; the junction can't be reached that early.
-final class ContextualOnboardingPathStarterProxy: ContextualOnboardingPathStarting {
-    weak var target: ContextualOnboardingPathStarting?
-
-    func startPath(_ kind: ContextualOnboardingPathKind) {
-        target?.startPath(kind)
-    }
-}
-
 /// Protocol for storing onboarding state data.
 protocol ContextualOnboardingStateStoring: AnyObject {
     /// Array of string representations of dialogs that have been shown.

@@ -177,7 +177,7 @@ final class BookmarkDragDropManager {
             return false
         }
 
-        var currentIndex = index
+        var websitesInfo = [WebsiteInfo]()
         for item in pasteboardItems {
             let url: URL
             let title: String
@@ -200,11 +200,13 @@ final class BookmarkDragDropManager {
                 continue
             }
 
-            self.bookmarkManager.makeBookmark(for: url, title: title, isFavorite: isFavorite, index: currentIndex, parent: parent)
-            currentIndex += 1
+            websitesInfo.append(WebsiteInfo(url: url, title: title))
         }
+        guard !websitesInfo.isEmpty else { return false }
 
-        return currentIndex > index
+        // One save for the whole drop: a save per item runs them in parallel and they hit merge conflicts on the parent folder.
+        bookmarkManager.makeBookmarks(for: websitesInfo, isFavorite: isFavorite, index: index, parent: parent)
+        return true
     }
 
     @MainActor

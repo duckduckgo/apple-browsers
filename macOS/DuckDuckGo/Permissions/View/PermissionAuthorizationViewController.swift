@@ -44,6 +44,8 @@ extension PermissionType {
             return app
         case .autoplayPolicy:
             return UserText.permissionAutoplay
+        case .browserTool(let name):
+            return name
         }
     }
 }

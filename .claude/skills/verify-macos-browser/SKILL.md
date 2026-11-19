@@ -236,6 +236,8 @@ verify.sh vm <topic> [vm-1|vm-2|auto]      # before flag/set-default/build
   (VM-SETUP.md step 4). `NOT READY` with no window: a keychain dialog waits in the VM; ask the user to
   answer it (VM-SETUP.md step 5).
 - A window can be frontmost without keyboard focus after the VM boots: `clickel` the field before `type`.
+- Worked examples in `examples/`: `demo-duckai.sh` (open a Duck.ai chat, type a prompt), `demo-search.sh`
+  (three tabs, then a search from the address bar), and `demo-both.sh`, which runs them at once on vm-1 and vm-2.
 
 ## Feature map
 

@@ -243,6 +243,14 @@ build)
     app="$DERIVED_DATA/Build/Products/Debug/$APP_NAME.app"
     exe="$app/Contents/MacOS/$APP_NAME"
     [[ -x "$exe" ]] || { echo "BUILD PRODUCT MISSING: $exe"; exit 2; }
+    # A build stopped halfway can leave an empty compiled asset catalog that later incremental builds reuse;
+    # the app then traps at launch looking up a color (ThemeStyle). Seen at 512 bytes; a real one is MBs.
+    car_size=$(stat -f %z "$app/Contents/Resources/Assets.car" 2>/dev/null || echo 0)
+    if (( car_size < 1000000 )); then
+        echo "BROKEN BUILD PRODUCT: Assets.car is $car_size bytes (a build stopped halfway?)."
+        echo "  Remove the app target's assetcatalog_output under $DERIVED_DATA/Build/Intermediates.noindex and build again."
+        exit 2
+    fi
     source_json=$(helper fingerprint "$worktree")
     hashes_json=$(helper hash "$exe" "$exe.debug.dylib")
     printf '{"worktree": "%s", "build_start": %s, "build_end": %s, "derived_data": "%s", "app": "%s", "source": %s, "hashes": %s}\n' \
@@ -389,6 +397,10 @@ web)
     ;;
 logs)
     [[ -f "$RUN_DIR/launch.json" ]] || { echo "NO LAUNCH: run verify.sh build first"; exit 2; }
+    # A run launched in a VM keeps its logs there: after cleanup released the VM, reading here would overwrite them.
+    if [[ -z "$VM" && "$(json_get "$RUN_DIR/launch.json" 'd.get("vm")')" != None ]]; then
+        echo "VM RELEASED: this run's logs were written by cleanup; run logs before cleanup"; exit 2
+    fi
     launched=$(json_get "$RUN_DIR/launch.json" 'd["launched"]')
     on_target '/usr/bin/log show --start "$(date -r "$1" "+%Y-%m-%d %H:%M:%S")" --predicate "process == \"$2\" AND eventMessage CONTAINS \"[VERIFY]\"" --style compact' \
         "$launched" "$APP_NAME" > "$RUN_DIR/log.txt" 2>&1

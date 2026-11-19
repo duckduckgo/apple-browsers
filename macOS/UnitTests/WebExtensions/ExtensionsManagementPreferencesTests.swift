@@ -102,12 +102,13 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         XCTAssertEqual(settings.detailsEntry?.hasHitNativeMessagingLimitation, true)
     }
 
-    func testWhenLearnMoreIsClicked_ThenTheConfiguredPageOpens() {
+    func testWhenLearnMoreIsClicked_ThenTheConfiguredPageOpensAndTheLearnMorePixelFires() throws {
         let settings = makeModel(featureSettings: ["learnMoreUrl": "https://duckduckgo.com/duckduckgo-help-pages/extensions"])
 
         settings.openLearnMore()
 
         XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages/extensions"))
+        try assertSingleFire("web_extension_learn_more_clicked_macos", parameters: nil)
     }
 
     func testWhenTheConfigurationHasNoLearnMoreURL_ThenLearnMoreOpensTheHelpPages() {
@@ -122,12 +123,13 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages"))
     }
 
-    func testWhenRemoteDisableLearnMoreIsClicked_ThenTheConfiguredPageOpens() {
+    func testWhenRemoteDisableLearnMoreIsClicked_ThenTheConfiguredPageOpensAndItsPixelFires() throws {
         let settings = makeModel(featureSettings: ["learnMoreUrlRemoteDisable": "https://duckduckgo.com/duckduckgo-help-pages/extensions/disabled"])
 
         settings.openRemoteDisableLearnMore()
 
         XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages/extensions/disabled"))
+        try assertSingleFire("web_extension_learn_more_remote_disable_clicked_macos", parameters: nil)
     }
 
     func testWhenTheConfigurationHasNoRemoteDisableLearnMoreURL_ThenItOpensTheHelpPages() {
@@ -182,11 +184,12 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         return try XCTUnwrap(catalog.listing(of: .bitwarden))
     }
 
-    private func assertSingleFire(_ name: String, file: StaticString = #filePath, line: UInt = #line) throws {
+    private func assertSingleFire(_ name: String, parameters: [String: String]? = ["extension": "bitwarden"],
+                                  file: StaticString = #filePath, line: UInt = #line) throws {
         XCTAssertEqual(pixels.actualFireCalls.count, 1, file: file, line: line)
         let call = try XCTUnwrap(pixels.actualFireCalls.first, file: file, line: line)
         XCTAssertEqual(call.pixel.name, name, file: file, line: line)
-        XCTAssertEqual(call.pixel.parameters, ["extension": "bitwarden"], file: file, line: line)
+        XCTAssertEqual(call.pixel.parameters, parameters, file: file, line: line)
         XCTAssertEqual(call.frequency, .dailyAndCount, file: file, line: line)
     }
 }

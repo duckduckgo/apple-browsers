@@ -108,6 +108,7 @@ final class ExtensionsManagementPreferences: ObservableObject {
     }
 
     func openLearnMore() {
+        fire(.learnMoreClicked)
         openConfiguredLearnMore(settingsKey: "learnMoreUrl")
     }
 
@@ -116,6 +117,7 @@ final class ExtensionsManagementPreferences: ObservableObject {
     }
 
     func openRemoteDisableLearnMore() {
+        fire(.learnMoreRemoteDisableClicked)
         openConfiguredLearnMore(settingsKey: "learnMoreUrlRemoteDisable")
     }
 

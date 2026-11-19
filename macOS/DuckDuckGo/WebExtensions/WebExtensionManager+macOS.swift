@@ -111,7 +111,8 @@ enum WebExtensionManagerFactory {
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
-        eventHub: EventHubManaging
+        eventHub: EventHubManaging,
+        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool = { false }
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
         let pixelFiring = MacOSWebExtensionPixelFiring()
@@ -176,7 +177,7 @@ enum WebExtensionManagerFactory {
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
                 eventHub: eventHub,
-                isAppleSurrogateRedirectionEnabled: { featureFlagger.isAppleSurrogateRedirectionEnabled() }
+                isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,

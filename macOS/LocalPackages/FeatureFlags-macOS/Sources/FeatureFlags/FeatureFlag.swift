@@ -172,8 +172,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
-    /// Serve surrogates from the embedded web extension instead of content-scope-scripts (macOS 26+, needs `embeddedExtension`).
-    /// Use `WebExtensionAvailability.isAppleSurrogateRedirectionEnabled`, which also checks those conditions.
+    /// Serve surrogates from the embedded web extension. Read it via `WebExtensionAvailability.isAppleSurrogateRedirectionEnabled`.
     case appleSurrogateRedirection
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625

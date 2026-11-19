@@ -60,14 +60,17 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     private let featureFlagger: FeatureFlagger
     private let nativeMessagingSupport: NativeMessagingSupport
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let isSurrogateRedirectionOSSupported: Bool
 
     init(
         featureFlagger: FeatureFlagger,
         nativeMessagingSupport: NativeMessagingSupport = NativeMessagingSupport(),
+        isSurrogateRedirectionOSSupported: Bool = { if #available(iOS 26, *) { true } else { false } }(),
         webExtensionManagerProvider: @escaping () -> WebExtensionManaging?
     ) {
         self.featureFlagger = featureFlagger
         self.nativeMessagingSupport = nativeMessagingSupport
+        self.isSurrogateRedirectionOSSupported = isSurrogateRedirectionOSSupported
         self.webExtensionManagerProvider = webExtensionManagerProvider
     }
 
@@ -95,30 +98,12 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
         false
     }
 
+    /// The only place that combines the conditions: iOS 26+, the embedded extension (which on iOS also needs native
+    /// messaging), and `trackerProtection.appleSurrogateRedirection`.
     var isAppleSurrogateRedirectionEnabled: Bool {
-        featureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: nativeMessagingSupport.isSupported)
-    }
-}
-
-extension FeatureFlagger {
-
-    /// Whether the embedded web extension serves surrogates instead of content-scope-scripts.
-    ///
-    /// Needs iOS 26 or later, the embedded extension (`webExtensions.embedded`, the gate on using the extension at all,
-    /// which on iOS also needs native messaging), and `trackerProtection.appleSurrogateRedirection`.
-    /// This is the only place that combines them.
-    /// - Parameters:
-    ///   - isNativeMessagingSupported: Whether this build can load the embedded extension; Alpha builds can't.
-    ///   - isOSSupported: Whether this iOS version supports it; overridable for tests.
-    func isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: Bool,
-                                            isOSSupported: Bool = Self.isAppleSurrogateRedirectionOSSupported) -> Bool {
-        isOSSupported && isNativeMessagingSupported && isFeatureOn(.embeddedExtension) && isFeatureOn(.appleSurrogateRedirection)
-    }
-
-    static var isAppleSurrogateRedirectionOSSupported: Bool {
-        if #available(iOS 26, *) {
-            return true
-        }
-        return false
+        isSurrogateRedirectionOSSupported
+            && nativeMessagingSupport.isSupported
+            && featureFlagger.isFeatureOn(.embeddedExtension)
+            && featureFlagger.isFeatureOn(.appleSurrogateRedirection)
     }
 }

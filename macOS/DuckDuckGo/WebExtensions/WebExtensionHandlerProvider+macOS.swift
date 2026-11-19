@@ -38,7 +38,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         eventHub: EventHubManaging,
-        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool = { false }
+        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences

@@ -22,6 +22,7 @@ import XCTest
 @testable import DuckDuckGo
 import BrowserServicesKit
 import Core
+import FeatureFlags_iOS
 import WebExtensions
 import WebExtensionsTestSupport
 import WebKit
@@ -88,45 +89,50 @@ final class WebExtensionAvailabilityTests: XCTestCase {
 
     // MARK: - isAppleSurrogateRedirectionEnabled
 
-    func testWhenAllConditionsAreMetThenAppleSurrogateRedirectionIsEnabled() {
-        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
+    private func isSurrogateRedirectionEnabled(flags: [FeatureFlag],
+                                               isOSSupported: Bool = true,
+                                               isNativeMessagingSupported: Bool = true) -> Bool {
+        mockFeatureFlagger.enabledFeatureFlags = flags
+        return WebExtensionAvailability(
+            featureFlagger: mockFeatureFlagger,
+            nativeMessagingSupport: NativeMessagingSupport(isSupported: isNativeMessagingSupported),
+            isSurrogateRedirectionOSSupported: isOSSupported,
+            webExtensionManagerProvider: { nil }
+        ).isAppleSurrogateRedirectionEnabled
+    }
 
-        XCTAssertTrue(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: true, isOSSupported: true))
+    func testWhenAllConditionsAreMetThenAppleSurrogateRedirectionIsEnabled() {
+        XCTAssertTrue(isSurrogateRedirectionEnabled(flags: [.embeddedExtension, .appleSurrogateRedirection]))
     }
 
     func testWhenOSIsNotSupportedThenAppleSurrogateRedirectionIsDisabled() {
-        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
-
-        XCTAssertFalse(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: true, isOSSupported: false))
+        XCTAssertFalse(isSurrogateRedirectionEnabled(flags: [.embeddedExtension, .appleSurrogateRedirection], isOSSupported: false))
     }
 
     func testWhenEmbeddedExtensionIsOffThenAppleSurrogateRedirectionIsDisabled() {
-        mockFeatureFlagger.enabledFeatureFlags = [.appleSurrogateRedirection]
-
-        XCTAssertFalse(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: true, isOSSupported: true))
+        XCTAssertFalse(isSurrogateRedirectionEnabled(flags: [.appleSurrogateRedirection]))
     }
 
     func testWhenAppleSurrogateRedirectionFlagIsOffThenItIsDisabled() {
-        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension]
-
-        XCTAssertFalse(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: true, isOSSupported: true))
+        XCTAssertFalse(isSurrogateRedirectionEnabled(flags: [.embeddedExtension]))
     }
 
     func testWhenNativeMessagingIsNotSupportedThenAppleSurrogateRedirectionIsDisabled() {
-        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
-
-        XCTAssertFalse(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: false, isOSSupported: true))
+        XCTAssertFalse(isSurrogateRedirectionEnabled(flags: [.embeddedExtension, .appleSurrogateRedirection], isNativeMessagingSupported: false))
     }
 
     func testWhenFlagsChangeWhileRunningThenAppleSurrogateRedirectionFollows() {
+        let sut = WebExtensionAvailability(featureFlagger: mockFeatureFlagger,
+                                           isSurrogateRedirectionOSSupported: true,
+                                           webExtensionManagerProvider: { nil })
         mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension]
-        XCTAssertFalse(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: true, isOSSupported: true))
+        XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
 
         mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
-        XCTAssertTrue(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: true, isOSSupported: true))
+        XCTAssertTrue(sut.isAppleSurrogateRedirectionEnabled)
 
         mockFeatureFlagger.enabledFeatureFlags = [.appleSurrogateRedirection]
-        XCTAssertFalse(mockFeatureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: true, isOSSupported: true))
+        XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
     }
 
     // MARK: - isAutoconsentExtensionAvailable

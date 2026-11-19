@@ -41,7 +41,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         searchTokenProvider: SearchTokenProviding? = nil,
         eventHub: EventHubManaging,
-        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool = { false }
+        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences

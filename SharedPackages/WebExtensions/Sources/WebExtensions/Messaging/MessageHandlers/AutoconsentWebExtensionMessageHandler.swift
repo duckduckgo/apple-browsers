@@ -51,9 +51,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
     public var handledFeatureName: String { "autoconsent" }
 
-    /// - Parameter isAppleSurrogateRedirectionEnabled: The app's answer for `trackerProtection.appleSurrogateRedirection`,
-    ///   which also checks the OS version and the embedded extension flag, so the extension sees the same value that
-    ///   decides whether content-scope-scripts injects surrogates.
+    /// - Parameter isAppleSurrogateRedirectionEnabled: The app's answer for `trackerProtection.appleSurrogateRedirection`.
     public init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,

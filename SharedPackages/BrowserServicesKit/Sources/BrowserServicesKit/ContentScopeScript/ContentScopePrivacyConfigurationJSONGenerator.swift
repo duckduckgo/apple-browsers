@@ -30,7 +30,7 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
     let featureFlagger: FeatureFlagger
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let excludedFeatures: [String]
-    let isSurrogateInjectionDisabled: () -> Bool
+    let isSurrogateInjectionDisabled: Bool
 
     /// Features every caller keeps out of the injected configuration. Exposed so a caller that
     /// needs to exclude more can extend this rather than restate it and drift.
@@ -40,13 +40,12 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
         PrivacyFeature.eventHub.rawValue
     ]
 
-    /// - Parameter isSurrogateInjectionDisabled: When it returns `true`, the generated configuration sets
-    ///   `trackerProtection.settings.surrogateInjection` to `disabled`, so content-scope-scripts stops injecting
-    ///   surrogates but still reports resource loads. Used when the embedded web extension serves surrogates instead.
+    /// - Parameter isSurrogateInjectionDisabled: Sets `trackerProtection.settings.surrogateInjection` to `disabled`,
+    ///   so content-scope-scripts stops injecting surrogates but still reports resource loads.
     public init(featureFlagger: FeatureFlagger,
                 privacyConfigurationManager: PrivacyConfigurationManaging,
                 excludedFeatures: [String] = Self.defaultExcludedFeatures,
-                isSurrogateInjectionDisabled: @escaping () -> Bool = { false }) {
+                isSurrogateInjectionDisabled: Bool = false) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.excludedFeatures = excludedFeatures
@@ -55,29 +54,53 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
 
     public var privacyConfiguration: Data? {
         let configuration = privacyConfigurationManager.currentConfigJSON(excludingFeatures: excludedFeatures)
-        guard let configuration, isSurrogateInjectionDisabled() else { return configuration }
-        return Self.disablingSurrogateInjection(in: configuration) ?? configuration
+        guard let configuration, isSurrogateInjectionDisabled else { return configuration }
+        return Self.disablingSurrogateInjection(in: configuration)
     }
+
+    /// Every tab builds its scripts from the same cached configuration, so the patched copy is kept for reuse
+    /// rather than decoding and re-encoding the whole configuration per tab.
+    private static let patchedConfigurationCache = PatchedConfigurationCache()
 
     /// Returns `configuration` with `features.trackerProtection.settings.surrogateInjection` set to `disabled`,
-    /// or `nil` if the configuration isn't a JSON object.
-    static func disablingSurrogateInjection(in configuration: Data) -> Data? {
-        guard var root = (try? JSONSerialization.jsonObject(with: configuration)) as? [String: Any] else { return nil }
+    /// or `configuration` unchanged if it isn't a JSON object.
+    static func disablingSurrogateInjection(in configuration: Data) -> Data {
+        patchedConfigurationCache.value(for: configuration) {
+            guard var root = (try? JSONSerialization.jsonObject(with: configuration)) as? [String: Any] else { return configuration }
 
-        let featureKey = PrivacyFeature.trackerProtection.rawValue
-        var features = root["features"] as? [String: Any] ?? [:]
-        var trackerProtection = features[featureKey] as? [String: Any] ?? [:]
-        var settings = trackerProtection["settings"] as? [String: Any] ?? [:]
-        settings[Constants.surrogateInjectionSettingKey] = PrivacyConfigurationData.State.disabled
-        trackerProtection["settings"] = settings
-        features[featureKey] = trackerProtection
-        root["features"] = features
+            let featureKey = PrivacyFeature.trackerProtection.rawValue
+            var features = root["features"] as? [String: Any] ?? [:]
+            var trackerProtection = features[featureKey] as? [String: Any] ?? [:]
+            var settings = trackerProtection["settings"] as? [String: Any] ?? [:]
+            settings["surrogateInjection"] = PrivacyConfigurationData.State.disabled
+            trackerProtection["settings"] = settings
+            features[featureKey] = trackerProtection
+            root["features"] = features
 
-        return try? JSONSerialization.data(withJSONObject: root)
+            return (try? JSONSerialization.data(withJSONObject: root)) ?? configuration
+        }
     }
+}
 
-    enum Constants {
-        static let surrogateInjectionSettingKey = "surrogateInjection"
+/// Remembers the most recent patched configuration, keyed by the configuration it was made from.
+private final class PatchedConfigurationCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var input: Data?
+    private var output: Data?
+
+    func value(for configuration: Data, make: () -> Data) -> Data {
+        lock.lock()
+        if configuration == input, let output {
+            lock.unlock()
+            return output
+        }
+        lock.unlock()
+
+        let patched = make()
+        lock.lock()
+        input = configuration
+        output = patched
+        lock.unlock()
+        return patched
     }
-
 }

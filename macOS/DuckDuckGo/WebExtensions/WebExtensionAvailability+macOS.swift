@@ -26,12 +26,15 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
 
     private let featureFlagger: FeatureFlagger
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let isSurrogateRedirectionOSSupported: Bool
 
     init(
         featureFlagger: FeatureFlagger,
+        isSurrogateRedirectionOSSupported: Bool = { if #available(macOS 26, *) { true } else { false } }(),
         webExtensionManagerProvider: @escaping () -> WebExtensionManaging?
     ) {
         self.featureFlagger = featureFlagger
+        self.isSurrogateRedirectionOSSupported = isSurrogateRedirectionOSSupported
         self.webExtensionManagerProvider = webExtensionManagerProvider
     }
 
@@ -57,26 +60,11 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
         isAvailable && featureFlagger.isFeatureOn(.webExtensions)
     }
 
+    /// The only place that combines the conditions: macOS 26+, the embedded extension, and
+    /// `trackerProtection.appleSurrogateRedirection`.
     var isAppleSurrogateRedirectionEnabled: Bool {
-        featureFlagger.isAppleSurrogateRedirectionEnabled()
-    }
-}
-
-extension FeatureFlagger {
-
-    /// Whether the embedded web extension serves surrogates instead of content-scope-scripts.
-    ///
-    /// Needs macOS 26 or later, the embedded extension (`webExtensions.embedded`, the gate on using the extension at all),
-    /// and `trackerProtection.appleSurrogateRedirection`. This is the only place that combines them.
-    /// - Parameter isOSSupported: Whether this macOS version supports it; overridable for tests.
-    func isAppleSurrogateRedirectionEnabled(isOSSupported: Bool = Self.isAppleSurrogateRedirectionOSSupported) -> Bool {
-        isOSSupported && isFeatureOn(.embeddedExtension) && isFeatureOn(.appleSurrogateRedirection)
-    }
-
-    static var isAppleSurrogateRedirectionOSSupported: Bool {
-        if #available(macOS 26, *) {
-            return true
-        }
-        return false
+        isSurrogateRedirectionOSSupported
+            && featureFlagger.isFeatureOn(.embeddedExtension)
+            && featureFlagger.isFeatureOn(.appleSurrogateRedirection)
     }
 }

@@ -110,11 +110,15 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
     }
 }
 
-final class AppleSurrogateRedirectionCheckTests: XCTestCase {
+final class WebExtensionAvailabilitySurrogateRedirectionTests: XCTestCase {
+
+    private func makeSUT(flags: MockFeatureFlagger, isOSSupported: Bool = true) -> WebExtensionAvailability {
+        WebExtensionAvailability(featureFlagger: flags, isSurrogateRedirectionOSSupported: isOSSupported, webExtensionManagerProvider: { nil })
+    }
 
     private func isEnabled(flags: [FeatureFlag], isOSSupported: Bool = true) -> Bool {
         let stub = Dictionary(uniqueKeysWithValues: flags.map { ($0.rawValue, true) })
-        return MockFeatureFlagger(featuresStub: stub).isAppleSurrogateRedirectionEnabled(isOSSupported: isOSSupported)
+        return makeSUT(flags: MockFeatureFlagger(featuresStub: stub), isOSSupported: isOSSupported).isAppleSurrogateRedirectionEnabled
     }
 
     func testWhenAllConditionsAreMetThenEnabled() {
@@ -135,12 +139,13 @@ final class AppleSurrogateRedirectionCheckTests: XCTestCase {
 
     func testWhenFlagsChangeWhileRunningThenCheckFollows() {
         let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.embeddedExtension.rawValue: true])
-        XCTAssertFalse(flags.isAppleSurrogateRedirectionEnabled(isOSSupported: true))
+        let sut = makeSUT(flags: flags)
+        XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
 
         flags.featuresStub[FeatureFlag.appleSurrogateRedirection.rawValue] = true
-        XCTAssertTrue(flags.isAppleSurrogateRedirectionEnabled(isOSSupported: true))
+        XCTAssertTrue(sut.isAppleSurrogateRedirectionEnabled)
 
         flags.featuresStub[FeatureFlag.embeddedExtension.rawValue] = false
-        XCTAssertFalse(flags.isAppleSurrogateRedirectionEnabled(isOSSupported: true))
+        XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
     }
 }

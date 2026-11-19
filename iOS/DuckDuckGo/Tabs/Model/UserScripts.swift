@@ -107,9 +107,7 @@ final class UserScripts: UserScriptsProvider {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                                                                                 excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue],
-                                                                                isSurrogateInjectionDisabled: { [webExtensionAvailability = sourceProvider.webExtensionAvailability] in
-                                                                                    webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
-                                                                                })
+                                                                                isSurrogateInjectionDisabled: sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true)
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                         privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,

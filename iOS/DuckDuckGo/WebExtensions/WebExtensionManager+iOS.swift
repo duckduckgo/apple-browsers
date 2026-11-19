@@ -84,7 +84,8 @@ public enum WebExtensionManagerFactory {
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         searchTokenProvider: SearchTokenProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
-        eventHub: EventHubManaging
+        eventHub: EventHubManaging,
+        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool = { false }
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
@@ -152,9 +153,7 @@ public enum WebExtensionManagerFactory {
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
                 searchTokenProvider: searchTokenProvider,
                 eventHub: eventHub,
-                isAppleSurrogateRedirectionEnabled: {
-                    featureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: NativeMessagingSupport().isSupported)
-                }
+                isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
             ),
             scriptletConfiguration: scriptletConfiguration
         )

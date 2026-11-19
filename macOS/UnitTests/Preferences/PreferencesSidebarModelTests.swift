@@ -1070,6 +1070,7 @@ private final class MockWebExtensionAvailability: WebExtensionAvailabilityProvid
     var isAvailable = false
     var isAutoconsentExtensionAvailable = false
     var isExtensionManagementAvailable: Bool
+    var isAppleSurrogateRedirectionEnabled = false
 
     init(isExtensionManagementAvailable: Bool) {
         self.isExtensionManagementAvailable = isExtensionManagementAvailable

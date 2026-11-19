@@ -869,8 +869,7 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
 public enum TrackerProtectionConfigSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .trackerProtection }
 
-    /// Serve surrogates from the embedded web extension instead of injecting them from content-scope-scripts.
-    /// Only takes effect on macOS/iOS 26+ with the embedded extension enabled; see each app's `isAppleSurrogateRedirectionEnabled`.
+    /// Serve surrogates from the embedded web extension instead of content-scope-scripts.
     case appleSurrogateRedirection
 }
 

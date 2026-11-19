@@ -2386,7 +2386,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration(),
-            eventHub: eventHubIntegration.eventHub
+            eventHub: eventHubIntegration.eventHub,
+            isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in webExtensionAvailability.isAppleSurrogateRedirectionEnabled }
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager

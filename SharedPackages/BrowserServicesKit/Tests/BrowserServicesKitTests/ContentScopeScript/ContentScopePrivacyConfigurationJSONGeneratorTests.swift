@@ -35,8 +35,10 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         return manager
     }
 
-    private func generatedJSON(from manager: MockPrivacyConfigurationManager) -> [String: Any]? {
-        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+    private func generatedJSON(from manager: MockPrivacyConfigurationManager, isSurrogateInjectionDisabled: Bool = false) -> [String: Any]? {
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(),
+                                                                       privacyConfigurationManager: manager,
+                                                                       isSurrogateInjectionDisabled: isSurrogateInjectionDisabled)
         guard let data = generator.privacyConfiguration,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
@@ -44,8 +46,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         return json
     }
 
-    private func generatedFeatures(from manager: MockPrivacyConfigurationManager) -> [String: Any]? {
-        generatedJSON(from: manager)?["features"] as? [String: Any]
+    private func generatedFeatures(from manager: MockPrivacyConfigurationManager, isSurrogateInjectionDisabled: Bool = false) -> [String: Any]? {
+        generatedJSON(from: manager, isSurrogateInjectionDisabled: isSurrogateInjectionDisabled)?["features"] as? [String: Any]
     }
 
     private func jsonString(from dict: [String: Any]) -> String {
@@ -111,16 +113,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
 
     private func trackerProtectionSettings(from manager: MockPrivacyConfigurationManager,
                                            isSurrogateInjectionDisabled: Bool) -> [String: Any]? {
-        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(),
-                                                                       privacyConfigurationManager: manager,
-                                                                       isSurrogateInjectionDisabled: { isSurrogateInjectionDisabled })
-        guard let data = generator.privacyConfiguration,
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let features = json["features"] as? [String: Any],
-              let trackerProtection = features["trackerProtection"] as? [String: Any] else {
-            return nil
-        }
-        return trackerProtection["settings"] as? [String: Any]
+        let features = generatedFeatures(from: manager, isSurrogateInjectionDisabled: isSurrogateInjectionDisabled)
+        return (features?["trackerProtection"] as? [String: Any])?["settings"] as? [String: Any]
     }
 
     func testWhenSurrogateInjectionDisabledThenSettingIsDisabledAndOtherSettingsKept() {
@@ -152,19 +146,28 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         XCTAssertEqual(settings?["surrogateInjection"] as? String, "enabled")
     }
 
+    func testWhenConfigChangesThenPatchedConfigReflectsNewConfig() {
+        let manager = makeManager(features: [
+            "trackerProtection": ["state": "enabled", "exceptions": [], "settings": ["additionalCheck": "enabled"]]
+        ])
+        XCTAssertEqual(trackerProtectionSettings(from: manager, isSurrogateInjectionDisabled: true)?["additionalCheck"] as? String, "enabled")
+
+        let updated = makeManager(features: [
+            "trackerProtection": ["state": "enabled", "exceptions": [], "settings": ["additionalCheck": "disabled"]]
+        ])
+        let settings = trackerProtectionSettings(from: updated, isSurrogateInjectionDisabled: true)
+
+        XCTAssertEqual(settings?["additionalCheck"] as? String, "disabled", "a cached patch must not outlive the config it came from")
+        XCTAssertEqual(settings?["surrogateInjection"] as? String, "disabled")
+    }
+
     func testWhenSurrogateInjectionDisabledThenOtherFeaturesAreUnchanged() {
         let manager = makeManager(features: [
             "trackerProtection": ["state": "enabled", "exceptions": []],
             "contentBlocking": ["state": "enabled", "exceptions": []],
             "autoconsent": ["state": "enabled", "exceptions": []]
         ])
-        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(),
-                                                                       privacyConfigurationManager: manager,
-                                                                       isSurrogateInjectionDisabled: { true })
-
-        guard let data = generator.privacyConfiguration,
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let features = json["features"] as? [String: Any] else {
+        guard let features = generatedFeatures(from: manager, isSurrogateInjectionDisabled: true) else {
             XCTFail("Could not generate config")
             return
         }

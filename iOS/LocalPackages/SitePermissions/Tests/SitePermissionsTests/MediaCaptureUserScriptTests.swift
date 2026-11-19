@@ -436,32 +436,40 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         }
     }
 
-    func testNativeHandlerAppliesFlagChangesToAnAlreadyLoadedIneligibleDocument() async throws {
+    func testWhenHandlingIsDisabledThenIneligibleRequestsBypassToWebKit() async throws {
+        try await assertIneligibleRequests(handlingEnabled: false, reachWebKit: true)
+    }
+
+    func testWhenHandlingIsEnabledThenIneligibleRequestsAreDeniedWithoutPrompt() async throws {
+        try await assertIneligibleRequests(handlingEnabled: true, reachWebKit: false)
+    }
+
+    private func assertIneligibleRequests(handlingEnabled: Bool, reachWebKit: Bool,
+                                          file: StaticString = #filePath, line: UInt = #line) async throws {
         let script = MediaCaptureUserScript()
         let delegate = MediaCapturePermissionDelegate()
+        delegate.isMediaCapturePermissionHandlingEnabled = handlingEnabled
         script.delegate = delegate
+        // An about:blank document has no usable origin, so the custom flow treats every request as ineligible.
         let (webView, _) = await makeWebView(reply: (nil, nil),
                                               baseURL: URL(string: "about:blank")!,
                                               messageHandler: script)
 
-        for enabled in [false, true, false] {
-            delegate.isMediaCapturePermissionHandlingEnabled = enabled
-            for constraints in Self.mediaRequests {
-                let result = try await webView.callAsyncJavaScript(
-                    """
-                    try {
-                        await navigator.mediaDevices.getUserMedia(constraints);
-                        return true;
-                    } catch (_) {
-                        return false;
-                    }
-                    """,
-                    arguments: ["constraints": constraints],
-                    in: nil,
-                    contentWorld: .page
-                ) as? Bool
-                XCTAssertEqual(result, !enabled, "Constraints: \(constraints)")
-            }
+        for constraints in Self.mediaRequests {
+            let result = try await webView.callAsyncJavaScript(
+                """
+                try {
+                    await navigator.mediaDevices.getUserMedia(constraints);
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+                """,
+                arguments: ["constraints": constraints],
+                in: nil,
+                contentWorld: .page
+            ) as? Bool
+            XCTAssertEqual(result, reachWebKit, "Constraints: \(constraints)", file: file, line: line)
         }
 
         let nativeCallCount = try await webView.callAsyncJavaScript(
@@ -470,8 +478,8 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             in: nil,
             contentWorld: .page
         ) as? Int
-        XCTAssertEqual(nativeCallCount, 2 * Self.mediaRequests.count)
-        XCTAssertEqual(delegate.requestCount, 0)
+        XCTAssertEqual(nativeCallCount, reachWebKit ? Self.mediaRequests.count : 0, file: file, line: line)
+        XCTAssertEqual(delegate.requestCount, 0, file: file, line: line)
     }
 
     func testNativeCapabilityIsNotExposedAsAGlobalPropertyName() async throws {

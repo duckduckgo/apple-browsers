@@ -183,6 +183,26 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// The `chrome.privacy.services` values extensions set, which let one take over DuckDuckGo autofill.
     /// `nil` without a key-value store.
     public let privacySettings: WebExtensionPrivacySettingsStore?
+
+    private let isAutofillTakeoverEnabled: @MainActor () -> Bool
+
+    /// The installation that DuckDuckGo leaves autofill to, if any: the one that turned
+    /// `passwordSavingEnabled` off, or else the first loaded extension in
+    /// `ChromeWebStoreID.takingOverAutofillWhileLoaded`.
+    @MainActor
+    public var autofillManagingIdentifier: String? {
+        guard isAutofillTakeoverEnabled() else { return nil }
+        if let identifier = privacySettings?.identifierTurningOff(.passwordSavingEnabled) {
+            return identifier
+        }
+        let takingOver = Set(ChromeWebStoreID.takingOverAutofillWhileLoaded.map {
+            WebExtensionStoreIdentity(store: .chromeWebStore, id: $0.rawValue)
+        })
+        return installationStore.installedExtensions.first { installedExtension in
+            installedExtension.storeIdentity.map(takingOver.contains) == true
+                && context(for: installedExtension.uniqueIdentifier) != nil
+        }?.uniqueIdentifier
+    }
 #endif
 
     private let storePixelsReporter: WebExtensionStorePixelsReporter?
@@ -350,6 +370,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
         self.privacySettings = keyValueStore.map { WebExtensionPrivacySettingsStore(keyValueStore: $0) }
+        self.isAutofillTakeoverEnabled = isAutofillTakeoverEnabled
 #endif
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()

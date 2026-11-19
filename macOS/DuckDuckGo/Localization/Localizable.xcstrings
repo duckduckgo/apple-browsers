@@ -126473,6 +126473,30 @@
         }
       }
     },
+    "webExtensions.nativeMessagingUnavailable.dontShowAgain" : {
+      "comment" : "Checkbox in the alert shown when an extension tries to communicate with a desktop app in the App Store version of the browser. When ticked, the alert isn't shown again for that extension. %@ is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t show again for %@"
+          }
+        }
+      }
+    },
+    "webExtensions.nativeMessagingUnavailable.title" : {
+      "comment" : "Title of the alert shown when an extension asks to communicate with a desktop app, which the App Store version of the browser can't allow. %@ is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ can’t connect to other apps on your Mac"
+          }
+        }
+      }
+    },
     "webExtensions.permissions.allow" : {
       "comment" : "Approve additional extension permissions",
       "extractionState" : "extracted_with_value",
@@ -127793,6 +127817,18 @@
         }
       }
     },
+    "webExtensions.permissions.nativeMessagingUnavailable" : {
+      "comment" : "Note below the permission list when an extension also asks to communicate with a desktop app, which the App Store version of the browser can't allow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Communicating with other apps on your Mac isn’t available in the App Store version of DuckDuckGo."
+          }
+        }
+      }
+    },
     "webExtensions.permissions.none" : {
       "comment" : "Extension requests no permissions",
       "extractionState" : "extracted_with_value",
@@ -129109,6 +129145,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Другие параметры"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.message" : {
+      "comment" : "Explanation in an extension's details in Settings > Extensions after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow. A Learn More link follows it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extensions in the App Store version of DuckDuckGo can't connect to other apps, so features that rely on this won't work."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.message.download" : {
+      "comment" : "Text at the bottom of the native mesasging limitation alert.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "To use all of this extension's features, download DuckDuckGo directly from duckduckgo.com/mac."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.title" : {
+      "comment" : "Title of a row in an extension's details in Settings > Extensions, and the accessibility label of the warning badge on its icon, after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can’t connect to other apps on your Mac"
           }
         }
       }

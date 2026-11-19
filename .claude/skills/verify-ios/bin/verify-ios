@@ -35,6 +35,7 @@ def build_parser():
     sp.add_parser("info", help="worktree key, state dir, sims, ports")
     a = sp.add_parser("selftest", help="check verify-ios works here: setup, build if needed, tests, trust checks, one proof")
     a.add_argument("--devices", default="iphone,ipad", help="iphone,ipad (default: both)")
+    a.add_argument("--evidence-dir", help="a directory outside the checkout for the proofs' attempt folders")
     a = sp.add_parser("new-proof", help="create a fresh evidence folder with a proof template; prints its path")
     a.add_argument("name")
     add_evidence_options(a)
@@ -43,6 +44,8 @@ def build_parser():
     a.add_argument("--devices", help="iphone,ipad (default: the proof's DEVICES)")
     a.add_argument("--keep", action="store_true", help="leave the simulator, runner and app running afterwards (to explore or debug a failure)")
     a.add_argument("--no-video", action="store_true", help="don't record each device's screen to <device>/recording.mp4")
+    a.add_argument("--base", metavar="REF", help="also prove on REF (built in its own worktree) and judge each check against both runs")
+    a.add_argument("--as-base", action="store_true", help=argparse.SUPPRESS)   # set by --base on its base run
     add_evidence_options(a)
     a = sp.add_parser("check", help="compile and import proofs without touching a device")
     a.add_argument("proofs", nargs="+")
@@ -109,7 +112,16 @@ def dispatch(args):
         return info()
     if args.cmd == "selftest":
         from verify_ios import selftest
-        code, out = selftest.run(harness.check_devices(args.devices.split(",")))
+        evidence_dir = harness.evidence_root(evidence_dir=args.evidence_dir) if args.evidence_dir else None
+        if evidence_dir:
+            # fail now, not after the 10-25 minutes of setup, build and tests that come before the proof
+            try:
+                os.makedirs(evidence_dir, exist_ok=True)
+            except OSError as e:
+                raise Failed(f"cannot create --evidence-dir {args.evidence_dir}: {e.strerror}")
+            if not os.access(evidence_dir, os.W_OK):
+                raise Failed(f"--evidence-dir is not writable: {args.evidence_dir}")
+        code, out = selftest.run(harness.check_devices(args.devices.split(",")), evidence_dir)
         if code:
             raise ProveExit(code, out)
         return out
@@ -120,9 +132,18 @@ def dispatch(args):
         if not all(c["ok"] for c in checked):
             raise ProveExit(2, dict(ok=False, code="PROOF_REJECTED", proofs=checked))
         return dict(proofs=checked)
+    if args.cmd == "prove" and args.base:
+        if len(args.proofs) != 1 or args.keep or args.as_base:
+            raise ProveExit(2, dict(ok=False, code="BAD_ARGS", message="--base takes one proof, without --keep"))
+        from verify_ios import compare
+        code, out = compare.prove_against_base(args.proofs[0], args.base, args.devices.split(",") if args.devices else None,
+                                               args.decision_log, args.evidence_dir, not args.no_video)
+        if code:
+            raise ProveExit(code, out)
+        return out
     if args.cmd == "prove":
         code, out = harness.run_proofs(args.proofs, args.devices.split(",") if args.devices else None, args.keep,
-                                       args.decision_log, args.evidence_dir, not args.no_video)
+                                       args.decision_log, args.evidence_dir, not args.no_video, args.as_base)
         if code:
             raise ProveExit(code, out)
         return out

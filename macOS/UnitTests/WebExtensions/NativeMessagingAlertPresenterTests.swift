@@ -58,10 +58,10 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         await explain(bitwarden, bitwarden, onePassword)
 
         XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), [
-            "Bitwarden can’t connect to apps on your Mac",
-            "1Password can’t connect to apps on your Mac"
+            "Bitwarden can’t connect to other apps on your Mac",
+            "1Password can’t connect to other apps on your Mac"
         ])
-        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show this again for Bitwarden"))
+        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show again for Bitwarden"))
         XCTAssertEqual(limitation.suppressed, [bitwarden.uniqueIdentifier, onePassword.uniqueIdentifier])
     }
 
@@ -83,7 +83,7 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
 
         await clickAction(of: onePassword, bitwarden, neverLimited)
 
-        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), ["1Password can’t connect to apps on your Mac"])
+        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), ["1Password can’t connect to other apps on your Mac"])
     }
 
     private func explain(_ contexts: WKWebExtensionContext...) async {

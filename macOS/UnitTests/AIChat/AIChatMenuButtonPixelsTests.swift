@@ -84,6 +84,38 @@ final class AIChatMenuButtonPixelsTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.pixel.namePrefix == PixelKitNamePrefix.none })
     }
 
+    // MARK: - Menu outcome
+
+    func testMenuOutcomeReportsChoicePageTypeAndChatState() {
+        firer.fireMenuOutcome(.none, context: AIChatMenuButtonContext(pageType: .serp, chatState: .hidden))
+        firer.fireMenuOutcome(.closeSidebar, context: AIChatMenuButtonContext(pageType: .web, chatState: .floating))
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), Array(repeating: "aichat_title_bar_menu_outcome_macos", count: 2))
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.parameters), [
+            ["choice": "none", "pageType": "serp", "chatState": "hidden"],
+            ["choice": "close-sidebar", "pageType": "web", "chatState": "floating"]
+        ])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.frequency), [.dailyAndCount, .dailyAndCount])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.pixel.namePrefix == PixelKitNamePrefix.none })
+    }
+
+    func testTheSidebarChoiceMatchesTheOfferedEntry() {
+        for entry in AIChatMenuButtonSidebarEntry.allCases {
+            XCTAssertEqual(AIChatMenuButtonChoice(entry).rawValue, entry.rawValue)
+        }
+    }
+
+    func testPageTypeFromTabContent() {
+        typealias PageType = AIChatMenuButtonContext.PageType
+        XCTAssertEqual(PageType(.newtab), .ntp)
+        XCTAssertEqual(PageType(.url(URL(string: "https://duckduckgo.com/?q=duck")!, source: .link)), .serp)
+        XCTAssertEqual(PageType(.url(URL(string: "https://duck.ai/")!, source: .link)), .duckai)
+        XCTAssertEqual(PageType(.aiChat(URL(string: "https://duck.ai/")!)), .duckai)
+        XCTAssertEqual(PageType(.url(URL(string: "https://example.com/")!, source: .link)), .web)
+        XCTAssertEqual(PageType(.url(URL(string: "file:///tmp/a.html")!, source: .link)), .other)
+        XCTAssertEqual(PageType(.settings(pane: nil)), .other)
+    }
+
     // MARK: - New chat
 
     func testAPlainClickOpensTheMenu() {

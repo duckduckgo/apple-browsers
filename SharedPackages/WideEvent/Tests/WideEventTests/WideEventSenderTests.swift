@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import PixelKit
+@testable import PixelKit
 @testable import WideEvent
 import Foundation
 
@@ -226,6 +226,57 @@ final class WideEventSenderTests: XCTestCase {
             if case .invalidFlowState = error {
             } else {
                 XCTFail("Expected invalidFlowState error")
+            }
+        }
+    }
+
+    // MARK: - Retry Tests
+
+    func testSendQueuesFailedPixelsForRetryWhenRequested() {
+        let store = InMemoryPixelRetryQueueStore()
+        let queued = XCTestExpectation(description: "Failed pixels queued")
+        queued.expectedFulfillmentCount = 2
+        store.onAppend = { queued.fulfill() }
+
+        let pixelKit = makeFailingPixelKit(retryQueueStore: store)
+        let sender = makeSender(pixelKitProvider: { pixelKit })
+
+        sender.send(makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(), options: .withRetry) { _, _ in }
+
+        wait(for: [queued], timeout: 5.0)
+
+        XCTAssertTrue(store.items.allSatisfy { $0.pixelName.contains("wide_sender_test_event") })
+    }
+
+    func testSendDoesNotQueueFailedPixelsForRetryByDefault() {
+        let store = InMemoryPixelRetryQueueStore()
+        let pixelKit = makeFailingPixelKit(retryQueueStore: store)
+        let sender = makeSender(pixelKitProvider: { pixelKit })
+
+        let expectation = XCTestExpectation(description: "Send completed")
+        sender.send(makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { success, _ in
+            XCTAssertFalse(success)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+    private func makeFailingPixelKit(retryQueueStore: PixelRetryQueueStoring) -> PixelKit {
+        PixelKit(dryRun: false,
+                 appVersion: "1.0.0",
+                 source: "test-suite",
+                 session: "test",
+                 channel: nil,
+                 defaultHeaders: [:],
+                 pixelCalendar: nil,
+                 dateGenerator: Date.init,
+                 defaults: testDefaults,
+                 retryQueueStore: retryQueueStore) { _, _, _, _, _, onComplete in
+            DispatchQueue.main.async {
+                onComplete(false, nil)
             }
         }
     }
@@ -793,6 +844,38 @@ final class SenderTestWideEventData: WideEventData {
 
         params["feature.data.ext.test_eligible"] = testEligible
         return params
+    }
+}
+
+// MARK: - In-Memory Retry Queue Store
+
+final class InMemoryPixelRetryQueueStore: PixelRetryQueueStoring {
+    private let lock = NSLock()
+    private var storage: [PixelRetryQueueItem] = []
+
+    var onAppend: (() -> Void)?
+
+    var items: [PixelRetryQueueItem] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    func append(_ items: [PixelRetryQueueItem]) throws {
+        lock.lock()
+        storage += items
+        lock.unlock()
+        onAppend?()
+    }
+
+    func remove(itemsWithIDs ids: Set<UUID>) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        storage.removeAll { ids.contains($0.id) }
+    }
+
+    func storedItems() throws -> [PixelRetryQueueItem] {
+        items
     }
 }
 

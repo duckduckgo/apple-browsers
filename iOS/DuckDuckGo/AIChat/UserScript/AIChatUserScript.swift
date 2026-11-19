@@ -237,6 +237,9 @@ final class AIChatUserScript: NSObject, Subfeature {
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
     private let bonusMessageLog: AIChatBonusMessageLogging?
+    private let localModelService: AIChatLocalModelServing?
+    private let localModelAccessPrompt: LocalModelAccessAsking?
+    private var localTaskForSubmission: AIChatLocalModelTask?
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
@@ -272,11 +275,15 @@ final class AIChatUserScript: NSObject, Subfeature {
     init(handler: AIChatUserScriptHandling,
          debugSettings: AIChatDebugSettingsHandling,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
-         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
+         bonusMessageLog: AIChatBonusMessageLogging? = nil,
+         localModelService: AIChatLocalModelServing? = nil,
+         localModelAccessPrompt: LocalModelAccessAsking? = nil) {
         self.debugSettings = debugSettings
         self.devicePlatform = devicePlatform
         self.handler = handler
         self.bonusMessageLog = bonusMessageLog
+        self.localModelService = localModelService
+        self.localModelAccessPrompt = localModelAccessPrompt
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
         super.init()
@@ -295,6 +302,11 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     deinit {
         pendingTabContextSubmission?.cancel()
+        guard let localModelService else { return }
+        let ownerID = ObjectIdentifier(self)
+        Task { @MainActor in
+            localModelService.cancelRuns(ownerID: ownerID)
+        }
     }
 
     private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
@@ -332,6 +344,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.localModelService?.register(self)
+        }
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -362,19 +378,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
             return { @MainActor [weak self, handler = self.handler] params, message in
-                let response = handler.getAIChatNativeConfigValues(params: params, message: message)
-
-                guard let self, self.browserToolsService?.isEnabled == true else {
-                    return response
-                }
-                guard var config = response as? AIChatNativeConfigValues else { return response }
-
-                if self.isBrowserToolsMessage(message) {
-                    config.clientTools = self.browserToolsService?.configuration(for: self)
-                } else {
-                    config.clientTools = nil
-                }
-                return config
+                guard let self else { return handler.getAIChatNativeConfigValues(params: params, message: message) }
+                return self.getAIChatNativeConfigValues(params: params, message: message)
             }
         case .getAIChats:
             return handler.getAIChats
@@ -472,9 +477,39 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.aiChatBonusDismiss
         case .aiChatBonusEnd:
             return handler.aiChatBonusEnd
+
+        // Main-actor closures, so the reply isn't held up by a hop in the middle of the handler.
+        case .startAIChatLocalRun:
+            return { @MainActor [weak self] params, message in
+                try self?.startAIChatLocalRun(params: params, message: message)
+            }
+        case .cancelAIChatLocalRun:
+            return { @MainActor [weak self] params, _ in
+                self?.cancelAIChatLocalRun(params: params)
+            }
+        case .requestAIChatLocalModelAccess:
+            return { @MainActor [weak self] _, message in
+                try await self?.requestAIChatLocalModelAccess(message: message)
+            }
+
         default:
             return nil
         }
+    }
+
+    @MainActor
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
+        let response = handler.getAIChatNativeConfigValues(params: params, message: message)
+        guard var configValues = response as? AIChatNativeConfigValues else { return response }
+        // The local model's state and text reach the page only through `pushToDuckAI`, so a page that
+        // can't receive pushes isn't offered it: it would wait for a summary that never arrives.
+        if let localModelService, isDuckAIPushDestination(message.messageWebView?.url) {
+            configValues.localModel = localModelService.config()
+        }
+        if browserToolsService?.isEnabled == true {
+            configValues.clientTools = isBrowserToolsMessage(message) ? browserToolsService?.configuration(for: self) : nil
+        }
+        return configValues
     }
 
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
@@ -591,11 +626,22 @@ final class AIChatUserScript: NSObject, Subfeature {
                       reasoningEffort: AIChatReasoningEffort? = nil,
                       termsAccepted: Bool = false) {
         let selections = attachedSelectionsPayload
+        let localTask = localTaskForSubmission
         submitWithTabContexts(currentPageContext: pageContext, request: attachedTabContextsProvider?()) { context in
             AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId,
-                                           pageContext: context, selections: selections, reasoningEffort: reasoningEffort)
+                                           pageContext: context, selections: selections, reasoningEffort: reasoningEffort,
+                                           localTask: localTask)
                 .withTermsAccepted(termsAccepted)
         }
+    }
+
+    /// Marks a prompt submitted inside `submit` as `localTask`, so Duck.ai can run it on the local model.
+    /// It's set only for the duration of the call: a prompt that's queued and goes out later uses the cloud.
+    @MainActor
+    func submitting(localTask: AIChatLocalModelTask, _ submit: () -> Void) {
+        localTaskForSubmission = localTask
+        defer { localTaskForSubmission = nil }
+        submit()
     }
 
     @MainActor
@@ -627,6 +673,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                       onPromptDispatched: (() -> Void)? = nil) {
         let currentPageContext = pageContext ?? attachedPageContextProvider?()
         let selections = attachedSelectionsPayload
+        let localTask = localTaskForSubmission
         let onPromptSubmitted = onPromptSubmitted
         submitWithTabContexts(currentPageContext: currentPageContext, request: tabAttachmentRequest, didSubmit: {
             onPromptSubmitted?()
@@ -640,7 +687,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 modelId: modelId,
                 pageContext: context,
                 selections: selections,
-                reasoningEffort: reasoningEffort
+                reasoningEffort: reasoningEffort,
+                localTask: localTask
             ).withTermsAccepted(termsAccepted)
         })
     }
@@ -852,6 +900,76 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 }
 
+// MARK: - Local models
+
+extension AIChatUserScript: AIChatLocalModelPushing {
+
+    @MainActor
+    func startAIChatLocalRun(params: Any, message: UserScriptMessage) throws -> Encodable? {
+        guard let localModelService, isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
+        guard let request: AIChatLocalRunRequest = DecodableHelper.decode(from: params) else {
+            throw AIChatLocalModelRequestError.invalidArguments
+        }
+        return try localModelService.startRun(request, for: self)
+    }
+
+    /// A notification, but it also answers with `{}` in case the page sends it as a request.
+    @MainActor
+    func cancelAIChatLocalRun(params: Any) -> Encodable? {
+        if let request: AIChatLocalRunCancelRequest = DecodableHelper.decode(from: params) {
+            localModelService?.cancelRun(requestId: request.requestId, for: self)
+        }
+        return [String: String]()
+    }
+
+    /// Waits for the user's answer, so the page must not time it out.
+    @MainActor
+    func requestAIChatLocalModelAccess(message: UserScriptMessage) async throws -> Encodable? {
+        guard let localModelService, let localModelAccessPrompt,
+              isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
+        let window = message.messageWebView?.window
+        let modelName = localModelService.model.name
+        let result = try await localModelService.requestAccess {
+            await localModelAccessPrompt.ask(in: window, modelName: modelName)
+        }
+        return AIChatLocalModelAccessReply(result: result)
+    }
+
+    /// Runs belong to the script that started them. One replaced under a page that stays open hands them on,
+    /// or the page would wait for chunks that never come.
+    @MainActor
+    func handOverLocalRuns(to replacement: AIChatUserScriptProviding) {
+        guard let replacement = replacement as? AIChatLocalModelPushing else { return }
+        localModelService?.moveRuns(from: self, to: replacement)
+    }
+
+    @MainActor
+    func pushLocalModelState(_ update: AIChatLocalModelStateUpdate) {
+        pushToDuckAI(.submitAIChatLocalModelState, params: update)
+    }
+
+    @MainActor
+    func pushLocalRunChunk(_ chunk: AIChatLocalRunChunk) {
+        pushToDuckAI(.submitAIChatLocalRunChunk, params: chunk)
+    }
+
+    /// Every tab has this script, so the host is checked before anything is pushed.
+    @MainActor
+    private func pushToDuckAI(_ message: AIChatUserScriptMessages, params: Encodable?) {
+        guard let webView, let broker, isDuckAIPushDestination(webView.url) else { return }
+        broker.push(method: message.rawValue, params: params, for: self, into: webView)
+    }
+
+    fileprivate func isDuckAIPushDestination(_ url: URL?) -> Bool {
+        guard let host = url?.host else { return false }
+        return messageDestinationPolicy.isAllowed(host)
+    }
+}
+
 // MARK: - AIChatMetricReportingHandling
 
 extension AIChatUserScript: AIChatMetricReportingHandling {
@@ -862,9 +980,9 @@ extension AIChatUserScript: AIChatMetricReportingHandling {
 
 extension AIChatUserScript: ClientToolPermissionPrompting {
     @MainActor
-    func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
+    func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, presenter: (any AIChatNativePermissionPresenting)? = nil, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
         detachBrowserTools()
-        service.attach(self, owner: owner, makeScope: makeScope)
+        service.attach(self, owner: owner, presenter: presenter, makeScope: makeScope)
         browserToolsService = service
     }
 
@@ -900,14 +1018,15 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
         return await browserToolsService.invoke(request, from: self)
     }
 
-    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
     @MainActor
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
-        false
+        browserToolsService?.presentPermissionPrompt(prompt, from: self) ?? false
     }
 
     @MainActor
-    func withdrawClientToolPermissionPrompt(requestID: String) {}
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        browserToolsService?.withdrawPermissionPrompt(requestID: requestID, from: self)
+    }
 
     @MainActor
     func pushClientToolsChanged(_ data: ClientToolsChangedData) -> Bool {

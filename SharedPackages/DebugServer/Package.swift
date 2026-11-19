@@ -27,6 +27,7 @@ let package = Package(
     ],
     products: [
         .library(name: "DebugServer", targets: ["DebugServer"]),
+        .library(name: "LaunchProfile", targets: ["LaunchProfile"]),
     ],
     targets: [
         .target(
@@ -38,6 +39,11 @@ let package = Package(
         .testTarget(
             name: "DebugServerTests",
             dependencies: ["DebugServer"]
+        ),
+        .target(name: "LaunchProfile"),
+        .testTarget(
+            name: "LaunchProfileTests",
+            dependencies: ["LaunchProfile"]
         ),
     ]
 )

@@ -13,6 +13,7 @@ CC:
 
 ### Testing Steps
 <!-- One action per step. Note expected outcome inline where relevant, e.g. "3. Tap Save → settings screen dismisses". Assume the reviewer is unfamiliar with this part of the app. -->
+<!-- iOS: instead of setup steps, list the starting state for people (only the flags and tabs a tester sets up on purpose, one per line) plus a collapsed launch profile JSON for agents. See .claude/skills/ddg-ios-launch-profile. -->
 1.
 2.
 

@@ -417,6 +417,23 @@ final class LaunchOptionsHandlerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func testWhenALaunchProfileSetsAFeatureFlagArgumentThenItIsApplied() {
+        let argumentDomain = userDefaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        userDefaults.setVolatileDomain(argumentDomain.merging(["ff.uiTestFeatureFlag": "true"]) { $1 },
+                                       forName: UserDefaults.argumentDomain)
+        defer { userDefaults.setVolatileDomain(argumentDomain, forName: UserDefaults.argumentDomain) }
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        defer { featureFlagStore.removePersistentDomain(forName: "testing_featureFlags") }
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, arguments: [],
+                                       internalUserStore: MockInternalUserStore())
+
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: featureFlagStore)
+
+        #expect(featureFlagStore.bool(forKey: "localOverrideUiTestFeatureFlag"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenExperimentCohortOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("treatment", forKey: "experiment.uiTestExperiment")

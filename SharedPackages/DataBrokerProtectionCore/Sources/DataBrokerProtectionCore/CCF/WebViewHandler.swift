@@ -79,7 +79,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 actionLogContext: PIRActionLogContext? = nil,
                 challengeEventHandler: ((String) -> Void)? = nil,
-                visualizeActions: Bool = false) throws {
+                visualizeActions: Bool = false,
+                rejectsStaleReplies: Bool = false) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.customUserAgent = customUserAgent
@@ -101,7 +102,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                                                        executionConfig: executionConfig,
                                                        shouldContinueActionHandler: shouldContinueActionHandler,
                                                        contentBlocking: contentBlocking,
-                                                       visualizeActions: visualizeActions)
+                                                       visualizeActions: visualizeActions,
+                                                       rejectsStaleReplies: rejectsStaleReplies)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
 

@@ -35,7 +35,8 @@ final class DataBrokerUserContentController: WKUserContentController {
          executionConfig: BrokerJobExecutionConfig,
          shouldContinueActionHandler: @escaping () -> Bool,
          contentBlocking: DBPWebViewContentBlocking?,
-         visualizeActions: Bool = false) throws {
+         visualizeActions: Bool = false,
+         rejectsStaleReplies: Bool = false) throws {
         super.init()
 
         dataBrokerUserScripts = try DataBrokerUserScript(privacyConfig: privacyConfigurationManager,
@@ -44,7 +45,8 @@ final class DataBrokerUserContentController: WKUserContentController {
                                                          executionConfig: executionConfig,
                                                          shouldContinueActionHandler: shouldContinueActionHandler,
                                                          contentBlocking: contentBlocking,
-                                                         visualizeActions: visualizeActions)
+                                                         visualizeActions: visualizeActions,
+                                                         rejectsStaleReplies: rejectsStaleReplies)
         dataBrokerUserScripts?.userScripts.forEach {
             let userScript = $0.makeWKUserScriptSync()
             self.installUserScripts([userScript], handlers: [$0])
@@ -103,12 +105,16 @@ final class DataBrokerUserScript: UserScriptsProvider {
          executionConfig: BrokerJobExecutionConfig,
          shouldContinueActionHandler: @escaping () -> Bool,
          contentBlocking: DBPWebViewContentBlocking?,
-         visualizeActions: Bool = false) throws {
+         visualizeActions: Bool = false,
+         rejectsStaleReplies: Bool = false) throws {
         contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride(visualizeActions: visualizeActions),
                                                                     properties: prefs,
                                                                     scriptContext: .brokerProtection,
                                                                     privacyConfigurationJSONGenerator: nil)
-        dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
+        dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate,
+                                                        executionConfig: executionConfig,
+                                                        shouldContinueActionHandler: shouldContinueActionHandler,
+                                                        rejectsStaleReplies: rejectsStaleReplies)
         dataBrokerFeature.broker = contentScopeUserScriptIsolated.broker
         contentScopeUserScriptIsolated.registerSubfeature(delegate: dataBrokerFeature)
 
@@ -183,7 +189,8 @@ extension WKWebViewConfiguration {
                                       executionConfig: BrokerJobExecutionConfig,
                                       shouldContinueActionHandler: @escaping () -> Bool,
                                       contentBlocking: DBPWebViewContentBlocking?,
-                                      visualizeActions: Bool) throws {
+                                      visualizeActions: Bool,
+                                      rejectsStaleReplies: Bool) throws {
         setURLSchemeHandler(WebViewSchemeHandler(), forURLScheme: WebViewSchemeHandler.dataBrokerProtectionScheme)
         preferences.isFraudulentWebsiteWarningEnabled = false
         let userContentController = try DataBrokerUserContentController(with: privacyConfig,
@@ -192,7 +199,8 @@ extension WKWebViewConfiguration {
                                                                         executionConfig: executionConfig,
                                                                         shouldContinueActionHandler: shouldContinueActionHandler,
                                                                         contentBlocking: contentBlocking,
-                                                                        visualizeActions: visualizeActions)
+                                                                        visualizeActions: visualizeActions,
+                                                                        rejectsStaleReplies: rejectsStaleReplies)
         self.userContentController = userContentController
     }
 }

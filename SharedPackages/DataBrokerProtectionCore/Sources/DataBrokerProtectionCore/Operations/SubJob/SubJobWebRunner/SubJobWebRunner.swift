@@ -426,7 +426,8 @@ public extension SubJobWebRunning {
                                                                                challengeEventHandler: { message in
                                                                                    debugEventReporter?.recordDebugEvent(kind: .challenge, actionType: nil, details: message)
                                                                                },
-                                                                               visualizeActions: assistanceObserver != nil)
+                                                                               visualizeActions: assistanceObserver != nil,
+                                                                               rejectsStaleReplies: assistanceObserver != nil)
         }
 
         // The assisted opt-out UI hosts the page itself, so the separate debug window stays closed.

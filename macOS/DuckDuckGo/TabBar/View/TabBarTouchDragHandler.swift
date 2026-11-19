@@ -30,6 +30,7 @@ final class TabBarTouchDragHandler: NSObject {
         guard #available(macOS 27.0, *) else { return }
 
         let recognizer = NSPressGestureRecognizer(target: self, action: #selector(touchPressRecognized(_:)))
+        // The default mask includes the primary mouse button, so a held click would also start a drag.
         recognizer.buttonMask = 0x0
         recognizer.allowedTouchTypes = .direct
         collectionView.addGestureRecognizer(recognizer)

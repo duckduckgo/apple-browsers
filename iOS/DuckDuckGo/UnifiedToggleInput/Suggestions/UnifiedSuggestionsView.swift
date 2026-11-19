@@ -31,7 +31,6 @@ struct UnifiedSuggestionsView: View {
     var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
-    var showsOnlyRedesignedFavorites = false
     var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -85,10 +84,10 @@ struct UnifiedSuggestionsView: View {
             listLayer
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
-                                                   messagesModel: showsOnlyRedesignedFavorites ? nil : favoritesPresentation.viewController?.messagesModel,
+                                                   messagesModel: favoritesPresentation.viewController?.messagesModel,
                                                    showsSearchModules: !usesScrollableEscapeHatch || showsRedesignedSearchModules,
                                                    recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
-                                                   escapeHatch: showsOnlyRedesignedFavorites ? nil : escapeHatch,
+                                                   escapeHatch: escapeHatch,
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom,
                                                    contentTopInset: viewModel.contentTopInset,

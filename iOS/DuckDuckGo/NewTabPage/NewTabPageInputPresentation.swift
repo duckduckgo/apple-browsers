@@ -17,6 +17,14 @@
 //  limitations under the License.
 //
 
+/// The page a redesigned focused state sits over.
+enum RedesignedFocusedSurface: Equatable {
+    /// Favorites, messages and the escape hatch, as on the new tab page.
+    case newTabPage
+    /// Only the favorites grid.
+    case webPage
+}
+
 enum NewTabPageInputPresentation: Equatable {
     case browser
     case resting(usesUnifiedInput: Bool)
@@ -44,9 +52,12 @@ enum NewTabPageInputPresentation: Equatable {
         !isOnAITab && self == .editing(usesUnifiedInput: true)
     }
 
+    /// The redesigned focused surface this presentation selects, or nil for the legacy one.
     /// A web page keeps the browser presentation, but its focused state shows the redesigned favorites.
-    func usesRedesignedFocusedFavorites(isOnWebPage: Bool) -> Bool {
-        isOnWebPage && self == .browser
+    func redesignedFocusedSurface(isOnAITab: Bool, isOnWebPage: Bool) -> RedesignedFocusedSurface? {
+        if usesRedesignedFocusedLayout(isOnAITab: isOnAITab) { return .newTabPage }
+        if !isOnAITab, isOnWebPage, self == .browser { return .webPage }
+        return nil
     }
 
     var hidesNavigationContainer: Bool {

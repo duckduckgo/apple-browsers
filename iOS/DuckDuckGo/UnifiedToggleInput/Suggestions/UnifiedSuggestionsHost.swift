@@ -54,7 +54,7 @@ final class UnifiedSuggestionsHost {
     private var isLogoHeldForForeground = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
-    private var showsOnlyRedesignedFavorites = false
+    private var redesignedFocusedSurface: RedesignedFocusedSurface?
     private var redesignedPresentationCancellable: AnyCancellable?
     private var showsRedesignedSearchModules = false
 
@@ -145,9 +145,8 @@ final class UnifiedSuggestionsHost {
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
-            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
+            usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
-            showsOnlyRedesignedFavorites: showsOnlyRedesignedFavorites,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
@@ -234,11 +233,11 @@ final class UnifiedSuggestionsHost {
             .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
     }
 
-    /// - Parameter favoritesOnly: Mounts only the redesigned favorites, without messages or the escape hatch.
-    func setUsesRedesignedNewTabPageLayout(_ enabled: Bool, favoritesOnly: Bool = false) {
-        let favoritesOnly = enabled && favoritesOnly
-        guard enabled != (redesignedSearchPresentation != nil) || favoritesOnly != showsOnlyRedesignedFavorites else { return }
-        showsOnlyRedesignedFavorites = favoritesOnly
+    /// - Parameter surface: The redesigned surface to mount, or nil for the legacy favorites.
+    func setRedesignedFocusedSurface(_ surface: RedesignedFocusedSurface?) {
+        guard surface != redesignedFocusedSurface else { return }
+        redesignedFocusedSurface = surface
+        let enabled = surface != nil
         stopModeChangeAnimator()
         viewModel.cancelLogoModeChange()
         viewModel.usesRedesignedNewTabPageLayout = enabled
@@ -249,8 +248,7 @@ final class UnifiedSuggestionsHost {
             let presentation = RedesignedFocusedSearchPresentation(
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
-                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher(),
-                favoritesOnly: favoritesOnly)
+                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher())
             redesignedSearchPresentation = presentation
             redesignedPresentationCancellable = presentation.$showsSearchModules
                 .sink { [weak self] showsSearchModules in
@@ -561,7 +559,9 @@ final class UnifiedSuggestionsHost {
             return view
         }
         // The logo shares this host and would slide too, so only while it is off screen.
-        guard viewModel.escapeHatchPlacement == .embedded, viewModel.backdropLogoFrame == nil else { return nil }
+        // The web page surface has no embedded hatch, but its favorites still have to follow the bar.
+        let slidesWithBar = viewModel.escapeHatchPlacement == .embedded || redesignedFocusedSurface == .webPage
+        guard slidesWithBar, viewModel.backdropLogoFrame == nil else { return nil }
         return hostingController?.view
     }
 
@@ -614,6 +614,7 @@ final class UnifiedSuggestionsHost {
         viewModel.isLogoRevealDeferred = false
         redesignedPresentationCancellable = nil
         redesignedSearchPresentation = nil
+        redesignedFocusedSurface = nil
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()
@@ -637,9 +638,8 @@ final class UnifiedSuggestionsHost {
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
-            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
+            usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
-            showsOnlyRedesignedFavorites: showsOnlyRedesignedFavorites,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)

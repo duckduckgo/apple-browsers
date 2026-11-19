@@ -107,30 +107,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// The one resolver-driven host that serves both surfaces; its container pinned directly in
     /// `contentContainerView`.
-    var usesRedesignedNewTabPageLayout = false {
+    var redesignedFocusedSurface: RedesignedFocusedSurface? {
         didSet {
-            guard oldValue != usesRedesignedNewTabPageLayout else { return }
-            applyRedesignedLayoutToHost(unifiedSuggestionsHost)
-            if isViewLoaded {
+            guard oldValue != redesignedFocusedSurface else { return }
+            unifiedSuggestionsHost?.setRedesignedFocusedSurface(redesignedFocusedSurface)
+            if (oldValue == .newTabPage) != usesRedesignedNewTabPageLayout, isViewLoaded {
                 view.setNeedsLayout()
                 applyRequestedContentInset()
             }
         }
     }
 
-    /// Shows only the redesigned favorites when focused on a web page. Ignored while
-    /// `usesRedesignedNewTabPageLayout` selects the full redesigned modules.
-    var usesRedesignedFavoritesOnWebPage = false {
-        didSet {
-            guard oldValue != usesRedesignedFavoritesOnWebPage else { return }
-            applyRedesignedLayoutToHost(unifiedSuggestionsHost)
-        }
-    }
-
-    private func applyRedesignedLayoutToHost(_ host: UnifiedSuggestionsHost?) {
-        host?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout || usesRedesignedFavoritesOnWebPage,
-                                                favoritesOnly: !usesRedesignedNewTabPageLayout)
-    }
+    var usesRedesignedNewTabPageLayout: Bool { redesignedFocusedSurface == .newTabPage }
 
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
@@ -679,7 +667,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let customizationStore = NewTabPageCustomizationStore()
         let hasFavorites: () -> Bool = { [weak self] in
-            let usesRedesignedFavorites = self?.usesRedesignedNewTabPageLayout == true || self?.usesRedesignedFavoritesOnWebPage == true
+            let usesRedesignedFavorites = self?.redesignedFocusedSurface != nil
             let isVisible = !usesRedesignedFavorites || customizationStore.isFavoritesSectionVisible
             return isVisible && !dependencies.favoritesViewModel.favorites.isEmpty
         }
@@ -740,7 +728,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let host = UnifiedSuggestionsHost(config: config, usesScrollableEscapeHatch: usesScrollableEscapeHatch)
         host.setEscapeHatch(escapeHatchModel)
-        applyRedesignedLayoutToHost(host)
+        host.setRedesignedFocusedSurface(redesignedFocusedSurface)
         host.onContentChanged = { [weak self] in
             self?.updateFocusedContent()
             self?.refreshVisibleContent(animateContentUpdates: true)

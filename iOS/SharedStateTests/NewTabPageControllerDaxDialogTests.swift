@@ -370,7 +370,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 probeFrame = frame
                 probeRevision += 1
             })
-        host.setUsesRedesignedNewTabPageLayout(usesRedesign)
+        host.setRedesignedFocusedSurface(usesRedesign ? .newTabPage : nil)
         host.setFocusedContent(mode: .aiChat, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: probe)
 
         let parent = UIViewController()

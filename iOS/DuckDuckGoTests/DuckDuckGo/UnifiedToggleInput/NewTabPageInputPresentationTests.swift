@@ -90,17 +90,22 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.reservesAddressBarSpace)
     }
 
-    func testWhenOnWebPageWithBrowserPresentationThenRedesignedFocusedFavoritesAreUsed() {
-        XCTAssertTrue(NewTabPageInputPresentation.browser.usesRedesignedFocusedFavorites(isOnWebPage: true))
-        XCTAssertFalse(NewTabPageInputPresentation.browser.usesRedesignedFocusedFavorites(isOnWebPage: false))
+    func testWhenOnWebPageWithBrowserPresentationThenWebPageSurfaceIsUsed() {
+        XCTAssertEqual(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: true), .webPage)
+        XCTAssertNil(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false))
+        XCTAssertNil(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: true, isOnWebPage: true))
     }
 
-    func testWhenInlineInputIsPresentThenRedesignedFocusedFavoritesAreNotUsed() {
+    func testWhenEditingUnifiedInputThenNewTabPageSurfaceIsUsed() {
+        XCTAssertEqual(NewTabPageInputPresentation.editing(usesUnifiedInput: true).redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false),
+                       .newTabPage)
+    }
+
+    func testWhenInlineInputIsPresentOtherwiseThenNoSurfaceIsUsed() {
         let presentations: [NewTabPageInputPresentation] = [.resting(usesUnifiedInput: true),
-                                                           .editing(usesUnifiedInput: true),
                                                            .editing(usesUnifiedInput: false)]
         for presentation in presentations {
-            XCTAssertFalse(presentation.usesRedesignedFocusedFavorites(isOnWebPage: true))
+            XCTAssertNil(presentation.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false))
         }
     }
 

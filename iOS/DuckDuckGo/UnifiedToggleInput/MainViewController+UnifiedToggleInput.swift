@@ -1207,12 +1207,10 @@ extension MainViewController {
 
     /// Selects presentation only. The content controller and its view stay installed for the session.
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
-        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
-            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
-        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedFavoritesOnWebPage =
-            !isOnAITab
-            && presentation.usesRedesignedFocusedFavorites(isOnWebPage: currentTab?.link != nil)
-            && NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable
+        let surface = presentation.redesignedFocusedSurface(isOnAITab: isOnAITab, isOnWebPage: currentTab?.link != nil)
+        let isWebPageSurfaceAvailable = NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable
+        unifiedToggleInputCoordinator?.contentViewController.redesignedFocusedSurface =
+            surface == .webPage && !isWebPageSurfaceAvailable ? nil : surface
     }
 
     func installDuckAIKeyboardEdgeSweep() {

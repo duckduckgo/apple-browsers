@@ -26,16 +26,14 @@ final class RedesignedFocusedSearchPresentation: ObservableObject {
     @Published private(set) var showsSearchModules = false
     private var cancellable: AnyCancellable?
 
-    /// - Parameter favoritesOnly: Shows the modules only while there are favorites to show, ignoring messages.
     init(inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>,
          dismissPublisher: AnyPublisher<UnifiedSuggestionsViewModel.DismissBehavior, Never>,
-         fireTabPublisher: AnyPublisher<Bool, Never>,
-         favoritesOnly: Bool = false) {
+         fireTabPublisher: AnyPublisher<Bool, Never>) {
         cancellable = Publishers.CombineLatest3(inputsPublisher, dismissPublisher, fireTabPublisher)
             .sink { [weak self] inputs, dismissBehavior, isFireTab in
                 guard let self, dismissBehavior == .none else { return }
                 let showsSearchModules = inputs.mode == .search && !inputs.isTyping && !isFireTab
-                    && (inputs.hasFavorites || (!favoritesOnly && inputs.hasMessages))
+                    && (inputs.hasFavorites || inputs.hasMessages)
                 guard self.showsSearchModules != showsSearchModules else { return }
                 self.showsSearchModules = showsSearchModules
             }

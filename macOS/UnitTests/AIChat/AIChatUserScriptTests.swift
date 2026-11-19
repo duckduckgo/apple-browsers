@@ -387,20 +387,37 @@ final class AIChatUserScriptTests: XCTestCase {
     @MainActor private func browserToolsFlags() -> MockFeatureFlagger {
         MockFeatureFlagger(featuresStub: [
             FeatureFlag.aiChatBrowserTools.rawValue: true,
+            FeatureFlag.websitePermissionsPrompts.rawValue: true,
             FeatureFlag.aiChatBrowserToolListOpenTabs.rawValue: true,
             FeatureFlag.aiChatBrowserToolSearchHistory.rawValue: false,
             FeatureFlag.aiChatBrowserToolSwitchToTab.rawValue: false,
             FeatureFlag.aiChatBrowserToolReadTabContent.rawValue: false,
             FeatureFlag.aiChatBrowserToolFindInPage.rawValue: false,
-            FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false
+            FeatureFlag.aiChatBrowserToolHighlightInPage.rawValue: false,
+            FeatureFlag.aiChatBrowserToolPinTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolOpenTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolCloseTabs.rawValue: false,
+            FeatureFlag.aiChatBrowserToolBookmarkTab.rawValue: false,
+            FeatureFlag.aiChatBrowserToolSearchDownloads.rawValue: false,
+            FeatureFlag.aiChatBrowserToolSearchBookmarks.rawValue: false
         ])
+    }
+
+    @MainActor func testWhenThePermissionPromptsFlagIsOffThenToolsThatAskAreNotAdvertised() {
+        let flags = browserToolsFlags()
+        flags.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = false
+
+        let service = makeBrowserToolsService(featureFlagger: flags)
+
+        XCTAssertNil(service.clientToolsConfiguration)
     }
 
     @MainActor private func makeBrowserToolsService(featureFlagger: MockFeatureFlagger? = nil) -> AIChatBrowserToolsService {
         AIChatBrowserToolsService(featureFlagger: featureFlagger ?? browserToolsFlags(),
                                  windowControllersManager: WindowControllersManagerMock(),
                                  historyCoordinator: HistoryCoordinatingMock(),
-                                 permissionStorage: MockKeyValueStore().keyedStoring())
+                                 bookmarkManager: MockBookmarkManager(),
+                                 permissionManager: PermissionManagerMock())
     }
 
     @MainActor private func settleFeatureFlagUpdate() async {
@@ -985,6 +1002,7 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     }
 
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
+    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {}
     func cancelRuns(ownerID: ObjectIdentifier) {}
 
     func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {

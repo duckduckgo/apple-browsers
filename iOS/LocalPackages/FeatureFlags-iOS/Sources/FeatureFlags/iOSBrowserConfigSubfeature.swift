@@ -44,7 +44,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case unifiedURLPredictor
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220345796572420
-    case suggestionDebounce200ms
+    case debounceLogic2026
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
@@ -168,9 +168,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219937997681296?focus=true
     case scrollableEscapeHatch
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
-    case sitePermissions
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
 
@@ -188,6 +185,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220301490819843
+    case idleReturnNewTabPageOnForeground
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
     case launchBackgroundTask

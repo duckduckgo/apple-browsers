@@ -28,7 +28,7 @@ def _cli(*args, timeout=3600):
     return p.returncode, out, p.stderr[-1000:]
 
 
-def run(devices):
+def run(devices, evidence_dir=None):
     steps, reports, t0 = [], [], time.time()
 
     def step(name, ok, detail=None):
@@ -69,7 +69,8 @@ def run(devices):
 
     proofs = [os.path.join(env.SKILL, "tests", "must_fail.py"), os.path.join(env.SKILL, "examples", "t7_fire_button.py")]
     _say(f"proving the trust checks and the Fire button on {', '.join(devices)} (about 3 minutes per device)...")
-    code, out, err = _cli("prove", *proofs, "--devices", ",".join(devices))
+    code, out, err = _cli("prove", *proofs, "--devices", ",".join(devices),
+                          *(["--evidence-dir", evidence_dir] if evidence_dir else []))
     for p_ in out.get("proofs", []):
         name = os.path.basename(p_.get("proof", "?"))
         if p_.get("report"):

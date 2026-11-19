@@ -38,8 +38,6 @@ final class RulesCompilationMonitor: NSObject {
         /// The setup gates released navigation, including a bounded extension-gate deadline.
         case success
         case cancelled
-        /// Content-blocking readiness timed out; this is not a network or page-load timeout.
-        case timeout
         case tabClosed = "tab_closed"
         case appQuit = "app_quit"
         case appBackgrounded = "app_backgrounded"
@@ -57,7 +55,8 @@ final class RulesCompilationMonitor: NSObject {
         var didWait = false
     }
 
-    private let pixelFiring: (any PixelKitFiring)?
+    /// Resolved at fire time, so the shared monitor picks up `PixelKit.setUp` whenever it ran.
+    private let pixelFiring: () -> (any PixelKitFiring)?
     private let isOnboarding: Bool
     private let now: () -> TimeInterval
     private let notificationCenter: NotificationCenter
@@ -65,7 +64,7 @@ final class RulesCompilationMonitor: NSObject {
     private var measurement: Measurement?
     private var didReport = false
 
-    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+    init(pixelFiring: @escaping () -> (any PixelKitFiring)? = { PixelKit.shared },
          isOnboarding: Bool = !DefaultTutorialSettings().hasSeenOnboarding,
          now: @escaping () -> TimeInterval = { CACurrentMediaTime() },
          notificationCenter: NotificationCenter = .default,
@@ -134,7 +133,7 @@ final class RulesCompilationMonitor: NSObject {
                                                       webExtensionsWait: Pixel.Event.BucketAggregation(number: measurement.webExtensionsWait),
                                                       contentBlockingWait: Pixel.Event.BucketAggregation(number: measurement.contentBlockingWait),
                                                       isOnboarding: isOnboarding)
-        pixelFiring?.fire(pixel, frequency: .standard)
+        pixelFiring()?.fire(pixel, frequency: .standard)
     }
 
     @objc private func didEnterBackground() {

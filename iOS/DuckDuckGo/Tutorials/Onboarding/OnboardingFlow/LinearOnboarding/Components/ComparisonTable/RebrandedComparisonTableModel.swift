@@ -144,10 +144,11 @@ extension RebrandedComparisonTableModel {
     static func browserFeatures(for reason: OnboardingDownloadReason) -> [Feature] {
         switch reason {
         case .vpn:
-            // The ad-blocking table without its AI chat and tracker rows, plus VPN.
+            // The ad-blocking table without its AI chat and tracker rows, plus two VPN rows.
             let excludedTitles = [BrowserText.privateAIChat, BrowserText.trackerBlockers]
             return browserFeatures(for: .blockAds).filter { !excludedTitles.contains($0.title) } + [
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.vpn), title: BrowserText.hideLocationWithVPN, competitorAvailability: .unavailable, ddgAvailability: .subscription),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.lock), title: BrowserText.secureWiFiWithVPN, competitorAvailability: .unavailable, ddgAvailability: .subscription),
             ]
         case .browserPrivately:
             return [

@@ -325,6 +325,81 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(makeController().hasAccessToPrivateData(for: context.uniqueIdentifier), true)
     }
 
+    // MARK: - Unavailable Permissions
+
+    func testWhenOnlyAnUnavailablePermissionIsRequestedThenThePromptExplainsItAndNothingIsGranted() async throws {
+        let controller = makeController()
+        let manager = makeManager(permissionController: controller, unavailablePermissions: [.nativeMessaging])
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        try await controller.prepare(context)
+
+        let granted = await requestPermissions([.nativeMessaging], from: manager, for: context)
+
+        XCTAssertEqual(granted, [])
+        XCTAssertFalse(context.hasPermission(.nativeMessaging))
+        XCTAssertEqual(prompter.permissionRequests.map(\.permissions), [[]])
+        XCTAssertEqual(prompter.permissionRequests.map(\.unavailablePermissions), [[.nativeMessaging]])
+    }
+
+    func testWhenAnExtensionLoadsThenEarlierGrantsOfOptionalUnavailablePermissionsAreDropped() async throws {
+        let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging])
+        let optional = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
+        optional.setPermissionStatus(.grantedExplicitly, for: .nativeMessaging)
+        optional.setPermissionStatus(.grantedExplicitly, for: .clipboardWrite)
+        let required = try await makeContext(permissions: ["nativeMessaging"])
+        required.setPermissionStatus(.grantedExplicitly, for: .nativeMessaging)
+
+        manager.webExtensionLoader(manager.loader, willLoad: optional, identifier: optional.uniqueIdentifier)
+        manager.webExtensionLoader(manager.loader, willLoad: required, identifier: required.uniqueIdentifier)
+
+        XCTAssertFalse(optional.hasPermission(.nativeMessaging))
+        XCTAssertTrue(optional.hasPermission(.clipboardWrite))
+        XCTAssertTrue(required.hasPermission(.nativeMessaging))
+    }
+
+    func testWhenPermissionsAreNotEnforcedThenAnUnavailablePermissionIsRefusedAndTheLimitationIsSaved() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging", "clipboardWrite"])
+        recordStoreInstallation(of: context)
+        let manager = makeManager(permissionController: nil,
+                                  unavailablePermissions: [.nativeMessaging],
+                                  nativeMessagingLimitationStore: NativeMessagingLimitationStore(keyValueStore: keyValueStore))
+
+        let granted = await requestPermissions([.nativeMessaging, .clipboardWrite], from: manager, for: context)
+
+        XCTAssertEqual(granted, [.clipboardWrite])
+        XCTAssertTrue(manager.hasHitNativeMessagingLimitation(identifier: context.uniqueIdentifier))
+        XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).hasHitLimitation(extensionKey: limitedStoreID))
+    }
+
+    func testWhenAnExtensionThatHitTheLimitationIsUninstalledThenItsStateIsForgotten() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        recordStoreInstallation(of: context)
+        let limitationStore = NativeMessagingLimitationStore(keyValueStore: keyValueStore)
+        limitationStore.recordLimitation(extensionKey: limitedStoreID)
+        limitationStore.suppressAlert(extensionKey: limitedStoreID)
+        let manager = makeManager(permissionController: nil, unavailablePermissions: [.nativeMessaging], nativeMessagingLimitationStore: limitationStore)
+
+        try? manager.uninstallExtension(identifier: context.uniqueIdentifier)
+
+        XCTAssertFalse(limitationStore.hasHitLimitation(extensionKey: limitedStoreID))
+        XCTAssertFalse(limitationStore.isAlertSuppressed(extensionKey: limitedStoreID))
+    }
+
+    func testWhenTheAlertIsSuppressedThenItStaysSuppressedForThatExtensionOnly() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        let otherContext = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        recordStoreInstallation(of: context)
+        recordStoreInstallation(of: otherContext, storeID: "aeblfdkhhhdcdjpifhhbdiojplfjncoa")
+        let manager = makeManager(permissionController: nil,
+                                  unavailablePermissions: [.nativeMessaging],
+                                  nativeMessagingLimitationStore: NativeMessagingLimitationStore(keyValueStore: keyValueStore))
+
+        manager.suppressNativeMessagingAlert(identifier: context.uniqueIdentifier)
+
+        XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).isAlertSuppressed(extensionKey: limitedStoreID))
+        XCTAssertFalse(manager.isNativeMessagingAlertSuppressed(identifier: otherContext.uniqueIdentifier))
+    }
+
     func testWhenAdditionalPermissionsAreDeniedThenGrantsDoNotChange() async throws {
         let controller = makeController()
         let context = try await makeContext()
@@ -1127,6 +1202,40 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                             permissionController: makeController(),
                             pixelFiring: pixelFiring,
                             bundledExtensionURL: bundledExtensionURL)
+    }
+
+    private let limitedStoreID = "nngceckbapebfimnlniiiahkandclblb"
+
+    private func makeManager(
+        permissionController: WebExtensionPermissionController?,
+        unavailablePermissions: Set<WKWebExtension.Permission>,
+        nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil
+    ) -> WebExtensionManager {
+        let extensionsDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
+                                   controllerConfiguration: .nonPersistent(),
+                                   windowTabProvider: WebExtensionWindowTabProvidingMock(),
+                                   storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
+                                   installationStore: installationStore,
+                                   permissionController: permissionController,
+                                   unavailablePermissions: unavailablePermissions,
+                                   nativeMessagingLimitationStore: nativeMessagingLimitationStore)
+    }
+
+    private func recordStoreInstallation(of context: WKWebExtensionContext, storeID: String? = nil) {
+        installationStore.installedExtensions.append(InstalledWebExtension(uniqueIdentifier: context.uniqueIdentifier,
+                                                                           filename: context.uniqueIdentifier,
+                                                                           name: nil,
+                                                                           version: "1.0",
+                                                                           storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID ?? limitedStoreID)))
+    }
+
+    private func requestPermissions(
+        _ permissions: Set<WKWebExtension.Permission>,
+        from manager: WebExtensionManager,
+        for context: WKWebExtensionContext
+    ) async -> Set<WKWebExtension.Permission> {
+        await manager.webExtensionController(manager.controller, promptForPermissions: permissions, in: nil, for: context).0
     }
 
     private func makeContext(claimsDDGIdentity: Bool = false,

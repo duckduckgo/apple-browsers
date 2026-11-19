@@ -1102,6 +1102,9 @@ final class MockWideEventManagerWithPending: WideEventManaging, @unchecked Senda
     }
     func updateFlow<T: WideEventData>(_ data: T) {}
     func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {}
+    func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, options: PixelKit.Options, onComplete: @escaping PixelKit.CompletionBlock) {
+        completeFlow(data, status: status, onComplete: onComplete)
+    }
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         if case .unknown(let reason) = status {
             completedWithReason.append(reason)
@@ -1248,6 +1251,9 @@ final class MockWideEventManager: WideEventManaging, @unchecked Sendable {
     }
     func updateFlow<T: WideEventData>(_ data: T) {}
     func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void) {}
+    func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, options: PixelKit.Options, onComplete: @escaping PixelKit.CompletionBlock) {
+        completeFlow(data, status: status, onComplete: onComplete)
+    }
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         if let data = data as? VPNIPLeakCheckWideEventData {
             lastCompletedData = data

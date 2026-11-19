@@ -73,6 +73,7 @@ protocol ScriptSourceProviding {
         tld: Application.appDelegate.tld,
         featureFlagger: Application.appDelegate.featureFlagger,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
+        onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
         appearancePreferences: Application.appDelegate.appearancePreferences,
         themeManager: Application.appDelegate.themeManager,
         startupPreferences: Application.appDelegate.startupPreferences,
@@ -137,6 +138,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          tld: TLD,
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
+         onboardingPathStarter: @escaping () -> ContextualOnboardingPathStarting,
          appearancePreferences: AppearancePreferences,
          themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
@@ -187,6 +189,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager(
             onboardingNavigationDelegate,
+            onboardingPathStarter,
             appearancePreferences,
             startupPreferences,
             reinstallUserDetection,
@@ -231,6 +234,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
     private func buildOnboardingActionsManager(
         _ navigationDelegate: OnboardingNavigating,
+        _ pathStarter: @escaping () -> ContextualOnboardingPathStarting,
         _ appearancePreferences: AppearancePreferences,
         _ startupPreferences: StartupPreferences,
         _ reinstallUserDetection: ReinstallingUserDetecting,
@@ -238,6 +242,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     ) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
@@ -246,8 +251,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             pinningManager: pinningManager,
             featureFlagger: featureFlagger,
             reinstallUserDetection: reinstallUserDetection,
-            installDateProvider: installDateProvider,
-            contextualOnboardingStateUpdater: Application.appDelegate.onboardingContextualDialogsManager
+            installDateProvider: installDateProvider
         )
     }
 

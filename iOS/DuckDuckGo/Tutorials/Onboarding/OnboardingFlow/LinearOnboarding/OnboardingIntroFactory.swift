@@ -20,6 +20,7 @@
 import AIChat
 import Onboarding
 import Persistence
+import Subscription
 import SystemSettingsPiPTutorial
 import UIKit
 import WebExtensions
@@ -35,7 +36,8 @@ enum OnboardingIntroFactory {
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         onboardingManager: OnboardingManaging,
         keyValueStore: ThrowingKeyValueStoring,
-        adBlockingAvailability: AdBlockingAvailabilityProviding
+        adBlockingAvailability: AdBlockingAvailabilityProviding,
+        subscriptionManager: any SubscriptionManager
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
             pixelReporter: pixelReporter,
@@ -49,7 +51,8 @@ enum OnboardingIntroFactory {
             personalizationManager: OnboardingPersonalizationManager.make(
                 keyValueStore: keyValueStore,
                 adBlockingAvailability: adBlockingAvailability
-            )
+            ),
+            tryVPNFollowUpProvider: OnboardingTryVPNFollowUpProvider(subscriptionManager: subscriptionManager)
         )
     }
 

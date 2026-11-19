@@ -135,6 +135,10 @@ enum AIChatPixel: PixelKit.Event {
     /// `sidebarEntry` is the sidebar item the menu offers.
     case aiChatTitleBarMenuShown(sidebarEntry: AIChatMenuButtonSidebarEntry)
 
+    /// Event Trigger: The tab-bar Duck.ai menu closes, once per open, with what the user picked (`none` if nothing),
+    /// the page type and the tab's chat state when the menu opened.
+    case aiChatTitleBarMenuOutcome(choice: AIChatMenuButtonChoice, context: AIChatMenuButtonContext)
+
     /// Event Trigger: User middle-clicks or ⌘-clicks the tab-bar Duck.ai menu button, which opens a new chat
     /// tab without showing the menu.
     case aiChatTitleBarMiddleClickNewChat
@@ -703,6 +707,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_chats_title_bar_menu"
         case .aiChatTitleBarMenuShown:
             return "aichat_title_bar_menu_shown_macos"
+        case .aiChatTitleBarMenuOutcome:
+            return "aichat_title_bar_menu_outcome_macos"
         case .aiChatTitleBarMiddleClickNewChat:
             return "aichat_title_bar_middle_click_new_chat_macos"
         case .aiChatSummarizeText:
@@ -1260,6 +1266,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["source": source.rawValue]
         case .aiChatTitleBarMenuShown(let sidebarEntry):
             return ["sidebarEntry": sidebarEntry.rawValue]
+        case .aiChatTitleBarMenuOutcome(let choice, let context):
+            return ["choice": choice.rawValue, "pageType": context.pageType.rawValue, "chatState": context.chatState.rawValue]
         case .aiChatSidebarResized(let width):
             return ["width": String(width)]
         case .aiChatSummarizeText(let source),
@@ -1319,6 +1327,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNewChatTitleBarMenu,
                 .aiChatChatsTitleBarMenu,
                 .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMenuOutcome,
                 .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
@@ -1485,6 +1494,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatEntryPoint,
                 .aiChatSettingsState,
                 .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMenuOutcome,
                 .aiChatTitleBarMiddleClickNewChat,
                 .aiChatScreenshotPermissionNeeded,
                 .aiChatScreenshotPermissionAlertAccepted,
@@ -1592,6 +1602,66 @@ enum AIChatMenuButtonSidebarEntry: String, CaseIterable {
         case .closeSidebar: .close
         }
     }
+}
+
+/// What the user picked from the tab-bar Duck.ai menu, as `aiChatTitleBarMenuOutcome` reports it.
+enum AIChatMenuButtonChoice: String, CaseIterable {
+    case newChat = "new-chat"
+    case askAboutPage = "ask-about-page"
+    case openSidebar = "open-sidebar"
+    case closeSidebar = "close-sidebar"
+    case chats = "chats"
+    case none = "none"
+
+    init(_ sidebarEntry: AIChatMenuButtonSidebarEntry) {
+        switch sidebarEntry {
+        case .askAboutPage: self = .askAboutPage
+        case .openSidebar: self = .openSidebar
+        case .closeSidebar: self = .closeSidebar
+        }
+    }
+}
+
+/// The selected tab when the tab-bar Duck.ai menu opened.
+struct AIChatMenuButtonContext: Equatable {
+
+    enum PageType: String, CaseIterable {
+        case serp
+        case ntp
+        case duckai
+        case web
+        case other
+
+        init(_ content: Tab.Content) {
+            switch content {
+            case .newtab:
+                self = .ntp
+            case .aiChat:
+                self = .duckai
+            case .url(let url, _, _):
+                if url.isDuckAIURL {
+                    self = .duckai
+                } else if url.isDuckDuckGoSearch {
+                    self = .serp
+                } else {
+                    self = url.isHttpOrHttps ? .web : .other
+                }
+            default:
+                self = .other
+            }
+        }
+    }
+
+    enum ChatState: String, CaseIterable {
+        case sidebarOpen = "sidebar-open"
+        case floating
+        /// The tab has a chat that is hidden and not yet expired, so reopening it resumes the conversation.
+        case hidden
+        case none
+    }
+
+    let pageType: PageType
+    let chatState: ChatState
 }
 
 /// Where an entry point opened Duck.ai, as `aiChatEntryPoint` reports it.

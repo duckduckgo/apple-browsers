@@ -56,6 +56,7 @@ import WebExtensions
 import WebKit
 import WidgetKit
 import FeatureFlags_iOS
+import WebPageTranslation
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
@@ -69,7 +70,7 @@ struct StartupOnboardingDecision {
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
              .aiSearchSettingsSelection, .aiModelSelection,
-             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN:
+             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN, .tryVPNFollowUp:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -592,6 +593,8 @@ class MainViewController: UIViewController {
     /// Results-page colour per appearance, so a search from any page can hand off to it.
     let searchPageColorMemory = SearchPageColorMemory()
     let searchPageHeaderMemory = SearchPageHeaderMemory()
+    /// Set by a submit until its load is requested; cleared on the next runloop pass.
+    var pendingFirstPaintCover: PendingFirstPaintCover?
     private var siteThemeColorObservation: NSKeyValueObservation?
     private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
@@ -611,6 +614,7 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     private let promptExposureReporter: PromptExposureReporting
+    let translationModels: TranslationModels?
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let promoCoordinationService:
@@ -623,7 +627,7 @@ class MainViewController: UIViewController {
     var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
 
     private var duckPlayerEntryPointVisible = false
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+    let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
 
     // Ensure the VPN entry-point impression pixels fire at most once per app launch.
     private var didFireVPNToolbarImpressionPixel = false
@@ -820,9 +824,11 @@ class MainViewController: UIViewController {
             & AppRatingPromptGating)? = nil,
         usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-        promptExposureReporter: PromptExposureReporting
+        promptExposureReporter: PromptExposureReporting,
+        translationModels: TranslationModels? = nil
     ) {
         self.pixelFiring = pixelFiring
+        self.translationModels = translationModels
         self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -2690,6 +2696,23 @@ class MainViewController: UIViewController {
         return true
     }
 
+    /// A launch action left the drawn after-idle page in place: report it as an ordinary New Tab Page once seen.
+    func releaseHeldNewTabPage() {
+        guard isAfterIdlePresentationPending, let page = newTabPageViewController else { return }
+        isAfterIdlePresentationPending = false
+        if let tabModel = tabManager.currentTabsModel.currentTab, tabModel.openedAfterIdle {
+            tabModel.openedAfterIdle = false
+            // Saved like the attach saves it, so a relaunch doesn't restore the tab as after-idle.
+            tabManager.save()
+        }
+        clearEscapeHatch()
+        newTabPagePresentation.schedule(for: page, shown: { [weak self] in
+            guard let self else { return }
+            fireNewTabPixels()
+            fireNTPShownInstrumentation(openedAfterIdle: false, hatch: nil, focused: isInputFocused)
+        })
+    }
+
     func recordPendingNewTabPagePresentationIfVisible() {
         newTabPagePresentation.recordIfVisible()
     }
@@ -3493,6 +3516,7 @@ class MainViewController: UIViewController {
         lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         dismissOmniBar()
         transitionTo(tab: tab, from: nil)
+        armPendingFirstPaintCover(on: tab)
     }
 
     /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
@@ -3516,6 +3540,7 @@ class MainViewController: UIViewController {
             tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
         }
 
+        currentTab?.browserToolsWillLeaveScreen()
         currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         dismissOmniBar()
         resetUnifiedToggleInputForTabTransition(to: tab)
@@ -3539,6 +3564,7 @@ class MainViewController: UIViewController {
         guard let tab else { return }
         // Re-selecting the current tab keeps its sidebar chat open.
         if previousTab !== tab {
+            previousTab?.browserToolsWillLeaveScreen()
             previousTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         }
         previousTab?.tabModel.openedAfterIdle = false
@@ -3606,6 +3632,7 @@ class MainViewController: UIViewController {
             tab.webView.underPageBackgroundColor = color
         }
         addToContentContainer(controller: tab)
+        tab.browserToolsDidBecomeActive()
 
         viewCoordinator.logoContainer.isHidden = true
 
@@ -4621,6 +4648,15 @@ class MainViewController: UIViewController {
         }
     }
 
+    /// Opens the after-idle New Tab Page. With the keyboard on New Tab Page, the launch handling raises it.
+    func openNewTabPageAfterIdleReturn() {
+        currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
+        newTab(reuseExisting: true,
+               allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+               openedAfterIdle: true,
+               entrance: .fromOutsideTheApp)
+    }
+
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
     func prepareForIdleReturnNTP(completion: @escaping () -> Void) {
         // A child of this controller rather than a presented one, so it outlives the dismissal below.
@@ -4873,8 +4909,9 @@ class MainViewController: UIViewController {
     }
 
     private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
-        let subscriptionFlowViewController = makeDataBrokerProtectionSubscriptionFlowViewController(
-            redirectURLComponents: redirectURLComponents
+        let subscriptionFlowViewController = makeSubscriptionFlowViewController(
+            redirectURLComponents: redirectURLComponents,
+            includesPostPurchaseOnboarding: true
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4889,7 +4926,9 @@ class MainViewController: UIViewController {
         presenter.present(navigationController, animated: true)
     }
 
-    private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
+    /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
+                                                    includesPostPurchaseOnboarding: Bool) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4910,7 +4949,7 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
-            onboardingKeyValueStore: keyValueStore,
+            onboardingKeyValueStore: includesPostPurchaseOnboarding ? keyValueStore : nil,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
@@ -5974,6 +6013,9 @@ extension MainViewController: BrowserChromeDelegate {
 
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
+        if isFloatingUIEnabled {
+            chromeManager.followFloatingChromeBottom { self.floatingWebViewObscuredInsets(for: percent).bottom }
+        }
         currentTab?.updateWebViewBottomAnchor(for: percent)
         updateFloatingTopNewTabPageInset(for: percent)
 
@@ -6100,6 +6142,11 @@ extension MainViewController: BrowserChromeDelegate {
 
     var toolbarHeight: CGFloat {
         viewCoordinator.constraints.toolbarHeight.constant
+    }
+
+    /// Matches `updateToolbarConstant`, which keeps a hidden or minimal-layout toolbar in place.
+    var isToolbarParked: Bool {
+        viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout
     }
 
     var isFloatingChromeEnabled: Bool {
@@ -6642,6 +6689,7 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if isPad {
+            guard omniBar.isTextFieldEditing || areSuggestionsVisible else { return }
             // iPad: the single authority decides search content for the typed text.
             refreshPopoverSuggestions()
             return
@@ -8289,6 +8337,7 @@ extension MainViewController: TabDelegate {
     }
 
     private func leaveForPageRequestedTab(opener: TabViewController?) {
+        opener?.browserToolsWillLeaveScreen()
         opener?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         themeColorManager.updateThemeColor()
     }
@@ -8537,6 +8586,7 @@ extension MainViewController: TabDelegate {
         }
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
+        tab.browserToolsWillLeaveScreen()
         tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
 
         // The new tab carries a URL, so no New Tab Page attaches to supersede the visit and nothing
@@ -9797,7 +9847,10 @@ extension MainViewController: FireExecutorDelegate {
         if syncService.authState != .inactive {
             syncService.scheduler.requestSyncImmediately()
         }
-        if #available(iOS 18.4, *) {
+        // Auto-clear on launch finishes before the app starts its deferred extension load, which waits for the
+        // app to be active and protected data to be available, and then loads everything. Reloading here would
+        // load WebKit extensions on the main thread at launch, ahead of that gate, and risk a watchdog kill.
+        if #available(iOS 18.4, *), webExtensionLifecycleCoordinator?.hasRequestedInitialLoadAndSync == true {
             Task { @MainActor [weak self] in
                 guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
                 if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
@@ -9924,6 +9977,17 @@ extension MainViewController {
 }
 
 extension MainViewController: OnboardingDelegate {
+
+    func presentSubscriptionPaywallFromOnboarding(from controller: UIViewController, onDismiss: @escaping () -> Void) {
+        // The onboarding continues with its own VPN setup, so skip the subscription onboarding after purchase.
+        let paywall = makeSubscriptionFlowViewController(
+            redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
+            includesPostPurchaseOnboarding: false
+        )
+        let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
+        navigationController.onDismiss = onDismiss
+        controller.present(navigationController, animated: true)
+    }
 
     func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {
         linearOnboardingContext?.activeInterlude = interlude

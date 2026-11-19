@@ -38,7 +38,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
     private let notifications = NotificationCenter()
 
     private func makeMonitor(isOnboarding: Bool = true) -> RulesCompilationMonitor {
-        RulesCompilationMonitor(pixelFiring: pixelFiring, isOnboarding: isOnboarding,
+        RulesCompilationMonitor(pixelFiring: { [pixelFiring] in pixelFiring }, isOnboarding: isOnboarding,
                                 now: { [unowned self] in self.time }, notificationCenter: notifications, isInBackground: { false })
     }
 
@@ -74,7 +74,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
         for testCase in cases {
             let firing = PixelKitMock()
             time = 0
-            let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false,
+            let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false,
                                                    now: { [unowned self] in self.time }, notificationCenter: notifications, isInBackground: { false })
             let id = try XCTUnwrap(monitor.begin())
             monitor.beginStage(.webExtensions, for: id)
@@ -139,21 +139,21 @@ final class RulesCompilationMonitorTests: XCTestCase {
         assertPixel(outcome: "success", total: "5", extensions: "5", rules: "0")
     }
 
-    func testContentBlockingTimeoutReportsPartialWaitInsteadOfRelease() throws {
+    func testCancelledContentBlockingWaitReportsPartialWaitInsteadOfRelease() throws {
         let monitor = makeMonitor()
         let id = try XCTUnwrap(monitor.begin())
         monitor.beginStage(.contentBlocking, for: id)
         time = 15
-        monitor.finish(id, outcome: .timeout)
         monitor.finish(id, outcome: .cancelled)
+        monitor.finish(id, outcome: .success)
 
-        assertPixel(outcome: "timeout", total: "20", extensions: "0", rules: "20")
+        assertPixel(outcome: "cancelled", total: "20", extensions: "0", rules: "20")
     }
 
     func testCancellationAndTabCloseEndPendingStageExactlyOnce() throws {
         for outcome in [RulesCompilationMonitor.Outcome.cancelled, .tabClosed] {
             let firing = PixelKitMock()
-            let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false,
+            let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false,
                                                   now: { [unowned self] in self.time }, notificationCenter: notifications, isInBackground: { false })
             time = 0
             let id = try XCTUnwrap(monitor.begin())
@@ -186,7 +186,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testBackgroundNavigationDoesNotConsumeFirstForegroundSample() throws {
         var backgrounded = true
-        let monitor = RulesCompilationMonitor(pixelFiring: pixelFiring, isOnboarding: true,
+        let monitor = RulesCompilationMonitor(pixelFiring: { [pixelFiring] in pixelFiring }, isOnboarding: true,
                                                now: { [unowned self] in self.time }, notificationCenter: notifications,
                                                isInBackground: { backgrounded })
         XCTAssertNil(monitor.begin())
@@ -239,7 +239,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
         for rulesPreparedDuringExtensions in [false, true] {
             let firing = PixelKitMock()
             var time: TimeInterval = 0
-            let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: true, now: { time })
+            let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: true, now: { time })
             let assets = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
             var releaseExtension: CheckedContinuation<Void, Never>?
             let extensionStarted = expectation(description: "Navigation waiting for extensions")
@@ -296,7 +296,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
     func testStoppingNavigationReportsCancellationAndLateExtensionCompletionCannotReportSuccess() async throws {
         let firing = PixelKitMock()
         var time: TimeInterval = 0
-        let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false, now: { time })
+        let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false, now: { time })
         var releaseExtension: CheckedContinuation<Void, Never>?
         let extensionStarted = expectation(description: "Navigation waiting for extensions")
         let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
@@ -329,7 +329,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
     func testSynchronousExtensionPreparationIsIncludedInItsWaitTime() async throws {
         let firing = PixelKitMock()
         var time: TimeInterval = 0
-        let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false, now: { time }, isInBackground: { false })
+        let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false, now: { time }, isInBackground: { false })
         let tab = try await makeReadyTab(monitor: monitor, sitePermissionsEnabled: true, waiterProvider: {
             time = 0.4 // Preparing WebKit background content can do synchronous work before returning the waiter.
             return { time = 0.8 }
@@ -345,7 +345,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
     func testReadyRulesWithoutExtensionWaitReportZeroWithSitePermissionsOnAndOff() async throws {
         for permissionsEnabled in [false, true] {
             let firing = PixelKitMock()
-            let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false, now: { 0 }, isInBackground: { false })
+            let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false, now: { 0 }, isInBackground: { false })
             let tab = try await makeReadyTab(monitor: monitor, sitePermissionsEnabled: permissionsEnabled)
             defer { tab.prepareForDataClearing() }
             let decided = expectation(description: "Already-ready navigation released")
@@ -359,7 +359,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
     func testSubframesAndNonWebNavigationsCannotConsumeOrFinishTheMainFrameSample() async throws {
         let firing = PixelKitMock()
         var time: TimeInterval = 0
-        let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false, now: { time }, isInBackground: { false })
+        let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false, now: { time }, isInBackground: { false })
         var releaseExtension: CheckedContinuation<Void, Never>?
         let started = expectation(description: "Main-frame extension wait")
         let tab = try await makeReadyTab(monitor: monitor, sitePermissionsEnabled: true, waiterProvider: {
@@ -391,32 +391,11 @@ final class RulesCompilationPolicyTests: XCTestCase {
         assertSetupPixel(firing, outcome: "success", state: "regular", total: "1", extensions: "1", rules: "0")
     }
 
-    func testRulesDeadlineReportsTimeoutBeforeErrorPageCancellation() async throws {
-        let firing = PixelKitMock()
-        var time: TimeInterval = 0
-        let monitor = RulesCompilationMonitor(pixelFiring: firing, isOnboarding: false, now: { time }, isInBackground: { false })
-        let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
-                                         featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
-        tab.rulesCompilationMonitor = monitor
-        tab.specialErrorPageNavigationHandler.delegate = nil
-        tab.sitePermissionsNavigationTimeout = 0.02
-        defer { tab.prepareForDataClearing() }
-        let decided = expectation(description: "Rules deadline cancels navigation")
-        tab.webView(tab.webView, decidePolicyFor: makeAction()) { policy in
-            XCTAssertEqual(policy, .cancel)
-            decided.fulfill()
-        }
-        time = 0.2
-        await fulfillment(of: [decided], timeout: 2)
-
-        assertSetupPixel(firing, outcome: "timeout", state: "regular", total: "0.5", extensions: "0", rules: "0.5")
-    }
-
     private func makeReadyTab(monitor: RulesCompilationMonitor, sitePermissionsEnabled: Bool,
                               waiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil }) async throws -> TabViewController {
         let assets = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
-                                         featureFlagger: MockFeatureFlagger(enabledFeatureFlags: sitePermissionsEnabled ? [.sitePermissions] : []),
+                                         featureFlagger: MockFeatureFlagger(),
                                          sitePermissionsEnabled: sitePermissionsEnabled,
                                          webExtensionInitialLoadWaiterProvider: waiterProvider,
                                          contentBlockingAssetsPublisher: assets.eraseToAnyPublisher())

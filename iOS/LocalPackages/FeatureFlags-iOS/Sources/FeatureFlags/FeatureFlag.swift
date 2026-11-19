@@ -83,6 +83,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220464829991571
     case heuristicHitTest
 
+    /// Autoconsent popup mutation observer: while checking whether a popup is open, also wait for DOM changes
+    /// so that popups that render late are found.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220498404318813
+    case popupMutationObserver
+
     /// Cookie Pop-up Protection opt-in dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654865?focus=true
     case cookiePopupOptInDialog
@@ -261,14 +266,10 @@ public enum FeatureFlag: String {
     case unifiedURLPredictor
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220345796572420
-    case suggestionDebounce200ms
+    case debounceLogic2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
-
-    /// Gates the VPN Session Health Telemetry
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
-    case vpnSessionHealthTelemetry
 
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
@@ -375,6 +376,15 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
     case aiChatBrowserToolSwitchToTab
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolReadTabContent
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolSearchHistory
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolFindInPage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218312902503176
     case aiChatContextualAttachMoreTabs
@@ -661,9 +671,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
     case nativeAIPromptEditing
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
-    case sitePermissions
-
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
@@ -690,6 +697,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220203462696863
     case idleReturnNewTabPageAtLaunch
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220301490819843
+    case idleReturnNewTabPageOnForeground
+
     /// Holds a background task assertion during `didFinishLaunching`, so iOS doesn't suspend the app mid-launch
     /// while it holds a lock on a shared App Group database (0xdead10cc).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
@@ -698,6 +708,11 @@ public enum FeatureFlag: String {
     /// On-device web page translation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
     case webPageTranslation
+
+    /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
+    /// Internal-only for the first version.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
+    case aiChatLocalModels
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -816,6 +831,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
         case .heuristicHitTest:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AutoconsentSubfeature.heuristicHitTest))
+        case .popupMutationObserver:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.popupMutationObserver))
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog))
         case .duckPlayer:
@@ -926,14 +943,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign))
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
-        case .suggestionDebounce200ms:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.suggestionDebounce200ms))
+        case .debounceLogic2026:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.debounceLogic2026))
         case .unifiedURLPredictor:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .vpnMenuItem:
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
-        case .vpnSessionHealthTelemetry:
-            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.sessionHealthTelemetry))
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .forgetAllInSettings:
@@ -1006,6 +1021,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled))
         case .aiChatBrowserToolListOpenTabs:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.listOpenTabs))
+        case .aiChatBrowserToolReadTabContent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.readTabContent))
+        case .aiChatBrowserToolSearchHistory:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchHistory))
+        case .aiChatBrowserToolFindInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.findInPage))
         case .aiChatBrowserToolSwitchToTab:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.switchToTab))
         case .aiChatContextualAttachMoreTabs:
@@ -1176,8 +1197,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
-        case .sitePermissions:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.sitePermissions))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
         case .alwaysShowKeyboardOnNewTabPage:
@@ -1192,10 +1211,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.searchSubmitPageCover))
         case .idleReturnNewTabPageAtLaunch:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
+        case .idleReturnNewTabPageOnForeground:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageOnForeground))
         case .launchBackgroundTask:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         case .webPageTranslation:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
+        case .aiChatLocalModels:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels))
         }
     }
 

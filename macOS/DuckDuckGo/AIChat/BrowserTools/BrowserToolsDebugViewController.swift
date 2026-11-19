@@ -140,7 +140,8 @@ final class BrowserToolsDebugViewController: NSViewController {
             let params: [String: Any] = [
                 "callId": callID,
                 "capability": ["name": capability.name, "version": capability.version],
-                "input": arguments
+                "input": arguments,
+                "chatId": "debug-panel"
             ]
             request.script.registerClientToolPermissionCancellation(source)
             self?.appendToLog(summary: "→ executeClientTool", detail: self?.prettyPrinted(params))
@@ -298,12 +299,14 @@ final class BrowserToolsDebugViewController: NSViewController {
         permissionsStack.addArrangedSubview(header)
 
         let decisions = service.permissions.storedDecisions
-        let askTools = service.catalog.enabledTools.filter { $0.permissionMode == .ask }.map(\.name)
+        let tools = service.catalog.enabledTools
+        let toolNames = tools.map(\.name)
         // A decision outlives its tool's flag, so it stays listed and resettable on its own.
-        let orphanedTools = decisions.keys.filter { !askTools.contains($0) }.sorted()
-        for toolName in askTools + orphanedTools {
+        let orphanedTools = decisions.keys.filter { !toolNames.contains($0) }.sorted()
+        for toolName in toolNames + orphanedTools {
             let state = decisions[toolName]
-            let label = NSTextField(labelWithString: "\(toolName): \(state?.rawValue ?? "ask")")
+            let defaultState = tools.first { $0.name == toolName }?.permissionMode.defaultState
+            let label = NSTextField(labelWithString: "\(toolName): \(state?.rawValue ?? "default (\(defaultState?.rawValue ?? "ask"))")")
             label.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
             label.textColor = state == nil ? .secondaryLabelColor : .labelColor
             var views: [NSView] = [label]
@@ -325,7 +328,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     }
 
     @objc private func resetPermission(_ sender: PermissionButton) {
-        service.permissions.setState(.ask, forToolNamed: sender.toolName)
+        service.permissions.setState(nil, forToolNamed: sender.toolName)
         appendToLog(summary: "· reset permission for \(sender.toolName)", detail: nil)
         refreshPermissions()
     }
@@ -346,9 +349,12 @@ final class BrowserToolsDebugViewController: NSViewController {
             row.removeFromSuperview()
         }
         argumentFields = []
-        guard let descriptor = service.catalog.enabledTools.first(where: { $0.name == tool }),
-              let properties = descriptor.inputSchema["properties"]?.objectValue else { return }
-        let required = Set(descriptor.inputSchema["required"]?.arrayValue?.compactMap(\.stringValue) ?? [])
+        let schema = tool == ClientToolCapability.requestAccess.name
+            ? JSONValue.object(["properties": .object(["capabilities": .object(["type": .string("array"), "items": .object(["type": .string("string")])])]),
+                                "required": .array([.string("capabilities")])])
+            : service.catalog.enabledTools.first(where: { $0.name == tool })?.inputSchema
+        guard let properties = schema?["properties"]?.objectValue else { return }
+        let required = Set(schema?["required"]?.arrayValue?.compactMap(\.stringValue) ?? [])
 
         for name in properties.keys.sorted(by: { ($0 == "query" || $0 == "quotes") != ($1 == "query" || $1 == "quotes") ? ($0 == "query" || $0 == "quotes") : $0 < $1 }) {
             let schema = properties[name] ?? .null
@@ -384,10 +390,21 @@ final class BrowserToolsDebugViewController: NSViewController {
             let owner = ownerTabProvider()?.uuid
             return ownerCollection.map { ($0.pinnedTabsCollection?.tabs ?? []) + $0.tabCollection.tabs }?
                 .first { $0.uuid != owner }?.uuid
+        case ("pinTab", "tabIds"):
+            let owner = ownerTabProvider()?.uuid
+            return ownerCollection?.tabCollection.tabs.first { $0.uuid != owner }?.uuid
+        case ("closeTabs", "tabIds"):
+            let owner = ownerTabProvider()?.uuid
+            return ownerCollection?.tabCollection.tabs.first { $0.uuid != owner }?.uuid
+        case ("bookmarkTab", "folder"): return "Duck.ai"
+        case ("openTab", "url"): return "https://duckduckgo.com"
+        case ("searchDownloads", "query"): return "pdf"
+        case ("searchBookmarks", "query"): return "duck"
         case ("searchHistory", "query"): return "wiki"
         case ("searchHistory", "limit"): return "5"
         case ("findInPage", "query"): return "games"
         case ("highlightInPage", "quotes"): return "games"
+        case ("requestAccess", "capabilities"): return "listOpenTabs, readTabContent, searchHistory"
         default: return nil
         }
     }
@@ -397,7 +414,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     /// Stands in for the browser's native prompt: the panel answers it directly, as the browser does.
     private func addPromptEntry(for prompt: ClientToolPermissionPrompt) -> Bool {
         guard prompt.callID == activeCallID else { return false }
-        let answers: [(String, ClientToolPermissionDecision)] = [("Allow once", .allowOnce), ("Always", .always), ("Never", .never), ("Dismiss", .dismiss)]
+        let answers: [(String, ClientToolPermissionDecision)] = [("Allow once", .allowOnce), ("Allow for chat", .allowForChat), ("Always", .always), ("Never", .never), ("Don't allow", .dontAllow), ("Dismiss", .dismiss)]
         let buttons = answers.map { title, decision -> NSView in
             let button = PromptButton(title: title, target: self, action: #selector(answerPrompt(_:)))
             button.bezelStyle = .rounded
@@ -406,7 +423,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             button.decision = decision
             return button
         }
-        let reason = service.catalog.enabledTools.first { $0.name == prompt.toolName }?.permissionReason ?? prompt.toolName
+        let reason = BrowserToolPermissionPromptText.title(toolName: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab)
         let entry = appendToLog(summary: "⇠ permission prompt  \(reason)",
                                 detail: "{\"requestID\": \"\(prompt.requestID)\", \"callID\": \"\(prompt.callID)\", \"tool\": \"\(prompt.toolName)\"}",
                                 accessories: buttons, highlighted: true)

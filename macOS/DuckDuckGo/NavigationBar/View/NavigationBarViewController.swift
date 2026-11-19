@@ -805,11 +805,21 @@ final class NavigationBarViewController: NSViewController {
                                                            themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
-                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab },
+                                                           nativeMessagingAlertPresenter: makeNativeMessagingAlertPresenter())
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
             subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    @available(macOS 15.4, *)
+    private func makeNativeMessagingAlertPresenter() -> NativeMessagingAlertPresenter {
+        NativeMessagingAlertPresenter(
+            limitationProvider: { NSApp.delegateTyped.webExtensionManager },
+            alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window }, themeManager: appThemeManager),
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
     }
 
     /// Only the window the install started from shows the popover.
@@ -2359,6 +2369,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     private func addAddressBarUpdateButton(title: String, for updateController: any UpdateController) {
         let button = AddressBarUpdateButton(title: title) {
+            UpdateClickReporter().reportClick(on: .toolbarButton)
             updateController.runUpdateFromPrompt()
         }.embeddedInHostingView()
 

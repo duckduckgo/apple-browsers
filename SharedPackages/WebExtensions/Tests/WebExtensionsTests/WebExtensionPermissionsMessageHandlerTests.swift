@@ -47,7 +47,7 @@ final class WebExtensionPermissionsMessageHandlerTests: XCTestCase {
                                                           prompter: ApprovingPrompter())
         try await controller.prepare(context)
         handler = WebExtensionPermissionsMessageHandler()
-        handler.controller = controller
+        handler.controller = { controller }
         handler.extensionContext = { [unowned self] url in
             url.host == Self.extensionHost ? context : nil
         }
@@ -99,7 +99,7 @@ final class WebExtensionPermissionsMessageHandlerTests: XCTestCase {
     }
 
     func testWhenThereIsNoPermissionController_ThenNothingIsHeld() async {
-        handler.controller = nil
+        handler.controller = { nil }
 
         let request = await answer(["action": "request", "permissions": ["privacy"]])
         let all = await answer(["action": "getAll"])

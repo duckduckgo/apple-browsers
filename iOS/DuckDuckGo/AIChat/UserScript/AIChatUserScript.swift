@@ -939,6 +939,14 @@ extension AIChatUserScript: AIChatLocalModelPushing {
         return AIChatLocalModelAccessReply(result: result)
     }
 
+    /// Runs belong to the script that started them. One replaced under a page that stays open hands them on,
+    /// or the page would wait for chunks that never come.
+    @MainActor
+    func handOverLocalRuns(to replacement: AIChatUserScriptProviding) {
+        guard let replacement = replacement as? AIChatLocalModelPushing else { return }
+        localModelService?.moveRuns(from: self, to: replacement)
+    }
+
     @MainActor
     func pushLocalModelState(_ update: AIChatLocalModelStateUpdate) {
         pushToDuckAI(.submitAIChatLocalModelState, params: update)

@@ -119,6 +119,16 @@ final class AIChatUserScriptLocalModelTests: XCTestCase {
 
         await fulfillment(of: [cancelled], timeout: 1)
     }
+
+    func testReplacedScriptHandsItsRunsToTheReplacement() {
+        let old = makeScript()
+        let replacement = makeScript()
+
+        old.handOverLocalRuns(to: replacement)
+
+        XCTAssertEqual(service.movedRuns.map(\.from), [ObjectIdentifier(old)])
+        XCTAssertEqual(service.movedRuns.map(\.to), [ObjectIdentifier(replacement)])
+    }
 }
 
 private final class StubURLWebView: WKWebView {
@@ -132,6 +142,7 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     var configToReturn: AIChatLocalModelConfig?
     var onCancelRuns: ((ObjectIdentifier) -> Void)?
     private(set) var startedRequestIds: [String] = []
+    private(set) var movedRuns: [(from: ObjectIdentifier, to: ObjectIdentifier)] = []
 
     func config() -> AIChatLocalModelConfig? { configToReturn }
     func register(_ pusher: AIChatLocalModelPushing) {}
@@ -142,6 +153,10 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     }
 
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
+
+    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {
+        movedRuns.append((ObjectIdentifier(pusher), ObjectIdentifier(replacement)))
+    }
 
     func cancelRuns(ownerID: ObjectIdentifier) {
         onCancelRuns?(ownerID)

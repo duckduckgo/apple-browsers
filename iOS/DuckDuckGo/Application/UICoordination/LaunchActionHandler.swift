@@ -71,6 +71,8 @@ protocol IdleReturnLaunchDelegate: AnyObject {
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
+    /// Reports a drawn page a launch action left in place as an ordinary New Tab Page.
+    func releaseHeldNewTabPage()
 }
 
 enum IdleReturnNewTabPageResult {
@@ -132,15 +134,15 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .openURL(let url):
             launchSourceManager.setSource(.URL)
             openURL(url)
-            recordNewTabPageLeftUnderAction(drewNewTabPage)
+            releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
-            recordNewTabPageLeftUnderAction(drewNewTabPage)
+            releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
             userActivityHandler.handleUserActivity(userActivity)
-            recordNewTabPageLeftUnderAction(drewNewTabPage)
+            releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
             // A New Tab Page the launch drew stands; the rest is the outcome decided on foreground.
@@ -180,11 +182,11 @@ final class LaunchActionHandler: LaunchActionHandling {
         }
     }
     
-    /// A page a background launch drew stays under an action that only presents a screen, so its arrival
-    /// is recorded once seen rather than left for a later return. A page the action replaces records nothing.
-    private func recordNewTabPageLeftUnderAction(_ drewNewTabPage: Bool) {
+    /// A return through an action isn't an after-idle return, so a drawn page the action leaves in place
+    /// is reported as an ordinary New Tab Page once seen. A page the action replaces reports nothing.
+    private func releaseNewTabPageLeftUnderAction(_ drewNewTabPage: Bool) {
         guard drewNewTabPage else { return }
-        idleReturnDelegate?.recordNewTabPageDrawnAtLaunch(timeAwayMs: idleReturnOutcome.timeAwayMs) { _ in }
+        idleReturnDelegate?.releaseHeldNewTabPage()
     }
 
     private func openURL(_ url: URL) {

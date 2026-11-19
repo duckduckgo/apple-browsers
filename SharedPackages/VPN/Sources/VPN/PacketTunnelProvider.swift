@@ -1495,7 +1495,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setRegistrationKeyValidity,
                 .setSelectedEnvironment,
                 .setShowInMenuBar,
-                .setSessionHealthTelemetryEnabled,
                 .setDisableRekeying:
             // Intentional no-op
             // Some of these don't require further action

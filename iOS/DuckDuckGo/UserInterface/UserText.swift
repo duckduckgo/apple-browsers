@@ -393,9 +393,6 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
-    // Accessibility label - DO NOT LOCALISE
-    public static let bookmarkAllTabs = NotLocalizedString("bookmarkAll.tabs.label", value: "Add all tabs as bookmarks", comment: "Accessibility label")
-
     public static let themeStyleNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
     public static let themeStyleNameLight = NSLocalizedString("theme.name.light", value: "Light", comment: "Light Theme entry")
     public static let themeStyleNameDark = NSLocalizedString("theme.name.dark", value: "Dark", comment: "Dark Theme entry")
@@ -441,11 +438,9 @@ public struct UserText {
 
     public static let deselectAllTabs = NSLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
 
-    // Needs to be localised later.
-    public static let tabSwitcherGridViewMenuTitle = NotLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
+    public static let tabSwitcherGridViewMenuTitle = NSLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
 
-    // Needs to be localised later.
-    public static let tabSwitcherListViewMenuTitle = NotLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
+    public static let tabSwitcherListViewMenuTitle = NSLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
 
     public static func alertTitleBookmarkSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkSelectedTabs.withCount", value: nil, table: nil)
@@ -2417,7 +2412,7 @@ public struct UserText {
     public static let duckPlayerOptInPillSubtitle = NSLocalizedString("duckplayer.opt-in.pill.subtitle", value: "Watch without targeted ads", comment: "Subtitle explaining Duck Player blocks targeted ads")
 
     // Opt-in mode - Floating Entry Pill
-    public static let duckPlayerFloatingPillTitle = NotLocalizedString("duckplayer.floating.pill.title", value: "Play in Duck Player", comment: "Button text to play a video in Duck Player")
+    public static let duckPlayerFloatingPillTitle = NSLocalizedString("duckplayer.floating.pill.title", value: "Play in Duck Player", comment: "Button text to play a video in Duck Player")
 
     // Opt-in mode - Welcome message
     public static let duckPlayerOptInWelcomeMessageTitle = NSLocalizedString("duckplayer.opt-in.message.title", value: "YouTube, but with fewer ads and more privacy", comment: "Title for Duck Player opt-in message")

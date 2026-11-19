@@ -30,6 +30,9 @@ import PixelKit
 
 final class SubscriptionPixelHandlerTests: XCTestCase {
 
+    private let mainTokenKey = SubscriptionTokenKeychainStorage.SubscriptionKeychainField.tokenContainer.keyValue
+    private let backupTokenKey = SubscriptionTokenKeychainStorage.SubscriptionKeychainField.backupTokenContainer.keyValue
+
     private struct FiredPixel {
         let name: String
         let parameters: [String: String]
@@ -242,12 +245,13 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testKeychainDataAddedToBacklogPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .dataAddedToTheBacklog)
+        handler.handle(pixel: .dataAddedToTheBacklog(key: mainTokenKey))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(subscriptionSource).name,
+            baseName: SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(subscriptionSource, tokenType: .main).name,
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
+                "token_type": "main",
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
@@ -256,12 +260,13 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testKeychainDeallocatedWithBacklogPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .deallocatedWithBacklog)
+        handler.handle(pixel: .deallocatedWithBacklog(key: mainTokenKey))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(subscriptionSource).name,
+            baseName: SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(subscriptionSource, tokenType: .main).name,
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
+                "token_type": "main",
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
@@ -270,12 +275,13 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testKeychainDataWroteFromBacklogPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .dataWroteFromBacklog)
+        handler.handle(pixel: .dataWroteFromBacklog(key: mainTokenKey))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(subscriptionSource).name,
+            baseName: SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(subscriptionSource, tokenType: .main).name,
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
+                "token_type": "main",
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
@@ -284,10 +290,40 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testKeychainFailedToWriteFromBacklogPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .failedToWriteDataFromBacklog)
+        handler.handle(pixel: .failedToWriteDataFromBacklog(key: mainTokenKey))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(subscriptionSource).name,
+            baseName: SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(subscriptionSource, tokenType: .main).name,
+            expectedParameters: [
+                "source": subscriptionSource.rawValue,
+                "token_type": "main",
+                PixelKit.Parameters.pixelSource: pixelSource,
+                PixelKit.Parameters.appVersion: "1.0.0"
+            ]
+        )
+    }
+
+    func testKeychainBacklogPixelForTheBackupTokenReportsTheBackupTokenType() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .dataAddedToTheBacklog(key: backupTokenKey))
+
+        assertDailyAndCountPixel(
+            baseName: SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(subscriptionSource, tokenType: .backup).name,
+            expectedParameters: [
+                "source": subscriptionSource.rawValue,
+                "token_type": "backup",
+                PixelKit.Parameters.pixelSource: pixelSource,
+                PixelKit.Parameters.appVersion: "1.0.0"
+            ]
+        )
+    }
+
+    func testKeychainBacklogPixelForAnotherItemHasNoTokenType() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .dataAddedToTheBacklog(key: "unrelated-key"))
+
+        assertDailyAndCountPixel(
+            baseName: SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(subscriptionSource, tokenType: nil).name,
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,

@@ -671,7 +671,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization) {
+    override init() {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -679,7 +679,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
-        self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
             keyStore = (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
@@ -847,6 +846,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        self.dockCustomization = DockCustomizer(featureFlagger: featureFlagger)
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
@@ -1642,11 +1642,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
-    private func synchronizeAddToDockNotificationIfOffered() {
-        guard dockCustomization.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) else { return }
-        dockCustomization.synchronizeNotificationVisibilityWithFirstLaunchDate()
-    }
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
@@ -1696,7 +1691,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try? store.set(build, for: \.installBuild)
             }
         }
-        synchronizeAddToDockNotificationIfOffered()
+        dockCustomization.synchronizeNotificationVisibilityWithFirstLaunchDate()
 
         setupWebExtensions()
 

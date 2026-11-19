@@ -21,9 +21,11 @@ import AppKitExtensions
 import Foundation
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import os.log
 import Persistence
+import PrivacyConfig
 
 /// Supplies whether a bundle identifier appears in the user Dock plist (`persistent-apps`).
 /// Injected so unit tests do not depend on the host machine’s Dock or whether the debug app is pinned.
@@ -89,6 +91,7 @@ final class DockCustomizer: DockCustomization {
     }
 
     private let applicationBuildType: ApplicationBuildType
+    private let featureFlagger: FeatureFlagger
     private let positionProvider: DockPositionProviding
     private let keyValueStore: KeyValueStoring
     private let dockMembershipProvider: DockMembershipProviding
@@ -100,10 +103,12 @@ final class DockCustomizer: DockCustomization {
     private var cancellables = Set<AnyCancellable>()
 
     init(applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
+         featureFlagger: FeatureFlagger,
          positionProvider: DockPositionProviding = DockPositionProvider(),
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          dockMembershipProvider: DockMembershipProviding = DockPlistDockMembershipProvider()) {
         self.applicationBuildType = applicationBuildType
+        self.featureFlagger = featureFlagger
         self.positionProvider = positionProvider
         self.keyValueStore = keyValueStore
         self.dockMembershipProvider = dockMembershipProvider
@@ -136,7 +141,8 @@ final class DockCustomizer: DockCustomization {
     }
 
     var shouldShowNotification: Bool {
-        AppDelegate.twoDaysPassedSinceFirstLaunch
+        (supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA))
+            && AppDelegate.twoDaysPassedSinceFirstLaunch
             && !didWeShowNotificationToUser
             && !isAddedToDock
     }

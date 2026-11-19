@@ -62,8 +62,11 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     private var shouldContinueAction: () -> Bool
 
-    /// The action last sent to the page. A reply carrying a different action ID is stale and ignored.
+    /// The action last sent to the page. When `rejectsStaleReplies` is on, a reply carrying a different action ID is ignored.
     @MainActor private var currentActionID: String?
+
+    // Limited to assisted runs so regular scans and opt-outs keep accepting every reply as they always have.
+    private let rejectsStaleReplies: Bool
 
     /// Called when the page answers the current action, so the web view stops re-sending a pending userAssist.
     @MainActor var onActionResponse: (() -> Void)?
@@ -72,10 +75,12 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     public init(delegate: CCFCommunicationDelegate,
                 executionConfig: BrokerJobExecutionConfig,
-                shouldContinueActionHandler shouldContinueAction: @escaping () -> Bool) {
+                shouldContinueActionHandler shouldContinueAction: @escaping () -> Bool,
+                rejectsStaleReplies: Bool = false) {
         self.delegate = delegate
         self.executionConfig = executionConfig
         self.shouldContinueAction = shouldContinueAction
+        self.rejectsStaleReplies = rejectsStaleReplies
     }
 
     deinit {
@@ -181,13 +186,8 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     @MainActor
     private func isStale(actionID: String) -> Bool {
-#if os(iOS)
-        // iOS never runs userAssist, so it keeps accepting every reply as it did before.
-        return false
-#else
-        guard let currentActionID else { return false }
+        guard rejectsStaleReplies, let currentActionID else { return false }
         return actionID != currentActionID
-#endif
     }
 
     @MainActor

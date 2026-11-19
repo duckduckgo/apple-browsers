@@ -373,8 +373,9 @@ ATTEMPT = re.compile(r"\d{8}-\d{6}-([a-z0-9-]+)-([0-9a-f]{4})")   # <stamp>-<nam
 
 
 def topic_of(folder):
-    """verify.sh's topic for an attempt folder: `<name>-<id>`, name cut to 9 characters. The topic is part of the
-    app's name, and in the VM (macOS 27.2.1) an app named after a 16-character topic never opened a window; 14 did."""
+    """verify.sh's topic for an attempt folder: `<name>-<id>`, name cut to 9 characters, 14 at most.
+    shortcut: the app is named "DuckDuckGo - verify-<topic>", and a Debug app named over 35 characters quits at
+    launch (callingSymbol() misread stack lines whose module column is cut at 35); drop the cap once #8345 is in."""
     name, uid = ATTEMPT.fullmatch(os.path.basename(folder)).groups()
     return f"{name[:9].strip('-')}-{uid}"
 

@@ -29,7 +29,6 @@ final class ListOpenTabsBrowserTool: BrowserTool {
 
     let name = AIChatBrowserToolsSubfeature.listOpenTabs.rawValue
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "Duck.ai wants to see your open tabs."
 
     let inputSchema: JSONValue = [
         "type": "object",

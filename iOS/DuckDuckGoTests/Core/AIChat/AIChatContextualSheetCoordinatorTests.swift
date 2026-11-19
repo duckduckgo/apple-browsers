@@ -1643,7 +1643,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         presenter.autoAnswer = nil
         presenter.holdDismissal = true
         sut.browserToolsPermissionPresenter = presenter
-        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs")
+        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
         XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("Resize must not grant permission") })
         host.canPresentContextualSidebar = false
 
@@ -1950,7 +1950,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         presenter.autoAnswer = nil
         presenter.holdDismissal = true
         sut.browserToolsPermissionPresenter = presenter
-        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs")
+        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
         XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("Leaving must not grant permission") })
         return presenter
     }

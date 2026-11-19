@@ -509,6 +509,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)
         XCTAssertEqual(fixture.presenter.prompts.count, 1)
+        XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to see your open tabs."])
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
     }

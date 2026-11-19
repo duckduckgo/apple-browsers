@@ -45,6 +45,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
 
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.presenter.prompts.count, 1)
+        XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to see your open tabs."])
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
     }
 
@@ -425,7 +426,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         service.permissions.setState(.deny, forToolNamed: "switchToTab")
         fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
         fixture.presenter.autoAnswer = nil
-        let prompt = ClientToolPermissionPrompt(requestID: "pending", callID: "pending-call", toolName: "listOpenTabs")
+        let prompt = ClientToolPermissionPrompt(requestID: "pending", callID: "pending-call", toolName: "listOpenTabs", targetsOtherTab: false)
         XCTAssertTrue(fixture.presenter.present(prompt, message: "Permission") { _ in XCTFail("No decision selected") })
         defer { fixture.presenter.withdrawActive {} }
         let result = await service.invoke(try request(name: "switchToTab", input: ["tabId": "target"]), from: fixture.script)

@@ -283,13 +283,13 @@ final class AIChatNativePermissionTests: XCTestCase {
             dismissals += 1
             finishDismissal = completion
         })
-        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs")
+        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
         XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("No action selected") })
         let alert = try XCTUnwrap(shownAlert)
         XCTAssertTrue(presenter.owns(alert))
         XCTAssertFalse(presenter.owns(UIViewController()))
         XCTAssertTrue(presenter.isSurfaceAvailable)
-        let anotherPrompt = ClientToolPermissionPrompt(requestID: "second", callID: "another-call", toolName: "listOpenTabs")
+        let anotherPrompt = ClientToolPermissionPrompt(requestID: "second", callID: "another-call", toolName: "listOpenTabs", targetsOtherTab: false)
         XCTAssertFalse(presenter.present(anotherPrompt, message: "Permission") { _ in XCTFail("Another prompt must wait") })
         var completions = 0
         presenter.withdraw(requestID: "first") { completions += 1 }
@@ -333,7 +333,7 @@ final class AIChatNativePermissionTests: XCTestCase {
             finishDismissal = completion
         })
         weak var retainedPresenter = presenter
-        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs")
+        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
         XCTAssertTrue(presenter?.present(prompt, message: "Permission") { _ in XCTFail("No action selected") } == true)
         var completions = 0
         presenter?.withdrawActive { completions += 1 }
@@ -364,7 +364,7 @@ final class AIChatNativePermissionTests: XCTestCase {
         defer { window.isHidden = true }
         var attempts = 0
         let presenter = AIChatNativePermissionPresenter(surface: { owner }, show: { _, _, _ in attempts += 1; return false })
-        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs")
+        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
         parent.modal = UIViewController()
         XCTAssertFalse(presenter.isSurfaceAvailable)
         XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })

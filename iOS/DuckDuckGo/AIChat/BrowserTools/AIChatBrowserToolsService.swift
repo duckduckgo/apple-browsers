@@ -197,10 +197,18 @@ extension AIChatBrowserToolsService {
         return binding(for: source)?.presenter?.isSurfaceAvailable == true ? nil : .cancelled
     }
 
+    private func permissionMessage(for toolName: String) -> String {
+        switch toolName {
+        case AIChatBrowserToolsSubfeature.listOpenTabs.rawValue: "Duck.ai wants to see your open tabs."
+        default: "Duck.ai wants to use a browser tool."
+        }
+    }
+
     func presentPermissionPrompt(_ prompt: ClientToolPermissionPrompt, from source: AIChatUserScript) -> Bool {
         guard permissionAdmissionFailure(toolName: prompt.toolName, from: source) == nil,
-              let binding = binding(for: source), let tool = catalog.tool(named: prompt.toolName) else { return false }
-        return binding.presenter?.present(prompt, message: tool.permissionReason) { [weak self, weak source, weak binding] decision in
+              let binding = binding(for: source) else { return false }
+        let message = permissionMessage(for: prompt.toolName)
+        return binding.presenter?.present(prompt, message: message) { [weak self, weak source, weak binding] decision in
             guard let self, let source, let binding, self.binding(for: source) === binding else { return }
             let response = self.permissionAdmissionFailure(toolName: prompt.toolName, from: source) == nil ? decision : .dismiss
             self.clientToolPermissions.respond(to: prompt, decision: response, from: source)
@@ -373,9 +381,9 @@ extension AIChatBrowserToolsService {
     }
 
     func presentPermissionPrompt(_ prompt: ClientToolPermissionPrompt, from session: BrowserToolsDebugSession) -> Bool {
-        guard debugAdmissionFailure(toolName: prompt.toolName, from: session) == nil,
-              let tool = catalog.tool(named: prompt.toolName) else { return false }
-        return session.presenter.present(prompt, message: tool.permissionReason) { [weak self, weak session] decision in
+        guard debugAdmissionFailure(toolName: prompt.toolName, from: session) == nil else { return false }
+        let message = permissionMessage(for: prompt.toolName)
+        return session.presenter.present(prompt, message: message) { [weak self, weak session] decision in
             guard let self, let session else { return }
             let admitted = self.debugAdmissionFailure(toolName: prompt.toolName, from: session) == nil
             self.clientToolPermissions.respond(to: prompt, decision: admitted ? decision : .dismiss, from: session)
@@ -530,9 +538,11 @@ private final class AIChatNativePermissionCoordinator: ClientToolPermissionCoord
         self.admission = admission
     }
 
-    func authorize(callID: String, tool: any BrowserTool, prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
+    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?,
+                   prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         if let failure = admission(tool.name, prompter) { return .refused(failure.clientToolError) }
-        let authorization = await base.authorize(callID: callID, tool: tool, prompter: prompter)
+        let authorization = await base.authorize(callID: callID, tool: tool, targetsOtherTab: targetsOtherTab,
+                                                 target: target, prompter: prompter)
         guard case .granted(let performExecution) = authorization else { return authorization }
         let requiresPrompter = prompter != nil
         let toolName = tool.name

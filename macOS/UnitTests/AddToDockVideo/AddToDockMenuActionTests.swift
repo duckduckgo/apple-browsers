@@ -43,6 +43,57 @@ final class AddToDockMenuActionTests {
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func dmgNotInDockCanShowMenuItem() {
+        #expect(makeSUT().canShowMenuItem)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func dmgInDockCannotShowMenuItem() {
+        dockCustomizer.dockStatus = true
+
+        #expect(!makeSUT().canShowMenuItem)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func appStoreWithFlagOnCanShowMenuItem() {
+        setAppStoreBuild(canShowVideo: true)
+
+        #expect(makeSUT().canShowMenuItem)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func appStoreWithFlagOffCannotShowMenuItem() {
+        setAppStoreBuild(canShowVideo: false)
+
+        #expect(!makeSUT().canShowMenuItem)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func appStoreInDockCannotShowMenuItem() {
+        setAppStoreBuild(canShowVideo: true)
+        dockCustomizer.dockStatus = true
+
+        #expect(!makeSUT().canShowMenuItem)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func appStoreFlagTurningOffHidesMenuItem() {
+        setAppStoreBuild(canShowVideo: true)
+        let sut = makeSUT()
+        #expect(sut.canShowMenuItem)
+
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+
+        #expect(!sut.canShowMenuItem)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func appStoreMainMenuPresentsVideoAndFiresClickPixel() {
         setAppStoreBuild(canShowVideo: true)
 

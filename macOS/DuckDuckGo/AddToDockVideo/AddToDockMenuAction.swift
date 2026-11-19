@@ -43,6 +43,11 @@ final class AddToDockMenuAction {
         self.pixelFiring = pixelFiring
     }
 
+    var canShowMenuItem: Bool {
+        (dockCustomization.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA))
+            && !dockCustomization.isAddedToDock
+    }
+
     func perform(from menu: Menu) {
         if dockCustomization.supportsAddingToDock {
             guard dockCustomization.addToDock() else { return }

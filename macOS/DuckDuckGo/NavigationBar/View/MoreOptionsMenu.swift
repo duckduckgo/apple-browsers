@@ -214,8 +214,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-        if dockCustomizer.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA),
-           dockCustomizer.isAddedToDock == false {
+        if addToDockMenuAction.canShowMenuItem {
 
             if dockCustomizer.shouldShowNotification {
                 let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))

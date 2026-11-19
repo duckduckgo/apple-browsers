@@ -2,8 +2,9 @@
 
 A proof is a short Python file written for one change, saved with its evidence, never committed. Its docstring is the
 claim; it defines `run(mac)` and may set `FLAGS = {"caseName": True}` (FeatureFlag cases to pin), `LIVE = ["duck.ai"]`
-(live services it depends on) and `AUTOMATION = True` (start the AutomationServer for `url()` and `navigate()`; it
-turns off popup blocking and the quit survey, so never use it to verify either).
+(live services it depends on: any other non-local host the app loaded is flagged in the report) and
+`AUTOMATION = True` (start the AutomationServer for `url()` and `navigate()`, and collect the hosts the app loaded;
+it turns off popup blocking and the quit survey, so never use it to verify either).
 
 Every action goes through verify.sh, the low-level layer. The harness keeps one run record (the checks in the order
 they ran, problems, warnings, notes, unverified items, the phase reached); the verdict and report.md come from it alone.
@@ -11,6 +12,8 @@ they ran, problems, warnings, notes, unverified items, the phase reached); the v
 from __future__ import annotations
 
 import contextlib
+import functools
+import http.server
 import importlib.util
 import inspect
 import json
@@ -19,10 +22,13 @@ import re
 import shlex
 import shutil
 import signal
+import socket
 import subprocess
 import sys
+import threading
 import time
 import traceback
+import urllib.parse
 import uuid
 
 sys.dont_write_bytecode = True   # keep __pycache__ out of the skill directory
@@ -33,6 +39,9 @@ VERIFY_SH = os.path.join(SCRIPTS, "verify.sh")
 HOME = os.environ.get("VERIFY_MACOS_HOME", os.path.expanduser("~/.ddg-verify-macos"))
 TARGETS = ("mac", "vm", "vm-1", "vm-2")
 VIDEO = "recording.mp4"
+FIXTURE = os.path.join(SKILL, "fixture")
+LOCAL_HOSTS = ("127.0.0.1", "localhost", "::1")
+SSH_OPTS = ("-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "-o", "ServerAliveInterval=15")   # as verify.sh
 BASE_OUTCOMES = ("fail", "pass", "unchanged")
 sys.path.insert(0, SCRIPTS)
 import vhelp  # noqa: E402
@@ -91,6 +100,34 @@ class Record:
         self.app_running = None  # at the end of the proof; None when the proof never started
         self.cancelled = False
         self.video = {}         # None when off (--no-video); else path, seconds, bytes once written, error if it failed
+        self.hosts = None       # hosts the app loaded pages or resources from; None when not collected (AUTOMATION off)
+
+
+# ---------------------------------------------------------------- hosts the app loaded
+URL = re.compile(r"(?:https?|wss?)://[^\s\"'\\,\]]+")
+
+
+def host_of(url):
+    """The network host `url` loads from; None for URLs that load nothing from the network (duck://, about:, data:)."""
+    try:
+        p = urllib.parse.urlparse(url.strip())
+        return p.hostname if p.scheme in ("http", "https", "ws", "wss") else None
+    except ValueError:
+        return None
+
+
+def undeclared(hosts, live):
+    """The non-local hosts no LIVE entry covers; an entry covers its own host and its subdomains."""
+    return sorted(h for h in hosts or () if h not in LOCAL_HOSTS
+                  and not any(h == s or h.endswith("." + s) for s in live))
+
+
+def evidence_kind(live, hosts):
+    """What the evidence rests on: declared or undeclared live services, local pages only, or unknown."""
+    services = list(live) + undeclared(hosts, live)
+    if services:
+        return "live: " + ", ".join(services)
+    return "local pages only" if hosts is not None else "unknown: hosts not collected (AUTOMATION is off)"
 
 
 def label(rec):
@@ -149,8 +186,10 @@ def report(doc, rec, manifest, evidence):
     lines += ["", "Problems (cleanup or evidence):"] + [f"- {p}" for p in rec.problems or ["(none)"]]
     if rec.action_errors:
         lines += ["", "Actions or reads that failed (the run can't tell):"] + [f"- {_line(e)}" for e in rec.action_errors]
-    if rec.warnings:
-        lines += ["", "Warnings:"] + [f"- {w}" for w in rec.warnings]
+    live = m.get("live") or []
+    warnings = [f"**Undeclared live host: {h}** (not in LIVE)" for h in undeclared(rec.hosts, live)] + rec.warnings
+    if warnings:
+        lines += ["", "Warnings:"] + [f"- {w}" for w in warnings]
     if rec.notes:
         lines += ["", "Notes:"] + [f"- {n}" for n in rec.notes]
     launch, vm, hashes = m.get("launch") or {}, m.get("vm"), m.get("build_hashes") or {}
@@ -171,7 +210,9 @@ def report(doc, rec, manifest, evidence):
               f"- Pinned flags: {', '.join(m.get('flags') or []) or '(none)'}",
               f"- Language: {launch.get('language', '?')}, locale {launch.get('locale', '?')}; automation "
               + ("on" if launch.get("automation_port") else "off"),
-              f"- Evidence: {'live services: ' + ', '.join(m['live']) if m.get('live') else 'app only'}",
+              f"- Evidence: {evidence_kind(live, rec.hosts)}",
+              "- Hosts the app loaded: " + ((", ".join(sorted(rec.hosts)) or "(none)") if rec.hosts is not None
+                                            else "(not collected: AUTOMATION is off)"),
               f"- Rerun: `{m.get('rerun', '?')}`",
               f"- Manifest: {link('manifest.json') or '(not written)'}",
               "", "## Unverified", ""]
@@ -200,6 +241,9 @@ class Mac:
         self.as_base = as_base     # the base run of prove --base
         self.base_outcome = "unchanged"   # what checks made now should do on the base build (on_base)
         self._marked = False
+        self._fixture = None
+        if automation:
+            rec.hosts = set()
 
     def _sh(self, command, *args):
         """Run `verify.sh <command> <topic> args`; return (exit code, output). Logged to transcript.jsonl."""
@@ -254,7 +298,22 @@ class Mac:
 
     def url(self):
         """The current tab's URL, through the AutomationServer (AUTOMATION = True)."""
-        return self._do("web", "url")
+        url = self._do("web", "url")
+        self._saw(url)
+        return url
+
+    def _saw(self, *urls):
+        if self.rec.hosts is not None:
+            self.rec.hosts.update(h for h in map(host_of, urls) if h)
+
+    def _sweep_hosts(self):
+        """Add the hosts of the front tab's page and every resource it loaded; a read that fails is a Problem."""
+        code, out = self._sh("web", "eval", "return [location.href, ...performance.getEntriesByType('resource')"
+                                            ".map(e => e.name)].join(' ')")
+        if code:
+            self.rec.problems.append(f"hosts of the last page not read: {_line(out[-300:])}")
+        else:
+            self._saw(*URL.findall(out.replace("\\/", "/")))   # the server JSON-escapes "/" as "\/"
 
     # assert -----------------------------------------------------------------
     def check(self, what, ok, detail=None):
@@ -348,10 +407,90 @@ class Mac:
         """Name behavior this proof could not verify, and why; it appears in the report."""
         self.rec.unverified.append((what, why))
 
+    # fixture pages ----------------------------------------------------------
+    def token(self, prefix="t"):
+        """A fresh token for this run, e.g. "t-1a2b3c4d"; never reuse one."""
+        return f"{prefix}-{uuid.uuid4().hex[:8]}"
+
+    def fixture_url(self, token):
+        """The skill's fixture page showing `token`, served for this run only at 127.0.0.1, for the app on this Mac
+        or in the VM. It links to target.html."""
+        if not self._fixture:
+            vm_file = os.path.join(self.evidence, "vm")
+            vm = open(vm_file).read().strip() if os.path.exists(vm_file) else None
+            try:
+                self._fixture = Fixture(os.path.join(self.evidence, "fixture.log"), vm)
+            except OSError as e:
+                raise self._error(f"fixture pages not served: {e}")
+            self.rec.notes.append(f"fixture pages served at 127.0.0.1:{self._fixture.port} for this run"
+                                  + (f" (in {vm} through an ssh reverse tunnel to its loopback)" if vm else ""))
+        return f"http://127.0.0.1:{self._fixture.port}/index.html?token={urllib.parse.quote(token)}"
+
     # setup only -------------------------------------------------------------
     def navigate(self, url):
         """Setup only, through the AutomationServer: a proof of navigation types in the address bar instead."""
+        self._saw(url)
         return self._do("web", "navigate", url)
+
+
+class _FixtureHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, fmt, *args):   # to fixture.log in the evidence, not the terminal
+        with open(self.server.log_path, "a") as f:
+            f.write(f"{self.log_date_time_string()} {fmt % args}\n")
+
+
+class Fixture:
+    """The fixture pages, served for one run on this Mac's loopback only. For a VM, an ssh reverse tunnel binds the
+    same port on the VM's loopback: the URL is the same on both, and nothing else on either network can reach it."""
+
+    def __init__(self, log_path, vm=None):
+        self.vm, self.tunnel = vm, None
+        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0),
+                                                      functools.partial(_FixtureHandler, directory=FIXTURE))
+        self.server.log_path = log_path
+        self.port = self.server.server_address[1]
+        # A daemon thread: if the harness dies, the listener dies with it.
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        if vm:
+            self.tunnel = subprocess.Popen(["ssh", *SSH_OPTS, "-N", "-o", "ExitOnForwardFailure=yes", "-R",
+                                            f"127.0.0.1:{self.port}:127.0.0.1:{self.port}", vm],
+                                           stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            for _ in range(40):   # up once the VM fetches the page through it
+                if self.tunnel.poll() is not None:
+                    break
+                if subprocess.run(["ssh", *SSH_OPTS, vm, f"curl -fsS -o /dev/null http://127.0.0.1:{self.port}/index.html"],
+                                  capture_output=True).returncode == 0:
+                    return
+                time.sleep(0.25)
+            err = self.tunnel.stderr.read().decode()[-300:] if self.tunnel.poll() is not None else "timed out"
+            self.stop()
+            raise OSError(f"the tunnel to {vm} did not come up: {_line(err)}")
+
+    def stop(self):
+        """Stop serving, here and in the VM; return problems: a listener still there afterwards."""
+        if self.tunnel:
+            self.tunnel.terminate()
+            try:
+                self.tunnel.wait(5)
+            except subprocess.TimeoutExpired:
+                self.tunnel.kill()
+                self.tunnel.wait()
+        self.server.shutdown()
+        self.server.server_close()
+        problems = []
+        with socket.socket() as s:
+            if s.connect_ex(("127.0.0.1", self.port)) == 0:
+                problems.append(f"fixture server still listening on 127.0.0.1:{self.port}")
+        if self.vm:
+            for _ in range(12):   # sshd drops the forwarded port when the session closes, not always at once
+                p = subprocess.run(["ssh", *SSH_OPTS, self.vm, f"nc -z 127.0.0.1 {self.port}"], capture_output=True)
+                if p.returncode == 1:
+                    break
+                time.sleep(0.25)
+            else:
+                problems.append(f"fixture port {self.port} still open in {self.vm}, or it couldn't tell "
+                                f"(ssh exit {p.returncode})")
+        return problems
 
 
 def _trim(v, n=600):
@@ -580,11 +719,15 @@ def _finish(mac, rec, evidence):
             rec.problems.append(f"final screenshot not taken: {out[-300:]}")
         if rec.video is not None and "error" not in rec.video:
             _record(mac, rec, "stop")   # after the final screenshot, so the video ends on the final state
+        if rec.hosts is not None and rec.app_running:
+            mac._sweep_hosts()
         if mac._marked and not _alive(os.path.join(evidence, "pixel_stream.pid")):
             rec.problems.append("pixel stream died during the run: telemetry checks after that can't be trusted")
         code, out = mac._sh("logs")
         if code:
             rec.problems.append(f"log.txt not written: {out[-300:]}")
+    if mac._fixture:   # before cleanup releases the VM
+        rec.problems += mac._fixture.stop()
     host = (open(os.path.join(evidence, "vm")).read().strip() if os.path.exists(os.path.join(evidence, "vm")) else None)
     code, out = mac._sh("cleanup")
     if code:
@@ -605,6 +748,8 @@ def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=N
         m = {}
     verdict, code = label(rec)
     m.update(proof=os.path.relpath(proof, evidence), target=target, evidence_dir=evidence_dir, rerun=rerun, running_hashes=running, live=live,
+             hosts=None if rec.hosts is None else sorted(rec.hosts), undeclared_hosts=undeclared(rec.hosts, live),
+             evidence_kind=evidence_kind(live, rec.hosts),
              verdict=verdict, exit=code, reason=rec.error, phase_reached=rec.phase,
              checks=[dict(check=n, ok=ok, detail=d, base=b) for n, ok, d, b in rec.checks], problems=rec.problems,
              unverified=[dict(what=w, why=y) for w, y in rec.unverified],

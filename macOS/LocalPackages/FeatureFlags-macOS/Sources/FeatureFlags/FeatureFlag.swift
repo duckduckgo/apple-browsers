@@ -503,17 +503,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Enables the Autofill Toolbar Pinning ("Add passwords shortcut?") promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240260?focus=true
-    case promoQueueAutofillToolbarPinningPromo
-
     /// Enables the Cookie Pop-ups Blocked promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
     case promoQueueCookiePopupsBlockedPromo
-
-    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218325559999462?focus=true
-    case promoQueueDuckPlayerOverlayPromo
 
     /// Enables the "Update available" promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
@@ -542,10 +534,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
     case promoQueueBookmarkAddedSyncPromo
-
-    /// Enables the import/sync promo on the "No bookmarks yet" empty state in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570477?focus=true
-    case promoQueueBookmarksEmptyStatePromo
 
     /// Enables the import/sync promo on the Passwords panel empty states in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
@@ -726,6 +714,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
+    case appStoreAddToDockOnlyCTA
 
     /// Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220338615600254?focus=true
@@ -1061,12 +1053,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueueAutofillToolbarPinningPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillToolbarPinningPromo))
         case .promoQueueCookiePopupsBlockedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
-        case .promoQueueDuckPlayerOverlayPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.duckPlayerOverlayPromo))
         case .promoQueueUpdateAvailablePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
         case .promoQueueBrowserUpdatedPromo:
@@ -1081,8 +1069,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
         case .promoQueueBookmarkAddedSyncPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
-        case .promoQueueBookmarksEmptyStatePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
         case .promoQueueAutofillEmptyStatePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .defaultBrowserWinBackPromo:
@@ -1187,6 +1173,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
+        case .appStoreAddToDockOnlyCTA:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreAddToDockOnlyCTA))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), category: .duckAI)
         case .fastTrackingParameterFilter:

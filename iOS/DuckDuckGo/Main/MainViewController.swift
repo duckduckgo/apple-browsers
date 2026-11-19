@@ -56,6 +56,7 @@ import WebExtensions
 import WebKit
 import WidgetKit
 import FeatureFlags_iOS
+import WebPageTranslation
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
@@ -69,7 +70,7 @@ struct StartupOnboardingDecision {
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI,
              .aiSearchSettingsSelection, .aiModelSelection,
-             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN:
+             .toggleInputModeSelection, .keepDuckAISelection, .adBlockingPersonalization, .tryVPN, .tryVPNFollowUp:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -613,6 +614,7 @@ class MainViewController: UIViewController {
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     private let promptExposureReporter: PromptExposureReporting
+    let translationModels: TranslationModels?
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let promoCoordinationService:
@@ -625,7 +627,7 @@ class MainViewController: UIViewController {
     var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
 
     private var duckPlayerEntryPointVisible = false
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+    let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
 
     // Ensure the VPN entry-point impression pixels fire at most once per app launch.
     private var didFireVPNToolbarImpressionPixel = false
@@ -822,9 +824,11 @@ class MainViewController: UIViewController {
             & AppRatingPromptGating)? = nil,
         usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-        promptExposureReporter: PromptExposureReporting
+        promptExposureReporter: PromptExposureReporting,
+        translationModels: TranslationModels? = nil
     ) {
         self.pixelFiring = pixelFiring
+        self.translationModels = translationModels
         self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -3536,6 +3540,7 @@ class MainViewController: UIViewController {
             tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
         }
 
+        currentTab?.browserToolsWillLeaveScreen()
         currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         dismissOmniBar()
         resetUnifiedToggleInputForTabTransition(to: tab)
@@ -3559,6 +3564,7 @@ class MainViewController: UIViewController {
         guard let tab else { return }
         // Re-selecting the current tab keeps its sidebar chat open.
         if previousTab !== tab {
+            previousTab?.browserToolsWillLeaveScreen()
             previousTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         }
         previousTab?.tabModel.openedAfterIdle = false
@@ -3626,6 +3632,7 @@ class MainViewController: UIViewController {
             tab.webView.underPageBackgroundColor = color
         }
         addToContentContainer(controller: tab)
+        tab.browserToolsDidBecomeActive()
 
         viewCoordinator.logoContainer.isHidden = true
 
@@ -4902,8 +4909,9 @@ class MainViewController: UIViewController {
     }
 
     private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
-        let subscriptionFlowViewController = makeDataBrokerProtectionSubscriptionFlowViewController(
-            redirectURLComponents: redirectURLComponents
+        let subscriptionFlowViewController = makeSubscriptionFlowViewController(
+            redirectURLComponents: redirectURLComponents,
+            includesPostPurchaseOnboarding: true
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4918,7 +4926,9 @@ class MainViewController: UIViewController {
         presenter.present(navigationController, animated: true)
     }
 
-    private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
+    /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
+                                                    includesPostPurchaseOnboarding: Bool) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4939,7 +4949,7 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
-            onboardingKeyValueStore: keyValueStore,
+            onboardingKeyValueStore: includesPostPurchaseOnboarding ? keyValueStore : nil,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
@@ -6003,6 +6013,9 @@ extension MainViewController: BrowserChromeDelegate {
 
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
+        if isFloatingUIEnabled {
+            chromeManager.followFloatingChromeBottom { self.floatingWebViewObscuredInsets(for: percent).bottom }
+        }
         currentTab?.updateWebViewBottomAnchor(for: percent)
         updateFloatingTopNewTabPageInset(for: percent)
 
@@ -6129,6 +6142,11 @@ extension MainViewController: BrowserChromeDelegate {
 
     var toolbarHeight: CGFloat {
         viewCoordinator.constraints.toolbarHeight.constant
+    }
+
+    /// Matches `updateToolbarConstant`, which keeps a hidden or minimal-layout toolbar in place.
+    var isToolbarParked: Bool {
+        viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout
     }
 
     var isFloatingChromeEnabled: Bool {
@@ -8319,6 +8337,7 @@ extension MainViewController: TabDelegate {
     }
 
     private func leaveForPageRequestedTab(opener: TabViewController?) {
+        opener?.browserToolsWillLeaveScreen()
         opener?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         themeColorManager.updateThemeColor()
     }
@@ -8567,6 +8586,7 @@ extension MainViewController: TabDelegate {
         }
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
+        tab.browserToolsWillLeaveScreen()
         tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
 
         // The new tab carries a URL, so no New Tab Page attaches to supersede the visit and nothing
@@ -9957,6 +9977,17 @@ extension MainViewController {
 }
 
 extension MainViewController: OnboardingDelegate {
+
+    func presentSubscriptionPaywallFromOnboarding(from controller: UIViewController, onDismiss: @escaping () -> Void) {
+        // The onboarding continues with its own VPN setup, so skip the subscription onboarding after purchase.
+        let paywall = makeSubscriptionFlowViewController(
+            redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
+            includesPostPurchaseOnboarding: false
+        )
+        let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
+        navigationController.onDismiss = onDismiss
+        controller.present(navigationController, animated: true)
+    }
 
     func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {
         linearOnboardingContext?.activeInterlude = interlude

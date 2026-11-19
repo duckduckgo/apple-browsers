@@ -19,8 +19,8 @@ V=.claude/skills/verify-ios/bin/verify-ios      # from the worktree root; every 
 **How it gets used.** Agents don't pick this skill on their own (`disable-model-invocation`), so name it when you start
 a task ("… and verify it with verify-ios"), or invoke `/verify-ios`.
 
-Before writing a proof, read the feature files in [features/](features/README.md) for what you are changing: they
-list the real ids, the iPhone/iPad differences and the app quirks that make a naive proof fail.
+Before writing a proof, read [features/](features/README.md) (shared steps, and the feature file if the map has
+one): they list the real ids, the iPhone/iPad differences and the quirks that make a naive proof fail.
 
 ## Layers
 
@@ -98,7 +98,7 @@ def run(ios):
     ios.expect_wide_event("data-clearing", status="SUCCESS")
 ```
 
-`examples/` has one worked proof per feature (t1–t9); start from the closest one.
+`examples/` shows how to drive the harness (t1–t11, listed in [features/](features/README.md)); start from the closest.
 
 **When a run passes:** the proof returned, recorded at least one passing check and no failing one (a failed check
 you caught still fails the run), and the app was still in the foreground at the end. A problem before the proof's
@@ -133,10 +133,8 @@ What `ios` gives you (`lib/verify_ios/harness.py`):
 - Every action's `after` is checked: an action that changed nothing in the UI tree is listed under Warnings in the
   report, so you can see where the proof's own reads must carry the proof.
 
-Shared steps (`lib/verify_ios/steps.py`) hold the app's quirks once: `fresh_start`, `open_url`, `open_fixture`,
-`dismiss_address_bar`, `new_tab`, `switch_to_tab`, `close_current_new_tab`, `tab_count`, `expect_tab_count`, `fire`,
-`open_duckai_new_chat`, `send_duckai_prompt`, `read_duckai_answer`. Add a step when a second proof needs the same
-quirk handled; keep steps to generic actions plus feature-map ids, and document every quirk in the feature map.
+Shared steps (`lib/verify_ios/steps.py`) hold the app's quirks once; [features/shared-steps.md](features/shared-steps.md)
+lists them. Add a step when a second proof needs a quirk handled; document every quirk there.
 
 Locators: `id=searchEntry`, `label="Fire Solid 24"`, `role=button label="New Tab"`, `text="Done"`, `contains="token"`,
 plus `nth=<n>` when several match (otherwise the action fails with AMBIGUOUS; it never guesses). `web:css=#token` and
@@ -212,19 +210,20 @@ devices and the evidence directory. It returns only the verdict per device (pass
 `report.md` path and the evidence folder. The lead still reads `report.md` and looks at the screenshots and the video
 before claiming anything.
 
-**Before and after (bug fixes).** Run the same proof against the base commit: add a worktree at it and run *this*
-checkout's `verify-ios` from inside that worktree. The checkout is taken from the current directory and the skill
-from the script's own path, so the base app is built and proved with today's skill and proof, on that worktree's own
-simulators. Each report's rerun command starts with `cd` into the checkout it proved:
+**Before and after (`--base`).** To show a change against the base build, wrap the checks that should differ there
+in `with ios.on_base("fail"):` (or `"pass"`); every other check should be unchanged.
 
 ```bash
-base=../base-verify; V="$PWD/$V"                     # absolute, so it still names this checkout's skill from there
-git worktree add "$base" "$(git merge-base HEAD origin/main)" && git -C "$base" submodule update --init --recursive
-(cd "$base" && $V --device iphone setup && $V build &&
- $V prove "$proof" --devices iphone --evidence-dir "$dir/before")   # expected to fail: the bug
-$V prove "$proof" --devices iphone --evidence-dir "$dir/after"      # expected to pass: the fix
-(cd "$base" && $V cleanup --all --delete-sims) && git worktree remove --force "$base"   # --force: it has submodules
+$V prove "$proof" --base "$(git merge-base HEAD origin/main)"   # adds a full app build of the base (3–20 min)
 ```
+
+This builds the base revision in its own worktree (own simulators, removed afterwards), proves it there with this
+checkout's skill and proof, then proves this checkout. On the base run a check expected to fail is recorded and the
+proof carries on, but only for an absent element or a failed assertion; any other error makes that run
+inconclusive. `report.md` judges each check against both runs and pairs the key frames Before | After; each run's
+own report is under `before/` and `after/`. Checks line up across runs by name, with tokens left out. Exit `0` as
+expected · `1` unexpected · `2` inconclusive (a run didn't finish, a check wasn't seen on both, or capture conditions
+differ).
 
 Exit codes: `0` pass · `1` a check failed (the product, or the proof) · `2` error: setup, stale build, driver, a proof
 rejected by `check`, or a pass with cleanup/evidence problems · `3` not supported · `75` device busy (another proof
@@ -296,14 +295,14 @@ $V prove .claude/skills/verify-ios/examples/*.py                                
 | path | what |
 |---|---|
 | `bin/verify-ios` | command line: setup, build, new-proof, check, prove, explore, doctor, cleanup (`-h`) |
-| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `steps.py`, `telemetry.py`, `video.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
+| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `compare.py` (`--base`), `steps.py`, `telemetry.py`, `video.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
 | `lib/vrunner_start.sh` | start one runner and report its pids (called by the driver, which also stops it) |
 | `lib/ios_identity.sh` | running-binary sha256 vs build (called by doctor) |
 | `runner/` | Swift XCUITest runner, XcodeGen spec and generated project; regenerate with `cd runner && xcodegen generate` |
-| `examples/` | worked proofs t1–t9 |
+| `examples/` | worked proofs t1–t11, harness examples |
 | `tests/` | `test_tool.py` (no simulator), `must_fail.py` (refusals and build identity, as a proof) |
 | `fixture/` | local test pages |
-| `features/` | the feature map |
+| `features/` | the feature map: shared steps, Duck.ai |
 
 Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .claude/skills/verify-ios/runner/Sources`.
 Keep the runner's fixes: the animation-idle swizzle, the `record(_:)` override, the alert handler (app + SpringBoard),

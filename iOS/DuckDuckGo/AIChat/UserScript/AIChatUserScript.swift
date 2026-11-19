@@ -862,9 +862,9 @@ extension AIChatUserScript: AIChatMetricReportingHandling {
 
 extension AIChatUserScript: ClientToolPermissionPrompting {
     @MainActor
-    func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
+    func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, presenter: (any AIChatNativePermissionPresenting)? = nil, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
         detachBrowserTools()
-        service.attach(self, owner: owner, makeScope: makeScope)
+        service.attach(self, owner: owner, presenter: presenter, makeScope: makeScope)
         browserToolsService = service
     }
 
@@ -900,14 +900,15 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
         return await browserToolsService.invoke(request, from: self)
     }
 
-    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
     @MainActor
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
-        false
+        browserToolsService?.presentPermissionPrompt(prompt, from: self) ?? false
     }
 
     @MainActor
-    func withdrawClientToolPermissionPrompt(requestID: String) {}
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        browserToolsService?.withdrawPermissionPrompt(requestID: requestID, from: self)
+    }
 
     @MainActor
     func pushClientToolsChanged(_ data: ClientToolsChangedData) -> Bool {

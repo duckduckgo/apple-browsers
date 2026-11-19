@@ -849,6 +849,22 @@ class TabViewController: UIViewController {
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
     var browserToolsService: AIChatBrowserToolsService?
+    private var browserToolsSurfaceVisible = false
+    private var browserToolsPermissionPresenter: AIChatNativePermissionPresenter?
+
+    func browserToolsDidBecomeActive() {
+        browserToolsSurfaceVisible = true
+    }
+
+    func browserToolsWillLeaveScreen() {
+        browserToolsSurfaceVisible = false
+        cancelPendingBrowserToolRequests()
+    }
+
+    private func cancelPendingBrowserToolRequests() {
+        if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
+    }
+
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -1155,6 +1171,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if browserToolsPermissionPresenter?.isPresentingPermission != true { cancelPendingBrowserToolRequests() }
         closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         duckAISwipeNewChat?.cancel()
@@ -2635,6 +2652,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        browserToolsWillLeaveScreen()
         closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
@@ -4233,7 +4251,7 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         guard isSitePermissionsEnabled else {
-            // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
+            // iOS 15 has no site permissions, so it keeps the existing content-blocking wait.
             if isMainFrame {
                 startContentBlockingWaitTimeoutPixel(until: userContentController.$contentBlockingAssets.filter { $0 != nil })
             }
@@ -5359,7 +5377,9 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
         userScripts.browserUiLockSubfeature.delegate = self
-        configureSitePermissionsMediaCapture(with: userScripts.mediaCaptureUserScript)
+        if let mediaCaptureUserScript = userScripts.mediaCaptureUserScript {
+            configureSitePermissionsMediaCapture(with: mediaCaptureUserScript)
+        }
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement
@@ -5383,7 +5403,14 @@ extension TabViewController: UserContentControllerDelegate {
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         if let browserToolsService, let browserToolScopeFactory,
            let webView, webView.configuration.userContentController === userContentController {
-            userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel, makeScope: browserToolScopeFactory)
+            if browserToolsPermissionPresenter == nil {
+                browserToolsPermissionPresenter = AIChatNativePermissionPresenter { [weak self] in
+                    guard let self, self.browserToolsSurfaceVisible, self.isTabCurrentlyPresented() else { return nil }
+                    return self
+                }
+            }
+            userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel,
+                                                        presenter: browserToolsPermissionPresenter, makeScope: browserToolScopeFactory)
         }
         userScripts.aiChatUserScript.connectInitialPromptSession(initialAIChatPromptSession)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()

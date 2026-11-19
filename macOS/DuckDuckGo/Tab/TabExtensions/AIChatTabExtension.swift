@@ -50,6 +50,7 @@ final class AIChatTabExtension {
     private let attachmentPrivacyDisclosureProvider: () -> AttachmentPrivacyDisclosure
     private let preferencesStorage: AIChatPreferencesStorage
     private let pixelFiring: PixelFiring?
+    private let tabsPreferences: TabsPreferences
 
     /// Source of the tab's latest content, for telling how a navigation to Duck.ai started.
     private var latestContentSource: TabContent.URLSource?
@@ -106,8 +107,10 @@ final class AIChatTabExtension {
          burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry? = NSApp.delegateTyped.burnerDuckAiStorageRegistry,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil,
          preferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences) {
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.tabsPreferences = tabsPreferences
         self.preferencesStorage = preferencesStorage
         self.pixelFiring = pixelFiring
         self.isTabBurner = isTabBurner
@@ -427,9 +430,30 @@ extension AIChatTabExtension: NavigationResponder {
             return .next
         }
 
-        let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
-        tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link))
+        let behavior = Self.sidebarLinkOpenBehavior(isMiddleButtonClick: navigationAction.navigationType.isMiddleButtonClick,
+                                                    modifierFlags: navigationAction.modifierFlags,
+                                                    switchToNewTabWhenOpened: tabsPreferences.switchToNewTabWhenOpened)
+        switch behavior {
+        case .newWindow(selected: let selected):
+            WindowsManager.openNewWindow(with: navigationAction.url, source: .link, isBurner: isTabBurner, showWindow: selected)
+        case .newTab(selected: let selected):
+            let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
+            tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link), selected: selected)
+        case .currentTab:
+            assertionFailure("Sidebar links never load in the current tab")
+        }
         return .cancel
+    }
+
+    /// Links clicked in the sidebar always leave it, so a plain click opens a selected tab,
+    /// while ⌘-click, middle-click and their ⇧/⌥ variants follow the same rules as in a regular tab.
+    static func sidebarLinkOpenBehavior(isMiddleButtonClick: Bool,
+                                        modifierFlags: NSEvent.ModifierFlags,
+                                        switchToNewTabWhenOpened: Bool) -> LinkOpenBehavior {
+        let behavior = LinkOpenBehavior(button: isMiddleButtonClick ? .middle : .left,
+                                        modifierFlags: modifierFlags,
+                                        switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpened)
+        return behavior == .currentTab ? .newTab(selected: true) : behavior
     }
 
     func navigationDidFinish(_ navigation: Navigation) {

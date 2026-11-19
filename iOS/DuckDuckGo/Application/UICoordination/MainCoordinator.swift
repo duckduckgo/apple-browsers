@@ -37,6 +37,7 @@ import Networking
 import WebExtensions
 import Onboarding
 import FeatureFlags_iOS
+import WebPageTranslation
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -151,7 +152,8 @@ final class MainCoordinator {
          onboardingManager: OnboardingManaging,
          eventHub: EventHubManaging,
          usageContextProvider: UsageContextProviding,
-         promptExposureReporter: PromptExposureReporting
+         promptExposureReporter: PromptExposureReporting,
+         translationModels: TranslationModels?
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -350,7 +352,8 @@ final class MainCoordinator {
                                         onboardingManager: onboardingManager,
                                         promoCoordinationService: promoCoordinationService,
                                         usageContextProvider: usageContextProvider,
-                                        promptExposureReporter: promptExposureReporter)
+                                        promptExposureReporter: promptExposureReporter,
+                                        translationModels: translationModels)
 
         onboardingTimeLimitCancellable = daxDialogs.isDismissedPublisher
             .filter { [weak daxDialogs] isDismissed in

@@ -192,6 +192,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
     case webPageTranslation
 
-    /// https://app.asana.com/1/137249556945/task/1219265729430356
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220697284449900
     case newTabPageStickyInput
 }

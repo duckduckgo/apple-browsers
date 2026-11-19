@@ -712,7 +712,7 @@ public enum FeatureFlag: String {
     case aiChatLocalModels
 
     /// Pins the redesigned New Tab Page's input to the top while the rest of the page scrolls.
-    /// https://app.asana.com/1/137249556945/task/1219265729430356
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220697284449900
     case newTabPageStickyInput
 }
 

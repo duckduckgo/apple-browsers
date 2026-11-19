@@ -27,9 +27,13 @@ import Testing
 @MainActor
 struct ContextualOnboardingDialogSchedulerTests {
 
-    private let provider = StubDialogProvider()
+    private let provider = MockContextualOnboardingState()
     private let sent = SentUpdates()
     let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.contextualOnboarding.rawValue: true])
+
+    init() {
+        provider.state = .ongoing
+    }
 
     func makeScheduler(isInPopUpWindow: Bool = false) -> ContextualOnboardingDialogScheduler {
         let scheduler = ContextualOnboardingDialogScheduler(dialogProvider: provider,
@@ -123,7 +127,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Showing the last dialog doesn't move onboarding forward", .timeLimit(.minutes(1)))
     func showLastDialogDoesNotAdvance() async {
-        provider.lastDialogForTabStub = .subscriptionUpsell
+        provider.lastDialog = .subscriptionUpsell
         let tab = await Tab(content: .newtab)
 
         makeScheduler().showLastDialog(in: tab)
@@ -137,7 +141,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("When the window becomes key, the last dialog of the tab comes back", .timeLimit(.minutes(1)))
     func windowKeyShowsLastDialog() async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil)
@@ -148,7 +152,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("When the window becomes key with the same dialog on screen, it is kept", .timeLimit(.minutes(1)))
     func windowKeyKeepsSameDialog() async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite)
@@ -159,7 +163,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("When the window becomes key with an outdated dialog on screen, it is replaced", .timeLimit(.minutes(1)))
     func windowKeyReplacesOutdatedDialog() async {
-        provider.lastDialogForTabStub = .tryFireButton
+        provider.lastDialog = .tryFireButton
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: .tryASite)
@@ -171,7 +175,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @Test("A dismissed dialog or a tab switch keeps the dialog away when the window becomes key", .timeLimit(.minutes(1)),
           arguments: [true, false])
     func dismissKeepsDialogAway(byTabSwitch: Bool) async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
         let scheduler = makeScheduler()
 
@@ -189,7 +193,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Showing a dialog again lets the window bring it back after a dismiss", .timeLimit(.minutes(1)))
     func showingResetsDismissed() async {
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
         let scheduler = makeScheduler()
         scheduler.dialogDismissed()
@@ -204,7 +208,7 @@ struct ContextualOnboardingDialogSchedulerTests {
     @Test("When onboarding is completed, the window becoming key changes nothing", .timeLimit(.minutes(1)))
     func windowKeyAfterCompletion() async {
         provider.state = .onboardingCompleted
-        provider.lastDialogForTabStub = .tryASite
+        provider.lastDialog = .tryASite
         let tab = await Tab(content: .newtab)
 
         makeScheduler().windowDidBecomeKey(tab: tab, displayed: nil)
@@ -216,33 +220,4 @@ struct ContextualOnboardingDialogSchedulerTests {
 /// Collects what the scheduler sends through `onUpdate`.
 private final class SentUpdates {
     var updates: [ContextualOnboardingDialogUpdate] = []
-}
-
-/// Keeps "next dialog" and "last dialog for this tab" apart, so tests can tell which one was asked.
-private final class StubDialogProvider: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
-    var nextDialog: ContextualDialogType?
-    var lastDialogForTabStub: ContextualDialogType?
-    private(set) var dialogTypeForTabCallCount = 0
-    private(set) var turnOffFeatureCallCount = 0
-
-    var lastDialog: ContextualDialogType?
-    var state: ContextualOnboardingState = .ongoing
-    @Published var isContextualOnboardingCompleted = false
-    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
-
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
-        dialogTypeForTabCallCount += 1
-        return nextDialog
-    }
-
-    func lastDialogForTab(_ tab: Tab) -> ContextualDialogType? {
-        lastDialogForTabStub
-    }
-
-    func gotItPressed() {}
-    func fireButtonUsed() {}
-
-    func turnOffFeature() {
-        turnOffFeatureCallCount += 1
-    }
 }

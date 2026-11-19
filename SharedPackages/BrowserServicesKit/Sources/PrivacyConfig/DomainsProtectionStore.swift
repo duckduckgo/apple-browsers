@@ -26,3 +26,30 @@ public protocol DomainsProtectionStore: AnyObject {
 
     func enableProtection(forDomain domain: String)
 }
+
+/// Forwards to another store and calls `didChange` after each change, so the user's allowlist can be observed when
+/// it is written rather than when something derived from it, such as content blocking rules, is rebuilt.
+final class ObservedDomainsProtectionStore: DomainsProtectionStore {
+
+    private let store: DomainsProtectionStore
+    private let didChange: () -> Void
+
+    init(_ store: DomainsProtectionStore, didChange: @escaping () -> Void) {
+        self.store = store
+        self.didChange = didChange
+    }
+
+    var unprotectedDomains: Set<String> {
+        store.unprotectedDomains
+    }
+
+    func disableProtection(forDomain domain: String) {
+        store.disableProtection(forDomain: domain)
+        didChange()
+    }
+
+    func enableProtection(forDomain domain: String) {
+        store.enableProtection(forDomain: domain)
+        didChange()
+    }
+}

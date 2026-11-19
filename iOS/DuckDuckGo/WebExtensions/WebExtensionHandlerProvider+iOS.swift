@@ -59,9 +59,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
                     cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                     delegate: autoconsentDelegate
                 ),
-                UserAllowlistWebExtensionMessageHandler(allowlist: { [privacyConfigurationManager] in
-                    privacyConfigurationManager.privacyConfig.userUnprotectedDomains
-                }),
+                UserAllowlistWebExtensionMessageHandler(privacyConfigurationManager: privacyConfigurationManager),
             ]
         case .darkReader:
             guard let provider = darkReaderExcludedDomainsProvider else { return [] }

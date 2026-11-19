@@ -75,12 +75,6 @@ public final class WebExtensionEventOutbox: @unchecked Sendable {
         events = []
         return drained
     }
-
-    public var isEmpty: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return events.isEmpty
-    }
 }
 
 /// Answers the extension's `drainEvents` requests from an outbox.

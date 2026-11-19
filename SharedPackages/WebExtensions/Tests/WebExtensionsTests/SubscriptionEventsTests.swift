@@ -27,7 +27,6 @@ final class WebExtensionEventOutboxTests: XCTestCase {
         outbox.enqueue(WebExtensionSubscriptionEvent(featureName: "b", subscriptionName: "x"))
 
         XCTAssertEqual(outbox.drain().map(\.featureName), ["a", "b"])
-        XCTAssertTrue(outbox.isEmpty)
         XCTAssertTrue(outbox.drain().isEmpty)
     }
 
@@ -65,7 +64,7 @@ final class SubscriptionEventsWebExtensionMessageHandlerTests: XCTestCase {
         XCTAssertEqual(events.first?["featureName"] as? String, "userAllowlist")
         XCTAssertEqual(events.first?["subscriptionName"] as? String, "onAllowlistChanged")
         XCTAssertEqual((events.first?["params"] as? [String: Any])?["version"] as? String, "v1")
-        XCTAssertTrue(outbox.isEmpty)
+        XCTAssertTrue(outbox.drain().isEmpty)
     }
 
     func testUnknownMethodFails() async {

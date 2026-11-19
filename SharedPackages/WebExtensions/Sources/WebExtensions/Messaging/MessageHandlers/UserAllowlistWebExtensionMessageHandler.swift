@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import CryptoKit
 import Foundation
+import FoundationExtensions
 import os.log
+import PrivacyConfig
 
 /// The user's allowlist (sites where the user turned protections off) and a version that identifies its contents.
 ///
@@ -26,21 +27,25 @@ import os.log
 /// list. The extension sends the version it holds, and gets the list back only when the versions differ.
 public struct UserAllowlistSnapshot: Equatable {
 
+    /// Reads the user's allowlist from the privacy configuration.
+    static func allowlist(from privacyConfigurationManager: PrivacyConfigurationManaging) -> () -> [String] {
+        { [privacyConfigurationManager] in privacyConfigurationManager.privacyConfig.userUnprotectedDomains }
+    }
+
     public let domains: [String]
     public let version: String
 
     public init(domains: [String]) {
         let sorted = Array(Set(domains)).sorted()
         self.domains = sorted
-        let digest = SHA256.hash(data: Data(sorted.joined(separator: "\n").utf8))
-        self.version = digest.map { String(format: "%02x", $0) }.joined()
+        self.version = sorted.joined(separator: "\n").sha256
     }
 }
 
 /// Answers the embedded extension's `userAllowlist` messages.
 ///
 /// The extension pulls the list when its background starts. Later changes reach it as subscription events (see
-/// `WebExtensionManager.installUserAllowlistNotifier(changes:allowlist:)`).
+/// `WebExtensionManager.installUserAllowlistNotifier(privacyConfigurationManager:)`).
 @available(macOS 15.4, iOS 18.4, *)
 public final class UserAllowlistWebExtensionMessageHandler: WebExtensionMessageHandler {
 
@@ -56,6 +61,11 @@ public final class UserAllowlistWebExtensionMessageHandler: WebExtensionMessageH
     ///   `privacyConfigurationManager.privacyConfig.userUnprotectedDomains`.
     public init(allowlist: @escaping () -> [String]) {
         self.allowlist = allowlist
+    }
+
+    /// Answers with `privacyConfigurationManager.privacyConfig.userUnprotectedDomains`.
+    public convenience init(privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.init(allowlist: UserAllowlistSnapshot.allowlist(from: privacyConfigurationManager))
     }
 
     public func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {

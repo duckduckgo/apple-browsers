@@ -20,6 +20,7 @@ import Combine
 import ConcurrencyExtensions
 import Foundation
 import os.log
+import PrivacyConfig
 
 /// Names shared with the embedded extension's `UserAllowlistSync` component.
 public enum UserAllowlistSync {
@@ -31,8 +32,8 @@ public enum UserAllowlistSync {
 
 /// Tells the embedded extension when the user's allowlist changes.
 ///
-/// `changes` may fire for unrelated reasons, such as content blocking rules recompiling after a config update, so
-/// the notifier compares allowlist versions and signals the extension only when the list itself changed.
+/// `changes` may fire without the list changing, for example when protections are turned back on for a site that
+/// wasn't on the list, so the notifier compares allowlist versions and signals the extension only on a real change.
 @MainActor
 public final class UserAllowlistChangeNotifier {
 
@@ -68,14 +69,18 @@ extension WebExtensionManager {
     /// Starts sending allowlist changes to the embedded extension as `UserAllowlistSync.changedSubscriptionName`
     /// subscription events.
     ///
-    /// - Parameters:
-    ///   - changes: Fires after the allowlist may have changed. Content blocking rules recompile after every
-    ///     allowlist toggle, so their updates publisher is a suitable source.
-    ///   - allowlist: The domains the user has turned protections off for.
+    /// The extension hears about a change as soon as the privacy configuration stores it, without waiting for
+    /// content blocking rules to be rebuilt.
+    ///
+    /// - Parameter privacyConfigurationManager: Stores the domains the user has turned protections off for, and
+    ///   publishes when they change.
     @MainActor
-    public func installUserAllowlistNotifier(changes: AnyPublisher<Void, Never>, allowlist: @escaping () -> [String]) {
+    public func installUserAllowlistNotifier(privacyConfigurationManager: PrivacyConfigurationManaging) {
         guard userAllowlistNotifier == nil else { return }
-        userAllowlistNotifier = UserAllowlistChangeNotifier(changes: changes, allowlist: allowlist) { [weak self] snapshot in
+        userAllowlistNotifier = UserAllowlistChangeNotifier(
+            changes: privacyConfigurationManager.userUnprotectedDomainsPublisher,
+            allowlist: UserAllowlistSnapshot.allowlist(from: privacyConfigurationManager)
+        ) { [weak self] snapshot in
             Logger.webExtensions.debug("🛡️ Allowlist changed (\(snapshot.domains.count, privacy: .public) domains)")
             self?.sendSubscriptionEvent(WebExtensionSubscriptionEvent(
                 featureName: UserAllowlistSync.featureName,

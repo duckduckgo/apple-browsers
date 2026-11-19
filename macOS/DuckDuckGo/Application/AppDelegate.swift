@@ -2414,10 +2414,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger
         )
         webExtensionManager.installUserAllowlistNotifier(
-            changes: privacyFeatures.contentBlocking.contentBlockingManager.updatesPublisher.map { _ in () }.eraseToAnyPublisher(),
-            allowlist: { [privacyConfigurationManager = privacyFeatures.contentBlocking.privacyConfigurationManager] in
-                privacyConfigurationManager.privacyConfig.userUnprotectedDomains
-            }
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
         )
         let nativeBitwardenRetirement = NativeBitwardenRetirement(
             isBitwardenExtensionInstalled: { [weak webExtensionManager] in

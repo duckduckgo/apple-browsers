@@ -81,13 +81,13 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
     public func handle(pixel: Subscription.KeychainManager.Pixel) {
         switch pixel {
         case .deallocatedWithBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         case .dataAddedToTheBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         case .dataWroteFromBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         case .failedToWriteDataFromBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         }
     }
 }

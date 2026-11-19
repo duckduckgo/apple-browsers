@@ -78,10 +78,10 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
     case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
     // KeychainManager
-    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
     // VPN Subscription Funnel Entry Points
     case subscriptionVPNToolbarImpression(isSubscriptionActive: Bool?)
     case subscriptionVPNToolbarClick(isSubscriptionActive: Bool?)
@@ -162,6 +162,7 @@ enum SubscriptionPixel: PixelKit.Event {
     private struct SubscriptionPixelsDefaults {
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let tokenTypeKey = "token_type"
         static let platformKey = "platform"
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
         static let entryPointKey = "entry_point"
@@ -184,12 +185,15 @@ enum SubscriptionPixel: PixelKit.Event {
         switch self {
         case .subscriptionInvalidRefreshTokenDetected(let source),
                 .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
-                .subscriptionPendingTransactionApproved(let source),
-                .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
-                .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
-                .subscriptionKeychainManagerDataWroteFromBacklog(let source),
-                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
+                .subscriptionPendingTransactionApproved(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionKeychainManagerDataAddedToTheBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerDeallocatedWithBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerDataWroteFromBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source, let tokenType):
+            var parameters = [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+            parameters[SubscriptionPixelsDefaults.tokenTypeKey] = tokenType?.rawValue
+            return parameters
         case .subscriptionInvalidRefreshTokenRecovered(let method):
             return method.map { [SubscriptionPixelsDefaults.recoveryMethodKey: $0.rawValue] }
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):

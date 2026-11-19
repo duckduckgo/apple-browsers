@@ -384,22 +384,22 @@ final class ContentScopeUserScriptTests: XCTestCase {
         )
     }
 
-    func testWhenSurrogateInjectionIsDisabledThenSurrogateInjectionEnabledIsFalse() throws {
-        let source = try generatedSource(for: .contentScope(isSurrogateInjectionDisabled: true))
+    func testWhenScriptSurrogateInjectionIsDisabledThenArgIsTrue() throws {
+        let source = try generatedSource(for: .contentScope(disableScriptSurrogateInjection: true))
 
-        XCTAssertTrue(source.contains("\"surrogateInjectionEnabled\":false"))
+        XCTAssertTrue(source.contains("\"disableScriptSurrogateInjection\":true"))
     }
 
-    func testWhenSurrogateInjectionIsNotDisabledThenSurrogateInjectionEnabledIsAbsent() throws {
+    func testWhenScriptSurrogateInjectionIsNotDisabledThenArgIsAbsent() throws {
         let source = try generatedSource(for: .contentScope())
 
-        XCTAssertFalse(source.contains("\"surrogateInjectionEnabled\":"), "C-S-S defaults to injecting when the key is absent")
+        XCTAssertFalse(source.contains("\"disableScriptSurrogateInjection\":"), "C-S-S injects surrogates when the arg is absent")
     }
 
-    func testWhenNonContentScopeContextThenSurrogateInjectionEnabledIsAbsent() throws {
+    func testWhenNonContentScopeContextThenArgIsAbsent() throws {
         let source = try generatedSource(for: .contentScopeIsolated)
 
-        XCTAssertFalse(source.contains("\"surrogateInjectionEnabled\":"))
+        XCTAssertFalse(source.contains("\"disableScriptSurrogateInjection\":"))
     }
 
     // MARK: - ContentScopeUserScript Integration Tests with aiChatDataClearing Context

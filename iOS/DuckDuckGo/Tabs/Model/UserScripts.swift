@@ -115,7 +115,7 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData,
-                                                                                             isSurrogateInjectionDisabled: sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true),
+                                                                                             disableScriptSurrogateInjection: sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true),
                                                                 allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue,
                                                                                              SelectionFrameUserScript.featureName],
                                                                 privacyConfigurationJSONGenerator: configGenerator)

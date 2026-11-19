@@ -185,7 +185,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
             // Windows found injecting it broke the aiChat message bridge, which is shared code.
             let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
-            let isSurrogateInjectionDisabled = sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
+            let disableScriptSurrogateInjection = sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
@@ -194,7 +194,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                 excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData, isSurrogateInjectionDisabled: isSurrogateInjectionDisabled), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData, disableScriptSurrogateInjection: disableScriptSurrogateInjection), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {

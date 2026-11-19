@@ -56,4 +56,27 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     var isExtensionManagementAvailable: Bool {
         isAvailable && featureFlagger.isFeatureOn(.webExtensions)
     }
+
+    var isAppleSurrogateRedirectionEnabled: Bool {
+        featureFlagger.isAppleSurrogateRedirectionEnabled()
+    }
+}
+
+extension FeatureFlagger {
+
+    /// Whether the embedded web extension serves surrogates instead of content-scope-scripts.
+    ///
+    /// Needs macOS 26 or later, the embedded extension (`webExtensions.embedded`, the gate on using the extension at all),
+    /// and `trackerProtection.appleSurrogateRedirection`. This is the only place that combines them.
+    /// - Parameter isOSSupported: Whether this macOS version supports it; overridable for tests.
+    func isAppleSurrogateRedirectionEnabled(isOSSupported: Bool = Self.isAppleSurrogateRedirectionOSSupported) -> Bool {
+        isOSSupported && isFeatureOn(.embeddedExtension) && isFeatureOn(.appleSurrogateRedirection)
+    }
+
+    static var isAppleSurrogateRedirectionOSSupported: Bool {
+        if #available(macOS 26, *) {
+            return true
+        }
+        return false
+    }
 }

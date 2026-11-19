@@ -47,19 +47,25 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     private let autoconsentPreferences: AutoconsentPreferencesProviding
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring?
     private weak var delegate: AutoconsentMessageHandlerDelegate?
+    private let isAppleSurrogateRedirectionEnabled: () -> Bool
 
     public var handledFeatureName: String { "autoconsent" }
 
+    /// - Parameter isAppleSurrogateRedirectionEnabled: The app's answer for `trackerProtection.appleSurrogateRedirection`,
+    ///   which also checks the OS version and the embedded extension flag, so the extension sees the same value that
+    ///   decides whether content-scope-scripts injects surrogates.
     public init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
-        delegate: AutoconsentMessageHandlerDelegate? = nil
+        delegate: AutoconsentMessageHandlerDelegate? = nil,
+        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool = { false }
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.delegate = delegate
+        self.isAppleSurrogateRedirectionEnabled = isAppleSurrogateRedirectionEnabled
     }
 
     public func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
@@ -218,6 +224,12 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         guard let feature = PrivacyFeature(rawValue: featureName) else {
             Logger.webExtensions.error("❌ Unknown feature name: \(featureName)")
             return .success(["enabled": false])
+        }
+
+        // Only this one tracker protection subfeature is exposed. Checking arbitrary subfeatures could assign the
+        // user to an experiment cohort as a side effect.
+        if feature == .trackerProtection, subfeatureName == TrackerProtectionConfigSubfeature.appleSurrogateRedirection.rawValue {
+            return .success(["enabled": isAppleSurrogateRedirectionEnabled()])
         }
 
         guard feature == .autoconsent else {

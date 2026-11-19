@@ -30,4 +30,12 @@ public protocol WebExtensionAvailabilityProviding {
 
     /// Whether the user can manage web extensions
     var isExtensionManagementAvailable: Bool { get }
+
+    /// Whether the embedded web extension serves surrogates instead of content-scope-scripts
+    /// (`trackerProtection.appleSurrogateRedirection`, combined with the OS version and embedded extension checks).
+    var isAppleSurrogateRedirectionEnabled: Bool { get }
+}
+
+public extension WebExtensionAvailabilityProviding {
+    var isAppleSurrogateRedirectionEnabled: Bool { false }
 }

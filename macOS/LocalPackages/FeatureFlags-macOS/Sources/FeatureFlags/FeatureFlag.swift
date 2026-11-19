@@ -172,6 +172,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
+    /// Serve surrogates from the embedded web extension instead of content-scope-scripts (macOS 26+, needs `embeddedExtension`).
+    /// Use `WebExtensionAvailability.isAppleSurrogateRedirectionEnabled`, which also checks those conditions.
+    case appleSurrogateRedirection
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
 
@@ -866,6 +870,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.iCloudPasswords), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
+        case .appleSurrogateRedirection:
+            Config(source: .remoteReleasable(TrackerProtectionConfigSubfeature.appleSurrogateRedirection), category: .webExtensions)
         case .adBlockingExtension:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
         case .adBlockingExtensionEnabledByDefault:

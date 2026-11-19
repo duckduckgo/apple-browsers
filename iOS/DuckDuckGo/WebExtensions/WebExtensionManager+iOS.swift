@@ -151,7 +151,10 @@ public enum WebExtensionManagerFactory {
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
                 searchTokenProvider: searchTokenProvider,
-                eventHub: eventHub
+                eventHub: eventHub,
+                isAppleSurrogateRedirectionEnabled: {
+                    featureFlagger.isAppleSurrogateRedirectionEnabled(isNativeMessagingSupported: NativeMessagingSupport().isSupported)
+                }
             ),
             scriptletConfiguration: scriptletConfiguration
         )

@@ -21,6 +21,7 @@ import Foundation
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
     case contentBlocking
+    case trackerProtection
     case duckPlayer
     case fingerprintingTemporaryStorage
     case fingerprintingBattery
@@ -861,6 +862,16 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
     case tdsNextExperiment028
     case tdsNextExperiment029
     case tdsNextExperiment030
+}
+
+/// Subfeatures of the `trackerProtection` feature, which configures the content-scope-scripts tracker protection (surrogates).
+/// Named with `Config` to avoid clashing with `TrackerProtectionSubfeature`, the content-scope-scripts message handler.
+public enum TrackerProtectionConfigSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .trackerProtection }
+
+    /// Serve surrogates from the embedded web extension instead of injecting them from content-scope-scripts.
+    /// Only takes effect on macOS/iOS 26+ with the embedded extension enabled; see each app's `isAppleSurrogateRedirectionEnabled`.
+    case appleSurrogateRedirection
 }
 
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {

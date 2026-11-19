@@ -181,7 +181,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue] + nativeOnlyFeatures)
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue] + nativeOnlyFeatures,
+                isSurrogateInjectionDisabled: { [webExtensionAvailability = sourceProvider.webExtensionAvailability] in
+                    webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
+                })
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,

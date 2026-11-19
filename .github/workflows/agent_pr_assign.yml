@@ -1,0 +1,49 @@
+name: Agent PR Assign
+
+# Assigns pull requests opened by the agent worker (agent/worker-* branches)
+# to the assignee of the Asana task linked in their "Task/Issue URL:" line,
+# mapped to a GitHub login through the GitHub → Asana user map. For feature
+# flag removals that's the flag's owner. Leaves the PR unassigned, with a
+# warning, when the task has no assignee or they aren't in the map.
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  assign:
+    name: Assign to the task owner
+    if: startsWith(github.head_ref, 'agent/worker-') && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Fetch GitHub → Asana user map
+        env:
+          GH_TOKEN: ${{ secrets.APPLE_GH_RO_PAT }}
+        run: |
+          gh api repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml \
+            --jq .content | base64 -d > "$RUNNER_TEMP/user_map.yml"
+
+      - name: Find the task owner
+        id: owner
+        env:
+          ASANA_PAT: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          USER_MAP_PATH: ${{ runner.temp }}/user_map.yml
+        run: python3 scripts/agent-pr-assign/agent_pr_assign.py
+
+      - name: Assign the pull request
+        if: steps.owner.outputs.login != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOGIN: ${{ steps.owner.outputs.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-assignee "$LOGIN"

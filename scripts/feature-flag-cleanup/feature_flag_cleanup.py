@@ -48,10 +48,7 @@ AGENT_PROJECT_GIDS = {
     "macOS": "1201037661562251",  # macOS App Development
 }
 
-FEATURE_FLAG_FILES = {
-    "iOS": "iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift",
-    "macOS": "macOS/LocalPackages/FeatureFlags-macOS/Sources/FeatureFlags/FeatureFlag.swift",
-}
+PLATFORMS = {"iOS", "macOS"}
 
 FLAG_NAME_PATTERN = re.compile(r"Flag name:\s*`?([A-Za-z_][A-Za-z0-9_]*)")
 
@@ -159,7 +156,7 @@ def plan_removal(task: dict) -> tuple[Optional[FlagRemoval], str]:
         return None, "unknown Auto Removal option"
 
     platform = (enum_value(task, PLATFORM_FIELD_GID) or {}).get("name")
-    if platform not in FEATURE_FLAG_FILES:
+    if platform not in PLATFORMS:
         return None, "Platform not set"
     if platform not in AGENT_PROJECT_GIDS:
         return None, f"no agent project for {platform} yet"
@@ -177,8 +174,7 @@ def render_prompt(removal: FlagRemoval, template: str) -> str:
         flag=removal.flag,
         platform=removal.platform,
         decision="approved" if removal.keep_enabled_path else "rejected",
-        kept_path="enabled (`true`)" if removal.keep_enabled_path else "disabled (`false`)",
-        feature_flag_file=FEATURE_FLAG_FILES[removal.platform],
+        kept_path="enabled" if removal.keep_enabled_path else "disabled",
     )
 
 

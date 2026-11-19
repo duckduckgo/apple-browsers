@@ -165,7 +165,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
             },
             autoRestoreProvider: syncAutoRestoreHandler,
             isImprovedPairingFlowEnabled: featureFlagger.isFeatureOn(.syncImprovedPairingFlow),
-            deviceActivityViewModel: DeviceActivityViewModel.make(syncService: syncService)
+            deviceActivityViewModel: DeviceActivityViewModel.make(syncService: syncService),
+            notificationSettingsViewModel: SyncNotificationSettingsViewModel(provider: SyncNotificationSettings())
         )
         self.viewModel = viewModel
 
@@ -181,6 +182,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         setUpAIChatSyncFeatureFlag(viewModel)
         setUpDeviceActivityFeatureFlag(viewModel)
         setUpPendingLoginEvents(viewModel)
+        setUpSyncNotificationsFeatureFlag(viewModel)
         refreshForState(syncService.authState)
 
         syncService.authStatePublisher
@@ -275,6 +277,21 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
                     viewModel.isDeviceActivityPresented = false
                     viewModel.deviceActivityViewModel?.cancelAndClear()
                 }
+            }
+            .store(in: &cancellables)
+    }
+
+    private var areSyncNotificationsAvailable: Bool {
+        featureFlagger.isFeatureOn(.syncLoginAuditLog) && featureFlagger.isFeatureOn(.syncLoginNotification)
+    }
+
+    private func setUpSyncNotificationsFeatureFlag(_ viewModel: SyncSettingsViewModel) {
+        viewModel.areSyncNotificationsAvailable = areSyncNotificationsAvailable
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                viewModel.areSyncNotificationsAvailable = self.areSyncNotificationsAvailable
             }
             .store(in: &cancellables)
     }

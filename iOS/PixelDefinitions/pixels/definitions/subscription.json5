@@ -4,7 +4,7 @@
         "description": "Fired once per keychain item when Privacy Pro keychain manager can't write it because the keychain is unavailable, and queues it in the backlog",
         "owners": ["federicocappelli"],
         "triggers": ["exception"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -25,7 +25,7 @@
         "description": "Fired once per keychain item still queued in the backlog when Privacy Pro keychain manager is deallocated, so the item was never written",
         "owners": ["federicocappelli"],
         "triggers": ["exception"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -46,7 +46,7 @@
         "description": "Fired once per keychain item that a backlog retry of Privacy Pro keychain manager writes to the keychain",
         "owners": ["federicocappelli"],
         "triggers": ["feature_lifecycle"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -67,7 +67,7 @@
         "description": "Fired once per keychain item that a backlog retry of Privacy Pro keychain manager fails to write with a permanent error",
         "owners": ["federicocappelli"],
         "triggers": ["exception"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",

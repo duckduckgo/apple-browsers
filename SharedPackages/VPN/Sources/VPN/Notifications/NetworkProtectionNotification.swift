@@ -105,6 +105,7 @@ public enum NetworkProtectionNotification: String {
     case showIssuesNotResolvedNotification
     case showVPNSupersededNotification
     case showExpiredEntitlementNotification
+    case showSignedOutNotification
     case showTestNotification
     case showStrictRoutingReminderNotification
 

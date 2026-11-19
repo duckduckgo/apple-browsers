@@ -66,6 +66,20 @@ extension UserDefaults {
         }
     }
 
+    private var signedOutNotificationShownKey: String {
+        "signedOutNotificationShown"
+    }
+
+    /// Whether the signed-out notification was shown since the VPN last connected.
+    public var signedOutNotificationShown: Bool {
+        get {
+            bool(forKey: signedOutNotificationShownKey)
+        }
+        set {
+            set(newValue, forKey: signedOutNotificationShownKey)
+        }
+    }
+
     private var suppressEntitlementMessagingKey: String {
         "suppressEntitlementMessaging"
     }

@@ -56,14 +56,10 @@ public protocol VPNNotificationsPresenting {
     func clearAuthorizationSuppression()
 
     /// Present a notification asking the user to open the app, shown when the tunnel can't start because no auth token is stored.
-    /// Defaults to `showEntitlementNotification()`.
     func showSignedOutNotification()
 
 }
 
 public extension VPNNotificationsPresenting {
     func clearAuthorizationSuppression() {}
-    func showSignedOutNotification() {
-        showEntitlementNotification()
-    }
 }

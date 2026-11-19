@@ -36,8 +36,8 @@ final class WebExtensionPermissionsMessageHandler: NSObject, WKScriptMessageHand
     /// The loaded extension context the page URL belongs to.
     @MainActor var extensionContext: (URL) -> WKWebExtensionContext? = { _ in nil }
 
-    /// Where the permissions are asked for and kept.
-    @MainActor var controller: WebExtensionPermissionController?
+    /// Where the permissions are asked for and kept; `nil` while permission enforcement is off.
+    @MainActor var controller: () -> WebExtensionPermissionController? = { nil }
 
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
@@ -69,7 +69,7 @@ final class WebExtensionPermissionsMessageHandler: NSObject, WKScriptMessageHand
               !originHost.isEmpty,
               let url = URL(string: "\(Self.extensionScheme)://\(originHost)/"),
               let context = extensionContext(url),
-              let controller else {
+              let controller = controller() else {
             return refusal
         }
 

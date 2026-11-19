@@ -384,6 +384,16 @@ final class BrowserToolsDebugViewController: NSViewController {
             let owner = ownerTabProvider()?.uuid
             return ownerCollection.map { ($0.pinnedTabsCollection?.tabs ?? []) + $0.tabCollection.tabs }?
                 .first { $0.uuid != owner }?.uuid
+        case ("pinTab", "tabIds"):
+            let owner = ownerTabProvider()?.uuid
+            return ownerCollection?.tabCollection.tabs.first { $0.uuid != owner }?.uuid
+        case ("closeTabs", "tabIds"):
+            let owner = ownerTabProvider()?.uuid
+            return ownerCollection?.tabCollection.tabs.first { $0.uuid != owner }?.uuid
+        case ("bookmarkTab", "folder"): return "Duck.ai"
+        case ("openTab", "url"): return "https://duckduckgo.com"
+        case ("searchDownloads", "query"): return "pdf"
+        case ("searchBookmarks", "query"): return "duck"
         case ("searchHistory", "query"): return "wiki"
         case ("searchHistory", "limit"): return "5"
         case ("findInPage", "query"): return "games"
@@ -406,7 +416,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             button.decision = decision
             return button
         }
-        let reason = service.catalog.enabledTools.first { $0.name == prompt.toolName }?.permissionReason ?? prompt.toolName
+        let reason = BrowserToolPermissionPromptText.title(toolName: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab)
         let entry = appendToLog(summary: "⇠ permission prompt  \(reason)",
                                 detail: "{\"requestID\": \"\(prompt.requestID)\", \"callID\": \"\(prompt.callID)\", \"tool\": \"\(prompt.toolName)\"}",
                                 accessories: buttons, highlighted: true)

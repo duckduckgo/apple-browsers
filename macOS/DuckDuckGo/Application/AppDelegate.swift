@@ -1061,9 +1061,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
-        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
-                                                              windowControllersManager: windowControllersManager,
-                                                              historyCoordinator: historyCoordinator)
         localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
@@ -1110,6 +1107,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
 #endif
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager,
+                                                              historyCoordinator: historyCoordinator,
+                                                              bookmarkManager: bookmarkManager,
+                                                              permissionManager: permissionManager)
         notificationService = UserNotificationAuthorizationService()
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)

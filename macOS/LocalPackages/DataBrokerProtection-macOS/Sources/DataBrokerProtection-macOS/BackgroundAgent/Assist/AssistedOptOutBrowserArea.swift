@@ -318,20 +318,6 @@ final class AssistedOptOutEdgeOverlayView: NSView {
     }
 }
 
-/// Covers the broker page while DuckDuckGo is in control and swallows clicks, keys and scrolling.
-@MainActor
-final class AssistedOptOutInputBlocker: NSView {
-    override var acceptsFirstResponder: Bool { true }
-
-    override func keyDown(with event: NSEvent) {}
-
-    override func scrollWheel(with event: NSEvent) {}
-
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .arrow)
-    }
-}
-
 /// Covers the page area until the broker page loads. It shows the intro before the user starts, then a loading placeholder.
 @MainActor
 struct AssistedOptOutPageCover: View {

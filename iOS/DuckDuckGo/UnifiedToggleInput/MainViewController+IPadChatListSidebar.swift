@@ -503,6 +503,8 @@ extension TabViewController {
         container.applyOpenState(isOpen)
         container.isHidden = !isOpen
 
+        // A tab set up off screen lays out once it joins a window; forcing it here makes the list's table warn.
+        guard view.window != nil else { return }
         UIView.performWithoutAnimation { view.layoutIfNeeded() }
     }
 
@@ -527,7 +529,7 @@ extension TabViewController {
         guard animated else {
             container.applyOpenState(isOpen)
             container.isHidden = !isOpen
-            view.layoutIfNeeded()
+            if view.window != nil { view.layoutIfNeeded() }
             return
         }
         // Start from the closed pose for the current layout, which a resize while closed may have changed.

@@ -114,7 +114,10 @@ extension MainViewController {
             }
             coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
             self?.updateUnifiedInputContentVisibility(for: coordinator)
-            self?.currentTab?.view.layoutIfNeeded()
+            // A tab refreshed before it joins a window lays out then; forcing it here makes the chats list's table warn.
+            if let tabView = self?.currentTab?.view, tabView.window != nil {
+                tabView.layoutIfNeeded()
+            }
         }
     }
 

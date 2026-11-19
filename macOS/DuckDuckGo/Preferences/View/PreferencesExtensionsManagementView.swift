@@ -486,10 +486,10 @@ extension Preferences {
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: Const.noteTextSpacing) {
-                    Text(UserText.extensionsSettingsNativeMessagingTitle)
+                    Text(UserText.webExtensionNativeMessagingUnavailableTitle(entry.listing.name))
                         .font(.system(size: Const.titleFontSize, weight: .regular))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                    Text(String(format: UserText.extensionsSettingsNativeMessagingMessage, entry.listing.name))
+                    Text(UserText.webExtensionNativeMessagingUnavailableMessage)
                         .font(.system(size: Const.detailsFontSize, weight: .regular))
                         .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
                         .lineSpacing(Const.noteMessageLineSpacing)

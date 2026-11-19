@@ -146,9 +146,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard),
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
-         addToDockMenuAction: AddToDockMenuAction? = nil) {
+         addToDockMenuAction: AddToDockMenuAction) {
 
-        self.addToDockMenuAction = addToDockMenuAction ?? AddToDockMenuAction(dockCustomization: dockCustomizer, featureFlagger: featureFlagger)
+        self.addToDockMenuAction = addToDockMenuAction
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager

@@ -255,7 +255,8 @@ extension AppDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: Any?) {
-        AddToDockMenuAction(dockCustomization: dockCustomization, featureFlagger: featureFlagger).perform(from: .mainMenu)
+        AddToDockMenuAction(dockCustomization: dockCustomization, featureFlagger: featureFlagger, videoPresenter: addToDockVideoPresenter)
+            .perform(from: .mainMenu)
     }
 
     @MainActor

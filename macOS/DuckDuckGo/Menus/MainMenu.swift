@@ -259,6 +259,7 @@ final class MainMenu: NSMenu {
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization,
+         addToDockVideoPresenter: AddToDockVideoPresenting,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          aiChatSuggestionsReader: AIChatSuggestionsReading,
@@ -281,7 +282,9 @@ final class MainMenu: NSMenu {
         self.appearancePreferences = appearancePreferences
         self.privacyConfigurationManager = privacyConfigurationManager
         self.appVersion = appVersion
-        self.addToDockMenuAction = AddToDockMenuAction(dockCustomization: dockCustomizer, featureFlagger: featureFlagger)
+        self.addToDockMenuAction = AddToDockMenuAction(dockCustomization: dockCustomizer,
+                                                       featureFlagger: featureFlagger,
+                                                       videoPresenter: addToDockVideoPresenter)
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSuggestionsReader = aiChatSuggestionsReader

@@ -54,8 +54,6 @@ extension AddToDockVideoPresenting {
 @MainActor
 final class AddToDockVideoPresenter: AddToDockVideoPresenting {
 
-    static let shared = AddToDockVideoPresenter()
-
     private struct PresentedSheet {
         weak var parentWindow: NSWindow?
         let sheetWindow: NSWindow

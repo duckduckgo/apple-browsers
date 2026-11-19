@@ -63,6 +63,7 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             recentlyClosedCoordinator: delegate.recentlyClosedCoordinator,
             faviconManager: delegate.faviconManager,
             dockCustomizer: delegate.dockCustomization,
+            addToDockVideoPresenter: delegate.addToDockVideoPresenter,
             defaultBrowserPreferences: delegate.defaultBrowserPreferences,
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             aiChatSuggestionsReader: delegate.aiChatSuggestionsReader,

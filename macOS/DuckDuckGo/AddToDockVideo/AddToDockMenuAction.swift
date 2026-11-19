@@ -35,7 +35,7 @@ final class AddToDockMenuAction {
 
     init(dockCustomization: DockCustomization,
          featureFlagger: FeatureFlagger,
-         videoPresenter: AddToDockVideoPresenting = AddToDockVideoPresenter.shared,
+         videoPresenter: AddToDockVideoPresenting,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.dockCustomization = dockCustomization
         self.featureFlagger = featureFlagger

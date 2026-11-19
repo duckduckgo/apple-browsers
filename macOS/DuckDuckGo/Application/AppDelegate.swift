@@ -341,7 +341,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncService: syncService,
         pinningManager: pinningManager,
         promoService: promoService,
-        dockCustomization: dockCustomization
+        dockCustomization: dockCustomization,
+        addToDockVideoPresenter: addToDockVideoPresenter
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -639,6 +640,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var updateController: UpdateController?
     private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
     let dockCustomization: DockCustomization
+    let addToDockVideoPresenter: AddToDockVideoPresenting
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -847,6 +849,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
         self.dockCustomization = DockCustomizer(featureFlagger: featureFlagger)
+        self.addToDockVideoPresenter = AddToDockVideoPresenter()
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report

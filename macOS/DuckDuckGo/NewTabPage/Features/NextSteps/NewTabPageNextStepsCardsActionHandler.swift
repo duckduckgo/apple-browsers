@@ -48,7 +48,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let pixelFiring: (any PixelKitFiring)?
-    private let videoPresenter: AddToDockVideoPresenting?
+    private let videoPresenter: AddToDockVideoPresenting
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -67,7 +67,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          syncLauncher: SyncDeviceFlowLaunching? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-         videoPresenter: AddToDockVideoPresenting? = nil) {
+         videoPresenter: AddToDockVideoPresenting) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -143,7 +143,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
                 completion?()
             }
         } else if featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) {
-            (videoPresenter ?? AddToDockVideoPresenter.shared).present(primaryAction: .done) { _ in completion?() }
+            videoPresenter.present(primaryAction: .done) { _ in completion?() }
         }
     }
 

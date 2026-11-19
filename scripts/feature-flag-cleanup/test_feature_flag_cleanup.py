@@ -71,7 +71,7 @@ class RenderPromptTests(unittest.TestCase):
 
         self.assertNotIn("$", prompt)
         self.assertIn("The flag was rejected", prompt)
-        self.assertIn("keep its disabled code path", prompt)
+        self.assertIn("runs when the flag is disabled", prompt)
         self.assertIn("ddg-remove-feature-flag/SKILL.md", prompt)
 
 

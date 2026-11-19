@@ -1962,6 +1962,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
         }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
+        OtherDistributionInstalledPixelReporter().fireDailyPixel()
     }
 
     private func fireDailyFireWindowConfigurationPixels() {

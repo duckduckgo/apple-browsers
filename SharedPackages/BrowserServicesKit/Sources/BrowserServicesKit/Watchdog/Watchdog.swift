@@ -221,10 +221,11 @@ private extension Watchdog {
 
     func performHangDetection() {
         let secondsSinceLastTick = timestamps.signalTick()
-        if secondsSinceLastTick > settings.lateTickThreshold {
+        if secondsSinceLastTick > settings.lateTickThreshold, detectionState == .responsive {
             /// Late tick: the watchdog was stalled (e.g. App Nap), so no heartbeat was requested meanwhile.
             /// The last heartbeat is old because of us, not because the main thread was blocked.
             /// Restart the baseline now: otherwise, the next tick would count the stalled time as a hang.
+            /// Only while responsive: during a hang, this reset would be mistaken for a recovery heartbeat.
             timestamps.signalHeartbeat()
         }
 

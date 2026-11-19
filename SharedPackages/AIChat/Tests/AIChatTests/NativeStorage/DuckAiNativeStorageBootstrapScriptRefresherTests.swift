@@ -105,6 +105,60 @@ final class DuckAiNativeStorageBootstrapScriptRefresherTests: XCTestCase {
         XCTAssertEqual(userContentController.userScripts.filter { $0.source.contains("__static = 1") }.count, 1)
     }
 
+#if os(macOS)
+    func testWhenRefreshedThenUnrelatedUserScriptsAreNotRemoved() throws {
+        try XCTSkipUnless(DuckAiNativeStorageBootstrapScriptRefresher.removeUserScriptSupported(by: userContentController))
+        // Stands in for a web extension content script, which WebKit installs only once per controller.
+        let unrelatedScript = WKUserScript(source: "window.__extension = 1;", injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        userContentController.addUserScript(unrelatedScript)
+        let sut = DuckAiNativeStorageBootstrapScriptRefresher(
+            handler: mockHandler,
+            originRules: [.exactOrSubdomain(hostname: "duck.ai")]
+        )
+
+        sut.refresh(on: userContentController, staticScripts: [])
+        sut.refresh(on: userContentController, staticScripts: [])
+
+        XCTAssertTrue(userContentController.userScripts.contains { $0 === unrelatedScript })
+        XCTAssertEqual(userContentController.userScripts.filter { $0.source.contains("__nativeStorageEntries") }.count, 1)
+        XCTAssertEqual(userContentController.userScripts.count, 2)
+    }
+#endif
+
+    // MARK: - shouldRefresh
+
+    func testWhenMainFrameHttpsInScopeThenShouldRefreshIsTrue() {
+        let sut = DuckAiNativeStorageBootstrapScriptRefresher(
+            handler: mockHandler,
+            originRules: [.exactOrSubdomain(hostname: "duck.ai")]
+        )
+        XCTAssertTrue(sut.shouldRefresh(navigatingTo: URL(string: "https://duck.ai/")!, isForMainFrame: true))
+    }
+
+    func testWhenSubframeThenShouldRefreshIsFalse() {
+        let sut = DuckAiNativeStorageBootstrapScriptRefresher(
+            handler: mockHandler,
+            originRules: [.exactOrSubdomain(hostname: "duck.ai")]
+        )
+        XCTAssertFalse(sut.shouldRefresh(navigatingTo: URL(string: "https://duck.ai/")!, isForMainFrame: false))
+    }
+
+    func testWhenNotHttpsThenShouldRefreshIsFalse() {
+        let sut = DuckAiNativeStorageBootstrapScriptRefresher(
+            handler: mockHandler,
+            originRules: [.exactOrSubdomain(hostname: "duck.ai")]
+        )
+        XCTAssertFalse(sut.shouldRefresh(navigatingTo: URL(string: "http://duck.ai/")!, isForMainFrame: true))
+    }
+
+    func testWhenOutOfScopeThenShouldRefreshIsFalse() {
+        let sut = DuckAiNativeStorageBootstrapScriptRefresher(
+            handler: mockHandler,
+            originRules: [.exactOrSubdomain(hostname: "duck.ai")]
+        )
+        XCTAssertFalse(sut.shouldRefresh(navigatingTo: URL(string: "https://example.com/")!, isForMainFrame: true))
+    }
+
     // MARK: - isInScope
 
     func testWhenExactRuleMatchesHostThenIsInScopeIsTrue() {

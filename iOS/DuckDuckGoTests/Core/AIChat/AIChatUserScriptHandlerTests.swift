@@ -600,6 +600,28 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testAIChatMessagesAreOnlyAcceptedFromHTTPSMainFrame() {
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
+
+        XCTAssertEqual(script.messageFramePolicy, .secureMainFrame)
+    }
+
+    @MainActor
+    func testWhenDebugHostnameIsSetThenAIChatAcceptsHTTPMainFrame() {
+        let debugSettings = MockAIChatDebugSettingsForTests()
+        debugSettings.messagePolicyHostname = "localhost"
+
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: debugSettings)
+
+        XCTAssertEqual(script.messageFramePolicy, .mainFrame)
+    }
+
+    @MainActor
+    func testPageContextIsOnlyAcceptedFromMainFrame() {
+        XCTAssertEqual(PageContextUserScript().messageFramePolicy, .mainFrame)
+    }
+
+    @MainActor
     func testAttachmentPrivacyBridgeHandlerRemainsAbsentOnIPhone() {
         let script = AIChatUserScript(handler: aiChatUserScriptHandler,
                                      debugSettings: MockAIChatDebugSettingsForTests(),
@@ -2561,6 +2583,81 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertNil(result)
+    }
+}
+
+// MARK: - openKeyboard Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    @MainActor
+    func testWhenOpenKeyboardSelectorMatchesThenElementIsFocused() async throws {
+        // Given
+        let webView = try await makeLoadedWebView(html: "<input id='prompt'>")
+
+        // When
+        let result = await aiChatUserScriptHandler.openKeyboard(
+            params: ["selector": "#prompt"],
+            message: MockUserScriptMessage(name: "test", body: [:]),
+            webView: webView
+        )
+
+        // Then
+        XCTAssertEqual((result as? OpenKeyboardResponse)?.success, true)
+        let focusedID = try await webView.callAsyncJavaScript("return document.activeElement?.id", contentWorld: .page) as? String
+        XCTAssertEqual(focusedID, "prompt")
+    }
+
+    @MainActor
+    func testWhenOpenKeyboardSelectorContainsScriptThenScriptIsNotExecuted() async throws {
+        // Given
+        let webView = try await makeLoadedWebView(html: "<input id='prompt'>")
+
+        // When
+        _ = await aiChatUserScriptHandler.openKeyboard(
+            params: ["selector": "#prompt'); window.injected = true; ('"],
+            message: MockUserScriptMessage(name: "test", body: [:]),
+            webView: webView
+        )
+
+        // Then
+        let injected = try await webView.callAsyncJavaScript("return window.injected === true", contentWorld: .page) as? Bool
+        XCTAssertEqual(injected, false)
+    }
+
+    @MainActor
+    private func makeLoadedWebView(html: String) async throws -> WKWebView {
+        let webView = WKWebView()
+        let loadObserver = WebViewLoadObserver()
+        webView.navigationDelegate = loadObserver
+        webView.loadHTMLString(html, baseURL: URL(string: "https://duck.ai"))
+        try await loadObserver.waitForLoad()
+        return webView
+    }
+}
+
+private final class WebViewLoadObserver: NSObject, WKNavigationDelegate {
+
+    private var continuation: CheckedContinuation<Void, Error>?
+
+    @MainActor
+    func waitForLoad() async throws {
+        try await withCheckedThrowingContinuation { continuation = $0 }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        continuation?.resume()
+        continuation = nil
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
     }
 }
 

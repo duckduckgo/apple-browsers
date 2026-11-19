@@ -50,7 +50,7 @@ final class ChromeWebStoreTabExtension {
             Task { @MainActor in
                 self?.userScript = userScript
                 userScript?.webView = self?.webView
-                userScript?.isEnabled = isFeatureEnabled()
+                userScript?.isEnabled = isFeatureEnabled
             }
         }.store(in: &cancellables)
     }

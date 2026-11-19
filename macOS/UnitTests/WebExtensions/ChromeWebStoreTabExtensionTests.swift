@@ -51,7 +51,7 @@ final class ChromeWebStoreTabExtensionTests: XCTestCase {
         withExtendedLifetime(tabExtension) {}
     }
 
-    func testRebuiltUserScriptsGetTheCurrentFeatureFlagState() async {
+    func testUserScriptsReadTheCurrentFeatureFlagState() async {
         let scripts = PassthroughSubject<ScriptsProvider, Never>()
         var isFeatureEnabled = false
         let tabExtension = ChromeWebStoreTabExtension(isFeatureEnabled: { isFeatureEnabled },
@@ -62,19 +62,18 @@ final class ChromeWebStoreTabExtensionTests: XCTestCase {
 
         scripts.send(ScriptsProvider(chromeWebStoreUserScript: first))
         await Task.yield()
-        XCTAssertFalse(first.isEnabled)
+        XCTAssertFalse(first.isEnabled())
 
-        // A flag turned on while the app runs reaches the next rebuilt user scripts.
+        // A flag change while the app runs reaches the installed user script without a rebuild.
         isFeatureEnabled = true
+        XCTAssertTrue(first.isEnabled())
+
+        // Rebuilt user scripts read the same flag.
         scripts.send(ScriptsProvider(chromeWebStoreUserScript: rebuilt))
         await Task.yield()
-        XCTAssertTrue(rebuilt.isEnabled)
-
-        // The flag turned off again reaches the next rebuild too.
+        XCTAssertTrue(rebuilt.isEnabled())
         isFeatureEnabled = false
-        scripts.send(ScriptsProvider(chromeWebStoreUserScript: first))
-        await Task.yield()
-        XCTAssertFalse(first.isEnabled)
+        XCTAssertFalse(rebuilt.isEnabled())
 
         withExtendedLifetime(tabExtension) {}
     }

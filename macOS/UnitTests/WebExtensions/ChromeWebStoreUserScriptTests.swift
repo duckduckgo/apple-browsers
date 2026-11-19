@@ -190,7 +190,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
 
     private func makeSubfeature(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?) -> ChromeWebStoreUserScript {
         let subfeature = ChromeWebStoreUserScript(serviceProvider: serviceProvider)
-        subfeature.isEnabled = true
+        subfeature.isEnabled = { true }
         return subfeature
     }
 

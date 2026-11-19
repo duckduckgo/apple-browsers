@@ -163,7 +163,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, Identifiable 
         path.append(next)
     }
 
-    func finish() {
+    private func finish() {
         onFinish()
     }
 
@@ -184,7 +184,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, Identifiable 
     /// Close button for the root screen; back button for pushed screens.
     func navigationButton(for section: SubscriptionOnboardingSection) -> SubscriptionOnboardingNavigationButton {
         section == sequence.first
-            ? .close { [weak self] in self?.finish() }
+            ? .close { [weak self] in self?.sectionDidRequestClose(section) }
             : .back { [weak self] in self?.goBack(from: section) }
     }
 
@@ -259,6 +259,11 @@ extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDele
     func sectionDidRequestAdvance() {
         reportSkipIfNeeded()
         proceed()
+    }
+
+    func sectionDidRequestClose(_ section: SubscriptionOnboardingSection) {
+        instrumentation.stepClosed(section)
+        finish()
     }
 
     /// The two sections with a skip CTA.

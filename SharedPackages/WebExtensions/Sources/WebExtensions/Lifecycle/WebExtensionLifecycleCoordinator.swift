@@ -77,6 +77,12 @@ public final class WebExtensionLifecycleCoordinator {
         initialLoadAndSync != nil
     }
 
+    /// Whether the launch `loadAndSync()` has been requested. Until then nothing is loaded, and a
+    /// data-clearing `reload()` would fall back to a full load that skips the host app's launch deferral.
+    public var hasRequestedInitialLoadAndSync: Bool {
+        didEnqueueInitialLoadAndSync
+    }
+
     public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
         guard initialLoadGateEnabledProvider() else { return nil }
         guard isInitialLoadGateOpen else {

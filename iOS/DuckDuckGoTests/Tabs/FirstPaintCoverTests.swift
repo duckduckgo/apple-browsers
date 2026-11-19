@@ -710,24 +710,37 @@ struct FirstPaintCoverTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The cover keeps asking until the first result shows, then reveals", .timeLimit(.minutes(1)))
-    func searchRevealsOnceResultShows() throws {
+    @Test("The cover asks once and goes in one frame once the first result is drawn, with no fade", .timeLimit(.minutes(1)))
+    func searchRevealsOnceResultShows() {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        harness.cover.renderingProgressDidChange(Self.firstMeaningfulPaint)
+        #expect(checks.value.count == 1)
+        #expect(harness.pendingFades.isEmpty)
+
+        checks.value[0](true)
+
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.isEmpty)
+        #expect(!harness.isCoverInHierarchy)
+        #expect(harness.cover.skeletonView == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A page that gives up waiting keeps the cover until the grace runs out", .timeLimit(.minutes(1)))
+    func searchGivingUpWaitsForGrace() {
         let harness = Harness()
         let checks = Box<[@MainActor (Bool) -> Void]>([])
         Self.armSearch(harness, checks: checks)
         harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
 
         checks.value[0](false)
+
+        #expect(harness.cover.phase == .awaitingContent)
         #expect(harness.pendingFades.isEmpty)
-        let poll = try #require(harness.timeouts.last)
-        #expect(poll.delay == FirstPaintCover.Constants.contentPollInterval)
-
-        poll.action()
-        #expect(checks.value.count == 2)
-        checks.value[1](true)
-
-        #expect(harness.cover.phase == .idle)
-        #expect(harness.pendingFades.count == 1)
+        #expect(checks.value.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -744,12 +757,11 @@ struct FirstPaintCoverTests {
 
         #expect(harness.cover.phase == .idle)
         #expect(harness.pendingFades.count == 1)
-        #expect(harness.timeouts.allSatisfy { $0.delay != FirstPaintCover.Constants.contentPollInterval || $0.isCancelled })
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Finishing the load while waiting for the first result reveals the page", .timeLimit(.minutes(1)))
-    func searchRevealsOnFinish() {
+    @Test("Finishing the load while waiting for the first result gives it a short grace, then fades in", .timeLimit(.minutes(1)))
+    func searchFinishShortensWait() throws {
         let harness = Harness()
         let checks = Box<[@MainActor (Bool) -> Void]>([])
         Self.armSearch(harness, checks: checks)
@@ -757,8 +769,31 @@ struct FirstPaintCoverTests {
 
         harness.cover.didFinish(harness.navigation)
 
+        #expect(harness.cover.phase == .awaitingContent)
+        #expect(harness.pendingFades.isEmpty)
+        let grace = try #require(harness.timeouts.last)
+        #expect(grace.delay == FirstPaintCover.Constants.contentAfterFinishGrace && !grace.isCancelled)
+
+        grace.action()
+
         #expect(harness.cover.phase == .idle)
         #expect(harness.pendingFades.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Results drawn just after the load finishes still lift the cover in one frame", .timeLimit(.minutes(1)))
+    func searchResultsAfterFinishCut() {
+        let harness = Harness()
+        let checks = Box<[@MainActor (Bool) -> Void]>([])
+        Self.armSearch(harness, checks: checks)
+        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
+        harness.cover.didFinish(harness.navigation)
+
+        checks.value[0](true)
+
+        #expect(harness.cover.phase == .idle)
+        #expect(harness.pendingFades.isEmpty)
+        #expect(!harness.isCoverInHierarchy)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -775,7 +810,6 @@ struct FirstPaintCoverTests {
 
         #expect(harness.cover.phase == .idle)
         #expect(harness.pendingFades.isEmpty)
-        #expect(harness.timeouts.allSatisfy { $0.delay != FirstPaintCover.Constants.contentPollInterval })
     }
 
     @available(iOS 16, macOS 13, *)
@@ -795,26 +829,7 @@ struct FirstPaintCoverTests {
 
         checks.value[1](true)
         #expect(harness.cover.phase == .idle)
-        #expect(harness.pendingFades.count == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A poll scheduled for an earlier search doesn't ask again for a later one", .timeLimit(.minutes(1)))
-    func earlierSearchPollIsIgnored() throws {
-        let harness = Harness()
-        let checks = Box<[@MainActor (Bool) -> Void]>([])
-        Self.armSearch(harness, checks: checks)
-        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
-        checks.value[0](false)
-        let stalePoll = try #require(harness.timeouts.last)
-        Self.armSearch(harness, checks: checks)
-        harness.cover.renderingProgressDidChange(Self.firstVisuallyNonEmptyLayout)
-        #expect(checks.value.count == 2)
-
-        stalePoll.action()
-
-        #expect(checks.value.count == 2)
-        #expect(harness.cover.phase == .awaitingContent)
+        #expect(!harness.isCoverInHierarchy)
     }
 
     @available(iOS 16, macOS 13, *)

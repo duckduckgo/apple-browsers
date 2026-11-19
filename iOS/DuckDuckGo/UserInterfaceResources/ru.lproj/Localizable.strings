@@ -2440,6 +2440,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Стоит ли это смотреть? Дай отзыв без спойлеров.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "Новый чат";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Выбранный текст";
 
@@ -3039,6 +3042,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "На каком сайте возникли проблемы?";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Очистить поиск";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d из %2$d";
@@ -3774,6 +3780,63 @@
 
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Принудительно включить строгую маршрутизацию (рекомендуется)";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "Спрашивай меня о чём угодно.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "Кря-кря, привет.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "Почти выходные.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "Прощай, надоедливая реклама!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "Привет!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "Чем могу помочь?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "Поехали!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "Давай исследовать.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "Сегодня понедельник. Поехали.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "Доброе утро, солнышко.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "Новый день, новые вкладки.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "Рад тебя видеть.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "Я и правда сова.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "Готов к конфиденциальному поиску?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "Готов, когда будешь готов.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "Я никогда не сплю.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "О чём думаешь?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "С чего начнём?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "Куда сегодня?";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Подтвердить";
@@ -5595,6 +5658,9 @@
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "Твоя подписка %1$@ сразу же завершится, а в течение 14 дней тебе вернут %2$@ на исходный способ оплаты.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Твоя подписка %@ сразу же завершится, а в течение 14 дней тебе вернут полную сумму на исходный способ оплаты.";
 
 /* Title of the alert confirming withdrawal from the subscription contract */
 "subscription.withdraw.confirm.title" = "Отказаться от подписки?";

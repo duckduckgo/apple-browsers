@@ -6007,6 +6007,9 @@ extension MainViewController: BrowserChromeDelegate {
 
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
+        if isFloatingUIEnabled {
+            chromeManager.followFloatingChromeBottom { self.floatingWebViewObscuredInsets(for: percent).bottom }
+        }
         currentTab?.updateWebViewBottomAnchor(for: percent)
         updateFloatingTopNewTabPageInset(for: percent)
 
@@ -6133,6 +6136,11 @@ extension MainViewController: BrowserChromeDelegate {
 
     var toolbarHeight: CGFloat {
         viewCoordinator.constraints.toolbarHeight.constant
+    }
+
+    /// Matches `updateToolbarConstant`, which keeps a hidden or minimal-layout toolbar in place.
+    var isToolbarParked: Bool {
+        viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout
     }
 
     var isFloatingChromeEnabled: Bool {

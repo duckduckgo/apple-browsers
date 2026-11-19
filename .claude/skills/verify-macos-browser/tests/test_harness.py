@@ -351,6 +351,18 @@ class PublishablePathTests(unittest.TestCase):
         words = subprocess.run(["zsh", "-fc", f"print -rl -- {args}"], capture_output=True, text=True).stdout
         self.assertEqual(words.splitlines(), [proof, "--target", "vm-1", "--evidence-dir", evidence_dir])
 
+    def test_a_run_on_another_checkout_reruns_from_that_checkout(self):
+        other = os.path.join(self.HOME, ".ddg-verify-macos", "base", "0123456789ab")
+        rerun = harness.rerun_command("/ev/p/proof.py", "vm-1", checkout=other)
+        self.assertTrue(rerun.startswith("cd ~/.ddg-verify-macos/base/0123456789ab && "), rerun)
+        self.assertIn(" --checkout ~/.ddg-verify-macos/base/0123456789ab", rerun)
+        self.assertNotIn("--checkout", harness.rerun_command("/ev/p/proof.py", "vm-1"))
+
+    def test_a_checkout_without_the_workspace_is_refused(self):
+        with self.assertRaises(harness.Refused):
+            harness.checkout_of(tempfile.mkdtemp())
+        self.assertEqual(harness.checkout_of(harness.ROOT), harness.ROOT)
+
     def test_manifest_and_report_show_home_as_tilde(self):
         evidence = tempfile.mkdtemp()
         with open(os.path.join(evidence, "manifest.json"), "w") as f:

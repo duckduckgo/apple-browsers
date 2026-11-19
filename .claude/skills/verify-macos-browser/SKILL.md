@@ -72,6 +72,17 @@ Proof rules:
 - Select pixels by name and order, never by the params you expect. `Skipped` is not `Fired`.
 - Shortcuts inside an `NSPopover` (Esc, Return) only fire when its window is key: test them explicitly.
 
+**Before and after (bug fixes).** Show the bug on the base revision with the same proof, then the fix:
+
+```
+B=~/.ddg-verify-macos/base/manual; git worktree add --detach $B "$(git merge-base HEAD origin/main)"
+$V prove <proof> --target vm-1 --checkout $B   # this skill, that checkout: expect FAIL (the bug); first build is cold
+$V prove <proof> --target vm-1                 # this checkout: expect PASS (the fix)
+```
+
+Each report's rerun starts with `cd` into the checkout it proved. Remove the worktree after:
+`git worktree remove --force $B`.
+
 ## 2. Evidence and report
 
 **Where evidence goes.** Each run writes one attempt folder, `<stamp>-<name>-<id>/`, in `--evidence-dir <dir>`

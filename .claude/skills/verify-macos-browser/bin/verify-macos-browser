@@ -5,6 +5,8 @@ verdict, writes report.md and manifest.json, and always cleans up. verify.sh sta
 usage: verify-macos-browser new-proof <name> [--evidence-dir <dir>]  a proof template in a fresh attempt folder
        verify-macos-browser check <proof>...                         compile + shape + FLAGS; no app, no build
        verify-macos-browser prove <proof> --target mac|vm|vm-1|vm-2 [--evidence-dir <dir>] [--no-video]
+                            [--checkout <dir>]
+--checkout: build and prove another checkout of this repo (e.g. a base revision) with this skill
 --evidence-dir: a directory outside any git checkout; each run writes a fresh <stamp>-<name>-<id>/ attempt folder in
        it (default ~/.ddg-verify-macos)
 --no-video: no recording.mp4 (by default the proof is recorded: a VM's screen, or only the app's window on this Mac)
@@ -28,19 +30,23 @@ def main(argv):
             print(__doc__)
             return 64
         argv.remove("--no-video")
-    if "--evidence-dir" in argv:
-        i = argv.index("--evidence-dir")
-        if i + 1 == len(argv) or argv[0] not in ("new-proof", "prove"):
-            print(__doc__)
-            return 64
-        evidence_dir = argv.pop(i + 1)
-        argv.pop(i)
+    options = {}
+    for name, commands in (("--evidence-dir", ("new-proof", "prove")), ("--checkout", ("prove",))):
+        if name in argv:
+            i = argv.index(name)
+            if i + 1 == len(argv) or argv[0] not in commands:
+                print(__doc__)
+                return 64
+            options[name] = argv.pop(i + 1)
+            argv.pop(i)
+    evidence_dir = options.get("--evidence-dir")
     try:
         if len(argv) == 2 and argv[0] == "new-proof":
             print(harness.new_proof(argv[1], harness.evidence_root(evidence_dir)))
             return 0
         if len(argv) == 4 and argv[0] == "prove" and argv[2] == "--target":
-            code, out = harness.prove(argv[1], argv[3], evidence_dir, video)
+            checkout = harness.checkout_of(options["--checkout"]) if "--checkout" in options else harness.ROOT
+            code, out = harness.prove(argv[1], argv[3], evidence_dir, video, checkout)
             print(json.dumps(out, indent=1))
             return code
     except harness.Refused as e:

@@ -191,16 +191,17 @@ def _sh_path(path):
 class Mac:
     """User actions, reads, waiting assertions, telemetry and evidence for one run. Each call runs one verify.sh step."""
 
-    def __init__(self, topic, evidence, rec, automation=False):
+    def __init__(self, topic, evidence, rec, automation=False, checkout=ROOT):
         self.topic, self.evidence, self.rec, self.automation = topic, evidence, rec, automation
+        self.checkout = checkout   # the checkout built and proved: this one, or another (prove --checkout)
         self._marked = False
 
     def _sh(self, command, *args):
         """Run `verify.sh <command> <topic> args`; return (exit code, output). Logged to transcript.jsonl."""
         t0 = time.time()
-        p = subprocess.run([VERIFY_SH, command, self.topic, *map(str, args)], cwd=ROOT, text=True,
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={**os.environ, "VERIFY_WORKTREE": ROOT,
-                                                       "VERIFY_RUN_DIR": self.evidence})
+        p = subprocess.run([VERIFY_SH, command, self.topic, *map(str, args)], cwd=self.checkout, text=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                           env={**os.environ, "VERIFY_WORKTREE": self.checkout, "VERIFY_RUN_DIR": self.evidence})
         with open(os.path.join(self.evidence, "transcript.jsonl"), "a") as f:
             f.write(json.dumps(dict(t=time.strftime("%Y-%m-%dT%H:%M:%S%z"), cmd=[command, *map(str, args)],
                                     exit=p.returncode, secs=round(time.time() - t0, 1), out=p.stdout[-2000:])) + "\n")
@@ -339,7 +340,7 @@ def _trim(v, n=600):
 
 
 # ---------------------------------------------------------------- check
-def load(path):
+def load(path, checkout=ROOT):
     """Compile and import a proof without running it; return (module, problems). Touches no app or build."""
     try:
         with open(path) as f:
@@ -366,7 +367,7 @@ def load(path):
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map FeatureFlag case names to True/False")
     elif flags:
-        names, fixed = vhelp.feature_flags(ROOT)
+        names, fixed = vhelp.feature_flags(checkout)
         problems += [f"FLAGS: {k} is not a FeatureFlag case" for k in flags if k not in names]
         problems += [f"FLAGS: {k} has supportsLocalOverriding: false; the app would ignore it" for k in flags if k in fixed]
     live = getattr(mod, "LIVE", [])
@@ -449,11 +450,19 @@ def _alive(pid_file):
         return False
 
 
-def prove(path, target, evidence_dir=None, video=True):
+def checkout_of(path):
+    """--checkout: another checkout of this repo to build and prove with this skill, such as a base revision."""
+    d = os.path.realpath(path)
+    if not os.path.isdir(os.path.join(d, "DuckDuckGo.xcworkspace")):
+        raise Refused(f"--checkout {path} is not a checkout of this repo (no DuckDuckGo.xcworkspace)")
+    return d
+
+
+def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary).
     Raises Refused, before anything is written, for an --evidence-dir inside a git checkout."""
     root = evidence_root(evidence_dir)
-    mod, problems = load(path)
+    mod, problems = load(path, checkout)
     if problems:
         return 2, dict(proof=path, ok=False, problems=problems)
     if target not in TARGETS:
@@ -462,10 +471,10 @@ def prove(path, target, evidence_dir=None, video=True):
     topic = topic_of(evidence)
     rec = Record()
     rec.video = {} if video else None
-    mac = Mac(topic, evidence, rec, automation=getattr(mod, "AUTOMATION", False))
+    mac = Mac(topic, evidence, rec, automation=getattr(mod, "AUTOMATION", False), checkout=checkout)
     vm = None if target == "mac" else ("auto" if target == "vm" else target)
     shown_dir = root if evidence_dir else None
-    rerun = rerun_command(proof, target, shown_dir, video)
+    rerun = rerun_command(proof, target, shown_dir, video, checkout)
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     running = None
     try:
@@ -473,7 +482,7 @@ def prove(path, target, evidence_dir=None, video=True):
             mac._do("vm", vm)
         for name, on in getattr(mod, "FLAGS", {}).items():
             mac._do("flag", name, "on" if on else "off")
-        mac._do("build", ROOT, *(["--automation"] if mac.automation else []))
+        mac._do("build", checkout, *(["--automation"] if mac.automation else []))
         doctor = mac._do("doctor")
         running = json.loads(re.search(r"^running_hashes=(.*)$", doctor, re.M).group(1))
         if video:
@@ -507,12 +516,12 @@ def prove(path, target, evidence_dir=None, video=True):
                       evidence=evidence, report=os.path.join(evidence, "report.md"))
 
 
-def rerun_command(proof, target, evidence_dir=None, video=True):
-    """The report's rerun command: same checkout, proof, target, evidence directory and video setting; it works pasted
-    into zsh."""
-    return f"cd {_sh_path(ROOT)} && {_sh_path(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
-           f"{_sh_path(proof)} --target {target}" + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "") \
-           + ("" if video else " --no-video")
+def rerun_command(proof, target, evidence_dir=None, video=True, checkout=ROOT):
+    """The report's rerun command: it starts in the checkout it proved and names the same proof, target, evidence
+    directory and video setting; it works pasted into zsh."""
+    return f"cd {_sh_path(checkout)} && {_sh_path(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
+           f"{_sh_path(proof)} --target {target}" + (f" --checkout {_sh_path(checkout)}" if checkout != ROOT else "") \
+           + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "") + ("" if video else " --no-video")
 
 
 def _record(mac, rec, step):

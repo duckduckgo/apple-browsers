@@ -30,6 +30,7 @@ final class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Con
     var state: ContextualOnboardingState = .onboardingCompleted
     private(set) var dialogTypeForTabCallCount = 0
     private(set) var turnOffFeatureCallCount = 0
+    private(set) var gotItPressedCallCount = 0
 
     @Published var isContextualOnboardingCompleted: Bool = true
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
@@ -43,7 +44,10 @@ final class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Con
         lastDialog
     }
 
-    func gotItPressed() {}
+    func gotItPressed() {
+        gotItPressedCallCount += 1
+    }
+
     func fireButtonUsed() {}
 
     func turnOffFeature() {

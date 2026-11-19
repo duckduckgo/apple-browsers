@@ -122,18 +122,54 @@ struct ContextualOnboardingDialogSchedulerTests {
         #expect(provider.turnOffFeatureCallCount == 1)
     }
 
-    // MARK: - Showing the last dialog
+    // MARK: - High Five hands over to the upsell
 
     @available(iOS 16, macOS 13, *)
-    @Test("Showing the last dialog doesn't move onboarding forward", .timeLimit(.minutes(1)))
-    func showLastDialogDoesNotAdvance() async {
+    @Test("Dismissing High Five shows the upsell next, without moving onboarding forward", .timeLimit(.minutes(1)))
+    func dismissingHighFiveShowsUpsell() async {
         provider.lastDialog = .subscriptionUpsell
         let tab = await Tab(content: .newtab)
 
-        makeScheduler().showLastDialog(in: tab)
+        makeScheduler().dialogDismissed(.highFive, in: tab)
 
         #expect(sent.updates == [.show(.subscriptionUpsell)])
         #expect(provider.dialogTypeForTabCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Dismissing any other dialog shows nothing, including the upsell itself", .timeLimit(.minutes(1)),
+          arguments: [ContextualDialogType.subscriptionUpsell, .tryASite])
+    func dismissingOtherDialogsShowsNothing(dialog: ContextualDialogType) async {
+        provider.lastDialog = .subscriptionUpsell
+        let tab = await Tab(content: .newtab)
+
+        makeScheduler().dialogDismissed(dialog, in: tab)
+
+        #expect(sent.updates.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Got it with nothing left on screen shows the upsell (legacy layout)", .timeLimit(.minutes(1)))
+    func gotItWithNothingOnScreenShowsUpsell() async {
+        provider.lastDialog = .subscriptionUpsell
+        let tab = await Tab(content: .newtab)
+
+        makeScheduler().gotItPressed(displayed: nil, in: tab)
+
+        #expect(provider.gotItPressedCallCount == 1)
+        #expect(sent.updates == [.show(.subscriptionUpsell)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Got it with High Five still on screen leaves the upsell to the dismiss (rebranded layout)", .timeLimit(.minutes(1)))
+    func gotItWithHighFiveOnScreenWaitsForDismiss() async {
+        provider.lastDialog = .subscriptionUpsell
+        let tab = await Tab(content: .newtab)
+
+        makeScheduler().gotItPressed(displayed: .highFive, in: tab)
+
+        #expect(provider.gotItPressedCallCount == 1)
+        #expect(sent.updates.isEmpty)
     }
 
     // MARK: - Window became key
@@ -182,7 +218,7 @@ struct ContextualOnboardingDialogSchedulerTests {
         if byTabSwitch {
             scheduler.selectedTabDidChange()
         } else {
-            scheduler.dialogDismissed()
+            scheduler.dialogDismissed(.tryASite, in: tab)
         }
 
         scheduler.windowDidBecomeKey(tab: tab, displayed: nil)
@@ -193,15 +229,15 @@ struct ContextualOnboardingDialogSchedulerTests {
     @available(iOS 16, macOS 13, *)
     @Test("Showing a dialog again lets the window bring it back after a dismiss", .timeLimit(.minutes(1)))
     func showingResetsDismissed() async {
-        provider.lastDialog = .tryASite
+        provider.lastDialog = .subscriptionUpsell
         let tab = await Tab(content: .newtab)
         let scheduler = makeScheduler()
-        scheduler.dialogDismissed()
 
-        scheduler.showLastDialog(in: tab)
+        // Dismissing High Five counts as a dismiss, then shows the upsell.
+        scheduler.dialogDismissed(.highFive, in: tab)
         scheduler.windowDidBecomeKey(tab: tab, displayed: nil)
 
-        #expect(sent.updates == [.show(.tryASite), .show(.tryASite)])
+        #expect(sent.updates == [.show(.subscriptionUpsell), .show(.subscriptionUpsell)])
     }
 
     @available(iOS 16, macOS 13, *)

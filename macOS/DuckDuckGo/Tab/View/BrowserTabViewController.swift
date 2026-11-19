@@ -861,16 +861,13 @@ final class BrowserTabViewController: NSViewController {
     /// `dialogType` is captured at presentation time rather than read back off the provider, which
     /// `gotItPressed()` may already have advanced.
     private func handleContextualOnboardingOnDismiss(dialogType: ContextualDialogType) {
-        contextualOnboardingScheduler.dialogDismissed()
         delegate?.dismissViewHighlight()
         removeChild(in: containerStackView, webViewContainer: webViewContainer)
         // Kept in step with the teardown so the got-it handler can tell whether dismiss already ran.
         presentedContextualOnboardingDialogType = nil
         onboardingPixelReporter.measureDialogDismissed(dialogType: dialogType)
-        // Both facts matter, or dismissing the upsell would re-present it.
-        if dialogType == .highFive, onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
-            contextualOnboardingScheduler.showLastDialog(in: tabViewModel?.tab)
-        }
+        // Last, so a dialog the scheduler shows next isn't removed with this one.
+        contextualOnboardingScheduler.dialogDismissed(dialogType, in: tabViewModel?.tab)
     }
 
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
@@ -885,7 +882,9 @@ final class BrowserTabViewController: NSViewController {
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
-        onboardingDialogTypeProvider.gotItPressed()
+        // Legacy dismisses before this runs, rebranded after its fade: a nil presented type means the
+        // teardown already happened, so the scheduler shows the upsell now instead of on dismiss.
+        contextualOnboardingScheduler.gotItPressed(displayed: presentedContextualOnboardingDialogType, in: tabViewModel?.tab)
         onboardingPixelReporter.measureGotItPressed(dialogType: displayedDialogType)
         let currentState = onboardingDialogTypeProvider.lastDialog
         delegate?.dismissViewHighlight()
@@ -896,11 +895,6 @@ final class BrowserTabViewController: NSViewController {
         // so its later callbacks remain High Five even after the manager advances to the upsell.
         if case .highFive = currentState {
             presentedContextualOnboardingDialogType = .highFive
-        }
-        // Legacy dismisses before this runs, rebranded after its fade. A nil presented type means the
-        // teardown already happened; otherwise the dismiss handler presents instead.
-        if case .subscriptionUpsell = currentState, presentedContextualOnboardingDialogType == nil {
-            contextualOnboardingScheduler.showLastDialog(in: tabViewModel?.tab)
         }
     }
 

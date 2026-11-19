@@ -35,25 +35,15 @@ $V check <proof>                                 # compile, shape, FLAGS; no app
 $V prove <proof> --target vm-1 [--evidence-dir <dir>]   # vm, vm-1, vm-2 or mac
 ```
 
-```python
-"""Cmd+T opens a new tab and fires the new-tab page loading pixel."""   # the claim: report.md's Verified line
-FLAGS = {}          # FeatureFlag cases to pin, on (True) or off; every flag the behavior depends on
-LIVE = []           # live services it depends on, e.g. ["duck.ai"]
-AUTOMATION = False  # True for url()/navigate(); turns off popup blocking and the quit survey
-
-def run(mac):
-    mac.expect_tab_count(1)
-    mac.mark()                                       # telemetry counts from here, not from setup
-    mac.key("cmd+t")                                 # the user's path
-    mac.expect_tab_count(2)                          # an independent read of the end state
-    mac.expect_pixel("m_mac_new-tab-page_loading_time")
-    mac.shot("two-tabs")
-```
+**Copy the closest example.** `examples/` holds worked proofs of the harness, kept passing, not feature recipes:
+`t1_launch_doctor`, `t2_tabs` (Cmd+T, Cmd+W, tab count), `t3_fixture_page` (fixture page and link, no live service),
+`t4_pixel` (`mark`, `expect_pixel`, `expect_no_pixel`). The docstring is the claim (report.md's Verified line);
+`FLAGS`, `LIVE` and `AUTOMATION` are explained in the `new-proof` template.
 
 `prove` reserves the VM, pins `FLAGS`, builds (incremental; uncommitted edits included), launches in en-US as an
 internal user, skips onboarding in a VM, runs `doctor`, runs the proof, takes `final.png`, writes the logs and
 `report.md`, and always cleans up: on pass, fail and Ctrl-C. A proof is throwaway: it stays with its evidence,
-never in the repo.
+never in the repo (only `examples/` are kept).
 
 What `mac` gives you (`scripts/harness.py`):
 - **Act:** `press(target)` (AX press), `click(target)` (real click), `type(text)`, `key("cmd+t")`. A target is an AX
@@ -150,7 +140,8 @@ Call it as a single command (one permission rule covers it). Exit codes: `0` ok,
 for code that is there is a stale module in DerivedData: move it out and rebuild. Don't build in Xcode meanwhile.
 
 **Changed the harness, `verify.sh`, `vhelp.py` or `ax.swift`?** Run the unit tests (`tests/`), then
-`$V prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1`: PASS means every refusal still refuses.
+`$V prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1`: PASS means every refusal still refuses. Then
+`prove` each `examples/*.py`: each must PASS.
 
 ## Running in a VM
 

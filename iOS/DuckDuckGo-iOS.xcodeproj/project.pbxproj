@@ -33,6 +33,7 @@
 		4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */; };
 		4BABF9183022746600B46B44 /* AppRouting in Frameworks */ = {isa = PBXBuildFile; productRef = 4BABF9173022746600B46B44 /* AppRouting */; };
 		4BACF9183022746600B46B44 /* InstallStatistics in Frameworks */ = {isa = PBXBuildFile; productRef = 4BACF9173022746600B46B44 /* InstallStatistics */; };
+		F4C6591E1F5742B1AD32F0F9 /* WebPageTranslation in Frameworks */ = {isa = PBXBuildFile; productRef = 035793DAC86B92641C063120 /* WebPageTranslation */; };
 		4BB88F3F2E5D701200DE539A /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKit */; };
 		4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8622E174D5400391C19 /* DesignResourcesKit */; };
 		4BC5E8652E174D5C00391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8642E174D5C00391C19 /* DesignResourcesKit */; };
@@ -380,6 +381,7 @@
 		4B94B79C2D4831700014AAB8 /* SyncUI-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "SyncUI-iOS"; sourceTree = "<group>"; };
 		4BABF9153022746600B46B44 /* AppRouting */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppRouting; sourceTree = "<group>"; };
 		4BACF9153022746600B46B44 /* InstallStatistics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = InstallStatistics; sourceTree = "<group>"; };
+		9C2F5F83DCD732162704F7FC /* WebPageTranslation */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = WebPageTranslation; sourceTree = "<group>"; };
 		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
 		4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Configuration-Experimental.xcconfig"; path = "Configuration/Configuration-Experimental.xcconfig"; sourceTree = "<group>"; };
 		4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
@@ -723,6 +725,7 @@
 				9F909E392EEA6BD00057F518 /* UIKitExtensions in Frameworks */,
 				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7CEA1D29838948C9BA16CDD7 /* SitePermissions in Frameworks */,
+				F4C6591E1F5742B1AD32F0F9 /* WebPageTranslation in Frameworks */,
 				7B0752D92F21BFDB00ACA559 /* AutomationServer in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
@@ -1009,6 +1012,7 @@
 				7BB9F8E82DFC1DDA00741690 /* VPN */,
 				7B10FF282D11AA0D00F36BF2 /* VPNiOS */,
 				1EC8B18B2F29147000F18679 /* WebExtensions */,
+				9C2F5F83DCD732162704F7FC /* WebPageTranslation */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";
@@ -1233,6 +1237,7 @@
 				9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */,
 				9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */,
 				B23B8E31062743D0AD136A57 /* SitePermissions */,
+				035793DAC86B92641C063120 /* WebPageTranslation */,
 				9F5003262E8D1B61002F98D1 /* FoundationExtensions */,
 				F19B98662EAFA799000FF209 /* AttributedMetric */,
 				BBD9C3962E9D73610060A6E8 /* SERPSettings */,
@@ -1752,6 +1757,7 @@
 				A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */,
 				4BABF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/AppRouting" */,
 				4BACF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/InstallStatistics" */,
+				00BE6117434BE2FEC5F71246 /* XCLocalSwiftPackageReference "LocalPackages/WebPageTranslation" */,
 			);
 			preferredProjectObjectVersion = 46;
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
@@ -4867,6 +4873,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/InstallStatistics;
 		};
+		00BE6117434BE2FEC5F71246 /* XCLocalSwiftPackageReference "LocalPackages/WebPageTranslation" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/WebPageTranslation;
+		};
 		7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/AutomationServer;
@@ -5591,6 +5601,10 @@
 		B23B8E31062743D0AD136A57 /* SitePermissions */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SitePermissions;
+		};
+		035793DAC86B92641C063120 /* WebPageTranslation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebPageTranslation;
 		};
 		B23B8E33A62743D0AD136A57 /* UIComponents */ = {
 			isa = XCSwiftPackageProductDependency;

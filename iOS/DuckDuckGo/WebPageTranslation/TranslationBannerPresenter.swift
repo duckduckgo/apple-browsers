@@ -74,8 +74,10 @@ final class TranslationBannerPresenter {
             ? controller.view.bottomAnchor.constraint(equalTo: addressBar.topAnchor, constant: -Constants.verticalMargin)
             : controller.view.topAnchor.constraint(equalTo: addressBar.bottomAnchor, constant: Constants.verticalMargin)
         NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: host.view.leadingAnchor, constant: Constants.horizontalMargin),
-            controller.view.trailingAnchor.constraint(equalTo: host.view.trailingAnchor, constant: -Constants.horizontalMargin),
+            controller.view.leadingAnchor.constraint(equalTo: host.view.safeAreaLayoutGuide.leadingAnchor,
+                                                     constant: Constants.horizontalMargin),
+            controller.view.trailingAnchor.constraint(equalTo: host.view.safeAreaLayoutGuide.trailingAnchor,
+                                                      constant: -Constants.horizontalMargin),
             edgeConstraint
         ])
         controller.didMove(toParent: host)

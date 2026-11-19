@@ -66,6 +66,18 @@ final class AddToDockMenuActionTests {
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func appStoreWhenVideoIsNotShownFiresNoClickPixel() {
+        setAppStoreBuild(canShowVideo: true)
+        videoPresenter.presentResult = false
+
+        makeSUT().perform(from: .mainMenu)
+
+        #expect(videoPresenter.presentations == [.done])
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func appStoreWithFlagOffDoesNothing() {
         setAppStoreBuild(canShowVideo: false)
 

@@ -48,8 +48,8 @@ final class AddToDockMenuAction {
             guard dockCustomization.addToDock() else { return }
             fireClickPixel(for: menu)
         } else if featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) {
+            guard videoPresenter.present(primaryAction: .done) else { return }
             fireClickPixel(for: menu)
-            videoPresenter.present(primaryAction: .done)
         }
     }
 

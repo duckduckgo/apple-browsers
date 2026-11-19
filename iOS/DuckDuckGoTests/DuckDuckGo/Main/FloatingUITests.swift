@@ -3548,3 +3548,92 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         return (sut, collection)
     }
 }
+
+final class SwipeTabsFullScreenSnapshotTests: XCTestCase {
+
+    // The coordinator holds this weakly.
+    private var mainViewCoordinator: MainViewCoordinator!
+    private var previewsSource: MockTabPreviewsSource!
+    private var window: UIWindow?
+
+    override func tearDown() {
+        window?.isHidden = true
+        window = nil
+        mainViewCoordinator = nil
+        previewsSource = nil
+        super.tearDown()
+    }
+
+    func testWhenViewIsNotInAWindowThenNoSnapshotIsStored() {
+        let sut = makeSUT(size: CGSize(width: 390, height: 800), inWindow: false)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    func testWhenViewHasZeroSizeThenNoSnapshotIsStored() {
+        let sut = makeSUT(size: .zero, inWindow: true)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    func testWhenViewIsOnScreenThenSnapshotMatchingItsSizeIsStored() {
+        let size = CGSize(width: 390, height: 800)
+        let sut = makeSUT(size: size, inWindow: true)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertEqual(previewsSource.updatedFullScreenSnapshots.count, 1)
+        XCTAssertEqual(previewsSource.updatedFullScreenSnapshots.first?.size, size)
+    }
+
+    private func makeTab() -> Tab {
+        Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))
+    }
+
+    private func makeSUT(size: CGSize, inWindow: Bool) -> SwipeTabsCoordinator {
+        let parent = UIViewController()
+        if inWindow {
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.rootViewController = parent
+            window.isHidden = false
+            self.window = window
+        }
+        parent.view.frame = CGRect(origin: .zero, size: size)
+
+        let coordinator = MainViewCoordinator(parentController: parent)
+        mainViewCoordinator = coordinator
+        coordinator.navigationBarCollectionView = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        previewsSource = MockTabPreviewsSource()
+        return SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: previewsSource,
+            appSettings: AppSettingsMock(),
+            omnibarDependencies: MockOmnibarDependency(),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: false,
+                isDuckAIAndInputLiquidGlassFeatureEnabled: false,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { _ in nil },
+            inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+    }
+}

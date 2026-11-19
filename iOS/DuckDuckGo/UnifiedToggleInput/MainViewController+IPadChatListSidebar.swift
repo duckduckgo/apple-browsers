@@ -66,10 +66,8 @@ extension MainViewController {
     func setIPadChatListSidebarOpen(_ isOpen: Bool) {
         iPadChatListSidebarState.isOpen = isOpen
         guard let tab = iPadChatListSidebarState.sidebar?.navigationController.parent as? TabViewController else { return }
-        // A list over the whole tab hides the input, so it takes the keyboard down too.
-        if !isOpen || tab.chatListSidebarContainer?.isOverlay == true {
-            tab.view.endEditing(true)
-        }
+        // Opening the list means switching or starting a chat, so the keyboard goes down either way.
+        tab.view.endEditing(true)
         tab.setChatListSidebarOpen(isOpen, animated: true)
     }
 

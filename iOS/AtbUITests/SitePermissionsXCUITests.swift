@@ -70,8 +70,22 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/iframe-camera-cross-origin-not-delegated-tampered"] = { _ in
             .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame-tampered")))
         }
+        // Top page → cross-origin frame → frame back on the top page's origin.
+        server["/iframe-camera-nested-same-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/relay-camera", allow: "camera *")))
+        }
+        server["/iframe-camera-nested-same-origin-not-delegated"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/relay-camera-not-delegated", allow: "camera *")))
+        }
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         port = try server.port()
+        let topPort = port
+        frameServer["/relay-camera"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(topPort)/camera-frame", allow: "camera")))
+        }
+        frameServer["/relay-camera-not-delegated"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(topPort)/camera-frame")))
+        }
     }
 
     override func tearDownWithError() throws {
@@ -748,6 +762,23 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     func testWhenCrossOriginIframeIsNotDelegatedCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
         assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-cross-origin-not-delegated",
+                                                      button: "Frame camera",
+                                                      result: "Frame result: NotAllowedError")
+    }
+
+    func testWhenSameOriginIframeInsideCrossOriginIframeIsDelegatedCameraThenSiteDialogPrecedesSystemPromptAndFrameGetsVideo() {
+        launchApp()
+        openPermissionPage(path: "/iframe-camera-nested-same-origin")
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame camera"])
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("Frame result: success video=1")
+    }
+
+    func testWhenSameOriginIframeInsideCrossOriginIframeIsNotDelegatedCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-nested-same-origin-not-delegated",
                                                       button: "Frame camera",
                                                       result: "Frame result: NotAllowedError")
     }

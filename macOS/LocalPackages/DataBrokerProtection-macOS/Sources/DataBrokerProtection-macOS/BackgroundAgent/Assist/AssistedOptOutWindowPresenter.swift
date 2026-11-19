@@ -110,7 +110,6 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     private let onClose: @MainActor () -> Void
     private let pageView = NSView()
     private let edgeView = AssistedOptOutEdgeOverlayView()
-    private let inputBlocker = AssistedOptOutInputBlocker()
     private let coverView: NSView
     private var cancellables = Set<AnyCancellable>()
     private var isClosed = false
@@ -179,8 +178,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         let divider = NSBox(frame: NSRect(x: 0, y: 0, width: 1, height: 100))
         divider.boxType = .separator
 
-        inputBlocker.isHidden = true
-        for (view, superview) in [(coverView, pageView), (inputBlocker, pageView), (pageView, content), (edgeView, content),
+        for (view, superview) in [(coverView, pageView), (pageView, content), (edgeView, content),
                                   (divider, content), (panel, content)] as [(NSView, NSView)] {
             view.translatesAutoresizingMaskIntoConstraints = false
             superview.addSubview(view)
@@ -198,7 +196,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
             panel.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             panel.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             panel.widthAnchor.constraint(equalToConstant: 320)
-        ] + pinned(coverView, to: pageView) + pinned(inputBlocker, to: pageView) + pinned(edgeView, to: pageView))
+        ] + pinned(coverView, to: pageView) + pinned(edgeView, to: pageView))
         return content
     }
 
@@ -237,6 +235,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         webView.translatesAutoresizingMaskIntoConstraints = false
         pageView.addSubview(webView, positioned: .below, relativeTo: coverView)
         NSLayoutConstraint.activate(pinned(webView, to: pageView))
+        (webView as? UserInputIgnoring)?.ignoresUserInput = ignoresPageInput(in: session.phase)
         page.observe(webView)
     }
 
@@ -248,19 +247,18 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         coverView.isHidden = phase != .ready && showsPage
         styleStatusItem(for: phase)
         switch phase {
-        case .ready, .submitted:
+        case .ready, .submitted, .queued, .agentInControl:
             edgeView.setEdge(.none)
-            inputBlocker.isHidden = true
-        case .queued, .agentInControl:
-            // The user can watch but not type or click into the page while DuckDuckGo fills it in.
-            edgeView.setEdge(.none)
-            inputBlocker.isHidden = false
-            window?.makeFirstResponder(inputBlocker)
         case .userTurn:
             edgeView.setEdge(.user)
-            inputBlocker.isHidden = true
             if let webView = session.webView { window?.makeFirstResponder(webView) }
         }
+        (session.webView as? UserInputIgnoring)?.ignoresUserInput = ignoresPageInput(in: phase)
+    }
+
+    /// The user can watch but not type or click into the page while DuckDuckGo fills it in.
+    private func ignoresPageInput(in phase: AssistedAttemptPhase) -> Bool {
+        phase == .queued || phase == .agentInControl
     }
 
     private func styleStatusItem(for phase: AssistedAttemptPhase) {

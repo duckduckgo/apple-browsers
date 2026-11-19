@@ -177,7 +177,7 @@ extension TabViewController {
 
             entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
 
-            if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon) {
+            if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon, origin: .aiChatMenu) {
                 entries.append(.separator)
                 entries.append(vpnEntry)
             }
@@ -206,7 +206,7 @@ extension TabViewController {
             entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
         }
 
-        if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon) {
+        if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon, origin: .aiChatMenu) {
             entries.append(.separator)
             entries.append(vpnEntry)
         }
@@ -989,8 +989,9 @@ extension TabViewController {
     /// Only the sheet menu can render badges; the legacy popover cell falls back to the notification dot.
     private func buildVPNEntry(useSmallIcon: Bool = true,
                                showStatusStringInDetail: Bool = false,
-                               showPromoBadge: Bool) -> BrowsingMenuEntry {
-        let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+                               showPromoBadge: Bool,
+                               origin: SubscriptionFunnelOrigin) -> BrowsingMenuEntry {
+        let vpnPromoHelper = VPNSubscriptionPromotionHelper(origin: origin)
         let promoStatus = vpnPromoHelper.subscriptionPromoStatus
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
@@ -1189,14 +1190,15 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         makeVPNEntry(useSmallIcon: false)
     }
 
-    private func makeVPNEntry(useSmallIcon: Bool) -> BrowsingMenuEntry? {
+    private func makeVPNEntry(useSmallIcon: Bool, origin: SubscriptionFunnelOrigin = .newTabMenu) -> BrowsingMenuEntry? {
         guard featureFlagger.isFeatureOn(.vpnMenuItem),
               AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
             return nil
         }
         return buildVPNEntry(useSmallIcon: useSmallIcon,
                              showStatusStringInDetail: !useSmallIcon,
-                             showPromoBadge: !useSmallIcon)
+                             showPromoBadge: !useSmallIcon,
+                             origin: origin)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {

@@ -81,6 +81,71 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testVPNPaywallOriginMatchesMenuInBothAIChatLayoutsAndPresentations() throws {
+        let dependencies = try XCTUnwrap(AppDependencyProvider.shared as? AppDependencyProvider)
+        let originalSubscriptionManager = dependencies.subscriptionManager
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultSubscription = .none
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        dependencies.subscriptionManager = subscriptionManager
+        let originalIdiom = MockUIDevice.mockUserInterfaceIdiom
+        UIDevice.swizzleCurrent()
+        defer {
+            dependencies.subscriptionManager = originalSubscriptionManager
+            MockUIDevice.mockUserInterfaceIdiom = originalIdiom
+            UIDevice.unswizzleCurrent()
+        }
+
+        for idiom in [UIUserInterfaceIdiom.phone, .pad] {
+            MockUIDevice.mockUserInterfaceIdiom = idiom
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.vpnMenuItem])
+            let sut = TabViewController.fake(featureFlagger: featureFlagger)
+            XCTAssertEqual(sut.unifiedToggleInputFeature.isAvailable, idiom == .phone)
+
+            for eligibleForFreeTrial in [false, true] {
+                subscriptionManager.isEligibleForFreeTrialResult = eligibleForFreeTrial
+                var actions: [(origin: String, action: () -> Void)] = []
+                let legacyMenus = [
+                    (sut.buildShortcutsMenu(), "funnel_appmenu_ios"),
+                    (sut.buildAITabMenu(), "funnel_appmenu_ios__chat")
+                ]
+                for (menu, origin) in legacyMenus {
+                    let entry = try XCTUnwrap(menu.first { $0.name == UserText.actionVPN })
+                    guard case .regular(_, _, _, _, _, _, _, _, _, let action) = entry else {
+                        return XCTFail("Expected a VPN menu action")
+                    }
+                    actions.append((origin, action))
+                }
+
+                for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
+                    let model = try XCTUnwrap(sut.buildSheetBrowsingMenu(
+                        context: context,
+                        with: MockMenuBookmarksInteractor(),
+                        mobileCustomization: makeMobileCustomization(),
+                        browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
+                        clearTabsAndData: {}
+                    ))
+                    let entry = try XCTUnwrap(model.sections.flatMap(\.items).first { $0.name == UserText.actionVPN })
+                    let origin = context == .aiChatTab ? "funnel_appmenu_ios__chat" : "funnel_appmenu_ios"
+                    actions.append((origin, entry.action))
+                }
+
+                for (origin, action) in actions {
+                    let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
+                        guard let deepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection,
+                              case .subscriptionFlow(let components) = deepLink else {
+                            return false
+                        }
+                        return components?.queryItems?.filter { $0.name == "origin" }.map(\.value) == [origin]
+                    }
+                    action()
+                    wait(for: [notificationExpectation], timeout: 1.0)
+                }
+            }
+        }
+    }
+
     func testNewTabPageMenuOmitsChatsWhenFallbackChatsEntryIsUnavailable() {
         let entryBuilder = MockBrowsingMenuEntryBuilder(chatsEntry: nil)
         let model = makeBuilder(entryBuilder: entryBuilder).buildMenu(

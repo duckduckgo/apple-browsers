@@ -585,6 +585,7 @@
             "funnel_modal_ios__subscriptionnudge",
             "funnel_appsettings_ios",
             "funnel_appmenu_ios",
+            "funnel_appmenu_ios__chat",
             "funnel_addressbar_ios__modelpicker",
             "funnel_addressbar_ios__reasoningdropdown",
             "funnel_duckai_ios__modelpicker",

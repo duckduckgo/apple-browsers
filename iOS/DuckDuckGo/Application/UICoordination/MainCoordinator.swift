@@ -989,15 +989,9 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-                startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-                completion(.keptCurrent)
-                return
-            }
             controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
                 guard let self else { return }
-                if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                    || !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
+                if !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
                     startUntreatedReturnSession(timeAwayMs: timeAwayMs)
                 }
                 completion(.keptCurrent)

@@ -474,6 +474,7 @@ public extension DesignSystemImages {
             public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude24) }
             public static var aiModelMistral: DesignSystemImage { .init(resource: .aiModelMistral24) }
             public static var aiModelOpenAI: DesignSystemImage { .init(resource: .aiModelOpenAI24) }
+            public static var aiModelOSS: DesignSystemImage { .init(resource: .aiModelOSS24) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }

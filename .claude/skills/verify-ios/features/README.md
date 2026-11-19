@@ -64,12 +64,13 @@ before a proof uses a step, and update it when you change one.
 - Duck.ai
   - [Full-tab chat](./duck-ai-tab.md): open Duck.ai, send a prompt, read the answer, chat history, attachments,
     deleting a chat; native input on iPhone, web input on iPad (examples t8, t12).
-  - [Contextual chat](./duck-ai-contextual.md): Duck.ai in a sheet over a web page. Not mapped yet.
+  - [Contextual chat](./duck-ai-contextual.md): Duck.ai over a web page with the page attached; floating
+    input then sheet on iPhone, sheet on iPad (example t11).
 
 ## Worked examples
 
 `examples/t<n>_*.py` show how to drive the harness, not how to verify a feature: t1 launch and build identity, t2,
 t3 and t9 the address bar, page reads and focus, t4 tabs, t5 a long-press menu, t6 a permission sheet and an iOS
 alert, t7 the Fire button with pixels and a wide event, t10 capture conditions. `selftest` runs t7 on each device
-because it needs no live service. t8 and t12 are Duck.ai proofs: t12 deletes a chat and reads history and storage
-before and after.
+because it needs no live service. t8 is the Duck.ai proof, t11 the contextual chat proof, and t12 deletes a chat and
+reads history and storage before and after.

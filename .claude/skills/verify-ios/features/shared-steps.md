@@ -39,3 +39,11 @@
   [Duck.ai: full-tab chat](./duck-ai-tab.md). After any manual Fire, the app covers its window with an invisible
   overlay until clearing finishes, so every control reads as not hittable until then; wait for a control to be
   `visible` again rather than retrying taps.
+
+Duck.ai contextual chat (details in [Duck.ai: contextual chat](./duck-ai-contextual.md)):
+
+- `CONTEXTUAL_FLAGS`: the flags a contextual proof pins; `contextualDuckAIMode` is off by default.
+- `open_contextual_chat`, `attached_context`: entry button, then Ask About Page; the attached page's title or `None`.
+- `send_contextual_prompt`, `read_contextual_answer`: the input is `role=textview id=searchEntry` (the address bar
+  shares the id). The answer is read from the native tree, because the web channel reads the tab, not the sheet.
+- `fire_contextual_chat`, `expand_contextual_chat`: the controls differ by device (`CONTEXTUAL_IDS`).

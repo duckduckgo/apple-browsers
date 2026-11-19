@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import Persistence
 import PrivacyDashboard
+import Subscription
 
 /// Represents the current state of onboarding.
 enum ContextualOnboardingState: String {
@@ -127,7 +128,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     }
 
     init(trackerMessageProvider: TrackerMessageProviding,
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         subscriptionManager: any SubscriptionManager,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
          makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
@@ -138,7 +139,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             switch kind {
             case .search:
                 return SearchOnboardingPath(progress: progress,
-                                            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                            subscriptionManager: subscriptionManager,
                                             trackerMessageProvider: trackerMessageProvider)
             }
         }

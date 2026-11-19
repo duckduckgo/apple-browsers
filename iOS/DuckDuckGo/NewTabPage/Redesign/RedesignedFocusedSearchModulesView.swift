@@ -20,7 +20,6 @@
 import DesignResourcesKit
 import SwiftUI
 
-/// The focused layer's own content over the redesigned New Tab Page.
 struct RedesignedFocusedSearchModulesView: View {
     var recentChats: SuggestionsListViewModel?
     var escapeHatch: EscapeHatchModel?

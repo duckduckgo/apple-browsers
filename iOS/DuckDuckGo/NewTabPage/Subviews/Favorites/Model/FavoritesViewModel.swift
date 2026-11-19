@@ -82,7 +82,6 @@ class FavoritesViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    /// Whether the favorites show under a focused input, which the pixels report as a website launch and autocomplete.
     var isFocussedState: Bool
     private let favoriteDataSource: NewTabPageFavoriteDataSource
     private let faviconsCache: FavoritesFaviconCaching

@@ -28,7 +28,6 @@ struct SuggestionsListView: View {
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
     var isFloatingPopover: Bool = false
-    /// Draws sections as cards styled like the redesigned New Tab Page search input, over a clear backdrop.
     var usesCardSurface = false
 
     fileprivate enum Metrics {
@@ -44,7 +43,6 @@ struct SuggestionsListView: View {
         /// List's horizontal content margin (cell edge). Reduced 8pt from the NTP's 24pt regularPadding
         /// to widen the cells in step with the narrower input card.
         static let listHorizontalContentMargin: CGFloat = 16
-        /// Leading inset that aligns separators with the row title.
         static let separatorLeadingInset: CGFloat = rowLeftInset + SuggestionRowView.titleLeadingInset
     }
 
@@ -165,8 +163,6 @@ struct LegacyRecentChatsView: View {
     }
 }
 
-/// One section's rows in a rounded group. With `usesCardSurface` the group is a card styled like the
-/// redesigned New Tab Page search input, Liquid Glass when `redesignedNewTabPageUsesLiquidGlass` is on.
 private struct SuggestionsSectionCard: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
@@ -215,13 +211,11 @@ private struct SuggestionsSectionCard: View {
     }
 }
 
-/// A suggestion row as a plain button, for layouts that do not use `List` rows.
 private struct SuggestionRowButton: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let row: SuggestionRow
     let isAddressBarAtBottom: Bool
-    /// The row's fill when neither selected nor pressed; nil leaves the surface behind it visible.
     let restingBackground: Color?
 
     private typealias Metrics = SuggestionsListView.Metrics
@@ -332,8 +326,7 @@ private struct SeparatorTrailingToContentModifier: ViewModifier {
     }
 }
 
-/// Suggestion sections drawn as cards like the redesigned New Tab Page search input. A `List` cannot
-/// put one surface behind a whole section, and a glass surface per row shows each row's edge.
+/// `List` cannot put one surface behind a whole section, and a glass surface per row shows each row's edge.
 private struct SuggestionsCardListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel

@@ -31,7 +31,6 @@ struct UnifiedSuggestionsView: View {
     var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
-    /// Draws the redesigned surfaces as Liquid Glass, like the focused input.
     var usesLiquidGlass = false
     var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
@@ -73,7 +72,6 @@ struct UnifiedSuggestionsView: View {
         }
     }
 
-    /// The escape hatch this layer draws. The page draws its own while its modules show beneath this layer.
     private var focusedLayerEscapeHatch: EscapeHatchModel? { showsRedesignedSearchModules ? nil : escapeHatch }
 
     /// The active typing states (the search / duck.ai suggestion lists); recents and empty states aren't.

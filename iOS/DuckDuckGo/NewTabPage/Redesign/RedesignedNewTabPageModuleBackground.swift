@@ -20,8 +20,6 @@
 import DesignResourcesKit
 import SwiftUI
 
-/// Surface shared by redesigned NTP modules. It matches the search input card: Liquid Glass when
-/// `redesignedNewTabPageUsesLiquidGlass` is on, the raised card otherwise.
 struct RedesignedNewTabPageModuleBackground: View {
     @Environment(\.redesignedNewTabPageUsesLiquidGlass) private var usesLiquidGlass
 
@@ -35,7 +33,6 @@ private struct RedesignedNewTabPageUsesLiquidGlassKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// Whether redesigned New Tab Page modules draw Liquid Glass surfaces, matching the floating input.
     var redesignedNewTabPageUsesLiquidGlass: Bool {
         get { self[RedesignedNewTabPageUsesLiquidGlassKey.self] }
         set { self[RedesignedNewTabPageUsesLiquidGlassKey.self] = newValue }

@@ -29,7 +29,6 @@ final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
 
     var viewController: UIViewController { hostingController }
 
-    /// - Parameter usesLiquidGlass: Draws the block's redesigned surfaces as Liquid Glass, like the search input.
     init(id: NewTabPageBlockID, rootView: Content, usesLiquidGlass: Bool = false) {
         self.id = id
 

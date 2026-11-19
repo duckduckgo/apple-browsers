@@ -63,10 +63,8 @@ final class UnifiedSuggestionsHost {
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
     var isShowingRedesignedSearchModules: Bool { showsRedesignedSearchModules }
-    /// Draws the redesigned surfaces as Liquid Glass, like the focused input.
     private var usesLiquidGlass = false
 
-    /// Reports whether the redesigned search modules should show, as the input mode and text change.
     var onSearchModulesVisibilityChange: ((Bool) -> Void)?
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {

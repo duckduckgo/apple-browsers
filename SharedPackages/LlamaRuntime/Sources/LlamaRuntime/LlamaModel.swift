@@ -226,7 +226,10 @@ public final class LlamaContext: @unchecked Sendable {
             written += 1
             let piece = text.append(model.bytes(of: token))
             if !piece.isEmpty { onText(piece) }
-            try decode(api.llama_batch_get_one!(&token, 1))
+            // The batch keeps the token's address until decode reads it, longer than `&token` would last.
+            try withUnsafeMutablePointer(to: &token) { tokenPointer in
+                try decode(api.llama_batch_get_one!(tokenPointer, 1))
+            }
         }
         let rest = text.flush()
         if !rest.isEmpty { onText(rest) }

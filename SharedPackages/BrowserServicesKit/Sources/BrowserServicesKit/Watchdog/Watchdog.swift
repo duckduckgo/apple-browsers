@@ -200,9 +200,8 @@ private extension Watchdog {
             return
         }
 
-        let secondsSinceLastTick = timestamps.signalTick()
         enqueueHeartbeatSignal()
-        performHangDetection(secondsSinceLastTick: secondsSinceLastTick)
+        performHangDetection()
     }
 
     func enqueueHeartbeatSignal() {
@@ -215,7 +214,8 @@ private extension Watchdog {
         DispatchQueue.main.async(execute: work)
     }
 
-    func performHangDetection(secondsSinceLastTick: TimeInterval) {
+    func performHangDetection() {
+        let secondsSinceLastTick = timestamps.signalTick()
         let secondsSinceLastHeartbeat = timestamps.secondsSinceLastHeartbeat
         let secondsSinceHangStarted = timestamps.secondsSinceHangStarted
 

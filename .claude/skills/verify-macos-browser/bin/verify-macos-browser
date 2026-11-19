@@ -2,11 +2,14 @@
 """Write and run a proof for the macOS browser: one command builds, launches, runs it, captures evidence, judges the
 verdict, writes report.md and manifest.json, and always cleans up. verify.sh stays the low-level layer.
 
-usage: verify-macos-browser new-proof <name>                       a proof template in a fresh evidence folder
-       verify-macos-browser check <proof>...                       compile + shape + FLAGS; no app, no build
-       verify-macos-browser prove <proof> --target mac|vm|vm-1|vm-2
+usage: verify-macos-browser new-proof <name> [--evidence-dir <dir>]  a proof template in a fresh attempt folder
+       verify-macos-browser check <proof>...                         compile + shape + FLAGS; no app, no build
+       verify-macos-browser prove <proof> --target mac|vm|vm-1|vm-2 [--evidence-dir <dir>]
+--evidence-dir: a directory outside any git checkout; each run writes a fresh <stamp>-<name>-<id>/ attempt folder in
+       it (default ~/.ddg-verify-macos)
 exit:  0 pass · 1 a check failed · 2 inconclusive: setup, an action or read that failed, nothing checked, a proof
-       rejected by check, or a pass with cleanup/evidence problems · 130 cancelled (report still written)
+       rejected by check, an --evidence-dir refused, or a pass with cleanup/evidence problems · 130 cancelled
+       (report still written)
 """
 import json
 import os
@@ -18,17 +21,29 @@ import harness  # noqa: E402
 
 
 def main(argv):
-    if len(argv) >= 2 and argv[0] == "new-proof":
-        print(harness.new_proof(argv[1]))
-        return 0
+    evidence_dir = None
+    if "--evidence-dir" in argv:
+        i = argv.index("--evidence-dir")
+        if i + 1 == len(argv) or argv[0] not in ("new-proof", "prove"):
+            print(__doc__)
+            return 64
+        evidence_dir = argv.pop(i + 1)
+        argv.pop(i)
+    try:
+        if len(argv) == 2 and argv[0] == "new-proof":
+            print(harness.new_proof(argv[1], harness.evidence_root(evidence_dir)))
+            return 0
+        if len(argv) == 4 and argv[0] == "prove" and argv[2] == "--target":
+            code, out = harness.prove(argv[1], argv[3], evidence_dir)
+            print(json.dumps(out, indent=1))
+            return code
+    except harness.Refused as e:
+        print(f"REFUSED: {e}", file=sys.stderr)
+        return 2
     if len(argv) >= 2 and argv[0] == "check":
         out = [dict(proof=p, problems=harness.load(p)[1]) for p in argv[1:]]
         print(json.dumps(out, indent=1))
         return 2 if any(o["problems"] for o in out) else 0
-    if len(argv) == 4 and argv[0] == "prove" and argv[2] == "--target":
-        code, out = harness.prove(argv[1], argv[3])
-        print(json.dumps(out, indent=1))
-        return code
     print(__doc__)
     return 64
 

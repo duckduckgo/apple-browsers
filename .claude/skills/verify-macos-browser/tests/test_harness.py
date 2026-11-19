@@ -1,11 +1,14 @@
 """Tests for the harness's pure parts: the verdict, report.md, and check. No app, build or VM.
 Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
 """
+import json
 import os
+import subprocess
 import sys
 import tempfile
 import textwrap
 import unittest
+import uuid
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "scripts"))
@@ -216,6 +219,97 @@ class FinalAppStateTests(unittest.TestCase):
 
     def test_an_ssh_failure_leaves_it_unknown(self):
         self.assertIsNone(self.state((255, "ssh: connect to host vm-1 port 22: Operation timed out")))
+
+
+BIN = os.path.join(harness.SKILL, "bin", "verify-macos-browser")
+
+
+def read(path):
+    with open(path) as f:
+        return f.read()
+
+
+class EvidenceDirTests(unittest.TestCase):
+    def cli(self, *args):
+        return subprocess.run([sys.executable, "-I", BIN, *args], capture_output=True, text=True)
+
+    def test_an_evidence_dir_inside_the_checkout_is_refused_and_nothing_is_written(self):
+        inside = os.path.join(harness.ROOT, f"evidence-{uuid.uuid4().hex[:8]}")
+        p = self.cli("new-proof", "x", "--evidence-dir", inside)
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertIn("inside the git checkout", p.stderr)
+        self.assertFalse(os.path.exists(inside))
+
+    def test_a_symlink_into_the_checkout_is_refused(self):
+        link = os.path.join(tempfile.mkdtemp(), "link")
+        os.symlink(os.path.join(harness.ROOT, f"evidence-{uuid.uuid4().hex[:8]}"), link)   # dangling until written
+        with self.assertRaises(harness.Refused):
+            harness.evidence_root(os.path.join(link, "proofs"))
+
+    def test_an_evidence_dir_outside_any_checkout_is_used_as_given(self):
+        d = os.path.join(tempfile.mkdtemp(), "not-yet")
+        proof = self.cli("new-proof", "Cmd T", "--evidence-dir", d).stdout.strip()
+        self.assertEqual(os.path.dirname(os.path.dirname(proof)), os.path.realpath(d))
+        self.assertRegex(os.path.basename(os.path.dirname(proof)), r"^\d{8}-\d{6}-cmd-t-[0-9a-f]{4}$")
+
+
+class AttemptFolderTests(unittest.TestCase):
+    def setUp(self):
+        self.root = os.path.realpath(tempfile.mkdtemp())
+
+    def test_each_new_proof_gets_its_own_folder(self):
+        a, b = harness.new_proof("tabs", self.root), harness.new_proof("tabs", self.root)
+        self.assertNotEqual(os.path.dirname(a), os.path.dirname(b))
+
+    def test_an_untouched_attempt_folder_is_used_in_place(self):
+        proof = harness.new_proof("tabs", self.root)
+        self.assertEqual(harness.attempt_dir(proof, self.root), (os.path.dirname(proof), proof))
+
+    def test_a_finished_attempt_is_never_overwritten(self):
+        proof = harness.new_proof("tabs", self.root)
+        with open(os.path.join(os.path.dirname(proof), "report.md"), "w") as f:
+            f.write("first run")
+        folder, copy = harness.attempt_dir(proof, self.root)
+        self.assertNotEqual(folder, os.path.dirname(proof))
+        self.assertEqual(os.path.dirname(folder), self.root)
+        self.assertEqual(read(copy), read(proof))
+        self.assertEqual(sorted(os.listdir(os.path.dirname(proof))), ["proof.py", "report.md"])
+        self.assertRegex(os.path.basename(folder), r"^\d{8}-\d{6}-tabs-[0-9a-f]{4}$")
+
+    def test_a_folder_whose_name_is_no_topic_gets_a_valid_one(self):
+        lead = os.path.join(self.root, "_lead")
+        os.makedirs(lead)
+        with open(os.path.join(lead, "proof.py"), "w") as f:
+            f.write(harness.TEMPLATE)
+        folder, _ = harness.attempt_dir(os.path.join(lead, "proof.py"), self.root)
+        self.assertRegex(os.path.basename(folder), r"^[a-z0-9-]+$")   # verify.sh's topic rule
+        self.assertIn("-lead-", os.path.basename(folder))
+
+
+class PublishablePathTests(unittest.TestCase):
+    HOME = os.path.expanduser("~")
+
+    def test_rerun_shows_home_as_tilde_and_expands_back_in_zsh(self):
+        proof = os.path.join(self.HOME, "ev dir", "20260101-000000-tabs-abcd", "proof.py")
+        evidence_dir = os.path.join(self.HOME, "ev dir")
+        rerun = harness.rerun_command(proof, "vm-1", evidence_dir)
+        self.assertNotIn(self.HOME + os.sep, rerun)
+        self.assertIn("--evidence-dir ~/", rerun)
+        args = rerun.split(" prove ", 1)[1]
+        words = subprocess.run(["zsh", "-fc", f"print -rl -- {args}"], capture_output=True, text=True).stdout
+        self.assertEqual(words.splitlines(), [proof, "--target", "vm-1", "--evidence-dir", evidence_dir])
+
+    def test_manifest_and_report_show_home_as_tilde(self):
+        evidence = tempfile.mkdtemp()
+        with open(os.path.join(evidence, "manifest.json"), "w") as f:
+            json.dump(dict(worktree=os.path.join(self.HOME, "repo")), f)
+        rec = record([("t", True, None)], problems=[f"cleanup failed: {self.HOME}/repo/x"])
+        m = harness._manifest(evidence, rec, os.path.join(evidence, "proof.py"), "rerun", {}, [], "vm-1",
+                              os.path.join(self.HOME, "ev"))
+        written = read(os.path.join(evidence, "manifest.json"))
+        self.assertNotIn(self.HOME + os.sep, written)
+        self.assertEqual(json.loads(written)["evidence_dir"], "~/ev")
+        self.assertNotIn(self.HOME + os.sep, harness.report("x", rec, m, evidence))
 
 
 if __name__ == "__main__":

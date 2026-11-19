@@ -322,6 +322,7 @@ platform :mac do
 
     release = fetch_live_appstore_release(options)
     UI.message("App Store version: #{release[:version]} (#{release[:build_number]})")
+    UI.message("Version state: #{release[:version_state]}")
     UI.message("Phased release: #{release[:phase_state] || 'none'}, started #{release[:phase_start_date] || 'n/a'}")
     UI.message("Is critical: #{is_critical.nil? ? 'unchanged' : is_critical}")
 

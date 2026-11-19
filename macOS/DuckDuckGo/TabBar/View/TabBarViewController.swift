@@ -221,7 +221,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var browserToolPermissionsPanelClose: AnyCancellable?
     private var browserToolUseSlideOut: DispatchWorkItem?
     private let browserToolPermissionCloseIcon: NSImage = {
-        let icon = DesignSystemImages.Glyphs.Size16.close
+        let icon = DesignSystemImages.Glyphs.Size16.closeSmall
         icon.isTemplate = true
         return icon
     }()
@@ -1670,7 +1670,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             menu.addItem(chatsItem)
         }
 
-        if !NSApp.delegateTyped.aiChatBrowserToolsService.catalog.enabledTools.isEmpty {
+        // Only once a browser tool has left its default.
+        let browserTools = NSApp.delegateTyped.aiChatBrowserToolsService
+        let enabledToolNames = Set(browserTools.catalog.enabledTools.map(\.name))
+        if browserTools.permissions.storedDecisions.keys.contains(where: enabledToolNames.contains) {
             menu.addItem(.separator())
 
             let permissionsItem = NSMenuItem(title: UserText.browserToolSettingsTitle, action: #selector(duckAIMenuBrowserPermissionsAction), keyEquivalent: "")

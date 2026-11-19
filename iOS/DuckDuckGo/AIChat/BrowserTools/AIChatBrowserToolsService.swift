@@ -491,7 +491,7 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .findInPage:
             .aiChatBrowserToolFindInPage
         case .featureEnabled, .highlightInPage,
-             .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks:
+             .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks, .requestAccess:
             nil
         }
     }

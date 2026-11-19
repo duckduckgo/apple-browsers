@@ -1650,6 +1650,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)
 
+        // Not in init: creating the Fire view model reads `NSApp.delegate`, which isn't set yet.
+        aiChatBrowserToolsService.revokeChatGrants(whenBurning: fireCoordinator.fireViewModel.fire.burningDataPublisher)
+
         Task {
             await subscriptionManager.loadInitialData()
 

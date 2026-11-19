@@ -107,6 +107,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     /// The sidebar entry the menu last offered. The item's action reads it rather than the tab's state,
     /// so it does what the item said and what the menu-shown pixel reported.
     private var duckAIMenuSidebarEntry: AIChatMenuButtonSidebarEntry?
+    /// Set while the menu is open; cleared when its outcome is reported, so each open reports once.
+    private var duckAIMenuContext: AIChatMenuButtonContext?
     private lazy var duckAIChromeContextMenu: NSMenu = {
         let menu = NSMenu()
         menu.delegate = self
@@ -1535,7 +1537,33 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // Right-align: anchor the menu's top-right corner to the button's bottom-right.
         let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
         duckAIMenuButtonPixelFirer.fireMenuShown(sidebarEntry: sidebarEntry)
-        menu.popUp(positioning: nil, at: origin, in: sender)
+        duckAIMenuContext = makeDuckAIMenuContext()
+        if !menu.popUp(positioning: nil, at: origin, in: sender) {
+            fireDuckAIMenuOutcome(.none)
+        }
+    }
+
+    private func makeDuckAIMenuContext() -> AIChatMenuButtonContext {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            return AIChatMenuButtonContext(pageType: .other, chatState: .none)
+        }
+        let chatState: AIChatMenuButtonContext.ChatState
+        if aiChatCoordinator?.isSidebarOpen(for: tab.uuid) == true {
+            chatState = .sidebarOpen
+        } else if aiChatCoordinator?.isChatFloating(for: tab.uuid) == true {
+            chatState = .floating
+        } else if aiChatCoordinator?.hasHiddenChat(for: tab.uuid) == true {
+            chatState = .hidden
+        } else {
+            chatState = .none
+        }
+        return AIChatMenuButtonContext(pageType: .init(tab.content), chatState: chatState)
+    }
+
+    private func fireDuckAIMenuOutcome(_ choice: AIChatMenuButtonChoice) {
+        guard let duckAIMenuContext else { return }
+        self.duckAIMenuContext = nil
+        duckAIMenuButtonPixelFirer.fireMenuOutcome(choice, context: duckAIMenuContext)
     }
 
     private func subscribeToNativeChats() {
@@ -1646,6 +1674,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuNewChatAction() {
+        fireDuckAIMenuOutcome(.newChat)
         openNewDuckAIChatTabFromMenuButton(via: .menuItem)
     }
 
@@ -1659,6 +1688,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuChatsAction() {
+        fireDuckAIMenuOutcome(.chats)
         PixelKit.fire(AIChatPixel.aiChatChatsTitleBarMenu, frequency: .dailyAndStandard)
         guard let mainViewController = parent as? MainViewController else {
             Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
@@ -1674,6 +1704,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             assertionFailure("The Duck.ai menu's sidebar item was picked before the menu resolved its entry")
             return
         }
+        fireDuckAIMenuOutcome(AIChatMenuButtonChoice(duckAIMenuSidebarEntry))
         switch duckAIMenuSidebarEntry.action {
         case .close:
             closeDuckAIChat()

@@ -5,9 +5,9 @@ Each check carries what it should do on the base build (`base`, set by `with ios
 The base revision is built and proved in its own worktree, so it gets its own simulators and build; the worktree is
 removed afterwards. Both runs use this checkout's skill and the same proof, devices and video setting.
 """
-import json, os, shlex, shutil, signal, subprocess, sys, time, urllib.parse
+import json, os, shlex, shutil, signal, subprocess, sys, time
 
-from . import env, harness
+from . import env, gallery, harness, page
 from .device import Device
 from .env import ROOT, SKILL, Failed, run
 
@@ -142,10 +142,22 @@ def prove_against_base(path, ref, devices=None, decision_log=None, evidence_dir=
                                                                "--devices", ",".join(devices)]
                                                               + harness.evidence_args(decision_log, evidence_dir)
                                                               + ([] if video else ["--no-video"])))
-    with open(f"{attempt}/comparison.json", "w") as f:
-        json.dump(cmp, f, indent=1)
-    with open(f"{attempt}/report.md", "w") as f:
-        f.write(report(mod, cmp, devices_out, attempt))
+    handlers = harness._ignore_signals()   # drawing takes seconds: a Ctrl-C now must not lose the report
+    try:
+        failed = gallery.compose(gallery.comparison_jobs(attempt, cmp["before"], cmp["after"], devices_out))
+        problems += [f"could not draw {os.path.relpath(out, attempt)}: {why}" for out, why in sorted(failed.items())]
+        try:
+            text = page.comparison_page(mod, cmp, devices_out, attempt)
+            with open(f"{attempt}/index.html", "w") as f:
+                f.write(text)
+        except Exception as e:
+            problems.append(f"could not write index.html: {type(e).__name__}: {e}")
+        with open(f"{attempt}/comparison.json", "w") as f:
+            json.dump(cmp, f, indent=1)
+        with open(f"{attempt}/report.md", "w") as f:
+            f.write(report(mod, cmp, devices_out, attempt))
+    finally:
+        harness._restore(handlers)
     any_problems = problems or any(o[s].get("problems") for o in devices_out.values() for s in ("before", "after"))
     code = exit_code([o["verdict"] for o in devices_out.values()], bool(any_problems))
     return code, dict(proof=proof, evidence=attempt, report=f"{attempt}/report.md", base=sha,
@@ -242,12 +254,20 @@ def report(mod, cmp, devices, attempt):
     before, after = cmp["before"], cmp["after"]
     lines = [f"# Before and after: {doc.splitlines()[0]}", "", "## Verified", "", doc, "",
              f"Before is the base build (`{cmp['base']['sha'][:12]}`, from `{cmp['base']['ref']}`); "
-             "after is this checkout.", "", "## Evidence", "", "Paths are relative to this report.", ""]
+             "after is this checkout.", "", "## Evidence", "",
+             "Paths are relative to this report. [index.html](index.html) shows the same evidence with the videos "
+             "playing in the page.", ""]
     for dev, o in devices.items():
-        lines += [f"### {dev}", "", "| | Before | After |", "|---|---|---|",
-                  f"| Video | {_video(before, dev, o['before'])} | {_video(after, dev, o['after'])} |"]
+        lines += [f"### {dev}", ""]
+        if os.path.isfile(os.path.join(attempt, gallery.before_after(dev))):
+            lines += [f"Key frames, before above after: "
+                      f"{harness.thumbnail(gallery.before_after(dev), f'Before and after on {dev}')}", ""]
+        lines += ["| | Before | After |", "|---|---|---|",
+                  f"| Video | {_video(attempt, before, dev, o['before'])} | {_video(attempt, after, dev, o['after'])} |"]
         lines += [f"| {_cell(name[:-4])} | {_frame(attempt, before, dev, name, 'Before')} | {_frame(attempt, after, dev, name, 'After')} |"
-                  for name in _key_frames(attempt, before, after, dev)]
+                  for name in gallery.matched_frames(*(gallery.key_frames(os.path.join(attempt, run, dev) if run else None,
+                                                                          o[side].get("shots"))
+                                                       for run, side in ((before, "before"), (after, "after"))))]
         lines.append("")
     lines += ["## Outcome", ""]
     for dev, o in devices.items():
@@ -260,7 +280,7 @@ def report(mod, cmp, devices, attempt):
             lines += ["", "**Problems (cleanup or evidence):**"] + [f"- {p}" for p in problems]
         lines.append("")
     if cmp["problems"]:
-        lines += ["**Problems (base worktree):**"] + [f"- {p}" for p in cmp["problems"]] + [""]
+        lines += ["**Problems (base worktree, images or page):**"] + [f"- {p}" for p in cmp["problems"]] + [""]
     lines += ["## Details", "",
               f"- Base run: [report]({before}/report.md)" if before else "- Base run: none ([log](base-run.log))",
               f"- This checkout: [report]({after}/report.md)" if after else "- This checkout: not run",
@@ -284,23 +304,17 @@ def _cell(text):
     return text.replace("|", "\\|").replace("\n", " ")
 
 
-def _key_frames(attempt, before, after, dev):
-    """Screenshot names from either run, in the order this checkout took them, then the final screen."""
-    def shots(run_dir):
-        d = os.path.join(attempt, run_dir, dev) if run_dir else None
-        names = [f for f in os.listdir(d) if f.endswith(".png") and f != "final.png"] if d and os.path.isdir(d) else []
-        return sorted(names, key=lambda f: os.path.getmtime(os.path.join(d, f)))
-    names = shots(after)
-    return names + [n for n in shots(before) if n not in names] + ["final.png"]
-
-
 def _frame(attempt, run_dir, dev, name, label):
     rel = f"{run_dir}/{dev}/{name}"
     if not run_dir or not os.path.isfile(os.path.join(attempt, rel)):
         return "not captured"
-    url, alt = urllib.parse.quote(rel), _cell(f"{label}: {name[:-4]} on {dev}").replace('"', "'")
-    return f'[<img src="{url}" width="200" alt="{alt}">]({url})'
+    return harness.thumbnail(rel, f"{label}: {name[:-4]} on {dev}")
 
 
-def _video(run_dir, dev, result):
-    return f"[▶ Watch video]({run_dir}/{dev}/{result['video']})" if run_dir and result.get("video") else "-"
+def _video(attempt, run_dir, dev, result):
+    """The run's poster thumbnail (when drawn) and a Watch video link, both opening its recording."""
+    if not run_dir or not result.get("video"):
+        return "-"
+    rel, poster = f"{run_dir}/{dev}/{result['video']}", f"{run_dir}/{dev}/{gallery.POSTER}"
+    still = harness.thumbnail(poster, f"Recording on {dev}", rel) + " " if os.path.isfile(os.path.join(attempt, poster)) else ""
+    return still + harness.watch(rel)

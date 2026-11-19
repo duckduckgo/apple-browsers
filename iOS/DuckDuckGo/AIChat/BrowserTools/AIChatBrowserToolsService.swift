@@ -211,6 +211,12 @@ extension AIChatBrowserToolsService {
     private func permissionMessage(for toolName: String) -> String {
         switch toolName {
         case AIChatBrowserToolsSubfeature.listOpenTabs.rawValue: "Duck.ai wants to see your open tabs."
+        case AIChatBrowserToolsSubfeature.readTabContent.rawValue:
+            NSLocalizedString("browserTools.ReadTabContentBrowserTool.permission", value: "Duck.ai wants to read this tab's content.", comment: "Browser tool permission reason")
+        case AIChatBrowserToolsSubfeature.searchHistory.rawValue:
+            NSLocalizedString("browserTools.SearchHistoryBrowserTool.permission", value: "Duck.ai wants to search your browsing history.", comment: "Browser tool permission reason")
+        case AIChatBrowserToolsSubfeature.findInPage.rawValue:
+            NSLocalizedString("browserTools.FindInPageBrowserTool.permission", value: "Duck.ai wants to find text on this page.", comment: "Browser tool permission reason")
         default: "Duck.ai wants to use a browser tool."
         }
     }

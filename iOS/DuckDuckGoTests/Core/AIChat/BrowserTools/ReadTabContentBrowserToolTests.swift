@@ -206,12 +206,11 @@ final class ReadTabContentBrowserToolTests: XCTestCase {
         XCTAssertNil(reader.requestedTabID)
     }
 
-    func testWhenDescribedThenItAsksWithTheWindowsCopy() {
+    func testWhenDescribedThenItAsksForPermission() {
         let (tool, _, _) = make()
 
         XCTAssertEqual(tool.name, "readTabContent")
         XCTAssertEqual(tool.permissionMode, .ask)
-        XCTAssertEqual(tool.permissionReason, "Duck.ai wants to read this tab's content.")
     }
 
 

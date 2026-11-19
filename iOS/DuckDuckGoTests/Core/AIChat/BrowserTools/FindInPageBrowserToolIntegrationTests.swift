@@ -70,6 +70,7 @@ final class FindInPageBrowserToolIntegrationTests: XCTestCase {
             await fulfillment(of: [prompted], timeout: 1)
             XCTAssertEqual(fixture.pageAcquisitions, 0)
             XCTAssertEqual(fixture.presenter.prompts.first?.toolName, "findInPage")
+            XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to find text on this page."])
             XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
             fixture.presenter.select(decision)
             let first = await task.value

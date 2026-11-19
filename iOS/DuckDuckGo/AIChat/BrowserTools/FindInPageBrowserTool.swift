@@ -29,7 +29,6 @@ final class FindInPageBrowserTool: BrowserTool {
 
     let name = "findInPage"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = NSLocalizedString("browserTools.FindInPageBrowserTool.permission", value: "Duck.ai wants to find text on this page.", comment: "Browser tool permission reason")
 
     let inputSchema: JSONValue = [
         "type": "object",

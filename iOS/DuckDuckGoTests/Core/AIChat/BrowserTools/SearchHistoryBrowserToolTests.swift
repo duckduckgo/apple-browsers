@@ -190,6 +190,7 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
         XCTAssertEqual(first, expected)
         XCTAssertEqual(stored, expected)
         XCTAssertEqual(fixture.presenter.prompts.count, 1)
+        XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to search your browsing history."])
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "searchHistory"), .allow)
         fixture.presenter.onPresent = nil
         fixture.service.permissions.setState(.ask, forToolNamed: "searchHistory")

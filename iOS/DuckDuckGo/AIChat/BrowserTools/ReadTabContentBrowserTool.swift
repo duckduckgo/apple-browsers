@@ -26,7 +26,6 @@ final class ReadTabContentBrowserTool: BrowserTool {
 
     let name = "readTabContent"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = NSLocalizedString("browserTools.ReadTabContentBrowserTool.permission", value: "Duck.ai wants to read this tab's content.", comment: "Browser tool permission reason")
 
     let inputSchema: JSONValue = [
         "type": "object",

@@ -200,7 +200,6 @@ enum WebExtensionManagerFactory {
                                            isAppStoreBuild: buildType.isAppStoreBuild,
                                            unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
-            supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),

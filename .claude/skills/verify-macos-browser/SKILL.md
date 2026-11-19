@@ -20,6 +20,8 @@ start a task ("… and verify it with verify-macos-browser"), or invoke `/verify
     (`ssh vm-1 true` works); otherwise mention `VM-SETUP.md` once.
   - **On this Mac** (`--target mac`): drives their screen; tell them and wait for an OK. The process running it
     needs the Accessibility and Screen Recording grants; an agent's shell often has neither.
+- **New Mac, checkout, Xcode or macOS, or a new VM?** `bin/verify-macos-browser selftest [--target vm-1|vm-2|mac]`
+  checks each step in order and names the first that fails, why, and the fix.
 - Read `features/README.md`, then `features/<feature>.md` for the area you're touching. Every entry point your
   change touches needs its own check or an `unverified` line.
 - For state, timing or geometry claims, add temporary logs with one tag (`os.Logger` with public interpolation;

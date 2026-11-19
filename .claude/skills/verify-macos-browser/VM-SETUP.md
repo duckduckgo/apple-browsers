@@ -140,6 +140,9 @@ ssh verify-vm 'defaults read /Library/Preferences/com.apple.loginwindow autoLogi
 Accessibility and Screen Recording: the agent runs `ax dump` against Finder (non-empty tree) and a `screencapture`
 over ssh.
 
+Or run all of it, and a launch and two proofs: `bin/verify-macos-browser selftest --target vm-1` names the first step
+that fails and points back into this file.
+
 ## Gotchas
 
 - **Onboarding blocks new tabs.** After each launch, press Debug → Skip Onboarding

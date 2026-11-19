@@ -318,6 +318,8 @@ class MainViewController: UIViewController {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    /// The iPad Duck.ai chats sidebar, shared by every Duck.ai tab.
+    let iPadChatListSidebarState = IPadChatListSidebarState()
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     private let tutorialSettings: TutorialSettings
@@ -1704,6 +1706,9 @@ class MainViewController: UIViewController {
     private var isKeyboardOverlappingContent = false
     private var didSendGestureDismissPixel: Bool = false
     var latestKeyboardFrame: CGRect = .zero
+    /// The full on-screen keyboard was up, not just the bar iPadOS shows above a hardware keyboard.
+    private var isOnScreenKeyboardShown = false
+    private static let onScreenKeyboardMinimumHeight: CGFloat = 150
 
     @objc
     private func keyboardDidShow() {
@@ -1761,6 +1766,19 @@ class MainViewController: UIViewController {
             return
         }
         coordinator.showCollapsed()
+    }
+
+    /// iPad's keyboard can be put away with the input still focused, and with a hardware keyboard paired it only shrinks to
+    /// the shortcut bar, so no hide is sent. Losing the full keyboard is what leaves the input nothing to type with.
+    private func updateOnScreenKeyboardVisibility(_ visibleHeight: CGFloat) {
+        let isShown = visibleHeight >= Self.onScreenKeyboardMinimumHeight
+        defer { isOnScreenKeyboardShown = isShown }
+        guard isOnScreenKeyboardShown, !isShown, isIPadFullTabChatInput, currentTab?.isAITab == true else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator,
+                  coordinator.isAITabExpanded, !coordinator.isEditing, self.presentedViewController == nil else { return }
+            coordinator.showCollapsed()
+        }
     }
 
     @objc
@@ -2290,6 +2308,7 @@ class MainViewController: UIViewController {
         let keyboardVisible = intersection.height > 0
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
+        updateOnScreenKeyboardVisibility(view.bounds.intersection(keyboardFrameInView).height)
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
         updateDuckAIKeyboardEdgeSweep(keyboardTargetFrame: keyboardTargetFrame)
         updateWebInputChromeVisibility()
@@ -6562,6 +6581,12 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+        recordChatHistorySelection()
+        loadChatFromHistory(url)
+    }
+
+    /// Ends the instrumentation a chat pick closes and fires its entry pixel, whether the chat then loads or opens in place.
+    func recordChatHistorySelection() {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadPreviousChat)
 
@@ -6573,6 +6598,9 @@ extension MainViewController: OmniBarDelegate {
             unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         ) == .openInNewTab
         fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
+    }
+
+    func loadChatFromHistory(_ url: URL) {
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url) { $0.duckAIEntrySource = .chatHistoryOpenChat }
     }
@@ -8725,44 +8753,45 @@ extension MainViewController: TabDelegate {
         // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
         // and this guard ensures the sheet can never be presented there.
         guard UIDevice.current.userInterfaceIdiom != .pad else { return }
-        // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
-        // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
-        // configure at launch the cast yields `nil`, and the reader surfaces a
-        // `.storageUnavailable` failure so the screen shows an error rather than a
-        // misleading empty list. Fire mode uses isolated storage so persistent chats
-        // cannot leak into a fire session.
-        let isFireMode = isCurrentTabFireTab()
-        let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
-        let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
-        // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
-        // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
-        // can't guarantee unique ids and the latter crashes on duplicates.
-        let modelDisplays = Dictionary(
-            (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        let downloader = ChatHistoryDownloader(
-            storageHandler: storageHandler,
-            modelDisplays: modelDisplays
-        )
-        let pinner: ChatPinning? = storageHandler.map { storage in
-            ChatPinner(storageHandler: storage, syncCleaner: isFireMode ? nil : aiChatSyncCleaner)
-        }
-        let viewModel = AIChatHistoryViewModel(
-            reader: reader,
-            featureFlagger: featureFlagger,
-            fireExecutor: fireExecutor,
-            downloader: downloader,
-            pinner: pinner,
-            source: source,
-            isFireMode: isFireMode
-        )
+        let viewModel = makeAIChatHistoryViewModel(source: source, isFireMode: isCurrentTabFireTab())
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
         let navigationController = UINavigationController(rootViewController: content)
         navigationController.modalPresentationStyle = .automatic
         duckAIInputFocus.setAside()
         present(navigationController, animated: true)
+    }
+
+    /// Shared by the iPhone Chats sheet and the iPad Duck.ai chats sidebar.
+    func makeAIChatHistoryViewModel(source: AIChatHistorySource, isFireMode: Bool) -> AIChatHistoryViewModel {
+        // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
+        // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
+        // configure at launch the cast yields `nil`, and the reader surfaces a
+        // `.storageUnavailable` failure so the screen shows an error rather than a
+        // misleading empty list. Fire mode uses isolated storage so persistent chats
+        // cannot leak into a fire session.
+        let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
+        let downloader = ChatHistoryDownloader(storageHandler: storageHandler)
+        // The UTI model catalog, for export header attribution. `uniquingKeysWith` rather than
+        // `uniqueKeysWithValues:` — the model list is server-supplied so ids may repeat, and the latter crashes on that.
+        let modelDisplays: () -> [String: ModelDisplay] = { [weak self] in
+            Dictionary((self?.unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
+                       uniquingKeysWith: { first, _ in first })
+        }
+        let pinner: ChatPinning? = storageHandler.map { storage in
+            ChatPinner(storageHandler: storage, syncCleaner: isFireMode ? nil : aiChatSyncCleaner)
+        }
+        return AIChatHistoryViewModel(
+            reader: reader,
+            featureFlagger: featureFlagger,
+            fireExecutor: fireExecutor,
+            downloader: downloader,
+            modelDisplays: modelDisplays,
+            pinner: pinner,
+            source: source,
+            isFireMode: isFireMode
+        )
     }
 
     func tabDidRequestBookmarks(tab: TabViewController) {

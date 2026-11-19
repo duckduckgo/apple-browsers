@@ -451,6 +451,16 @@ enum AITabRefreshBehavior: Equatable {
     case showExpanded
 }
 
+private extension URL {
+
+    /// Read only for a tab already known to be Duck.ai, so it skips the host check a custom Duck.ai URL would fail.
+    var autoSubmitsDuckAIPrompt: Bool {
+        URLComponents(url: self, resolvingAgainstBaseURL: false)?.queryItems?.contains {
+            $0.name == AIChatURLParameters.autoSubmitPromptQueryName && $0.value == AIChatURLParameters.autoSubmitPromptQueryValue
+        } == true
+    }
+}
+
 struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let tabIsAITab: Bool
     let tabURL: URL?
@@ -526,7 +536,9 @@ extension MainViewController {
         let hasExistingChat = resolvedURL?.duckAIChatID != nil
         let isSidebarOpen = resolvedURL?.isDuckAISidebarOpen == true
         let isSettingsOpen = resolvedURL?.isDuckAISettingsOpen == true
-        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen && !inputs.tabRequestsDeepLinkSurface
+        // A prompt sent from elsewhere (e.g. the iPad address bar) is answered here, so the keyboard stays down like the web input.
+        let autoSubmitsPrompt = resolvedURL?.autoSubmitsDuckAIPrompt == true
+        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !autoSubmitsPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen && !inputs.tabRequestsDeepLinkSurface
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 }
@@ -1115,7 +1127,6 @@ extension MainViewController {
         if isIPadFullTabChatInput {
             // iPad keeps its own address bar and tabs bar, which already carry fire and the app menu.
             coordinator.viewController.setFlankingAccessoriesVisible([])
-            currentTab?.setFullTabChatInputSeparatorVisible(coordinator.isAITabCollapsed)
             return
         }
         let isOnAITab = currentTab?.isAITab == true

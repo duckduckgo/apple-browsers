@@ -168,6 +168,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case openChatProtectionAction
         case nativeInputFocused(Bool)
         case bonusRecordChanged(AIChatBonusRecordPayload)
+        case openChatAction(chatId: String)
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
@@ -175,6 +176,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         struct NativeInputFocusedParams: Encodable {
             let focused: Bool
+        }
+
+        struct OpenChatActionParams: Encodable {
+            let chatId: String
         }
 
         var methodName: String {
@@ -205,6 +210,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitNativeInputFocused"
             case .bonusRecordChanged:
                 return AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue
+            case .openChatAction:
+                return AIChatUserScriptMessages.submitOpenChatAction.rawValue
             }
         }
 
@@ -220,6 +227,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return NativeInputFocusedParams(focused: focused)
             case .bonusRecordChanged(let payload):
                 return payload
+            case .openChatAction(let chatId):
+                return OpenChatActionParams(chatId: chatId)
             default:
                 return nil
             }
@@ -255,6 +264,9 @@ final class AIChatUserScript: NSObject, Subfeature {
     private var pendingTabContextSubmission: Task<Void, Never>?
     private var tabContextSubmissionGeneration = 0
     private var latestTabContextSubmissionID: UUID?
+    private var pendingOpenChat: PendingOpenChat?
+    /// How long `openChat(chatId:)` waits for the page's `openChatActionHandled`.
+    var openChatReplyTimeout: TimeInterval = 1.5
 
     /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
@@ -307,6 +319,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     deinit {
         pendingTabContextSubmission?.cancel()
+        pendingOpenChat?.continuation.resume(returning: nil)
         guard let localModelService else { return }
         let ownerID = ObjectIdentifier(self)
         Task { @MainActor in
@@ -482,6 +495,11 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.aiChatBonusDismiss
         case .aiChatBonusEnd:
             return handler.aiChatBonusEnd
+        case .openChatActionHandled:
+            return { @MainActor [weak self] params, _ in
+                self?.openChatActionHandled(params: params)
+                return nil
+            }
 
         // Main-actor closures, so the reply isn't held up by a hop in the middle of the handler.
         case .startAIChatLocalRun:
@@ -864,6 +882,41 @@ final class AIChatUserScript: NSObject, Subfeature {
         push(.openChatProtectionAction)
     }
 
+    /// Asks the page to open a chat in place, superseding any open still waiting for its answer.
+    /// - Returns: the page's answer, or `nil` when the push can't be sent, is superseded or gets no answer in time.
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        finishPendingOpenChat(with: nil)
+        let requestID = UUID()
+        let timeout = openChatReplyTimeout
+        return await withCheckedContinuation { continuation in
+            pendingOpenChat = PendingOpenChat(id: requestID, chatId: chatId, continuation: continuation)
+            guard push(.openChatAction(chatId: chatId)) else {
+                finishPendingOpenChat(with: nil)
+                return
+            }
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                guard self?.pendingOpenChat?.id == requestID else { return }
+                self?.finishPendingOpenChat(with: nil)
+            }
+        }
+    }
+
+    @MainActor
+    private func openChatActionHandled(params: Any) {
+        guard let reply: OpenChatActionHandled = DecodableHelper.decode(from: params),
+              reply.chatId == pendingOpenChat?.chatId else { return }
+        finishPendingOpenChat(with: AIChatOpenChatOutcome(rawValue: reply.status) ?? .failed)
+    }
+
+    @MainActor
+    private func finishPendingOpenChat(with outcome: AIChatOpenChatOutcome?) {
+        let pending = pendingOpenChat
+        pendingOpenChat = nil
+        pending?.continuation.resume(returning: outcome)
+    }
+
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
     @MainActor
     func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
@@ -914,6 +967,26 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker.push(method: message.methodName, params: params, for: self, into: webView)
         return true
     }
+}
+
+// MARK: - Open chat
+
+/// The page's answer to `submitOpenChatAction`.
+enum AIChatOpenChatOutcome: String {
+    case opened
+    case notFound
+    case failed
+}
+
+private struct PendingOpenChat {
+    let id: UUID
+    let chatId: String
+    let continuation: CheckedContinuation<AIChatOpenChatOutcome?, Never>
+}
+
+private struct OpenChatActionHandled: Decodable {
+    let chatId: String
+    let status: String
 }
 
 // MARK: - Local models

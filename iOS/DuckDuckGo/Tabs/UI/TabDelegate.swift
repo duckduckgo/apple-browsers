@@ -252,7 +252,7 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
 
-    /// Whether a prompt such as a notification banner, find in page or the Duck Player pill is already on screen,
+    /// Whether a prompt such as a notification banner, find in page, the Duck Player pill or a Dax dialog is already on screen,
     /// so the tab skips its own.
     func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool
 }

@@ -309,6 +309,10 @@ extension DebugScreensViewModel {
                     func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {}
 
                     func searchFromOnboarding(for query: String) {}
+
+                    func presentSubscriptionPaywallFromOnboarding(from controller: UIViewController, onDismiss: @escaping () -> Void) {
+                        onDismiss()
+                    }
                 }
 
                 weak var capturedController: OnboardingDebugViewController?
@@ -322,8 +326,9 @@ extension DebugScreensViewModel {
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(timeLimit: daxDialogs.timeLimit) {
                     guard let capturedController else { return }
 
+                    let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
                     let viewModel = OnboardingIntroFactory.makeViewModel(
-                        pixelReporter: OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
+                        pixelReporter: OnboardingPixelReporter(subscriptionManager: subscriptionManager),
                         systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                         daxDialogsManager: d.daxDialogManager,
                         syncAutoRestoreHandler: d.syncAutoRestoreHandler,
@@ -333,7 +338,8 @@ extension DebugScreensViewModel {
                         adBlockingAvailability: AdBlockingAvailability(
                             featureFlagger: AppDependencyProvider.shared.featureFlagger,
                             isEnabledByUserProvider: { false }
-                        )
+                        ),
+                        subscriptionManager: subscriptionManager
                     )
                     let controller = OnboardingIntroFactory.makeController(
                         viewModel: viewModel,

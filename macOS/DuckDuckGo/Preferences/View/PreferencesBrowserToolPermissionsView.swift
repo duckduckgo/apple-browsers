@@ -86,10 +86,6 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     var canResetAll: Bool {
         rows.contains { storedStates[$0.name] != nil }
     }
-
-    static func hasAllowedTool(catalog: BrowserToolCatalog, permissions: BrowserToolPermissionStoring) -> Bool {
-        catalog.enabledTools.contains { !$0.asksEveryTime && permissions.state(forToolNamed: $0.name) == .allow }
-    }
 }
 
 struct PreferencesBrowserToolPermissionsView: View {
@@ -127,10 +123,78 @@ struct PreferencesBrowserToolPermissionsView: View {
     }
 }
 
-private struct BrowserToolPermissionRow: View {
+struct BrowserToolPermissionsPanelView: View {
+
+    @StateObject private var model: BrowserToolPermissionsPreferences
+    // Tools changed from their default when the panel opened. One set back from the dropdown
+    // stays until the panel closes, so it can be changed again; Reset removes it at once.
+    @State private var shownTools: Set<String>
+    private let openSettings: () -> Void
+
+    @MainActor
+    init(model: BrowserToolPermissionsPreferences? = nil, openSettings: @escaping () -> Void) {
+        let model = model ?? BrowserToolPermissionsPreferences()
+        _model = StateObject(wrappedValue: model)
+        _shownTools = State(initialValue: Set(model.storedStates.keys))
+        self.openSettings = openSettings
+    }
+
+    private var rows: [BrowserToolPermissionsPreferences.Row] {
+        model.rows.filter { shownTools.contains($0.name) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(UserText.browserToolSettingsTitle)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+            if rows.isEmpty {
+                Text(UserText.browserToolPanelAllDefault)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                PreferencesWebsitePermissionListContainer {
+                    VStack(spacing: 0) {
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 {
+                                WebsitePermissionListSeparator()
+                            }
+                            BrowserToolPermissionRow(row: row, model: model, showsDetail: false) {
+                                shownTools.remove(row.name)
+                            }
+                        }
+                    }
+                }
+            }
+
+            scopeNote
+        }
+        .padding(16)
+        .frame(width: 420)
+    }
+
+    private var scopeNote: some View {
+        var link = AttributedString(UserText.browserToolPanelManageInSettings)
+        link.link = URL(string: "about:settings")
+        return Text(AttributedString(UserText.browserToolPanelScope + " ") + link)
+            .font(.system(size: 12))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .fixedSize(horizontal: false, vertical: true)
+            .environment(\.openURL, OpenURLAction { _ in
+                openSettings()
+                return .handled
+            })
+    }
+}
+
+struct BrowserToolPermissionRow: View {
 
     let row: BrowserToolPermissionsPreferences.Row
     @ObservedObject var model: BrowserToolPermissionsPreferences
+    var showsDetail = true
+    var onReset: (() -> Void)?
 
     private static let states: [BrowserToolPermissionState] = [.ask, .allow, .deny]
 
@@ -146,7 +210,8 @@ private struct BrowserToolPermissionRow: View {
                 Text(BrowserToolSettingsText.title(toolName: row.name))
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                if let detail = BrowserToolSettingsText.detail(toolName: row.name) {
+                    .help(showsDetail ? "" : BrowserToolSettingsText.detail(toolName: row.name) ?? "")
+                if showsDetail, let detail = BrowserToolSettingsText.detail(toolName: row.name) {
                     Text(detail)
                         .font(.system(size: 11))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -156,18 +221,22 @@ private struct BrowserToolPermissionRow: View {
 
             Spacer(minLength: 10)
 
-            Picker(selection: Binding(get: { model.state(of: row) }, set: { model.setState($0, of: row) }), label: EmptyView()) {
-                ForEach(row.asksEveryTime ? Self.states.filter { $0 != .allow } : Self.states, id: \.self) { state in
-                    Text(Self.title(for: state)).tag(state)
+            NSPopUpButtonView(selection: Binding(get: { model.state(of: row) }, set: { model.setState($0, of: row) })) {
+                let button = BrowserToolStatePopUpButton()
+                for state in Self.states where !(row.asksEveryTime && state == .allow) {
+                    button.menu?.addItem(withTitle: Self.title(for: state), action: nil, keyEquivalent: "").representedObject = state
                 }
+                return button
             }
-            .labelsHidden()
             .fixedSize()
             .accessibilityLabel(BrowserToolSettingsText.title(toolName: row.name))
             .accessibilityIdentifier("Preferences.AIChat.browserToolPermissions.\(row.name)")
 
-            Button { model.reset(row) } label: {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.undo)
+            Button {
+                model.reset(row)
+                onReset?()
+            } label: {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.replay)
                     .renderingMode(.template)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .frame(width: 24, height: 24)
@@ -176,13 +245,14 @@ private struct BrowserToolPermissionRow: View {
             .buttonStyle(HoverHighlightButtonStyle())
             .disabled(model.storedStates[row.name] == nil)
             .opacity(model.storedStates[row.name] == nil ? 0.4 : 1)
-            .accessibilityLabel(UserText.browserToolSettingsReset)
+            .help(UserText.browserToolSettingsReset)
+            .accessibilityLabel(UserText.browserToolSettingsReset(toolName: BrowserToolSettingsText.title(toolName: row.name)))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
     }
 
-    private static func title(for state: BrowserToolPermissionState) -> String {
+    fileprivate static func title(for state: BrowserToolPermissionState) -> String {
         switch state {
         case .ask: UserText.permissionCenterAlwaysAsk
         case .allow: UserText.permissionCenterAlwaysAllow
@@ -227,5 +297,19 @@ enum BrowserToolSettingsText {
         case "switchToTab": UserText.browserToolSettingsDetailSwitchToTab
         default: nil
         }
+    }
+}
+
+/// As wide as the longest option, so rows that leave out Allow line up with the rest.
+private final class BrowserToolStatePopUpButton: NSPopUpButton {
+
+    private static let width: CGFloat = {
+        let button = NSPopUpButton()
+        button.addItems(withTitles: [BrowserToolPermissionState.ask, .allow, .deny].map(BrowserToolPermissionRow.title(for:)))
+        return button.intrinsicContentSize.width
+    }()
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: Self.width, height: super.intrinsicContentSize.height)
     }
 }

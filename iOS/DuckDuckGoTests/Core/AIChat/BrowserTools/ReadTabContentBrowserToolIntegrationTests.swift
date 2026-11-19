@@ -43,6 +43,7 @@ final class ReadTabContentBrowserToolIntegrationTests: XCTestCase {
                 guard case .success = response else { XCTFail("Expected success: \(response)"); continue }
             case .never: XCTAssertEqual(response, .failure(callId: "call", error: .denied))
             case .dismiss: XCTAssertEqual(response, .failure(callId: "call", error: .cancelled))
+            case .allowForChat, .allowAccess, .dontAllow: XCTFail("Not answered in this test: \(decision)")
             }
             if decision == .never || decision == .dismiss {
                 XCTAssertEqual(fixture.pageAcquisitions, 0)

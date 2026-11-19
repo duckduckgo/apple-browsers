@@ -178,8 +178,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
         tab.contentBlockingWaitPixelTimeout = 3600
-        var compilationResults = [Pixel.Event.CompileRulesResult]()
-        tab.rulesCompilationMonitor = RulesCompilationMonitor { result, _, _ in compilationResults.append(result) }
+        let compilationPixels = PixelKitMock()
+        tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
         let webView = try XCTUnwrap(tab.webView as? MockWebView)
         let cancelled = expectation(description: "Superseded main-frame decision cancelled")
         cancelled.assertForOverFulfill = true
@@ -204,13 +204,14 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         await fulfillment(of: [cancelled], timeout: 1)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertTrue(newDecisions.isEmpty)
-        XCTAssertTrue(compilationResults.isEmpty, "A superseded wait must not report the rules as compiled")
+        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A superseded wait must not report the rules as compiled")
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [continued], timeout: 10)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertEqual(newDecisions.count, 1)
         XCTAssertNotEqual(newDecisions.first, .cancel)
-        XCTAssertEqual(compilationResults, [.success])
+        XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
+        XCTAssertTrue(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("m_compilation_result_success_") == true)
         XCTAssertFalse(tab.isError, "The superseded wait must not replace the new page with an error")
         XCTAssertEqual(webView.loadCallCount, 0)
     }
@@ -479,8 +480,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             tab.specialErrorPageNavigationHandler.delegate = nil
             defer { tab.prepareForDataClearing() }
             tab.contentBlockingWaitPixelTimeout = 3600
-            var compilationResults = [Pixel.Event.CompileRulesResult]()
-            tab.rulesCompilationMonitor = RulesCompilationMonitor { result, _, _ in compilationResults.append(result) }
+            let compilationPixels = PixelKitMock()
+            tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
             try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock).enabledFeaturesForVersions = [:]
             let request = URLRequest(url: URL(string: "https://example.com/stopped")!)
             let action = MockNavigationAction(request: request, navigationType: .other,
@@ -505,7 +506,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             await fulfillment(of: [installed], timeout: 10)
             subscription.cancel()
             XCTAssertEqual(decisions, [.cancel])
-            XCTAssertTrue(compilationResults.isEmpty, "A stopped wait must not report the rules as compiled")
+            XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A stopped wait must not report the rules as compiled")
             XCTAssertFalse(tab.isError)
             XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
         }

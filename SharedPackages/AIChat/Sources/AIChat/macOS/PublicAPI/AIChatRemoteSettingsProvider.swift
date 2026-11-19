@@ -22,8 +22,6 @@ import Foundation
 public protocol AIChatRemoteSettingsProvider {
     var onboardingCookieName: String { get }
     var onboardingCookieDomain: String { get }
-    var aiChatURLIdentifiableQuery: String { get }
-    var aiChatURLIdentifiableQueryValue: String { get }
     var aiChatURL: URL { get }
     var isAIChatEnabled: Bool { get }
 }

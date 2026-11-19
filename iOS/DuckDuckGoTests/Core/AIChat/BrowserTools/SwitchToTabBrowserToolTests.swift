@@ -83,7 +83,7 @@ final class SwitchToTabBrowserToolTests: XCTestCase {
     }
 
     func testDuckAIURLsAreNotSelectable() async {
-        for address in ["https://duck.ai/", "https://duck.ai/chat", "https://duckduckgo.com/?q=hello&ia=chat"] {
+        for address in ["https://duck.ai/", "https://duck.ai/chat", "https://duck.ai/chat?q=hello&ia=chat"] {
             let owner = tab("owner")
             let target = Tab(uid: "chat", link: Link(title: "Chat", url: URL(string: address)!), fireTab: false)
             var selections = 0

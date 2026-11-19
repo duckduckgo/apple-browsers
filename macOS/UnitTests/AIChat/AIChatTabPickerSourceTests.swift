@@ -230,7 +230,7 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         let page = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
         let newTab = Tab(content: .newtab)
         let homepage = Tab(content: .url(URL(string: "https://duckduckgo.com/")!, credential: nil, source: .ui))
-        let duckAI = Tab(content: .url(URL(string: "https://duckduckgo.com/?ia=chat")!, credential: nil, source: .ui))
+        let duckAI = Tab(content: .url(URL(string: "https://duck.ai/chat?ia=chat")!, credential: nil, source: .ui))
         let serp = Tab(content: .url(URL(string: "https://duckduckgo.com/?q=test")!, credential: nil, source: .ui))
         let origin = collection([page, newTab, homepage, duckAI, serp].map { AnyTab.loaded($0) })
 

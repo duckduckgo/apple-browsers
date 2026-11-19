@@ -86,20 +86,6 @@ class AIChatRemoteSettingsTests: XCTestCase {
         XCTAssertEqual(config.cookieDomain, aiChatRemoteSettings.onboardingCookieDomain)
     }
 
-    func testAIChatURLIdentifiableQuery_WhenSettingExists_ThenReturnsCorrectValue() {
-        var config = MockConfig()
-        config.embeddedData = config.configWithSettings
-        aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
-        XCTAssertEqual(config.aiChatURLIdentifiableQuery, aiChatRemoteSettings.aiChatURLIdentifiableQuery)
-    }
-
-    func testAIChatURLIdentifiableQueryValue_WhenSettingExists_ThenReturnsCorrectValue() {
-        var config = MockConfig()
-        config.embeddedData = config.configWithSettings
-        aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
-        XCTAssertEqual(config.aiChatURLIdentifiableQueryValue, aiChatRemoteSettings.aiChatURLIdentifiableQueryValue)
-    }
-
     func testOnboardingCookieName_WhenSettingDoesNotExist_ThenReturnsDefaultValue() {
         var config = MockConfig()
         config.embeddedData = config.configWithoutSettings
@@ -130,8 +116,6 @@ private struct MockConfig {
     var aiChatURL = "https://potato.com"
     var cookieName = "test0"
     var cookieDomain = "duck.com"
-    var aiChatURLIdentifiableQuery = "test1"
-    var aiChatURLIdentifiableQueryValue = "test2"
 
     var embeddedData = Data()
 
@@ -156,9 +140,7 @@ private struct MockConfig {
                     "settings": {
                         "aiChatURL": "\(aiChatURL)",
                         "onboardingCookieName": "\(cookieName)",
-                        "onboardingCookieDomain": "\(cookieDomain)",
-                        "aiChatURLIdentifiableQuery": "\(aiChatURLIdentifiableQuery)",
-                        "aiChatURLIdentifiableQueryValue": "\(aiChatURLIdentifiableQueryValue)"
+                        "onboardingCookieDomain": "\(cookieDomain)"
                     },
                     "hash": "64a9f318c4cfd9fc702e641d2a69347b"
                 }

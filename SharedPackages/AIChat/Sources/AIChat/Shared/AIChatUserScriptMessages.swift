@@ -184,3 +184,14 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case submitAIChatLocalModelState
 }
 // swiftlint:enable inclusive_language
+
+public extension AIChatUserScriptMessages {
+
+    /// The only messages duckduckgo.com may send: its homepage lists chats and its search results hand
+    /// off to Duck.ai. Every other message comes from Duck.ai alone.
+    static let duckDuckGoPageMessages: Set<AIChatUserScriptMessages> = [
+        .getAIChatNativeConfigValues,
+        .getAIChats,
+        .openAIChat
+    ]
+}

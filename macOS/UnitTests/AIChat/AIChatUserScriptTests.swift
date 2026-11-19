@@ -44,6 +44,25 @@ final class AIChatUserScriptTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenDuckDuckGoSendsAHomepageOrSearchHandoffMessageThenItIsAllowed() {
+        for message in AIChatUserScriptMessages.duckDuckGoPageMessages {
+            XCTAssertTrue(userScript.messageOriginPolicy(forMethodNamed: message.rawValue).isAllowed("duckduckgo.com"), message.rawValue)
+        }
+    }
+
+    func testWhenDuckDuckGoSendsAnyOtherMessageThenItIsRefused() {
+        for message in AIChatUserScriptMessages.allCases where !AIChatUserScriptMessages.duckDuckGoPageMessages.contains(message) {
+            XCTAssertFalse(userScript.messageOriginPolicy(forMethodNamed: message.rawValue).isAllowed("duckduckgo.com"), message.rawValue)
+        }
+        XCTAssertFalse(userScript.messageOriginPolicy(forMethodNamed: "unknownMethod").isAllowed("duckduckgo.com"))
+    }
+
+    func testWhenDuckAISendsAnyMessageThenItIsAllowed() {
+        for message in AIChatUserScriptMessages.allCases {
+            XCTAssertTrue(userScript.messageOriginPolicy(forMethodNamed: message.rawValue).isAllowed("duck.ai"), message.rawValue)
+        }
+    }
+
     @MainActor func testOpenSettingsMessageTriggersOpenSettingsMethod() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChatSettings.rawValue))
         _ = try await handler([""], WKScriptMessage.mock())
@@ -249,7 +268,7 @@ final class AIChatUserScriptTests: XCTestCase {
         userScript.webView = webView
         let cases: [(url: String?, isFire: Bool, shouldPush: Bool)] = [
             ("https://duck.ai/chat", false, true),
-            ("https://duckduckgo.com/?ia=chat", false, true),
+            ("https://duckduckgo.com/?ia=chat", false, false),
             ("https://chat.example.com/conversation", false, true),
             ("https://duckduckgo.com/?q=search", false, false),
             ("https://example.com", false, false),

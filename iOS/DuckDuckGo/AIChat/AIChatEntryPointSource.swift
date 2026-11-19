@@ -134,7 +134,7 @@ extension AIChatEntryPointSource {
     /// Names the page behind an `openAIChat` user-script request so it is not reported as a typed
     /// address. `nil` for duck.ai and debug hosts, which have no entry of their own.
     static func forFrontEndOpenRequest(messageHost: String?, pageURL: URL?) -> AIChatEntryPointSource? {
-        if pageURL?.isDuckDuckGoHomepageEntry == true { return .ddgHomepage }
+        if pageURL?.isDuckDuckGoHomepage == true { return .ddgHomepage }
         guard let messageHost, messageHost == URL.ddg.host else { return nil }
         return .serp
     }
@@ -144,7 +144,7 @@ extension AIChatEntryPointSource {
     /// results page and `direct_url` from any other page.
     static func forInPageNavigation(from currentURL: URL?, to targetURL: URL, isLinkActivation: Bool) -> AIChatEntryPointSource? {
         guard targetURL.isDuckAIURL, currentURL?.isDuckAIURL != true else { return nil }
-        if currentURL?.isDuckDuckGoHomepageEntry == true { return .ddgHomepage }
+        if currentURL?.isDuckDuckGoHomepage == true { return .ddgHomepage }
         guard isLinkActivation else { return nil }
         return currentURL?.isDuckDuckGoSearch == true ? .serp : .directURL
     }
@@ -153,11 +153,6 @@ extension AIChatEntryPointSource {
     var isFollowedLink: Bool {
         self == .serp || self == .directURL
     }
-}
-
-private extension URL {
-    /// The homepage proper: `duckduckgo.com/?ia=chat` shares its shape but is a Duck.ai page.
-    var isDuckDuckGoHomepageEntry: Bool { isDuckDuckGoHomepage && !isDuckAIURL }
 }
 
 extension WidgetSourceType {

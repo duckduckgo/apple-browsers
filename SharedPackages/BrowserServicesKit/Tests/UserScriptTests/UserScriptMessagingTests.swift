@@ -189,6 +189,55 @@ class UserScriptMessagingTests: XCTestCase {
     }
 }
 
+final class UserScriptMessagingMethodOriginPolicyTests: XCTestCase {
+
+    func testWhenMethodPolicyRejectsTheOriginThenTheMessageIsRefused() {
+        let action = brokerAction(method: "restricted")
+
+        guard case .error(.policyRestriction) = action else {
+            return XCTFail("Expected a policy restriction, got \(action)")
+        }
+    }
+
+    func testWhenMethodPolicyAllowsTheOriginThenTheMessageIsHandled() {
+        let action = brokerAction(method: "open")
+
+        guard case .notify = action else {
+            return XCTFail("Expected a notification, got \(action)")
+        }
+    }
+
+    private func brokerAction(method: String) -> UserScriptMessageBroker.Action {
+        let broker = UserScriptMessageBroker(context: "any_context", hostProvider: FixedHostProvider(host: "example.com"))
+        broker.registerSubfeature(delegate: MethodPolicyDelegate())
+        let message = WKScriptMessage.mock(name: broker.context, body: [
+            "context": "any_context",
+            "featureName": "methodPolicyFeature",
+            "method": method
+        ])
+        return broker.messageHandlerFor(message)
+    }
+
+    private struct FixedHostProvider: UserScriptHostProvider {
+        let host: String
+        func hostForMessage(_ message: UserScriptMessage) -> String { host }
+    }
+
+    private struct MethodPolicyDelegate: Subfeature {
+        weak var broker: UserScriptMessageBroker?
+        let featureName = "methodPolicyFeature"
+        let messageOriginPolicy: MessageOriginPolicy = .all
+
+        func messageOriginPolicy(forMethodNamed methodName: String) -> MessageOriginPolicy {
+            methodName == "restricted" ? .only(rules: [.exact(hostname: "duck.ai")]) : messageOriginPolicy
+        }
+
+        func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+            { _, _ in nil }
+        }
+    }
+}
+
 class HostnameMatchingRuleTests: XCTestCase {
 
     func testMakingExactRuleBasedOnURL() throws {

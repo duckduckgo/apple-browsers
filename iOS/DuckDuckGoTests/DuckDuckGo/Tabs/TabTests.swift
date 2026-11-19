@@ -263,9 +263,9 @@ class TabTests: XCTestCase {
         XCTAssertTrue(tab.isAITab)
     }
 
-    func testWhenTabHasDuckDuckGoAIChatQueryThenIsAITabReturnsTrue() {
-        // Given - duckduckgo.com URL with ia=chat
-        let aiURL = URL(string: "https://duckduckgo.com/?ia=chat")!
+    func testWhenTabHasDuckDuckGoAIBangThenIsAITabReturnsTrue() {
+        // Given - duckduckgo.com URL with a Duck.ai bang
+        let aiURL = URL(string: "https://duckduckgo.com/?q=!ai+hello")!
         let tab = Tab(link: Link(title: "AI Chat", url: aiURL))
 
         // Then
@@ -493,7 +493,7 @@ class TabTests: XCTestCase {
     }
 
     func testWhenAITabHasDuckDuckGoSuffixThenConversationTitleStripsIt() {
-        let aiURL = URL(string: "https://duckduckgo.com/?ia=chat")!
+        let aiURL = URL(string: "https://duck.ai/chat?ia=chat")!
         let tab = Tab(link: Link(title: "My Chat at DuckDuckGo", url: aiURL))
 
         XCTAssertEqual(tab.aiChatConversationTitle, "My Chat")
@@ -673,7 +673,7 @@ class TabTests: XCTestCase {
     }
 
     func testWhenTabLinkIsChatQueryThenPromptPageTypeIsDuckAI() {
-        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?q=cats&ia=chat")!))
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duck.ai/chat?q=cats&ia=chat")!))
 
         XCTAssertEqual(tab.promptPageType, .duckAI)
     }

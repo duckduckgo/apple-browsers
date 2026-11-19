@@ -35,8 +35,8 @@ final class SerpSearchTokenInterceptorTests: XCTestCase {
         XCTAssertFalse(SerpSearchTokenInterceptor.isSerpURL(url))
     }
 
-    func testIsSerpURL_falseForDuckAIChatQuery() {
-        let url = URL(string: "https://duckduckgo.com/?q=hello&ia=chat")!
+    func testIsSerpURL_falseForDuckAIBang() {
+        let url = URL(string: "https://duckduckgo.com/?q=!ai+hello")!
         XCTAssertFalse(SerpSearchTokenInterceptor.isSerpURL(url))
     }
 

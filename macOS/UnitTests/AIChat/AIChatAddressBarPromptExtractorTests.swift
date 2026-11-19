@@ -48,7 +48,7 @@ final class AIChatAddressBarPromptExtractorTests: XCTestCase {
     }
 
     func testExtractAIChatQueryForAIChatPage() {
-        let url = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
+        let url = URL(string: "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let value = AddressBarTextField.Value.url(urlString: url.absoluteString, url: url, userTyped: false)
         let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
 
@@ -113,7 +113,7 @@ final class AIChatAddressBarPromptExtractorTests: XCTestCase {
     }
 
     func testExtractAIChatQueryForDuckAIChatURL() {
-        let url = URL(string: "https://duckduckgo.com/?q=example&ia=chat")!
+        let url = URL(string: "https://duck.ai/chat?q=example&ia=chat")!
         let value = AddressBarTextField.Value.url(urlString: url.absoluteString, url: url, userTyped: false)
         let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
 

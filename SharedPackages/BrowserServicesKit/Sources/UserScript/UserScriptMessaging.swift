@@ -47,6 +47,10 @@ public protocol Subfeature {
     /// This allows the feature to be selective about which domains/origins it accepts messages from
     var messageOriginPolicy: MessageOriginPolicy { get }
 
+    /// The origins allowed to call `methodName`, checked before its handler is resolved.
+    /// Defaults to `messageOriginPolicy` for every method.
+    func messageOriginPolicy(forMethodNamed methodName: String) -> MessageOriginPolicy
+
     /// The top-level name of the feature. For example, if Duck Player was delivered through C-S-S, the
     /// "featureName" would still be "duckPlayer" and the "context" would be related to the shared UserScript, in this
     /// case that's "contentScopeScripts"
@@ -69,6 +73,10 @@ extension Subfeature {
     /// providing a blank implementation since not all features will need this
     public func with(broker: UserScriptMessageBroker) {
         // nothing
+    }
+
+    public func messageOriginPolicy(forMethodNamed methodName: String) -> MessageOriginPolicy {
+        messageOriginPolicy
     }
 }
 
@@ -191,7 +199,7 @@ public final class UserScriptMessageBroker: NSObject {
 
         /// Check if the selected delegate accepts messages from this origin
         let messageHost = hostProvider.hostForMessage(message)
-        guard delegate.messageOriginPolicy.isAllowed(messageHost) else {
+        guard delegate.messageOriginPolicy(forMethodNamed: method).isAllowed(messageHost) else {
             if isNativeStorage {
                 Logger.nativeStorageDebug.error("[NativeStorage] Broker: origin '\(messageHost)' REJECTED by policy for method '\(method)'")
             }

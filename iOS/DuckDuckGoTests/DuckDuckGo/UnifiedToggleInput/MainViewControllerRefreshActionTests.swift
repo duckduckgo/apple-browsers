@@ -147,7 +147,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
     func test_aiTab_freshChat_showsCollapsedAndExpandsAfterRefresh() {
         let inputs = makeInputs(
             tabIsAITab: true,
-            tabURL: URL(string: "https://duckduckgo.com/?q=hello&ia=chat&duckai=2"),
+            tabURL: URL(string: "https://duck.ai/chat?q=hello&ia=chat&duckai=2"),
             coordinatorIsAITabState: false,
             coordinatorHasSubmittedPrompt: false
         )
@@ -187,7 +187,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
     func test_aiTab_deepLinkSurfaceRequested_showsCollapsedWithoutExpand() {
         let inputs = makeInputs(
             tabIsAITab: true,
-            tabURL: URL(string: "https://duckduckgo.com/?q=hello&ia=chat&duckai=2"),
+            tabURL: URL(string: "https://duck.ai/chat?q=hello&ia=chat&duckai=2"),
             tabRequestsDeepLinkSurface: true,
             coordinatorIsAITabState: false,
             coordinatorHasSubmittedPrompt: false
@@ -213,7 +213,7 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
     func test_aiTab_freshChat_arrivingByTabSwipe_collapsesWithoutExpand() {
         let inputs = makeInputs(
             tabIsAITab: true,
-            tabURL: URL(string: "https://duckduckgo.com/?q=hello&ia=chat&duckai=2"),
+            tabURL: URL(string: "https://duck.ai/chat?q=hello&ia=chat&duckai=2"),
             coordinatorIsAITabState: false,
             isArrivingByTabSwipe: true
         )

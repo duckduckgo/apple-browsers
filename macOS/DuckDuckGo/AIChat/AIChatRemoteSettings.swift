@@ -43,16 +43,12 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         case cookieName = "onboardingCookieName"
         case cookieDomain = "onboardingCookieDomain"
         case aiChatURL = "aiChatURL"
-        case aiChatURLIdentifiableQuery = "aiChatURLIdentifiableQuery"
-        case aiChatURLIdentifiableQueryValue = "aiChatURLIdentifiableQueryValue"
 
         var defaultValue: String {
             switch self {
             case .cookieName: return "dcm"
             case .cookieDomain: return "duckduckgo.com"
             case .aiChatURL: return "https://duck.ai"
-            case .aiChatURLIdentifiableQuery: return "ia"
-            case .aiChatURLIdentifiableQueryValue: return "chat"
             }
         }
     }
@@ -75,8 +71,6 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
 
     var onboardingCookieName: String { getSettingsData(.cookieName) }
     var onboardingCookieDomain: String { getSettingsData(.cookieDomain) }
-    var aiChatURLIdentifiableQuery: String { getSettingsData(.aiChatURLIdentifiableQuery) }
-    var aiChatURLIdentifiableQueryValue: String { getSettingsData(.aiChatURLIdentifiableQueryValue) }
 
     var aiChatURL: URL {
         // 1. First check for debug URL override

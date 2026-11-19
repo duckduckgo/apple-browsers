@@ -32,6 +32,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     private(set) var messageOriginPolicy: MessageOriginPolicy
+    private let duckDuckGoPageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
 
     private var cancellables: Set<AnyCancellable> = []
@@ -81,12 +82,6 @@ final class AIChatUserScript: NSObject, Subfeature {
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
-        /// Default rule for DuckDuckGo AI Chat
-        if let ddgDomain = URL.duckDuckGo.host {
-            originRules.append(.exact(hostname: ddgDomain))
-        }
-
-        /// Default rule for standalone DuckDuckGo AI Chat
         if let duckAiDomain = URL.duckAi.host {
             originRules.append(.exact(hostname: duckAiDomain))
             destinationRules.append(.exact(hostname: duckAiDomain))
@@ -100,6 +95,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
 
         self.messageOriginPolicy = .only(rules: originRules)
+        let duckDuckGoRules: [HostnameMatchingRule] = URL.duckDuckGo.host.map { [.exact(hostname: $0)] } ?? []
+        self.duckDuckGoPageOriginPolicy = .only(rules: originRules + duckDuckGoRules)
         self.messageDestinationPolicy = .only(rules: destinationRules)
         super.init()
 
@@ -181,6 +178,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
 
         broker?.push(method: AIChatUserScriptMessages.submitSyncStatusChanged.rawValue, params: status, for: self, into: webView)
+    }
+
+    func messageOriginPolicy(forMethodNamed methodName: String) -> MessageOriginPolicy {
+        guard let message = AIChatUserScriptMessages(rawValue: methodName),
+              AIChatUserScriptMessages.duckDuckGoPageMessages.contains(message) else { return messageOriginPolicy }
+        return duckDuckGoPageOriginPolicy
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {

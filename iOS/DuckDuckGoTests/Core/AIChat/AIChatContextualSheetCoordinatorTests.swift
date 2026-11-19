@@ -319,7 +319,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockPresentingVC: MockPresentingViewController!
     private var mockNativeStorage: MockDuckAiChatStorage!
     private let savedChatID = "760d681e-9173-4abd-a120-d660783787e9"
-    private lazy var savedChatURL = URL(string: "https://duckduckgo.com/?ia=chat&chatID=\(savedChatID)")!
+    private lazy var savedChatURL = URL(string: "https://duck.ai/chat?ia=chat&chatID=\(savedChatID)")!
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!

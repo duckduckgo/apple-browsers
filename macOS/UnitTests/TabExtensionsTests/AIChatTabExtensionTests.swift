@@ -258,7 +258,7 @@ final class AIChatTabExtensionTests: XCTestCase {
     func testWhenDuckAIOrDuckDuckGoLinksToDuckAIThenTheChatIsAttributedToTheLinkWithoutAPixel() {
         let cases: [(sourceURL: URL, expected: AIChatConversationSource)] = [
             (URL(string: "https://duck.ai/chat")!, .duckAILink),
-            (URL(string: "https://duckduckgo.com/?q=test&ia=chat")!, .duckAILink),
+            (URL(string: "https://duckduckgo.com/?q=!ai+test")!, .duckAILink),
             (URL(string: "https://duckduckgo.com/?q=test")!, .duckDuckGoLink),
         ]
         for (sourceURL, expected) in cases {

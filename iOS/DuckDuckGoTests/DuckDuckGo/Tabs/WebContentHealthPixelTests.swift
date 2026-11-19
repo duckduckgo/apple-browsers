@@ -445,7 +445,7 @@ final class WebContentHealthPixelTests: XCTestCase {
 
     func testSurfaceIsDerivedFromURL() {
         XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://duckduckgo.com/?q=test")), .search)
-        XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://duckduckgo.com/?q=test&ia=chat&duckai=1")), .duckai)
+        XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://duck.ai/chat?q=test&ia=chat&duckai=1")), .duckai)
         XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://duck.ai/")), .duckai)
         XCTAssertEqual(WebContentHealthPixel.Surface(url: URL(string: "https://example.com/")), .other)
         XCTAssertEqual(WebContentHealthPixel.Surface(url: nil), .other)

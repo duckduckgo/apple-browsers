@@ -792,7 +792,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     }
     
     private func createAITab() -> Tab {
-        let aiChatURL = URL(string: "https://duckduckgo.com/?ia=chat")!
+        let aiChatURL = URL(string: "https://duck.ai/chat?ia=chat")!
         let link = Link(title: "AI Chat", url: aiChatURL)
         return Tab(link: link)
     }

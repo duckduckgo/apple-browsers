@@ -59,8 +59,8 @@ final class PageContextAttachabilityPolicyTests: XCTestCase {
                        PageContextExtractionOutcome.internalPageCategory)
     }
 
-    func testWhenDDGInPageChatThenPreventedInternalPage() {
-        XCTAssertEqual(policy.verdict(url: url("https://duckduckgo.com/?ia=chat"), mimeType: "text/html").preventionReason,
+    func testWhenDDGDuckAIBangThenPreventedInternalPage() {
+        XCTAssertEqual(policy.verdict(url: url("https://duckduckgo.com/?q=!ai+hello"), mimeType: "text/html").preventionReason,
                        PageContextExtractionOutcome.internalPageCategory)
     }
 

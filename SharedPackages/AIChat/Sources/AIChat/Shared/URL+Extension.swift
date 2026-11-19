@@ -23,8 +23,6 @@ extension URL {
     private enum DuckDuckGo {
         static let host = "duckduckgo.com"
         static let aiHost = "duck.ai"
-        static let chatQueryName = "ia"
-        static let chatQueryValue = "chat"
         static let bangQueryName = "q"
         static let supportedBangs: Set<String> = ["ai", "aichat", "chat", "duckai"]
         static let revokeAccessPath = "/revoke-duckai-access"
@@ -38,14 +36,14 @@ extension URL {
 
      Rules:
      - Any URL with host `duck.ai` is considered Duck AI.
-     - Or a `duckduckgo.com` URL (including subdomains) that either includes `ia=chat` or a supported AI bang in `q=`.
+     - Or a `duckduckgo.com` URL (including subdomains) with a supported AI bang in `q=`.
      - Or any URL whose path is exactly `/revoke-duckai-access` (used for revocation flow)
      */
     public var isDuckAIURL: Bool {
         // Entry via duck.ai root
         if host == DuckDuckGo.aiHost { return true }
-        // Chat intent on duckduckgo.com (or subdomains) via query or bang
-        if isDuckDuckGoHost { return isDuckAIChatQuery || isDuckAIBang || isRevokeAccessPath }
+        // Chat intent on duckduckgo.com (or subdomains) via bang
+        if isDuckDuckGoHost { return isDuckAIBang || isRevokeAccessPath }
         return false
     }
 
@@ -134,10 +132,6 @@ extension URL {
     }
 
     // MARK: - Private methods
-
-    private var isDuckAIChatQuery: Bool {
-        return queryItems?.contains { $0.name == DuckDuckGo.chatQueryName && $0.value == DuckDuckGo.chatQueryValue } == true
-    }
 
     private var isRevokeAccessPath: Bool {
         return path == DuckDuckGo.revokeAccessPath

@@ -75,7 +75,7 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let tabs = [owner, tab("custom", "https://dev.example/chat"),
                     tab("homepage", "https://duckduckgo.com/"),
                     tab("chat", "https://duck.ai/chat"),
-                    tab("production", "https://duckduckgo.com/?q=hello&ia=chat")]
+                    tab("production", "https://duck.ai/chat?q=hello&ia=chat")]
         let scope = BrowserToolScope(owner: owner,
                                      source: MultiTabAttachmentSource(currentTabID: owner.uid, mode: .normal, tabsProvider: { tabs }),
                                      selectedTabID: { nil })

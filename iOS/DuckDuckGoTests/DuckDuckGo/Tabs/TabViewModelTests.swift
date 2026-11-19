@@ -168,7 +168,7 @@ final class TabViewModelTests: XCTestCase {
 
     func testWhenTabIsAITabWithoutChatIDParam_ThenCurrentAIChatIdReturnsNil() {
         // Given - AI tab URL without chatID parameter
-        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4")!
+        let aiURL = URL(string: "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4")!
         tab.link = Link(title: nil, url: aiURL)
         sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
 
@@ -179,7 +179,7 @@ final class TabViewModelTests: XCTestCase {
     func testWhenTabIsAITabWithChatIDParam_ThenCurrentAIChatIdReturnsValue() {
         // Given - AI tab URL with chatID parameter
         let chatID = "eb5e9bce-9d58-4ff1-8c81-c88f52120933"
-        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
+        let aiURL = URL(string: "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
         tab.link = Link(title: nil, url: aiURL)
         sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
 
@@ -189,7 +189,7 @@ final class TabViewModelTests: XCTestCase {
 
     func testWhenTabIsAITabWithEmptyChatIDParam_ThenCurrentAIChatIdReturnsNil() {
         // Given - AI tab URL with empty chatID parameter
-        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&chatID=")!
+        let aiURL = URL(string: "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&chatID=")!
         tab.link = Link(title: nil, url: aiURL)
         sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
 
@@ -219,7 +219,7 @@ final class TabViewModelTests: XCTestCase {
 
     func testWhenContextualChatURLHasNoChatIDParam_ThenCurrentContextualChatIdReturnsNil() {
         // Given - Valid Duck AI URL without chatID parameter
-        tab.contextualChatURL = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
+        tab.contextualChatURL = "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
         sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
 
         // Then
@@ -228,7 +228,7 @@ final class TabViewModelTests: XCTestCase {
 
     func testWhenContextualChatURLHasEmptyChatIDParam_ThenCurrentContextualChatIdReturnsNil() {
         // Given - Duck AI URL with empty chatID parameter
-        tab.contextualChatURL = "https://duckduckgo.com/?ia=chat&chatID="
+        tab.contextualChatURL = "https://duck.ai/chat?ia=chat&chatID="
         sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
 
         // Then
@@ -238,7 +238,7 @@ final class TabViewModelTests: XCTestCase {
     func testWhenContextualChatURLHasValidChatIDParam_ThenCurrentContextualChatIdReturnsValue() {
         // Given - Duck AI URL with valid chatID parameter
         let chatID = "eb5e9bce-9d58-4ff1-8c81-c88f52120933"
-        tab.contextualChatURL = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)"
+        tab.contextualChatURL = "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)"
         sut = TabViewModel(tab: tab, historyManager: mockHistoryManager)
 
         // Then

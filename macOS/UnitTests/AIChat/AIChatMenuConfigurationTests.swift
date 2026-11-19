@@ -419,8 +419,6 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
     var onboardingCookieName: String
     var onboardingCookieDomain: String
-    var aiChatURLIdentifiableQuery: String
-    var aiChatURLIdentifiableQueryValue: String
     var aiChatURL: URL
     var isAIChatEnabled: Bool
     var isAddressBarShortcutEnabled: Bool
@@ -428,16 +426,12 @@ final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
 
     init(onboardingCookieName: String = "defaultCookie",
          onboardingCookieDomain: String = "defaultdomain.com",
-         aiChatURLIdentifiableQuery: String = "defaultQuery",
-         aiChatURLIdentifiableQueryValue: String = "defaultValue",
          aiChatURL: URL = URL(string: "https://duck.com/chat")!,
          isAIChatEnabled: Bool = true,
          isAddressBarShortcutEnabled: Bool = true,
          isApplicationMenuShortcutEnabled: Bool = true) {
         self.onboardingCookieName = onboardingCookieName
         self.onboardingCookieDomain = onboardingCookieDomain
-        self.aiChatURLIdentifiableQuery = aiChatURLIdentifiableQuery
-        self.aiChatURLIdentifiableQueryValue = aiChatURLIdentifiableQueryValue
         self.aiChatURL = aiChatURL
         self.isAIChatEnabled = isAIChatEnabled
         self.isAddressBarShortcutEnabled = isAddressBarShortcutEnabled

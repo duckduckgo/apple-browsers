@@ -280,14 +280,14 @@ final class FireExecutorTests: XCTestCase {
     
     private func makeAITabViewModel(chatID: String) -> TabViewModel {
         let tab = Tab(uid: "test-ai-tab-uid")
-        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
+        let aiURL = URL(string: "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
         tab.link = Link(title: nil, url: aiURL)
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
     }
     
     private func makeTabViewModelWithContextualChat(contextualChatID: String) -> TabViewModel {
         let tab = Tab(uid: "test-tab-with-contextual-chat")
-        tab.contextualChatURL = "https://duckduckgo.com/?ia=chat&duckai=4&chatID=\(contextualChatID)"
+        tab.contextualChatURL = "https://duck.ai/chat?ia=chat&duckai=4&chatID=\(contextualChatID)"
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
     }
 
@@ -691,7 +691,7 @@ final class FireExecutorTests: XCTestCase {
 
     private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {
         let tab = Tab(uid: "test-tab-\(fireTab ? "fire" : "normal")", fireTab: fireTab)
-        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
+        let aiURL = URL(string: "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
         tab.link = Link(title: nil, url: aiURL)
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
     }

@@ -241,6 +241,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     private let localModelAccessPrompt: LocalModelAccessAsking?
     private var localTaskForSubmission: AIChatLocalModelTask?
     private(set) var messageOriginPolicy: MessageOriginPolicy
+    private let duckDuckGoPageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
     /// Returns the page context currently attached to the chat session, queried at submit time
@@ -284,7 +285,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.bonusMessageLog = bonusMessageLog
         self.localModelService = localModelService
         self.localModelAccessPrompt = localModelAccessPrompt
-        self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
+        let originRules = Self.buildMessageOriginRules(debugSettings: debugSettings)
+        self.messageOriginPolicy = .only(rules: originRules)
+        let duckDuckGoRules: [HostnameMatchingRule] = URL.ddg.host.map { [.exact(hostname: $0)] } ?? []
+        self.duckDuckGoPageOriginPolicy = .only(rules: originRules + duckDuckGoRules)
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
         super.init()
 
@@ -312,10 +316,6 @@ final class AIChatUserScript: NSObject, Subfeature {
     private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
         var rules: [HostnameMatchingRule] = []
 
-        if let ddgDomain = URL.ddg.host {
-            rules.append(.exact(hostname: ddgDomain))
-        }
-
         if let duckAiDomain = URL.duckAi.host {
             rules.append(.exact(hostname: duckAiDomain))
         }
@@ -341,6 +341,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     // MARK: - Subfeature
+
+    func messageOriginPolicy(forMethodNamed methodName: String) -> MessageOriginPolicy {
+        guard let message = AIChatUserScriptMessages(rawValue: methodName),
+              AIChatUserScriptMessages.duckDuckGoPageMessages.contains(message) else { return messageOriginPolicy }
+        return duckDuckGoPageOriginPolicy
+    }
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker

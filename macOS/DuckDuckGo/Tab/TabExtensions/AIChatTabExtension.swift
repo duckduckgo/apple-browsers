@@ -541,7 +541,7 @@ extension AIChatTabExtension: NavigationResponder {
     }
 
     /// Duck.ai and duckduckgo.com link to Duck.ai themselves, which isn't a direct navigation. Duck.ai
-    /// goes first because duckduckgo.com/?ia=chat is both.
+    /// goes first because a duckduckgo.com Duck.ai bang is both.
     private static func linkOrigin(from sourceURL: URL?) -> DuckAINavigationOrigin {
         if sourceURL?.isDuckAIURL == true {
             return .attributed(.duckAILink)

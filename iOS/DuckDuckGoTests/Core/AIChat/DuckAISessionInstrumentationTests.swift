@@ -41,7 +41,7 @@ struct DuckAISessionInstrumentationTests {
     }
 
     private func duckAI(_ uid: TabUID, chatID: String? = nil, path: String = "") -> DuckAISessionTabSnapshot {
-        var components = URLComponents(string: "https://duckduckgo.com/\(path)?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4")!
+        var components = URLComponents(string: "https://duck.ai/\(path)?duckai=4")!
         if let chatID {
             components.queryItems?.append(URLQueryItem(name: "chatID", value: chatID))
         }

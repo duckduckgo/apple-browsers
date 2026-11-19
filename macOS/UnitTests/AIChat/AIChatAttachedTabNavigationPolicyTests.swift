@@ -108,7 +108,7 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
 
     func testNavigationToDuckAIDropsTheAttachment() {
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(URL(string: "https://duckduckgo.com/?ia=chat")!), title: "Duck.ai", favicon: nil))
+                                                             page: AIChatAttachedTabPage(content: content(URL(string: "https://duck.ai/chat?ia=chat")!), title: "Duck.ai", favicon: nil))
 
         XCTAssertEqual(action, .drop)
     }

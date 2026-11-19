@@ -91,14 +91,6 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host, pageURL: homepage) == .ddgHomepage)
     }
 
-    /// `duckduckgo.com/?ia=chat` has the homepage's shape but is a Duck.ai page, so it keeps the host mapping.
-    @available(iOS 16, *)
-    @Test("A front-end open request from a duckduckgo.com chat page is not a homepage entry", .timeLimit(.minutes(1)))
-    func chatPageOpenRequestIsNotHomepage() {
-        let chatOnDDG = URL(string: "https://duckduckgo.com/?ia=chat")!
-        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host, pageURL: chatOnDDG) == .serp)
-    }
-
     /// Returning nil leaves the caller's own fallback in place rather than mislabelling the entry.
     @available(iOS 16, *)
     @Test("Other hosts have no front-end open request source", .timeLimit(.minutes(1)))
@@ -150,7 +142,6 @@ struct AIChatEntryPointSourceTests {
     func otherPagesResolveToNil() {
         #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?q=test")!, to: duckAIChat, isLinkActivation: false) == nil)
         #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://example.com/")!, to: duckAIChat, isLinkActivation: false) == nil)
-        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?ia=chat")!, to: duckAIChat, isLinkActivation: false) == nil)
         #expect(AIChatEntryPointSource.forInPageNavigation(from: nil, to: duckAIChat, isLinkActivation: false) == nil)
     }
 

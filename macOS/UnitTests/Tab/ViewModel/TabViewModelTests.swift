@@ -400,7 +400,7 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForAIChat() {
         let mockFeatureFlagger = MockFeatureFlagger()
-        let aiChatURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
+        let aiChatURL = URL(string: "https://duck.ai/chat?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let tabViewModel = TabViewModel.forTabWithURL(aiChatURL, featureFlagger: mockFeatureFlagger)
 
         XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.duckAI)

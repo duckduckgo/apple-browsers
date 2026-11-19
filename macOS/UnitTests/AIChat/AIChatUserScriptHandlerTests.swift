@@ -978,15 +978,6 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A chat served from a homepage-shaped duckduckgo.com URL is not attributed to the homepage", .timeLimit(.minutes(1)))
-    @MainActor
-    func testThatAChatServedFromAHomepageShapedURLIsNotAttributedToTheHomepage() async {
-        let webView = mockWebView(url: "https://duckduckgo.com/?ia=chat")
-        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
-        #expect(parameters?["source"] == "unattributed")
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("An ongoing chat keeps its source within a document and leaves a later stamp alone", .timeLimit(.minutes(1)))
     @MainActor
     func testThatOngoingChatKeepsItsSourceAndLeavesALaterStampAlone() async {

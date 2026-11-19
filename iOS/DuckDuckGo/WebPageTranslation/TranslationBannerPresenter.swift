@@ -63,6 +63,14 @@ final class TranslationBannerPresenter {
                                                 },
                                                 onDismiss: { [weak self] animated in
                                                     self?.dismiss(animated: animated)
+                                                },
+                                                onDraggingChanged: { [weak self] isDragging in
+                                                    // Never time out under the user's finger.
+                                                    if isDragging {
+                                                        self?.autoDismissTask?.cancel()
+                                                    } else {
+                                                        self?.scheduleAutoDismiss()
+                                                    }
                                                 })
         let controller = UIHostingController(rootView: banner)
         controller.view.backgroundColor = .clear
@@ -132,8 +140,10 @@ private struct SwipeableTranslationBanner: View {
     let offer: TranslationOffer
     let onTranslate: () -> Void
     let onDismiss: (_ animated: Bool) -> Void
+    let onDraggingChanged: (_ isDragging: Bool) -> Void
 
     @State private var dragOffset: CGFloat = 0
+    @State private var isDragging = false
     @State private var isLeaving = false
 
     var body: some View {
@@ -142,11 +152,19 @@ private struct SwipeableTranslationBanner: View {
             .opacity(isLeaving ? 0 : 1)
             .gesture(
                 DragGesture()
-                    .onChanged { dragOffset = $0.translation.height }
+                    .onChanged { value in
+                        if !isDragging {
+                            isDragging = true
+                            onDraggingChanged(true)
+                        }
+                        dragOffset = value.translation.height
+                    }
                     .onEnded { value in
+                        isDragging = false
                         let predicted = value.predictedEndTranslation.height
                         guard max(abs(dragOffset), abs(predicted)) > Constants.dismissDistance else {
                             withAnimation(.spring()) { dragOffset = 0 }
+                            onDraggingChanged(false)
                             return
                         }
                         // Carry on in the flick's direction, then remove without a second fade.

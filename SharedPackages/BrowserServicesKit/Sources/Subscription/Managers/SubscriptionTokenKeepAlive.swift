@@ -37,7 +37,7 @@ public protocol SubscriptionTokenRefreshing {
 public struct SubscriptionTokenKeepAlive {
 
     /// The result of `refreshIfNeeded()`.
-    public enum Outcome: Equatable {
+    public enum Outcome: Equatable, CustomStringConvertible {
         /// The keep-alive is disabled. Nothing was read or refreshed.
         case disabled
         /// No token container is stored, or it can't be read, or the session ended during the refresh.
@@ -61,6 +61,17 @@ public struct SubscriptionTokenKeepAlive {
                 return date
             }
         }
+
+        /// A short name for the outcome, without its date.
+        public var description: String {
+            switch self {
+            case .disabled: return "disabled"
+            case .noToken: return "no token"
+            case .notDue: return "not due"
+            case .refreshed: return "refreshed"
+            case .failed: return "failed"
+            }
+        }
     }
 
     /// The default age of the refresh token after which the token container is refreshed.
@@ -71,20 +82,21 @@ public struct SubscriptionTokenKeepAlive {
 
     private let tokenProvider: any SubscriptionTokenRefreshing
     private let isEnabled: () -> Bool
-    private let maxRefreshTokenAge: TimeInterval
-    private let retryInterval: TimeInterval
+    private let maxRefreshTokenAge: () -> TimeInterval
+    private let retryInterval: () -> TimeInterval
     private let now: () -> Date
 
     /// - Parameters:
     ///   - tokenProvider: Reads and refreshes the current token container.
     ///   - isEnabled: Whether the keep-alive is enabled, read at the start of every `refreshIfNeeded()` call.
     ///   - maxRefreshTokenAge: The refresh token age, measured from its `iat`, after which the token container is refreshed.
-    ///   - retryInterval: The delay before trying again after a failed refresh.
+    ///     Read on every `refreshIfNeeded()` call.
+    ///   - retryInterval: The delay before trying again after a failed refresh. Read on every `refreshIfNeeded()` call.
     ///   - now: The current date.
     public init(tokenProvider: any SubscriptionTokenRefreshing,
                 isEnabled: @escaping () -> Bool,
-                maxRefreshTokenAge: TimeInterval = Self.defaultMaxRefreshTokenAge,
-                retryInterval: TimeInterval = Self.defaultRetryInterval,
+                maxRefreshTokenAge: @escaping () -> TimeInterval = { Self.defaultMaxRefreshTokenAge },
+                retryInterval: @escaping () -> TimeInterval = { Self.defaultRetryInterval },
                 now: @escaping () -> Date = Date.init) {
         self.tokenProvider = tokenProvider
         self.isEnabled = isEnabled
@@ -98,11 +110,17 @@ public struct SubscriptionTokenKeepAlive {
     /// - Returns: What happened, and when to check again.
     public func refreshIfNeeded() async -> Outcome {
         guard isEnabled() else {
+            Logger.subscriptionTokenKeepAlive.log("Check skipped: the keep-alive is disabled")
             return .disabled
         }
 
-        guard tokenProvider.localTokenState() == .present else {
-            Logger.subscription.log("Token keep-alive: no token stored")
+        let maxAge = maxRefreshTokenAge()
+        let retryInterval = retryInterval()
+        Logger.subscriptionTokenKeepAlive.log("Check started, max refresh token age \(Int(maxAge), privacy: .public)s, retry interval \(Int(retryInterval), privacy: .public)s")
+
+        let tokenState = tokenProvider.localTokenState()
+        guard tokenState == .present else {
+            Logger.subscriptionTokenKeepAlive.log("Check ended: no usable token stored (\(String(describing: tokenState), privacy: .public))")
             return .noToken
         }
 
@@ -110,34 +128,34 @@ public struct SubscriptionTokenKeepAlive {
         do {
             current = try await tokenProvider.getTokenContainer(policy: .local)
         } catch {
-            Logger.subscription.error("Token keep-alive: failed to read the token: \(String(describing: error), privacy: .public)")
+            Logger.subscriptionTokenKeepAlive.error("Check ended: failed to read the token: \(String(describing: error), privacy: .public)")
             return .noToken
         }
 
-        let refreshDate = refreshDate(for: current)
+        let issuedAt = current.decodedRefreshToken.issuedAtDate
+        let expiresAt = current.decodedRefreshToken.expirationDate
+        let refreshDate = issuedAt.addingTimeInterval(maxAge)
+        Logger.subscriptionTokenKeepAlive.log("Refresh token issued \(issuedAt, privacy: .public), expires \(expiresAt, privacy: .public), refresh due \(refreshDate, privacy: .public)")
+
         guard now() >= refreshDate else {
-            Logger.subscription.log("Token keep-alive: refresh not due until \(refreshDate, privacy: .public)")
+            Logger.subscriptionTokenKeepAlive.log("Check ended: refresh not due until \(refreshDate, privacy: .public)")
             return .notDue(nextRefresh: refreshDate)
         }
 
         do {
-            Logger.subscription.log("Token keep-alive: refreshing the token")
+            Logger.subscriptionTokenKeepAlive.log("Refreshing the token")
             let refreshed = try await tokenProvider.getTokenContainer(policy: .localForceRefresh)
-            let nextRefresh = self.refreshDate(for: refreshed)
-            Logger.subscription.log("Token keep-alive: token refreshed, next refresh due \(nextRefresh, privacy: .public)")
+            let newIssuedAt = refreshed.decodedRefreshToken.issuedAtDate
+            let nextRefresh = newIssuedAt.addingTimeInterval(maxAge)
+            Logger.subscriptionTokenKeepAlive.log("Token refreshed: new refresh token issued \(newIssuedAt, privacy: .public), expires \(refreshed.decodedRefreshToken.expirationDate, privacy: .public), next refresh due \(nextRefresh, privacy: .public)")
             return .refreshed(nextRefresh: nextRefresh)
         } catch SubscriptionManagerError.noTokenAvailable {
-            Logger.subscription.log("Token keep-alive: the session ended during the refresh")
+            Logger.subscriptionTokenKeepAlive.log("Check ended: the session ended during the refresh")
             return .noToken
         } catch {
             let retryAt = now().addingTimeInterval(retryInterval)
-            Logger.subscription.error("Token keep-alive: refresh failed, retrying at \(retryAt, privacy: .public): \(String(describing: error), privacy: .public)")
+            Logger.subscriptionTokenKeepAlive.error("Refresh failed, retrying at \(retryAt, privacy: .public): \(String(describing: error), privacy: .public)")
             return .failed(retryAt: retryAt)
         }
-    }
-
-    /// When the refresh token of `tokenContainer` reaches `maxRefreshTokenAge`.
-    private func refreshDate(for tokenContainer: TokenContainer) -> Date {
-        tokenContainer.decodedRefreshToken.issuedAtDate.addingTimeInterval(maxRefreshTokenAge)
     }
 }

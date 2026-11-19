@@ -23,6 +23,7 @@ import Testing
 @testable import DuckDuckGo
 import Subscription
 @_spi(Testing) import Networking
+@_spi(Testing) import Persistence
 
 struct SubscriptionTokenRefreshTaskTests {
 
@@ -38,17 +39,33 @@ struct SubscriptionTokenRefreshTaskTests {
         let provider: FakeTokenProvider
         let scheduler: RecordingScheduler
         let notificationCenter: NotificationCenter
+        let debugSettings: SubscriptionTokenRefreshDebugSettings
+        let internalUser: FlagState
         let refreshTask: SubscriptionTokenRefreshTask
     }
 
-    private func makeFixture(flagOn: Bool, token: TokenContainer?, now: Date) -> Fixture {
+    /// Builds the task the way `SubscriptionService` does, with debug overrides that apply while `internalUser` is on.
+    private func makeFixture(flagOn: Bool, token: TokenContainer?, now: Date, internalUser: Bool = true) -> Fixture {
         let flag = FlagState(isOn: flagOn)
+        let internalUserState = FlagState(isOn: internalUser)
         let provider = FakeTokenProvider(token: token)
         let scheduler = RecordingScheduler()
         let notificationCenter = NotificationCenter()
-        let keepAlive = SubscriptionTokenKeepAlive(tokenProvider: provider, isEnabled: { flag.isOn }, now: { now })
-        let refreshTask = SubscriptionTokenRefreshTask(keepAlive: keepAlive, scheduler: scheduler, notificationCenter: notificationCenter, now: { now })
-        return Fixture(flag: flag, provider: provider, scheduler: scheduler, notificationCenter: notificationCenter, refreshTask: refreshTask)
+        let debugSettings = SubscriptionTokenRefreshDebugSettings(keyValueStore: InMemoryThrowingKeyValueStore())
+        let intervals = SubscriptionTokenRefreshIntervals(debugSettings: debugSettings, isInternalUser: { internalUserState.isOn })
+        let keepAlive = SubscriptionTokenKeepAlive(tokenProvider: provider,
+                                                   isEnabled: { flag.isOn },
+                                                   maxRefreshTokenAge: intervals.maxRefreshTokenAge,
+                                                   retryInterval: intervals.retryInterval,
+                                                   now: { now })
+        let refreshTask = SubscriptionTokenRefreshTask(keepAlive: keepAlive,
+                                                       scheduler: scheduler,
+                                                       debugSettings: debugSettings,
+                                                       retryInterval: intervals.retryInterval,
+                                                       notificationCenter: notificationCenter,
+                                                       now: { now })
+        return Fixture(flag: flag, provider: provider, scheduler: scheduler, notificationCenter: notificationCenter,
+                       debugSettings: debugSettings, internalUser: internalUserState, refreshTask: refreshTask)
     }
 
     // MARK: - Registration
@@ -238,6 +255,129 @@ struct SubscriptionTokenRefreshTaskTests {
         fixture.notificationCenter.post(name: .accountDidSignIn, object: nil)
 
         try await waitUntil { fixture.scheduler.events == [.submit(issuedAt.addingTimeInterval(.days(15)))] }
+    }
+
+    // MARK: - Run record
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each run records its trigger, outcome and next check, and posts didRun", .timeLimit(.minutes(1)))
+    func recordsRuns() async throws {
+        let now = issuedAt.addingTimeInterval(.days(15))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+        var didRunCount = 0
+        let observer = fixture.notificationCenter.addObserver(forName: .subscriptionTokenRefreshDidRun, object: nil, queue: nil) { _ in
+            didRunCount += 1
+        }
+        defer { fixture.notificationCenter.removeObserver(observer) }
+
+        await fixture.refreshTask.refreshAndSchedule(trigger: .foreground).value
+        #expect(fixture.debugSettings.lastRun == SubscriptionTokenRefreshRun(date: now, trigger: .foreground, outcome: "refreshed",
+                                                                             nextCheck: now.addingTimeInterval(.days(15))))
+
+        let task = FakeBGTask(identifier: identifier)
+        await fixture.refreshTask.handle(task).value
+        #expect(fixture.debugSettings.lastRun == SubscriptionTokenRefreshRun(date: now, trigger: .backgroundTask, outcome: "not due",
+                                                                             nextCheck: now.addingTimeInterval(.days(15))))
+        #expect(didRunCount == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Sign-out records nothing: the next run after it records no token and a cancelled task", .timeLimit(.minutes(1)))
+    func signOutThenRunRecordsNoToken() async {
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: issuedAt.addingTimeInterval(.days(1)))
+        fixture.refreshTask.register()
+        await fixture.refreshTask.refreshAndSchedule().value
+
+        fixture.provider.token = nil
+        fixture.notificationCenter.post(name: .accountDidSignOut, object: nil)
+        await fixture.refreshTask.refreshAndSchedule().value
+
+        #expect(fixture.debugSettings.lastRun?.outcome == "no token")
+        #expect(fixture.debugSettings.lastRun?.nextCheck == nil)
+    }
+
+    // MARK: - Debug menu
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A debug run request runs the keep-alive and records the debug trigger", .timeLimit(.minutes(1)))
+    func debugRunRequest() async throws {
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: issuedAt.addingTimeInterval(.days(1)))
+        fixture.refreshTask.register()
+
+        fixture.notificationCenter.post(name: .subscriptionTokenRefreshDebugRunRequested, object: nil)
+
+        try await waitUntil { fixture.debugSettings.lastRun?.trigger == .debugMenu }
+        #expect(fixture.debugSettings.lastRun?.outcome == "not due")
+        #expect(fixture.scheduler.events == [.submit(issuedAt.addingTimeInterval(.days(15)))])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A debug run request while off records disabled and cancels the task", .timeLimit(.minutes(1)))
+    func debugRunRequestWhileOff() async throws {
+        let fixture = makeFixture(flagOn: false, token: token(issuedAt: issuedAt), now: issuedAt.addingTimeInterval(.days(20)))
+        fixture.refreshTask.register()
+
+        fixture.notificationCenter.post(name: .subscriptionTokenRefreshDebugRunRequested, object: nil)
+
+        try await waitUntil { fixture.debugSettings.lastRun?.trigger == .debugMenu }
+        #expect(fixture.debugSettings.lastRun?.outcome == "disabled")
+        #expect(fixture.scheduler.events == [.cancel])
+        #expect(fixture.provider.requestedPolicies.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A shorter refresh token age set in the debug menu refreshes and schedules with it from the next run", .timeLimit(.minutes(1)))
+    func debugMaxAgeOverride() async {
+        let now = issuedAt.addingTimeInterval(.minutes(3))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+
+        await fixture.refreshTask.refreshAndSchedule().value
+        #expect(fixture.scheduler.events == [.submit(issuedAt.addingTimeInterval(.days(15)))])
+
+        fixture.debugSettings.maxRefreshTokenAgeOverride = .minutes(2)
+        await fixture.refreshTask.refreshAndSchedule().value
+
+        #expect(fixture.provider.requestedPolicies.contains(.localForceRefresh))
+        #expect(fixture.scheduler.events.last == .submit(now.addingTimeInterval(.minutes(2))))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Debug overrides are ignored for a user who isn't internal, and apply again once they are", .timeLimit(.minutes(1)))
+    func debugOverrideNotInternal() async {
+        let now = issuedAt.addingTimeInterval(.minutes(3))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now, internalUser: false)
+        fixture.debugSettings.maxRefreshTokenAgeOverride = .minutes(2)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+
+        await fixture.refreshTask.refreshAndSchedule().value
+        #expect(!fixture.provider.requestedPolicies.contains(.localForceRefresh))
+        #expect(fixture.scheduler.events == [.submit(issuedAt.addingTimeInterval(.days(15)))])
+
+        fixture.internalUser.isOn = true
+        await fixture.refreshTask.refreshAndSchedule().value
+        #expect(fixture.provider.requestedPolicies.contains(.localForceRefresh))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expiring during the refresh reschedules after the retry interval set in the debug menu", .timeLimit(.minutes(1)))
+    func expirationUsesRetryOverride() async {
+        let now = issuedAt.addingTimeInterval(.days(16))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.debugSettings.retryIntervalOverride = 30
+        fixture.provider.refreshedToken = token(issuedAt: now)
+        let gate = Gate()
+        fixture.provider.beforeForceRefresh = { await gate.wait() }
+        let task = FakeBGTask(identifier: identifier)
+
+        let work = fixture.refreshTask.handle(task)
+        await fixture.provider.waitForForceRefresh()
+        task.expirationHandler?()
+        await gate.open()
+        await work.value
+
+        #expect(fixture.scheduler.events == [.submit(now.addingTimeInterval(30))])
     }
 
     private func waitUntil(_ condition: @escaping () -> Bool) async throws {

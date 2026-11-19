@@ -123,6 +123,31 @@ struct SubscriptionTokenKeepAliveTests {
         #expect(outcome.nextCheckDate == nil)
     }
 
+    // MARK: - Intervals
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Intervals are read on every check, so a change applies to the next one", .timeLimit(.minutes(1)))
+    func intervalsReadLive() async {
+        let intervals = Intervals(maxAge: .days(15), retry: .hours(6))
+        let now = issuedAt.addingTimeInterval(.days(14))
+        let provider = FakeTokenProvider(token: token(issuedAt: issuedAt))
+        let keepAlive = SubscriptionTokenKeepAlive(tokenProvider: provider,
+                                                   isEnabled: { true },
+                                                   maxRefreshTokenAge: { intervals.maxAge },
+                                                   retryInterval: { intervals.retry },
+                                                   now: { now })
+        #expect(await keepAlive.refreshIfNeeded() == .notDue(nextRefresh: issuedAt.addingTimeInterval(.days(15))))
+
+        intervals.maxAge = .minutes(2)
+        intervals.retry = .minutes(1)
+        provider.refreshError = URLError(.notConnectedToInternet)
+        #expect(await keepAlive.refreshIfNeeded() == .failed(retryAt: now.addingTimeInterval(.minutes(1))))
+
+        provider.refreshError = nil
+        provider.refreshedToken = token(issuedAt: now)
+        #expect(await keepAlive.refreshIfNeeded() == .refreshed(nextRefresh: now.addingTimeInterval(.minutes(2))))
+    }
+
     // MARK: - Flag transitions
 
     @available(iOS 16, macOS 13, *)
@@ -222,6 +247,16 @@ struct SubscriptionTokenKeepAliveTests {
 private final class FlagState: @unchecked Sendable {
     var isOn: Bool
     init(isOn: Bool) { self.isOn = isOn }
+}
+
+/// Mutable intervals read through the keep-alive's interval closures.
+private final class Intervals: @unchecked Sendable {
+    var maxAge: TimeInterval
+    var retry: TimeInterval
+    init(maxAge: TimeInterval, retry: TimeInterval) {
+        self.maxAge = maxAge
+        self.retry = retry
+    }
 }
 
 /// Stores one token container and records the policies it was asked for. A forced refresh stores `refreshedToken`.

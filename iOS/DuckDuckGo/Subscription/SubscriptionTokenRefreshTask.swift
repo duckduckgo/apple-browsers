@@ -31,6 +31,8 @@ final class SubscriptionTokenRefreshTask {
 
     private let keepAlive: SubscriptionTokenKeepAlive
     private let scheduler: BGTaskScheduling
+    private let debugSettings: SubscriptionTokenRefreshDebugStoring?
+    private let retryInterval: () -> TimeInterval
     private let now: () -> Date
     private var observers: [NSObjectProtocol] = []
     private let notificationCenter: NotificationCenter
@@ -38,14 +40,20 @@ final class SubscriptionTokenRefreshTask {
     /// - Parameters:
     ///   - keepAlive: Decides when the token is refreshed and refreshes it.
     ///   - scheduler: Registers and submits the background task.
-    ///   - notificationCenter: Where `.accountDidSignIn` and `.accountDidSignOut` are observed.
+    ///   - debugSettings: Where each run is recorded for the debug menu. Nil records nothing.
+    ///   - retryInterval: The delay before scheduling the task again when it expires before the run finishes.
+    ///   - notificationCenter: Where sign-ins, sign-outs and debug run requests are observed, and `.subscriptionTokenRefreshDidRun` is posted.
     ///   - now: The current date.
     init(keepAlive: SubscriptionTokenKeepAlive,
          scheduler: BGTaskScheduling = BGTaskScheduler.shared,
+         debugSettings: SubscriptionTokenRefreshDebugStoring? = nil,
+         retryInterval: @escaping () -> TimeInterval = { SubscriptionTokenKeepAlive.defaultRetryInterval },
          notificationCenter: NotificationCenter = .default,
          now: @escaping () -> Date = Date.init) {
         self.keepAlive = keepAlive
         self.scheduler = scheduler
+        self.debugSettings = debugSettings
+        self.retryInterval = retryInterval
         self.notificationCenter = notificationCenter
         self.now = now
     }
@@ -54,31 +62,46 @@ final class SubscriptionTokenRefreshTask {
         observers.forEach(notificationCenter.removeObserver)
     }
 
-    /// Registers the background task's launch handler and starts observing sign-ins and sign-outs.
+    /// Registers the background task's launch handler and starts observing sign-ins, sign-outs and debug run requests.
     /// Call once, before the app finishes launching.
     func register() {
-        scheduler.register(forTaskWithIdentifier: Self.taskIdentifier) { [weak self] task in
+        let registered = scheduler.register(forTaskWithIdentifier: Self.taskIdentifier) { [weak self] task in
             guard let self else {
+                Logger.subscriptionTokenKeepAlive.error("Background task launched after its handler was released")
                 task.setTaskCompleted(success: false)
                 return
             }
             self.handle(task)
         }
+        if registered {
+            Logger.subscriptionTokenKeepAlive.log("Background task registered: \(Self.taskIdentifier, privacy: .public)")
+        } else {
+            Logger.subscriptionTokenKeepAlive.error("Failed to register the background task \(Self.taskIdentifier, privacy: .public)")
+        }
 
         observers.append(notificationCenter.addObserver(forName: .accountDidSignIn, object: nil, queue: nil) { [weak self] _ in
-            self?.refreshAndSchedule()
+            Logger.subscriptionTokenKeepAlive.log("Sign-in observed")
+            self?.refreshAndSchedule(trigger: .signIn)
         })
         observers.append(notificationCenter.addObserver(forName: .accountDidSignOut, object: nil, queue: nil) { [weak self] _ in
+            Logger.subscriptionTokenKeepAlive.log("Sign-out observed")
             self?.cancelScheduledTask()
+        })
+        observers.append(notificationCenter.addObserver(forName: .subscriptionTokenRefreshDebugRunRequested, object: nil, queue: nil) { [weak self] _ in
+            Logger.subscriptionTokenKeepAlive.log("Run requested from the debug menu")
+            self?.refreshAndSchedule(trigger: .debugMenu)
         })
     }
 
     /// Refreshes the token if it is due, then schedules the background task for the next check, or cancels it when there is nothing to check.
+    /// - Parameter trigger: What started the run, recorded for the debug menu.
     @discardableResult
-    func refreshAndSchedule() -> Task<Void, Never> {
-        Task { [keepAlive] in
+    func refreshAndSchedule(trigger: SubscriptionTokenRefreshRun.Trigger = .foreground) -> Task<Void, Never> {
+        Logger.subscriptionTokenKeepAlive.log("Run started, trigger: \(trigger.rawValue, privacy: .public)")
+        return Task { [keepAlive] in
             let outcome = await keepAlive.refreshIfNeeded()
-            schedule(after: outcome)
+            let nextCheck = schedule(after: outcome)
+            record(trigger: trigger, outcome: outcome, nextCheck: nextCheck)
         }
     }
 
@@ -86,13 +109,17 @@ final class SubscriptionTokenRefreshTask {
     /// When the task expires first, the refresh is cancelled and the task is scheduled again after the keep-alive's retry interval.
     @discardableResult
     func handle(_ task: BGTaskInterface) -> Task<Void, Never> {
-        Logger.subscription.log("Token keep-alive: background task started")
+        Logger.subscriptionTokenKeepAlive.log("Run started, trigger: \(SubscriptionTokenRefreshRun.Trigger.backgroundTask.rawValue, privacy: .public)")
         let completion = TaskCompletion(task: task)
 
         let work = Task { [keepAlive] in
             let outcome = await keepAlive.refreshIfNeeded()
-            guard !Task.isCancelled else { return }
-            schedule(after: outcome)
+            guard !Task.isCancelled else {
+                Logger.subscriptionTokenKeepAlive.log("Background run finished after expiring, outcome \(outcome.description, privacy: .public) discarded")
+                return
+            }
+            let nextCheck = schedule(after: outcome)
+            record(trigger: .backgroundTask, outcome: outcome, nextCheck: nextCheck)
             if case .failed = outcome {
                 completion.complete(success: false)
             } else {
@@ -101,22 +128,25 @@ final class SubscriptionTokenRefreshTask {
         }
 
         task.expirationHandler = { [weak self] in
-            Logger.subscription.error("Token keep-alive: background task expired")
+            Logger.subscriptionTokenKeepAlive.error("Background task expired before the run finished")
             work.cancel()
             if let self {
-                self.submit(earliestBeginDate: self.now().addingTimeInterval(SubscriptionTokenKeepAlive.defaultRetryInterval))
+                self.submit(earliestBeginDate: self.now().addingTimeInterval(self.retryInterval()))
             }
             completion.complete(success: false)
         }
         return work
     }
 
-    private func schedule(after outcome: SubscriptionTokenKeepAlive.Outcome) {
+    /// Schedules or cancels the background task after `outcome`.
+    /// - Returns: The date the task was scheduled for, or nil when it was cancelled.
+    private func schedule(after outcome: SubscriptionTokenKeepAlive.Outcome) -> Date? {
         guard let nextCheckDate = outcome.nextCheckDate else {
             cancelScheduledTask()
-            return
+            return nil
         }
         submit(earliestBeginDate: nextCheckDate)
+        return nextCheckDate
     }
 
     private func submit(earliestBeginDate: Date) {
@@ -128,15 +158,21 @@ final class SubscriptionTokenRefreshTask {
         // e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.duckduckgo.app.subscriptionTokenRefresh"]
         do {
             try scheduler.submit(request)
-            Logger.subscription.log("Token keep-alive: background task scheduled for \(earliestBeginDate, privacy: .public)")
+            Logger.subscriptionTokenKeepAlive.log("Background task scheduled for \(earliestBeginDate, privacy: .public)")
         } catch {
-            Logger.subscription.error("Token keep-alive: failed to schedule the background task: \(String(describing: error), privacy: .public)")
+            Logger.subscriptionTokenKeepAlive.error("Failed to schedule the background task: \(String(describing: error), privacy: .public)")
         }
     }
 
     private func cancelScheduledTask() {
         scheduler.cancel(taskRequestWithIdentifier: Self.taskIdentifier)
-        Logger.subscription.log("Token keep-alive: background task cancelled")
+        Logger.subscriptionTokenKeepAlive.log("Background task cancelled")
+    }
+
+    private func record(trigger: SubscriptionTokenRefreshRun.Trigger, outcome: SubscriptionTokenKeepAlive.Outcome, nextCheck: Date?) {
+        Logger.subscriptionTokenKeepAlive.log("Run finished, trigger: \(trigger.rawValue, privacy: .public), outcome: \(outcome.description, privacy: .public)")
+        debugSettings?.lastRun = SubscriptionTokenRefreshRun(date: now(), trigger: trigger, outcome: outcome.description, nextCheck: nextCheck)
+        notificationCenter.post(name: .subscriptionTokenRefreshDidRun, object: nil)
     }
 }
 
@@ -156,6 +192,7 @@ private final class TaskCompletion: @unchecked Sendable {
         isCompleted = true
         lock.unlock()
         if shouldComplete {
+            Logger.subscriptionTokenKeepAlive.log("Background task completed, success: \(success, privacy: .public)")
             task.setTaskCompleted(success: success)
         }
     }

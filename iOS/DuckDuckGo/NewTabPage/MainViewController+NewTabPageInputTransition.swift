@@ -162,7 +162,6 @@ extension MainViewController {
             completion: finish)
     }
 
-    /// Re-measures the page's focused pose after the input or its modules change while focused.
     func refreshFocusedNewTabPagePose() {
         guard let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource,
               let currentPose = transitionSource.focusedPose,
@@ -180,7 +179,6 @@ extension MainViewController {
         }
     }
 
-    /// The page's pose that follows the focused input, independent of transforms on either card.
     private func measureFocusedPose(coordinator: UnifiedToggleInputCoordinator,
                                     transitionSource: NewTabPageInputTransitionSource?) -> NewTabPageFocusedPose? {
         guard let transitionSource, let restingFrame = transitionSource.searchInputTransitionFrame(in: view) else { return nil }
@@ -195,18 +193,14 @@ extension MainViewController {
     }
 }
 
-/// How the page's resting search card gives way to the focused card and comes back.
 enum RestingSearchCardHandoff: Equatable {
-    /// Top input: the focused card travels to and from the resting card, which stays beneath it until the cards swap.
     case staysUnderTravellingCard
-    /// Bottom input: the keyboard carries the focused card, so the resting card hides as the focused card appears.
     case hidesWithFocusedCard
 
     init(cardPosition: UnifiedToggleInputCardPosition) {
         self = cardPosition.isBottom ? .hidesWithFocusedCard : .staysUnderTravellingCard
     }
 
-    /// The resting card's fade out on show, as a delay and a duration within a transition of `transitionDuration`.
     func showFadeTiming(transitionDuration: TimeInterval) -> (delay: TimeInterval, duration: TimeInterval) {
         switch self {
         case .hidesWithFocusedCard:
@@ -217,7 +211,6 @@ enum RestingSearchCardHandoff: Equatable {
         }
     }
 
-    /// Fades the resting card out. Call inside the show animation.
     func fadeOutWhileShowing(_ restingInput: UIView?, transitionDuration: TimeInterval) {
         let timing = showFadeTiming(transitionDuration: transitionDuration)
         UIView.animateOnOwnTiming(duration: timing.duration, delay: timing.delay, options: .curveEaseInOut) {
@@ -225,7 +218,6 @@ enum RestingSearchCardHandoff: Equatable {
         }
     }
 
-    /// The resting card's alpha while the focused card leaves.
     var alphaWhenDismissStarts: CGFloat {
         switch self {
         case .staysUnderTravellingCard: 1
@@ -235,19 +227,16 @@ enum RestingSearchCardHandoff: Equatable {
 }
 
 extension NewTabPageInputPresentation {
-    /// How long the resting and focused cards overlap while one replaces the other.
     static let inlineInputCardSwapDuration: TimeInterval = 0.1
 }
 
 private enum InlineNTPTransitionMetrics {
-    /// A small directional cue for the focused layer's own content.
     static let contentTravel: CGFloat = 12
     static let focusedPoseRefreshDuration: TimeInterval = 0.2
 }
 
 extension UIView {
 
-    /// Animates with its own duration and curve, even when called inside another animation.
     static func animateOnOwnTiming(duration: TimeInterval,
                                    delay: TimeInterval = 0,
                                    options: UIView.AnimationOptions,
@@ -258,7 +247,6 @@ extension UIView {
                 animations: animations)
     }
 
-    /// Where `rect`, in this view's coordinates, would sit in `targetView` if this view had no transform.
     func untransformedFrame(of rect: CGRect, in targetView: UIView) -> CGRect {
         guard let superview else { return rect }
         let origin = CGPoint(x: center.x - bounds.width * layer.anchorPoint.x,

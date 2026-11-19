@@ -94,17 +94,12 @@ protocol NewTabPage: UIViewController,
     func widthChanged()
 }
 
-/// Where the page's own blocks sit while the focused input is shown over the page.
 struct NewTabPageFocusedPose: Equatable {
-    /// How far the resting search input and the greeting above it move, to meet the focused input.
     var inputOffset: CGFloat
-    /// How far the modules below the search input move, to sit under the focused input.
     var modulesOffset: CGFloat
     var showsModules: Bool
-    /// How much of the bottom the focused input covers above the keyboard, so the modules can scroll clear of it. Zero for a top input.
     var bottomInputHeight: CGFloat
 
-    /// Space between the status bar and the modules while a bottom input is focused.
     static let bottomInputModulesTopMargin: CGFloat = 8
 
     init(inputOffset: CGFloat, modulesOffset: CGFloat, showsModules: Bool, bottomInputHeight: CGFloat = 0) {
@@ -114,7 +109,6 @@ struct NewTabPageFocusedPose: Equatable {
         self.bottomInputHeight = bottomInputHeight
     }
 
-    /// The pose for a resting card at `restingInputFrame` and a focused card at `focusedInputFrame`, both untransformed.
     init(restingInputFrame: CGRect,
          focusedInputFrame: CGRect,
          cardPosition: UnifiedToggleInputCardPosition,
@@ -127,7 +121,6 @@ struct NewTabPageFocusedPose: Equatable {
                       modulesOffset: focusedInputFrame.maxY - restingInputFrame.maxY,
                       showsModules: showsModules)
         case .bottom:
-            // The keyboard carries a bottom input, so the resting input stays put and the modules rise to the top.
             let modulesTop = safeAreaTop + Self.bottomInputModulesTopMargin
             self.init(inputOffset: 0,
                       modulesOffset: modulesTop - restingInputFrame.maxY,
@@ -136,7 +129,6 @@ struct NewTabPageFocusedPose: Equatable {
         }
     }
 
-    /// Places the focused input card over the resting card: where it starts on show and ends on dismiss.
     var focusedInputRestingTransform: CGAffineTransform {
         CGAffineTransform(translationX: 0, y: -inputOffset)
     }
@@ -153,6 +145,5 @@ protocol NewTabPageInputTransitionSource: AnyObject {
     func setFocusedPose(_ pose: NewTabPageFocusedPose?)
     /// Lets the modules scroll beneath the focused input once it has arrived. Call outside any animation.
     func settleFocusedPose()
-    /// Whether a point in the given view falls on a module shown in the focused pose.
     func focusedModulesContain(_ point: CGPoint, in view: UIView) -> Bool
 }

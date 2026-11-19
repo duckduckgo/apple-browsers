@@ -37,7 +37,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let focusedBackdropAlpha: CGFloat = 0.5
     }
 
-    /// The blocks that follow the search input and move with it into the focused pose.
     private static let focusedModuleIDs: [NewTabPageBlockID] = [.favorites, .escapeHatch, .messages]
 
     weak var delegate: NewTabPageControllerDelegate?
@@ -82,7 +81,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
 
-    /// Dims the illustration behind the focused input and its modules.
     private let focusedBackdropView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .background)
@@ -511,7 +509,6 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.isScrollEnabled = true
     }
 
-    /// Returns the modules to the page's resting scroll position. Call outside any animation.
     private func unsettleFocusedPose() {
         guard isFocusedPoseSettled else { return }
         isFocusedPoseSettled = false
@@ -526,13 +523,11 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         }
     }
 
-    /// The scroll position held while the input is focused, until the focused pose settles and the modules scroll freely.
     private var pinnedEditingContentOffset: CGPoint? {
         guard !isFocusedPoseSettled, let inputEditingLayout, inputEditingLayout.isGeometryValid else { return nil }
         return inputEditingLayout.contentOffset
     }
 
-    /// Ends the scrollable area at the last module above the keyboard.
     private func updateFocusedScrollInset(keyboardTop: CGFloat) {
         let keyboardOverlap = max(0, view.bounds.maxY - keyboardTop)
         scrollView.contentInset.bottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0) + (focusedPose?.bottomInputHeight ?? 0)
@@ -585,7 +580,6 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         }
     }
 
-    /// Applies what VoiceOver can reach to the page, its blocks and the customize button.
     private func applyAccessibilityReach() {
         let reach = RedesignedNewTabPageAccessibilityReach(isEditing: inputEditingLayout != nil,
                                                            isPresentingOnboardingDialog: isPresentingOnboardingDialog,
@@ -622,10 +616,8 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 }
 
-/// What VoiceOver can reach on the redesigned New Tab Page.
 enum RedesignedNewTabPageAccessibilityReach: Equatable {
     case wholePage
-    /// The focused input covers the page and shows the page's own modules beneath it.
     case focusedModulesOnly
     case nothing
 

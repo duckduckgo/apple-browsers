@@ -1517,7 +1517,6 @@ class MainViewController: UIViewController {
             // The focused NTP stays mounted even while Duck.ai or suggestions cover it.
             guard coordinator.inputMode == .search else { return nil }
             if coordinator.contentViewController.usesRedesignedNewTabPageLayout {
-                // The redesigned page draws its own messages beneath the focused input.
                 return coordinator.contentViewController.isShowingRedesignedSearchModules ? newTabPageViewController : nil
             }
             guard coordinator.contentViewController.isShowingFavoritesContent else { return nil }

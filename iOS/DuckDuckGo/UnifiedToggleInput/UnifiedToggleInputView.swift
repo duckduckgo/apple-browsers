@@ -881,7 +881,6 @@ final class UnifiedToggleInputView: UIView {
         cardPosition == .bottom ? Constants.collapsedCardHeight / 2 : Constants.cardCornerRadiusCollapsed
     }
 
-    /// Matches the card to the redesigned New Tab Page's resting search input while editing there.
     var usesNewTabPageCardBackground = false {
         didSet {
             guard oldValue != usesNewTabPageCardBackground else { return }

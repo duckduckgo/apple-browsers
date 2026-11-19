@@ -433,7 +433,6 @@ extension MainViewFactory {
     }
 
     final class UnifiedInputContentContainer: UIView {
-        /// Returns true for points over content drawn beneath this container, which then receives the touch.
         var passesTouchThrough: ((CGPoint) -> Bool)?
 
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {

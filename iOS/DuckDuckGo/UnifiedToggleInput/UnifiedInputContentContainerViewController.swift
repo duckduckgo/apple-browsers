@@ -121,7 +121,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     var usesRedesignedNewTabPageLayout: Bool { redesignedFocusedSurface == .newTabPage }
 
-    /// Called when the redesigned search modules should appear or disappear.
     var onRedesignedSearchModulesVisibilityChange: ((Bool) -> Void)? {
         didSet { unifiedSuggestionsHost?.onSearchModulesVisibilityChange = onRedesignedSearchModulesVisibilityChange }
     }

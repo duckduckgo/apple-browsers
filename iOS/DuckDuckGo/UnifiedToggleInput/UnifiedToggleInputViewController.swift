@@ -530,7 +530,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.refreshFireMode(fireMode: fireMode)
     }
 
-    /// Matches the card to the redesigned New Tab Page's resting search input while editing there.
     func setUsesNewTabPageCardBackground(_ usesNewTabPageCardBackground: Bool) {
         inputBarView.usesNewTabPageCardBackground = usesNewTabPageCardBackground
     }

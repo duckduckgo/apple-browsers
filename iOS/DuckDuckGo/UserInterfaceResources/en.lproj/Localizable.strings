@@ -1510,8 +1510,14 @@
 /* Browser tool permission reason */
 "browserTools.FindInPageBrowserTool.permission" = "Duck.ai wants to find text on this page.";
 
+/* Browser tool permission message for finding text in another tab */
+"browserTools.FindInPageBrowserTool.permission.otherTab" = "Allow Duck.ai to use Find in Page on another tab?";
+
 /* Browser tool permission reason */
 "browserTools.ReadTabContentBrowserTool.permission" = "Duck.ai wants to read this tab's content.";
+
+/* Browser tool permission message for reading another tab */
+"browserTools.ReadTabContentBrowserTool.permission.otherTab" = "Allow Duck.ai to read the content of another tab?";
 
 /* Browser tool permission reason */
 "browserTools.SearchHistoryBrowserTool.permission" = "Duck.ai wants to search your browsing history.";

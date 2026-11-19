@@ -50,11 +50,11 @@ final class ContextualOnboardingDialogScheduler {
     /// Set when the user dismissed the dialog or switched tabs, so it isn't shown again when the window becomes key.
     private var wasDismissed = false
 
-    /// A Duck.ai page asks after its first answer, or after this delay if the answer doesn't come.
-    static let firstAnswerFailsafeDelay: TimeInterval = 2
+    static let firstDuckAIAnswerFailsafeDelay: TimeInterval = 2
+    /// Runs an action after a delay; cancelling the result skips it. Injected so tests control time.
     private let runAfter: (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable
-    private weak var tabWaitingForFirstAnswer: Tab?
-    private var firstAnswerFailsafe: AnyCancellable?
+    private weak var tabWaitingForFirstDuckAIAnswer: Tab?
+    private var firstDuckAIAnswerFailsafe: AnyCancellable?
 
     init(dialogProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater,
          featureFlagger: FeatureFlagger,
@@ -75,23 +75,23 @@ final class ContextualOnboardingDialogScheduler {
         }
         lastURL = tab?.url
         lastTab = tab
-        stopWaitingForFirstAnswer()
+        stopWaitingForFirstDuckAIAnswer()
         guard canShowDialog(), let tab else {
             onUpdate(.hide)
             return
         }
         if tab.url?.isDuckAIURL == true, dialogProvider.state != .onboardingCompleted {
             onUpdate(.hide)
-            waitForFirstAnswer(in: tab)
+            waitForFirstDuckAIAnswer(in: tab)
             return
         }
         send(dialogProvider.dialogTypeForTab(tab))
     }
 
     /// Duck.ai's first answer arrived in the tab on screen.
-    func firstAnswerReceived() {
+    func firstDuckAIAnswerReceived() {
         // TODO: pixel (dialog triggered by the first answer)
-        askAfterFirstAnswer()
+        askAfterFirstDuckAIAnswer()
     }
 
     /// The window became key; `displayed` is the dialog on screen, if any.
@@ -125,7 +125,7 @@ final class ContextualOnboardingDialogScheduler {
     /// The selected tab changed. Counts as dismissing the dialog.
     func selectedTabDidChange() {
         wasDismissed = true
-        stopWaitingForFirstAnswer()
+        stopWaitingForFirstDuckAIAnswer()
     }
 
     /// The user dismissed `dialog`, and it's no longer on screen.
@@ -137,17 +137,17 @@ final class ContextualOnboardingDialogScheduler {
         }
     }
 
-    private func waitForFirstAnswer(in tab: Tab) {
-        tabWaitingForFirstAnswer = tab
-        firstAnswerFailsafe = runAfter(Self.firstAnswerFailsafeDelay) { [weak self] in
+    private func waitForFirstDuckAIAnswer(in tab: Tab) {
+        tabWaitingForFirstDuckAIAnswer = tab
+        firstDuckAIAnswerFailsafe = runAfter(Self.firstDuckAIAnswerFailsafeDelay) { [weak self] in
             // TODO: pixel (dialog triggered by the failsafe)
-            self?.askAfterFirstAnswer()
+            self?.askAfterFirstDuckAIAnswer()
         }
     }
 
-    private func askAfterFirstAnswer() {
-        guard let tab = tabWaitingForFirstAnswer else { return }
-        stopWaitingForFirstAnswer()
+    private func askAfterFirstDuckAIAnswer() {
+        guard let tab = tabWaitingForFirstDuckAIAnswer else { return }
+        stopWaitingForFirstDuckAIAnswer()
         guard canShowDialog() else {
             onUpdate(.hide)
             return
@@ -155,9 +155,9 @@ final class ContextualOnboardingDialogScheduler {
         send(dialogProvider.dialogTypeForTab(tab))
     }
 
-    private func stopWaitingForFirstAnswer() {
-        tabWaitingForFirstAnswer = nil
-        firstAnswerFailsafe = nil
+    private func stopWaitingForFirstDuckAIAnswer() {
+        tabWaitingForFirstDuckAIAnswer = nil
+        firstDuckAIAnswerFailsafe = nil
     }
 
     /// Runs `action` on the main actor after `delay`; cancelling the result skips it.

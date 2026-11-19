@@ -284,7 +284,7 @@ extension ContextualOnboardingDialogSchedulerTests {
         let scheduler = makeScheduler()
         scheduler.navigationDidFinish(in: tab)
 
-        scheduler.firstAnswerReceived()
+        scheduler.firstDuckAIAnswerReceived()
         timer.fireAll()
 
         #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
@@ -292,15 +292,29 @@ extension ContextualOnboardingDialogSchedulerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Without an answer, the failsafe asks once", .timeLimit(.minutes(1)))
-    func failsafeAsksOnce() async throws {
+    @Test("Without an answer, the failsafe asks", .timeLimit(.minutes(1)))
+    func failsafeAsks() async throws {
         provider.nextDialog = .thatsDuckAI
         let tab = try await duckAITab()
         let scheduler = makeScheduler()
         scheduler.navigationDidFinish(in: tab)
 
         timer.fireAll()
-        scheduler.firstAnswerReceived()
+
+        #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
+        #expect(provider.dialogTypeForTabCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An answer arriving after the failsafe asks nothing more", .timeLimit(.minutes(1)))
+    func lateAnswerAfterFailsafeAsksNothing() async throws {
+        provider.nextDialog = .thatsDuckAI
+        let tab = try await duckAITab()
+        let scheduler = makeScheduler()
+        scheduler.navigationDidFinish(in: tab)
+        timer.fireAll()
+
+        scheduler.firstDuckAIAnswerReceived()
 
         #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
         #expect(provider.dialogTypeForTabCallCount == 1)
@@ -321,7 +335,7 @@ extension ContextualOnboardingDialogSchedulerTests {
             scheduler.navigationDidFinish(in: otherTab)
         }
         timer.fireAll()
-        scheduler.firstAnswerReceived()
+        scheduler.firstDuckAIAnswerReceived()
 
         #expect(provider.dialogTypeForTabCallCount == (bySwitchingTabs ? 0 : 1))
         #expect(timer.pendingDelays.isEmpty)

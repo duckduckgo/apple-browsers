@@ -139,7 +139,6 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
-    /// Sent once by Duck.ai in onboarding mode, when the first answer finishes, fails or is blocked.
     func responseReceived(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?

@@ -1075,7 +1075,7 @@ final class BrowserTabViewController: NSViewController {
         tabViewModel?.tab.aiChat?.responseReceivedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.contextualOnboardingScheduler.firstAnswerReceived()
+                self?.contextualOnboardingScheduler.firstDuckAIAnswerReceived()
             }
             .store(in: &tabViewModelCancellables)
 

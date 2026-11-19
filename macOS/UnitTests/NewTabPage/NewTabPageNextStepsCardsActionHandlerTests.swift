@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import FeatureFlags_macOS
 @_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 import PrivacyConfigTestsUtils
@@ -35,6 +36,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var navigator: MockNavigator!
     private var syncLauncher: MockSyncLauncher!
     private var pixelFiring: PixelKitMock!
+    private var videoPresenter: CapturingAddToDockVideoPresenter!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -48,12 +50,13 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         navigator = MockNavigator()
         syncLauncher = MockSyncLauncher()
         pixelFiring = PixelKitMock()
+        videoPresenter = CapturingAddToDockVideoPresenter()
 
         actionHandler = makeActionHandler()
     }
 
     @MainActor
-    private func makeActionHandler() -> NewTabPageNextStepsCardsActionHandler {
+    private func makeActionHandler(featureFlagger: FeatureFlagger = MockFeatureFlagger()) -> NewTabPageNextStepsCardsActionHandler {
         NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
@@ -63,7 +66,9 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             pixelHandler: pixelHandler,
             newTabPageNavigator: navigator,
             syncLauncher: syncLauncher,
-            pixelFiring: pixelFiring
+            pixelFiring: pixelFiring,
+            featureFlagger: featureFlagger,
+            videoPresenter: videoPresenter
         )
     }
 
@@ -78,6 +83,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         navigator = nil
         syncLauncher = nil
         pixelFiring = nil
+        videoPresenter = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
@@ -155,6 +161,41 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
 
         XCTAssertTrue(pixelHandler.fireDefaultBrowserRequestedPixelCalled)
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .defaultApp)
+    }
+
+    @MainActor func testWhenAppStoreBuildCanShowVideoThenDockActionPresentsVideoWithDonePrimaryAction() {
+        let appStoreDockCustomizer = DockCustomizerMock()
+        appStoreDockCustomizer.supportsAddingToDock = false
+        dockCustomizer = appStoreDockCustomizer
+        let handler = makeActionHandler(featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.appStoreAddToDockOnlyCTA.rawValue: true]))
+        var cardsRefreshed = false
+
+        handler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
+        XCTAssertFalse(cardsRefreshed)
+        videoPresenter.complete(with: .done)
+
+        XCTAssertEqual(videoPresenter.presentations, [.done])
+        XCTAssertTrue(pixelHandler.fireAddedToDockPixelCalled)
+        XCTAssertFalse(appStoreDockCustomizer.isAddedToDock)
+        XCTAssertTrue(cardsRefreshed)
+    }
+
+    @MainActor func testWhenAppStoreBuildCannotShowVideoThenDockActionPresentsNothing() {
+        let appStoreDockCustomizer = DockCustomizerMock()
+        appStoreDockCustomizer.supportsAddingToDock = false
+        dockCustomizer = appStoreDockCustomizer
+        let handler = makeActionHandler(featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.appStoreAddToDockOnlyCTA.rawValue: false]))
+
+        handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+        XCTAssertTrue(videoPresenter.presentations.isEmpty)
+    }
+
+    @MainActor func testWhenDMGBuildThenDockActionDoesNotPresentVideo() {
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+        XCTAssertTrue(videoPresenter.presentations.isEmpty)
+        XCTAssertTrue(dockCustomizer.isAddedToDock)
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixels() {

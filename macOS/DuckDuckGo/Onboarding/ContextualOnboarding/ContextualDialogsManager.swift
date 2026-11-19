@@ -60,6 +60,11 @@ protocol ContextualOnboardingStateUpdater: AnyObject {
     func turnOffFeature()
 }
 
+/// Starts the contextual onboarding path the user picked on the junction.
+protocol ContextualOnboardingPathStarting: AnyObject {
+    func startPath(_ kind: ContextualOnboardingPathKind)
+}
+
 /// Protocol for storing onboarding state data.
 protocol ContextualOnboardingStateStoring: AnyObject {
     /// Array of string representations of dialogs that have been shown.
@@ -85,7 +90,7 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 }
 
 /// Main manager responsible for deciding which onboarding dialog to display based on the current state and tab.
-public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
+public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater, ContextualOnboardingPathStarting {
 
     private let progress: ContextualOnboardingProgress
     private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath
@@ -140,6 +145,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
                 return SearchOnboardingPath(progress: progress,
                                             subscriptionUpsellExperiment: subscriptionUpsellExperiment,
                                             trackerMessageProvider: trackerMessageProvider)
+            case .duckAI:
+                return DuckAIOnboardingPath()
             }
         }
         // Compares the raw value, as before: an unreadable saved value counts as not completed here.
@@ -188,6 +195,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .search:
             // The user has just searched from the junction, so Try a search is skipped.
             progress.markSeen(.tryASearch)
+        case .duckAI:
+            break
         }
     }
 

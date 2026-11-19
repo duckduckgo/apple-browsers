@@ -1062,7 +1062,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
                                                               windowControllersManager: windowControllersManager,
                                                               historyCoordinator: historyCoordinator)
-        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
+        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                     downloadableModel: .llamaCpp(privacyConfigurationManager: privacyConfigurationManager))
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

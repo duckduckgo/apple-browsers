@@ -218,16 +218,21 @@ final class AIChatLocalModelServiceTests {
     @available(iOS 16, macOS 13, *)
     @Test("Turn On in the prompt opts in", .timeLimit(.minutes(1)))
     func allowedOptsIn() async throws {
-        let result = try await service.requestAccess { .allowed }
+        var asked: AIChatLocalModelAccessRequest?
+        let result = try await service.requestAccess { request in
+            asked = request
+            return .allowed
+        }
 
         #expect(result == .allowed)
+        #expect(asked == .connect(engine.model))
         #expect(storage.pageSummariesModel == .appleIntelligence)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("No Thanks or closing the prompt leaves the model off", .timeLimit(.minutes(1)))
     func declinedLeavesItOff() async throws {
-        let result = try await service.requestAccess { .declined }
+        let result = try await service.requestAccess { _ in .declined }
 
         #expect(result == .declined)
         #expect(storage.pageSummariesModel == .duckAI)
@@ -239,7 +244,7 @@ final class AIChatLocalModelServiceTests {
         service.optIn()
         var asked = false
 
-        let result = try await service.requestAccess {
+        let result = try await service.requestAccess { _ in
             asked = true
             return .declined
         }
@@ -255,7 +260,7 @@ final class AIChatLocalModelServiceTests {
         var asked = false
 
         await #expect(throws: AIChatLocalModelRequestError.unavailable) {
-            try await self.service.requestAccess {
+            try await self.service.requestAccess { _ in
                 asked = true
                 return .allowed
             }

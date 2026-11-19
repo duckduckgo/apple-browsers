@@ -17,8 +17,11 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import UIKit
+import UserScript
+import WebKit
 
 /// iPad runs the iPhone Duck.ai tab input (same coordinator, view and FE bridge) but keeps its own address bar and
 /// tabs bar, so only the layout differs: the input sits at the bottom of the Duck.ai tab instead of replacing the omnibar.
@@ -246,4 +249,36 @@ extension TabViewController {
             container.webViewContainerBottomConstraint?.isActive = true
         }
     }
+}
+
+// MARK: - Duck.ai loading skeleton
+
+/// iPad's native input owns the bottom of the tab, so Duck.ai's own loading skeleton only flashes before the chat draws.
+/// The page has no setting for it; the Duck.ai front end suggested this rule until it has one.
+/// https://app.asana.com/1/137249556945/task/1220705777593462?focus=true
+final class DuckAILoadingSkeletonUserScript: NSObject, UserScript {
+
+    let source: String
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly = true
+    let messageNames: [String] = []
+
+    /// Nil unless iPad's full-tab chat uses the native input; `debugSettings` adds a debug Duck.ai host, if set.
+    init?(unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding, debugSettings: AIChatDebugSettingsHandling) {
+        guard unifiedToggleInputFeature.isFullTabChatInputAvailable, !unifiedToggleInputFeature.isAvailable else { return nil }
+        let debugHosts = [debugSettings.messagePolicyHostname, debugSettings.customURL.flatMap { URL(string: $0)?.host }]
+        let hosts = Set((["duck.ai"] + debugHosts).compactMap { $0 })
+        guard let hostsJSON = try? JSONSerialization.data(withJSONObject: hosts.sorted()),
+              let hostsList = String(data: hostsJSON, encoding: .utf8) else { return nil }
+        source = """
+        (() => {
+            if (!\(hostsList).includes(location.hostname)) { return; }
+            const style = document.createElement('style');
+            style.textContent = '#app-loader { display: none !important; }';
+            document.documentElement.appendChild(style);
+        })();
+        """
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 }

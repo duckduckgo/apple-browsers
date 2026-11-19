@@ -172,10 +172,18 @@ final class SuggestionContainerViewModel {
             return
         }
 
-        guard selectedRowIndex != rowIndex else { return }
+        guard !isSelectionCurrent(forRow: rowIndex) else { return }
 
         selectedRowIndex = rowIndex
         selectionIndex = selectionIndex(forRow: rowIndex)
+    }
+
+    /// The row index alone is not enough: when the result changes (e.g. a history entry is removed),
+    /// the same row can hold a different suggestion and the selection must be republished.
+    private func isSelectionCurrent(forRow rowIndex: Int) -> Bool {
+        guard selectedRowIndex == rowIndex else { return false }
+        guard let selectionIndex else { return true }
+        return suggestionViewModel(at: selectionIndex) == selectedSuggestionViewModel
     }
 
     func clearRowSelection() {

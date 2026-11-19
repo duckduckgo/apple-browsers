@@ -118,7 +118,7 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     }
 
     @available(macOS 13, *)
-    @Test("The page's image and screenshot telemetry fires the matching pixel, and drops values it doesn't know", .timeLimit(.minutes(1)))
+    @Test("The page's image, screenshot and pasted-text telemetry fires the matching pixel, and drops values it doesn't know", .timeLimit(.minutes(1)))
     func pageTelemetryFiresTheMatchingPixel() {
         let cases: [(event: NewTabPageDataModel.TelemetryEvent, name: String?, parameters: [String: String])] = [
             (.omnibarImageAttached(source: "paste"), "aichat_ntp_image_attached", ["source": "paste"]),
@@ -128,7 +128,11 @@ struct NewTabPageOmnibarScreenshotProviderTests {
             (.omnibarScreenshotFailed(reason: "unavailable"), "aichat_ntp_screenshot_failed", ["reason": "unavailable"]),
             (.omnibarScreenshotFailed(reason: "denied"), nil, [:]),
             (.omnibarScreenshotFailed(reason: "unknown"), nil, [:]),
-            (.omnibarImageAttached(source: "drop"), nil, [:])
+            (.omnibarImageAttached(source: "drop"), nil, [:]),
+            (.omnibarPastedTextAttached, "aichat_ntp_pasted_text_attached", [:]),
+            (.omnibarPastedTextRemoved, "aichat_ntp_pasted_text_removed", [:]),
+            (.omnibarPastedTextEdited, "aichat_ntp_pasted_text_edited", [:]),
+            (.omnibarPastedTextDialogOpened, "aichat_ntp_pasted_text_dialog_opened", [:])
         ]
         for testCase in cases {
             let pixels = PixelKitMock()

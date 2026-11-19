@@ -54,12 +54,29 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// False for records saved before this field existed.
     public var isDisabled: Bool
 
+    /// Selects a complete prepared package without changing this installation's identity.
+    public let packageIdentifier: UUID?
+    public let consumedVersionOverrideIdentifier: UUID?
+    public var needsInitialUpdateActivationValidation: Bool
+
+    static let packagesDirectoryName = "versions"
+
+    var resourceIdentifier: String {
+        Self.resourceIdentifier(for: uniqueIdentifier, packageIdentifier: packageIdentifier)
+    }
+
+    static func resourceIdentifier(for installationID: String, packageIdentifier: UUID?) -> String {
+        guard let packageIdentifier else { return installationID }
+        return installationID + "/" + packagesDirectoryName + "/" + packageIdentifier.uuidString
+    }
+
     /// CPM's private origin after data clearing, rollback or a background-load failure.
     /// Nil preserves the installation UUID for existing records.
     public var cpmOriginIdentifier: UUID?
 
     private enum CodingKeys: String, CodingKey {
         case uniqueIdentifier, filename, name, version, embeddedType, storeIdentity, permissions, matchPatterns, isDisabled
+        case packageIdentifier, consumedVersionOverrideIdentifier, needsInitialUpdateActivationValidation
         case cpmOriginIdentifier = "cpmStableOriginIdentifier"
     }
 
@@ -80,7 +97,10 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         permissions: [String]? = nil,
         matchPatterns: [String]? = nil,
         isDisabled: Bool = false,
-        cpmOriginIdentifier: UUID? = nil
+        cpmOriginIdentifier: UUID? = nil,
+        packageIdentifier: UUID? = nil,
+        consumedVersionOverrideIdentifier: UUID? = nil,
+        needsInitialUpdateActivationValidation: Bool = false
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
@@ -91,6 +111,9 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         self.permissions = permissions
         self.matchPatterns = matchPatterns
         self.isDisabled = isDisabled
+        self.packageIdentifier = packageIdentifier
+        self.consumedVersionOverrideIdentifier = consumedVersionOverrideIdentifier
+        self.needsInitialUpdateActivationValidation = needsInitialUpdateActivationValidation
         self.cpmOriginIdentifier = cpmOriginIdentifier
     }
 
@@ -106,6 +129,9 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         matchPatterns = try container.decodeIfPresent([String].self, forKey: .matchPatterns)
         cpmOriginIdentifier = try container.decodeIfPresent(UUID.self, forKey: .cpmOriginIdentifier)
         isDisabled = try container.decodeIfPresent(Bool.self, forKey: .isDisabled) ?? false
+        packageIdentifier = try container.decodeIfPresent(UUID.self, forKey: .packageIdentifier)
+        consumedVersionOverrideIdentifier = try container.decodeIfPresent(UUID.self, forKey: .consumedVersionOverrideIdentifier)
+        needsInitialUpdateActivationValidation = try container.decodeIfPresent(Bool.self, forKey: .needsInitialUpdateActivationValidation) ?? false
     }
 }
 

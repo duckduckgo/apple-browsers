@@ -42,6 +42,7 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     public var stateDidChange: (@Sendable (ServerState) -> Void)?
 
     private let port: UInt16
+    private let loopbackOnly: Bool
     private let queue: DispatchQueue
     private var listener: NWListener?
     private var activeConnections: [NWConnection] = []
@@ -56,9 +57,14 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     /// Creates a new debug server.
     ///
-    /// - Parameter port: The TCP port to listen on. Defaults to `8473`.
-    public init(port: UInt16 = 8473) {
+    /// - Parameters:
+    ///   - port: The TCP port to listen on. Defaults to `8473`.
+    ///   - loopbackOnly: When `true`, the listener binds to `127.0.0.1` only, so the server is
+    ///     unreachable from the LAN. Defaults to `false`, preserving the original all-interfaces
+    ///     behavior for existing callers.
+    public init(port: UInt16 = 8473, loopbackOnly: Bool = false) {
         self.port = port
+        self.loopbackOnly = loopbackOnly
         self.queue = DispatchQueue(label: "com.debugserver.listener", qos: .userInitiated)
     }
 
@@ -73,7 +79,15 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
             let parameters = NWParameters.tcp
             let nwPort = NWEndpoint.Port(rawValue: port)!
-            let listener = try NWListener(using: parameters, on: nwPort)
+
+            let listener: NWListener
+            if loopbackOnly {
+                // Bind to the loopback address so the server is unreachable from other interfaces.
+                parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: .ipv4(.loopback), port: nwPort)
+                listener = try NWListener(using: parameters)
+            } else {
+                listener = try NWListener(using: parameters, on: nwPort)
+            }
 
             listener.stateUpdateHandler = { [weak self] listenerState in
                 self?.handleListenerStateChange(listenerState)
@@ -227,6 +241,7 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     private func processRequest(_ data: Data) -> HTTPResponse {
         do {
             let request = try parser.parse(data)
+
             let key = RouteKey(method: request.method, path: request.path)
 
             if let handler = routes[key] {

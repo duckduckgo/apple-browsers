@@ -134,6 +134,7 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
+            privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
             searchPreferences: NSApp.delegateTyped.searchPreferences,
             windowControllersManager: windowControllersManager,
@@ -187,7 +188,8 @@ extension NewTabPageActionsManager {
                 tabOpener: NewTabPageTabOpener(),
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 pixelHandler: nextStepsPixelHandler,
-                newTabPageNavigator: DefaultNewTabPageNavigator()
+                newTabPageNavigator: DefaultNewTabPageNavigator(),
+                featureFlagger: featureFlagger
             ),
             pixelHandler: nextStepsPixelHandler,
             persistor: nextStepsCardsPersistor,

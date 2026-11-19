@@ -368,6 +368,38 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         XCTAssertEqual(try backgroundSection(in: loadableURL)["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
     }
 
+    func testWhenTheCopyWasMadeBeforeAnOSUpgrade_ThenItIsCopiedAgainWithTheWasmPolicyOfThisOS() throws {
+        let policy = "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+        let manifest = """
+        { "manifest_version": 3, "name": "Wasm", "version": "1.0", "background": { "service_worker": "background.js" },
+          "content_security_policy": { "extension_pages": "\(policy)" } }
+        """
+        let archiveURL = try makeArchive(files: ["manifest.json": manifest, "background.js": "1;"])
+        let folder = installFolder(of: archiveURL)
+        let loadableURL = patcher.loadableExtensionURL(for: archiveURL, installFolder: folder)
+        let markerURL = loadableURL.appendingPathComponent("marker")
+        try Data().write(to: markerURL)
+
+        // Restamp the copy as the other side of the macOS 26 boundary would have.
+        var isPolicyPatchedOnThisOS = true
+        if #available(macOS 26, iOS 26, *) { isPolicyPatchedOnThisOS = false }
+        let sourceDate = try XCTUnwrap(FileManager.default.attributesOfItem(atPath: archiveURL.path)[.modificationDate] as? Date)
+        let otherOSStamp = "\(sourceDate.timeIntervalSinceReferenceDate)" + (isPolicyPatchedOnThisOS ? "" : "-wasm-pre-26-fix")
+        try otherOSStamp.write(to: loadableURL.appendingPathComponent(".ddg-source-date"), atomically: true, encoding: .utf8)
+
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL, installFolder: folder), loadableURL)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
+        let policies = try XCTUnwrap(loadManifest(in: loadableURL)["content_security_policy"] as? [String: Any])
+        let patchedPolicy = "object-src 'self'; script-src-elem 'self'; script-src-attr 'self'; worker-src 'self'"
+        XCTAssertEqual(policies["extension_pages"] as? String, isPolicyPatchedOnThisOS ? patchedPolicy : policy)
+
+        // The new copy is then reused.
+        try Data().write(to: markerURL)
+        XCTAssertEqual(patcher.loadableExtensionURL(for: archiveURL, installFolder: folder), loadableURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: markerURL.path))
+    }
+
     @available(macOS 15.4, iOS 18.4, *)
     func testWhenAFolderInstallHasACopy_ThenTheInstallationIsStillResolved() throws {
         let installFolder = try makeInstallFolder()

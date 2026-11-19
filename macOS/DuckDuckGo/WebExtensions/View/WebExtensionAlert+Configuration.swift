@@ -26,21 +26,32 @@ extension WebExtensionAlert.Configuration {
 
     static func installation(of webExtension: WKWebExtension, permissionEntries entries: [String]) -> Self {
         Self(
-            icon: webExtension.displayIcon(for: iconSize),
+            icon: webExtension.displayIcon(for: iconSize).map(Icon.extensionIcon),
             title: String(format: UserText.webExtensionInstallTitle, webExtension.displayName ?? UserText.webExtensionUnnamedExtension),
             message: entries.isEmpty ? UserText.webExtensionNoPermissions : UserText.webExtensionPermissionExplanation,
             details: entries,
-            checkbox: UserText.webExtensionAllowFireWindows,
-            checkboxToolTip: UserText.webExtensionPrivateAccessExplanation,
+            checkbox: .option(UserText.webExtensionAllowFireWindows, toolTip: UserText.webExtensionPrivateAccessExplanation),
             confirmTitle: UserText.webExtensionInstall,
-            cancelTitle: UserText.cancel)
+            leadingButton: .cancel(UserText.cancel))
     }
 
     static func removal(of webExtension: WKWebExtension?, name: String) -> Self {
         Self(
-            icon: webExtension?.displayIcon(for: iconSize),
+            icon: webExtension?.displayIcon(for: iconSize).map(Icon.extensionIcon),
             title: String(format: UserText.chromeWebStoreRemoveTitle, name),
             confirmTitle: UserText.webExtensionRemoveButton,
-            cancelTitle: UserText.cancel)
+            leadingButton: .cancel(UserText.cancel))
+    }
+
+    static func nativeMessagingUnavailable(for webExtension: WKWebExtension) -> Self {
+        let name = webExtension.displayName ?? UserText.webExtensionUnnamedExtension
+        return Self(
+            icon: .illustration(NSImage(resource: .duckDuckGoResponseAlertFeature96)),
+            title: UserText.webExtensionNativeMessagingUnavailableTitle(name),
+            message: UserText.webExtensionNativeMessagingUnavailableMessage + "\n\n" + UserText.webExtensionNativeMessagingUnavailableMessageDownload,
+            messageColor: .textPrimary,
+            checkbox: .suppression(UserText.webExtensionNativeMessagingUnavailableDontShowAgain(name)),
+            confirmTitle: UserText.ok,
+            leadingButton: .secondary(UserText.learnMore))
     }
 }

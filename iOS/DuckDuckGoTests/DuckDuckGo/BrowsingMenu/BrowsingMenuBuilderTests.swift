@@ -85,7 +85,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             internalFeedbackEntry: .named(MockBrowsingMenuEntryBuilder.internalFeedbackName)
         )
 
-        for context in [BrowsingMenuContext.newTabPage, .website] {
+        for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
             let model = makeBuilder(entryBuilder: entryBuilder).buildMenu(
                 context: context,
                 bookmarksInterface: MockMenuBookmarksInteractor(),
@@ -197,7 +197,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
-    func testSitePermissionsEntryIsHiddenWithFlagOffInLegacyAndSheetMenus() {
+    func testWhenSitePermissionsIsUnsupportedThenEntryIsHiddenInLegacyAndSheetMenus() {
         assertSitePermissionsEntry(isPresent: false, featureEnabled: false, storedDecision: .allow)
     }
 
@@ -302,10 +302,10 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
-    func testManagementPresenterRefusesFlagOffAndStaleCommittedSite() {
-        let flagOff = makeTabViewController(featureEnabled: false, storedDecision: .allow)
-        flagOff.presentSitePermissionsManagement()
-        XCTAssertNil(flagOff.presentedViewController)
+    func testManagementPresenterRefusesUnsupportedOSAndStaleCommittedSite() {
+        let unsupportedOS = makeTabViewController(featureEnabled: false, storedDecision: .allow)
+        unsupportedOS.presentSitePermissionsManagement()
+        XCTAssertNil(unsupportedOS.presentedViewController)
 
         let staleCommittedSite = makeTabViewController(featureEnabled: true, storedDecision: .allow)
         staleCommittedSite.webView(staleCommittedSite.webView, didStartProvisionalNavigation: nil)
@@ -534,7 +534,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
 
         let sut = TabViewController.fake(
             customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : []),
+            featureFlagger: MockFeatureFlagger(),
             sitePermissionsEnabled: featureEnabled,
             link: Link(title: nil, url: url),
             fireTab: fireTab
@@ -576,6 +576,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             MediaCaptureUserScript(),
             requestPermissionFor: [.camera],
             requestID: UUID().uuidString.replacingOccurrences(of: "-", with: "") + ":1",
+            topLevelOrigin: SitePermissionSecurityOrigin(URL(string: "https://example.com")!)!,
             in: frame,
             webView: sut.webView
         )

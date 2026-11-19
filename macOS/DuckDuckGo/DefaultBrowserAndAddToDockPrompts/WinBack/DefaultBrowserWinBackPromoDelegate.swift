@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Foundation
+import PixelKit
 
 final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
 
@@ -29,6 +30,8 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
     private let actionPerformer: DefaultBrowserAndDockActionPerforming
     private let churnState: UserChurnStateProviding
     private let promptStore: DefaultBrowserAndDockPromptStorage
+    private let confirmationMonitor: DefaultBrowserConfirmationMonitoring
+    private let pixelFiring: PixelFiring?
     private let isFeatureEnabled: () -> Bool
     private let uiHosting: () -> DefaultBrowserAndDockPromptUIHosting?
     private let modalFactory: ModalFactory
@@ -49,6 +52,8 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
     init(actionPerformer: DefaultBrowserAndDockActionPerforming,
          churnState: UserChurnStateProviding,
          promptStore: DefaultBrowserAndDockPromptStorage,
+         confirmationMonitor: DefaultBrowserConfirmationMonitoring,
+         pixelFiring: PixelFiring? = PixelKit.shared,
          isFeatureEnabled: @escaping () -> Bool,
          uiHosting: @escaping () -> DefaultBrowserAndDockPromptUIHosting?,
          modalFactory: @escaping ModalFactory,
@@ -56,6 +61,8 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         self.actionPerformer = actionPerformer
         self.churnState = churnState
         self.promptStore = promptStore
+        self.confirmationMonitor = confirmationMonitor
+        self.pixelFiring = pixelFiring
         self.isFeatureEnabled = isFeatureEnabled
         self.uiHosting = uiHosting
         self.modalFactory = modalFactory
@@ -75,6 +82,10 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
               !promptStore.hasSeenInactiveUserModal else {
             return false
         }
+        return isSetAsDefaultPending
+    }
+
+    private var isSetAsDefaultPending: Bool {
         switch actionPerformer.pendingPromptType {
         case .setAsDefaultPrompt, .bothDefaultBrowserAndDockPrompt:
             return true
@@ -94,16 +105,20 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
 
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
-            let onConfirm: () -> Void = { [weak self] in self?.handleConfirm(isForceShow: force) }
-            let onDismiss: () -> Void = { [weak self] in self?.handleDismiss(isForceShow: force) }
+            let onConfirm: () -> Void = { [weak self] in self?.handleConfirm(type: type, isForceShow: force) }
+            let onDismiss: () -> Void = { [weak self] in self?.handleDismiss(type: type, isForceShow: force) }
             let modal = modalFactory(type, onConfirm, onDismiss)
             self.modal = modal
             modal.present(over: anchor)
+            pixelFiring?.fire(DefaultBrowserWinBackPixel.shown(type: type))
         }
     }
 
     @MainActor
     func hide() {
+        if showContinuation != nil, !isSetAsDefaultPending {
+            pixelFiring?.fire(DefaultBrowserWinBackPixel.defaultSetWithoutPromoAction)
+        }
         if let modal {
             Task { await modal.dismiss() }
         }
@@ -112,16 +127,19 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
     }
 
     @MainActor
-    private func handleConfirm(isForceShow: Bool) {
+    private func handleConfirm(type: DefaultBrowserAndDockPromptType, isForceShow: Bool) {
         guard showContinuation != nil else { return }
+        pixelFiring?.fire(DefaultBrowserWinBackPixel.confirmButtonClicked(type: type))
         markInactiveUserModalSeen(isForceShow: isForceShow)
         actionPerformer.performPendingActions()
+        confirmationMonitor.start(clickDate: dateProvider())
         resume(with: .actioned())
     }
 
     @MainActor
-    private func handleDismiss(isForceShow: Bool) {
+    private func handleDismiss(type: DefaultBrowserAndDockPromptType, isForceShow: Bool) {
         guard showContinuation != nil else { return }
+        pixelFiring?.fire(DefaultBrowserWinBackPixel.dismissed(type: type))
         markInactiveUserModalSeen(isForceShow: isForceShow)
         resume(with: .ignored())
     }

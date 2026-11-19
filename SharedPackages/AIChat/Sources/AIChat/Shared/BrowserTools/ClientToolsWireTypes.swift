@@ -29,8 +29,14 @@ public struct ClientToolCapability: Codable, Equatable, Sendable {
     public static let readTabContent = Self(canonicalName: "readTabContent", version: 1)
     public static let findInPage = Self(canonicalName: "findInPage", version: 1)
     public static let highlightInPage = Self(canonicalName: "highlightInPage", version: 1)
+    public static let pinTab = Self(canonicalName: "pinTab", version: 1)
+    public static let openTab = Self(canonicalName: "openTab", version: 1)
+    public static let closeTabs = Self(canonicalName: "closeTabs", version: 1)
+    public static let bookmarkTab = Self(canonicalName: "bookmarkTab", version: 1)
+    public static let searchDownloads = Self(canonicalName: "searchDownloads", version: 1)
+    public static let searchBookmarks = Self(canonicalName: "searchBookmarks", version: 1)
 
-    public static let browserTools: [Self] = [.listOpenTabs, .switchToTab, .searchHistory, .readTabContent, .findInPage, .highlightInPage]
+    public static let browserTools: [Self] = [.listOpenTabs, .switchToTab, .searchHistory, .readTabContent, .findInPage, .highlightInPage, .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks]
 
     public init(name: String, version: Int) throws {
         try ClientToolWireValidation.validateIdentifier(name, maximumLength: ClientToolWireValidation.maximumCapabilityNameLength, field: "name")
@@ -83,12 +89,28 @@ public struct ClientToolsConfiguration: Codable, Equatable, Sendable {
     }
 }
 
+public struct ClientToolsChangedData: Encodable, Equatable {
+    public let clientTools: ClientToolsConfiguration?
+
+    public init(clientTools: ClientToolsConfiguration?) {
+        self.clientTools = clientTools
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientTools
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(clientTools, forKey: .clientTools)
+    }
+}
+
 /// Byte limits apply to the UTF-8 encoded JSON of the whole payload, separately from field limits.
 public enum ClientToolPayloadLimits {
     public static let configBytes = 4096
     public static let inputBytes = 262_144
     public static let resultBytes = 524_288
-    public static let permissionBytes = 8192
 
     public static func fits(_ value: some Encodable, within limit: Int) -> Bool {
         guard let data = try? JSONEncoder().encode(value) else { return false }
@@ -177,75 +199,12 @@ public enum ClientToolError: String, Encodable, Equatable, Sendable {
     case executionFailed = "execution_failed"
 }
 
-public enum ClientToolPermissionChoice: String, Encodable, Hashable, Sendable {
-    case allow
-    case always
-    case never
-}
-
-public struct ClientToolPermissionRequested: Encodable, Equatable, Sendable {
-    public let requestId: String
-    public let callId: String
-    public let message: String
-    public let choices: [ClientToolPermissionChoice]
-
-    public init(requestId: String, callId: String, message: String, choices: [ClientToolPermissionChoice]) throws {
-        try ClientToolWireValidation.validateIdentifier(requestId, maximumLength: ClientToolWireValidation.maximumIdentifierLength, field: "requestId")
-        try ClientToolWireValidation.validateIdentifier(callId, maximumLength: ClientToolWireValidation.maximumIdentifierLength, field: "callId")
-        guard message.unicodeScalars.count <= ClientToolWireValidation.maximumPermissionMessageLength else {
-            throw ClientToolWireValidation.InvalidField(name: "message")
-        }
-        guard (1...ClientToolWireValidation.maximumPermissionChoices).contains(choices.count), Set(choices).count == choices.count else {
-            throw ClientToolWireValidation.InvalidField(name: "choices")
-        }
-        self.requestId = requestId
-        self.callId = callId
-        self.message = message
-        self.choices = choices
-    }
-}
-
-public enum ClientToolPermissionDecision: String, Equatable, Sendable {
-    case allow
-    case always
-    case never
-    case decline
-    case cancel
-}
-
-public struct RespondToClientToolPermissionRequest: Decodable, Equatable, Sendable {
-    public let callId: String
-    public let requestId: String
-    public let decision: ClientToolPermissionDecision
-
-    private enum CodingKeys: String, CodingKey, CaseIterable {
-        case callId, requestId, decision
-    }
-
-    public init(from decoder: Decoder) throws {
-        try ClientToolWireValidation.rejectUnknownKeys(in: decoder, allowing: CodingKeys.allCases)
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        callId = try container.decode(String.self, forKey: .callId)
-        requestId = try container.decode(String.self, forKey: .requestId)
-        try ClientToolWireValidation.validateIdentifier(callId, maximumLength: ClientToolWireValidation.maximumIdentifierLength, field: "callId")
-        try ClientToolWireValidation.validateIdentifier(requestId, maximumLength: ClientToolWireValidation.maximumIdentifierLength, field: "requestId")
-        let rawDecision = try container.decode(String.self, forKey: .decision)
-        decision = ClientToolPermissionDecision(rawValue: rawDecision) ?? .cancel
-    }
-}
-
-public struct RespondToClientToolPermissionResponse: Encodable, Equatable, Sendable {
-    public init() {}
-}
-
 private enum ClientToolWireValidation {
     static let maximumCapabilities = 32
     static let maximumCapabilityNameLength = 64
     // Capability versions must stay within JavaScript's safe integer range.
     static let maximumCapabilityVersion = 9_007_199_254_740_991
     static let maximumIdentifierLength = 128
-    static let maximumPermissionMessageLength = 4096
-    static let maximumPermissionChoices = 3
 
     struct InvalidField: DDGError {
         static let errorDomain = "com.duckduckgo.aiChat.clientTools.validation"

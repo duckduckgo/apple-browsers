@@ -975,14 +975,14 @@
         ]
     },
     "subscription_onboarding_step_completed_": {
-        "description": "Fired when an onboarding step is completed — the protection it offers was activated. Only activation steps can complete.",
+        "description": "Fired when an onboarding step is completed. Activation steps complete when the protection they offer is activated; the intro, features summary and completion steps complete when their primary button is tapped.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": [
             {
                 "type": "string",
                 "description": "The onboarding step that was completed",
-                "enum": ["vpn", "idtr", "duck_ai", "pir"]
+                "enum": ["intro", "features_summary", "vpn", "idtr", "duck_ai", "pir", "completion"]
             },
             "platform",
             "form_factor"
@@ -1007,6 +1007,30 @@
                 "type": "string",
                 "description": "The onboarding step that was skipped",
                 "enum": ["vpn", "duck_ai"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_step_closed_": {
+        "description": "Fired when the customer closes the onboarding flow, either with the close button on its first screen or with the primary button on the completion screen.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step the flow was closed from",
+                "enum": ["intro", "vpn", "idtr", "duck_ai", "completion"]
             },
             "platform",
             "form_factor"

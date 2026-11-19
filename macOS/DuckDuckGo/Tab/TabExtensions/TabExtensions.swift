@@ -214,7 +214,8 @@ extension TabExtensionsBuilder {
         add {
             NavigationProtectionTabExtension(
                 contentBlocking: dependencies.privacyFeatures.contentBlocking,
-                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
+                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences,
+                featureFlagger: dependencies.featureFlagger
             )
 
         }
@@ -324,7 +325,8 @@ extension TabExtensionsBuilder {
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                isTabBurner: args.isTabBurner,
-                               burnerMode: args.burnerMode)
+                               burnerMode: args.burnerMode,
+                               tabsPreferences: dependencies.tabsPreferences)
         }
 
         add {

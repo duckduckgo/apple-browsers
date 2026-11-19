@@ -2440,6 +2440,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Érdemes megnézni? Mondj egy spoilermentes véleményt.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "Új csevegés";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Szövegkijelölés";
 
@@ -3039,6 +3042,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Melyik weboldalon vannak problémák?";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Keresés törlése";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d/%2$d";
@@ -3774,6 +3780,63 @@
 
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Szigorú útvonalválasztás kényszerítése (ajánlott)";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "Kérdezz tőlem bármit.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "Háp-háp, helló!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "Már majdnem hétvége van.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "Viszlát, gyanús hirdetések!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "Szia!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "Ma miben segíthetek?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "Rajta, csináljuk!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "Nézzünk körül!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "Hétfő van. Vágjunk bele.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "Jó reggelt, napsütés!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "Új nap, új lapok.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "Örülök, hogy látlak.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "Igazi éjjeli bagoly vagyok.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "Készen állsz a privát keresésre?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "Készen állok, ha te is készen állsz.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "Sosem alszom.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "Mi jár a fejedben?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "Hol kezdjük?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "Ma merre tovább?";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Megerősítés";
@@ -5595,6 +5658,9 @@
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "%1$@-előfizetésed azonnal megszűnik, és 14 napon belül visszatérítünk %2$@ összeget az eredeti fizetési módodra.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "%@-előfizetésed azonnal megszűnik, és 14 napon belül visszatérítjük a teljes összeget az eredeti fizetési módodra.";
 
 /* Title of the alert confirming withdrawal from the subscription contract */
 "subscription.withdraw.confirm.title" = "Elállsz az előfizetéstől?";

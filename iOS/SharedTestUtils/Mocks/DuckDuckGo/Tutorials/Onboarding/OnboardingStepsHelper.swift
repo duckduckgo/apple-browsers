@@ -72,6 +72,8 @@ struct OnboardingStepsHelper {
         switch reason {
         case .browserPrivately:
             personalisationSteps = [.searchExperienceSelection]
+        case .vpn:
+            personalisationSteps = [.tryVPN, .tryVPNFollowUp, .searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:

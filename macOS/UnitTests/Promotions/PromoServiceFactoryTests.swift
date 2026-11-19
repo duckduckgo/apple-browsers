@@ -208,6 +208,7 @@ extension PromoServiceFactoryTests {
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             userChurnService: MockUserChurnStateProvider(),
+            defaultBrowserWinBackConfirmationMonitor: MockDefaultBrowserConfirmationMonitor(),
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),
@@ -238,8 +239,7 @@ extension PromoServiceFactoryTests {
                         privacyConfigurationManager: MockPrivacyConfigurationManager(),
                         internalUserDecider: featureFlagger.internalUserDecider
                     ),
-                    windowControllersManager: windowControllersManager,
-                    featureFlagger: featureFlagger
+                    windowControllersManager: windowControllersManager
                 )
             }(),
             updateController: nil,
@@ -274,7 +274,6 @@ extension PromoServiceFactoryTests {
                 recordResult: { _, _ in }
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),

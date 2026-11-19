@@ -36,9 +36,44 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
     var duckAIQueryContent: OnboardingDuckAIQueryContent = .mock
+    var tryVPNContent: OnboardingTryVPNContent = .mock
+    var vpnActivationContent: OnboardingVPNActivationContent = .mock
+    var subscriptionReminderContent: OnboardingSubscriptionReminderContent = .mock
 }
 
 // MARK: - Helpers
+
+extension OnboardingVPNActivationContent {
+    static let mock = OnboardingVPNActivationContent(
+        offTitle: "Off",
+        onTitle: "On",
+        turnOnCTA: "Turn On",
+        tryAgainCTA: "Try Again",
+        skipCTA: "Skip",
+        nextCTA: "Next",
+        daxAnimation: nil
+    )
+}
+
+extension OnboardingSubscriptionReminderContent {
+    static let mock = OnboardingSubscriptionReminderContent(
+        title: "Reminder",
+        message: AttributedString("Message"),
+        cta: "Next",
+        daxAnimation: nil
+    )
+}
+
+extension OnboardingTryVPNContent {
+    static let mock = OnboardingTryVPNContent(
+        title: "Try VPN",
+        message: "Message",
+        footer: "Footer",
+        primaryCTA: "Try",
+        secondaryCTA: "Skip",
+        daxAnimation: nil
+    )
+}
 
 extension OnboardingLandingContent {
     static let mock = OnboardingLandingContent(
@@ -51,11 +86,12 @@ extension OnboardingDownloadReasonContent {
     static let mock = OnboardingDownloadReasonContent(
         title: "Download Reason Title",
         message: "Download Reason Message",
+        layout: .grid,
         options: [
-            .init(reason: .browserPrivately, animation: .search, title: "Search and browse privately"),
-            .init(reason: .privateAIChat, animation: .duckAIChat, title: "Chat with AI privately"),
-            .init(reason: .noAI, animation: .noAI, title: "Remove AI from search results"),
-            .init(reason: .blockAds, animation: .imageSweep, title: "Block ads and pop-ups")
+            .init(reason: .browserPrivately, asset: .animation(.search), title: "Search and browse privately"),
+            .init(reason: .privateAIChat, asset: .animation(.duckAIChat), title: "Chat with AI privately"),
+            .init(reason: .noAI, asset: .animation(.noAI), title: "Remove AI from search results"),
+            .init(reason: .blockAds, asset: .animation(.imageSweep), title: "Block ads and pop-ups")
         ],
         primaryCTA: "Download Reason Primary",
         daxAnimation: .wingBottom

@@ -32,6 +32,7 @@ import RemoteMessaging
 import ScreenTimeDataCleaner
 import WebExtensions
 import FeatureFlags_iOS
+import WebPageTranslation
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -199,6 +200,12 @@ struct Launching: LaunchingHandling {
             consentStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
+        let translationModels = Self.makeTranslationModels(featureFlagger: featureFlagger)
+        WebPageTranslationCapability.resolve(translationModels: translationModels)
+        if let translationModels {
+            Task { _ = await translationModels.refreshManifest() }
+        }
+
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
                                     contentBlocking: contentBlockingService.common,
@@ -222,7 +229,12 @@ struct Launching: LaunchingHandling {
         reportingService.syncService = syncService
         autofillService.syncService = syncService
 
-        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+        let daxDialogs = DaxDialogs(
+            entityProviding: contentBlocking.contentBlockingManager,
+            timeLimit: ContextualOnboardingTimeLimit(featureFlagger: featureFlagger,
+                                                     privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager),
+            timeLimitReporter: reportingService.onboardingPixelReporter
+        )
 
         let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                                   featureFlagger: featureFlagger,
@@ -360,7 +372,7 @@ struct Launching: LaunchingHandling {
                                               contentBlockingService: contentBlockingService,
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
-                                              daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                              daxDialogs: daxDialogs,
                                               idleReturnEligibilityManager: idleReturnEligibilityManager,
                                               reportingService: reportingService,
                                               variantManager: configuration.atbAndVariantConfiguration.variantManager,
@@ -394,7 +406,8 @@ struct Launching: LaunchingHandling {
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub,
                                               usageContextProvider: usageContextProvider,
-                                              promptExposureReporter: promptExposureReporter
+                                              promptExposureReporter: promptExposureReporter,
+                                              translationModels: translationModels
         )
         launchBreadcrumb.mark(.mainCoordinator)
 
@@ -495,6 +508,9 @@ struct Launching: LaunchingHandling {
         launchTaskManager.register(task: BlockLaunchTask(name: "Initialize PIR Secure Vault") { taskContext in
             Task {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
+#if DEBUG
+                await dbpService.startDebugServerIfRequestedAtLaunch()
+#endif
                 taskContext.finish()
             }
         })
@@ -516,12 +532,14 @@ struct Launching: LaunchingHandling {
 #if DEBUG || ALPHA
         mainCoordinator.controller.automationServer = configuration.finalize(
             reportingService: reportingService,
+            daxDialogs: daxDialogs,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
 #else
         _ = configuration.finalize(
             reportingService: reportingService,
+            daxDialogs: daxDialogs,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
@@ -587,6 +605,26 @@ struct Launching: LaunchingHandling {
             Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
             return nil
         }
+    }
+
+    /// Nil when web page translation is off, or when its store or models folder can't be opened:
+    /// translation is then unavailable rather than failing launch.
+    private static func makeTranslationModels(featureFlagger: FeatureFlagger) -> TranslationModels? {
+        guard featureFlagger.isFeatureOn(.webPageTranslation) else {
+            return nil
+        }
+
+        guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        // Translation gets its own store, so its cached manifest never shares a file with app settings.
+        guard let keyValueStore = try? KeyValueFileStore(location: applicationSupport, name: "WebPageTranslationStore") else {
+            return nil
+        }
+
+        let modelsDirectory = applicationSupport.appendingPathComponent("WebPageTranslation")
+        return try? TranslationModels(directory: modelsDirectory, keyValueStore: keyValueStore)
     }
 
     private func logAppLaunchTime() {

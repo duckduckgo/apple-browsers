@@ -28,10 +28,10 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
 
     func checkForEmailConfirmation() {
         updateProgress("Checking email confirmations...")
-        let emailConfirmationDataService = emailConfirmationDataService
+        let runner = runner
         Task {
             do {
-                try await emailConfirmationDataService.checkForEmailConfirmationData()
+                try await runner.checkForEmailConfirmation()
                 await MainActor.run { [weak self] in
                     self?.progressText = "Idle"
                     self?.isProgressActive = false
@@ -54,19 +54,10 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
         isProgressActive = true
         progressText = "Continuing opt-out..."
         let showWebView = !hidesWebView
-        let brokerProfileQueryData = BrokerProfileQueryData(
-            dataBroker: scanResult.dataBroker,
-            profileQuery: scanResult.profileQuery,
-            scanJobData: ScanJobData(
-                brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
-                profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
-                historyEvents: [HistoryEvent]()
-            )
-        )
         Task {
             do {
                 let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                    let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
+                    let profileQuery = self?.profileQueryText(for: scanResult.profileQuery) ?? "-"
                     let summary = self?.actionSummary(stepType: .optOut, actionType: actionType) ?? "-"
                     let progressText = self?.currentActionText(stepType: .optOut,
                                                                actionType: actionType,
@@ -77,22 +68,10 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
                                         details: details,
                                         progressText: progressText)
                 }
-                let runner = BrokerProfileOptOutSubJobWebRunner(
-                    privacyConfig: self.privacyConfigManager,
-                    prefs: self.contentScopeProperties,
-                    context: brokerProfileQueryData,
-                    emailConfirmationDataService: self.emailConfirmationDataService,
-                    captchaService: self.captchaService,
-                    featureFlagger: self.featureFlagger,
-                    stageCalculator: stageCalculator,
-                    pixelHandler: fakePixelHandler,
-                    executionConfig: .init(),
-                    actionsHandlerMode: .emailConfirmation(confirmationURL),
-                    shouldRunNextStep: { true }
-                )
-
-                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                        showWebView: showWebView) { true }
+                try await self.runner.continueOptOut(scanResult,
+                                                     confirmationURL: confirmationURL,
+                                                     showWebView: showWebView,
+                                                     stageCalculator: stageCalculator)
 
                 addOptOutConfirmedEvent(for: scanResult)
                 Task { @MainActor in

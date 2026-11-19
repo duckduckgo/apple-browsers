@@ -25,18 +25,34 @@ import SwiftUIExtensions
 struct WebExtensionAlert: View {
 
     struct Configuration {
-        let icon: NSImage?
+        enum LeadingButton {
+            case cancel(String)
+            case secondary(String)
+        }
+
+        enum Icon {
+            case extensionIcon(NSImage)
+            case illustration(NSImage)
+        }
+
+        enum Checkbox: Equatable {
+            case option(String, toolTip: String?)
+            case suppression(String)
+        }
+
+        let icon: Icon?
         let title: String
         var message: String?
+        var messageColor: DesignSystemColor = .textSecondary
         var details: [String] = []
-        var checkbox: String?
-        var checkboxToolTip: String?
+        var checkbox: Checkbox?
         let confirmTitle: String
-        let cancelTitle: String
+        let leadingButton: LeadingButton
     }
 
     enum Response {
         case cancelled
+        case secondary(isChecked: Bool)
         case confirmed(isChecked: Bool)
     }
 
@@ -50,6 +66,9 @@ struct WebExtensionAlert: View {
         static let contentHorizontalPadding: CGFloat = 12
         static let contentBottomPadding: CGFloat = 16
         static let iconSize: CGFloat = 48
+        static let illustrationSize: CGFloat = 72
+        static let contentHorizontalPaddingWithIllustration: CGFloat = 4
+        static let suppressionCheckboxTopPadding: CGFloat = 4
         static let iconInset: CGFloat = 28
         static let iconTitleSpacing: CGFloat = 28
         static let titleLeadingOffset: CGFloat = 8
@@ -76,22 +95,24 @@ struct WebExtensionAlert: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Constants.sectionSpacing) {
-            if let icon = configuration.icon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: Constants.iconSize, height: Constants.iconSize)
+            switch configuration.icon {
+            case .extensionIcon(let icon):
+                iconImage(icon, size: Constants.iconSize)
                     .padding([.top, .leading], Constants.iconInset - Constants.padding)
                     .padding(.bottom, Constants.iconTitleSpacing - Constants.sectionSpacing)
+            case .illustration(let image):
+                iconImage(image, size: Constants.illustrationSize)
+            case nil:
+                EmptyView()
             }
 
             content
 
-            if let checkbox = configuration.checkbox {
-                Toggle(checkbox, isOn: $isChecked)
+            if case .option(let title, let toolTip) = configuration.checkbox {
+                Toggle(title, isOn: $isChecked)
                     .toggleStyle(.checkbox)
                     .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                    .help(configuration.checkboxToolTip ?? "")
+                    .help(toolTip ?? "")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -141,17 +162,48 @@ struct WebExtensionAlert: View {
             if !configuration.details.isEmpty {
                 detailsList
             }
+
+            if case .suppression(let title) = configuration.checkbox {
+                Toggle(isOn: $isChecked) {
+                    Text(title)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                }
+                .toggleStyle(.checkbox)
+                .padding(.top, Constants.suppressionCheckboxTopPadding)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, Constants.contentHorizontalPadding - Constants.titleLeadingOffset)
-        .padding(.trailing, Constants.contentHorizontalPadding)
+        .padding(.leading, contentLeadingPadding)
+        .padding(.trailing, contentTrailingPadding)
         .padding(.bottom, Constants.contentBottomPadding)
+    }
+
+    private var contentLeadingPadding: CGFloat {
+        if case .illustration = configuration.icon {
+            return Constants.contentHorizontalPaddingWithIllustration
+        }
+        return Constants.contentHorizontalPadding - Constants.titleLeadingOffset
+    }
+
+    private var contentTrailingPadding: CGFloat {
+        if case .illustration = configuration.icon {
+            return Constants.contentHorizontalPaddingWithIllustration
+        }
+        return Constants.contentHorizontalPadding
+    }
+
+    private func iconImage(_ image: NSImage, size: CGFloat) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size, height: size)
     }
 
     private func messageText(_ message: String) -> some View {
         Text(message)
             .font(.system(size: 13))
-            .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+            .foregroundColor(Color(designSystemColor: configuration.messageColor, palette: palette))
             .multilineTextAlignment(.leading)
             .fixMultilineScrollableText()
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -172,15 +224,7 @@ struct WebExtensionAlert: View {
 
     private var buttons: some View {
         HStack(spacing: Constants.buttonSpacing) {
-            Button {
-                respond(.cancelled)
-            } label: {
-                Text(configuration.cancelTitle)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: Constants.buttonHeight)
-            }
-            .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
-            .keyboardShortcut(.cancelAction)
+            leadingButton
 
             Button {
                 respond(.confirmed(isChecked: isChecked))
@@ -192,6 +236,28 @@ struct WebExtensionAlert: View {
             .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, stateColors: .themedActionButton, pillShape: true))
             .keyboardShortcut(.defaultAction)
         }
+    }
+
+    @ViewBuilder
+    private var leadingButton: some View {
+        switch configuration.leadingButton {
+        case .cancel(let title):
+            dismissStyleButton(title, response: .cancelled)
+                .keyboardShortcut(.cancelAction)
+        case .secondary(let title):
+            dismissStyleButton(title, response: .secondary(isChecked: isChecked))
+        }
+    }
+
+    private func dismissStyleButton(_ title: String, response: Response) -> some View {
+        Button {
+            respond(response)
+        } label: {
+            Text(title)
+                .frame(maxWidth: .infinity)
+                .frame(height: Constants.buttonHeight)
+        }
+        .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
     }
 
     private func respond(_ response: Response) {

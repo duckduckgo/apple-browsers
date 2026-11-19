@@ -31,6 +31,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case sendPixel
         case reportCpmCoverage
         case refreshCpmDashboardState
+        case cpmInitProgress
         case showCpmAnimation
         case cookiePopupHandled
         case isFeatureEnabled
@@ -80,6 +81,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return handleReportCpmCoverage(message.params)
         case .refreshCpmDashboardState:
             return await handleRefreshCpmDashboardState(message.params, extensionIdentifier: message.extensionIdentifier)
+        case .cpmInitProgress:
+            return await handleCpmInitProgress(message.params, extensionIdentifier: message.extensionIdentifier)
         case .showCpmAnimation:
             return handleShowCpmAnimation(message.params)
         case .cookiePopupHandled:
@@ -147,11 +150,29 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
         Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.shortDescription), consentManaged: \(consentStatus.consentManaged)")
 
-        let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
-        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url,
-                                                                 extensionIdentifier: extensionIdentifier))
+        // The extension is running but will never answer the page's init: the page stays unanswered and its tab is reported.
+        let event = CPMMessagingHealthEvent.dashboardResponse(url: url,
+                                                              extensionIdentifier: extensionIdentifier,
+                                                              isAnswer: !consentStatus.cpmCannotAnswerPage)
+        await cpmMessagingHealthMonitor?.handle(event)
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
+        return .success(Self.successResponse)
+    }
+
+    /// A best-effort progress mark for one main-frame init. Unknown stages and marks without a page are
+    /// ignored, never an error, so a newer extension cannot make an older app answer with failures. Marks are
+    /// ignored too while the `cpmInitProgress` subfeature is off; the extension learns the flag from the settings.
+    private func handleCpmInitProgress(_ params: [String: Any]?, extensionIdentifier: String) async -> WebExtensionMessageResult {
+        guard privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AutoconsentSubfeature.cpmInitProgress),
+              let stageName = params?["stage"] as? String,
+              let stage = CPMInitStage(rawValue: stageName),
+              let urlString = params?["url"] as? String,
+              let url = URL(string: urlString),
+              url.host != nil else {
+            return .success(Self.successResponse)
+        }
+        await cpmMessagingHealthMonitor?.handle(.initProgress(url: url, stage: stage, extensionIdentifier: extensionIdentifier))
         return .success(Self.successResponse)
     }
 

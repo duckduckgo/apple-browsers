@@ -39,11 +39,8 @@ import Networking
 import Configuration
 import Network
 import FeatureFlags_iOS
-import Persistence
 
 protocol DependencyProvider {
-    var appSessionInfo: AppSessionInfo? { get }
-
     var appSettings: AppSettings { get }
     var variantManager: VariantManager { get }
     var internalUserDecider: InternalUserDecider { get }
@@ -81,53 +78,12 @@ protocol DependencyProvider {
     var subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging { get }
 }
 
-/// Captures launch time and version change once per app session.
-struct AppSessionInfo {
-    enum VersionChange {
-        case updated
-        case downgraded
-    }
-
-    let appVersionChange: VersionChange?
-    let launchDate: Date
-
-    private enum Key: String {
-        case previousVersion = "app-session.previous-app-version"
-    }
-
-    init(keyValueStore: any KeyValueStoring, version: String, launchDate: Date = Date()) {
-        let previousVersion = try? keyValueStore.object(forKey: Key.previousVersion.rawValue) as? String
-        let change: VersionChange?
-        if let previousVersion, !previousVersion.isEmpty, !version.isEmpty {
-            switch version.compare(previousVersion, options: .numeric) {
-            case .orderedDescending: change = .updated
-            case .orderedAscending: change = .downgraded
-            case .orderedSame: change = nil
-            }
-        } else {
-            change = nil
-        }
-        if !version.isEmpty {
-            try? keyValueStore.set(version, forKey: Key.previousVersion.rawValue)
-        }
-        self.appVersionChange = change
-        self.launchDate = launchDate
-    }
-}
-
-extension DependencyProvider {
-    var appSessionInfo: AppSessionInfo? { nil }
-}
-
 /// Provides dependencies for objects that are not directly instantiated
 /// through `init` call (e.g. ViewControllers created from Storyboards).
 ///
 /// Legacy dependency container. Do not add new consumers.
 /// Inject the specific dependencies through initializers instead.
 final class AppDependencyProvider: DependencyProvider {
-    let appSessionInfo: AppSessionInfo? = AppSessionInfo(
-        keyValueStore: UserDefaults.standard, version: AppVersion().versionAndBuildNumber)
-
     static var shared: DependencyProvider = AppDependencyProvider()
     let appSettings: AppSettings = AppUserDefaults()
     let variantManager: VariantManager = DefaultVariantManager()
@@ -176,11 +132,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
-    static func sitePermissionsEnabledAtLaunch(featureFlagger: FeatureFlagger,
-                                               isSupportedOSProvider: () -> Bool = isSitePermissionsSupportedOS) -> Bool {
-        isSupportedOSProvider() && featureFlagger.isFeatureOn(.sitePermissions)
-    }
-
+    /// Site permissions requires iOS 16; iOS 15 keeps WebKit's own permission flow.
     private static func isSitePermissionsSupportedOS() -> Bool {
         if #available(iOS 16.0, *) {
             true
@@ -265,8 +217,7 @@ final class AppDependencyProvider: DependencyProvider {
             featureFlagger = defaultFeatureFlagger
         }
 
-        // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
-        isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
+        isSitePermissionsEnabled = Self.isSitePermissionsSupportedOS()
         isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.duckAIAndInputLiquidGlass)
         findInPageImplementation = FindInPageImplementation(featureFlagger: featureFlagger)
 
@@ -372,7 +323,10 @@ final class AppDependencyProvider: DependencyProvider {
                                                                },
                                                                wideEvent: wideEvent,
                                                                isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
-                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation,
+                                                               isStripeProductsByPlanCountryEnabled: {
+            featureFlagger.isFeatureOn(.stripeProductsByPlanCountry)
+                                                               })
         self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,

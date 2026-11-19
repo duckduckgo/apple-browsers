@@ -20,7 +20,7 @@ import Foundation
 import WebKit
 
 /// Protocol defining the interface for managing web extensions.
-public protocol WebExtensionManaging: AnyObject {
+public protocol WebExtensionManaging: AnyObject, NativeMessagingLimitationProviding {
 
     /// Shared Chrome Web Store service, available only when installation is supported.
     @available(macOS 15.4, iOS 18.4, *)
@@ -200,6 +200,16 @@ public protocol WebExtensionManaging: AnyObject {
     /// Returns the website patterns the manifest requests for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionMatchPatterns(for identifier: String) -> [String]
+
+    /// Returns whether the extension runs in private windows, or nil when permissions aren't managed.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func hasAccessToPrivateData(for identifier: String) -> Bool?
+
+    /// Allows or denies the extension in private windows.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws
 
     /// Returns the extension context for the given URL.
     @available(macOS 15.4, iOS 18.4, *)

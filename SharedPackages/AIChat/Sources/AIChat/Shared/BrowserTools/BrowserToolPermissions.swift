@@ -41,7 +41,9 @@ public extension BrowserToolPermissionStoring {
 
     /// An `auto` tool is always allowed; only `ask` tools have a stored decision.
     func effectiveState(for tool: any BrowserTool) -> BrowserToolPermissionState {
-        tool.permissionMode == .auto ? .allow : state(forToolNamed: tool.name)
+        guard tool.permissionMode == .ask else { return .allow }
+        let state = state(forToolNamed: tool.name)
+        return tool.asksEveryTime && state == .allow ? .ask : state
     }
 }
 

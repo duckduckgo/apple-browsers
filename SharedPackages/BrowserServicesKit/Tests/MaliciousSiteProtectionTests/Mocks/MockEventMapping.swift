@@ -22,13 +22,25 @@ import MaliciousSiteProtection
 import PixelKit
 
 public class MockEventMapping: EventMapping<MaliciousSiteProtection.Event> {
+    #if os(iOS)
+    struct BucketedEvent: Equatable {
+        let category: ThreatKind
+        let type: DataManager.StoredDataType.Kind
+        let bucket: String
+    }
+    struct AggregateEvent: Equatable {
+        let type: DataManager.StoredDataType.Kind
+        let bucket: String
+    }
+    #endif
     var events: [MaliciousSiteProtection.Event] = []
     var clientSideHitParam: String?
     #if os(iOS)
-    var singleDataSetUpdatePerformanceInfos: [SingleDataSetUpdatePerformanceInfo] = []
-    var singleDataSetUpdateDiskUsageInfos: [SingleDataSetUpdateDiskUsageInfo] = []
-    var aggregateDataSetPerformanceInfos: [AggregateDataSetPerformanceInfo] = []
-    var aggregateDataSetUpdateDiskUsageInfos: [AggregateDataSetUpdateDiskUsageInfo] = []
+    var dataSetUpdateTimeEvents: [BucketedEvent] = []
+    var dataSetSizeEvents: [BucketedEvent] = []
+    var dataSetLoadTimeEvents: [BucketedEvent] = []
+    var aggregateUpdateTimeEvents: [AggregateEvent] = []
+    var aggregateSizeEvents: [AggregateEvent] = []
     #endif
     var errorParam: Error?
 
@@ -40,14 +52,16 @@ public class MockEventMapping: EventMapping<MaliciousSiteProtection.Event> {
             case .errorPageShown:
                 weakSelf!.clientSideHitParam = params?[PixelKit.Parameters.clientSideHit]
             #if os(iOS)
-            case .singleDataSetUpdatePerformance(let info):
-                weakSelf!.singleDataSetUpdatePerformanceInfos.append(info)
-            case .singleDataSetUpdateDiskUsage(let info):
-                weakSelf!.singleDataSetUpdateDiskUsageInfos.append(info)
-            case .aggregateDataSetUpdatePerformance(let info):
-                weakSelf!.aggregateDataSetPerformanceInfos.append(info)
-            case .aggregateDataSetUpdateDiskUsage(let info):
-                weakSelf!.aggregateDataSetUpdateDiskUsageInfos.append(info)
+            case .dataSetUpdateTime(let category, let type, let bucket):
+                weakSelf!.dataSetUpdateTimeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
+            case .dataSetSize(let category, let type, let bucket):
+                weakSelf!.dataSetSizeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
+            case .dataSetLoadTime(let category, let type, let bucket):
+                weakSelf!.dataSetLoadTimeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
+            case .dataSetAggregateUpdateTime(let type, let bucket):
+                weakSelf!.aggregateUpdateTimeEvents.append(AggregateEvent(type: type, bucket: bucket.rawValue))
+            case .dataSetAggregateSize(let type, let bucket):
+                weakSelf!.aggregateSizeEvents.append(AggregateEvent(type: type, bucket: bucket.rawValue))
             #endif
             default:
                 break

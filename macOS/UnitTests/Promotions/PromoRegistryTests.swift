@@ -54,6 +54,7 @@ final class PromoRegistryTests: XCTestCase {
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             userChurnService: MockUserChurnStateProvider(),
+            defaultBrowserWinBackConfirmationMonitor: MockDefaultBrowserConfirmationMonitor(),
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),
@@ -84,8 +85,7 @@ final class PromoRegistryTests: XCTestCase {
                         privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                         internalUserDecider: featureFlagger.internalUserDecider
                     ),
-                    windowControllersManager: windowControllersManager,
-                    featureFlagger: featureFlagger
+                    windowControllersManager: windowControllersManager
                 )
             }(),
             updateController: nil,
@@ -120,7 +120,6 @@ final class PromoRegistryTests: XCTestCase {
                 recordResult: { _, _ in }
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),

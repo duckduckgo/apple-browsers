@@ -40,6 +40,7 @@ class Device:
         self.web = Web(self.web_port, self.token)
         self._driver = None
         self._udid = None
+        self.language = None   # what the last launch pinned (env.LANGUAGE or a proof's own), for capture_conditions
 
     @property
     def name(self):
@@ -189,14 +190,16 @@ class Device:
         except (IndexError, ValueError):
             return dict(ok=False, reason=(p.stdout[-200:] + p.stderr[-200:]).strip())
 
-    def launch(self, fresh=False, flags=None):
+    def launch(self, fresh=False, flags=None, language=None):
         """Install this worktree's build if it changed, start the runner, launch, and wait for a real ready signal.
 
         `flags` pins remote feature flags for this launch ({"newTabPageRedesign": True}) on top of env.PINNED_FLAGS, so
-        a proof never depends on what the live privacy configuration currently says.
+        a proof never depends on what the live privacy configuration currently says. `language` ({"language": "fr",
+        "locale": "fr_FR"}) replaces env.LANGUAGE, the en-US the text locators assume.
         """
         t0 = time.time()
         flags = {**env.PINNED_FLAGS, **(flags or {})}
+        language = language or env.LANGUAGE
         if not self.booted():
             self.setup()
         if env.port_listening(self.web_port, "::1") and not self.web.ready_now():
@@ -211,8 +214,10 @@ class Device:
             raise Failed(problem)
         # The app applies -ff. overrides only for internal users or in UI-test mode (AppDependencyProvider's
         # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features.
-        args = ["isRunningUITests"] + [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
+        args = ["isRunningUITests", "-AppleLanguages", f"({language['language']})", "-AppleLocale", language["locale"]]
+        args += [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
         self.driver.launch({"AUTOMATION_TOKEN": self.token}, args)
+        self.language = dict(language)
         if self.web.wait_ready(60) is None:
             raise Failed(f"AutomationServer on [::1]:{self.web_port} never reported /contentBlockerReady true")
         self.driver.wait({"id": "searchEntry"}, "exists", 20)
@@ -220,7 +225,7 @@ class Device:
         if not ident.get("ok"):
             raise Failed("running app is not this worktree's build", build=ident)
         return dict(device=self.device, udid=self.udid, bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
-                    ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
+                    language=language, ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
                     runnerStarted=bool(started))
 
     # capture conditions -----------------------------------------------------------
@@ -241,21 +246,22 @@ class Device:
             raise Failed("simctl status_bar failed", stderr=p.stderr.strip())
 
     def capture_conditions(self):
-        """What a screenshot taken now depends on, beyond the device type and runtime."""
+        """What a screenshot taken now depends on, beyond the device type and runtime: the simulator's settings and the
+        language the app was launched in."""
         o = self.driver.orientation().get("orientation")
         overrides = run(["xcrun", "simctl", "status_bar", self.udid, "list"]).stdout
         return dict(appearance=self.ui("appearance"), textSize=self.ui("content_size"),
                     orientation=o if o and o != "unknown" else "portrait",
-                    statusBar="fixed (9:41)" if "9:41" in overrides else "live")
+                    statusBar="fixed (9:41)" if "9:41" in overrides else "live", **(self.language or {}))
 
     def foreground(self):
         """True if the app is running in the foreground (not crashed, not backgrounded)."""
         from .driver import APP_FOREGROUND
         return self.driver.state() == APP_FOREGROUND
 
-    def reset(self, flags=None):
+    def reset(self, flags=None, language=None):
         """Known state: reinstall (clears app data, per-site permissions and pixel frequency state), launch, one blank tab."""
-        return self.launch(fresh=True, flags=flags)
+        return self.launch(fresh=True, flags=flags, language=language)
 
     def terminate(self):
         self.driver.terminate()
@@ -322,7 +328,7 @@ class Device:
         loc = parse_locator(locator)
         matches = [m for m in [self.web.find(loc["web"], loc["value"])] if m] if "web" in loc else self.driver.find(loc["sel"])
         if not matches:
-            raise Failed("no match")
+            raise Failed("no match", runner=dict(code="NOT_FOUND"))
         return dict(matches=matches)
 
     def get(self, locator, attr="value"):
@@ -330,7 +336,7 @@ class Device:
         if "web" in loc:
             m = self.web.find(loc["web"], loc["value"])
             if not m:
-                raise Failed("no web match")
+                raise Failed("no web match", runner=dict(code="NOT_FOUND"))
             return dict(value=m["text"])
         el = self.driver.get(loc["sel"])
         return dict(value=el.get(attr or "value"), element=el)
@@ -383,7 +389,7 @@ class Device:
             if any(m.get("hittable") for m in matches):
                 return dict(matched=matches[0])
             self.driver.swipe("up")
-        raise Failed("not reachable by scrolling")
+        raise Failed("not reachable by scrolling", runner=dict(code="NOT_FOUND"))
 
     def alert(self, action, button=None, timeout=5):
         return self._result(self.driver.alert(action, button, timeout))
@@ -396,11 +402,23 @@ class Device:
             raise Failed("screenshot failed", stderr=p.stderr.strip())
         return path
 
-    def app_logs(self, path, since="5m"):
-        out = run(["xcrun", "simctl", "spawn", self.udid, "log", "show", "--last", since, "--style", "compact",
-                   "--predicate", 'process == "DuckDuckGo"']).stdout
+    APP_LOG_LIMIT = 5_000_000   # characters, about 5 minutes of a proof; past it the end is kept, where a failure shows
+    # The UI-test runner's accessibility queries are logged inside the app process (com.apple.dt.xctest), most of a
+    # proof's log; the transcript already records every action, so they are left out.
+    APP_LOG_PREDICATE = 'process == "DuckDuckGo" AND subsystem != "com.apple.dt.xctest"'
+
+    def app_logs(self, path, since="5m", start=None):
+        """The app's own log (`log show`, APP_LOG_PREDICATE) for the last `since`, or from `start` (epoch seconds)."""
+        window = ["--start", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))] if start else ["--last", since]
+        p = run(["xcrun", "simctl", "spawn", self.udid, "log", "show", *window, "--style", "compact",
+                 "--predicate", self.APP_LOG_PREDICATE], timeout=120)
+        if p.returncode:
+            raise Failed("log show failed", stderr=p.stderr.strip())
+        out = p.stdout
+        if len(out) > self.APP_LOG_LIMIT:
+            out = f"[verify-ios: kept the last {self.APP_LOG_LIMIT} of {len(out)} characters]\n" + out[-self.APP_LOG_LIMIT:]
         with open(path, "w") as f:
-            f.write(out[-500000:])
+            f.write(out)
         return path
 
     def data_container(self):

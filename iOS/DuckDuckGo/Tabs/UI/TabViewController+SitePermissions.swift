@@ -105,7 +105,6 @@ final class SitePermissionsState {
     fileprivate var isGeolocationBackgrounded = false
     fileprivate var geolocationActivitySubscription: AnyCancellable?
     fileprivate var retiredGeolocationUserScripts = [GeolocationUserScript]()
-    fileprivate var shouldRetireGeolocationOnProcessReplacement = false
     fileprivate var storeChangeCancellable: AnyCancellable?
     fileprivate var isCommittedGeolocationPolicyBlocked = false
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
@@ -260,7 +259,6 @@ final class SitePermissionsState {
         geolocationProvider = nil
         geolocationUserScript = nil
         storeChangeCancellable = nil
-        shouldRetireGeolocationOnProcessReplacement = false
     }
 
     fileprivate func discardRetiredGeolocationUserScripts() {
@@ -285,10 +283,6 @@ final class SitePermissionsState {
         geolocationProvider?.cancelPageActivity()
         geolocationUserScript?.cancelAllWatches()
         discardRetiredGeolocationUserScripts()
-        if pageChange == .webContentProcessReplacement,
-           shouldRetireGeolocationOnProcessReplacement {
-            retireGeolocation()
-        }
         coordinator?.pageDidChange(pageChange)
         dismissRecovery()
     }
@@ -297,13 +291,6 @@ final class SitePermissionsState {
         let continuations = pendingBridgeRequests.values.map(\.continuation)
         pendingBridgeRequests.removeAll()
         continuations.forEach { $0.resume(returning: .deny) }
-    }
-
-    fileprivate func bypassPendingBridgeRequests() {
-        let pendingRequests = pendingBridgeRequests
-        pendingBridgeRequests.removeAll()
-        handledBridgeRequestIDs.subtract(pendingRequests.keys)
-        pendingRequests.values.forEach { $0.continuation.resume(returning: .bypass) }
     }
 
     fileprivate func discardPreapprovals() {
@@ -415,7 +402,7 @@ extension TabViewController {
         }
 
         // Install before navigation, even when content-blocking assets are not ready.
-        // The bridge delegates to the legacy WebKit flow when site permissions is disabled.
+        // On iOS 15 the bridge hands every request back to WebKit's own flow.
         let userScript = MediaCaptureUserScript()
         sitePermissionsState.mediaCaptureUserScript = userScript
         userScript.delegate = self
@@ -515,7 +502,6 @@ extension TabViewController {
         }
 
         guard isSitePermissionsEnabled else {
-            sitePermissionsState.discardPreapprovals()
             decisionHandler(.prompt)
             return
         }
@@ -887,17 +873,12 @@ extension TabViewController {
     }
 
     func configureSitePermissionsGeolocation(with userScript: GeolocationUserScript?, notificationCenter: NotificationCenter = .default) {
-        guard let userScript else {
-            // Cached documents keep their injected shim when restored by back/forward navigation.
-            // Retain the bridge until process replacement or tab teardown; navigation still cancels page activity.
-            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = sitePermissionsState.geolocationUserScript != nil
-            return
-        }
+        // iOS 15 installs no geolocation script and keeps WebKit's own prompt.
+        guard let userScript else { return }
         userScript.activationHandler = { [weak self] frame in
             self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
         }
         if sitePermissionsState.geolocationUserScript === userScript {
-            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = false
             if let provider = sitePermissionsState.geolocationProvider {
                 userScript.delegate = provider
                 return
@@ -907,7 +888,6 @@ extension TabViewController {
                 sitePermissionsState.retiredGeolocationUserScripts.append(currentScript)
             }
             sitePermissionsState.geolocationUserScript = userScript
-            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = false
         }
         if let provider = sitePermissionsState.geolocationProvider {
             userScript.delegate = provider
@@ -1072,7 +1052,8 @@ extension TabViewController {
         sitePermissionsState.mediaCapturePreapprovals.removeAll { staleRequestIDs.contains($0.requestID) }
 
         let trustedOrigin = SitePermissionSecurityOrigin(frame.securityOrigin)
-        guard trustedOrigin == SitePermissionSecurityOrigin(origin),
+        // WebKit passes the top-level origin here; the requesting frame's origin is frame.securityOrigin.
+        guard isSameOriginAsCommittedMainFrame(SitePermissionSecurityOrigin(origin)),
               let index = sitePermissionsState.mediaCapturePreapprovals.firstIndex(where: {
                   $0.permissionTypes == permissionTypes
                       && $0.origin == trustedOrigin
@@ -1261,19 +1242,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         isSitePermissionsEnabled
     }
 
-    func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript?) {
-        guard let userScript else {
-            sitePermissionsState.cancelGrantAnimation()
-            // Existing geolocation documents remain managed, including back/forward-cache restores.
-            sitePermissionsState.bypassPendingBridgeRequests()
-            sitePermissionsState.discardPreapprovals()
-            sitePermissionsState.dismissManagement()
-            sitePermissionsState.coordinator?.resetMediaPermissions {
-                sitePermissionsState.dismissDialog()
-                sitePermissionsState.dismissRecovery()
-            }
-            return
-        }
+    func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript) {
         sitePermissionsState.mediaCaptureUserScript = userScript
         userScript.delegate = self
     }
@@ -1281,10 +1250,10 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
     func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
                                 requestPermissionFor permissionTypes: Set<SitePermissionType>,
                                 requestID: String,
+                                topLevelOrigin: SitePermissionSecurityOrigin,
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
         guard isSitePermissionsEnabled else {
-            sitePermissionsState.discardPreapprovals()
             return .bypass
         }
 
@@ -1296,7 +1265,11 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         pruneExpiredMediaCapturePreapprovals()
         guard webView === self.webView,
               !isLinkPreview,
-              isSameOriginAsCommittedMainFrame(origin),
+              // Cross-origin frames may ask too: WebKit enforces iframe delegation before capture,
+              // and the prompt and saved decision belong to the top-level site. The request must come
+              // from the committed page, not from one the tab is leaving.
+              origin.isPotentiallyTrustworthy,
+              isSameOriginAsCommittedMainFrame(frame.isMainFrame ? origin : topLevelOrigin),
               sitePermissionsState.committedMediaPolicyBlocks.isDisjoint(with: permissionTypes),
               sitePermissionsState.pendingBridgeRequests[requestID] == nil,
               !sitePermissionsState.handledBridgeRequestIDs.contains(requestID),

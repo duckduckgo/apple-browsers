@@ -65,6 +65,11 @@ protocol ContextualOnboardingPathStarting: AnyObject {
     func startPath(_ kind: ContextualOnboardingPathKind)
 }
 
+/// Locks the browser UI while contextual onboarding needs the user to stay on one tab.
+protocol ContextualOnboardingUILocking: AnyObject {
+    func setUILocked(_ locked: Bool)
+}
+
 /// Protocol for storing onboarding state data.
 protocol ContextualOnboardingStateStoring: AnyObject {
     /// Array of string representations of dialogs that have been shown.
@@ -94,6 +99,9 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     private let progress: ContextualOnboardingProgress
     private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath
+    private weak var uiLocker: ContextualOnboardingUILocking?
+    /// The lock last sent to `uiLocker`, so it's only told about changes.
+    private var isUILockApplied = false
 
     /// The path chosen at the junction. No saved path means search.
     /// Built on first use, so a finished onboarding never builds one.
@@ -128,6 +136,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
                 progress.reset()
                 activePath = makePath(.search)
             }
+            updateUILock()
         }
     }
 
@@ -135,9 +144,11 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
          subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
+         uiLocker: ContextualOnboardingUILocking? = nil,
          makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
         let progress = ContextualOnboardingProgress(storage: stateStorage, settings: settings)
         self.progress = progress
+        self.uiLocker = uiLocker
         self.makePath = { kind in
             if let makePath { return makePath(kind, progress) }
             switch kind {
@@ -180,11 +191,19 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     // Called when the user uses the fire button
     func fireButtonUsed() {
         progress.fireButtonUsedOnce = true
+        updateUILock()
     }
 
-    /// Whether the active path keeps the browser UI locked. Always false on the search path.
+    /// Whether the active path keeps the browser UI locked. Always false on the search path and once onboarding ends.
     var isUILocked: Bool {
-        activePath.isUILocked
+        state != .onboardingCompleted && activePath.isUILocked
+    }
+
+    private func updateUILock() {
+        let locked = isUILocked
+        guard locked != isUILockApplied else { return }
+        isUILockApplied = locked
+        uiLocker?.setUILocked(locked)
     }
 
     /// Called from the junction with the path the user picked.
@@ -198,6 +217,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .duckAI:
             break
         }
+        updateUILock()
     }
 
     // Called to turn off the contextual onboarding.

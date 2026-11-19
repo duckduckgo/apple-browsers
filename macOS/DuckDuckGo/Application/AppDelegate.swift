@@ -1297,7 +1297,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
             ),
-            settings: keyValueStore.throwingKeyedStoring()
+            settings: keyValueStore.throwingKeyedStoring(),
+            uiLocker: windowControllersManager
         )
 
         let onboardingManager = onboardingContextualDialogsManager

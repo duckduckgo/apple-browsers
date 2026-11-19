@@ -658,6 +658,12 @@ extension WindowControllersManagerProtocol {
 
 extension WindowControllersManager: WebNotificationTabFinding {}
 
+extension WindowControllersManager: @preconcurrency ContextualOnboardingUILocking {
+    func setUILocked(_ locked: Bool) {
+        updatePreventUserInteraction(prevent: locked)
+    }
+}
+
 extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     func updatePreventUserInteraction(prevent: Bool) {

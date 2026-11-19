@@ -78,6 +78,11 @@ class ReleaseStatus:
 # Smartling API Client
 # ============================================================================
 
+def smartling_file_type(file_path: Path) -> str:
+    """The Smartling file type for a localization file, by extension."""
+    return {'.xliff': 'xliff', '.xcstrings': 'xcstrings'}.get(file_path.suffix, 'stringsdict')
+
+
 class SmartlingClient:
     """Minimal Smartling API client with only essential methods."""
 
@@ -237,9 +242,7 @@ class SmartlingClient:
         """Upload file to batch."""
         form = aiohttp.FormData()
         form.add_field('fileUri', file_uri)
-        form.add_field(
-            'fileType', 'xliff' if file_path.suffix == '.xliff' else 'stringsdict'
-        )
+        form.add_field('fileType', smartling_file_type(file_path))
         for locale in locales:
             form.add_field('localeIdsToAuthorize[]', locale)
         form.add_field('file', file_path.read_bytes(), filename=file_path.name)
@@ -302,9 +305,7 @@ class SmartlingClient:
         """Upload a file outside any job, without authorizing any locale."""
         form = aiohttp.FormData()
         form.add_field('fileUri', file_uri)
-        form.add_field(
-            'fileType', 'xliff' if file_path.suffix == '.xliff' else 'stringsdict'
-        )
+        form.add_field('fileType', smartling_file_type(file_path))
         form.add_field('file', file_path.read_bytes(), filename=file_path.name)
         data = await self._request(
             'POST',

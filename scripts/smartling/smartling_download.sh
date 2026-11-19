@@ -46,6 +46,11 @@ if [ "${download_failed:-0}" = "1" ]; then
 	exit 0
 fi
 
+if ls "$DOWNLOAD_DIR"/PluralTest_*.xcstrings >/dev/null 2>&1; then
+	python3 ./scripts/smartling/plural-test/report_plurals.py "$DOWNLOAD_DIR" | tee download_message.txt
+	exit 0
+fi
+
 ./scripts/smartling/smartling_import.sh "$DOWNLOAD_DIR" "$PLATFORM"
 
 # Cleanup temporary directories

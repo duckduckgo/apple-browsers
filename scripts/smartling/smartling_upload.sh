@@ -35,11 +35,10 @@ if [ "$PLATFORM" = "iOS" ]; then
 			--files ./iOS/scripts/assets/loc/en.xcloc/Localized\ Contents/en.xliff \
 				./iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict 2>&1) || upload_failed=1
 elif [ "$PLATFORM" = "macOS" ]; then
-	# Upload macOS file (XLIFF only)
-	echo "Uploading macOS files..."
+	echo "Uploading the plural test String Catalog..."
 	output=$(./scripts/smartling/loc_tool.sh upload \
 			--job-name "$JOB_NAME" \
-			--files ./macOS/scripts/assets/loc/en.xliff 2>&1) || upload_failed=1
+			--files ./scripts/smartling/plural-test/PluralTest.xcstrings 2>&1) || upload_failed=1
 else
 	echo "Error: Unknown platform '$PLATFORM'. Must be 'iOS' or 'macOS'"
 	exit 1

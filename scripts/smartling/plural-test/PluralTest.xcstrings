@@ -1,0 +1,98 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "fire.dialog.chats.detail" : {
+      "comment" : "Detail label next to the Duck.ai chats toggle showing the number of chats that will be deleted.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d chat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d chats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "fire.dialog.cookies.detail" : {
+      "comment" : "Detail label next to the Cookies toggle showing the number of sites whose cookies/site data will be deleted.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d site"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d sites"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "fire.dialog.history.detail" : {
+      "comment" : "Detail label next to the History toggle showing the number of history items that will be deleted.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d item"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d items"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "import.summary.history.visits" : {
+      "comment" : "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visit"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "History: %d visits"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

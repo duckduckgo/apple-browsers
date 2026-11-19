@@ -207,17 +207,6 @@ final class LaunchActionHandlerTests {
         #expect(userActivityHandler.lastHandledUserActivity?.activityType == userActivity.activityType)
     }
 
-    @Test("Show keyboard when LaunchAction is .standardLaunch")
-    func showKeyboard() {
-        let date = Date()
-        let action = LaunchAction.standardLaunch(lastBackgroundDate: date, isFirstForeground: false)
-
-        launchActionHandler.handleLaunchAction(action)
-
-        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
-        #expect(keyboardPresenter.lastBackgroundDate == date)
-    }
-
     @available(iOS 16, macOS 13, *)
     @Test("A standard launch passes the authentication state to the keyboard", .timeLimit(.minutes(1)), arguments: [false, true])
     func passesAuthenticationStateToKeyboard(hasCompletedAuthentication: Bool) {

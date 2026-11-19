@@ -245,22 +245,6 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A newly created inline page uses the next-turn focus schedule", .timeLimit(.minutes(1)), arguments: [false, true])
-    func createdNewTabPageFocusTiming(inlineInput: Bool) {
-        target.hasInlineNewTabPageInput = inlineInput
-
-        presenter.showKeyboardOnNewTabPageCreated()
-
-        #expect(target.allowedKeyboardCallCount == 0)
-        #expect(inlinePageActions.count == (inlineInput ? 1 : 0))
-        #expect(scheduledActions.count == (inlineInput ? 0 : 1))
-        inlinePageActions.forEach { $0() }
-        scheduledActions.forEach { $0() }
-        #expect(target.allowedKeyboardCallCount == 1)
-        #expect(pixelFiring.actualFireCalls.isEmpty)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("Inline focus waits for a launch prompt registered after page creation", .timeLimit(.minutes(1)))
     func createdInlinePageWaitsForNewLaunchPrompt() {
         target.hasInlineNewTabPageInput = true

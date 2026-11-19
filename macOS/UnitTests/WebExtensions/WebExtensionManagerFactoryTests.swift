@@ -140,14 +140,12 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
     }
 
     private func makeManager(storage: DiscoveryStateStorage, flags: MockFeatureFlagger) -> WebExtensionManager {
-        let buildType = ApplicationBuildTypeMock()
-        buildType.isSparkleBuild = true
-        return WebExtensionManagerFactory.makeManager(keyValueStore: storage,
-                                                     privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                                                     autoconsentPreferences: Preferences(),
-                                                     themeManager: ThemeManager(appearancePreferences: .mock),
-                                                     buildType: buildType, featureFlagger: flags,
-                                                     eventHub: RecordingEventHub())
+        WebExtensionManagerFactory.makeManager(keyValueStore: storage,
+                                              privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                                              autoconsentPreferences: Preferences(),
+                                              themeManager: ThemeManager(appearancePreferences: .mock),
+                                              featureFlagger: flags,
+                                              eventHub: RecordingEventHub())
     }
 
     private struct Preferences: AutoconsentPreferencesProviding {

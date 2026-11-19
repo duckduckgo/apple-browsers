@@ -79,11 +79,12 @@ struct TranslationBannerView: View {
 
     @ViewBuilder private var background: some View {
         let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+        // Solid like the Figma card, so the page behind never shows through the text.
+        let card = shape.fill(Color(designSystemColor: .surfaceTertiary))
         if #available(iOS 26.0, *), !reduceTransparency {
-            Color.clear.glassEffect(.regular, in: shape)
+            card.glassEffect(.regular, in: shape)
         } else {
-            shape
-                .fill(reduceTransparency ? AnyShapeStyle(Color(designSystemColor: .surfaceTertiary)) : AnyShapeStyle(.thinMaterial))
+            card
                 .overlay { shape.strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 0.5) }
                 .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 8, y: 4)
         }

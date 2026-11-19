@@ -54,6 +54,7 @@ import SitePermissions
 import WebExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
+import WebPageTranslation
 
 enum WebViewPreviewSnapshotGeometry {
 
@@ -872,6 +873,7 @@ class TabViewController: UIViewController {
     }
 
     var pageTranslationOfferProvider: PageTranslationOfferProvider?
+    private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -1187,6 +1189,7 @@ class TabViewController: UIViewController {
         duckAISwipeNewChat?.cancel()
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
+        translationBannerPresenter.dismiss(animated: false)
 
         unregisterFromResignActive()
         unregisterFromKeyboardNotifications()
@@ -3125,7 +3128,7 @@ extension TabViewController: WKNavigationDelegate {
         return PageContextAttachabilityPolicy(settings: blocklist)
     }
 
-    /// Detects the page's language once per page load and logs what translation to offer.
+    /// Detects the page's language once per page load and shows the translation banner when it applies.
     private func offerTranslationIfNeeded(in webView: WKWebView) {
         guard let provider = pageTranslationOfferProvider, provider.isEnabled,
               webView === self.webView, !isError,
@@ -3135,11 +3138,17 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        Task { [weak webView] in
-            guard let webView else { return }
-            _ = await provider.decision(in: webView)
-            // TODO: Show the banner if needed.
+        Task { [weak self, weak webView] in
+            guard let webView, let offer = await provider.bannerOffer(in: webView) else { return }
+            self?.showTranslationBanner(offer)
         }
+    }
+
+    /// One prompt at a time, and only on the tab the user is looking at.
+    private func showTranslationBanner(_ offer: TranslationOffer) {
+        guard view.window != nil, delegate?.tabIsShowingOtherPrompt(self) != true,
+              let addressBar = chromeDelegate?.omniBar.barView else { return }
+        translationBannerPresenter.present(offer, in: self, nextTo: addressBar)
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -3255,6 +3264,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         if webView === self.webView {
             firstPaintCover.didStartNavigation(navigation)
+            translationBannerPresenter.dismiss(animated: false)
         }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
@@ -6584,6 +6594,12 @@ extension TabViewController: Navigatable {
 extension TabViewController: DuckPlayerHosting {
     var contentBottomConstraint: NSLayoutConstraint? {
         return webViewBottomAnchorConstraint
+    }
+
+    /// Read from the pill itself: its visibility notification also fires when no pill exists.
+    var isDuckPlayerPillVisible: Bool {
+        let duckPlayer = duckPlayerNavigationHandler.duckPlayer as? DuckPlayer
+        return (duckPlayer?.nativeUIPresenter as? DuckPlayerNativeUIPresenter)?.containerViewModel?.sheetVisible == true
     }
     
     var floatingBottomChromeObscuredHeight: CGFloat {

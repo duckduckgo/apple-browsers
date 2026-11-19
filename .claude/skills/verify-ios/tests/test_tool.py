@@ -9,7 +9,7 @@ os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import compare, device, env, harness, telemetry, video  # noqa: E402
+from verify_ios import compare, device, env, harness, steps, telemetry, video, web  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -1140,6 +1140,49 @@ class BaseExpectationTests(HarnessTests):
             ios.check("after the alert", True)
         self.fake.alert = alert
         self.assertIn("after the alert", [c["check"] for c in self.run_base(run)["checks"]])
+
+    def test_a_step_that_does_not_find_what_it_looks_for_is_the_expected_failure_on_the_base_run(self):
+        class Driver:   # nothing on screen: every lookup comes back empty
+            def find(self, sel):
+                return []
+
+            def swipe(self, direction, sel=None):
+                return {}
+        dev = device.Device.__new__(device.Device)
+        dev._driver = Driver()
+        self.fake.scroll_to = dev.scroll_to
+        self.fake.web.eval = lambda js: {"t": ""}   # Duck.ai never answers
+        page = web.Web(0, "-")
+        page.page_url = lambda: None                 # the tab shows no web page
+        misses = {
+            "tab count": lambda ios: steps.expect_tab_count(ios, 2, timeout=0),   # no tab-switcher button in the tree
+            "alternative controls": lambda ios: ios.eventually(
+                "a New Tab control", lambda: steps.tap_first_present(ios, steps.NEW_TAB, timeout=0), timeout=0),
+            "scrolling": lambda ios: ios.eventually("row reachable", lambda: ios.scroll_to('label="row"'), timeout=0),
+            "Duck.ai answer": lambda ios: ios.eventually(
+                "Duck.ai answered", lambda: steps.read_duckai_answer(ios, timeout=0), timeout=0),
+            "page URL": lambda ios: ios.eventually("page shows the token", lambda: "t-1" in page.url(), timeout=0),
+        }
+        for name, miss in misses.items():
+            def run(ios, miss=miss):
+                with ios.on_base("fail"):
+                    miss(ios)
+                ios.check("after the miss", True)
+            with self.subTest(name):
+                before, verdict = self.judge_base_run(run, absent=set(steps.NEW_TAB))
+                self.assertEqual((before["status"], verdict), ("fail", "AS EXPECTED"), before)
+                self.assertIn("after the miss", [c["check"] for c in before["checks"]])
+
+    def test_a_step_stopped_by_a_refusal_is_still_inconclusive_on_the_base_run(self):
+        def snapshot():
+            raise env.Failed("the app is not running", runner={"code": "APP_NOT_RUNNING"})
+
+        def run(ios):
+            with ios.on_base("fail"):
+                steps.expect_tab_count(ios, 2, timeout=0)
+        self.fake.snapshot = snapshot
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual((before["status"], verdict), ("error", "INCONCLUSIVE"), before)
 
     def test_an_unknown_base_outcome_is_an_error(self):
         def run(ios):

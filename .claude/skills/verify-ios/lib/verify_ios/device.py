@@ -389,7 +389,7 @@ class Device:
             if any(m.get("hittable") for m in matches):
                 return dict(matched=matches[0])
             self.driver.swipe("up")
-        raise Failed("not reachable by scrolling")
+        raise Failed("not reachable by scrolling", runner=dict(code="NOT_FOUND"))
 
     def alert(self, action, button=None, timeout=5):
         return self._result(self.driver.alert(action, button, timeout))

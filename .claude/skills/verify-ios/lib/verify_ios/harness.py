@@ -15,6 +15,7 @@ import contextlib, importlib.util, inspect, json, os, re, shlex, shutil, signal,
 from . import env
 from .device import Device, fixture, fixture_release
 from .env import APP, EVIDENCE, ROOT, SKILL, Busy, DeviceLock, Failed, Missed, SetupFailed, Unsupported, run
+from . import gallery, page
 from .telemetry import Pixels, WideEvents
 from .video import Video
 
@@ -56,6 +57,7 @@ class Ios:
         self.flags = dict(flags or {})
         self.language = dict(language or env.LANGUAGE)
         self.checks, self.unverified_items, self.notes, self.warnings = [], [], [], []
+        self.shots = []   # screenshot files in the order taken: the key frames
         self.hosts = set()                       # non-local hosts the proof saw, to check LIVE
         self.cleanups = []                       # (what, fn) undo steps, run in reverse after the proof
         self.capture = {}                        # capture conditions screenshots depend on, for the manifest
@@ -405,7 +407,11 @@ class Ios:
     # evidence --------------------------------------------------------------------
     def shot(self, name):
         """Screenshot the simulator; take one before and after each key action."""
-        return self._log("screenshot", [name], lambda: self.d.screenshot(os.path.join(self.evidence, f"{name}.png")))
+        if f"{name}.png" in gallery.GENERATED | {"final.png"}:
+            raise Unsupported(f"shot({name!r}): that name is kept for an image prove writes itself; pick another")
+        out = self._log("screenshot", [name], lambda: self.d.screenshot(os.path.join(self.evidence, f"{name}.png")))
+        self.shots = [s for s in self.shots if s != f"{name}.png"] + [f"{name}.png"]
+        return out
 
     def note(self, text):
         self.notes.append(text)
@@ -609,12 +615,15 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
     finally:
         _ignore_signals()   # writing the manifest and report must not be interrupted
     try:
+        add_problems(gallery.problems(gallery.compose(gallery.proof_jobs(attempt, results)), attempt, results))
         manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log,
                              evidence_dir, video, as_base)
+        write_index(attempt, results, lambda: page.proof_page(mod, manifest, results, attempt))
+        manifest["results"] = _manifest_results(results)   # with any problem writing the page
         with open(f"{attempt}/manifest.json", "w") as f:
             json.dump(manifest, f, indent=1)
         with open(f"{attempt}/report.md", "w") as f:
-            f.write(_report(mod, manifest, results))
+            f.write(_report(mod, manifest, results, attempt))
     finally:
         _restore(old)
     code = exit_code([r["status"] for r in results], any(r.get("problems") for r in results))
@@ -683,6 +692,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=No
         result = dict(device=device, status=status, reason=reason, secs=round(time.time() - t0, 1),
                       checks=ios.checks if ios else [], unverified=ios.unverified_items if ios else [],
                       notes=ios.notes if ios else [], warnings=ios.warnings if ios else [], problems=problems,
+                      shots=ios.shots if ios else [],
                       liveHostsSeen=sorted(ios.hosts) if ios else [], launched=ios.launched if ios else None,
                       capture=ios.capture if ios else {}, evidence=evidence,
                       appLog=os.path.exists(f"{evidence}/app.log"),
@@ -810,18 +820,49 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         video={r["device"]: f"{r['device']}/{r['video']}" if r.get("video") else None
                for r in results if r.get("device") != "-"} if video else "off (--no-video)",
         started=started, finished=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        results=[{k: r.get(k) for k in ("device", "status", "reason", "secs", "problems")} for r in results])
+        results=_manifest_results(results))
 
 
-def _report(mod, m, results):
+def _manifest_results(results):
+    return [{k: r.get(k) for k in ("device", "status", "reason", "secs", "problems")} for r in results]
+
+
+def add_problems(pairs):
+    """Add each (result, problem) to the result and its result.json, so the run exits 2 like any evidence problem."""
+    for r, problem in pairs:
+        r["problems"] = (r.get("problems") or []) + [problem]
+        if r.get("evidence"):
+            try:
+                with open(f"{r['evidence']}/result.json", "w") as f:
+                    json.dump(r, f, indent=1, default=str)
+            except OSError:
+                pass
+
+
+def write_index(attempt, results, render):
+    """Write index.html from `render()`. A page that fails is an evidence problem of the first device; report.md is
+    still written."""
+    try:
+        text = render()
+        with open(f"{attempt}/index.html", "w") as f:
+            f.write(text)
+    except Exception as e:
+        runs = [r for r in results if r.get("evidence")] or results
+        add_problems([(runs[0], f"could not write index.html: {type(e).__name__}: {e}")] if runs else [])
+
+
+def _report(mod, m, results, attempt):
     """One scenario per proof: what it verifies, evidence, outcome, details, then what it left unverified."""
     doc = (mod.__doc__ or "").strip()
     undeclared = [h for h in m["liveHostsSeen"] if not any(s in h for s in m["live"])]
     built = m.get("appBuild") or {}
     runs = [r for r in results if r["device"] != "-"]
     lines = [f"# Proof: {doc.splitlines()[0]}", "", "## Verified", "", doc, "", "## Evidence", "",
-             "Paths are relative to this report.", "",
-             "| Device | Video | Final screen | Screenshots (key frames) | Telemetry | Transcript and app log |", "|---|---|---|---|---|---|"]
+             "Paths are relative to this report. [index.html](index.html) shows the same evidence with the videos "
+             "playing in the page.", ""]
+    if os.path.isfile(os.path.join(attempt, gallery.DEVICES)):
+        lines += [f"Final screen per device: {thumbnail(gallery.DEVICES, 'Final screen per device')}", ""]
+    lines += ["| Device | Video | Key frames | Screenshots | Telemetry | Transcript and app log |", "|---|---|---|---|---|---|"]
     for r in runs:
         lines.append(f"| {r['device']} | " + " | ".join(_evidence_links(r)) + " |")
     lines += ["", "## Outcome", ""]
@@ -853,17 +894,33 @@ def _report(mod, m, results):
     return "\n".join(lines) + "\n"
 
 
+def thumbnail(path, alt, target=None):
+    """A linked 200px thumbnail in the PR evidence format; `target` (default: the image) is what it opens."""
+    url = urllib.parse.quote(path)
+    alt = alt.replace("|", "-").replace('"', "'")
+    return f'[<img src="{url}" width="200" alt="{alt}">]({urllib.parse.quote(target or path)})'
+
+
+def watch(path):
+    return f"[▶ Watch video]({urllib.parse.quote(path)})"
+
+
 def _evidence_links(r):
-    """Markdown links, relative to the attempt folder, to one device's evidence; "-" where there is none."""
+    """Markdown cells, relative to the attempt folder, for one device's evidence; "-" where there is none."""
     ev, dev = r.get("evidence"), r["device"]
     if not ev or not os.path.isdir(ev):
         return ["-"] * 5
     def link(name, label=None):
         return f"[{label or name}]({dev}/{name})" if os.path.isfile(f"{ev}/{name}") else "-"
-    shots = sorted(f for f in os.listdir(ev) if f.endswith(".png") and f != "final.png")
+    video = "-"
+    if r.get("video"):
+        poster = f"{dev}/{gallery.POSTER}"
+        video = (thumbnail(poster, f"Recording on {dev}", f"{dev}/{r['video']}") + " "
+                 if os.path.isfile(f"{ev}/{gallery.POSTER}") else "") + watch(f"{dev}/{r['video']}")
+    strip = next((f"{dev}/{n}" for n in (gallery.KEY_FRAMES, "final.png") if os.path.isfile(f"{ev}/{n}")), None)
     telemetry = [x for x in (link("pixels.json"), link("wide-events.json")) if x != "-"]
-    return [link(Video.FILE, "recording.mp4") if r.get("video") else "-", link("final.png"),
-            ", ".join(link(f) for f in shots) or "-", ", ".join(telemetry) or "-",
+    return [video, thumbnail(strip, f"Key frames on {dev}") if strip else "-",
+            ", ".join(link(f) for f in gallery.key_frames(ev, r.get("shots"))) or "-", ", ".join(telemetry) or "-",
             ", ".join(x for x in (link("transcript.jsonl"), link("app.log")) if x != "-") or "-"]
 
 

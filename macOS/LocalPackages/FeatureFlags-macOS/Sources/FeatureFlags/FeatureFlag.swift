@@ -511,10 +511,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
     case promoQueueUpdateAvailablePromo
 
-    /// Enables the "Browser updated" promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923091?focus=true
-    case promoQueueBrowserUpdatedPromo
-
     /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
     case promoQueueVPNUpsellPromo
@@ -534,14 +530,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
     case promoQueueBookmarkAddedSyncPromo
-
-    /// Enables the import/sync promo on the "No bookmarks yet" empty state in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570477?focus=true
-    case promoQueueBookmarksEmptyStatePromo
-
-    /// Enables the import/sync promo on the Passwords panel empty states in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
-    case promoQueueAutofillEmptyStatePromo
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo
@@ -1061,8 +1049,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
         case .promoQueueUpdateAvailablePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
-        case .promoQueueBrowserUpdatedPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.browserUpdatedPromo))
         case .promoQueueVPNUpsellPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .promoQueueSyncSetupBookmarksPromo:
@@ -1073,10 +1059,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
         case .promoQueueBookmarkAddedSyncPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
-        case .promoQueueBookmarksEmptyStatePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
-        case .promoQueueAutofillEmptyStatePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .defaultBrowserWinBackPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:

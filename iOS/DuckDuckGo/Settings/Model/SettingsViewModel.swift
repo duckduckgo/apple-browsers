@@ -200,6 +200,12 @@ final class SettingsViewModel: ObservableObject {
         callbacks: makeSitePermissionsCallbacks()
     )
 
+    @MainActor
+    private(set) lazy var localModelAccessSettingsViewModel: LocalModelAccessSettingsViewModel? = {
+        guard let service = userScriptsDependencies.aiChatLocalModel?.service else { return nil }
+        return LocalModelAccessSettingsViewModel(service: service)
+    }()
+
     // View State
     @Published private(set) var state: SettingsState
     private var lastEnabledDuckPlayerMode: DuckPlayerMode?

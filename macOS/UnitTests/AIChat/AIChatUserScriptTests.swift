@@ -1002,6 +1002,7 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     }
 
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
+    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {}
     func cancelRuns(ownerID: ObjectIdentifier) {}
 
     func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {

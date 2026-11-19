@@ -274,7 +274,6 @@ extension PromoServiceFactoryTests {
                 recordResult: { _, _ in }
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
@@ -282,7 +281,6 @@ extension PromoServiceFactoryTests {
                 recordResult: { _, _ in }
             ),
             autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 isAnyCategoryEmptyProvider: { true },
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
                 syncService: nil,

@@ -68,6 +68,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
     let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
     let translationModels: TranslationModels?
+    let aiChatLocalModel: AIChatLocalModelDependencies?
     let daxGreetingDebugging: DaxGreetingDebugging
 
     init(syncService: any DDGSyncing,
@@ -96,7 +97,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
          promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
          promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil,
-         translationModels: TranslationModels? = nil) {
+         translationModels: TranslationModels? = nil,
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -123,6 +125,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
         self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
         self.translationModels = translationModels
+        self.aiChatLocalModel = aiChatLocalModel
         self.daxGreetingDebugging = daxGreetingDebugging
     }
     
@@ -180,7 +183,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
             promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter,
             translationModels: self.translationModels,
-            daxGreetingDebugging: self.daxGreetingDebugging))
+            daxGreetingDebugging: self.daxGreetingDebugging,
+            aiChatLocalModel: self.aiChatLocalModel))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

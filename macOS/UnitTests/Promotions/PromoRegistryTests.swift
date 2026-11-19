@@ -85,8 +85,7 @@ final class PromoRegistryTests: XCTestCase {
                         privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                         internalUserDecider: featureFlagger.internalUserDecider
                     ),
-                    windowControllersManager: windowControllersManager,
-                    featureFlagger: featureFlagger
+                    windowControllersManager: windowControllersManager
                 )
             }(),
             updateController: nil,

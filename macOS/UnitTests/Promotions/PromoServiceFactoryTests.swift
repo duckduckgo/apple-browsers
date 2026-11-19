@@ -239,8 +239,7 @@ extension PromoServiceFactoryTests {
                         privacyConfigurationManager: MockPrivacyConfigurationManager(),
                         internalUserDecider: featureFlagger.internalUserDecider
                     ),
-                    windowControllersManager: windowControllersManager,
-                    featureFlagger: featureFlagger
+                    windowControllersManager: windowControllersManager
                 )
             }(),
             updateController: nil,

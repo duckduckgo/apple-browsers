@@ -18,6 +18,7 @@
 //
 
 import PrivacyConfigTestsUtils
+import WebKit
 import WebPageTranslation
 import XCTest
 @testable import DuckDuckGo
@@ -29,6 +30,11 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         The weather was mild this morning, so we walked along the river before breakfast. \
         Several shops in the old town had already opened their doors. \
         We bought fresh bread and sat on a bench to watch the boats go by.
+        """
+
+    private static let french = """
+        Le temps était doux ce matin, alors nous avons marché le long de la rivière avant le petit déjeuner. \
+        Plusieurs boutiques de la vieille ville avaient déjà ouvert leurs portes.
         """
 
     func testDisabledCapabilityOffersNothing() async throws {
@@ -47,6 +53,18 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         let provider = try makeProvider(deviceLanguages: ["de-DE"])
         let decision = await provider.decision(forSample: Self.english)
         XCTAssertEqual(decision, .banner(TranslationOffer(source: "en", target: "de")))
+    }
+
+    func testReadsTheSampleFromTheWebView() async throws {
+        let webView = WKWebView()
+        let navigationDelegate = FinishedLoading()
+        webView.navigationDelegate = navigationDelegate
+        webView.loadHTMLString("<html><body><p>\(Self.french)</p></body></html>", baseURL: URL(string: "https://example.fr/"))
+        await fulfillment(of: [navigationDelegate.finished], timeout: 10)
+
+        let provider = try makeProvider(deviceLanguages: ["en-US"])
+        let decision = await provider.decision(in: webView)
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en")))
     }
 
     func testEligibility() {
@@ -71,7 +89,8 @@ final class PageTranslationOfferProviderTests: XCTestCase {
     nonisolated private static func manifest() -> TranslationManifest? {
         let json = """
             {"schemaVersion": 1, "baseUrl": "https://example.com/", "models": {
-              "en-de": {"sourceLanguage": "en", "targetLanguage": "de", "version": "1.0", "totalBytes": 1, "files": {}}
+              "en-de": {"sourceLanguage": "en", "targetLanguage": "de", "version": "1.0", "totalBytes": 1, "files": {}},
+              "fr-en": {"sourceLanguage": "fr", "targetLanguage": "en", "version": "1.0", "totalBytes": 1, "files": {}}
             }}
             """
         return try? TranslationManifest.decode(Data(json.utf8))
@@ -80,4 +99,12 @@ final class PageTranslationOfferProviderTests: XCTestCase {
 
 private struct MockCapability: WebPageTranslationCapable {
     let isWebPageTranslationEnabled: Bool
+}
+
+private final class FinishedLoading: NSObject, WKNavigationDelegate {
+    let finished = XCTestExpectation(description: "page finished loading")
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        finished.fulfill()
+    }
 }

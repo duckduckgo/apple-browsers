@@ -3,6 +3,9 @@
 Every step uses only generic actions and the ids documented in ../../features/. Keep it that way: when the app gets
 an XCUITest target, these port to Swift mechanically, from the feature map, not from this code.
 """
+import ast
+import json
+import re
 import time
 
 from . import env
@@ -147,7 +150,25 @@ def open_duckai_new_chat(ios):
     """Open Duck.ai from its in-app entry point and start a new chat. Needs the live duck.ai service."""
     ios.tap(ids(ios)["aichat"])
     ios.tap('label="New Chat"')
+    # The first duck.ai load on a fresh iPad simulator sometimes fails with "Could not connect to the server"; a
+    # reload loads it. Reload once and say so, so a run that needed it is visible in the report. The URL already
+    # reads duck.ai while that first load is in flight, so "loaded" means the chat input is on screen.
+    if ios.eventually("duck.ai loaded or failed to load", lambda: _duckai_load_state(ios), 20) == "failed":
+        ios.note("duck.ai failed its first load (Could not connect to the server); reloaded once")
+        tap_first_present(ios, ["id=Browser.OmniBar.Button.RefreshExternal", "id=Browser.OmniBar.Button.Refresh"])
+        ios.eventually("duck.ai loaded after the reload", lambda: _duckai_load_state(ios) == "loaded", 20)
     ios.expect_url_contains("duck.ai", 15)
+
+
+DUCKAI_LOAD_ERROR = 'label="Could not connect to the server."'
+# Duck.ai's chat input: iPhone shows the app's native composer, iPad the page's own input box.
+DUCKAI_INPUT = ["id=AIChat.Toolbar.Button.Submit", 'label="Ask anything privately" nth=0']
+
+
+def _duckai_load_state(ios):
+    if ios.exists(DUCKAI_LOAD_ERROR, 0.2):
+        return "failed"
+    return "loaded" if any(ios.exists(loc, 0.2) for loc in DUCKAI_INPUT) else None
 
 
 def send_duckai_prompt(ios, prompt):
@@ -157,11 +178,15 @@ def send_duckai_prompt(ios, prompt):
         ios.type("-", prompt)
         ios.wait("id=AIChat.Toolbar.Button.Submit", "enabled", 5)
         return ios.tap("id=AIChat.Toolbar.Button.Submit")
+    # The box isn't focused in a chat opened in a second tab, and typing into it then changes nothing: tap it first.
+    # The submit button is "Ask" until the user has accepted the terms (their first prompt), "Send" after.
     box = 'label="Ask anything privately" nth=0'
     ios.wait(box, "exists", 15)
-    ios.type(box, prompt)
-    ios.wait('role=button label="Ask"', "enabled", 5)
-    return ios.tap('role=button label="Ask"')
+    ios.tap(box)
+    ios.type("-", prompt)
+    submit = ios.eventually("Duck.ai submit enabled", lambda: next(
+        (loc for loc in DUCKAI_SUBMIT if any(m.get("enabled") for m in ios.find(loc))), None), 5)
+    return ios.tap(submit)
 
 
 def read_duckai_answer(ios, timeout=90, settle=2.0):
@@ -186,8 +211,120 @@ def read_duckai_answer(ios, timeout=90, settle=2.0):
     raise Failed(f"Duck.ai answer did not settle within {timeout}s", last=last)
 
 
+# ---------------------------------------------------------------- Duck.ai: chat ids, history, deletion, storage
+DUCKAI_SUBMIT = ['role=button label="Ask"', 'role=button label="Send"']
+# The Fire button on a Duck.ai tab: iPhone has no id there, only this label; iPad keeps its toolbar id.
+DUCKAI_FIRE = {"iphone": 'label="Clear Tabs and Data"', "ipad": "id=Browser.Toolbar.Button.Fire"}
+
+
+def duckai_chat_id(ios, timeout=30):
+    """The open chat's id: Duck.ai adds `chatID=<id>` to the tab's URL once the first prompt is sent."""
+    url = ios.eventually("chat id in the URL", lambda: "chatID=" in (ios.page_url() or "") and ios.page_url(), timeout)
+    return url.split("chatID=", 1)[1].split("&", 1)[0]
+
+
+def new_duckai_chat_tab(ios):
+    """Start another chat in a new tab, from a Duck.ai tab. iPhone: the chat header's New menu, then Chat (the
+    address-bar Duck.ai button isn't on a Duck.ai tab). iPad: the tab bar's Duck.ai menu, then New Chat."""
+    if ios.device == "iphone":
+        ios.tap('label="New"')
+        ios.tap('label="Chat"')
+    else:
+        ios.tap(ids(ios)["aichat"])
+        ios.tap('label="New Chat"')
+    ios.eventually("a new chat without a chat id", lambda: _is_empty_duckai_chat(ios.page_url() or ""), 15)
+
+
+def duckai_history(ios):
+    """Open chat history from a Duck.ai tab and return the chat titles it lists, newest first.
+    iPhone: the native Chats sheet (chat header button "Recent chats"); rows have no ids, and each title follows its
+    `Chat-24` icon in the tree; closed again with Close. iPad: Duck.ai's own web sidebar ("Show sidebar"); rows are
+    the buttons between "Search chats" and "Settings & More"; left open (it covers the input, not the toolbar)."""
+    if ios.device == "iphone":
+        ios.tap('label="Recent chats"')
+        ios.wait("id=Chats", "exists", 10)
+        lines = ios.snapshot().get("tree", "").splitlines()
+        titles = [_label(nxt) for line, nxt in zip(lines, lines[1:]) if "id='Chat-24'" in line]
+        ios.tap('label="Close"')
+        ios.wait("id=Chats", "hidden", 10)
+    else:
+        if not ios.exists('label="Search chats"', 1):
+            ios.tap('label="Show sidebar"')
+        ios.wait('label="Search chats"', "exists", 10)
+        lines = ios.snapshot().get("tree", "").splitlines()
+        start = next(i for i, line in enumerate(lines) if "label='Search chats'" in line)
+        titles = []
+        for line in lines[start + 1:]:
+            if "label='Settings & More'" in line:
+                break
+            if line.strip().startswith("9 "):   # element type 9 is a button
+                titles.append(_label(line))
+    return ios._log("duck.ai history", [], lambda: titles)
+
+
+def _is_empty_duckai_chat(url):
+    return "duck.ai" in url and "chatID=" not in url
+
+
+# Device.snapshot writes `label={label!r}`, so read the label back as the Python literal repr wrote: a title with an
+# apostrophe comes out double-quoted (label="Mango's chat").
+_LABEL = re.compile(r""" label=('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")""")
+
+
+def _label(tree_line):
+    m = _LABEL.search(tree_line)
+    return ast.literal_eval(m.group(1)) if m else ""
+
+
+def delete_current_duckai_chat(ios, timeout=180):
+    """The Fire button on a Duck.ai tab offers only "Delete This Chat" (`Fire.Confirmation.Button.ThisTab`). It deletes
+    that chat whatever the Data Clearing settings say, and the tab reloads an empty chat.
+    Until the whole clear finishes, the app covers its window with an invisible overlay that takes the next tap (a
+    user's tap just removes it), so every control reads as not hittable. That can last minutes on a loaded Mac: wait
+    for the Fire button to be hittable again instead of tapping through it."""
+    ios.tap(DUCKAI_FIRE[ios.device])
+    ios.wait("id=Fire.Confirmation.Button.ThisTab", "visible", 10)
+    ios.shot("fire-sheet")
+    ios.tap("id=Fire.Confirmation.Button.ThisTab")
+    ios.eventually("tab shows an empty chat", lambda: _is_empty_duckai_chat(ios.page_url() or ""), 15)
+    ios.wait(DUCKAI_FIRE[ios.device], "visible", timeout)
+
+
+DUCKAI_STORAGE_JS = """
+const needles = %s, hits = {};
+const look = (where, text) => { for (const n of needles) if (text && text.includes(n)) (hits[where] = hits[where] || []).push(n); };
+const req = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+for (const k of Object.keys(localStorage)) look('localStorage:' + k, localStorage.getItem(k));
+for (const info of await indexedDB.databases()) {
+  const db = await req(indexedDB.open(info.name));
+  for (const s of Array.from(db.objectStoreNames)) {
+    const keys = await req(db.transaction(s).objectStore(s).getAllKeys());
+    const rows = await req(db.transaction(s).objectStore(s).getAll());
+    look('indexedDB:' + info.name + '/' + s, JSON.stringify(keys) + JSON.stringify(rows));
+  }
+  db.close();
+}
+const ns = navigator.duckduckgo.createMessageBridge('duckAiNativeStorage');
+const chats = (await ns.request('getAllChats', {})).chats || [];
+look('native:chats', JSON.stringify(chats));
+look('native:files', JSON.stringify(await ns.request('listFiles', {})));
+const entries = (await ns.request('getAllEntries', {})).entries || {};
+const tombstones = entries.locallyDeletedChatIds || [];
+delete entries.locallyDeletedChatIds;
+look('native:entries', JSON.stringify(entries));
+return {chats: chats.map(c => ({id: c.chatId, title: c.title || ''})), tombstones, hits};
+"""
+
+
+def duckai_storage(ios, needles):
+    """Read Duck.ai's storage from a duck.ai page: the chats in native storage (id, title), the
+    `locallyDeletedChatIds` tombstones, and where any of `needles` (chat ids, prompt text) appears: localStorage, every
+    IndexedDB store, and native storage's chats, files and entries (tombstones left out). Native storage is read
+    through the page bridge Duck.ai itself uses (`duckAiNativeStorage`), so the tab must show duck.ai."""
+    return ios.eval(DUCKAI_STORAGE_JS % json.dumps(list(needles)))
+
+
 # ---------------------------------------------------------------- Duck.ai contextual chat (features/duck-ai-contextual.md)
-import re  # noqa: E402  (kept with the block that uses it)
 
 # Flags every contextual proof pins: the feature is off by default, the iPad entry is the tabs-bar menu button and the
 # chat docks beside the page, iPhone uses the floating native input with Fire beside it (`aiChatTabHandoffImprovements`,

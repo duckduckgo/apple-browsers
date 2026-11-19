@@ -745,7 +745,7 @@ private final class CapturingWebExtensionPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
-        case .cpmMessagingBreakage(let tabs):
+        case .cpmMessagingBreakage(_, let tabs):
             breakages.append(tabs)
         case .cpmMessagingBreakagePersistent:
             persistentCount += 1

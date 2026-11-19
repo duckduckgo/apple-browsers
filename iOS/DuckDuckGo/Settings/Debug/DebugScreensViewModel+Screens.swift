@@ -191,6 +191,12 @@ extension DebugScreensViewModel {
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
+            .view(title: "Translation Models", { d in
+                TranslationModelsDebugView(
+                    models: d.translationModels,
+                    capability: WebPageTranslationCapability.create(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+                )
+            }),
             .view(title: "Prompt Coordination", { d in
                 PromptCoordinationDebugView(
                     diagnosticsProvider: d.promoCoordinationDiagnosticsProvider,

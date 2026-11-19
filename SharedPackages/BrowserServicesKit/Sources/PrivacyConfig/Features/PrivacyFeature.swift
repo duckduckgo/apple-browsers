@@ -655,6 +655,30 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Paints previously-found matches on a page.
     case highlightInPage
+
+    /// Pins open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case pinTab
+
+    /// Opens a URL in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case openTab
+
+    /// Closes open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case closeTabs
+
+    /// Bookmarks an open tab, optionally into a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case bookmarkTab
+
+    /// Searches completed downloads by file name and source URL.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchDownloads
+
+    /// Searches bookmarks by title, URL and folder, optionally within a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchBookmarks
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -757,7 +781,11 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case heuristicHitTest
+    case popupMutationObserver
     case cookiePopupOptInDialog
+    /// The extension reports how far each page's init got, and the app puts the last step in the breakage pixel.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1220422645861893?focus=true
+    case cpmInitProgress
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -942,8 +970,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
-    /// Controls permission prompts and persistence on macOS.
-    case permissions
     /// Controls Chrome Web Store update discovery on macOS.
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery

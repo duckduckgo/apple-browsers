@@ -27,12 +27,23 @@ public protocol ClientToolPermissionPrompting: AnyObject {
 
     /// Closes a prompt whose call finished without an answer: deadline, chat gone or cancelled.
     func withdrawClientToolPermissionPrompt(requestID: String)
+
+    func clientToolUseDidStart(requestID: String, toolName: String)
+    func clientToolUseDidEnd(requestID: String, completed: Bool)
+}
+
+public extension ClientToolPermissionPrompting {
+    func clientToolUseDidStart(requestID: String, toolName: String) {}
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {}
 }
 
 public struct ClientToolPermissionPrompt: Equatable, Sendable {
     public let requestID: String
     public let callID: String
     public let toolName: String
+    public let targetsOtherTab: Bool
+    public var target: String?
+    public var offersAlways = true
 }
 
 /// Allow once · Always · Never, or the prompt closed without a choice. A prompt left unanswered until
@@ -46,7 +57,8 @@ public enum ClientToolPermissionDecision: Equatable, Sendable {
 
 @MainActor
 public protocol ClientToolPermissionCoordinating: AnyObject {
-    func authorize(callID: String, tool: any BrowserTool, prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization
+    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?,
+                   prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization
 }
 
 public enum ClientToolPermissionAuthorization {
@@ -71,6 +83,8 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let requestID: String
         let callID: String
         let tool: any BrowserTool
+        let targetsOtherTab: Bool
+        let target: String?
         weak var prompter: (any ClientToolPermissionPrompting)?
         let requiresPrompter: Bool
         let deadline: TimeInterval
@@ -81,12 +95,14 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         var executionTask: Task<Void, Never>?
         var timeout: Task<Void, Never>?
 
-        init(requestID: String, callID: String, tool: any BrowserTool,
+        init(requestID: String, callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?,
              prompter: (any ClientToolPermissionPrompting)?, deadline: TimeInterval,
              cancellation: ClientToolCancellationSignal, continuation: CheckedContinuation<ClientToolPermissionAuthorization, Never>) {
             self.requestID = requestID
             self.callID = callID
             self.tool = tool
+            self.targetsOtherTab = targetsOtherTab
+            self.target = target
             self.prompter = prompter
             requiresPrompter = prompter != nil
             self.deadline = deadline
@@ -131,15 +147,16 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     /// Queue time counts toward the permission timeout.
     /// Task cancellation marks the request immediately, then schedules MainActor cleanup
     /// to remove it and resume any pending wait as `.refused(.cancelled)`.
-    public func authorize(callID: String, tool: any BrowserTool, prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
+    public func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool = false, target: String? = nil,
+                          prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         let cancellation = ClientToolCancellationSignal()
         let requestID = UUID().uuidString
         let deadline = now() + Self.permissionTimeout
         return await withTaskCancellationHandler {
             guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled) }
             return await withCheckedContinuation { continuation in
-                let entry = Entry(requestID: requestID, callID: callID, tool: tool, prompter: prompter,
-                                  deadline: deadline, cancellation: cancellation, continuation: continuation)
+                let entry = Entry(requestID: requestID, callID: callID, tool: tool, targetsOtherTab: targetsOtherTab, target: target,
+                                  prompter: prompter, deadline: deadline, cancellation: cancellation, continuation: continuation)
                 entries[requestID] = entry
                 queues[tool.name, default: []].append(requestID)
                 entry.timeout = Task { [weak self, sleepUntil] in
@@ -181,7 +198,9 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         }
         switch decision {
         case .always:
-            permissions.setState(.allow, forToolNamed: entry.tool.name)
+            if !entry.tool.asksEveryTime {
+                permissions.setState(.allow, forToolNamed: entry.tool.name)
+            }
             grant(entry)
         case .allowOnce:
             grant(entry)
@@ -254,6 +273,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         entry.executionTask = nil
         let continuation = entry.executionContinuation
         entry.executionContinuation = nil
+        entry.prompter?.clientToolUseDidEnd(requestID: requestID, completed: !entry.isCancelled)
         continuation?.resume(returning: entry.isCancelled ? nil : result)
     }
 
@@ -268,6 +288,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     private func grant(_ entry: Entry) {
         guard entries[entry.requestID] === entry else { return }
         entry.state = .granted
+        entry.prompter?.clientToolUseDidStart(requestID: entry.requestID, toolName: entry.tool.name)
         releaseQueue(entry)
         let continuation = entry.continuation
         entry.continuation = nil
@@ -281,8 +302,13 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     /// - Parameter withdrawingPrompt: false when the prompt is already gone: answered or never shown.
     private func finish(_ requestID: String, error: ClientToolError, withdrawingPrompt: Bool = true) {
         guard let entry = entries.removeValue(forKey: requestID) else { return }
-        if withdrawingPrompt, case .awaitingDecision = entry.state {
+        switch entry.state {
+        case .awaitingDecision where withdrawingPrompt:
             entry.prompter?.withdrawClientToolPermissionPrompt(requestID: requestID)
+        case .granted, .executing:
+            entry.prompter?.clientToolUseDidEnd(requestID: requestID, completed: false)
+        default:
+            break
         }
         entry.executionTask?.cancel()
         entry.executionTask = nil
@@ -345,7 +371,9 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
             return
         }
         entry.state = .awaitingDecision
-        let shown = prompter.presentClientToolPermissionPrompt(.init(requestID: entry.requestID, callID: entry.callID, toolName: entry.tool.name))
+        let shown = prompter.presentClientToolPermissionPrompt(.init(requestID: entry.requestID, callID: entry.callID,
+                                                                    toolName: entry.tool.name, targetsOtherTab: entry.targetsOtherTab,
+                                                                    target: entry.target, offersAlways: !entry.tool.asksEveryTime))
         if !shown, entries[entry.requestID] === entry, case .awaitingDecision = entry.state {
             finish(entry.requestID, error: .cancelled, withdrawingPrompt: false)
         }

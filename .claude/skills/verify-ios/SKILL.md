@@ -82,6 +82,7 @@ from verify_ios import steps
 DEVICES = ["iphone", "ipad"]   # default: both
 LIVE = []                      # live services it depends on, e.g. ["duck.ai"]; empty = local fixture / app only
 FLAGS = {}                     # remote feature flags to pin for this proof (env.PINNED_FLAGS are always pinned)
+# LANGUAGE = {"language": "fr", "locale": "fr_FR"}   # only to test localization; default en-US (env.LANGUAGE)
 
 def run(ios):
     steps.fresh_start(ios)                         # reinstall + launch: one blank tab, address bar not focused
@@ -119,6 +120,9 @@ What `ios` gives you (`lib/verify_ios/harness.py`):
 - **Capture conditions:** `appearance("dark")`, `text_size("accessibility-large")` (see `Ios.TEXT_SIZES`; `large` is
   the iOS default), `rotate("landscapeLeft")` (fails if the app's window didn't follow), `fixed_status_bar()` (9:41,
   full battery and signal). Each is undone after the proof and recorded per device in the manifest and report.
+  The app always launches in en-US (`-AppleLanguages (en) -AppleLocale en_US`), because locators match English
+  text; a proof that tests localization sets `LANGUAGE`, and the language and locale are recorded with the other
+  conditions. They are launch arguments for the app; the simulator's own system language is left as it is.
   `fresh_start` always begins from light mode, default text size, portrait and a live status bar, even if an earlier
   run was killed before its undo ran. Text size reaches web pages on their next load. Use these so screenshots compare
   (visual-parity needs the same conditions on both sides).
@@ -162,20 +166,30 @@ plus `nth=<n>` when several match (otherwise the action fails with AMBIGUOUS; it
 
 `prove` writes, per attempt, `<state dir>/evidence/<stamp>-<name>-<id>/` (`$V info` prints the state dir):
 `proof.py`, `manifest.json` (git revision and dirty flag, the build's source fingerprint and sha256, the running
-binary's sha256 per device as verified at launch, pinned flags, skill sha256, Xcode, simulators, live services and
-live hosts seen, video per device, rerun command), `report.md`, and per device `recording.mp4`, `transcript.jsonl`,
-your screenshots, `final.png`, `final-snapshot.txt`, `pixels.json`, `pixels.ndjson` (raw), `wide-events.json`,
-`result.json`.
+binary's sha256 per device as verified at launch, pinned flags, capture conditions including language and locale,
+each device's `app.log`, skill sha256, Xcode, simulators, live services and live hosts seen, video per device, rerun
+command), `report.md`, and per device `recording.mp4`, `transcript.jsonl`, your screenshots, `final.png`,
+`final-snapshot.txt`, `app.log`, `pixels.json`, `pixels.ndjson` (raw), `wide-events.json`, `result.json`.
+
+`app.log` is the app's own log (`log show`, process DuckDuckGo) from the start of that device's run, kept on pass,
+fail and cancel, so a failed proof can be diagnosed without running it again (about 1 MB a minute; the UI-test
+runner's own lines are left out). A log over 5 MB keeps its end and says so on its first line.
 
 An attempt folder is used once: a proof inside a folder that holds anything else is copied to a new folder.
 
-**Where evidence goes.** Pass one of these to `new-proof` and `prove` (the manifest and rerun command record it):
+**Where evidence goes.** Pass one of these to `new-proof` and `prove` (`selftest` takes `--evidence-dir`); the
+manifest and rerun command record it:
 - `--evidence-dir <dir>`: any directory outside the checkout, created if missing; each run writes a fresh attempt
   folder in it. Use the directory your tooling publishes evidence from.
 - `--decision-log <path>`: a `decisions.tsv` outside the checkout; attempt folders go in `proofs/` next to it, so the
   log can link them.
 
 Either one inside the checkout is refused, so evidence never lands in the repo.
+
+**Publishing it in a PR.** Allocate a fresh directory per attempt from the evidence store your PR tooling uploads
+from, pass it as `--evidence-dir` to `new-proof` and `prove`, then publish it with that tooling. Upload the whole
+attempt folder, since `report.md` links its evidence by relative path. In the PR's Verification section, link
+`report.md` as the entry point, each device's `recording.mp4`, and `final.png` or your screenshots as key frames.
 
 **Video.** `prove` records each device's screen to `<device>/recording.mp4` (h264) from launch until the final
 screenshot, on pass, fail and cancel. Your `shot()` screenshots and `final.png` are the key frames. A recording that
@@ -191,6 +205,12 @@ Report to the user from `report.md`: **passed, failed and unverified** behavior 
 live services or only the local fixture, the revision, the rerun command, and links to the evidence. Look at the
 screenshots before claiming anything about appearance. The report's **Problems** section lists cleanup and evidence
 failures; pass them on, never hide them.
+
+**Run it in a subagent.** An agent verifying its own change hands the proof to a subagent: writing it, `new-proof`,
+`check`, `prove`, retries and build waits, whose output would fill the lead's context. Brief it with the claim, the
+devices and the evidence directory. It returns only the verdict per device (pass, fail or INCONCLUSIVE), the
+`report.md` path and the evidence folder. The lead still reads `report.md` and looks at the screenshots and the video
+before claiming anything.
 
 **Before and after (bug fixes).** Run the same proof against the base commit: add a worktree at it and run *this*
 checkout's `verify-ios` from inside that worktree. The checkout is taken from the current directory and the skill

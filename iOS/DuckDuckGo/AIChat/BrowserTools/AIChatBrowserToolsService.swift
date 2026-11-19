@@ -582,11 +582,11 @@ private final class AIChatNativePermissionCoordinator: ClientToolPermissionCoord
         self.admission = admission
     }
 
-    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?,
+    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?, chatID: String?, accessToolNames: [String]?,
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         if let failure = admission(tool.name, prompter) { return .refused(failure.clientToolError) }
         let authorization = await base.authorize(callID: callID, tool: tool, targetsOtherTab: targetsOtherTab,
-                                                 target: target, prompter: prompter)
+                                                 target: target, chatID: chatID, accessToolNames: accessToolNames, prompter: prompter)
         guard case .granted(let performExecution) = authorization else { return authorization }
         let requiresPrompter = prompter != nil
         let toolName = tool.name
@@ -597,5 +597,13 @@ private final class AIChatNativePermissionCoordinator: ClientToolPermissionCoord
                 return await operation()
             }
         })
+    }
+
+    func state(for tool: any BrowserTool, chatID: String?) -> BrowserToolPermissionState {
+        base.state(for: tool, chatID: chatID)
+    }
+
+    func accessLevel(for tool: any BrowserTool, chatID: String) -> BrowserToolAccessLevel? {
+        base.accessLevel(for: tool, chatID: chatID)
     }
 }

@@ -986,7 +986,8 @@ extension DefaultSubscriptionPagesUseSubscriptionFeature {
         }
     }
 
-    /// Any status that requires a Settings change to become `.authorized` is reported as `.denied`.
+    /// Any status that requires a Settings change to become `.authorized` is reported as `.denied`,
+    /// except `.provisional`, which is reported separately even though it also needs a Settings change.
     private static func permissionStatus(from status: UNAuthorizationStatus) -> NotificationsPermissionStatus {
         switch status {
         case .authorized, .ephemeral: return .granted

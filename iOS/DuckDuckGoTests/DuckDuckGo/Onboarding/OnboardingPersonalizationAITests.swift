@@ -29,64 +29,50 @@ import Onboarding
 
 @Suite("Onboarding Personalization – AI Model Adapter")
 struct OnboardingPersonalizationAIModelTests {
-    private let persistor: AIChatPreferencesPersistor
-    private let sut: OnboardingAIModelAdapter
 
-    init() {
-        persistor = AIChatPreferencesPersistor(keyValueStore: InMemoryKeyValueStore())
-        sut = OnboardingAIModelAdapter(persistor: persistor)
-    }
-
-    @Test("Selected model is nil when nothing is stored")
+    @Test("Selected model is nil at the start of onboarding")
     func modelIsNilWhenUnset() {
+        // GIVEN
+        let sut = OnboardingAIModelAdapter()
+
         // THEN
         #expect(sut.selectedAIModel == nil)
     }
 
-    @Test("Setting a model persists both its id and short name")
-    func settingModelPersistsIdAndName() {
+    @Test("Setting a model keeps it for the onboarding session")
+    func settingModelKeepsIt() {
         // GIVEN
-        let model = OnboardingAIModel(id: "gpt-x", name: "ChatGPT")
+        let sut = OnboardingAIModelAdapter()
 
         // WHEN
-        sut.selectedAIModel = model
-
-        // THEN
-        #expect(persistor.selectedModelId == "gpt-x")
-        #expect(persistor.selectedModelShortName == "ChatGPT")
-        #expect(sut.selectedAIModel == model)
-    }
-
-    @Test("Getting a model reflects the stored id and short name")
-    func getReflectsStoredIdAndName() {
-        // GIVEN
-        persistor.selectedModelId = "claude-x"
-        persistor.selectedModelShortName = "Claude"
+        sut.selectedAIModel = OnboardingAIModel(id: "claude-x", name: "Claude")
 
         // THEN
         #expect(sut.selectedAIModel == OnboardingAIModel(id: "claude-x", name: "Claude"))
     }
 
-    @Test("Getting a model with no stored short name yields a best-effort empty name")
-    func getBestEffortNameWhenShortNameMissing() {
-        // GIVEN
-        persistor.selectedModelId = "id-only"
-
-        // THEN - only the id is guaranteed; the manager resolves the canonical name from the catalog.
-        #expect(sut.selectedAIModel == OnboardingAIModel(id: "id-only", name: ""))
-    }
-
-    @Test("Setting nil clears the stored model")
+    @Test("Setting nil clears the model")
     func settingNilClearsModel() {
         // GIVEN
-        sut.selectedAIModel = OnboardingAIModel(id: "mistral-x", name: "Mistral")
+        let sut = OnboardingAIModelAdapter()
+        sut.selectedAIModel = OnboardingAIModel(id: "claude-x", name: "Claude")
 
         // WHEN
         sut.selectedAIModel = nil
 
         // THEN
-        #expect(persistor.selectedModelId == nil)
-        #expect(persistor.selectedModelShortName == nil)
+        #expect(sut.selectedAIModel == nil)
+    }
+
+    @Test("A new onboarding session does not see the model picked in an earlier one")
+    func modelDoesNotOutliveTheAdapter() {
+        // GIVEN
+        OnboardingAIModelAdapter().selectedAIModel = OnboardingAIModel(id: "claude-x", name: "Claude")
+
+        // WHEN
+        let sut = OnboardingAIModelAdapter()
+
+        // THEN
         #expect(sut.selectedAIModel == nil)
     }
 }

@@ -5659,9 +5659,9 @@ class MainViewController: UIViewController {
     }
 
     private func updateAIChatSelectedModel(for request: AIChatOpeningRequest) {
-        if request.shouldPresent, let modelID = request.modelID {
-            unifiedToggleInputCoordinator?.updateSelectedModel(modelID)
-        }
+        guard request.shouldPresent, let modelID = request.modelID else { return }
+        // The model picked in onboarding applies to the onboarding chat only, so new chats don't start on it.
+        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, persistsSelection: request.source != .onboarding)
     }
 
     /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.

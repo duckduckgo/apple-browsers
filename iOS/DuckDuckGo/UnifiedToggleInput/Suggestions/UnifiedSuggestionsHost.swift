@@ -43,15 +43,13 @@ final class UnifiedSuggestionsHost {
     private var syncPromo: AnyView?
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
-    private var logoKeyboardCancellable: AnyCancellable?
-    private var keyboardSettleTime: CFTimeInterval = 0
+    private let logoReveal: FocusedLogoRevealScheduler
     /// True while a mode switch or an expand runs, so its inset changes move the content with Core Animation.
     private var slidesContentWithCoreAnimation = false
     private var isChangingInputMode = false
     private var heldModeChangeLayers: [HeldLayerAnimation] = []
     private var modeChangeAnimator: UIViewPropertyAnimator?
     private var pendingModeChangeResizeStarted: (() -> Void)?
-    private var isLogoHeldForForeground = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedFocusedSurface: RedesignedFocusedSurface?
@@ -119,7 +117,12 @@ final class UnifiedSuggestionsHost {
             inputsPublisher: config.inputsPublisher,
             listViewModel: listViewModel
         )
+        self.logoReveal = FocusedLogoRevealScheduler(viewModel: viewModel)
         viewModel.onDuckAISuggestionsShown = { AutocompleteSuggestionsPixels().fireDuckAIShownPixel() }
+        logoReveal.layoutHost = { [weak self] in
+            self?.hostingController?.view.window?.layoutIfNeeded()
+            self?.hostingController?.view.layoutIfNeeded()
+        }
     }
 
     // MARK: - Container-facing surface
@@ -142,20 +145,9 @@ final class UnifiedSuggestionsHost {
             .sink { [weak self] _ in self?.onContentChanged?() }
             .store(in: &cancellables)
 
-        let view = UnifiedSuggestionsView(
-            viewModel: viewModel,
-            isAddressBarAtBottom: isAddressBarAtBottom,
-            favoritesPresentation: favoritesPresentation,
-            usesScrollableEscapeHatch: usesScrollableEscapeHatch,
-            usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
-            showsRedesignedSearchModules: showsRedesignedSearchModules,
-            embedsRedesignedModules: redesignedFocusedSurface == .webPage,
-            mode: focusedMode,
-            escapeHatch: escapeHatch,
-            syncPromo: syncPromo)
-        let hosting = UnifiedSuggestionsHostingController(rootView: view)
+        let hosting = UnifiedSuggestionsHostingController(rootView: makeRootView())
         hosting.isFloatingUIEnabled = isFloatingUIEnabled
-        hosting.onKeyboardLowering = { [weak self] in self?.deferLogoRevealUntilKeyboardSettles() }
+        hosting.onKeyboardLowering = { [weak self] in self?.logoReveal.deferUntilKeyboardSettles() }
         if #available(iOS 16.4, *) {
             // UIKit already bounds this host with the keyboard guide. Keep only container insets.
             hosting.safeAreaRegions = [.container]
@@ -180,60 +172,18 @@ final class UnifiedSuggestionsHost {
             .removeDuplicates()
             .sink { [weak self] in self?.favoritesPresentation.viewController?.setFocusedLogoFrame($0) }
             .store(in: &cancellables)
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
-            .filter { notification in
-                let info = notification.userInfo
-                guard let begin = (info?[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue,
-                      let end = (info?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return false }
-                return end.minY > begin.minY
-            }
-            .sink { [weak self] in
-                self?.deferLogoRevealUntilKeyboardSettles(duration: $0.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0)
-            }
-            .store(in: &cancellables)
-        // Leaving the app lowers the keyboard and returning raises it again, so a logo without room
-        // beside the keyboard would show in between. Hold it back until the keyboard is up again.
+        // Leaving the app ends a held mode switch, so its animations do not wait for a fade that never finishes.
         NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
-            .handleEvents(receiveOutput: { [weak self] _ in
-                self?.pendingModeChangeResizeStarted = nil
-                self?.resumeModeChangeAnimations()
-            })
-            .filter { [weak self] _ in
-                guard let self else { return false }
-                return usesScrollableEscapeHatch && hostingController?.view.window != nil && !viewModel.isLogoOnScreen
-                    && UIResponder.currentFirstResponder() != nil
-            }
             .sink { [weak self] _ in
-                self?.logoKeyboardCancellable = nil
-                self?.viewModel.isLogoRevealDeferred = true
-                self?.isLogoHeldForForeground = true
+                guard let self else { return }
+                pendingModeChangeResizeStarted = nil
+                resumeModeChangeAnimations()
+                if usesScrollableEscapeHatch && hostingController?.view.window != nil {
+                    logoReveal.holdForForegroundIfNeeded()
+                }
             }
             .store(in: &cancellables)
-        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .filter { [weak self] _ in self?.isLogoHeldForForeground == true }
-            .sink { [weak self] _ in
-                self?.isLogoHeldForForeground = false
-                self?.deferLogoRevealUntilKeyboardRises()
-            }
-            .store(in: &cancellables)
-    }
-
-    /// A hidden logo beside the hatch appears only once a lowering keyboard settles, never sliding in with it.
-    /// A rising keyboard only takes room away, so it never reveals the logo and needs no wait.
-    /// A logo that is already shown keeps the existing fit checks, which hide it when room runs out.
-    /// The did-hide notifications can arrive while the keyboard is still animating, so the reveal also waits out its duration.
-    private func deferLogoRevealUntilKeyboardSettles(duration: TimeInterval = 0) {
-        keyboardSettleTime = max(keyboardSettleTime, CACurrentMediaTime() + duration)
-        guard viewModel.escapeHatchPlacement != .hidden, viewModel.backdropLogoFrame == nil, !viewModel.isLogoRevealDeferred else { return }
-        viewModel.isLogoRevealDeferred = true
-        logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)
-            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification),
-                   NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification))
-            .first()
-            .flatMap { [weak self] _ in
-                Just(()).delay(for: .seconds(max(0, (self?.keyboardSettleTime ?? 0) - CACurrentMediaTime())), scheduler: DispatchQueue.main)
-            }
-            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
+        logoReveal.startObservingKeyboardAndApp()
     }
 
     /// - Parameter surface: The redesigned surface to mount, or nil for the legacy favorites.
@@ -307,7 +257,7 @@ final class UnifiedSuggestionsHost {
         }
         let applyChanges = { [self] in
             isChangingInputMode = true
-            slideContentWithCoreAnimation { performInputModeChangeDeferringLogo(changes) }
+            slideContentWithCoreAnimation { logoReveal.deferDuringInputModeChange(changes) }
             isChangingInputMode = false
         }
         viewModel.performLogoModeChange(to: mode) {
@@ -381,60 +331,6 @@ final class UnifiedSuggestionsHost {
         }
     }
 
-    private func performInputModeChangeDeferringLogo(_ changes: () -> Void) {
-        // A logo on screen stays to morph; one hidden for lack of room stays hidden while the bar resizes.
-        guard viewModel.escapeHatchPlacement != .hidden, !viewModel.isLogoOnScreen else {
-            changes()
-            return
-        }
-        // The input view forwards its text view's focus, so any first responder here is the input.
-        let wasEditing = UIResponder.currentFirstResponder() != nil
-        viewModel.isLogoRevealDeferred = true
-        // Floating and split iPad keyboards report only frame changes, so those release the logo too.
-        logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
-            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification),
-                   NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
-                .filter { _ in UIResponder.currentFirstResponder() == nil })
-            .first()
-            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
-        changes()
-        if #available(iOS 17.0, *), !wasEditing, UIResponder.currentFirstResponder() != nil {
-            let inputContext: UITextInputContext? = .current()
-            if let inputContext,
-               !inputContext.isHardwareKeyboardInputExpected,
-               !inputContext.isPencilInputExpected,
-               !inputContext.isDictationInputExpected {
-                return
-            }
-        }
-        // The bar settles at the new mode's height after its 0.2s resize, so check the room once it has.
-        logoKeyboardCancellable = Just(()).delay(for: .seconds(0.25), scheduler: DispatchQueue.main)
-            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
-    }
-
-    /// A focus raises the keyboard after the content shows, so a logo that only has room without it would
-    /// flash before the keyboard hides it. The keyboard guide already holds the keyboard's end frame here,
-    /// so it cannot tell a rising keyboard from a risen one: without a keyboard on the way, the fallback reveals it.
-    private func deferLogoRevealUntilKeyboardRises() {
-        viewModel.isLogoRevealDeferred = true
-        logoKeyboardCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
-            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification))
-            .map { _ in () }
-            .merge(with: Just(()).delay(for: .seconds(Self.keyboardRiseFallback), scheduler: DispatchQueue.main))
-            .first()
-            .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
-    }
-
-    /// Longer than the keyboard takes to rise.
-    private static let keyboardRiseFallback: TimeInterval = 0.6
-
-    private func finishDeferredLogoReveal() {
-        hostingController?.view.window?.layoutIfNeeded()
-        hostingController?.view.layoutIfNeeded()
-        viewModel.isLogoRevealDeferred = false
-        logoKeyboardCancellable = nil
-    }
-
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
     func setIsFireTab(_ value: Bool) {
         viewModel.setFireTab(value)
@@ -449,13 +345,7 @@ final class UnifiedSuggestionsHost {
     /// A logo handed over from the NTP is already on screen, so it does not wait for the keyboard:
     /// the fit checks hide it if the keyboard leaves no room.
     func showLogoForHandoff() {
-        logoKeyboardCancellable = nil
-        // The activation deferred it within the same update, so it shows as it was instead of fading in.
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            viewModel.isLogoRevealDeferred = false
-        }
+        logoReveal.revealForHandoff()
     }
 
     func beginDismissFade() {
@@ -473,10 +363,7 @@ final class UnifiedSuggestionsHost {
     /// Resets the dismiss/morph state on each focus.
     func prepareForActivation(favoritesExpansionState: FavoritesExpansionState? = nil) {
         stopModeChangeAnimator()
-        logoKeyboardCancellable = nil
-        viewModel.isLogoRevealDeferred = false
-        isLogoHeldForForeground = false
-        deferLogoRevealUntilKeyboardRises()
+        logoReveal.prepareForActivation()
         scrollLegacyContentToTop(duration: 0)
         if let favoritesExpansionState,
            let model = favoritesPresentation.viewController?.favoritesModel,
@@ -619,8 +506,7 @@ final class UnifiedSuggestionsHost {
     func tearDown() {
         stopModeChangeAnimator()
         viewModel.cancelLogoModeChange()
-        logoKeyboardCancellable = nil
-        viewModel.isLogoRevealDeferred = false
+        logoReveal.tearDown()
         redesignedPresentationCancellable = nil
         redesignedSearchPresentation = nil
         redesignedFocusedSurface = nil
@@ -642,7 +528,12 @@ final class UnifiedSuggestionsHost {
 
     private func rebuildRootView() {
         guard let hosting = hostingController else { return }
-        hosting.rootView = UnifiedSuggestionsView(
+        hosting.rootView = makeRootView()
+        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
+    }
+
+    private func makeRootView() -> UnifiedSuggestionsView {
+        UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
@@ -653,7 +544,6 @@ final class UnifiedSuggestionsHost {
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
-        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
     }
 }
 
@@ -712,5 +602,152 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         !rootView.viewModel.isFireTab &&
         !rootView.viewModel.isFadingOut &&
         rootView.favoritesPresentation.hasAppearedRemoteMessage(withID: messageID)
+    }
+}
+
+/// Holds back a logo beside the escape hatch until the keyboard and the input settle, so it never
+/// flashes in a spot the keyboard is about to cover or slides in with a lowering keyboard.
+@MainActor
+private final class FocusedLogoRevealScheduler {
+
+    /// Lays out the host before a reveal, so the fit checks see the settled geometry.
+    var layoutHost: (() -> Void)?
+
+    private let viewModel: UnifiedSuggestionsViewModel
+    private var revealCancellable: AnyCancellable?
+    private var observers = Set<AnyCancellable>()
+    private var keyboardSettleTime: CFTimeInterval = 0
+    private var isHeldForForeground = false
+
+    /// Longer than the keyboard takes to rise.
+    private static let keyboardRiseFallback: TimeInterval = 0.6
+
+    init(viewModel: UnifiedSuggestionsViewModel) {
+        self.viewModel = viewModel
+    }
+
+    func startObservingKeyboardAndApp() {
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
+            .filter { notification in
+                let info = notification.userInfo
+                guard let begin = (info?[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue,
+                      let end = (info?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return false }
+                return end.minY > begin.minY
+            }
+            .sink { [weak self] in
+                self?.deferUntilKeyboardSettles(duration: $0.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0)
+            }
+            .store(in: &observers)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .filter { [weak self] _ in self?.isHeldForForeground == true }
+            .sink { [weak self] _ in
+                self?.isHeldForForeground = false
+                self?.deferUntilKeyboardRises()
+            }
+            .store(in: &observers)
+    }
+
+    /// The keyboard lowers when leaving the app. Keep a hidden logo hidden until the keyboard rises on return.
+    func holdForForegroundIfNeeded() {
+        guard !viewModel.isLogoOnScreen, UIResponder.currentFirstResponder() != nil else { return }
+        revealCancellable = nil
+        viewModel.isLogoRevealDeferred = true
+        isHeldForForeground = true
+    }
+
+    /// A hidden logo beside the hatch appears only once a lowering keyboard settles, never sliding in with it.
+    /// A rising keyboard only takes room away, so it never reveals the logo and needs no wait.
+    /// A logo that is already shown keeps the existing fit checks, which hide it when room runs out.
+    /// The did-hide notifications can arrive while the keyboard is still animating, so the reveal also waits out its duration.
+    func deferUntilKeyboardSettles(duration: TimeInterval = 0) {
+        keyboardSettleTime = max(keyboardSettleTime, CACurrentMediaTime() + duration)
+        guard viewModel.escapeHatchPlacement != .hidden, viewModel.backdropLogoFrame == nil, !viewModel.isLogoRevealDeferred else { return }
+        viewModel.isLogoRevealDeferred = true
+        revealCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification),
+                   NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification))
+            .first()
+            .flatMap { [weak self] _ in
+                Just(()).delay(for: .seconds(max(0, (self?.keyboardSettleTime ?? 0) - CACurrentMediaTime())), scheduler: DispatchQueue.main)
+            }
+            .sink { [weak self] _ in self?.finishReveal() }
+    }
+
+    func deferDuringInputModeChange(_ changes: () -> Void) {
+        // A logo on screen stays to morph; one hidden for lack of room stays hidden while the bar resizes.
+        guard viewModel.escapeHatchPlacement != .hidden, !viewModel.isLogoOnScreen else {
+            changes()
+            return
+        }
+        // The input view forwards its text view's focus, so any first responder here is the input.
+        let wasEditing = UIResponder.currentFirstResponder() != nil
+        viewModel.isLogoRevealDeferred = true
+        // Floating and split iPad keyboards report only frame changes, so those release the logo too.
+        revealCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification),
+                   NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
+                .filter { _ in UIResponder.currentFirstResponder() == nil })
+            .first()
+            .sink { [weak self] _ in self?.finishReveal() }
+        changes()
+        if #available(iOS 17.0, *), !wasEditing, UIResponder.currentFirstResponder() != nil {
+            let inputContext: UITextInputContext? = .current()
+            if let inputContext,
+               !inputContext.isHardwareKeyboardInputExpected,
+               !inputContext.isPencilInputExpected,
+               !inputContext.isDictationInputExpected {
+                return
+            }
+        }
+        // The bar settles at the new mode's height after its 0.2s resize, so check the room once it has.
+        revealCancellable = Just(()).delay(for: .seconds(0.25), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.finishReveal() }
+    }
+
+    /// A logo handed over from the NTP is already on screen, so it does not wait for the keyboard:
+    /// the fit checks hide it if the keyboard leaves no room.
+    func revealForHandoff() {
+        revealCancellable = nil
+        // The activation deferred it within the same update, so it shows as it was instead of fading in.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            viewModel.isLogoRevealDeferred = false
+        }
+    }
+
+    func prepareForActivation() {
+        cancel()
+        isHeldForForeground = false
+        deferUntilKeyboardRises()
+    }
+
+    func cancel() {
+        revealCancellable = nil
+        viewModel.isLogoRevealDeferred = false
+    }
+
+    func tearDown() {
+        cancel()
+        observers.removeAll()
+    }
+
+    /// A focus raises the keyboard after the content shows, so a logo that only has room without it would
+    /// flash before the keyboard hides it. The keyboard guide already holds the keyboard's end frame here,
+    /// so it cannot tell a rising keyboard from a risen one: without a keyboard on the way, the fallback reveals it.
+    private func deferUntilKeyboardRises() {
+        viewModel.isLogoRevealDeferred = true
+        revealCancellable = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification))
+            .map { _ in () }
+            .merge(with: Just(()).delay(for: .seconds(Self.keyboardRiseFallback), scheduler: DispatchQueue.main))
+            .first()
+            .sink { [weak self] _ in self?.finishReveal() }
+    }
+
+    private func finishReveal() {
+        layoutHost?()
+        viewModel.isLogoRevealDeferred = false
+        revealCancellable = nil
     }
 }

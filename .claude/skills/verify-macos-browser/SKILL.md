@@ -119,8 +119,8 @@ stale build; rebuild.
 - Take the user's real path: menus, clicks, shortcuts. `web` reads back and never stands in for the action
   being proved. Never debug setters or internal URLs.
 - Confirm every end state with a second, independent read. An action that returned ok proves nothing.
-  `ax press` prints AX's code, which isn't the outcome: a press on `NewTabButton` reports `-25200` and still
-  opens the tab.
+  `ax press` prints AX's code, which isn't the outcome: a press on the tab bar's new-tab button reports
+  `-25200` and still opens the tab.
 - Screenshots only for visual or layout claims: `verify.sh shot <topic> NN-<step>`, the app's window only;
   it refuses when another app is in front. Capture before and after the action.
 - Shortcuts inside an `NSPopover` (Esc, Return) only fire when its window is key: test them explicitly.

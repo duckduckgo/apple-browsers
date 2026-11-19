@@ -103,7 +103,6 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
             var undo: (() -> Void)?
             var viewModel: SettingsSitePermissionsViewModel? = SettingsSitePermissionsViewModel(
                 store: store,
-                isEnabled: { true },
                 favicons: favicons,
                 openSystemSettings: {},
                 presentUndoToast: { _, action in undo = action },
@@ -126,7 +125,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         }
     }
 
-    func testWhenFeatureIsDisabledThenRetainsNothingButRemovedRecordsStillDeleteTheirImages() async throws {
+    func testWhenSitePermissionsIsUnsupportedThenRetainsNothingButRemovedRecordsStillDeleteTheirImages() async throws {
         let site = try makeSite("disabled.example")
         let removedSite = try makeSite("removed-while-disabled.example")
         let store = makeStore(sites: [site, removedSite])

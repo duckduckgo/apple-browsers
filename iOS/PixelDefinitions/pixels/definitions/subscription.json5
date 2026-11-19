@@ -1022,6 +1022,30 @@
             }
         ]
     },
+    "subscription_onboarding_step_closed_": {
+        "description": "Fired when the customer closes the onboarding flow, either with the close button on its first screen or with the primary button on the completion screen.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step the flow was closed from",
+                "enum": ["intro", "vpn", "idtr", "duck_ai", "completion"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
     "subscription_onboarding_connection-info_failure": {
         "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
         "owners": ["hanyutang-sandra"],

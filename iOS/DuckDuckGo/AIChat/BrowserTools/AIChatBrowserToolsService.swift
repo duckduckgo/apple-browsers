@@ -22,6 +22,7 @@ import Combine
 import Core
 import FeatureFlags_iOS
 import Foundation
+import FoundationExtensions
 import Persistence
 import PrivacyConfig
 
@@ -210,22 +211,34 @@ extension AIChatBrowserToolsService {
 
     private func permissionMessage(for prompt: ClientToolPermissionPrompt) -> String {
         switch (prompt.toolName, prompt.targetsOtherTab) {
-        case (AIChatBrowserToolsSubfeature.listOpenTabs.rawValue, _): "Duck.ai wants to see your open tabs."
+        case (AIChatBrowserToolsSubfeature.listOpenTabs.rawValue, _):
+            NotLocalizedString("browserTools.ListOpenTabsBrowserTool.permission",
+                               value: "Duck.ai wants to see your open tabs.",
+                               comment: "Browser tool permission reason")
         case (AIChatBrowserToolsSubfeature.readTabContent.rawValue, true):
-            NSLocalizedString("browserTools.ReadTabContentBrowserTool.permission.otherTab",
-                              value: "Allow Duck.ai to read the content of another tab?",
-                              comment: "Browser tool permission message for reading another tab")
+            NotLocalizedString("browserTools.ReadTabContentBrowserTool.permission.otherTab",
+                               value: "Allow Duck.ai to read the content of another tab?",
+                               comment: "Browser tool permission message for reading another tab")
         case (AIChatBrowserToolsSubfeature.readTabContent.rawValue, false):
-            NSLocalizedString("browserTools.ReadTabContentBrowserTool.permission", value: "Duck.ai wants to read this tab's content.", comment: "Browser tool permission reason")
+            NotLocalizedString("browserTools.ReadTabContentBrowserTool.permission",
+                               value: "Duck.ai wants to read this tab's content.",
+                               comment: "Browser tool permission reason")
         case (AIChatBrowserToolsSubfeature.searchHistory.rawValue, _):
-            NSLocalizedString("browserTools.SearchHistoryBrowserTool.permission", value: "Duck.ai wants to search your browsing history.", comment: "Browser tool permission reason")
+            NotLocalizedString("browserTools.SearchHistoryBrowserTool.permission",
+                               value: "Duck.ai wants to search your browsing history.",
+                               comment: "Browser tool permission reason")
         case (AIChatBrowserToolsSubfeature.findInPage.rawValue, true):
-            NSLocalizedString("browserTools.FindInPageBrowserTool.permission.otherTab",
-                              value: "Allow Duck.ai to use Find in Page on another tab?",
-                              comment: "Browser tool permission message for finding text in another tab")
+            NotLocalizedString("browserTools.FindInPageBrowserTool.permission.otherTab",
+                               value: "Allow Duck.ai to use Find in Page on another tab?",
+                               comment: "Browser tool permission message for finding text in another tab")
         case (AIChatBrowserToolsSubfeature.findInPage.rawValue, false):
-            NSLocalizedString("browserTools.FindInPageBrowserTool.permission", value: "Duck.ai wants to find text on this page.", comment: "Browser tool permission reason")
-        default: "Duck.ai wants to use a browser tool."
+            NotLocalizedString("browserTools.FindInPageBrowserTool.permission",
+                               value: "Duck.ai wants to find text on this page.",
+                               comment: "Browser tool permission reason")
+        default:
+            NotLocalizedString("browserTools.permission.default",
+                               value: "Duck.ai wants to use a browser tool.",
+                               comment: "Generic browser tool permission reason")
         }
     }
 

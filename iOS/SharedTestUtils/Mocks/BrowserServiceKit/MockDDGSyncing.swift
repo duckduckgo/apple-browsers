@@ -118,7 +118,10 @@ final class MockDDGSyncing: DDGSyncing {
         self.isSyncInProgress = isSyncInProgress
     }
 
+    private(set) var initializeIfNeededCallCount = 0
+
     func initializeIfNeeded() {
+        initializeIfNeededCallCount += 1
     }
 
     func enableSyncFromPreservedAccount() async throws {
@@ -180,7 +183,13 @@ final class MockDDGSyncing: DDGSyncing {
     private(set) var auditLogReaderAccounts: [String?] = []
     private(set) var auditLogPageReadCount = 0
 
-    func pollAuditLog() async throws -> Bool { false }
+    var pollAuditLogHandler: (() async throws -> Bool)?
+    private(set) var pollAuditLogCallCount = 0
+
+    func pollAuditLog() async throws -> Bool {
+        pollAuditLogCallCount += 1
+        return try await pollAuditLogHandler?() ?? false
+    }
     var isAuditLogPollingAvailableStub = false
     var isAuditLogPollingAvailableError: Error?
 

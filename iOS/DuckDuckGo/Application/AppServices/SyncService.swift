@@ -35,6 +35,7 @@ final class SyncService {
     let syncErrorHandler: SyncErrorHandler
     private let isSyncInProgressCancellable: AnyCancellable
     private var syncDidFinishCancellable: AnyCancellable?
+    private var auditLogBackgroundTask: SyncAuditLogBackgroundTask?
     private let application: UIApplication
 
     weak var presenter: SyncAlertsPresenting? {
@@ -150,6 +151,14 @@ final class SyncService {
             await presenter.deliver(notification)
         }
         sync.initializeIfNeeded()
+    }
+
+    @MainActor
+    func registerAuditLogBackgroundTask(featureFlagger: FeatureFlagger) {
+        guard auditLogBackgroundTask == nil else { return }
+        let task = SyncAuditLogBackgroundTask(syncService: sync, featureFlagger: featureFlagger)
+        auditLogBackgroundTask = task
+        task.start()
     }
 
     // MARK: - Resume

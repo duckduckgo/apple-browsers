@@ -40,7 +40,7 @@ final class SyncLoginNotificationServiceTests: XCTestCase {
         center = MockUNUserNotificationCenter()
         settingsStorage = MockKeyValueStore().keyedStoring()
         service = SyncLoginNotificationService(syncService: sync, featureFlagger: flags, notificationCenter: center,
-                                               settingsStorage: settingsStorage)
+                                               settings: SyncNotificationSettings(storage: settingsStorage, notificationCenter: center))
     }
 
     private func notification(count: Int = 1, accountID: String = "account") -> SyncLoginNotification {

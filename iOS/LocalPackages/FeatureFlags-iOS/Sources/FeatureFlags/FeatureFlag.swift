@@ -653,6 +653,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219707245498818?focus=true
     case syncLoginNotification
 
+    /// Background refresh for Sync audit-log polling.
+    case syncAuditLogBackgroundPolling
+
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
@@ -1188,6 +1191,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.loginAuditLog))
         case .syncLoginNotification:
             Config(source: .remoteReleasable(SyncSubfeature.loginNotification))
+        case .syncAuditLogBackgroundPolling:
+            Config(source: .remoteReleasable(SyncSubfeature.auditLogBackgroundPolling))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:

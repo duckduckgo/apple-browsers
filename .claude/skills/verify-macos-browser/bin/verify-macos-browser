@@ -4,9 +4,10 @@ verdict, writes report.md and manifest.json, and always cleans up. verify.sh sta
 
 usage: verify-macos-browser new-proof <name> [--evidence-dir <dir>]  a proof template in a fresh attempt folder
        verify-macos-browser check <proof>...                         compile + shape + FLAGS; no app, no build
-       verify-macos-browser prove <proof> --target mac|vm|vm-1|vm-2 [--evidence-dir <dir>]
+       verify-macos-browser prove <proof> --target mac|vm|vm-1|vm-2 [--evidence-dir <dir>] [--no-video]
 --evidence-dir: a directory outside any git checkout; each run writes a fresh <stamp>-<name>-<id>/ attempt folder in
        it (default ~/.ddg-verify-macos)
+--no-video: no recording.mp4 (by default the proof is recorded: a VM's screen, or only the app's window on this Mac)
 exit:  0 pass · 1 a check failed · 2 inconclusive: setup, an action or read that failed, nothing checked, a proof
        rejected by check, an --evidence-dir refused, or a pass with cleanup/evidence problems · 130 cancelled
        (report still written)
@@ -21,7 +22,12 @@ import harness  # noqa: E402
 
 
 def main(argv):
-    evidence_dir = None
+    evidence_dir, video = None, "--no-video" not in argv
+    if not video:
+        if argv[0:1] != ["prove"]:
+            print(__doc__)
+            return 64
+        argv.remove("--no-video")
     if "--evidence-dir" in argv:
         i = argv.index("--evidence-dir")
         if i + 1 == len(argv) or argv[0] not in ("new-proof", "prove"):
@@ -34,7 +40,7 @@ def main(argv):
             print(harness.new_proof(argv[1], harness.evidence_root(evidence_dir)))
             return 0
         if len(argv) == 4 and argv[0] == "prove" and argv[2] == "--target":
-            code, out = harness.prove(argv[1], argv[3], evidence_dir)
+            code, out = harness.prove(argv[1], argv[3], evidence_dir, video)
             print(json.dumps(out, indent=1))
             return code
     except harness.Refused as e:

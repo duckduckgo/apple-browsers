@@ -83,7 +83,9 @@ overwritten. Pass the same `--evidence-dir` to `new-proof` and `prove`; the mani
 
 The attempt folder holds `proof.py`, `report.md`, `manifest.json` (revision, dirty flag, source fingerprint, build and running-binary
 hashes, launch args, flags, macOS and Xcode, VM, skill hash, checks, rerun command), your screenshots,
-`final.png`, `app.log`, `log.txt`, `pixels.json`, `wide-events.json`, `transcript.jsonl` (every `verify.sh` call).
+`final.png`, `app.log`, `log.txt`, `pixels.json`, `wide-events.json`, `transcript.jsonl` (every `verify.sh` call),
+and `recording.mp4`, from after launch to `final.png`: a VM's whole screen, or on this Mac only the app's window,
+cut where another app came in front. `prove --no-video` turns it off; the report says so.
 
 `report.md` is one PR verification scenario: **Verified** (the docstring), **Evidence**, **Outcome** (label,
 passed, failed, problems, warnings, notes), **Details** (revision, build and running binary, target and its
@@ -92,11 +94,12 @@ macOS, flags, language, rerun), **Unverified**. The verdict comes from what ran,
 - **FAIL** (exit 1): a check failed, or the app was gone at the end.
 - **INCONCLUSIVE** (exit 2): setup broke (VM, build, doctor, launch, readiness), an action or read failed, or
   nothing was checked. Never a pass. Ctrl-C exits 130; the report is still written.
-- **Problems** (screenshot not taken, dead pixel stream, VM not released, cleanup failed) are always listed;
+- **Problems** (screenshot or recording failed, dead pixel stream, VM not released, cleanup failed) are always listed;
   a pass with problems exits 2.
 
 Report to the user from `report.md`: passed, failed and unverified behavior, the revision, the rerun command and
-the evidence folder. Look at the screenshots before claiming anything about appearance.
+the evidence folder. Look at the screenshots before claiming anything about appearance, and watch the recording
+before claiming what the app did.
 
 **Publishing for a PR.** Upload the whole attempt folder: `report.md` links its screenshots and telemetry by
 relative path. Paths in `report.md` and `manifest.json` show your home folder as `~`; `app.log`, `log.txt` and
@@ -115,7 +118,7 @@ The low-level layer `prove` calls, for finding ids and trying steps before writi
 ```
 S=.claude/skills/verify-macos-browser/scripts/verify.sh
 $S vm <topic> [vm-1|vm-2|auto]; $S flag <topic> <Case> on|off; $S build <topic> . [--automation]
-$S doctor <topic>; $S ax <topic> dump|find|press|clickel|click|type|key …; $S shot <topic> <name>
+$S doctor <topic>; $S ax <topic> dump|find|press|clickel|click|type|key …; $S shot <topic> <name>; $S record <topic> start|stop
 $S mark|expect-pixel|expect-no-pixel|expect-wide-event <topic> …; $S web <topic> url; $S cleanup <topic>
 ```
 

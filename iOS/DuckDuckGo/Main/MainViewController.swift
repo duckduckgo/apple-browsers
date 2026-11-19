@@ -8129,6 +8129,10 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool {
+        notificationView != nil || findInPageView?.isHidden == false || tab.isDuckPlayerPillVisible
+    }
+
     func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController) {
         promoCoordinationService?.registerAppRatingPromptUsage()
     }

@@ -10,12 +10,14 @@ they ran, problems, warnings, notes, unverified items, the phase reached); the v
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import inspect
 import json
 import os
 import re
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -31,6 +33,7 @@ VERIFY_SH = os.path.join(SCRIPTS, "verify.sh")
 HOME = os.environ.get("VERIFY_MACOS_HOME", os.path.expanduser("~/.ddg-verify-macos"))
 TARGETS = ("mac", "vm", "vm-1", "vm-2")
 VIDEO = "recording.mp4"
+BASE_OUTCOMES = ("fail", "pass", "unchanged")
 sys.path.insert(0, SCRIPTS)
 import vhelp  # noqa: E402
 
@@ -76,7 +79,7 @@ class _Stop(BaseException):
 # ---------------------------------------------------------------- the run record and its verdict
 class Record:
     def __init__(self):
-        self.checks = []        # (name, ok, detail) in the order they ran
+        self.checks = []        # (name, ok, detail, what the base build should do) in the order they ran
         self.problems = []      # cleanup or evidence failures: never dropped
         self.warnings = []
         self.notes = []
@@ -94,11 +97,11 @@ def label(rec):
     """(label, exit code), by fixed rules. Never a pass by default."""
     if rec.cancelled:
         return "INCONCLUSIVE", 130
-    if any(not ok for _, ok, _ in rec.checks):
+    if any(not ok for _, ok, *_ in rec.checks):
         return "FAIL", 1
     if rec.app_running is False:
         return "FAIL", 1
-    if rec.error or rec.action_errors or not any(ok for _, ok, _ in rec.checks) or rec.app_running is not True:
+    if rec.error or rec.action_errors or not any(ok for _, ok, *_ in rec.checks) or rec.app_running is not True:
         return "INCONCLUSIVE", 2
     return "PASS", 2 if rec.problems else 0
 
@@ -137,8 +140,8 @@ def report(doc, rec, manifest, evidence):
              "", "## Outcome", "",
              f"**{verdict}**" + (" with problems (exit 2)" if verdict == "PASS" and code else "")
              + (f" ({_line(rec.error)})" if rec.error else ""), ""]
-    passed = [name for name, ok, _ in rec.checks if ok]
-    failed = [f"{name}" + (f": {_line(detail)}" if detail else "") for name, ok, detail in rec.checks if not ok]
+    passed = [name for name, ok, *_ in rec.checks if ok]
+    failed = [f"{name}" + (f": {_line(detail)}" if detail else "") for name, ok, detail, *_ in rec.checks if not ok]
     if rec.app_running is not None:
         (passed if rec.app_running else failed).append("app still running at the end")
     lines += ["Passed:"] + [f"- {c}" for c in passed or ["(none)"]]
@@ -191,9 +194,11 @@ def _sh_path(path):
 class Mac:
     """User actions, reads, waiting assertions, telemetry and evidence for one run. Each call runs one verify.sh step."""
 
-    def __init__(self, topic, evidence, rec, automation=False, checkout=ROOT):
+    def __init__(self, topic, evidence, rec, automation=False, checkout=ROOT, as_base=False):
         self.topic, self.evidence, self.rec, self.automation = topic, evidence, rec, automation
         self.checkout = checkout   # the checkout built and proved: this one, or another (prove --checkout)
+        self.as_base = as_base     # the base run of prove --base
+        self.base_outcome = "unchanged"   # what checks made now should do on the base build (on_base)
         self._marked = False
 
     def _sh(self, command, *args):
@@ -254,10 +259,25 @@ class Mac:
     # assert -----------------------------------------------------------------
     def check(self, what, ok, detail=None):
         """Record a named check; stop the proof if it is false."""
-        self.rec.checks.append((what, bool(ok), None if ok else _trim(detail)))
+        self.rec.checks.append((what, bool(ok), None if ok else _trim(detail), self.base_outcome))
         if not ok:
+            if self.as_base and self.base_outcome == "fail":
+                return False   # the bug, as the proof declared: record it and carry on
             raise CheckFailed(what)
         return True
+
+    @contextlib.contextmanager
+    def on_base(self, outcome):
+        """Checks made inside this block should `outcome` ("fail", "pass" or "unchanged") on the base build, for
+        `prove --base`; checks outside any block should be unchanged. On the base run a check expected to fail is
+        recorded and the proof carries on; that check returns False."""
+        if outcome not in BASE_OUTCOMES:
+            raise ValueError(f"on_base takes one of {BASE_OUTCOMES}, got {outcome!r}")
+        outer, self.base_outcome = self.base_outcome, outcome
+        try:
+            yield
+        finally:
+            self.base_outcome = outer
 
     def eventually(self, what, fn, timeout=8, every=0.5):
         """Poll `fn` until it returns a truthy value; record check `what` either way. A ProofError counts as not yet."""
@@ -274,7 +294,7 @@ class Mac:
             if time.time() > end:
                 if isinstance(last, ProofError):
                     raise self._error(f"{what}: can't tell within {timeout}s: {last}")
-                self.check(what, False, f"not true within {timeout}s (last: {last})")
+                return self.check(what, False, f"not true within {timeout}s (last: {last})")
             time.sleep(every)
 
     def expect_tab_count(self, n, timeout=8):
@@ -468,13 +488,24 @@ def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     if target not in TARGETS:
         return 2, dict(proof=path, ok=False, problems=[f"--target must be one of {TARGETS}"])
     evidence, proof = attempt_dir(path, root)
-    topic = topic_of(evidence)
+    shown_dir = root if evidence_dir else None
+    rec, _ = run_one(mod, proof, evidence, topic_of(evidence), target, video, checkout,
+                     rerun_command(proof, target, shown_dir, video, checkout), shown_dir)
+    verdict, code = label(rec)
+    return code, dict(ok=code == 0, verdict=verdict, reason=rec.error, problems=rec.problems, proof=proof,
+                      evidence=evidence, report=os.path.join(evidence, "report.md"))
+
+
+def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_dir, as_base=False):
+    """One run of a loaded proof on `checkout`, with its evidence in `evidence`: setup, the proof, capture, cleanup,
+    report.md and manifest.json. Returns (record, manifest)."""
     rec = Record()
     rec.video = {} if video else None
-    mac = Mac(topic, evidence, rec, automation=getattr(mod, "AUTOMATION", False), checkout=checkout)
+    if as_base:
+        rec.notes.append("the base run of prove --base: a check the proof expects to fail here is recorded and the "
+                         "proof carries on; the comparison is ../report.md")
+    mac = Mac(topic, evidence, rec, getattr(mod, "AUTOMATION", False), checkout, as_base)
     vm = None if target == "mac" else ("auto" if target == "vm" else target)
-    shown_dir = root if evidence_dir else None
-    rerun = rerun_command(proof, target, shown_dir, video, checkout)
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     running = None
     try:
@@ -511,9 +542,7 @@ def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     finally:
         for s, h in old.items():
             signal.signal(s, h)
-    verdict, code = label(rec)
-    return code, dict(ok=code == 0, verdict=verdict, reason=rec.error, problems=rec.problems, proof=proof,
-                      evidence=evidence, report=os.path.join(evidence, "report.md"))
+    return rec, manifest
 
 
 def rerun_command(proof, target, evidence_dir=None, video=True, checkout=ROOT):
@@ -577,7 +606,7 @@ def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=N
     verdict, code = label(rec)
     m.update(proof=os.path.relpath(proof, evidence), target=target, evidence_dir=evidence_dir, rerun=rerun, running_hashes=running, live=live,
              verdict=verdict, exit=code, reason=rec.error, phase_reached=rec.phase,
-             checks=[dict(check=n, ok=ok, detail=d) for n, ok, d in rec.checks], problems=rec.problems,
+             checks=[dict(check=n, ok=ok, detail=d, base=b) for n, ok, d, b in rec.checks], problems=rec.problems,
              unverified=[dict(what=w, why=y) for w, y in rec.unverified],
              video=dict(off=True) if rec.video is None else rec.video)
     with open(path, "w") as f:

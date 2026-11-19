@@ -72,16 +72,20 @@ Proof rules:
 - Select pixels by name and order, never by the params you expect. `Skipped` is not `Fired`.
 - Shortcuts inside an `NSPopover` (Esc, Return) only fire when its window is key: test them explicitly.
 
-**Before and after (bug fixes).** Show the bug on the base revision with the same proof, then the fix:
+**Before and after (bug fixes).** Show the bug on the base revision with the same proof, then the fix. Wrap the
+checks that show the bug in `with mac.on_base("fail"):`; every other check must come out the same on both.
 
 ```
-B=~/.ddg-verify-macos/base/manual; git worktree add --detach $B "$(git merge-base HEAD origin/main)"
-$V prove <proof> --target vm-1 --checkout $B   # this skill, that checkout: expect FAIL (the bug); first build is cold
-$V prove <proof> --target vm-1                 # this checkout: expect PASS (the fix)
+$V prove <proof> --target vm-1 --base "$(git merge-base HEAD origin/main)" [--evidence-dir <dir>]
 ```
 
-Each report's rerun starts with `cd` into the checkout it proved. Remove the worktree after:
-`git worktree remove --force $B`.
+It proves the base in a worktree kept at `~/.ddg-verify-macos/base/<sha12>` (its own DerivedData: the first build is
+cold, 20+ min; later runs on that revision are incremental; `$V clean-base` removes them), then this checkout, with
+the same target, flags and language. On the base a check declared `fail` is recorded and the proof carries on; any
+other error there is INCONCLUSIVE. **PASS** needs this checkout to pass and the base to do what each check declares,
+with at least one declared `fail`; a `fail` check that passes on the base is **FAIL**: the proof doesn't reproduce
+the bug. `report.md` shows each check and screenshot Before | After; each run's evidence is in `base/` and `change/`.
+By hand: `git worktree add --detach <dir> <ref>`, then `$V prove <proof> --target vm-1 --checkout <dir>`.
 
 ## 2. Evidence and report
 

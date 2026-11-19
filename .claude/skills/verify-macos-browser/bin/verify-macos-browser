@@ -5,14 +5,17 @@ verdict, writes report.md and manifest.json, and always cleans up. verify.sh sta
 usage: verify-macos-browser new-proof <name> [--evidence-dir <dir>]  a proof template in a fresh attempt folder
        verify-macos-browser check <proof>...                         compile + shape + FLAGS; no app, no build
        verify-macos-browser prove <proof> --target mac|vm|vm-1|vm-2 [--evidence-dir <dir>] [--no-video]
-                            [--checkout <dir>]
+                            [--base <ref> | --checkout <dir>]
+       verify-macos-browser clean-base                               remove the kept base worktrees
+--base: prove <ref> first (the bug), then this checkout (the fix), and judge each check against both; the base
+       worktree is kept in ~/.ddg-verify-macos/base/<sha12> for the next run on that revision
 --checkout: build and prove another checkout of this repo (e.g. a base revision) with this skill
 --evidence-dir: a directory outside any git checkout; each run writes a fresh <stamp>-<name>-<id>/ attempt folder in
        it (default ~/.ddg-verify-macos)
 --no-video: no recording.mp4 (by default the proof is recorded: a VM's screen, or only the app's window on this Mac)
-exit:  0 pass · 1 a check failed · 2 inconclusive: setup, an action or read that failed, nothing checked, a proof
-       rejected by check, an --evidence-dir refused, or a pass with cleanup/evidence problems · 130 cancelled
-       (report still written)
+exit:  0 pass · 1 a check failed (with --base: also a base build that didn't do what the proof declared) ·
+       2 inconclusive: setup, an action or read that failed, nothing checked, a proof rejected by check, an
+       --evidence-dir refused, or a pass with cleanup/evidence problems · 130 cancelled (report still written)
 """
 import json
 import os
@@ -20,6 +23,7 @@ import sys
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "scripts"))
+import base  # noqa: E402
 import harness  # noqa: E402
 
 
@@ -31,7 +35,7 @@ def main(argv):
             return 64
         argv.remove("--no-video")
     options = {}
-    for name, commands in (("--evidence-dir", ("new-proof", "prove")), ("--checkout", ("prove",))):
+    for name, commands in (("--evidence-dir", ("new-proof", "prove")), ("--checkout", ("prove",)), ("--base", ("prove",))):
         if name in argv:
             i = argv.index(name)
             if i + 1 == len(argv) or argv[0] not in commands:
@@ -39,14 +43,20 @@ def main(argv):
                 return 64
             options[name] = argv.pop(i + 1)
             argv.pop(i)
+    if "--base" in options and "--checkout" in options:
+        print(__doc__)
+        return 64
     evidence_dir = options.get("--evidence-dir")
     try:
         if len(argv) == 2 and argv[0] == "new-proof":
             print(harness.new_proof(argv[1], harness.evidence_root(evidence_dir)))
             return 0
         if len(argv) == 4 and argv[0] == "prove" and argv[2] == "--target":
-            checkout = harness.checkout_of(options["--checkout"]) if "--checkout" in options else harness.ROOT
-            code, out = harness.prove(argv[1], argv[3], evidence_dir, video, checkout)
+            if "--base" in options:
+                code, out = base.prove_base(argv[1], options["--base"], argv[3], evidence_dir, video)
+            else:
+                checkout = harness.checkout_of(options["--checkout"]) if "--checkout" in options else harness.ROOT
+                code, out = harness.prove(argv[1], argv[3], evidence_dir, video, checkout)
             print(json.dumps(out, indent=1))
             return code
     except harness.Refused as e:
@@ -56,6 +66,9 @@ def main(argv):
         out = [dict(proof=p, problems=harness.load(p)[1]) for p in argv[1:]]
         print(json.dumps(out, indent=1))
         return 2 if any(o["problems"] for o in out) else 0
+    if argv == ["clean-base"]:
+        print("\n".join(base.clean_base()) or "no base worktrees")
+        return 0
     print(__doc__)
     return 64
 

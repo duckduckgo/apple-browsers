@@ -18,7 +18,7 @@ import vhelp  # noqa: E402
 
 def record(checks=(), app_running=True, error=None, problems=(), cancelled=False):
     rec = harness.Record()
-    rec.checks = list(checks)
+    rec.checks = [tuple(c) + ("unchanged",) * (4 - len(c)) for c in checks]   # (name, ok, detail[, base])
     rec.app_running, rec.error, rec.problems, rec.cancelled = app_running, error, list(problems), cancelled
     return rec
 
@@ -245,7 +245,7 @@ class RecordingTests(unittest.TestCase):
     def test_a_failed_recording_is_a_problem_not_a_failed_check(self):
         rec, _, text = self.finish((2, "UNPLAYABLE: AVFoundation can't read the movie"))
         self.assertEqual(harness.label(rec), ("PASS", 2))
-        self.assertEqual([ok for _, ok, _ in rec.checks], [True])
+        self.assertEqual([ok for _, ok, *_ in rec.checks], [True])
         self.assertIn("- screen recording failed: UNPLAYABLE: AVFoundation can't read the movie\n", text)
         self.assertIn("- Recording: (none: see Problems)\n", text)
         self.assertNotIn("](recording.mp4)", text)

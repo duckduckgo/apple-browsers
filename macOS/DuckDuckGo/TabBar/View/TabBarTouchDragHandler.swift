@@ -20,25 +20,23 @@ import Cocoa
 
 /// Starts item drags from on-screen touches, which scroll instead of producing the mouse drags `NSCollectionView` needs.
 ///
+/// Press and hold lifts an item; a plain swipe still scrolls.
 /// The collection view is the dragging source, as in a mouse drag, so drop handling is shared.
 final class TabBarTouchDragHandler: NSObject {
 
     init(collectionView: NSCollectionView) {
         super.init()
 
-        let recognizer = NSPanGestureRecognizer(target: self, action: #selector(touchPanRecognized(_:)))
+        let recognizer = NSPressGestureRecognizer(target: self, action: #selector(touchPressRecognized(_:)))
         recognizer.buttonMask = 0x0
         recognizer.allowedTouchTypes = .direct
-        collectionView.addGestureRecognizer(recognizer)
-
         if #available(macOS 27.0, *) {
-            // One finger drags items, so scrolling takes two.
-            recognizer.maximumNumberOfTouches = 1
-            collectionView.enclosingScrollView?.minimumNumberOfTouchesForScrolling = 2
+            recognizer.isCancellableByScrollGesture = true
         }
+        collectionView.addGestureRecognizer(recognizer)
     }
 
-    @objc private func touchPanRecognized(_ recognizer: NSPanGestureRecognizer) {
+    @objc private func touchPressRecognized(_ recognizer: NSPressGestureRecognizer) {
         guard recognizer.state == .began,
               let collectionView = recognizer.view as? NSCollectionView,
               let event = NSApp.currentEvent,

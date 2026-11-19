@@ -346,6 +346,21 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.exportedFilenames, ["duck.ai_2026-01-01_00-00-00.txt"])
     }
 
+    func testDownloadChat_readsModelNamesWhenTheExportStarts_notWhenTheListWasBuilt() {
+        let downloader = StubDownloader()
+        let queue = DispatchQueue(label: "test.download")
+        var catalog: [String: ModelDisplay] = [:]
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader,
+                          modelDisplays: { catalog }, mutationQueue: queue)
+
+        // The models arrive after the list was built, as they do for the long-lived iPad sidebar.
+        catalog = ["gpt-5-mini": ModelDisplay(fullName: "GPT-5 mini", shortName: "GPT-5 mini", providerPossessive: "OpenAI's")]
+        sut.downloadChat(chatId: "r1")
+        queue.sync { }
+
+        XCTAssertEqual(downloader.receivedModelDisplays.first?.keys.sorted(), ["gpt-5-mini"])
+    }
+
     func testDownloadChat_onFailure_notifiesFailureAndNotSuccess() {
         let downloader = StubDownloader()
         downloader.stubbedResult = .failure(ChatHistoryDownloader.DownloadError.chatNotFound)
@@ -713,6 +728,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         chats: [DuckAiChat],
         fireExecutor: FireExecuting? = MockChatHistoryFireExecutor(),
         downloader: ChatHistoryDownloading? = nil,
+        modelDisplays: @escaping () -> [String: ModelDisplay] = { [:] },
         pinner: ChatPinning? = nil,
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
@@ -723,6 +739,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             reader: MockChatHistoryReader(chats: chats),
             fireExecutor: fireExecutor,
             downloader: downloader,
+            modelDisplays: modelDisplays,
             pinner: pinner,
             source: source,
             isFireMode: isFireMode,
@@ -811,9 +828,11 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         /// Chat ids in this set throw `chatNotFound`; all others resolve to `stubbedResult`.
         var failingChatIds: Set<String> = []
         private(set) var requestedChatIds: [String] = []
+        private(set) var receivedModelDisplays: [[String: ModelDisplay]] = []
 
-        func downloadChat(chatId: String) throws -> URL {
+        func downloadChat(chatId: String, modelDisplays: [String: ModelDisplay]) throws -> URL {
             requestedChatIds.append(chatId)
+            receivedModelDisplays.append(modelDisplays)
             if failingChatIds.contains(chatId) {
                 throw ChatHistoryDownloader.DownloadError.chatNotFound
             }

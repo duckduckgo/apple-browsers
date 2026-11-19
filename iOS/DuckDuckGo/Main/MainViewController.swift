@@ -8807,17 +8807,13 @@ extension MainViewController: TabDelegate {
         // cannot leak into a fire session.
         let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
         let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
-        // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
-        // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
-        // can't guarantee unique ids and the latter crashes on duplicates.
-        let modelDisplays = Dictionary(
-            (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        let downloader = ChatHistoryDownloader(
-            storageHandler: storageHandler,
-            modelDisplays: modelDisplays
-        )
+        let downloader = ChatHistoryDownloader(storageHandler: storageHandler)
+        // The UTI model catalog, for export header attribution. `uniquingKeysWith` rather than
+        // `uniqueKeysWithValues:` — the model list is server-supplied so ids may repeat, and the latter crashes on that.
+        let modelDisplays: () -> [String: ModelDisplay] = { [weak self] in
+            Dictionary((self?.unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
+                       uniquingKeysWith: { first, _ in first })
+        }
         let pinner: ChatPinning? = storageHandler.map { storage in
             ChatPinner(storageHandler: storage, syncCleaner: isFireMode ? nil : aiChatSyncCleaner)
         }
@@ -8826,6 +8822,7 @@ extension MainViewController: TabDelegate {
             featureFlagger: featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
+            modelDisplays: modelDisplays,
             pinner: pinner,
             source: source,
             isFireMode: isFireMode

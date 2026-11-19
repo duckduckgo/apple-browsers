@@ -78,6 +78,47 @@ final class WebExtensionPermissionUserGestureScriptTests: XCTestCase {
         XCTAssertNil(context.exception)
     }
 
+    func testScreenshotShortcutsModifierKeysAndEscapeDoNotAuthorizeRequests() throws {
+        let context = try makeContext()
+        context.evaluateScript("""
+        [
+            { key: 'Shift', shiftKey: true },
+            { key: 'Meta', metaKey: true, shiftKey: true },
+            { key: '4', metaKey: true, shiftKey: true },
+            { key: 'Control', ctrlKey: true },
+            { key: 'c', ctrlKey: true },
+            { key: 'Alt', altKey: true },
+            { key: 'CapsLock' },
+            { key: 'Escape' }
+        ].forEach(function(event) {
+            event.isTrusted = true;
+            listeners.keydown(event);
+        });
+        """)
+
+        XCTAssertEqual(context.objectForKeyedSubscript("recordedGestures")?.toInt32(), 0)
+        XCTAssertNil(context.exception)
+    }
+
+    func testOrdinaryTypingAndKeyboardActivationStillAuthorizeRequests() throws {
+        let context = try makeContext()
+        context.evaluateScript("""
+        [
+            { key: 'Enter' },
+            { key: ' ' },
+            { key: 'a' },
+            { key: 'A', shiftKey: true },
+            { key: 'é', altKey: true }
+        ].forEach(function(event) {
+            event.isTrusted = true;
+            listeners.keydown(event);
+        });
+        """)
+
+        XCTAssertEqual(context.objectForKeyedSubscript("recordedGestures")?.toInt32(), 5)
+        XCTAssertNil(context.exception)
+    }
+
     func testWebsitesDoNotInstallGestureListeners() throws {
         let context = try makeContext(originProtocol: "https:")
         XCTAssertEqual(context.evaluateScript("Object.keys(listeners).length")?.toInt32(), 0)

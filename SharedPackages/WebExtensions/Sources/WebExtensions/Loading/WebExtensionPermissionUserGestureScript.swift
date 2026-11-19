@@ -27,11 +27,14 @@ public enum WebExtensionPermissionUserGestureScript {
         if (globalThis.location.protocol !== "webkit-extension:") { return; }
         var handler = globalThis.webkit.messageHandlers.\(messageHandlerName);
         var keyPressed = false;
+        var modifierKeys = ["Alt", "AltGraph", "CapsLock", "Control", "Fn", "Meta", "Shift"];
         function record(event) {
             if (event.isTrusted && !event.repeat) { handler.postMessage(null); }
         }
         globalThis.addEventListener("pointerdown", record, true);
         globalThis.addEventListener("keydown", function(event) {
+            // System/browser shortcuts, modifier keys, and dismissing UI do not authorize a prompt.
+            if (event.metaKey || event.ctrlKey || event.key === "Escape" || modifierKeys.indexOf(event.key) !== -1) { return; }
             if (event.isTrusted) { keyPressed = true; }
             record(event);
         }, true);

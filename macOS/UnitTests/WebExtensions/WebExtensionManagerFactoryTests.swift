@@ -122,20 +122,15 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         }
     }
 
-    func testAppStoreBuildDoesNotStartUpdateDiscoveryWhenFlagIsOn() async throws {
+    func testAppStoreBuildStartsUpdateDiscoveryWhenFlagIsOn() async throws {
         let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionUpdateDiscovery.rawValue: true])
         let storage = try DiscoveryStateStorage()
         let manager = makeManager(storage: storage, flags: flags, isAppStore: true)
         let store = try XCTUnwrap(manager.chromeWebStore)
-        XCTAssertFalse(store.canCheckForUpdates)
-        await store.checkForUpdatesNow()
-        flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = false
-        flags.triggerUpdate()
-        flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = true
-        flags.triggerUpdate()
-        await store.checkForUpdatesNow()
-        XCTAssertFalse(store.canCheckForUpdates)
-        XCTAssertEqual(storage.discoveryReads, 0)
+        try await waitForCondition { store.canCheckForUpdates }
+        XCTAssertTrue(store.canCheckForUpdates)
+        XCTAssertEqual(storage.discoveryReads, 1)
+        withExtendedLifetime(manager) {}
     }
 
     func testManagerEnforcesExtensionPermissions() throws {

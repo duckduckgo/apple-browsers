@@ -305,6 +305,7 @@ extension SimplifiedSyncSettingsView {
         getDesktopBrowserSection(source: .activated)
         bookmarksSection
         recoverySection
+        deviceActivitySection
         deleteSection
     }
 
@@ -587,6 +588,26 @@ extension SimplifiedSyncSettingsView {
             }
         }
         .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+    }
+
+    @ViewBuilder
+    var deviceActivitySection: some View {
+        if model.isDeviceActivityAvailable {
+            Section {
+                NavigationLink(destination: DeviceActivityView()) {
+                    Label(title: {
+                        Text(UserText.deviceActivityTitle)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                    }, icon: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
+                            .foregroundColor(Color(designSystemColor: .icons))
+                    })
+                }
+                .buttonStyle(.plain)
+            }
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+        }
     }
 }
 

@@ -30,12 +30,26 @@ final class AIChatBrowserToolsService {
     private var featureFlagChanges: AnyCancellable?
     private var bindings: [ObjectIdentifier: AIChatBrowserToolsBinding] = [:]
     private var clearing: [UUID: AIChatBrowserToolsClearing] = [:]
+#if DEBUG || ALPHA
+    private var debugSessions: [ObjectIdentifier: BrowserToolsDebugSession] = [:]
+#endif
     private let injectedScopeProvider: BrowserToolScopeProvider?
     private(set) lazy var catalog = BrowserToolCatalog(
         tools: makeTools(),
         configuration: configuration, capabilities: supportedCapabilities)
     private(set) lazy var invoker = BrowserToolInvoker(
-        catalog: catalog, clientToolPermissions: clientToolPermissions)
+        catalog: catalog,
+        clientToolPermissions: AIChatNativePermissionCoordinator(base: clientToolPermissions) { [weak self] toolName, prompter in
+#if DEBUG || ALPHA
+            if let source = prompter as? BrowserToolsDebugSession {
+                guard let self else { return .unavailable }
+                return self.debugAdmissionFailure(toolName: toolName, from: source)
+            }
+#endif
+            guard let source = prompter as? AIChatUserScript else { return nil }
+            guard let self else { return .unavailable }
+            return self.permissionAdmissionFailure(toolName: toolName, from: source)
+        })
     let permissions: BrowserToolPermissionStoring
     let clientToolPermissions: ClientToolPermissionCoordinator
     private let configuration: AIChatBrowserToolsConfiguration
@@ -128,20 +142,24 @@ extension AIChatBrowserToolsService {
 // MARK: - Source lifecycle
 
 extension AIChatBrowserToolsService {
-    func attach(_ source: AIChatUserScript, owner: Tab, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
+    func attach(_ source: AIChatUserScript, owner: Tab, presenter: (any AIChatNativePermissionPresenting)? = nil, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
         detach(source)
-        bindings[ObjectIdentifier(source)] = AIChatBrowserToolsBinding(source: source, owner: owner, scope: makeScope(), makeScope: makeScope)
+        bindings[ObjectIdentifier(source)] = AIChatBrowserToolsBinding(source: source, owner: owner, scope: makeScope(), presenter: presenter, makeScope: makeScope)
     }
 
     func detach(_ source: AIChatUserScript) {
         guard let binding = bindings.removeValue(forKey: ObjectIdentifier(source)), binding.source === source else { return }
         binding.pendingConfigurationRefresh = false
         revoke(binding, document: .awaitingCommit)
-        source.browserToolsService = nil
         clientToolPermissions.cancelRequests(from: source)
+        binding.presenter?.withdrawActive {}
+        source.browserToolsService = nil
     }
 
     func detachSources(ownerTabID: String) {
+#if DEBUG || ALPHA
+        for session in debugSessions.values.filter({ $0.scope.ownerTabID == ownerTabID }) { session.close() }
+#endif
         guard !bindings.isEmpty else { return }
         let sources = bindings.values.filter { $0.ownerTabID == ownerTabID }.compactMap(\.source)
         for source in sources { detach(source) }
@@ -174,7 +192,36 @@ extension AIChatBrowserToolsService {
         return await invoker.invokeClientTool(request, context: context, permissionPrompter: source)
     }
 
+    private func permissionAdmissionFailure(toolName: String, from source: AIChatUserScript) -> AIChatNativePermissionFailure? {
+        guard admittedScope(for: source) != nil, catalog.tool(named: toolName) != nil else { return .unavailable }
+        return binding(for: source)?.presenter?.isSurfaceAvailable == true ? nil : .cancelled
+    }
 
+    private func permissionMessage(for toolName: String) -> String {
+        switch toolName {
+        case AIChatBrowserToolsSubfeature.listOpenTabs.rawValue: "Duck.ai wants to see your open tabs."
+        default: "Duck.ai wants to use a browser tool."
+        }
+    }
+
+    func presentPermissionPrompt(_ prompt: ClientToolPermissionPrompt, from source: AIChatUserScript) -> Bool {
+        guard permissionAdmissionFailure(toolName: prompt.toolName, from: source) == nil,
+              let binding = binding(for: source) else { return false }
+        let message = permissionMessage(for: prompt.toolName)
+        return binding.presenter?.present(prompt, message: message) { [weak self, weak source, weak binding] decision in
+            guard let self, let source, let binding, self.binding(for: source) === binding else { return }
+            let response = self.permissionAdmissionFailure(toolName: prompt.toolName, from: source) == nil ? decision : .dismiss
+            self.clientToolPermissions.respond(to: prompt, decision: response, from: source)
+        } ?? false
+    }
+
+    func withdrawPermissionPrompt(requestID: String, from source: AIChatUserScript) {
+        binding(for: source)?.presenter?.withdraw(requestID: requestID) {}
+    }
+
+    func sourceWillDisappear(_ source: AIChatUserScript) {
+        clientToolPermissions.cancelPendingRequests(from: source)
+    }
 }
 
 // MARK: - Clearing
@@ -191,6 +238,9 @@ extension AIChatBrowserToolsService {
             return AIChatBrowserToolsClearingSnapshot(binding: binding, scope: scope, chatID: source.browserToolsDocumentURL?.duckAIChatID)
         }
         clearing[token.id] = AIChatBrowserToolsClearing(target: target, snapshots: snapshots)
+#if DEBUG || ALPHA
+        for session in Array(debugSessions.values) { session.close() }
+#endif
         for snapshot in snapshots { revoke(snapshot.binding, document: renewedDocument(snapshot.binding)) }
         for snapshot in snapshots {
             if let source = snapshot.binding.source { clientToolPermissions.cancelRequests(from: source) }
@@ -290,9 +340,86 @@ private extension AIChatBrowserToolsService {
                   let scope = admittedScope(for: source), scope.accepts(context) else { continue }
             return scope
         }
+#if DEBUG || ALPHA
+        for session in debugSessions.values where session.scope.accepts(context) {
+            guard debugAdmissionFailure(from: session) == nil else { continue }
+            return session.scope
+        }
+#endif
         return injectedScopeProvider?(context)
     }
 }
+
+#if DEBUG || ALPHA
+extension AIChatBrowserToolsService {
+    func registerDebugSession(_ session: BrowserToolsDebugSession) {
+        debugSessions[ObjectIdentifier(session)] = session
+    }
+
+    func closeDebugSession(_ session: BrowserToolsDebugSession) {
+        debugSessions.removeValue(forKey: ObjectIdentifier(session))
+        session.scope.revoke()
+        clientToolPermissions.cancelRequests(from: session)
+        session.presenter.withdrawActive {}
+    }
+
+    private func debugAdmissionFailure(toolName: String? = nil,
+                                       from session: BrowserToolsDebugSession) -> AIChatNativePermissionFailure? {
+        guard debugSessions[ObjectIdentifier(session)] === session,
+              isEnabled, clearing.isEmpty, session.scope.isValid, session.isNormalMode(),
+              toolName.map({ catalog.tool(named: $0) != nil }) ?? true else { return .unavailable }
+        return session.presenter.isSurfaceAvailable ? nil : .cancelled
+    }
+
+    func invoke(_ request: ExecuteClientToolRequest, from session: BrowserToolsDebugSession) async -> ExecuteClientToolResponse {
+        guard debugAdmissionFailure(toolName: request.capability.name, from: session) == nil else {
+            return .failure(callId: request.callId, error: .unavailable)
+        }
+        let scope = session.scope
+        let context = BrowserToolCallContext(ownerTabID: scope.ownerTabID, ownerWindowToken: scope.token, isBurner: scope.isBurner)
+        return await invoker.invokeClientTool(request, context: context, permissionPrompter: session)
+    }
+
+    func presentPermissionPrompt(_ prompt: ClientToolPermissionPrompt, from session: BrowserToolsDebugSession) -> Bool {
+        guard debugAdmissionFailure(toolName: prompt.toolName, from: session) == nil else { return false }
+        let message = permissionMessage(for: prompt.toolName)
+        return session.presenter.present(prompt, message: message) { [weak self, weak session] decision in
+            guard let self, let session else { return }
+            let admitted = self.debugAdmissionFailure(toolName: prompt.toolName, from: session) == nil
+            self.clientToolPermissions.respond(to: prompt, decision: admitted ? decision : .dismiss, from: session)
+        }
+    }
+}
+
+@MainActor
+final class BrowserToolsDebugSession: ClientToolPermissionPrompting {
+    let scope: BrowserToolScope
+    let presenter: any AIChatNativePermissionPresenting
+    let isNormalMode: @MainActor () -> Bool
+    private weak var service: AIChatBrowserToolsService?
+
+    init(service: AIChatBrowserToolsService, scope: BrowserToolScope, presenter: any AIChatNativePermissionPresenting,
+         isNormalMode: @escaping @MainActor () -> Bool) {
+        self.service = service
+        self.scope = scope
+        self.presenter = presenter
+        self.isNormalMode = isNormalMode
+        service.registerDebugSession(self)
+    }
+
+    func close() {
+        service?.closeDebugSession(self)
+    }
+
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        service?.presentPermissionPrompt(prompt, from: self) ?? false
+    }
+
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        presenter.withdraw(requestID: requestID) {}
+    }
+}
+#endif
 
 @MainActor
 private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
@@ -333,6 +460,7 @@ private final class AIChatBrowserToolsBinding {
         case awaitingCommit
     }
 
+    let presenter: (any AIChatNativePermissionPresenting)?
     weak var source: AIChatUserScript?
     let makeScope: @MainActor () -> BrowserToolScope?
     let ownerTabID: String
@@ -340,8 +468,9 @@ private final class AIChatBrowserToolsBinding {
     var document: Document
     var pendingConfigurationRefresh = false
 
-    init(source: AIChatUserScript, owner: Tab, scope: BrowserToolScope?, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
+    init(source: AIChatUserScript, owner: Tab, scope: BrowserToolScope?, presenter: (any AIChatNativePermissionPresenting)?, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
         self.source = source
+        self.presenter = presenter
         self.makeScope = makeScope
         ownerTabID = owner.uid
         isBurner = owner.mode == .fire
@@ -376,4 +505,53 @@ private struct AIChatBrowserToolsClearingSnapshot {
 private struct AIChatBrowserToolsClearing {
     let target: AIChatBrowserToolsClearingTarget
     let snapshots: [AIChatBrowserToolsClearingSnapshot]
+}
+
+private enum AIChatNativePermissionFailure {
+    case unavailable
+    case cancelled
+
+    var clientToolError: ClientToolError {
+        switch self {
+        case .unavailable: .unavailable
+        case .cancelled: .cancelled
+        }
+    }
+
+    var browserToolFailure: BrowserToolFailure {
+        switch self {
+        case .unavailable: .unavailable
+        case .cancelled: .cancelled
+        }
+    }
+}
+
+@MainActor
+private final class AIChatNativePermissionCoordinator: ClientToolPermissionCoordinating {
+    typealias Admission = @MainActor (String, (any ClientToolPermissionPrompting)?) -> AIChatNativePermissionFailure?
+
+    private let base: ClientToolPermissionCoordinator
+    private let admission: Admission
+
+    init(base: ClientToolPermissionCoordinator, admission: @escaping Admission) {
+        self.base = base
+        self.admission = admission
+    }
+
+    func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?,
+                   prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
+        if let failure = admission(tool.name, prompter) { return .refused(failure.clientToolError) }
+        let authorization = await base.authorize(callID: callID, tool: tool, targetsOtherTab: targetsOtherTab,
+                                                 target: target, prompter: prompter)
+        guard case .granted(let performExecution) = authorization else { return authorization }
+        let requiresPrompter = prompter != nil
+        let toolName = tool.name
+        return .granted(performExecution: { [weak prompter, admission] operation in
+            await performExecution { [weak prompter] in
+                guard !Task.isCancelled, !requiresPrompter || prompter != nil else { return .failure(.cancelled) }
+                if let failure = admission(toolName, prompter) { return .failure(failure.browserToolFailure) }
+                return await operation()
+            }
+        })
+    }
 }

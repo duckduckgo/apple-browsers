@@ -132,11 +132,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
-    static func sitePermissionsEnabledAtLaunch(featureFlagger: FeatureFlagger,
-                                               isSupportedOSProvider: () -> Bool = isSitePermissionsSupportedOS) -> Bool {
-        isSupportedOSProvider() && featureFlagger.isFeatureOn(.sitePermissions)
-    }
-
+    /// Site permissions requires iOS 16; iOS 15 keeps WebKit's own permission flow.
     private static func isSitePermissionsSupportedOS() -> Bool {
         if #available(iOS 16.0, *) {
             true
@@ -221,8 +217,7 @@ final class AppDependencyProvider: DependencyProvider {
             featureFlagger = defaultFeatureFlagger
         }
 
-        // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
-        isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
+        isSitePermissionsEnabled = Self.isSitePermissionsSupportedOS()
         isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.duckAIAndInputLiquidGlass)
         findInPageImplementation = FindInPageImplementation(featureFlagger: featureFlagger)
 

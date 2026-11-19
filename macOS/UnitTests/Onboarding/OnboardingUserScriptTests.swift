@@ -230,4 +230,32 @@ final class OnboardingUserScriptTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    @MainActor
+    func testSubmitQuery_Search_CallsSubmitQuery() async throws {
+        let params = ["mode": "search", "query": "best pizza", "source": "typed"]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "submitQuery"))
+
+        let result = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.submittedQuery, .init(mode: .search, query: "best pizza", source: .typed))
+        XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testSubmitQuery_DuckAI_CallsSubmitQuery() async throws {
+        let params = ["mode": "duckAi", "query": "Surprise me!", "source": "suggestion"]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "submitQuery"))
+
+        _ = try await handler(params, WKScriptMessage.mock())
+        XCTAssertEqual(mockManager.submittedQuery, .init(mode: .duckAi, query: "Surprise me!", source: .suggestion))
+    }
+
+    @MainActor
+    func testSubmitQuery_UnknownMode_DoesNotCallSubmitQuery() async throws {
+        let params = ["mode": "images", "query": "cats", "source": "typed"]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "submitQuery"))
+
+        _ = try await handler(params, WKScriptMessage.mock())
+        XCTAssertNil(mockManager.submittedQuery)
+    }
+
 }

@@ -188,7 +188,8 @@ extension NewTabPageActionsManager {
                 tabOpener: NewTabPageTabOpener(),
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 pixelHandler: nextStepsPixelHandler,
-                newTabPageNavigator: DefaultNewTabPageNavigator()
+                newTabPageNavigator: DefaultNewTabPageNavigator(),
+                featureFlagger: featureFlagger
             ),
             pixelHandler: nextStepsPixelHandler,
             persistor: nextStepsCardsPersistor,

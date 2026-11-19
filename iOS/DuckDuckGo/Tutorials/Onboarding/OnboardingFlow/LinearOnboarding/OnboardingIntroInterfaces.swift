@@ -32,5 +32,7 @@ protocol OnboardingDelegate: NSObjectProtocol {
     func onboardingCompleted(controller: UIViewController)
     func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType)
     func searchFromOnboarding(for query: String)
+    /// Presents the subscription paywall over `controller` and calls `onDismiss` once it closes.
+    func presentSubscriptionPaywallFromOnboarding(from controller: UIViewController, onDismiss: @escaping () -> Void)
 
 }

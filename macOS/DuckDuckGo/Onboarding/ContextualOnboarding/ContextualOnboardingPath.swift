@@ -32,6 +32,7 @@ enum ContextualOnboardingDecision: Equatable {
 /// The path picked at the junction, saved so it survives a relaunch.
 enum ContextualOnboardingPathKind: String {
     case search
+    case duckAI
 }
 
 /// The dialog sequence of one junction path, from its first dialog to its ending.

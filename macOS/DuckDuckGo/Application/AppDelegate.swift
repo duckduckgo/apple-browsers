@@ -202,8 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
-            windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            windowControllersManager: windowControllersManager
         )
     }()
 
@@ -403,7 +402,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
 
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater & ContextualOnboardingPathStarting
 
     @MainActor
     var isOnboardingReadyForPrompts: Bool {
@@ -512,7 +511,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         BookmarksEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             hasTopLevelEntitiesProvider: { [bookmarkManager] in
                 bookmarkManager.hasTopLevelEntities()
             },
@@ -1214,6 +1212,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 configurationStore: configurationStore,
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
+                onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
                 appearancePreferences: appearancePreferences,
                 themeManager: themeManager,
                 startupPreferences: startupPreferences,
@@ -1250,6 +1249,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configurationStore: configurationStore,
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,
+            onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
             appearancePreferences: appearancePreferences,
             themeManager: themeManager,
             startupPreferences: startupPreferences,

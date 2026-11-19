@@ -9,7 +9,7 @@ os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import device, env, harness, telemetry, video  # noqa: E402
+from verify_ios import compare, device, env, harness, steps, telemetry, video, web  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -425,6 +425,11 @@ class FakeDevice:
     def snapshot(self):
         return dict(tree="", focused=None)
 
+    def wait(self, locator, state="visible", timeout=5):
+        if locator in getattr(self, "absent", ()):
+            raise env.Failed(f"{locator} not {state} within {timeout}s", runner={"code": "TIMEOUT"})
+        return dict(ok=True)
+
     def data_container(self):
         return TMP
 
@@ -470,6 +475,9 @@ class FakePixels:
 
     def mark(self):
         pass
+
+    def fired(self, name, occurrence=0, timeout=10):
+        raise env.Missed(f"pixel {name} did not fire")
 
     def all(self):
         return []
@@ -973,6 +981,378 @@ class CliTests(unittest.TestCase):
         self.assertEqual(p.returncode, 1, p.stdout + p.stderr)   # as new-proof and prove refuse it
         self.assertIn("outside this checkout", p.stdout)
         self.assertNotIn("simulator ready", p.stderr)
+
+
+class BaseExpectationTests(HarnessTests):
+    """What a proof declares for the base build, and how the base run of `prove --base` treats it."""
+
+    def run_base(self, run, **fake):
+        self.fake.__dict__.update(fake)
+        mod = type("Proof", (), {"run": staticmethod(run)})
+        return harness._run_device(mod, "iphone", tempfile.mkdtemp(dir=TMP), keep=False, flags={}, device_obj=self.fake,
+                                   video=False, as_base=True)
+
+    @staticmethod
+    def bug_fix_proof(ios):
+        ios.check("set up", True)
+        with ios.on_base("fail"):
+            ios.expect_visible("id=fixed")
+            with ios.on_base("pass"):
+                ios.check("still there", True)
+            ios.check("the fix", False)
+        ios.check("after the fix", True)
+
+    @staticmethod
+    def outcomes(r):
+        return [(c["check"], c["ok"], c["base"]) for c in r["checks"]]
+
+    def test_base_run_records_an_expected_failure_and_carries_on(self):
+        r = self.run_base(self.bug_fix_proof, absent={"id=fixed"})
+        self.assertEqual(r["status"], "fail", r)
+        self.assertEqual(self.outcomes(r), [("set up", True, "unchanged"), ("id=fixed visible", False, "fail"),
+                                            ("still there", True, "pass"), ("the fix", False, "fail"),
+                                            ("after the fix", True, "unchanged"),
+                                            ("app still in the foreground at the end", True, "unchanged")])
+
+    def test_the_same_failure_stops_a_normal_run(self):
+        r = self.run_proof(self.bug_fix_proof, absent={"id=fixed"})
+        self.assertEqual(r["status"], "fail", r)
+        self.assertEqual(self.outcomes(r)[:2], [("set up", True, "unchanged"), ("id=fixed visible", False, "fail")])
+        self.assertNotIn("after the fix", [c["check"] for c in r["checks"]])
+
+    def test_base_run_stops_at_a_failure_the_proof_did_not_expect(self):
+        def run(ios):
+            ios.check("should be unchanged", False)
+            ios.check("never reached", True)
+        r = self.run_base(run)
+        self.assertEqual(r["status"], "fail", r)
+        self.assertNotIn("never reached", [c["check"] for c in r["checks"]])
+
+    def test_failed_waits_and_telemetry_are_recorded_as_failed_checks(self):
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_hidden("id=gone")
+                ios.expect_keyboard(shown=True)
+                ios.expect_pixel("m_x")
+        r = self.run_base(run, absent={"id=gone", "role=keyboard"})
+        self.assertEqual([(c["check"], c["ok"]) for c in r["checks"]][:3],
+                         [("id=gone gone", False), ("keyboard shown", False), ("pixel m_x fired", False)])
+
+    def test_check_keys_leave_out_this_runs_tokens_and_local_ports(self):
+        def run(ios):
+            ios.check(f"tab loaded http://127.0.0.1:20412/index.html?token={ios.token('demo')}", True)
+        self.assertEqual(self.run_proof(run)["checks"][0]["key"],
+                         "tab loaded http://127.0.0.1:<port>/index.html?token=<token:demo>")
+
+    def test_base_run_never_takes_a_runner_refusal_for_the_expected_failure(self):
+        def wait(locator, state="visible", timeout=5):
+            raise env.Failed("2 elements match", runner={"code": "AMBIGUOUS"})
+
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_visible('label="twin"')
+            ios.check("never reached", True)
+        self.fake.wait = wait
+        r = self.run_base(run)
+        self.assertEqual(r["status"], "error", r)
+        self.assertIn("not observed on the base build", r["reason"])
+        self.assertEqual(r["checks"], [], "a refused check was never observed, so it is not recorded as failed")
+
+    def judge_base_run(self, run, **fake):
+        """The device's `prove --base` verdict when this checkout passes every check the base run was meant to make."""
+        before = self.run_base(run, **fake)
+        after = [dict(c, ok=True) for c in before["checks"]] or [check("expected miss", True, "fail")]
+        return before, compare.verdict(before["status"], "pass", compare.judge(before["checks"], after))[0]
+
+    @staticmethod
+    def live_pixel_stream(ios, dead=False):
+        ios.pixels = telemetry.Pixels("-", os.path.join(tempfile.mkdtemp(dir=TMP), "pixels.ndjson"))
+        ios.pixels.proc = subprocess.Popen(["true" if dead else "sleep", *([] if dead else ["30"])])
+        if dead:
+            ios.pixels.proc.wait()
+        ios.pixels.since = 0
+
+    def test_a_dead_pixel_stream_on_the_base_run_is_inconclusive_not_the_expected_failure(self):
+        def run(ios):
+            self.live_pixel_stream(ios, dead=True)
+            with ios.on_base("fail"):
+                ios.expect_pixel("m_new_pixel", timeout=0)
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual(before["status"], "error", before)
+        self.assertIn("pixel log stream is not running", before["reason"])
+        self.assertEqual(verdict, "INCONCLUSIVE")
+
+    def test_a_harness_error_inside_on_base_fail_is_inconclusive_too(self):
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_wide_event("data-clearing", timeout=0)   # no ios.mark(): a proof bug, not a miss
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual((before["status"], verdict), ("error", "INCONCLUSIVE"), before)
+
+    def test_a_pixel_that_really_did_not_fire_on_the_base_run_is_as_expected(self):
+        def run(ios):
+            self.live_pixel_stream(ios)
+            try:
+                with ios.on_base("fail"):
+                    ios.expect_pixel("m_new_pixel", timeout=0)
+                ios.check("after the pixel", True)
+            finally:
+                ios.pixels.stop()
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual(before["status"], "fail", before)
+        self.assertEqual([(c["check"], c["ok"]) for c in before["checks"]][:2],
+                         [("pixel m_new_pixel fired", False), ("after the pixel", True)])
+        self.assertEqual(verdict, "AS EXPECTED")
+
+    def test_eventually_keeps_the_last_errors_runner_code(self):
+        def read(code):
+            def fn():
+                raise env.Failed(code, runner={"code": code})
+            return fn
+        raised = []
+
+        def run(ios):
+            try:
+                ios.eventually("reads the token", read("AMBIGUOUS"), timeout=0)
+            except env.Failed as e:
+                raised.append(e)
+        self.run_proof(run)
+        self.assertEqual(harness._code(raised[0]), "AMBIGUOUS")
+        self.assertNotIsInstance(raised[0], env.Missed)
+
+        def on_base(code):
+            def run(ios):
+                with ios.on_base("fail"):
+                    ios.eventually("reads the token", read(code), timeout=0)
+                ios.check("after", True)
+            return self.run_base(run)
+        self.assertEqual(on_base("AMBIGUOUS")["status"], "error")
+        absent = on_base("NOT_FOUND")
+        self.assertEqual([(c["check"], c["ok"]) for c in absent["checks"]][:2], [("reads the token", False), ("after", True)])
+
+    def test_base_run_carries_on_past_an_expected_alert(self):
+        def alert(action, button=None, timeout=5):
+            raise env.Failed("cannot answer", runner={"code": "NOT_FOUND", "alert": "Allow?"})
+
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_no_alert()
+            ios.check("after the alert", True)
+        self.fake.alert = alert
+        self.assertIn("after the alert", [c["check"] for c in self.run_base(run)["checks"]])
+
+    def test_a_step_that_does_not_find_what_it_looks_for_is_the_expected_failure_on_the_base_run(self):
+        class Driver:   # nothing on screen: every lookup comes back empty
+            def find(self, sel):
+                return []
+
+            def swipe(self, direction, sel=None):
+                return {}
+        dev = device.Device.__new__(device.Device)
+        dev._driver = Driver()
+        self.fake.scroll_to = dev.scroll_to
+        self.fake.web.eval = lambda js: {"t": ""}   # Duck.ai never answers
+        page = web.Web(0, "-")
+        page.page_url = lambda: None                 # the tab shows no web page
+        misses = {
+            "tab count": lambda ios: steps.expect_tab_count(ios, 2, timeout=0),   # no tab-switcher button in the tree
+            "alternative controls": lambda ios: ios.eventually(
+                "a New Tab control", lambda: steps.tap_first_present(ios, steps.NEW_TAB, timeout=0), timeout=0),
+            "scrolling": lambda ios: ios.eventually("row reachable", lambda: ios.scroll_to('label="row"'), timeout=0),
+            "Duck.ai answer": lambda ios: ios.eventually(
+                "Duck.ai answered", lambda: steps.read_duckai_answer(ios, timeout=0), timeout=0),
+            "page URL": lambda ios: ios.eventually("page shows the token", lambda: "t-1" in page.url(), timeout=0),
+        }
+        for name, miss in misses.items():
+            def run(ios, miss=miss):
+                with ios.on_base("fail"):
+                    miss(ios)
+                ios.check("after the miss", True)
+            with self.subTest(name):
+                before, verdict = self.judge_base_run(run, absent=set(steps.NEW_TAB))
+                self.assertEqual((before["status"], verdict), ("fail", "AS EXPECTED"), before)
+                self.assertIn("after the miss", [c["check"] for c in before["checks"]])
+
+    def test_a_step_stopped_by_a_refusal_is_still_inconclusive_on_the_base_run(self):
+        def snapshot():
+            raise env.Failed("the app is not running", runner={"code": "APP_NOT_RUNNING"})
+
+        def run(ios):
+            with ios.on_base("fail"):
+                steps.expect_tab_count(ios, 2, timeout=0)
+        self.fake.snapshot = snapshot
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual((before["status"], verdict), ("error", "INCONCLUSIVE"), before)
+
+    def test_an_unknown_base_outcome_is_an_error(self):
+        def run(ios):
+            with ios.on_base("different"):
+                ios.check("x", True)
+        self.assertEqual(self.run_proof(run)["status"], "error")
+
+
+def check(name, ok, base="unchanged", key=None):
+    return dict(check=name, ok=ok, base=base, key=key or name)
+
+
+class JudgeTests(unittest.TestCase):
+    @staticmethod
+    def judged(before, after):
+        return [(r["check"], r["before"], r["after"], r["judged"]) for r in compare.judge(before, after)]
+
+    def test_each_declared_outcome_against_the_base_run(self):
+        after = [check("bug fixed", True, "fail"), check("menu works", True, "pass"), check("page loads", True)]
+        self.assertEqual(self.judged([check("bug fixed", False, "fail"), check("menu works", True, "pass"),
+                                      check("page loads", True)], after),
+                         [("bug fixed", "fail", "pass", "as expected"), ("menu works", "pass", "pass", "as expected"),
+                          ("page loads", "pass", "pass", "as expected")])
+        self.assertEqual(self.judged([check("bug fixed", True, "fail"), check("menu works", False, "pass"),
+                                      check("page loads", False)], after),
+                         [("bug fixed", "pass", "pass", "unexpected"), ("menu works", "fail", "pass", "unexpected"),
+                          ("page loads", "fail", "pass", "unexpected")])
+
+    def test_a_check_the_base_run_never_made_is_not_shown(self):
+        rows = self.judged([check("set up", True)], [check("set up", True), check("bug fixed", True, "fail")])
+        self.assertEqual(rows[1], ("bug fixed", "not run", "pass", "not shown"))
+
+    def test_a_declared_check_this_checkout_never_made_is_not_shown(self):
+        rows = self.judged([check("bug", False, "fail")], [])
+        self.assertEqual(rows, [("bug", "fail", "not run", "not shown")])
+
+    def test_checks_only_the_base_run_made_come_last(self):
+        rows = self.judged([check("old path", True), check("set up", True)], [check("set up", True)])
+        self.assertEqual(rows, [("set up", "pass", "pass", "as expected"), ("old path", "pass", "not run", "not shown")])
+
+    def test_checks_line_up_by_token_free_key_and_occurrence(self):
+        before = [check("reads a-1", True, key="reads <t>"), check("reads a-2", False, "fail", key="reads <t>")]
+        after = [check("reads b-1", True, key="reads <t>"), check("reads b-2", True, "fail", key="reads <t>")]
+        self.assertEqual(self.judged(before, after), [("reads b-1", "pass", "pass", "as expected"),
+                                                      ("reads b-2", "fail", "pass", "as expected")])
+
+    def test_verdicts(self):
+        ok = [dict(check="x", judged="as expected")]
+        self.assertEqual(compare.verdict("fail", "pass", ok)[0], "AS EXPECTED")
+        self.assertEqual(compare.verdict("fail", "pass", [dict(check="x", judged="unexpected")])[0], "UNEXPECTED")
+        self.assertEqual(compare.verdict("fail", "fail", ok)[0], "UNEXPECTED")
+        self.assertEqual(compare.verdict("error", "pass", ok)[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("fail", "busy", ok)[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("fail", "pass", [dict(check="x", judged="not shown")])[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("fail", "pass", ok, ["appearance"])[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("cancelled", "pass", ok)[0], "CANCELLED")
+
+    def test_capture_conditions_compare_every_key(self):
+        self.assertEqual(compare.capture_differs(dict(appearance="light", textSize="large"),
+                                                 dict(appearance="dark", textSize="large", locale="en_US")),
+                         ["appearance", "locale"])
+
+    def test_exit_codes(self):
+        self.assertEqual(compare.exit_code(["AS EXPECTED", "AS EXPECTED"]), 0)
+        self.assertEqual(compare.exit_code(["AS EXPECTED"], problems=True), 2)
+        self.assertEqual(compare.exit_code(["AS EXPECTED", "UNEXPECTED"]), 1)
+        self.assertEqual(compare.exit_code(["UNEXPECTED", "INCONCLUSIVE"]), 2)
+        self.assertEqual(compare.exit_code(["INCONCLUSIVE", "CANCELLED"]), 130)
+
+
+class CompareReportTests(unittest.TestCase):
+    @staticmethod
+    def run_dir(attempt, name, status, checks, shots):
+        d = os.path.join(attempt, name, "iphone")
+        os.makedirs(d)
+        for shot in shots + ["final.png", "recording.mp4"]:
+            open(os.path.join(d, shot), "w").close()
+        return dict(status=status, reason=None, checks=checks, video="recording.mp4", capture=dict(appearance="light"))
+
+    def test_before_after_key_frames_and_judged_checks(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        b = self.run_dir(attempt, "before/run1", "fail", [check("hint | text", False, "fail")], ["menu.png"])
+        a = self.run_dir(attempt, "after/run2", "pass", [check("hint | text", True, "fail")], ["menu.png", "extra.png"])
+        rows = compare.judge(b["checks"], a["checks"])
+        devices = dict(iphone=dict(verdict="AS EXPECTED", reason=None, rows=rows, before=b, after=a, captureDiffers=[]))
+        cmp = dict(base=dict(ref="origin/main", sha="a" * 40), before="before/run1", after="after/run2", problems=[],
+                   rerun="cd x && verify-ios prove p --base aaa")
+        mod = type("Proof", (), {"__doc__": "The hint names the demo.\n\nDetails."})
+        text = compare.report(mod, cmp, devices, attempt)
+        self.assertEqual([line for line in text.splitlines() if line.startswith("## ")],
+                         ["## Verified", "## Evidence", "## Outcome", "## Details", "## Unverified"])
+        self.assertIn("| | Before | After |", text)
+        self.assertIn('| menu | [<img src="before/run1/iphone/menu.png" width="200" alt="Before: menu on iphone">]'
+                      '(before/run1/iphone/menu.png) | [<img src="after/run2/iphone/menu.png"', text)
+        self.assertIn("| extra | not captured | [<img", text)
+        self.assertIn("| final | [<img", text)
+        self.assertIn("[▶ Watch video](before/run1/iphone/recording.mp4)", text)
+        self.assertIn("### iphone: AS EXPECTED", text)
+        self.assertIn("| hint \\| text | fail | fail | pass | as expected |", text)
+        self.assertIn("[report](before/run1/report.md)", text)
+
+
+class ProveAgainstBaseTests(unittest.TestCase):
+    @staticmethod
+    def proof():
+        path = os.path.join(tempfile.mkdtemp(dir=TMP), "p.py")
+        with open(path, "w") as f:
+            f.write('"""Proves a thing."""\nDEVICES = ["iphone"]\n\ndef run(ios):\n    ios.check("x", True)\n')
+        return path
+
+    def test_a_stale_build_here_fails_before_the_base_is_touched(self):
+        def stale():
+            raise env.Failed("the app source changed since the last build: run build --app-only")
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(stale)), \
+                mock.patch.object(compare, "_prove_base") as base:
+            code, out = compare.prove_against_base(self.proof(), "HEAD", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        self.assertEqual((code, out["code"]), (2, "BUILD_NOT_CURRENT"))
+        base.assert_not_called()
+
+    def test_a_ref_that_is_not_a_commit_is_refused(self):
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(lambda: {})), \
+                mock.patch.object(compare, "_prove_base") as base:
+            code, out = compare.prove_against_base(self.proof(), "no-such-ref-xyz", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        self.assertEqual((code, out["code"]), (2, "BAD_BASE"))
+        base.assert_not_called()
+
+    def test_a_base_worktree_another_run_is_using_is_left_in_place(self):
+        worktree = tempfile.mkdtemp(dir=TMP)
+        log = os.path.join(worktree, "log")
+        with mock.patch.object(compare, "_step", return_value=(env.EXIT_BUSY, "")) as step:
+            problems = compare._remove_worktree(worktree, log)
+        self.assertEqual(step.call_count, 1, "only the cleanup ran: the worktree was not removed")
+        self.assertIn("in use", problems[0])
+
+    def test_ctrl_c_during_the_worktree_cleanup_does_not_cut_it_short(self):
+        """The cleanup child runs in its own session (the terminal's Ctrl-C can't reach it) and the parent ignores
+        signals from the first step to the last, then puts its handlers back."""
+        worktree, scripts = tempfile.mkdtemp(dir=TMP), tempfile.mkdtemp(dir=TMP)
+        log, seen, cleanup = os.path.join(worktree, "log"), os.path.join(scripts, "seen"), os.path.join(scripts, "cleanup")
+        with open(cleanup, "w") as f:   # stands in for `verify-ios cleanup`: Ctrl-C reaches the parent while it runs
+            f.write(f"import os, signal, time\nopen({seen!r}, 'w').write(str(os.getsid(0)))\n"
+                    "os.kill(os.getppid(), signal.SIGINT)\ntime.sleep(0.2)\n")
+        runs = []
+        real_step = compare._step
+
+        def step(cmd, cwd, log, interruptible=True):
+            runs.append(cmd)
+            if cmd[-1] == "--delete-sims":
+                return real_step([sys.executable, cleanup], cwd, log, interruptible)
+            os.kill(os.getpid(), signal.SIGINT)   # between the steps and during the second
+            return 0, ""
+        before = signal.getsignal(signal.SIGINT)
+        with mock.patch.object(compare, "_step", step):
+            problems = compare._remove_worktree(worktree, log)
+        self.assertEqual(problems, [])
+        self.assertEqual(len(runs), 2, "the worktree was removed after its simulators")
+        with open(seen) as f:
+            self.assertNotEqual(int(f.read()), os.getsid(0), "the cleanup child shares the terminal's session")
+        self.assertIs(signal.getsignal(signal.SIGINT), before)
+
+    def test_without_a_base_run_the_verdict_is_inconclusive_and_this_checkout_is_not_proved(self):
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(lambda: {})), \
+                mock.patch.object(compare, "_prove_base", return_value=(None, "the base build failed (exit 1)")), \
+                mock.patch.object(compare.harness, "prove") as after:
+            code, out = compare.prove_against_base(self.proof(), "HEAD", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        after.assert_not_called()
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["devices"]["iphone"]["verdict"], "INCONCLUSIVE")
+        with open(out["report"]) as f:
+            self.assertIn("the base build failed", f.read())
 
 
 if __name__ == "__main__":

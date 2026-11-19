@@ -31,13 +31,16 @@ struct AIChatDebugView: View {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let aiChatBonusMessageLog: AIChatBonusMessageLog?
     private let featureFlagger: FeatureFlagger?
+    private let tabManager: TabManager?
 
     init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
-         featureFlagger: FeatureFlagger? = nil) {
+         featureFlagger: FeatureFlagger? = nil,
+         tabManager: TabManager? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.aiChatBonusMessageLog = aiChatBonusMessageLog
         self.featureFlagger = featureFlagger
+        self.tabManager = tabManager
     }
 
     var body: some View {
@@ -57,6 +60,13 @@ struct AIChatDebugView: View {
             Section(header: Text(verbatim: "Boost Offer")) {
                 NavigationLink(destination: AIChatBoostOfferDebugView(featureFlagger: featureFlagger, messageLog: aiChatBonusMessageLog)) {
                     Text(verbatim: "Duck.ai Boost Offer")
+                }
+            }
+            if let tabManager {
+                Section(header: Text(verbatim: "Browser Tools")) {
+                    NavigationLink(destination: BrowserToolsDebugView(tabManager: tabManager)) {
+                        Text(verbatim: "Browser Tools")
+                    }
                 }
             }
 #endif

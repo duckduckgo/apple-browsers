@@ -18,6 +18,11 @@ on:
         description: "SHA-256 of the plan"
         required: true
         type: string
+      auto_sha256:
+        description: "SHA-256 of the auto plugin zip in the handoff. Empty runs the plan without auto"
+        required: false
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -32,6 +37,8 @@ env:
   # Inputs are checked in the agent job's first step before any of these paths are used. Storage is
   # create-only, so each run gets its own prefix
   PLAN_BLOB: ${{ inputs.handoff }}/plan.md
+  AUTO_BLOB: ${{ inputs.handoff }}/auto-claude.zip
+  AUTO_SHA256: ${{ inputs.auto_sha256 }}
   HANDOFF_PREFIX: ${{ inputs.handoff }}
   EVIDENCE_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ github.run_id }}-${{ github.run_attempt }}
   DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -67,6 +74,7 @@ jobs:
           [[ "$TASK_GID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::bad task_gid"; exit 1; }
           [[ "$HANDOFF" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]] || { echo "::error::bad handoff"; exit 1; }
           [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::bad sha256"; exit 1; }
+          [[ "$AUTO_SHA256" =~ ^([0-9a-f]{64})?$ ]] || { echo "::error::bad auto_sha256"; exit 1; }
           [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]] ||
             { echo "::error::dispatch on the agent-worker branch, not $DEFAULT_BRANCH"; exit 1; }
 
@@ -106,6 +114,11 @@ jobs:
           SHA256: ${{ inputs.sha256 }}
         run: worker/scripts/agent-worker/blobs.sh plan "$RUNNER_TEMP/plan.md" "$SHA256"
 
+      # The orchestrator copies the pinned auto release here from dub, which this runner can't reach
+      - name: Download auto plugin from artifacts.go
+        if: env.AUTO_SHA256 != ''
+        run: worker/scripts/agent-worker/blobs.sh auto "$RUNNER_TEMP/auto-claude.zip" "$AUTO_SHA256"
+
       - name: Azure logout
         if: always()
         run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
@@ -141,9 +154,29 @@ jobs:
         continue-on-error: true
         run: command -v swiftlint > /dev/null || brew install swiftlint > /dev/null
 
+      # Unpacked outside the checkout and the agent's writable paths, so it can run auto's scripts but not change
+      # them. Its npm packages are installed here, without install scripts, since the agent has no network
+      - name: Set up auto plugin
+        if: env.AUTO_SHA256 != ''
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: |
+          set -euo pipefail
+          node_major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+          [[ "$node_major" -ge 24 ]] || brew install node > /dev/null
+          auto="$RUNNER_TEMP/auto"
+          mkdir -p "$auto" "$RUNNER_TEMP/worktrees"
+          unzip -q "$RUNNER_TEMP/auto-claude.zip" -d "$auto"
+          for d in skills/auto/scripts skills/show-me-your-work/scripts; do
+            (cd "$auto/$d" && npm ci --ignore-scripts --omit=dev --no-audit --no-fund > /dev/null)
+          done
+          echo "AUTO_DIR=$auto" >> "$GITHUB_ENV"
+          echo "auto $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$auto/.claude-plugin/plugin.json") ready"
+
       - name: Write prompt
         run: |
-          python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" > "$RUNNER_TEMP/prompt.md"
+          python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" \
+            ${AUTO_DIR:+"$RUNNER_TEMP/worktrees"} > "$RUNNER_TEMP/prompt.md"
 
       - name: Install Claude Code
         run: |
@@ -164,7 +197,9 @@ jobs:
 
       # Besides file tools, the agent can run xc (build, test, lint) and read-only git, so it can check its
       # change and fix it as it goes. Building and testing runs code the agent wrote, which is why the worker
-      # runs from the agent-worker branch (Security Triage MM1) and holds no Azure login while the agent runs
+      # runs from the agent-worker branch (Security Triage MM1) and holds no Azure login while the agent runs.
+      # With auto, the agent also gets subagents, local git commits and worktrees, and auto's local scripts.
+      # Anything that needs a token or network (PRs, evidence upload, other models, reflect) stays denied
       - name: Run coding agent
         working-directory: target
         env:
@@ -175,17 +210,45 @@ jobs:
           mkdir -p "$RUNNER_TEMP/evidence" "$RUNNER_TEMP/bin"
           ln -sf "$GITHUB_WORKSPACE/worker/scripts/agent-worker/xc.sh" "$RUNNER_TEMP/bin/xc"
           git_ro="Bash(git log:*),Bash(git show:*),Bash(git blame:*),Bash(git diff:*),Bash(git status:*),Bash(git grep:*),Bash(git ls-files:*)"
+          allow="Read,Glob,Grep,Edit(./**),Write(./**),Bash(xc:*),$git_ro"
+          deny="WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)"
+          plugin=()
+          if [[ -n "${AUTO_DIR:-}" ]]; then
+            A=$AUTO_DIR W=$RUNNER_TEMP/worktrees
+            allow+=",Agent,TodoWrite,Edit(/$W/**),Write(/$W/**),Write(~/.auto/**)"
+            allow+=",Bash(git worktree add $W/:*),Bash(git worktree list:*),Bash(git worktree remove:*)"
+            allow+=",Bash(git add:*),Bash(git commit:*),Bash(git cherry-pick:*),Bash(git rev-parse:*),Bash(git merge-base:*)"
+            for s in auto/scripts/resolve-models auto/scripts/check-plan auto/scripts/check-pr-body \
+              show-me-your-work/scripts/log show-me-your-work/scripts/snapshot show-me-your-work/scripts/new-evidence; do
+              allow+=",Bash(node $A/skills/$s.ts:*)"
+            done
+            allow+=",Bash(node $A/scripts/installation.ts verify:*),Bash(.claude/skills/verify-ios/bin/verify-ios:*)"
+            # The checkout's .claude and .git hold scripts the agent runs, so it can't change them
+            deny+=",Edit(./.claude/**),Write(./.claude/**),Edit(./.git/**),Write(./.git/**)"
+            deny+=",Bash(gh:*),Bash(git push:*),Bash(claude:*),Bash(codex:*)"
+            for s in auto/scripts/publish-pr auto/scripts/watch-pr auto/scripts/merge-strategy auto/scripts/pstack-runner \
+              show-me-your-work/scripts/upload-evidence show-me-your-work/scripts/evidence-url \
+              show-me-your-work/scripts/resolve-decision-log reflect/scripts/issue; do
+              deny+=",Bash(node $A/skills/$s.ts:*)"
+            done
+            plugin=(--plugin-dir "$A")
+          fi
+          echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           rc=0
           env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u SSH_AUTH_SOCK \
             PATH="$RUNNER_TEMP/bin:$PATH" PACKAGES="$RUNNER_TEMP/packages" \
             XC_DERIVED="$RUNNER_TEMP/derived" XC_LOGS="$RUNNER_TEMP/xc-logs" \
             BASH_DEFAULT_TIMEOUT_MS=2700000 BASH_MAX_TIMEOUT_MS=2700000 \
-            claude -p "$(cat "$RUNNER_TEMP/prompt.md")" \
+            GIT_AUTHOR_NAME="Apple Agent" GIT_AUTHOR_EMAIL="agent@localhost" \
+            GIT_COMMITTER_NAME="Apple Agent" GIT_COMMITTER_EMAIL="agent@localhost" \
+            claude -p "$(cat "$RUNNER_TEMP/prompt.md")" ${plugin[@]+"${plugin[@]}"} \
               --permission-mode dontAsk \
-              --allowedTools "Read,Glob,Grep,Edit(./**),Write(./**),Bash(xc:*),$git_ro" \
-              --disallowedTools "WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)" \
+              --allowedTools "$allow" \
+              --disallowedTools "$deny" \
               --model opus --max-turns 150 --max-budget-usd 30 --output-format json \
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
+          # auto's local decision log and snapshots go with the evidence
+          if [[ -d "$HOME/.auto" ]]; then cp -R "$HOME/.auto" "$RUNNER_TEMP/evidence/auto" || true; fi
           python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/summary_md.py" \
             "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence" "$rc" || true
           echo "rc=$rc" >> "$GITHUB_ENV"

@@ -601,7 +601,33 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     }
 }
 
-private class WebView: WKWebView {
+/// A broker page that can stop taking the user's clicks, scrolling and typing while its actions are automated.
+public protocol UserInputIgnoring: AnyObject {
+    var ignoresUserInput: Bool { get set }
+}
+
+private class WebView: WKWebView, UserInputIgnoring {
+    var ignoresUserInput = false {
+        didSet {
+#if os(macOS)
+            guard responds(to: Selector.setIgnoresAllEvents),
+                  let method = class_getInstanceMethod(object_getClass(self), Selector.setIgnoresAllEvents) else {
+                assertionFailure("WKWebView does not respond to selector _setIgnoresAllEvents:")
+                return
+            }
+            let imp = method_getImplementation(method)
+            typealias SetIgnoresAllEventsType = @convention(c) (WKWebView, ObjectiveC.Selector, ObjCBool) -> Void
+            let setIgnoresAllEvents = unsafeBitCast(imp, to: SetIgnoresAllEventsType.self)
+            setIgnoresAllEvents(self, Selector.setIgnoresAllEvents, ObjCBool(ignoresUserInput))
+#endif
+        }
+    }
+
+#if os(macOS)
+    private enum Selector {
+        static let setIgnoresAllEvents = NSSelectorFromString("_setIgnoresAllEvents:")
+    }
+#endif
 
     deinit {
         configuration.userContentController.removeAllUserScripts()

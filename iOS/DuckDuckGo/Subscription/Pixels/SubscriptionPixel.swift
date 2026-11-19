@@ -50,7 +50,8 @@ enum SubscriptionPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
         switch self {
-        case .subscriptionCancellationCancelClick,
+        case .subscriptionOnboardingStepClosed,
+                .subscriptionCancellationCancelClick,
                 .subscriptionCancellationAppStoreCancelled,
                 .subscriptionCancellationFlowLoadFailure,
                 .subscriptionCancellationFeatureInfoFailure,
@@ -93,6 +94,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionOnboardingStepShown(step: String, entryPoint: String)
     case subscriptionOnboardingStepCompleted(step: String, entryPoint: String)
     case subscriptionOnboardingStepSkipped(step: String, entryPoint: String)
+    case subscriptionOnboardingStepClosed(step: String, entryPoint: String)
     case subscriptionOnboardingConnectionInfoFailure(Error)
     case subscriptionOnboardingAIModelsFailure(Error)
     case subscriptionOnboardingSubscriptionFailure(Error)
@@ -137,6 +139,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionOnboardingStepShown(let step, _): return "subscription_onboarding_step_shown_\(step)"
         case .subscriptionOnboardingStepCompleted(let step, _): return "subscription_onboarding_step_completed_\(step)"
         case .subscriptionOnboardingStepSkipped(let step, _): return "subscription_onboarding_step_skipped_\(step)"
+        case .subscriptionOnboardingStepClosed(let step, _): return "subscription_onboarding_step_closed_\(step)"
         case .subscriptionOnboardingConnectionInfoFailure: return "subscription_onboarding_connection-info_failure"
         case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
         case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
@@ -196,7 +199,8 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
         case .subscriptionOnboardingStepShown(_, let entryPoint),
                 .subscriptionOnboardingStepCompleted(_, let entryPoint),
-                .subscriptionOnboardingStepSkipped(_, let entryPoint):
+                .subscriptionOnboardingStepSkipped(_, let entryPoint),
+                .subscriptionOnboardingStepClosed(_, let entryPoint):
             return [SubscriptionPixelsDefaults.entryPointKey: entryPoint]
         case .subscriptionOnboardingLaunchFailure(let reason):
             return [SubscriptionPixelsDefaults.reasonKey: reason.rawValue]
@@ -234,6 +238,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionOnboardingStepShown,
                 .subscriptionOnboardingStepCompleted,
                 .subscriptionOnboardingStepSkipped,
+                .subscriptionOnboardingStepClosed,
                 .subscriptionOnboardingConnectionInfoFailure,
                 .subscriptionOnboardingAIModelsFailure,
                 .subscriptionOnboardingSubscriptionFailure,

@@ -503,27 +503,6 @@ public final class SitePermissionsCoordinator {
         }
     }
 
-    /// Discards media requests on feature rollback while preserving geolocation in existing documents.
-    /// The caller resolves media bridge replies first; presentation dismissal precedes the next queued prompt.
-    public func resetMediaPermissions(dismissPresentation: () -> Void) {
-        let permissionTypes: Set<SitePermissionType> = [.camera, .microphone]
-        clearManagementSessionState(for: permissionTypes)
-        for site in fireModeManagementOverrides.keys {
-            for permissionType in permissionTypes {
-                fireModeManagementOverrides[site]?[permissionType] = nil
-            }
-        }
-        for site in fireModeRemovedPermissionTypes.keys {
-            fireModeRemovedPermissionTypes[site]?.subtract(permissionTypes)
-        }
-        queuedRequests.removeAll { !$0.request.permissionTypes.isDisjoint(with: permissionTypes) }
-        if let activeRequest, !activeRequest.request.permissionTypes.isDisjoint(with: permissionTypes) {
-            self.activeRequest = nil
-            dismissPresentation()
-        }
-        processNextRequestIfNeeded()
-    }
-
     public func pageDidChange(_ change: SitePermissionPageChange) {
         guard change != .sameDocumentNavigation else { return }
         resetPageState()

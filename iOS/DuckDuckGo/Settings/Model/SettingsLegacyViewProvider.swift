@@ -33,6 +33,7 @@ import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
 import PixelKit
+import WebPageTranslation
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -66,6 +67,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
     let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+    let translationModels: TranslationModels?
     let daxGreetingDebugging: DaxGreetingDebugging
 
     init(syncService: any DDGSyncing,
@@ -93,7 +95,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
          promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
-         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
+         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil,
+         translationModels: TranslationModels? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -119,6 +122,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
         self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
+        self.translationModels = translationModels
         self.daxGreetingDebugging = daxGreetingDebugging
     }
     
@@ -175,6 +179,7 @@ class SettingsLegacyViewProvider: ObservableObject {
             aiChatBonusMessageLog: self.aiChatBonusMessageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
             promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter,
+            translationModels: self.translationModels,
             daxGreetingDebugging: self.daxGreetingDebugging))
     }
 

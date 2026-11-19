@@ -11,6 +11,7 @@
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		0238E44F29C0FAA100615E30 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */; };
 		0CEF7424DF47598D800EB920 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3E0D167D2CFCE3C99849696D /* WideEvent */; };
+		1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 028550FF94FC586352ECCAB2 /* UITestingSupport */; };
 		1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B622995143200C96994 /* OHHTTPStubs */; };
 		1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B642995143200C96994 /* OHHTTPStubsSwift */; };
 		1EC8B18A2F29145C00F18679 /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1EC8B1892F29145C00F18679 /* WebExtensions */; };
@@ -33,7 +34,6 @@
 		4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */; };
 		4BABF9183022746600B46B44 /* AppRouting in Frameworks */ = {isa = PBXBuildFile; productRef = 4BABF9173022746600B46B44 /* AppRouting */; };
 		4BACF9183022746600B46B44 /* InstallStatistics in Frameworks */ = {isa = PBXBuildFile; productRef = 4BACF9173022746600B46B44 /* InstallStatistics */; };
-		F4C6591E1F5742B1AD32F0F9 /* WebPageTranslation in Frameworks */ = {isa = PBXBuildFile; productRef = 035793DAC86B92641C063120 /* WebPageTranslation */; };
 		4BB88F3F2E5D701200DE539A /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKit */; };
 		4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8622E174D5400391C19 /* DesignResourcesKit */; };
 		4BC5E8652E174D5C00391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8642E174D5C00391C19 /* DesignResourcesKit */; };
@@ -204,12 +204,12 @@
 		F143C2EC1E4A4CD400CFDE3A /* Core.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F19B98662EAFA799000FF209 /* AttributedMetric */; };
 		F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */; };
-		1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 028550FF94FC586352ECCAB2 /* UITestingSupport */; };
 		F486D31D2506980E002D07D7 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F486D31C2506980E002D07D7 /* Swifter */; };
 		9C37B55E8694CE00EAC8DF25 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = 005EA9165C9636A4E0BD4261 /* Swifter */; };
 		F486D33425069BBB002D07D7 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F486D33325069BBB002D07D7 /* Kingfisher */; };
 		F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3352506A037002D07D7 /* OHHTTPStubs */; };
 		F486D3382506A225002D07D7 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3372506A225002D07D7 /* OHHTTPStubsSwift */; };
+		F4C6591E1F5742B1AD32F0F9 /* WebPageTranslation in Frameworks */ = {isa = PBXBuildFile; productRef = 035793DAC86B92641C063120 /* WebPageTranslation */; };
 		F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */; };
 		FA57C0DE000000000000000F /* HangMetrics in Frameworks */ = {isa = PBXBuildFile; productRef = FA57C0DE000000000000000E /* HangMetrics */; };
 		FCFC00031F00000000010001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000010001 /* DDGError */; };
@@ -381,7 +381,6 @@
 		4B94B79C2D4831700014AAB8 /* SyncUI-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "SyncUI-iOS"; sourceTree = "<group>"; };
 		4BABF9153022746600B46B44 /* AppRouting */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppRouting; sourceTree = "<group>"; };
 		4BACF9153022746600B46B44 /* InstallStatistics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = InstallStatistics; sourceTree = "<group>"; };
-		9C2F5F83DCD732162704F7FC /* WebPageTranslation */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = WebPageTranslation; sourceTree = "<group>"; };
 		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
 		4BC991252F0F4EF1001F6575 /* Configuration-Experimental.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Configuration-Experimental.xcconfig"; path = "Configuration/Configuration-Experimental.xcconfig"; sourceTree = "<group>"; };
 		4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
@@ -409,6 +408,7 @@
 		98424AA92CED4F430071C7DB /* WebViewUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebViewUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		98A54A8122AFCB2C00E541F4 /* Instruments.instrdst */ = {isa = PBXFileReference; explicitFileType = com.apple.instruments.instrdst; includeInIndex = 0; path = Instruments.instrdst; sourceTree = BUILT_PRODUCTS_DIR; };
 		98E5643E2DE8DDA200E6E75F /* SharedStateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharedStateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C2F5F83DCD732162704F7FC /* WebPageTranslation */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = WebPageTranslation; sourceTree = "<group>"; };
 		9D6891E52DAD25B600819662 /* DataBrokerProtection-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DataBrokerProtection-iOS"; sourceTree = "<group>"; };
 		9D87088B2DAD5075007E22D4 /* DataBrokerProtectionCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionCore; path = ../../SharedPackages/DataBrokerProtectionCore; sourceTree = "<group>"; };
 		9F0727862E2F2439005894C8 /* SystemSettingsPiPTutorial */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemSettingsPiPTutorial; sourceTree = "<group>"; };
@@ -655,8 +655,8 @@
 		FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"UI Tests.xctestplan",
 				"iPad UI Tests.xctestplan",
+				"UI Tests.xctestplan",
 			);
 			target = 23215268B3D7426DA0FAC923 /* UI Tests */;
 		};
@@ -4861,6 +4861,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		00BE6117434BE2FEC5F71246 /* XCLocalSwiftPackageReference "LocalPackages/WebPageTranslation" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/WebPageTranslation;
+		};
 		315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
@@ -4872,10 +4876,6 @@
 		4BACF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/InstallStatistics" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/InstallStatistics;
-		};
-		00BE6117434BE2FEC5F71246 /* XCLocalSwiftPackageReference "LocalPackages/WebPageTranslation" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = LocalPackages/WebPageTranslation;
 		};
 		7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -5049,6 +5049,15 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */;
 			productName = FindInPageIOSJSSupport;
+		};
+		028550FF94FC586352ECCAB2 /* UITestingSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */;
+			productName = UITestingSupport;
+		};
+		035793DAC86B92641C063120 /* WebPageTranslation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebPageTranslation;
 		};
 		07CAD3291BFA44269AD3CA0F /* SitePermissions */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -5602,10 +5611,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = SitePermissions;
 		};
-		035793DAC86B92641C063120 /* WebPageTranslation */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = WebPageTranslation;
-		};
 		B23B8E33A62743D0AD136A57 /* UIComponents */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = UIComponents;
@@ -5735,11 +5740,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */;
 			productName = BareBonesBrowserKit;
-		};
-		028550FF94FC586352ECCAB2 /* UITestingSupport */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */;
-			productName = UITestingSupport;
 		};
 		F486D31C2506980E002D07D7 /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;

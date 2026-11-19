@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0322CFF4BD0A08EC26D3DFD7 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = E59994348B609380F6349489 /* WideEvent */; };
+		04CF7A0DE37F204EE912B270 /* WebExtensionsTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = E6A0F47EFD7E0E7B21606696 /* WebExtensionsTestSupport */; };
 		08355A13D28C7D20D863D8DE /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 052E3BE94C5927500125A19C /* AIChatDebugServer */; };
 		0A13924A522BDE2329EAE4C4 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = E2E9392DAE76D4A028C3D79E /* WideEvent */; };
 		0B4522CBE78E3ACA916DF169 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 02CEB1343E11D5F92293C1F5 /* WideEvent */; };
@@ -22,6 +23,7 @@
 		1E7D3C302F2232620099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C2F2F2232620099611C /* WebExtensions */; };
 		1E7D3C322F2232690099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C312F2232690099611C /* WebExtensions */; };
 		1EA7B8D32B7E078C000330A4 /* SubscriptionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1EA7B8D22B7E078C000330A4 /* SubscriptionUI */; };
+		233101AEAA1CEE34AA841FD9 /* WebExtensionsTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = C9B3BF2C0FDEE22288261E72 /* WebExtensionsTestSupport */; };
 		23F31642A4C5168A6538E6FD /* EventHub in Frameworks */ = {isa = PBXBuildFile; productRef = F07A89FE5A0959D49AF0E27F /* EventHub */; };
 		315E395F2F86A37000D2289D /* DebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 315E395E2F86A37000D2289D /* DebugServer */; };
 		316AC7892DC28DDA003D9770 /* UIComponents in Frameworks */ = {isa = PBXBuildFile; productRef = 316AC7882DC28DDA003D9770 /* UIComponents */; };
@@ -1178,6 +1180,7 @@
 				845F570B2E97BFF900C7F78A /* SharedTestUtilities in Frameworks */,
 				84B49F0D2CB10F0900FF08BB /* OHHTTPStubs in Frameworks */,
 				37EACB142EF53F62002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
+				233101AEAA1CEE34AA841FD9 /* WebExtensionsTestSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1220,6 +1223,7 @@
 				845F57032E97BFE600C7F78A /* SharedTestUtilities in Frameworks */,
 				B6AE39F529374AEC00C37AA4 /* OHHTTPStubsSwift in Frameworks */,
 				37EACB102EF53F4C002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
+				04CF7A0DE37F204EE912B270 /* WebExtensionsTestSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1880,6 +1884,7 @@
 				CC55B23C2E82BF4D0032E8BD /* BrowserServicesKitTestsUtils */,
 				9F33033B2E8E606400D6F0C9 /* RemoteMessagingTestsUtils */,
 				37EACB132EF53F62002C06F9 /* PrivacyConfigTestsUtils */,
+				C9B3BF2C0FDEE22288261E72 /* WebExtensionsTestSupport */,
 			);
 			productName = "Integration Tests";
 			productReference = 3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */;
@@ -1970,6 +1975,7 @@
 				CC55B23A2E82BF430032E8BD /* BrowserServicesKitTestsUtils */,
 				9F0F46A12E865BEC00A9FC4D /* RemoteMessagingTestsUtils */,
 				37EACB0F2EF53F4C002C06F9 /* PrivacyConfigTestsUtils */,
+				E6A0F47EFD7E0E7B21606696 /* WebExtensionsTestSupport */,
 			);
 			productName = "Integration Tests";
 			productReference = 4B1AD89D25FC27E200261379 /* Integration Tests.xctest */;
@@ -6051,6 +6057,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Freemium;
 		};
+		C9B3BF2C0FDEE22288261E72 /* WebExtensionsTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebExtensionsTestSupport;
+		};
 		CA57AD4FC8F1853F05E21997 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WideEvent;
@@ -6130,6 +6140,10 @@
 		E59994348B609380F6349489 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WideEvent;
+		};
+		E6A0F47EFD7E0E7B21606696 /* WebExtensionsTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebExtensionsTestSupport;
 		};
 		EC2E83ED38F4FAB06EE3D557 /* EventHub */ = {
 			isa = XCSwiftPackageProductDependency;

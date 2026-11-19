@@ -693,6 +693,10 @@ public enum FeatureFlag: String {
     /// On-device web page translation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
     case webPageTranslation
+
+    /// Runs lighter AutoConsent, Autofill and Content Scope Scripts builds in blank frames to reduce memory use.
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1220371333669061
+    case blankFrameOptimizations
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1187,6 +1191,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         case .webPageTranslation:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
+        case .blankFrameOptimizations:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankFrameOptimizations))
         }
     }
 

@@ -194,4 +194,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
     case webPageTranslation
+
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1220371333669061
+    case blankFrameOptimizations
 }

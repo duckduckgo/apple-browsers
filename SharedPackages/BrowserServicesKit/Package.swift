@@ -49,7 +49,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../WideEvent"),
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", revision: "7b1ff4c64b7b52d9258be320e563420b75b4968f"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", revision: "66775a14f4872598a21fcc09b00ba4ece5fa6fbf"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.11.0"),

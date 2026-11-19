@@ -267,7 +267,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         scrollView.setContentOffset(clampedContentOffset(savedOffset), animated: false)
     }
 
-    /// The offset moved into the scrollable range, so a rubber band overscroll has no distance left to travel.
+    /// The offset moved into the scrollable range.
     private func clampedContentOffset(_ offset: CGPoint) -> CGPoint {
         let minimumY = -scrollView.adjustedContentInset.top
         let maximumY = max(minimumY, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
@@ -318,7 +318,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
-        // With the sticky input the button scrolls away with the content instead of floating above it.
         let customizeButtonHost: UIView = isStickyInputEnabled ? scrollView : contentContainerView
         let customizeButtonTopAnchor = isStickyInputEnabled
             ? scrollView.contentLayoutGuide.topAnchor
@@ -370,15 +369,12 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
-        // The pinned input must draw above the blocks that scroll beneath it.
         if isStickyInputEnabled, let searchInputView {
             blocksStackView.bringSubviewToFront(searchInputView)
         }
     }
 
-    /// Keeps the search input just below the top of the visible page once scrolling would carry it offscreen.
-    /// It keeps following the viewport while the input is focused, because a viewport change during focus,
-    /// such as the bottom inset shrinking, moves the content and would strand the page's input away from the focused card.
+    /// Keeps the search input just below the top of the visible page once scrolling would carry it offscreen, including while it is focused.
     private func updateStickySearchInput() {
         guard isStickyInputEnabled, let searchInputView else { return }
         // Center and bounds ignore the pinning transform, so they give the resting position.
@@ -602,17 +598,16 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     /// The bottom safe area, such as the floating toolbar's, kept from shrinking below its pre-focus value while the input is focused.
-    /// A shrinking inset clamps the scroll offset and makes the page jump, while a growing one, such as a bottom input reserving space, must apply.
     private var scrollBottomSafeAreaInset: CGFloat {
         guard isStickyInputEnabled else { return 0 }
         if let inputEditingLayout, inputEditingLayout.isGeometryValid {
+            // A shrinking inset clamps the scroll offset and makes the page jump, while a growing one must apply.
             return max(inputEditingLayout.bottomSafeAreaInset, view.safeAreaInsets.bottom)
         }
         return view.safeAreaInsets.bottom
     }
 
     /// While the input is focused the page cannot scroll back past where the modules sit right under the focused card.
-    /// A page scrolled to pin the input would otherwise leave a gap above the first module at the top.
     private var editingTopContentInset: CGFloat {
         guard isStickyInputEnabled, let inputEditingLayout, inputEditingLayout.isGeometryValid else { return 0 }
         return -inputEditingLayout.scrolledInputDistance
@@ -637,7 +632,6 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         super.viewSafeAreaInsetsDidChange()
         applyScrollInsets()
     }
-
 
     private var focusedModuleViews: [UIView] {
         blocks.filter { Self.focusedModuleIDs.contains($0.id) }.compactMap { $0.viewController.view }
@@ -717,7 +711,6 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
             setFocusedPose(nil)
             inputEditingLayout = nil
             applyScrollInsets()
-            // With the sticky input the page keeps the position the user scrolled to while focused.
             restoreScrollPosition(savedLayout.isGeometryValid && !isStickyInputEnabled ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1

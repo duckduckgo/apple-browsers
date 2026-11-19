@@ -525,7 +525,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         AutofillEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             isAnyCategoryEmptyProvider: {
                 guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
                 return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0

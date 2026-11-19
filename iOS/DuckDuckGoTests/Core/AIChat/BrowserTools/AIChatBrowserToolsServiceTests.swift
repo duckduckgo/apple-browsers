@@ -130,7 +130,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
             let result = await fixture.service.invoke(try request(), from: session)
 
             XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
-            XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+            XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
             XCTAssertEqual(fixture.listings, 0)
         }
     }

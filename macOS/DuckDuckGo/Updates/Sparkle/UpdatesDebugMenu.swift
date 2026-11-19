@@ -267,7 +267,7 @@ final class UpdatesDebugMenu: NSMenu {
             alert.messageText = "Set metadata server URL:"
             alert.informativeText = errorMessage ?? "Enter a base URL. The app adds release_metadata.json to this URL."
 
-            if alert.runModal() == .cancel {
+            if alert.runModal() != .alertFirstButtonReturn {
                 return
             }
             guard let textField = alert.accessoryView as? NSTextField else {
@@ -937,6 +937,11 @@ private enum AppStoreTestingResources {
             return {"scenario": copy.deepcopy(self.server.scenario), "requests": list(self.server.requests)}
 
         def do_GET(self):
+            if self.headers.get("Host", "").lower() not in (
+                f"{host}:{self.server.server_port}" for host in ("localhost", "127.0.0.1", "[::1]")
+            ):
+                self.reply(403, {"error": "Use a loopback host on the server's port."})
+                return
             path = self.path.split("?", 1)[0]
             if path == "/":
                 self.reply(200, PANEL, "text/html")
@@ -971,6 +976,11 @@ private enum AppStoreTestingResources {
                 self.reply(404, {"error": "Not found"})
 
         def do_POST(self):
+            if self.headers.get("Host", "").lower() not in (
+                f"{host}:{self.server.server_port}" for host in ("localhost", "127.0.0.1", "[::1]")
+            ):
+                self.reply(403, {"error": "Use a loopback host on the server's port."})
+                return
             # A page on another origin must not be able to change the local offer.
             origin = self.headers.get("Origin")
             if origin and origin not in ("http://" + self.headers.get("Host", ""), "https://" + self.headers.get("Host", "")):
@@ -1053,6 +1063,36 @@ private enum AppStoreTestingResources {
                                              capture_output=True, text=True, timeout=5)
                     self.assertNotEqual(invalid.returncode, 0)
                     self.assertIn("Build must be", invalid.stderr)
+
+            def test_loopback_hosts(self):
+                server = MetadataServer(0, initial_scenario("1.216.0", 872))
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                base = f"http://127.0.0.1:{server.server_port}"
+                initial = copy.deepcopy(server.scenario)
+                try:
+                    for host in ("localhost", "127.0.0.1", "[::1]"):
+                        authority = f"{host}:{server.server_port}"
+                        headers = {"Host": authority, "Origin": f"http://{authority}"}
+                        for route, data in (("/api/state", None), ("/api/scenario", json.dumps(initial).encode())):
+                            with self.subTest(host=host, route=route):
+                                with urlopen(Request(base + route, data=data, headers=headers), timeout=5) as response:
+                                    self.assertEqual(response.status, 200)
+                    for authority in (f"evil.example:{server.server_port}", f"localhost:{server.server_port + 1}", "localhost", ""):
+                        headers = {"Host": authority, "Origin": f"http://{authority}"}
+                        for route, data in (("/", None), ("/api/state", None), ("/release_metadata.json", None),
+                                            ("/api/scenario", json.dumps(initial).encode()), ("/api/reset", b"{}"),
+                                            ("/unknown", None), ("/unknown", b"{}")):
+                            with self.subTest(host=authority, route=route, method="GET" if data is None else "POST"):
+                                with self.assertRaises(HTTPError) as raised:
+                                    urlopen(Request(base + route, data=data, headers=headers), timeout=5)
+                                self.assertEqual(raised.exception.code, 403)
+                    self.assertEqual(server.scenario, initial)
+                    self.assertEqual(server.requests, [])
+                finally:
+                    server.shutdown()
+                    thread.join(timeout=5)
+                    server.server_close()
 
             def test_http_contract(self):
                 self.assertEqual(startup_scenario("1", 0)["installed_version"], "1")

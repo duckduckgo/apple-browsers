@@ -61,7 +61,7 @@ final class UpdatePromptStageDebugMenu: NSMenu {
             NSMenuItem.separator()
             NSMenuItem(title: "Third Prompt", action: #selector(movePromptClockToStage), representedObject: UpdatePromptStage.thirdPrompt)
                 .targetting(self)
-            NSMenuItem(title: "1 Minute Before Third Prompt", action: #selector(movePromptClockToMinuteBeforeStage), representedObject: UpdatePromptStage.thirdPrompt)
+            NSMenuItem(title: "10 Seconds Before Third Prompt", action: #selector(movePromptClockToTenSecondsBeforeStage), representedObject: UpdatePromptStage.thirdPrompt)
                 .targetting(self)
         }
 

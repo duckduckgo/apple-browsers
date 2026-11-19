@@ -3540,6 +3540,7 @@ class MainViewController: UIViewController {
             tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
         }
 
+        currentTab?.browserToolsWillLeaveScreen()
         currentTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         dismissOmniBar()
         resetUnifiedToggleInputForTabTransition(to: tab)
@@ -3563,6 +3564,7 @@ class MainViewController: UIViewController {
         guard let tab else { return }
         // Re-selecting the current tab keeps its sidebar chat open.
         if previousTab !== tab {
+            previousTab?.browserToolsWillLeaveScreen()
             previousTab?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         }
         previousTab?.tabModel.openedAfterIdle = false
@@ -3630,6 +3632,7 @@ class MainViewController: UIViewController {
             tab.webView.underPageBackgroundColor = color
         }
         addToContentContainer(controller: tab)
+        tab.browserToolsDidBecomeActive()
 
         viewCoordinator.logoContainer.isHidden = true
 
@@ -8334,6 +8337,7 @@ extension MainViewController: TabDelegate {
     }
 
     private func leaveForPageRequestedTab(opener: TabViewController?) {
+        opener?.browserToolsWillLeaveScreen()
         opener?.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
         themeColorManager.updateThemeColor()
     }
@@ -8582,6 +8586,7 @@ extension MainViewController: TabDelegate {
         }
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
+        tab.browserToolsWillLeaveScreen()
         tab.aiChatContextualSheetCoordinator.tabWillLeaveScreen()
 
         // The new tab carries a URL, so no New Tab Page attaches to supersede the visit and nothing

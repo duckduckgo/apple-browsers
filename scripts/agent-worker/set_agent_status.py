@@ -3,13 +3,14 @@
 
 Every status change comes with a comment saying what happened and what a person should do next.
 When the run ends:
-- PR open with the PR link
+- PR open with the PR links (a stack lists each), plus any problems the publish audit or tool report found
 - Needs attention otherwise, with what to look at and how to try again
 
 Env: ASANA_APP_CLIENT_ID, ASANA_APP_CLIENT_SECRET, ASANA_APP_REFRESH_TOKEN, TASK_GID, RUN_URL,
 EVIDENCE_URL, DECISION_LOG_URL (auto's, when it kept one), STATUS_FIELD (Agent Status field gid), STATUS_OPTIONS
-(JSON map of status to option gid), and at the end AGENT and PUBLISH (job results), CANCELLED, BUILD_OK, FAILURE
-and PR_URL
+(JSON map of status to option gid), and at the end AGENT and PUBLISH (job results), CANCELLED, BUILD_OK, FAILURE,
+PR_URL (from publish, without auto), and with auto PR_URLS (the agent's own PRs, bottom of the stack first),
+AUDIT_FLAGS and TOOL_ISSUES (counts), and AUTO
 """
 
 import html
@@ -66,28 +67,75 @@ def failure(e):
     return None
 
 
+PR = re.compile(r"https://github\.com/[^\s/]+/[^\s/]+/pull/[0-9]+")
+
+
+def prs(e):
+    """The PRs this run opened: the agent's own with auto, or the one publish opened"""
+    if e.get("AUTO") == "true":
+        return [u for u in e.get("PR_URLS", "").split() if PR.fullmatch(u)]
+    return [e["PR_URL"]] if e.get("PUBLISH") == "success" and PR.fullmatch(e.get("PR_URL", "")) else []
+
+
+def count(e, key):
+    try:
+        return int(e.get(key) or 0)
+    except ValueError:
+        return 0
+
+
+def warnings(e):
+    """List items for problems to look at first: what went public, and denied or failed tool calls"""
+    ev, items = e.get("EVIDENCE_URL", "").rstrip("/"), []
+    flags, issues = count(e, "AUDIT_FLAGS"), count(e, "TOOL_ISSUES")
+    page = lambda name, text: a(f"{ev}/{name}", text) if ev else text
+    if flags:
+        items.append(f"<li>⚠️ The worker found {flags} problem(s) in what the agent published. Open the "
+                     f"{page('pr-audit.md', 'publish check')} first, and close the PR if anything sensitive went public.</li>")
+    if issues:
+        items.append(f"<li>{issues} tool call(s) were denied or failed. The {page('tool-report.md', 'tool report')} "
+                     "says how to fix each.</li>")
+    return "".join(items)
+
+
 def outcome(e):
     """The end status and its comment"""
     run = a(e["RUN_URL"], "worker run")
-    if e["PUBLISH"] == "success" and re.fullmatch(r"https://github\.com/[^\s]+/pull/[0-9]+", e.get("PR_URL", "")):
+    opened = prs(e)
+    if opened:
         _, summary = evidence(e)
-        steps = f"<li>Review the PR. The agent's {summary} has the problem, the fix and its build and test results.</li>"
+        steps = warnings(e)
+        if len(opened) > 1:
+            steps += ("<li>It's a stack of " + str(len(opened)) + " PRs. Review them from the bottom: "
+                      + ", ".join(a(u, u) for u in opened) + ".</li>")
+        steps += f"<li>Review the PR. The agent's {summary} has the problem, the fix and its build and test results.</li>"
+        if e.get("AUTO") == "true" and e.get("BUILD_OK") != "true":
+            steps += (f"<li>The agent's last build or test run before the PR didn't pass ({esc(e.get('FAILURE') or 'no result')}), "
+                      "so check the PR checks closely.</li>")
+        if e.get("CANCELLED") == "true":
+            steps += f"<li>The {run} was cancelled or timed out, so the agent may not have finished babysitting the PR.</li>"
         if how(e):
             steps += f"<li>To see how the agent worked, open {how(e)}.</li>"
-        return "pr_open", (f"{REVIEW}<strong>The agent opened a PR ready for review:</strong> {a(e['PR_URL'], e['PR_URL'])}\n"
+        return "pr_open", (f"{REVIEW}<strong>The agent opened a PR ready for review:</strong> {a(opened[0], opened[0])}\n"
                            f"<ol>{steps}</ol></body>")
     if e.get("CANCELLED") == "true":
         return "needs_attention", (f"{ATTENTION}<strong>The worker run was cancelled.</strong>\n"
-                                   f"<ol><li>Open the {run} to see who cancelled it or why it timed out.</li>" + AGAIN + "</ol></body>")
+                                   f"<ol>{warnings(e)}<li>Open the {run} to see who cancelled it or why it timed out.</li>" + AGAIN + "</ol></body>")
     failed = failure(e)
     if failed:
         what, page = failed
         more = f" You can also open {how(e)}." if how(e) else ""
         return "needs_attention", (f"{ATTENTION}<strong>{esc(what)}.</strong>\n"
-                                   f"<ol><li>Open {page} and the {run} to see why.{more}</li>"
+                                   f"<ol>{warnings(e)}<li>Open {page} and the {run} to see why.{more}</li>"
                                    "<li>Fix the cause, or add what the agent needs as a comment.</li>" + AGAIN + "</ol></body>")
+    if e.get("AUTO") == "true":
+        _, summary = evidence(e)
+        more = f" You can also open {how(e)}." if how(e) else ""
+        return "needs_attention", (f"{ATTENTION}<strong>The agent didn't open a PR.</strong>\n"
+                                   f"<ol>{warnings(e)}<li>Open the agent's {summary} and the {run} to see why.{more}</li>"
+                                   + AGAIN + "</ol></body>")
     return "needs_attention", (f"{ATTENTION}<strong>The agent's change wasn't published.</strong> The publish step failed or was skipped.\n"
-                               f"<ol><li>Open the {run} to see why.</li>" + AGAIN + "</ol></body>")
+                               f"<ol>{warnings(e)}<li>Open the {run} to see why.</li>" + AGAIN + "</ol></body>")
 
 
 def access_token(e):

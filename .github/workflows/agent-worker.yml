@@ -1,7 +1,8 @@
 name: Agent worker
 
-# Agent worker: applies a plan from the apple-agent-orchestrator and opens a PR ready for review when the agent's last
-# build and test run passed
+# Agent worker: applies a plan from the apple-agent-orchestrator. With auto (the default), the agent opens its PR ready for
+# review and babysits it to merge-ready itself. Without auto, the publish job opens the PR when the agent's last build
+# and test run passed
 
 on:
   workflow_dispatch:
@@ -50,7 +51,8 @@ jobs:
   agent:
     runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
     environment: agent-worker
-    timeout-minutes: 180
+    # With auto, the run includes babysitting the PR through its CI, so it gets longer by default
+    timeout-minutes: ${{ fromJSON(vars.WORKER_TIMEOUT_MINUTES || '300') }}
     permissions:
       contents: read
       id-token: write
@@ -58,6 +60,9 @@ jobs:
       evidence_url: ${{ steps.evidence.outputs.url }}
       decision_log_url: ${{ steps.evidence.outputs.decision_log_url }}
       changed: ${{ steps.export.outputs.changed }}
+      pr_urls: ${{ steps.audit.outputs.pr_urls }}
+      audit_flags: ${{ steps.audit.outputs.flags }}
+      tool_issues: ${{ steps.tools.outputs.issues }}
       ok: ${{ steps.result.outputs.ok }}
       failure: ${{ steps.result.outputs.failure }}
     steps:
@@ -177,6 +182,8 @@ jobs:
           echo "auto $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$auto/.claude-plugin/plugin.json") ready"
 
       - name: Write prompt
+        env:
+          TASK_GID: ${{ inputs.task_gid }}
         run: |
           python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" \
             ${AUTO_DIR:+"$RUNNER_TEMP/worktrees"} > "$RUNNER_TEMP/prompt.md"
@@ -198,11 +205,25 @@ jobs:
           worker/scripts/agent-worker/anthropic_identity.sh "$RUNNER_TEMP/anthropic-identity"
           echo "identity-dir=$RUNNER_TEMP/anthropic-identity" >> "$GITHUB_OUTPUT"
 
+      # With auto, the agent opens and babysits its own PRs with a ddg-apple-agent-publish token, refreshed in the
+      # background since the run outlasts an app token. Ruleset 27679350 keeps the app to agent/** branches, and main's
+      # protection needs an approving review. Without auto, the agent gets no GitHub token and publish opens the PR
+      - name: GitHub token for the agent
+        if: env.AUTO_SHA256 != ''
+        env:
+          APP_CLIENT_ID: ${{ vars.AGENT_APP_CLIENT_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: |
+          command -v gh > /dev/null || brew install gh > /dev/null
+          worker/scripts/agent-worker/github_token.sh "$RUNNER_TEMP/gh"
+
       # Besides file tools, the agent can run xc (build, test, lint) and read-only git, so it can check its
       # change and fix it as it goes. Building and testing runs code the agent wrote, which is why the worker
       # runs from the agent-worker branch and holds no Azure login while the agent runs.
-      # With auto, the agent also gets subagents, local git commits and worktrees, and auto's local scripts.
-      # Anything that needs a token or network (PRs, evidence upload, other models, reflect) stays denied
+      # With auto, the agent also gets subagents, git branches, commits, worktrees and pushes, gh for its own PRs and
+      # their CI, and auto's PR, babysit and evidence scripts. Merging, approving, closing, workflows, secrets, Azure,
+      # evidence upload, other models, reflect and setup-auto stay denied
       - name: Run coding agent
         working-directory: target
         env:
@@ -220,35 +241,55 @@ jobs:
             A=$AUTO_DIR W=$RUNNER_TEMP/worktrees
             allow+=",Agent,TodoWrite,Edit(/$W/**),Write(/$W/**),Write(~/.auto/**)"
             allow+=",Bash(git worktree add $W/:*),Bash(git worktree list:*),Bash(git worktree remove:*)"
-            allow+=",Bash(git add:*),Bash(git commit:*),Bash(git cherry-pick:*),Bash(git rev-parse:*),Bash(git merge-base:*)"
-            for s in auto/scripts/resolve-models auto/scripts/check-plan auto/scripts/check-pr-body \
-              show-me-your-work/scripts/log show-me-your-work/scripts/snapshot show-me-your-work/scripts/new-evidence; do
+            for c in add commit cherry-pick rev-parse merge-base switch checkout branch rebase merge reset restore \
+              stash rm mv fetch pull push rev-list for-each-ref show-ref ls-remote; do
+              allow+=",Bash(git $c:*)"
+            done
+            for c in "pr view" "pr list" "pr diff" "pr checks" "pr create" "pr edit" "pr ready" "run view" "run list" \
+              "run rerun" api; do
+              allow+=",Bash(gh $c:*)"
+            done
+            for s in auto/scripts/resolve-models auto/scripts/check-pr-body auto/scripts/publish-pr auto/scripts/watch-pr \
+              show-me-your-work/scripts/log show-me-your-work/scripts/snapshot show-me-your-work/scripts/new-evidence \
+              show-me-your-work/scripts/evidence-url show-me-your-work/scripts/resolve-decision-log; do
               allow+=",Bash(node $A/skills/$s.ts:*)"
             done
-            allow+=",Bash(node $A/scripts/installation.ts verify:*),Bash(.claude/skills/verify-ios/bin/verify-ios:*)"
+            allow+=",Bash(.claude/skills/verify-ios/bin/verify-ios:*)"
             # The checkout's .claude and .git hold scripts the agent runs, so it can't change them
-            deny+=",Edit(./.claude/**),Write(./.claude/**),Edit(./.git/**),Write(./.git/**)"
-            deny+=",Bash(gh:*),Bash(git push:*),Bash(claude:*),Bash(codex:*)"
-            for s in auto/scripts/publish-pr auto/scripts/watch-pr auto/scripts/merge-strategy auto/scripts/pstack-runner \
-              show-me-your-work/scripts/upload-evidence show-me-your-work/scripts/evidence-url \
-              show-me-your-work/scripts/resolve-decision-log reflect/scripts/issue; do
+            deny+=",Edit(./.claude/**),Write(./.claude/**),Edit(./.git/**),Write(./.git/**),Read(/$GH_TOKEN_DIR/**)"
+            deny+=",Bash(claude:*),Bash(codex:*),Bash(git config:*),Bash(git remote:*)"
+            for c in "pr merge" "pr close" "pr review" "pr comment" "auth" "secret" "variable" "workflow" "release" \
+              "repo" "gist" "issue" "ssh-key" "gpg-key" "extension" "codespace" "cache" "ruleset" "org"; do
+              deny+=",Bash(gh $c:*)"
+            done
+            for s in auto/scripts/merge-strategy auto/scripts/pstack-runner show-me-your-work/scripts/upload-evidence \
+              reflect/scripts/issue setup-auto/scripts/setup-config setup-auto/scripts/setup-deps \
+              setup-auto/scripts/setup-evidence setup-auto/scripts/setup-labels setup-auto/scripts/setup-run \
+              setup-auto/scripts/verify-models statechart/scripts/statechart statechart/scripts/supervisor \
+              statechart/scripts/worker; do
               deny+=",Bash(node $A/skills/$s.ts:*)"
             done
             plugin=(--plugin-dir "$A")
           fi
           echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "RUN_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+          # For the tool report, which explains denials against these lists
+          printf '%s' "$allow" > "$RUNNER_TEMP/evidence/allowed-tools.txt"
+          printf '%s' "$deny" > "$RUNNER_TEMP/evidence/denied-tools.txt"
+          name=${AGENT_GIT_NAME:-Apple Agent} email=${AGENT_GIT_EMAIL:-agent@localhost}
           rc=0
           env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u SSH_AUTH_SOCK \
-            PATH="$RUNNER_TEMP/bin:$PATH" PACKAGES="$RUNNER_TEMP/packages" \
+            PATH="${GH_TOKEN_DIR:+$GH_TOKEN_DIR/bin:}$RUNNER_TEMP/bin:$PATH" PACKAGES="$RUNNER_TEMP/packages" \
             XC_DERIVED="$RUNNER_TEMP/derived" XC_LOGS="$RUNNER_TEMP/xc-logs" \
             BASH_DEFAULT_TIMEOUT_MS=2700000 BASH_MAX_TIMEOUT_MS=2700000 \
-            GIT_AUTHOR_NAME="Apple Agent" GIT_AUTHOR_EMAIL="agent@localhost" \
-            GIT_COMMITTER_NAME="Apple Agent" GIT_COMMITTER_EMAIL="agent@localhost" \
+            GIT_AUTHOR_NAME="$name" GIT_AUTHOR_EMAIL="$email" GIT_COMMITTER_NAME="$name" GIT_COMMITTER_EMAIL="$email" \
+            GIT_TERMINAL_PROMPT=0 \
             claude -p "$(cat "$RUNNER_TEMP/prompt.md")" ${plugin[@]+"${plugin[@]}"} \
               --permission-mode dontAsk \
               --allowedTools "$allow" \
               --disallowedTools "$deny" \
-              --model opus --max-turns 150 --max-budget-usd 30 --output-format json \
+              --model opus --max-turns "${{ vars.WORKER_MAX_TURNS || 250 }}" \
+              --max-budget-usd "${{ vars.WORKER_MAX_BUDGET_USD || 50 }}" --output-format json \
               > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
           # The full session as Markdown, so reviewers can see how the agent worked and tune auto or the prompt
           python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/transcript_md.py" \
@@ -284,6 +325,32 @@ jobs:
           printf '\n## Build and tests\n\nFrom the last xc build and xc test the agent ran. Build: %s. Tests: %s.\n' \
             "${build:-not run}" "${tests:-not run}" >> "$RUNNER_TEMP/evidence/summary.md"
           { echo "ok=$([[ -z $failure ]] && echo true || echo false)"; echo "failure=$failure"; } | tee -a "$GITHUB_OUTPUT"
+
+      # Denied tool calls and failed GitHub, git and auto script calls, each with how to fix it, for the Asana comment
+      - name: Tool report
+        id: tools
+        if: always() && steps.anthropic.outcome == 'success'
+        run: |
+          python3 -I worker/scripts/agent-worker/tool_report.py \
+            "$RUNNER_TEMP/evidence/result.json" "$HOME/.claude/projects" "$RUNNER_TEMP/evidence" || echo "issues=" >> "$GITHUB_OUTPUT"
+
+      # With auto nobody reads the PR before it's public, so check what went out: links, attached images, .github/
+      # changes and copied instructions. Findings go in the Asana comment
+      - name: Check what the agent published
+        id: audit
+        if: always() && env.AUTO_SHA256 != '' && steps.anthropic.outcome == 'success'
+        env:
+          TASK_GID: ${{ inputs.task_gid }}
+        run: |
+          GH="$GH_TOKEN_DIR/bin/gh" \
+          LEAK_CORPUS="$GITHUB_WORKSPACE/worker/scripts/agent-worker/prompts:$AUTO_DIR" \
+            python3 -I worker/scripts/agent-worker/pr_audit.py "$RUNNER_TEMP/evidence" target/.github/PULL_REQUEST_TEMPLATE.md
+
+      - name: Stop the GitHub token refresher
+        if: always() && env.GH_TOKEN_DIR != ''
+        run: |
+          kill "$(cat "$GH_TOKEN_DIR/refresher.pid")" 2> /dev/null || true
+          rm -rf "$GH_TOKEN_DIR"
 
       - name: Azure login again (GitHub OIDC)
         if: always() && steps.anthropic.outcome == 'success'
@@ -321,11 +388,12 @@ jobs:
           echo "::error::claude exited with $rc"
           exit 1
 
-  # Opens the PR once the agent's last build and tests passed, with no approval step. The agent-publish environment
-  # holds the GitHub App key and must have no required reviewers. The patch comes from artifacts.go, never a public artifact
+  # Without auto, opens the PR once the agent's last build and tests passed, with no approval step. With auto the agent
+  # opens its own PRs, so this doesn't run. The agent-publish environment holds the GitHub App key and must have no
+  # required reviewers. The patch comes from artifacts.go, never a public artifact
   publish:
     needs: agent
-    if: needs.agent.outputs.changed == 'true' && needs.agent.outputs.ok == 'true'
+    if: inputs.auto_sha256 == '' && needs.agent.outputs.changed == 'true' && needs.agent.outputs.ok == 'true'
     runs-on: ubuntu-latest
     environment: agent-publish
     timeout-minutes: 10
@@ -442,5 +510,9 @@ jobs:
           DECISION_LOG_URL: ${{ needs.agent.outputs.decision_log_url }}
           PUBLISH: ${{ needs.publish.result }}
           PR_URL: ${{ needs.publish.outputs.pr_url }}
+          PR_URLS: ${{ needs.agent.outputs.pr_urls }}
+          AUDIT_FLAGS: ${{ needs.agent.outputs.audit_flags }}
+          TOOL_ISSUES: ${{ needs.agent.outputs.tool_issues }}
+          AUTO: ${{ inputs.auto_sha256 != '' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: python3 -I worker/scripts/agent-worker/set_agent_status.py

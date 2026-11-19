@@ -50,7 +50,9 @@ public enum ContentScopeScriptContext: Equatable {
     /// Page-world content scope. Optionally carries surrogate-filtered tracker data
     /// (a TDS subset containing only trackers with surrogate rules) which is serialised
     /// as `trackerData` in the user-preferences payload for C-S-S surrogate injection.
-    case contentScope(surrogateTrackerData: TrackerData? = nil)
+    /// `isSurrogateInjectionDisabled` is sent as `surrogateInjectionEnabled: false`, so C-S-S keeps reporting
+    /// resource loads but stops injecting surrogates (when the embedded web extension serves them instead).
+    case contentScope(surrogateTrackerData: TrackerData? = nil, isSurrogateInjectionDisabled: Bool = false)
     case contentScopeIsolated
     case aiChatDataClearing
     case aiChatHistory
@@ -347,7 +349,11 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         var dict = try JSONSerialization.jsonObject(with: jsonProperties, options: []) as? [String: Any] ?? [:]
         dict["messagingContextName"] = scriptContext.messagingContextName
 
-        if case .contentScope(let surrogateTrackerData?) = scriptContext,
+        if case .contentScope(_, isSurrogateInjectionDisabled: true) = scriptContext {
+            dict["surrogateInjectionEnabled"] = false
+        }
+
+        if case .contentScope(let surrogateTrackerData?, _) = scriptContext,
            let encodedTrackerData = try? JSONEncoder().encode(surrogateTrackerData),
            let trackerDataDict = try? JSONSerialization.jsonObject(with: encodedTrackerData, options: []) as? [String: Any] {
             // Failure here is non-fatal: surrogate tracker data is optional metadata. If

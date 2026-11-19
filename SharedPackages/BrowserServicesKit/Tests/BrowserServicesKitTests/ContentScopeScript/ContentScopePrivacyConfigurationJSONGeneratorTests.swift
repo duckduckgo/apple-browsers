@@ -35,10 +35,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         return manager
     }
 
-    private func generatedJSON(from manager: MockPrivacyConfigurationManager, isSurrogateInjectionDisabled: Bool = false) -> [String: Any]? {
-        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(),
-                                                                       privacyConfigurationManager: manager,
-                                                                       isSurrogateInjectionDisabled: isSurrogateInjectionDisabled)
+    private func generatedJSON(from manager: MockPrivacyConfigurationManager) -> [String: Any]? {
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
         guard let data = generator.privacyConfiguration,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
@@ -46,8 +44,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         return json
     }
 
-    private func generatedFeatures(from manager: MockPrivacyConfigurationManager, isSurrogateInjectionDisabled: Bool = false) -> [String: Any]? {
-        generatedJSON(from: manager, isSurrogateInjectionDisabled: isSurrogateInjectionDisabled)?["features"] as? [String: Any]
+    private func generatedFeatures(from manager: MockPrivacyConfigurationManager) -> [String: Any]? {
+        generatedJSON(from: manager)?["features"] as? [String: Any]
     }
 
     private func jsonString(from dict: [String: Any]) -> String {
@@ -107,73 +105,6 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
 
         XCTAssertNil(outputFeatures["trackerAllowlist"], "trackerAllowlist must be excluded (not needed by isolated script)")
         XCTAssertNil(outputFeatures["autoconsent"])
-    }
-
-    // MARK: - Surrogate injection
-
-    private func trackerProtectionSettings(from manager: MockPrivacyConfigurationManager,
-                                           isSurrogateInjectionDisabled: Bool) -> [String: Any]? {
-        let features = generatedFeatures(from: manager, isSurrogateInjectionDisabled: isSurrogateInjectionDisabled)
-        return (features?["trackerProtection"] as? [String: Any])?["settings"] as? [String: Any]
-    }
-
-    func testWhenSurrogateInjectionDisabledThenSettingIsDisabledAndOtherSettingsKept() {
-        let manager = makeManager(features: [
-            "trackerProtection": ["state": "enabled", "exceptions": [], "settings": ["additionalCheck": "enabled"]]
-        ])
-
-        let settings = trackerProtectionSettings(from: manager, isSurrogateInjectionDisabled: true)
-
-        XCTAssertEqual(settings?["surrogateInjection"] as? String, "disabled")
-        XCTAssertEqual(settings?["additionalCheck"] as? String, "enabled")
-    }
-
-    func testWhenSurrogateInjectionDisabledAndTrackerProtectionHasNoSettingsThenSettingIsAdded() {
-        let manager = makeManager(features: ["trackerProtection": ["state": "enabled", "exceptions": []]])
-
-        let settings = trackerProtectionSettings(from: manager, isSurrogateInjectionDisabled: true)
-
-        XCTAssertEqual(settings?["surrogateInjection"] as? String, "disabled")
-    }
-
-    func testWhenSurrogateInjectionNotDisabledThenSettingIsLeftAlone() {
-        let manager = makeManager(features: [
-            "trackerProtection": ["state": "enabled", "exceptions": [], "settings": ["surrogateInjection": "enabled"]]
-        ])
-
-        let settings = trackerProtectionSettings(from: manager, isSurrogateInjectionDisabled: false)
-
-        XCTAssertEqual(settings?["surrogateInjection"] as? String, "enabled")
-    }
-
-    func testWhenConfigChangesThenPatchedConfigReflectsNewConfig() {
-        let manager = makeManager(features: [
-            "trackerProtection": ["state": "enabled", "exceptions": [], "settings": ["additionalCheck": "enabled"]]
-        ])
-        XCTAssertEqual(trackerProtectionSettings(from: manager, isSurrogateInjectionDisabled: true)?["additionalCheck"] as? String, "enabled")
-
-        let updated = makeManager(features: [
-            "trackerProtection": ["state": "enabled", "exceptions": [], "settings": ["additionalCheck": "disabled"]]
-        ])
-        let settings = trackerProtectionSettings(from: updated, isSurrogateInjectionDisabled: true)
-
-        XCTAssertEqual(settings?["additionalCheck"] as? String, "disabled", "a cached patch must not outlive the config it came from")
-        XCTAssertEqual(settings?["surrogateInjection"] as? String, "disabled")
-    }
-
-    func testWhenSurrogateInjectionDisabledThenOtherFeaturesAreUnchanged() {
-        let manager = makeManager(features: [
-            "trackerProtection": ["state": "enabled", "exceptions": []],
-            "contentBlocking": ["state": "enabled", "exceptions": []],
-            "autoconsent": ["state": "enabled", "exceptions": []]
-        ])
-        guard let features = generatedFeatures(from: manager, isSurrogateInjectionDisabled: true) else {
-            XCTFail("Could not generate config")
-            return
-        }
-
-        XCTAssertNotNil(features["contentBlocking"])
-        XCTAssertNil(features["autoconsent"], "excluded features must stay excluded")
     }
 
     // MARK: - Nil on bad input

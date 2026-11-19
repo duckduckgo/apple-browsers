@@ -344,6 +344,36 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertFalse(source.contains("\"trackerData\""), "trackerData key should never leak into non-contentScope contexts")
     }
 
+    // MARK: - Surrogate injection argument
+
+    private func generatedSource(for scriptContext: ContentScopeScriptContext) throws -> String {
+        try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: scriptContext,
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: nil
+        )
+    }
+
+    func testWhenSurrogateInjectionIsDisabledThenSurrogateInjectionEnabledIsFalse() throws {
+        let source = try generatedSource(for: .contentScope(isSurrogateInjectionDisabled: true))
+
+        XCTAssertTrue(source.contains("\"surrogateInjectionEnabled\":false"))
+    }
+
+    func testWhenSurrogateInjectionIsNotDisabledThenSurrogateInjectionEnabledIsAbsent() throws {
+        let source = try generatedSource(for: .contentScope())
+
+        XCTAssertFalse(source.contains("\"surrogateInjectionEnabled\":"), "C-S-S defaults to injecting when the key is absent")
+    }
+
+    func testWhenNonContentScopeContextThenSurrogateInjectionEnabledIsAbsent() throws {
+        let source = try generatedSource(for: .contentScopeIsolated)
+
+        XCTAssertFalse(source.contains("\"surrogateInjectionEnabled\":"))
+    }
+
     // MARK: - ContentScopeUserScript Integration Tests with aiChatDataClearing Context
 
     func testWhenAIChatDataClearingContextThenMessageNamesContainsDuckAiDataClearing() throws {

@@ -30,6 +30,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: feature-flag-cleanup
+  cancel-in-progress: false
+
 jobs:
   feature-flag-cleanup:
     name: Queue feature flag removals

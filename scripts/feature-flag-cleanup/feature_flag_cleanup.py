@@ -111,14 +111,16 @@ class AsanaClient:
         return [subtask["name"] for subtask in response.get("data", [])]
 
     def create_ready_subtask(self, removal: FlagRemoval, notes: str) -> str:
-        body = {"name": removal.subtask_name, "notes": notes}
+        body = {
+            "name": removal.subtask_name,
+            "notes": notes,
+            "parent": removal.registry_task_gid,
+            "projects": [removal.agent_project_gid],
+            "custom_fields": {AGENT_STATUS_FIELD_GID: AGENT_STATUS_READY_OPTION_GID},
+        }
         if removal.owner_gid:
             body["assignee"] = removal.owner_gid
-        subtask = self._request("POST", f"/tasks/{removal.registry_task_gid}/subtasks", body=body)["data"]
-        self._request("POST", f"/tasks/{subtask['gid']}/addProject", body={"project": removal.agent_project_gid})
-        ready = {"custom_fields": {AGENT_STATUS_FIELD_GID: AGENT_STATUS_READY_OPTION_GID}}
-        self._request("PUT", f"/tasks/{subtask['gid']}", body=ready)
-        return subtask["gid"]
+        return self._request("POST", "/tasks", body=body)["data"]["gid"]
 
     def _request(self, method: str, path: str, *, params: Optional[dict] = None, body: Optional[dict] = None) -> dict:
         url = f"{ASANA_BASE}{path}"

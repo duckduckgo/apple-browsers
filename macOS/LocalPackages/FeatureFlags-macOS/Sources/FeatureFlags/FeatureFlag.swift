@@ -910,7 +910,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .partnershipsHub:
             Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub), category: .subscription)
         case .authBackupToken:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(PrivacyProSubfeature.authBackupToken), category: .subscription)
+            Config(source: .disabled, category: .subscription)
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
         case .syncIdentities:

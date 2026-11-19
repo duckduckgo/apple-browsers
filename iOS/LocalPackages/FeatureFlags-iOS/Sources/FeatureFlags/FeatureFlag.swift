@@ -1141,7 +1141,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .ipadAIChatContextSidebar:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadContextualSidebar))
         case .aiChatNativeInputIPad:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.iPadNativeChatInput))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadNativeChatInput))
         case .floatingUIiOS26:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
         case .floatingUIiOS27:

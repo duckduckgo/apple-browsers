@@ -3548,3 +3548,90 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         return (sut, collection)
     }
 }
+
+@MainActor
+final class SwipeTabsFullScreenSnapshotTests: XCTestCase {
+
+    // The coordinator holds these weakly.
+    private var mainViewCoordinator: MainViewCoordinator!
+    private var tabsModel: TabsModel!
+    private var previewsSource: MockTabPreviewsSource!
+
+    override func tearDown() {
+        mainViewCoordinator = nil
+        tabsModel = nil
+        previewsSource = nil
+        super.tearDown()
+    }
+
+    func testWhenViewIsNotInAWindowThenNoSnapshotIsStored() {
+        let (sut, parent) = makeSUT()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        XCTAssertNil(parent.view.window)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertEqual(previewsSource.updateFullScreenSnapshotCallCount, 0)
+    }
+
+    func testWhenViewHasEmptyBoundsThenNoSnapshotIsStored() {
+        let (sut, parent) = makeSUT()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(parent.view)
+        parent.view.frame = .zero
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertEqual(previewsSource.updateFullScreenSnapshotCallCount, 0)
+    }
+
+    func testWhenWindowIsNotInAnActiveSceneThenNoSnapshotIsStored() {
+        let (sut, parent) = makeSUT()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(parent.view)
+        parent.view.frame = window.bounds
+        XCTAssertNil(window.windowScene)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertEqual(previewsSource.updateFullScreenSnapshotCallCount, 0)
+    }
+
+    private func makeSUT() -> (SwipeTabsCoordinator, UIViewController) {
+        let parent = UIViewController()
+        let coordinator = MainViewCoordinator(parentController: parent)
+        mainViewCoordinator = coordinator
+        coordinator.navigationBarCollectionView = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        let previewsSource = MockTabPreviewsSource()
+        self.previewsSource = previewsSource
+        let sut = SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: previewsSource,
+            appSettings: AppSettingsMock(),
+            omnibarDependencies: MockOmnibarDependency(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: false,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { _ in nil },
+            inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+        tabsModel = TabsModel(tabs: [Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))], desktop: false)
+        sut.tabsModel = tabsModel
+        return (sut, parent)
+    }
+}

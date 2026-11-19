@@ -64,7 +64,10 @@ class MockTabPreviewsSource: TabPreviewsSource {
         return nil
     }
 
+    private(set) var updateFullScreenSnapshotCallCount = 0
+
     func updateFullScreenSnapshot(_ snapshot: UIImage, forTab tab: DuckDuckGo.Tab) {
+        updateFullScreenSnapshotCallCount += 1
     }
 
 }

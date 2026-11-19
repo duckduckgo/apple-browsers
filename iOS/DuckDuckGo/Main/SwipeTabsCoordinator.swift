@@ -597,18 +597,32 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
 
     /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
-    /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
-    /// snapshot. The alpha flip happens entirely within a single synchronous block, so UIKit
-    /// only paints once — no visible flash.
+    /// transiently hiding the overlay so it doesn't appear in its own snapshot. The overlay keeps
+    /// the previous swipe's snapshots, whose backing surfaces may no longer be readable, so it
+    /// must be skipped entirely rather than drawn at zero alpha. The flip happens entirely within
+    /// a single synchronous block, so UIKit only paints once — no visible flash.
+    ///
+    /// Returns nil when the view isn't on screen in an active scene: surfaces can be purged
+    /// while the app is in the background or returning from it.
     private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
         let superview = coordinator.superview
-        guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
+        guard superview.bounds.width > 0, superview.bounds.height > 0,
+              let window = superview.window,
+              window.windowScene?.activationState == .foregroundActive else { return nil }
 
         let priorAlpha = swipeOverlayView?.alpha ?? 0
+        let priorHidden = swipeOverlayView?.isHidden ?? true
         swipeOverlayView?.alpha = 0
-        defer { swipeOverlayView?.alpha = priorAlpha }
+        swipeOverlayView?.isHidden = true
+        defer {
+            swipeOverlayView?.isHidden = priorHidden
+            swipeOverlayView?.alpha = priorAlpha
+        }
 
-        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = window.traitCollection.displayScale
+        format.preferredRange = .standard
+        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size, format: format)
         return renderer.image { _ in
             superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
         }

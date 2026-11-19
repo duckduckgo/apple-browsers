@@ -256,7 +256,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         // controller's, so its extension pages get the API stubs from here.
         if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
             webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
-                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser)
+                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
+                managerProvider: { NSApp.delegateTyped.webExtensionManager as? WebExtensionManager })
         } else {
             webExtensionPageStubUserScript = nil
         }
@@ -267,7 +268,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         if let webExtensionPageStubUserScript {
             if #available(macOS 15.4, *) {
-                userScripts.append(WebExtensionPermissionUserGestureUserScript())
+                userScripts.append(WebExtensionPermissionUserGestureUserScript(
+                    managerProvider: { NSApp.delegateTyped.webExtensionManager as? WebExtensionManager }))
             }
             userScripts.append(webExtensionPageStubUserScript)
         }

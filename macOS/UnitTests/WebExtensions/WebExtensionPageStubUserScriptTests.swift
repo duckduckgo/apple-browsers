@@ -17,6 +17,7 @@
 //
 
 import WebExtensions
+import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -27,7 +28,7 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        script = WebExtensionPageStubUserScript()
+        script = WebExtensionPageStubUserScript(managerProvider: { nil })
     }
 
     override func tearDown() {
@@ -61,20 +62,34 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
     }
 
     func testThatScriptIsCreatedForInternalUsers() {
-        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isInternalUser: true))
+        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isInternalUser: true, managerProvider: { nil }))
     }
 
     func testThatScriptIsNotCreatedForOtherUsers() {
-        XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false))
+        XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false, managerProvider: { nil }))
     }
 
     func testGestureScriptRunsAtDocumentStartInAllFramesInTheIsolatedWorld() {
-        let gestureScript = WebExtensionPermissionUserGestureUserScript()
+        let gestureScript = WebExtensionPermissionUserGestureUserScript(managerProvider: { nil })
 
         XCTAssertEqual(gestureScript.source, WebExtensionPermissionUserGestureScript.source)
         XCTAssertEqual(gestureScript.injectionTime, .atDocumentStart)
         XCTAssertFalse(gestureScript.forMainFrameOnly)
         XCTAssertFalse(gestureScript.requiresRunInPageContentWorld)
         XCTAssertEqual(gestureScript.messageNames, [WebExtensionPermissionUserGestureScript.messageHandlerName])
+    }
+
+    @MainActor
+    func testReplyReportsUnavailableManagerThroughTheInjectedProvider() {
+        let script = WebExtensionPageStubUserScript(managerProvider: { nil })
+        var replies = 0
+
+        script.userContentController(WKUserContentController(), didReceive: WKScriptMessage()) { reply, error in
+            replies += 1
+            XCTAssertNil(reply)
+            XCTAssertEqual(error, "Web extensions are unavailable")
+        }
+
+        XCTAssertEqual(replies, 1)
     }
 }

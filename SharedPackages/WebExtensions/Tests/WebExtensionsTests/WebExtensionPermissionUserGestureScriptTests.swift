@@ -98,12 +98,34 @@ final class WebExtensionPermissionUserGestureScriptTests: XCTestCase {
         XCTAssertNil(context.exception)
     }
 
+    func testKeyUpDefersResetUntilAfterTheKeyboardClickAndAllowsTheNextAccessibilityClick() throws {
+        let context = try makeContext()
+        context.evaluateScript("""
+        listeners.keydown({ isTrusted: true });
+        listeners.keyup({ isTrusted: true });
+        listeners.click({ isTrusted: true, detail: 0 });
+        """)
+
+        XCTAssertEqual(context.objectForKeyedSubscript("recordedGestures")?.toInt32(), 1)
+        XCTAssertNil(context.exception)
+
+        context.evaluateScript("""
+        scheduledTimers.splice(0).forEach(function(callback) { callback(); });
+        listeners.click({ isTrusted: true, detail: 0 });
+        """)
+
+        XCTAssertEqual(context.objectForKeyedSubscript("recordedGestures")?.toInt32(), 2)
+        XCTAssertNil(context.exception)
+    }
+
     private func makeContext(originProtocol: String = "webkit-extension:") throws -> JSContext {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("""
         var location = { protocol: "\(originProtocol)" };
         var listeners = {};
         var recordedGestures = 0;
+        var scheduledTimers = [];
+        function setTimeout(callback) { scheduledTimers.push(callback); }
         function addEventListener(name, callback, capture) {
             if (capture !== true) { throw new Error("Input must be captured before extension listeners"); }
             listeners[name] = callback;

@@ -669,6 +669,37 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
+    "web_extension_native_messaging_blocked_macos": {
+        "description": "App Store build only. Fires the first time an extension tries to connect to an app on the Mac and the app refuses, because the sandbox doesn't allow native messaging. Fires once per extension, and again only after the extension is uninstalled and reinstalled.",
+        "owners": ["andremartingo"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_native_messaging_alert_shown_macos": {
+        "description": "App Store build only. Fires when the alert explaining that an extension can't connect to other apps on the Mac is shown: when the extension asks for the native messaging permission at runtime, or when the user clicks the toolbar button of an extension that requires native messaging and has already hit the limit.",
+        "owners": ["andremartingo"],
+        "triggers": ["impression", "user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "enum": ["permission_request", "toolbar_click"],
+                "description": "What showed the alert: the extension's runtime request for the native messaging permission (permission_request), or a click on its toolbar button (toolbar_click)."
+            }
+        ]
+    },
+    "web_extension_native_messaging_alert_learn_more_clicked_macos": {
+        "description": "App Store build only. Fires when the user clicks Learn More in the alert explaining that an extension can't connect to other apps on the Mac, which opens the help page.",
+        "owners": ["andremartingo"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
     "web_extension_cpm_breakage_macos": {
         "description": "A tab stayed silent: after an http(s) page committed with the extension loaded, the extension sent no dashboard refresh from that tab for 30 seconds of app time (the app being suspended does not count). A refresh that arrives later still counts as an answer, so slow answers are not reported; a refresh saying the extension cannot answer (no configuration or settings) does not count as one, but its tab is reported as one and never counts towards many or the persistent pixel, because the extension is running. Evaluated when a tab event or an extension refresh arrives, so a tab left idle until the app exits is not reported. Pages that cannot run the extension (browser error pages, history restores from cache, restored sessions, non-HTML documents such as PDFs and images, Duck Player videos, non-http(s) pages) are not measured. Uses dailyAndCount: the first report of the day sends daily and count requests, later ones send count only. Daily estimates affected installations per day; count measures silent tabs. No URL, tab or document identifier is sent.",
         "owners": ["mallexxx"],

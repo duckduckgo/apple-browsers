@@ -371,6 +371,20 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).hasHitLimitation(extensionKey: limitedStoreID))
     }
 
+    func testWhenAnExtensionHitsTheLimitationAgainThenTheBlockedPixelFiresOnlyTheFirstTime() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        recordStoreInstallation(of: context)
+        let pixels = InstallationPixelFiringMock()
+        let manager = makeManager(permissionController: nil,
+                                  unavailablePermissions: [.nativeMessaging],
+                                  nativeMessagingLimitationStore: NativeMessagingLimitationStore(keyValueStore: keyValueStore),
+                                  pixelFiring: pixels)
+
+        await requestNativeMessaging(times: 2, from: manager, for: context)
+
+        XCTAssertEqual(pixels.nativeMessagingBlocked, [.other])
+    }
+
     func testWhenAnExtensionThatHitTheLimitationIsUninstalledThenItsStateIsForgotten() async throws {
         let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
         recordStoreInstallation(of: context)
@@ -1209,7 +1223,8 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
     private func makeManager(
         permissionController: WebExtensionPermissionController?,
         unavailablePermissions: Set<WKWebExtension.Permission>,
-        nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil
+        nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil,
+        pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()
     ) -> WebExtensionManager {
         let extensionsDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
@@ -1218,6 +1233,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                                    storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
                                    installationStore: installationStore,
                                    permissionController: permissionController,
+                                   pixelFiring: pixelFiring,
                                    unavailablePermissions: unavailablePermissions,
                                    nativeMessagingLimitationStore: nativeMessagingLimitationStore)
     }
@@ -1228,6 +1244,12 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                                                                            name: nil,
                                                                            version: "1.0",
                                                                            storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID ?? limitedStoreID)))
+    }
+
+    private func requestNativeMessaging(times: Int, from manager: WebExtensionManager, for context: WKWebExtensionContext) async {
+        for _ in 0..<times {
+            _ = await requestPermissions([.nativeMessaging], from: manager, for: context)
+        }
     }
 
     private func requestPermissions(
@@ -1325,10 +1347,16 @@ private final class FailingUnloadWebExtensionController: WKWebExtensionControlle
 @available(macOS 15.4, iOS 18.4, *)
 private final class InstallationPixelFiringMock: WebExtensionPixelFiring {
     private(set) var installErrors: [Error] = []
+    private(set) var nativeMessagingBlocked: [WebExtensionPixelExtension] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
-        if case .installError(_, let error) = event {
+        switch event {
+        case .installError(_, let error):
             installErrors.append(error)
+        case .nativeMessagingBlocked(let pixelExtension):
+            nativeMessagingBlocked.append(pixelExtension)
+        default:
+            break
         }
     }
 }

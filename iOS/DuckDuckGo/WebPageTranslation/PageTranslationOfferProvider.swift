@@ -68,7 +68,7 @@ final class PageTranslationOfferProvider {
 
         let script = "(() => (document.body?.innerText ?? '').slice(0, \(settings.sampleLength)))()"
         do {
-            let sample = try await webView.evaluateJavaScript(script, in: nil, in: .defaultClient) as? String
+            let sample = try await webView.evaluateJavaScript(script, contentWorld: .defaultClient) as? String
             return await decision(forSample: sample ?? "")
         } catch {
             Logger.webPageTranslation.error("Reading the page sample failed: \(error.localizedDescription, privacy: .public)")

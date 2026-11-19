@@ -176,6 +176,29 @@ final class MockDDGSyncing: DDGSyncing {
         return registeredDevices
     }
 
+    var auditLogPageStub = SyncAuditLogPage(events: [], hasMore: false)
+    private(set) var auditLogReaderAccounts: [String?] = []
+    private(set) var auditLogPageReadCount = 0
+
+    @MainActor
+    func makeAuditLogReader() throws -> any SyncAuditLogReading {
+        auditLogReaderAccounts.append(account?.userId)
+        return MockAuditLogReader { [self] in
+            auditLogPageReadCount += 1
+            return auditLogPageStub
+        }
+    }
+
+    private var auditLogReviewStates = [String: SyncAuditLogReviewState]()
+
+    func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
+        auditLogReviewStates[accountID]
+    }
+
+    func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
+        auditLogReviewStates[accountID] = reviewState
+    }
+
     func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
         return []
     }
@@ -267,4 +290,13 @@ struct MockRemoteConnecting: RemoteConnecting {
 
     func stopPolling() {
     }
+}
+
+@MainActor
+private final class MockAuditLogReader: SyncAuditLogReading {
+    private let read: () -> SyncAuditLogPage
+
+    init(read: @escaping () -> SyncAuditLogPage) { self.read = read }
+
+    func nextPage() async throws -> SyncAuditLogPage { read() }
 }

@@ -21,7 +21,6 @@ import Foundation
 @testable import DDGSync
 
 final class MockDDGSyncing: DDGSyncing {
-
     // MARK: - Configurable State
 
     var authState: SyncAuthState = .active
@@ -156,6 +155,20 @@ final class MockDDGSyncing: DDGSyncing {
     func disconnect() async throws {}
     func disconnect(deviceId: String) async throws {}
     func fetchDevices() async throws -> [RegisteredDevice] { [] }
+
+    @MainActor
+    func makeAuditLogReader() throws -> any SyncAuditLogReading { MockAuditLogReader() }
+
+    private var auditLogReviewStates = [String: SyncAuditLogReviewState]()
+
+    func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
+        auditLogReviewStates[accountID]
+    }
+
+    func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
+        auditLogReviewStates[accountID] = reviewState
+    }
+
     func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] { [] }
     func deleteAccount() async throws {}
     func encryptAndBase64Encode(_ values: [String]) throws -> [String] { values }
@@ -189,4 +202,9 @@ enum MockSyncAccount {
             state: .active
         )
     }
+}
+
+@MainActor
+private final class MockAuditLogReader: SyncAuditLogReading {
+    func nextPage() async throws -> SyncAuditLogPage { SyncAuditLogPage(events: [], hasMore: false) }
 }

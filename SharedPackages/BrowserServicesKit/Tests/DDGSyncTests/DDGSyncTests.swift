@@ -20,6 +20,7 @@ import Combine
 import Common
 import CryptoKit
 import XCTest
+@_spi(Testing) import Persistence
 
 @testable import DDGSync
 
@@ -166,6 +167,254 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
         XCTAssertNil(accountManager.fetchAuditLogCalls.first?.1)
         XCTAssertNil(accountManager.fetchAuditLogCalls.first?.2)
+    }
+
+    @MainActor
+    func testMakeAuditLogReaderWithoutAccountThrows() {
+        (dependencies.secureStore as! SecureStorageStub).theAccount = nil
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        XCTAssertThrowsError(try syncService.makeAuditLogReader()) { error in
+            XCTAssertEqual(error as? SyncError, .accountNotFound)
+        }
+    }
+
+    @MainActor
+    func testAuditLogReaderMapsEventsAndOwnsBeforeCursor() async throws {
+        let accountManager = dependencies.account as! AccountManagingMock
+        let device = RegisteredDevice(id: "device-id", name: "iPhone", type: "phone")
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [
+            .decoded(AuditLogEvent(id: "login-id", type: .login, occurredAt: Date(timeIntervalSince1970: 10),
+                                   device: device, actor: nil, hasDeviceInfo: false)),
+            .decoded(AuditLogEvent(id: "logout-id", type: .logout, occurredAt: Date(timeIntervalSince1970: 20),
+                                   device: device, actor: nil, hasDeviceInfo: false)),
+            .unknownType(id: "ignored-id", type: "future")
+        ], after: "head-cursor", before: "older-cursor")
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let reader = try syncService.makeAuditLogReader()
+
+        let page = try await reader.nextPage()
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [], after: nil, before: nil)
+        let last = try await reader.nextPage()
+        _ = try await reader.nextPage()
+
+        XCTAssertEqual(page.events.map(\.id), ["login-id", "logout-id"])
+        XCTAssertEqual(page.events.map(\.kind), [.synced, .removed])
+        XCTAssertTrue(page.hasMore)
+        XCTAssertFalse(last.hasMore)
+        XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 2)
+        XCTAssertEqual(accountManager.fetchAuditLogCalls.first?.2, 100)
+        XCTAssertNil(accountManager.fetchAuditLogCalls.first?.1)
+        guard case .before("older-cursor") = accountManager.fetchAuditLogCalls[1].1 else {
+            return XCTFail("Expected the reader to use its own before cursor")
+        }
+    }
+
+    @MainActor
+    func testAuditLogReaderUsesOldestInfoBetweenLoginsAcrossPages() async throws {
+        let reader = auditLogReader(pages: [
+            AuditLogPage(entries: [
+                auditLogEntry("too-new", .deviceInfoAdded, 6, name: "After next login", hasInfo: true),
+                auditLogEntry("logout", .logout, 5, name: "Logout name"),
+                auditLogEntry("relogin", .login, 4, name: "Own info", hasInfo: true),
+                auditLogEntry("later-info", .deviceInfoAdded, 3, name: "Later info", hasInfo: true),
+                auditLogEntry("first-info", .deviceInfoAdded, 2, name: "First info", hasInfo: true),
+                auditLogEntry("orphan", .deviceInfoAdded, 1.5, name: "Other device", deviceID: "other", hasInfo: true)
+            ], after: nil, before: "older"),
+            AuditLogPage(entries: [auditLogEntry("first-login", .login, 1), auditLogEntry("earlier-login", .login, 0),
+                                   auditLogEntry("older-logout", .logout, -1)], after: nil, before: nil)
+        ])
+
+        let first = try await reader.nextPage()
+        let older = try await reader.nextPage()
+
+        XCTAssertEqual(first.events.map(\.id), ["logout", "relogin"])
+        XCTAssertEqual(first.events.map { $0.device.name }, ["Logout name", "Own info"])
+        XCTAssertEqual(older.events.map { $0.device.name }, ["First info", "Legacy", "Legacy"])
+        XCTAssertEqual(older.events.first?.device.id, "device")
+        XCTAssertEqual(older.events.first?.device.credentialId, "3party")
+        XCTAssertFalse(older.hasMore)
+    }
+
+    @MainActor
+    func testAuditLogReaderUsesStreamOrderForSameSecondEvents() async throws {
+        let cases: [(entries: [AuditLogEntryDecodingResult], names: [String])] = [
+            ([auditLogEntry("info", .deviceInfoAdded, 1, name: "Same second", hasInfo: true),
+              auditLogEntry("login", .login, 1)], ["Same second"]),
+            ([auditLogEntry("newer-login", .login, 1),
+              auditLogEntry("info", .deviceInfoAdded, 1, name: "Between logins", hasInfo: true),
+              auditLogEntry("older-login", .login, 1)], ["Legacy", "Between logins"]),
+            ([auditLogEntry("newer-info", .deviceInfoAdded, 1, name: "Newer", hasInfo: true),
+              auditLogEntry("older-info", .deviceInfoAdded, 1, name: "Oldest", hasInfo: true),
+              auditLogEntry("login", .login, 1)], ["Oldest"]),
+            ([auditLogEntry("readable-info", .deviceInfoAdded, 1, name: "Readable", hasInfo: true),
+              auditLogEntry("unreadable-info", .deviceInfoAdded, 1),
+              auditLogEntry("login", .login, 1)], ["Legacy"])
+        ]
+        for testCase in cases {
+            let reader = auditLogReader(pages: [AuditLogPage(entries: testCase.entries, after: nil, before: nil)])
+            let page = try await reader.nextPage()
+            XCTAssertEqual(page.events.map { $0.device.name }, testCase.names)
+        }
+    }
+
+    @MainActor
+    func testAuditLogReaderDeduplicatesBeforeChangingPendingCandidates() async throws {
+        let reader = auditLogReader(pages: [
+            AuditLogPage(entries: [auditLogEntry("relogin", .login, 1),
+                                   auditLogEntry("newer-info", .deviceInfoAdded, 1, name: "Newer", hasInfo: true),
+                                   auditLogEntry("oldest-info", .deviceInfoAdded, 1, name: "Oldest", hasInfo: true)],
+                         after: nil, before: "older"),
+            AuditLogPage(entries: [auditLogEntry("relogin", .login, 1),
+                                   auditLogEntry("newer-info", .deviceInfoAdded, 1, name: "Newer", hasInfo: true),
+                                   auditLogEntry("first-login", .login, 1)], after: nil, before: nil)
+        ])
+        _ = try await reader.nextPage()
+        let older = try await reader.nextPage()
+
+        XCTAssertEqual(older.events.map(\.id), ["first-login"])
+        XCTAssertEqual(older.events.first?.device.name, "Oldest")
+    }
+
+    @MainActor
+    func testAuditLogReaderKeepsCursorAndCandidatesWhenFetchFails() async throws {
+        var cursors = [String?]()
+        let reader = SyncAuditLogReader(account: .mock) { _, cursor in
+            cursors.append(cursor)
+            if cursor == nil {
+                return AuditLogPage(entries: [self.auditLogEntry("info", .deviceInfoAdded, 1, name: "Enriched", hasInfo: true)],
+                                    after: nil, before: "older")
+            }
+            if cursors.count == 2 { throw SyncError.unexpectedStatusCode(418) }
+            return AuditLogPage(entries: [self.auditLogEntry("login", .login, 1)], after: nil, before: nil)
+        }
+        let first = try await reader.nextPage()
+        XCTAssertTrue(first.events.isEmpty)
+        do {
+            _ = try await reader.nextPage()
+            XCTFail("Expected the failed fetch to propagate")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .unexpectedStatusCode(418))
+        }
+        let retried = try await reader.nextPage()
+
+        XCTAssertEqual(cursors, [nil, "older", "older"])
+        XCTAssertEqual(retried.events.first?.device.name, "Enriched")
+    }
+
+    @MainActor
+    func testAuditLogReaderRejectsCancelledResponseWithoutAdvancing() async throws {
+        var continuation: CheckedContinuation<AuditLogPage, Never>?
+        var cursors = [String?]()
+        let reader = SyncAuditLogReader(account: .mock) { _, cursor in
+            cursors.append(cursor)
+            if cursors.count == 1 {
+                return await withCheckedContinuation { continuation = $0 }
+            }
+            return AuditLogPage(entries: [self.auditLogEntry("login", .login, 1)], after: nil, before: nil)
+        }
+        let request = Task { try await reader.nextPage() }
+        while continuation == nil { await Task.yield() }
+        request.cancel()
+        continuation?.resume(returning: AuditLogPage(entries: [auditLogEntry("login", .login, 1)], after: nil, before: "older"))
+        do {
+            _ = try await request.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+            // Expected.
+        }
+        let retried = try await reader.nextPage()
+        XCTAssertEqual(cursors, [nil, nil])
+        XCTAssertEqual(retried.events.map(\.id), ["login"])
+    }
+
+    @MainActor
+    func testAuditLogReaderStopsOnRepeatedCursor() async throws {
+        var requests = 0
+        let reader = SyncAuditLogReader(account: .mock) { _, _ in
+            requests += 1
+            return AuditLogPage(entries: [], after: nil, before: "same")
+        }
+        let first = try await reader.nextPage()
+        let second = try await reader.nextPage()
+        let exhausted = try await reader.nextPage()
+        XCTAssertTrue(first.hasMore)
+        XCTAssertFalse(second.hasMore)
+        XCTAssertFalse(exhausted.hasMore)
+        XCTAssertEqual(requests, 2)
+    }
+
+    @MainActor
+    func testAuditLogReadersAreIsolatedByVisitAndBoundToStartingAccount() async throws {
+        let accountManager = dependencies.account as! AccountManagingMock
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [auditLogEntry("info", .deviceInfoAdded, 1, name: "Enriched", hasInfo: true)],
+                                                       after: nil, before: "older")
+        let reader = try syncService.makeAuditLogReader()
+        _ = try await reader.nextPage()
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [auditLogEntry("login", .login, 1)], after: nil, before: nil)
+        let freshReader = try syncService.makeAuditLogReader()
+        let fresh = try await freshReader.nextPage()
+        let older = try await reader.nextPage()
+        XCTAssertEqual(fresh.events.first?.device.name, "Legacy")
+        XCTAssertEqual(older.events.first?.device.name, "Enriched")
+
+        let previousAccount = SyncAccount.mock
+        (dependencies.secureStore as! SecureStorageStub).theAccount = nil
+        let calls = accountManager.fetchAuditLogCalls.count
+        do {
+            _ = try syncService.makeAuditLogReader()
+            XCTFail("Expected missing account")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .accountNotFound)
+        }
+        // A reader created before logout must not issue another request with the old account.
+        (dependencies.secureStore as! SecureStorageStub).theAccount = previousAccount
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [], after: nil, before: "older")
+        let pendingReader = try syncService.makeAuditLogReader()
+        (dependencies.secureStore as! SecureStorageStub).theAccount = nil
+        do {
+            _ = try await pendingReader.nextPage()
+            XCTFail("Expected the old account reader to be rejected")
+        } catch is CancellationError {
+            // Expected.
+        }
+        XCTAssertEqual(accountManager.fetchAuditLogCalls.count, calls)
+    }
+
+    @MainActor
+    func testAuditLogReaderDiscardsAuthenticationFailureAfterAccountChanges() async throws {
+        let secureStore = dependencies.secureStore as! SecureStorageStub
+        let accountManager = dependencies.account as! AccountManagingMock
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let reader = try syncService.makeAuditLogReader()
+        let replacement = SyncAccount(deviceId: "new-device", deviceName: "New Device", deviceType: "phone", userId: "new-account",
+                                      primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        accountManager.fetchAuditLogHandler = { _, _, _ in
+            secureStore.theAccount = replacement
+            throw SyncError.unexpectedStatusCode(401)
+        }
+
+        do {
+            _ = try await reader.nextPage()
+            XCTFail("Expected the old account's response to be discarded")
+        } catch is CancellationError {
+            // Expected: an old request must not log out the replacement account.
+        }
+        XCTAssertEqual(secureStore.theAccount?.userId, replacement.userId)
+    }
+
+    @MainActor
+    private func auditLogReader(pages: [AuditLogPage]) -> SyncAuditLogReader {
+        var remainingPages = pages
+        return SyncAuditLogReader(account: .mock) { _, _ in remainingPages.removeFirst() }
+    }
+
+    private func auditLogEntry(_ id: String, _ type: AuditLogEventType, _ time: TimeInterval,
+                               name: String = "Legacy", deviceID: String = "device", hasInfo: Bool = false) -> AuditLogEntryDecodingResult {
+        .decoded(AuditLogEvent(id: id, type: type, occurredAt: Date(timeIntervalSince1970: time),
+                              device: RegisteredDevice(id: deviceID, name: name, type: "phone", credentialId: "3party"),
+                              actor: nil, hasDeviceInfo: hasInfo))
     }
 
     func testRecoveryCodeWhenScopedAccessCredentialsAndPairingV2CodeAreEnabledReturnsV2Code() throws {
@@ -632,6 +881,80 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(syncService.authState, .active)
         XCTAssertNotNil((dependencies.secureStore as! SecureStorageStub).theAccount)
         XCTAssertEqual((dependencies.errorEvents as! MockErrorHandler).handledErrors, [])
+    }
+
+    func testAuditLogReviewStateDecodesPersistedFields() throws {
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let accountID = SyncAccount.mock.userId
+        let key = "\(DDGSync.Constants.auditLogReviewStateKey).\(accountID)"
+        let fixtures: [(String, SyncAuditLogReviewState)] = [
+            (#"{"reviewedThrough":12345,"isInitialized":true}"#,
+             SyncAuditLogReviewState(reviewedThrough: Date(timeIntervalSinceReferenceDate: 12345), isInitialized: true)),
+            (#"{"isInitialized":true}"#,
+             SyncAuditLogReviewState(reviewedThrough: nil, isInitialized: true)),
+            (#"{"reviewedThrough":null,"isInitialized":false}"#,
+             SyncAuditLogReviewState(reviewedThrough: nil, isInitialized: false))
+        ]
+        for (json, expected) in fixtures {
+            try dependencies.keyValueStore.set(Data(json.utf8), forKey: key)
+            XCTAssertEqual(try syncService.auditLogReviewState(for: accountID), expected)
+        }
+    }
+
+    func testAuditLogReviewStateIsAccountScopedAndDebugResetCanMoveItBackwards() throws {
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let futureDate = Date().addingTimeInterval(365 * 24 * 60 * 60)
+        let reviewState = SyncAuditLogReviewState(reviewedThrough: futureDate, isInitialized: true)
+        try syncService.setAuditLogReviewState(reviewState, for: SyncAccount.mock.userId)
+
+        XCTAssertEqual(try syncService.auditLogReviewState(for: SyncAccount.mock.userId), reviewState)
+        XCTAssertNil(try syncService.auditLogReviewState(for: "another-account"))
+        try syncService.setAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: Date(), isInitialized: true),
+                                                 for: SyncAccount.mock.userId)
+        XCTAssertEqual(try syncService.auditLogReviewState(for: SyncAccount.mock.userId), reviewState)
+
+        let resetDate = Date(timeIntervalSince1970: 12345)
+        try syncService.resetAuditLogReviewStateForDebug(to: resetDate)
+        XCTAssertEqual(try syncService.auditLogReviewState(for: SyncAccount.mock.userId)?.reviewedThrough, resetDate)
+        XCTAssertLessThan(resetDate, futureDate)
+    }
+
+    func testAuditLogReviewStateIsClearedWhenAccountIsRemoved() throws {
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let account = SyncAccount.mock
+        try syncService.setAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: Date(), isInitialized: true), for: account.userId)
+        (dependencies.secureStore as! SecureStorageStub).theAccount = SyncAccount(deviceId: account.deviceId,
+                                                                                   deviceName: account.deviceName,
+                                                                                   deviceType: account.deviceType,
+                                                                                   userId: account.userId,
+                                                                                   primaryKey: account.primaryKey,
+                                                                                   secretKey: account.secretKey,
+                                                                                   token: account.token,
+                                                                                   state: .inactive)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(try (dependencies.secureStore as! SecureStorageStub).account())
+        XCTAssertNil(try syncService.auditLogReviewState(for: account.userId))
+    }
+
+    func testAccountRemovalContinuesWhenReviewStateCleanupFails() throws {
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let account = SyncAccount.mock
+        try syncService.setAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: Date(), isInitialized: true), for: account.userId)
+        (dependencies.secureStore as! SecureStorageStub).theAccount = SyncAccount(deviceId: account.deviceId,
+                                                                                   deviceName: account.deviceName,
+                                                                                   deviceType: account.deviceType,
+                                                                                   userId: account.userId,
+                                                                                   primaryKey: account.primaryKey,
+                                                                                   secretKey: account.secretKey,
+                                                                                   token: account.token,
+                                                                                   state: .inactive)
+        (dependencies.keyValueStore as! MockKeyValueFileStore).throwOnRemove = MockKeyValueFileStore.MockError.removeError
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertNil(try (dependencies.secureStore as! SecureStorageStub).account())
     }
 
     func testWhenLoginResponseContainsProtectedKeysThenAllKeysAreCached() async throws {

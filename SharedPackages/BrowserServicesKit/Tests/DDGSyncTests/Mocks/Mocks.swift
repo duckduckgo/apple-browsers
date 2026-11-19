@@ -120,8 +120,12 @@ class AccountManagingMock: AccountManaging {
     var fetchAuditLogCalls: [(SyncAccount, AuditLogCursor?, Int?)] = []
     var fetchAuditLogStub = AuditLogPage(entries: [], after: "cursor", before: nil)
     var fetchAuditLogError: Error?
+    var fetchAuditLogHandler: ((SyncAccount, AuditLogCursor?, Int?) async throws -> AuditLogPage)?
     func fetchAuditLog(for account: SyncAccount, cursor: AuditLogCursor?, limit: Int?) async throws -> AuditLogPage {
         fetchAuditLogCalls.append((account, cursor, limit))
+        if let fetchAuditLogHandler {
+            return try await fetchAuditLogHandler(account, cursor, limit)
+        }
         if let fetchAuditLogError {
             throw fetchAuditLogError
         }
@@ -500,6 +504,10 @@ final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
         return loadKeyStub
     }
 
+    func loadKeyForAuditLog(for account: SyncAccount) async throws -> AuditLogKeyMaterial {
+        AuditLogKeyMaterial(key: try await loadKey(for: account), passwordRecovery: .notAttempted)
+    }
+
     var preloadKeyCalls: [(protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], account: SyncAccount)] = []
     var preloadKeyError: Error?
     func preloadKey(from protectedKeys: [ProtectedKey],
@@ -616,11 +624,13 @@ final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
     var fetchProtectedKeysCalls: [SyncAccount] = []
     var fetchProtectedKeysStub: [ProtectedKey] = []
     var fetchProtectedKeysError: Error?
+    var fetchProtectedKeysHandler: (() async throws -> [ProtectedKey])?
     func fetchProtectedKeys(_ account: SyncAccount) async throws -> [ProtectedKey] {
         fetchProtectedKeysCalls.append(account)
         if let fetchProtectedKeysError {
             throw fetchProtectedKeysError
         }
+        if let fetchProtectedKeysHandler { return try await fetchProtectedKeysHandler() }
         return fetchProtectedKeysStub
     }
 

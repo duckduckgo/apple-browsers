@@ -123,6 +123,90 @@ final class APIRequestTests: XCTestCase {
         }
     }
 
+    func testWhenHTTPErrorResponsesAreAllowedThenStatusAndBodyAreReturned() async throws {
+        for (status, body) in [(400, #"{"error":"invalid_cursor"}"#), (418, ""),
+                               (429, #"{"error":"rate_limited"}"#), (500, "Internal server error")] {
+            let response = HTTPURLResponse(url: HTTPURLResponse.testUrl, statusCode: status, httpVersion: nil, headerFields: nil)!
+            let errorData = Data(body.utf8)
+            MockURLProtocol.requestHandler = { _ in (response, errorData) }
+            let configuration = APIRequest.Configuration(url: HTTPURLResponse.testUrl)
+            let request = APIRequest(configuration: configuration,
+                                     requirements: [.allowHTTPErrorResponse, .requireNonEmptyData, .requireETagHeader],
+                                     urlSession: mockURLSession)
+
+            let (data, returnedResponse) = try await request.fetch()
+
+            XCTAssertEqual(returnedResponse.statusCode, status)
+            XCTAssertEqual(data, errorData)
+        }
+    }
+
+    func testWhenHTTPErrorResponsesAreNotAllowedThenErrorBodyDoesNotChangeStatusError() async {
+        MockURLProtocol.requestHandler = { _ in
+            (HTTPURLResponse.internalServerError, Data(#"{"error":"server_error"}"#.utf8))
+        }
+        let configuration = APIRequest.Configuration(url: HTTPURLResponse.testUrl)
+        let request = APIRequest(configuration: configuration, requirements: .all, urlSession: mockURLSession)
+
+        do {
+            _ = try await request.fetch()
+            XCTFail("Expected an HTTP status error")
+        } catch {
+            guard case APIRequest.Error.invalidStatusCode(500) = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
+    }
+
+    func testWhenHTTPErrorResponsesAreAllowedThenCompletionReceivesErrorBody() async {
+        let body = Data(#"{"error":"invalid_cursor"}"#.utf8)
+        let response = HTTPURLResponse(url: HTTPURLResponse.testUrl, statusCode: 400, httpVersion: nil, headerFields: nil)!
+        MockURLProtocol.requestHandler = { _ in (response, body) }
+        let configuration = APIRequest.Configuration(url: HTTPURLResponse.testUrl)
+        let request = APIRequest(configuration: configuration, requirements: .allowHTTPErrorResponse, urlSession: mockURLSession)
+        let completed = expectation(description: "Error response returned through completion")
+
+        request.fetch { result, error in
+            XCTAssertNil(error)
+            XCTAssertEqual(result?.response.statusCode, 400)
+            XCTAssertEqual(result?.data, body)
+            completed.fulfill()
+        }
+
+        await fulfillment(of: [completed], timeout: 1)
+    }
+
+    func testWhenHTTPErrorResponsesAreAllowedThenSuccessRequirementsStillApply() async {
+        MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.ok, nil) }
+        let configuration = APIRequest.Configuration(url: HTTPURLResponse.testUrl)
+        let request = APIRequest(configuration: configuration,
+                                 requirements: [.allowHTTPErrorResponse, .requireNonEmptyData], urlSession: mockURLSession)
+
+        do {
+            _ = try await request.fetch()
+            XCTFail("Expected the success response to require data")
+        } catch {
+            guard case APIRequest.Error.emptyData = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
+    }
+
+    func testWhenHTTPErrorResponsesAreAllowedThenNetworkErrorsStillThrow() async {
+        MockURLProtocol.requestHandler = { _ in throw MockError.someError }
+        let configuration = APIRequest.Configuration(url: HTTPURLResponse.testUrl)
+        let request = APIRequest(configuration: configuration, requirements: .allowHTTPErrorResponse, urlSession: mockURLSession)
+
+        do {
+            _ = try await request.fetch()
+            XCTFail("Expected a network error")
+        } catch {
+            guard case APIRequest.Error.urlSession = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
+    }
+
     func testWhenNotModifiedResponseThenInvalidResponseErrorIsThrown() async {
         MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.notModified, nil) }
         let configuration = APIRequest.Configuration(url: HTTPURLResponse.testUrl)

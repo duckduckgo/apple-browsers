@@ -242,6 +242,17 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func fetchDevices() async throws -> [RegisteredDevice]
 
     /**
+     Polls the audit log without initializing or resuming normal Sync. Returns false if disabled or another poll is running.
+     */
+    func pollAuditLog() async throws -> Bool
+
+    /**
+     Returns whether persisted account state and current flags allow audit polling, independently of engine readiness.
+     If an account ID is supplied, the stored account must also match it.
+     */
+    func isAuditLogPollingAvailable(forAccountID accountID: String?) throws -> Bool
+
+    /**
      Creates a reader bound to the current account for one Device Activity screen visit.
      */
     @MainActor

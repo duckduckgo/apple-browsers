@@ -99,6 +99,36 @@ struct AIChatLocalModelProtocolTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A select request decodes from the page's params", .timeLimit(.minutes(1)))
+    func selectRequestDecodes() throws {
+        let params: [String: Any] = ["requestId": "r2", "task": "select",
+                                     "instruction": "Fusion article\nSearch history: query \"fusion\"",
+                                     "content": "0 | Fusion | iter.org | 2026-11-10"]
+        let data = try JSONSerialization.data(withJSONObject: params)
+        let request = try JSONDecoder().decode(AIChatLocalRunRequest.self, from: data)
+        #expect(request.task == .select)
+        #expect(request.content == "0 | Fusion | iter.org | 2026-11-10")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The config lists every supported task, select included", .timeLimit(.minutes(1)))
+    func configListsSelect() throws {
+        let config = AIChatLocalModelConfig(state: .ready,
+                                            tasks: AIChatLocalModelService.supportedTasks,
+                                            model: AIChatLocalModelInfo(id: "id", name: "name"))
+        #expect(try jsonObject(config)["tasks"] as? [String] == ["summarize", "title", "select"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A select result encodes as the page expects",
+          .timeLimit(.minutes(1)),
+          arguments: [([3, 0, 7], #"{"indexes":[3,0,7]}"#), ([], #"{"indexes":[]}"#)])
+    func selectResultEncodes(indexes: [Int], json: String) throws {
+        let data = try JSONEncoder().encode(AIChatLocalSelectResult(indexes: indexes))
+        #expect(String(bytes: data, encoding: .utf8) == json)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Rejections carry the error code as their message", .timeLimit(.minutes(1)))
     func rejectionsUseTheErrorCodeAsMessage() {
         #expect(AIChatLocalModelRequestError.unavailable.localizedDescription == "unavailable")

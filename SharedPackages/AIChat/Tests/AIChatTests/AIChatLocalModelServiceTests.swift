@@ -42,8 +42,8 @@ final class AIChatLocalModelServiceTests {
                                                        engine: engine,
                                                        notificationCenter: notificationCenter)
 
-    private func request(content: String = "Page text", requestId: String = "r1") -> AIChatLocalRunRequest {
-        AIChatLocalRunRequest(requestId: requestId, task: .summarize, instruction: "Summarize", content: content)
+    private func request(task: AIChatLocalModelTask = .summarize, content: String = "Page text", requestId: String = "r1") -> AIChatLocalRunRequest {
+        AIChatLocalRunRequest(requestId: requestId, task: task, instruction: "Summarize", content: content)
     }
 
     private func postDidBecomeActive() {
@@ -70,7 +70,7 @@ final class AIChatLocalModelServiceTests {
     func availableNotOptedInIsNotSetUp() {
         let config = service.config()
 
-        #expect(config == AIChatLocalModelConfig(state: .notSetUp, tasks: [.summarize, .title], model: engine.model))
+        #expect(config == AIChatLocalModelConfig(state: .notSetUp, tasks: [.summarize, .title, .select], model: engine.model))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -130,6 +130,45 @@ final class AIChatLocalModelServiceTests {
         #expect(page.chunks.map(\.text).joined() == "Short summary")
         #expect(page.chunks.last?.status == .ok)
         #expect(otherPage.chunks.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The config offers select along with summarize", .timeLimit(.minutes(1)))
+    func configOffersSelect() throws {
+        storage.pageSummariesModel = .appleIntelligence
+
+        let config = try #require(service.config())
+
+        #expect(config.state == .ready)
+        #expect(config.tasks.contains(.select))
+        #expect(config.tasks.contains(.summarize))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A select run is refused until the user opts in", .timeLimit(.minutes(1)))
+    func selectRunRefusedWithoutOptIn() {
+        #expect(throws: AIChatLocalModelRequestError.unavailable) {
+            try self.service.startRun(self.request(task: .select, content: "0 | Fusion | iter.org | 2026-11-10"), for: self.page)
+        }
+        #expect(engine.runRequests.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A select run starts when ready and streams the picked indexes to its page", .timeLimit(.minutes(1)))
+    func selectRunStartsWhenReady() async throws {
+        storage.pageSummariesModel = .appleIntelligence
+        engine.reply = [#"{"indexes":[1,0]}"#]
+        service.register(page)
+        let selectRequest = request(task: .select, content: "0 | Fusion | iter.org | 2026-11-10\n1 | Tokamak | wikipedia.org | 2026-11-11")
+
+        let reply = try service.startRun(selectRequest, for: page)
+        await waitUntil { self.page.chunks.last?.done == true }
+
+        #expect(reply == AIChatLocalRunStartReply(model: engine.model))
+        #expect(engine.runRequests == [selectRequest])
+        #expect(page.chunks.last?.status == .ok)
+        let data = Data(page.chunks.map(\.text).joined().utf8)
+        #expect(try JSONDecoder().decode(AIChatLocalSelectResult.self, from: data) == AIChatLocalSelectResult(indexes: [1, 0]))
     }
 
     // MARK: - Pushes

@@ -31,6 +31,17 @@ public enum AIChatLocalModelState: String, Codable, Equatable, Sendable {
 public enum AIChatLocalModelTask: String, Codable, Equatable, Sendable, CaseIterable {
     case summarize
     case title
+    /// Picks the items in a numbered list that match the user's request, such as browser search results.
+    case select
+}
+
+/// What the joined chunk text of a `select` run decodes to, most relevant first.
+public struct AIChatLocalSelectResult: Codable, Equatable, Sendable {
+    public let indexes: [Int]
+
+    public init(indexes: [Int]) {
+        self.indexes = indexes
+    }
 }
 
 public struct AIChatLocalModelInfo: Codable, Equatable, Sendable {

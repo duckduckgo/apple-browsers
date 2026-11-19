@@ -184,3 +184,99 @@ def read_duckai_answer(ios, timeout=90, settle=2.0):
         prev = last
         time.sleep(0.5)
     raise Failed(f"Duck.ai answer did not settle within {timeout}s", last=last)
+
+
+# ---------------------------------------------------------------- Duck.ai contextual chat (features/duck-ai-contextual.md)
+import re  # noqa: E402  (kept with the block that uses it)
+
+# Flags every contextual proof pins: the feature is off by default, the iPad entry is the tabs-bar menu button and the
+# chat docks beside the page, iPhone uses the floating native input with Fire beside it (`aiChatTabHandoffImprovements`,
+# which CONTEXTUAL_IDS["iphone"]["fire"] relies on), and page attachment is manual (the default).
+# Proofs copy it (`FLAGS = {**steps.CONTEXTUAL_FLAGS}`) so an override never leaks into another proof in the same run.
+CONTEXTUAL_FLAGS = {"contextualDuckAIMode": True, "aiChatChromeShortcutIPad": True, "aiChatChromeMenuButtonIPad": True,
+                    "ipadAIChatContextSidebar": True, "aiChatContextualUnifiedToggleInput": True,
+                    "aiChatContextualFloatingInput": True, "aiChatTabHandoffImprovements": True,
+                    "aiChatAutoAttachContextByDefault": False}
+CONTEXTUAL_INPUT = "role=textview id=searchEntry"   # shares `searchEntry` with the address bar (a search field)
+CONTEXTUAL_IDS = {
+    # iPhone: the sheet's Fire sits beside the collapsed input and shares its label with the toolbar Fire button, which
+    # stays in the tree under the sheet (not hittable) and is listed second.
+    "iphone": dict(fire='label="Clear Tabs and Data" nth=0', expand='label="Open In 24"'),
+    "ipad": dict(fire='label="Fire 24"', expand='label="Expand 24"'),
+}
+_TREE_LINE = re.compile(r"^\s*(\d+) id=.*? label=(['\"])(.*?)\2 value=")
+
+
+def open_contextual_chat(ios):
+    """On a web page with no chat yet: the Duck.ai entry button, then Ask About Page, which attaches the page.
+    iPhone opens the floating input over the page (the sheet comes with the first prompt); iPad opens the sheet."""
+    ios.tap(ids(ios)["aichat"])
+    ios.tap('label="Ask About Page"')
+    return ios.wait("id=AIChat.ContextChip.AttachedTitle", "exists", 15)
+
+
+def attached_context(ios):
+    """The title of the page attached to the next prompt, or None when nothing is attached."""
+    matches = ios.find("id=AIChat.ContextChip.AttachedTitle")
+    return matches[0]["label"] if matches else None
+
+
+def send_contextual_prompt(ios, prompt):
+    """Type into the contextual input and submit; ends with the sheet open (iPhone promotes the floating input)."""
+    ios.tap(CONTEXTUAL_INPUT)   # iPad opens without focus in the input
+    ios.type(CONTEXTUAL_INPUT, prompt)
+    ios.wait("id=AIChat.Toolbar.Button.Submit", "enabled", 5)
+    ios.tap("id=AIChat.Toolbar.Button.Submit")
+    return ios.wait("id=AIChat.ContextualSheet", "exists", 20)
+
+
+def _contextual_answer_texts(ios):
+    """Static texts after the last "Duck.ai said" heading in the native tree, up to the first button ([] if none)."""
+    lines = ios.snapshot().get("tree", "").splitlines()
+    heads = [i for i, line in enumerate(lines) if (m := _TREE_LINE.match(line)) and m.group(1) == "48"
+             and m.group(3) == "Duck.ai said"]
+    texts = []
+    for line in lines[heads[-1] + 1:] if heads else []:
+        m = _TREE_LINE.match(line)
+        if m and m.group(1) == "9":
+            break
+        if m and m.group(1) == "48":
+            texts.append(m.group(3))
+    return texts
+
+
+def read_contextual_answer(ios, timeout=90, settle=2.0):
+    """The last answer in the sheet (model name first), once it has stopped changing for `settle` seconds.
+
+    The web channel reads the tab, not the sheet, so this reads the sheet's chat from the native tree. Relies on Duck.ai's
+    "Duck.ai said" heading (its own wording): if that changes this fails loudly, never passes. Never settles on the model
+    name alone or while Duck.ai shows "Generating"."""
+    prev, since, last = None, None, ""
+    end = time.time() + timeout
+    while time.time() < end:
+        texts = _contextual_answer_texts(ios)
+        last = " ".join(texts)
+        if len(texts) > 1 and last == prev and "Generating" not in last:
+            since = since or time.time()
+            if time.time() - since >= settle:
+                return ios._log("contextual answer", [], lambda: last)
+        else:
+            since = None
+        prev = last
+        time.sleep(0.5)
+    raise Failed(f"contextual answer did not settle within {timeout}s", last=last)
+
+
+def fire_contextual_chat(ios):
+    """Fire from the sheet and confirm Delete Chat: the sheet closes and this tab's chat is deleted."""
+    ios.tap(CONTEXTUAL_IDS[ios.device]["fire"])
+    ios.wait("id=alert.forget-data.confirm", "exists", 5)
+    ios.shot("contextual-fire-confirm")
+    ios.tap("id=alert.forget-data.confirm")
+    return ios.expect_hidden("id=AIChat.ContextualSheet", 10)
+
+
+def expand_contextual_chat(ios):
+    """Move the sheet's chat to its own Duck.ai tab."""
+    ios.tap(CONTEXTUAL_IDS[ios.device]["expand"])
+    return ios.expect_url_contains("chatID=", 15)

@@ -172,6 +172,7 @@
 		4BF97AD12B43C43F00EB4240 /* NetworkProtectionIPC in Frameworks */ = {isa = PBXBuildFile; productRef = 4BF97AD02B43C43F00EB4240 /* NetworkProtectionIPC */; };
 		4BF97AD32B43C43F00EB4240 /* NetworkProtectionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4BF97AD22B43C43F00EB4240 /* NetworkProtectionUI */; };
 		517D1CC5BBC997B1D17DA1AC /* (null) in Sources */ = {isa = PBXBuildFile; };
+		548936935367B1D7D3E186AB /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 75060B0FCC045AA3E1FBFD6B /* ZIPFoundation */; };
 		5641734B2CFE168700F4B716 /* PixelExperimentKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5641734A2CFE168700F4B716 /* PixelExperimentKit */; };
 		5641734D2CFE169400F4B716 /* PixelExperimentKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5641734C2CFE169400F4B716 /* PixelExperimentKit */; };
 		5FFB5A9B02EB884EACEB7FFD /* (null) in Sources */ = {isa = PBXBuildFile; };
@@ -279,6 +280,7 @@
 		880C1ABF57058209BA6D7676 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 5AE9295C2BD02B4D08BA79E4 /* WideEvent */; };
 		8974DAC582F9B4F81E026EAA /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 2B6E79CFC9F345A68F8AD44B /* WideEvent */; };
 		8D6186F0686CC9257F2B7DD1 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = CA57AD4FC8F1853F05E21997 /* WideEvent */; };
+		94A93A9FC8E5055953B4F971 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 9A8B4B015C6759D3F71FE70B /* ZIPFoundation */; };
 		9D84E42C2CD4E66F0046CD8B /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4072CD4E66F0046CD8B /* Common */; };
 		9D84E42D2CD4E66F0046CD8B /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4042CD4E66F0046CD8B /* PixelKit */; };
 		9D84E42F2CD4E66F0046CD8B /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4062CD4E66F0046CD8B /* AppKitExtensions */; };
@@ -1134,6 +1136,7 @@
 				8D6186F0686CC9257F2B7DD1 /* WideEvent in Frameworks */,
 				FD8C554D30455000D23DB903 /* EventHub in Frameworks */,
 				3706FE88293F661700E42796 /* OHHTTPStubs in Frameworks */,
+				548936935367B1D7D3E186AB /* ZIPFoundation in Frameworks */,
 				A7B000072F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				845F57072E97BFF100C7F78A /* SharedTestUtilities in Frameworks */,
 				379C68E130933649007A52B1 /* DesignResourcesKit in Frameworks */,
@@ -1527,6 +1530,7 @@
 				C5401A7B1CC72C4B1A8C3390 /* WideEvent in Frameworks */,
 				35F0EEDB46C5B99058C0A95A /* EventHub in Frameworks */,
 				B6DA44172616C13800DD1EC2 /* OHHTTPStubs in Frameworks */,
+				94A93A9FC8E5055953B4F971 /* ZIPFoundation in Frameworks */,
 				A7B000042F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				845F56FF2E97BFD100C7F78A /* SharedTestUtilities in Frameworks */,
 				379C68DF30933642007A52B1 /* DesignResourcesKit in Frameworks */,
@@ -1818,6 +1822,7 @@
 			packageProductDependencies = (
 				CA57AD4FC8F1853F05E21997 /* WideEvent */,
 				3706FDD6293F661700E42796 /* OHHTTPStubs */,
+				75060B0FCC045AA3E1FBFD6B /* ZIPFoundation */,
 				3706FDD8293F661700E42796 /* OHHTTPStubsSwift */,
 				CA7335A53836D5A56E2F5B4A /* EventHub */,
 				A7B000062F6A000100000001 /* SnapshotTestingSupport */,
@@ -2474,6 +2479,7 @@
 			packageProductDependencies = (
 				083E8F2C1E9FFCBA04A4C9EB /* WideEvent */,
 				B6DA44162616C13800DD1EC2 /* OHHTTPStubs */,
+				9A8B4B015C6759D3F71FE70B /* ZIPFoundation */,
 				B6DA44182616C13800DD1EC2 /* OHHTTPStubsSwift */,
 				A7B000062F6A000100000001 /* SnapshotTestingSupport */,
 				9DC5FACA2C6B8E050011F068 /* AppKitExtensions */,
@@ -2617,6 +2623,7 @@
 				FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */,
 				FA57C0DE0000000000000015 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */,
 				B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
+				E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				B6EC37F529B5DAAC001ACE79 /* XCRemoteSwiftPackageReference "swifter" */,
 				B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */,
 				F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */,
@@ -4728,6 +4735,14 @@
 			traits = (
 			);
 		};
+		E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.9.20;
+			};
+		};
 		F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/BareBonesBrowser.git";
@@ -5401,6 +5416,11 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = WideEvent;
 		};
+		75060B0FCC045AA3E1FBFD6B /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
 		7B00997C2B6508B700FE7C31 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkProtectionProxy;
@@ -5804,6 +5824,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */;
 			productName = EventHub;
+		};
+		9A8B4B015C6759D3F71FE70B /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 		9D84E3FF2CD4E66F0046CD8B /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

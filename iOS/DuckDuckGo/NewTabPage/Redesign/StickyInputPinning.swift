@@ -33,9 +33,9 @@ struct StickyInputPinning {
 
     /// The downward translation that keeps the block's top edge at `pinnedMinY`.
     ///
-    /// The block never moves up from its resting position, and never past the bottom of the container,
-    /// so it keeps receiving touches inside the container's bounds.
+    /// The block never moves up from its resting position, and never past the bottom of the container.
     func translation(pinnedMinY: CGFloat) -> CGFloat {
+        // Staying inside the container's bounds keeps the block receiving touches.
         let maximumTranslation = max(0, containerHeight - (restingMinY + height))
         return min(max(0, pinnedMinY - restingMinY), maximumTranslation)
     }

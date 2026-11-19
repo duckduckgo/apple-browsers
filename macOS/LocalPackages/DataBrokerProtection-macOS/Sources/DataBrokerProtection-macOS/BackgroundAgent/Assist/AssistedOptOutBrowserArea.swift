@@ -169,7 +169,7 @@ struct AssistedOptOutStatus: View {
                 Text(AssistedOptOutText.notStarted)
                     .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
             case .queued, .agentInControl:
-                label(AssistedOptOutText.agentInControl, dot: Color(designSystemColor: .accentFirePrimary, palette: palette))
+                agentInControlLabel
             case .userTurn:
                 label(AssistedOptOutText.waitingForYou, dot: Color(designSystemColor: .statusYellowPrimary, palette: palette))
             case .submitted:
@@ -177,8 +177,24 @@ struct AssistedOptOutStatus: View {
             }
         }
         .font(.system(size: 13))
+        .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
         .padding(.horizontal, 12)
         .fixedSize()
+    }
+
+    @ViewBuilder
+    private var agentInControlLabel: some View {
+        let label = label(AssistedOptOutText.agentInControl, dot: Color(designSystemColor: .accentFirePrimary, palette: palette))
+            .foregroundColor(.white)
+        if #available(macOS 26.0, *) {
+            // The window tints the toolbar item's own background black, so drawing a capsule here would sit inset inside it.
+            label
+        } else {
+            label
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(Color.black.opacity(0.85)))
+        }
     }
 
     private func label(_ title: String, dot: Color) -> some View {
@@ -188,17 +204,15 @@ struct AssistedOptOutStatus: View {
                 .frame(width: 8, height: 8)
             Text(title)
                 .fontWeight(.medium)
-                .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
         }
     }
 }
 
-/// Draws a colored glow around the page edge. It pulses yellow while the user has a step to do.
+/// Draws a pulsing yellow glow around the page edge while the user has a step to do.
 @MainActor
 final class AssistedOptOutEdgeOverlayView: NSView {
     enum Edge {
         case none
-        case agent
         case user
     }
 
@@ -280,22 +294,19 @@ final class AssistedOptOutEdgeOverlayView: NSView {
 
     private func updateEdgeColors() {
         innerShadowLayer.removeAnimation(forKey: Self.pulseKey)
-        let color: NSColor
-        switch edge {
-        case .none:
+        guard edge == .user else {
             edgeLayer.borderColor = NSColor.clear.cgColor
             innerShadowLayer.fillColor = NSColor.clear.cgColor
             innerShadowLayer.shadowOpacity = 0
             return
-        case .agent: color = NSColor(designSystemColor: .accentFirePrimary, palette: .default)
-        case .user: color = NSColor(designSystemColor: .statusYellowPrimary, palette: .default)
         }
+        let color = NSColor(designSystemColor: .statusYellowPrimary, palette: .default)
         edgeLayer.borderColor = color.cgColor
         innerShadowLayer.fillColor = color.cgColor
         innerShadowLayer.shadowColor = color.cgColor
         innerShadowLayer.shadowOpacity = 0.5
 
-        guard edge == .user, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
         let pulse = CABasicAnimation(keyPath: "shadowOpacity")
         pulse.fromValue = 0.8
         pulse.toValue = 0.3

@@ -328,6 +328,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // `chrome.permissions` asks the app for the permissions WebKit doesn't know, such as `privacy`.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             permissionsHandler, contentWorld: .page, name: WebExtensionAPIStubScript.permissionsMessageHandlerName)
+        controllerConfiguration.webViewConfiguration.userContentController.add(
+            permissionsHandler, contentWorld: .defaultClient, name: WebExtensionPermissionUserGestureScript.messageHandlerName)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(
+            WKUserScript(source: WebExtensionPermissionUserGestureScript.source,
+                         injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
 #endif
         controllerConfiguration.webViewConfiguration.userContentController.add(
             badgeColorHandler, contentWorld: .page, name: WebExtensionAPIStubScript.badgeColorMessageHandlerName)
@@ -1578,6 +1583,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func handlePermissionsMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         permissionsHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
+    @MainActor
+    public func handlePermissionUserGestureMessage(_ message: WKScriptMessage) {
+        permissionsHandler.recordUserGesture(from: message)
+    }
+
+    @MainActor
+    public func recordUserGesture(for context: WKWebExtensionContext) {
+        guard self.context(for: context.uniqueIdentifier) === context else { return }
+        permissionController?.recordUserGesture(for: context)
     }
 #endif
 

@@ -949,6 +949,56 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     // MARK: - App Permissions
 
+    func testCombinedRequestReservesInteractionBeforeTheHostPromptResolves() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        context.evaluateScript("""
+        var resolveHost;
+        chrome.permissions.request = function() {
+            if (appPreparations.length !== 1) { throw new Error('Interaction was not reserved first'); }
+            return new Promise(function(resolve) { resolveHost = resolve; });
+        };
+        """)
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'tabs'] })")
+        try assertTrue("permissionsResult === 'pending' && appRequests.length === 0")
+        context.evaluateScript("resolveHost(true);")
+
+        try assertNoExceptions()
+        try assertTrue("permissionsResult === true")
+        try assertTrue("appRequests[0].requestIdentifier === 'reservation'")
+    }
+
+    func testCombinedRequestCancelsReservationWhenTheHostRefuses() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'downloads'] })")
+
+        try assertTrue("permissionsResult === false")
+        try assertTrue("appPreparations.length === 1 && appCancellations.length === 1")
+        try assertTrue("appRequests.length === 0")
+    }
+
+    func testCombinedRequestCancelsReservationWhenTheHostFails() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        context.evaluateScript("chrome.permissions.request = function() { return Promise.reject(new Error('Host failed')); };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hostError = '';
+        chrome.permissions.request({ permissions: ['privacy', 'tabs'] }).catch(function(error) { hostError = error.message; });
+        """)
+
+        try assertNoExceptions()
+        try assertTrue("hostError === 'Host failed'")
+        try assertTrue("appPreparations.length === 1 && appCancellations.length === 1")
+        try assertTrue("appRequests.length === 0")
+    }
+
     func testWhenPrivacyIsAskedAbout_ThenTheAppAnswersAndTheHostIsNotAsked() throws {
         try installFakePermissions()
         try installFakePermissionsHandler()
@@ -2142,10 +2192,20 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         let grantedList = granted.map { "'\($0)'" }.joined(separator: ", ")
         context.evaluateScript("""
         var appRequests = [];
+        var appPreparations = [];
+        var appCancellations = [];
         var appGranted = [\(grantedList)];
         var webkit = { messageHandlers: {
             "\(WebExtensionAPIStubScript.permissionsMessageHandlerName)": {
                 postMessage: function(payload) {
+                    if (payload.action === 'prepareRequest') {
+                        appPreparations.push(payload);
+                        return Promise.resolve(\(fails) ? null : 'reservation');
+                    }
+                    if (payload.action === 'cancelRequest') {
+                        appCancellations.push(payload);
+                        return Promise.resolve(true);
+                    }
                     appRequests.push(payload);
                     if (\(fails)) {
                         return Promise.reject(new Error('nope'));

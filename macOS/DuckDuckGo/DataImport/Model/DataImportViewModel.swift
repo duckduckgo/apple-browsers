@@ -979,10 +979,6 @@ extension DataImportViewModel {
         }
     }
 
-    var isHistoryImportEnabled: Bool {
-        featureFlagger.isFeatureOn(.dataImportHistory)
-    }
-
     var shouldShowSyncFooterButton: Bool {
         switch screen {
         case .summary:

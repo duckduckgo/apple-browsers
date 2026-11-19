@@ -60,7 +60,7 @@ final class DataImportSummaryViewTests {
             isPasswordManagerAutolockEnabled: true,
             syncFeatureVisibility: syncFeatureVisibility,
             loadProfiles: { .init(browser: $0, profiles: []) },
-            featureFlagger: historyImportFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             pixelFiring: nil
         )
         return DataImportView(
@@ -69,11 +69,5 @@ final class DataImportSummaryViewTests {
             syncFeatureVisibility: syncFeatureVisibility,
             pinningManager: MockPinningManager()
         )
-    }
-
-    private func historyImportFeatureFlagger() -> MockFeatureFlagger {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.dataImportHistory.rawValue] = true
-        return featureFlagger
     }
 }

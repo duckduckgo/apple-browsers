@@ -258,11 +258,11 @@ struct UserText {
     // Warn Before Quit/Close
     static let confirmQuitAction = NSLocalizedString("confirm.quit.action", value: "Hold or press again to quit", comment: "Action text shown in the quit confirmation overlay")
     static let confirmQuitSubtitle = NSLocalizedString("confirm.quit.subtitle", value: "Tabs will be saved for next time.", comment: "Subtitle shown in the quit confirmation overlay explaining that tabs will be restored")
-    
+
     static let confirmCloseAction = NSLocalizedString("confirm.close.action", value: "Hold or press again to close", comment: "Action text shown in the close confirmation overlay")
-    
+
     static let confirmDontShowAgain = NSLocalizedString("confirm.dont.show.again", value: "Don‘t Show Again", comment: "Button to disable confirmation dialogs")
-    
+
     // Settings
     static let settingsOnQuitSection = NSLocalizedString("settings.on.quit.section", value: "On Quit", comment: "Settings section header for quit-related preferences")
     static let settingsConfirmQuitCheckbox = NSLocalizedString("settings.confirm.quit.checkbox", value: "Show confirmation before quitting with ⌘Q", comment: "Checkbox label in Settings to enable quit confirmation")
@@ -910,7 +910,6 @@ struct UserText {
     static let aiChatToggleSearchLabel = NSLocalizedString("aichat.toggle.search.label", value: "Search", comment: "Label for the search segment in the address bar toggle control")
     static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
 
-
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
     static let aiChatVoiceChatButtonTooltip = NSLocalizedString("aichat.voice-chat-button.tooltip", value: "Start a voice chat", comment: "Tooltip for the voice chat button shown in the AI chat omnibar when the input is empty")
     static let aiChatSearchToggleButtonTooltip = NSLocalizedString("aichat.search-toggle-button.tooltip", value: "Search the web", comment: "Tooltip for the search toggle button in AI chat omnibar")
@@ -1297,7 +1296,7 @@ struct UserText {
     static let importBookmarks = NSLocalizedString("import.browser.data.bookmarks", value: "Import Bookmarks", comment: "Opens Import Browser Data dialog")
     static let importPasswords = NSLocalizedString("import.browser.data.passwords", value: "Import Passwords…", comment: "Opens Import Browser Data dialog")
 
-    static let importDataSummaryTitle = NSLocalizedString("import.browser.data.summary.title", value:"Import Summary", comment: "Title for screen shown after importing data (passwords / bookmarks)")
+    static let importDataSummaryTitle = NSLocalizedString("import.browser.data.summary.title", value: "Import Summary", comment: "Title for screen shown after importing data (passwords / bookmarks)")
     static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
     static let importDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.set.up.sync.button.title", value: "Set Up Sync", comment: "Import Browser Data dialog button title to set up data sync at completion stage")
 
@@ -2136,7 +2135,6 @@ struct UserText {
         return String(format: localized, source.importSourceName)
     }
 
-
     static let passwordEntryHelpTitle = NSLocalizedString("import.password.entry.help.title", value: "Want to try again? macOS needs your permission to finish importing.", comment: "Title for the password entry help screen")
     static let passwordEntryHelpInstructions = NSLocalizedString("import.password.entry.help.instructions", value: "Click **Show macOS Message** and select **Allow** when the macOS message appears.", comment: "Instructions for password entry help")
     static let passwordEntryHelpShowMacOSMessageButton = NSLocalizedString("import.password.entry.help.show.macos.message.button", value: "Show macOS Message", comment: "Button text to trigger the macOS keychain prompt")
@@ -2149,30 +2147,6 @@ struct UserText {
     static let importShortcutsBookmarksTitle = NSLocalizedString("import.shortcuts.bookmarks.title", value: "Show Bookmarks Bar", comment: "Title for the setting to enable the bookmarks bar")
     static let importShortcutsPasswordsTitle = NSLocalizedString("import.shortcuts.passwords.title", value: "Show Passwords Shortcut", comment: "Title for the setting to enable the passwords shortcut")
 
-    static func importSummaryBookmarksImported(_ count: Int) -> String {
-        let localized = NSLocalizedString("import.summary.bookmarks.imported", value: "Bookmarks Imported: %d", comment: "Summary text showing number of bookmarks successfully imported")
-        return String(format: localized, count)
-    }
-    static func importSummaryBookmarksImportedPartial(_ successful: Int, _ total: Int) -> String {
-        let localized = NSLocalizedString("import.summary.bookmarks.imported.partial", value: "Bookmarks Imported: %d / %d", comment: "Summary text showing number of bookmarks successfully imported out of total attempted")
-        return String(format: localized, successful, total)
-    }
-    static func importSummaryPasswordsImported(_ count: Int) -> String {
-        let localized = NSLocalizedString("import.summary.passwords.imported", value: "Passwords Imported: %d", comment: "Summary text showing number of passwords successfully imported")
-        return String(format: localized, count)
-    }
-    static func importSummaryPasswordsImportedPartial(_ successful: Int, _ total: Int) -> String {
-        let localized = NSLocalizedString("import.summary.passwords.imported.partial", value: "Passwords Imported: %d / %d", comment: "Summary text showing number of passwords successfully imported out of total attempted")
-        return String(format: localized, successful, total)
-    }
-    static func importSummaryCreditCardsImported(_ count: Int) -> String {
-        let localized = NSLocalizedString("import.summary.credit.cards.imported", value: "Credit Cards Imported: %d", comment: "Summary text showing number of credit cards successfully imported")
-        return String(format: localized, count)
-    }
-    static func importSummaryCreditCardsImportedPartial(_ successful: Int, _ total: Int) -> String {
-        let localized = NSLocalizedString("import.summary.credit.cards.imported.partial", value: "Credit Cards Imported: %d / %d", comment: "Summary text showing number of credit cards successfully imported out of total attempted")
-        return String(format: localized, successful, total)
-    }
     static func importSummaryHistoryImported(_ count: Int) -> String {
         let template = NSLocalizedString("import.summary.history.visits", value: "History: %d visits", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange")
         return String.localizedStringWithFormat(template, count)
@@ -2503,7 +2477,6 @@ struct UserText {
     // Internal only — not localized
     static let showFeedbackShortcut = "Show Feedback Shortcut"
     static let hideFeedbackShortcut = "Hide Feedback Shortcut"
-
 
     // MARK: - Tooltips
 

@@ -61,6 +61,10 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_mediaMutedState")))
     }
 
+    func testWebViewRespondsTo_setIgnoresAllEvents() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_setIgnoresAllEvents:")))
+    }
+
     func testWKWebpagePreferencesCustomHeaderFieldsSupported() {
         XCTAssertTrue(NavigationPreferences.customHeadersSupported)
         let testHeaders = ["X-CUSTOM-HEADER": "TEST"]

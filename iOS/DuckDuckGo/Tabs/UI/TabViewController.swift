@@ -3146,8 +3146,12 @@ extension TabViewController: WKNavigationDelegate {
 
     /// One prompt at a time, and only on the tab the user is looking at.
     private func showTranslationBanner(_ offer: TranslationOffer) {
-        guard view.window != nil, delegate?.tabIsShowingOtherPrompt(self) != true,
-              let addressBar = chromeDelegate?.omniBar.barView else { return }
+        guard view.window != nil,
+              delegate?.tabIsShowingOtherPrompt(self) != true,
+              let addressBar = chromeDelegate?.omniBar.barView,
+              addressBar.window === view.window else {
+            return
+        }
         translationBannerPresenter.present(offer, in: self, nextTo: addressBar)
     }
 

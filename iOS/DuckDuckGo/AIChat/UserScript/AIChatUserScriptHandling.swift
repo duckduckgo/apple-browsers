@@ -231,9 +231,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
             return .invalidRequest(rawParams: params)
         }
-        guard let source else {
-            return .failure(callId: request.callId, error: .unavailable)
-        }
+        guard let source else { return .failure(callId: request.callId, error: .unavailable) }
         return await source.invokeBrowserTool(request).limitedToResultBytes()
     }
 

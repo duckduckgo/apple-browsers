@@ -85,7 +85,6 @@ final class BrowserToolPageContentReader: BrowserToolPageContentReading {
         scope.source.tabsPublisher?.sink { _ in lease.check() }.store(in: &subscriptions)
         defer { subscriptions.removeAll() }
 
-        guard lease.isValid else { return nil }
         guard !Task.isCancelled, lease.isValid, let loaded = page.state(),
               loaded.isLoaded || loaded.isLoading, timeout > 0 else { return nil }
 

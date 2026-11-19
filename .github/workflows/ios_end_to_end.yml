@@ -229,7 +229,7 @@ jobs:
     name: "E2E: ${{ matrix.test-tag }}${{ matrix.user-mode == 'internal' && ' - internal' || '' }}"
     needs: [build-end-to-end-tests, setup-matrix]
     runs-on: macos-26
-    timeout-minutes: 250
+    timeout-minutes: 330
 
     env:
       RUNS_ON: macos-26 # keep this in sync with runs-on above
@@ -297,17 +297,10 @@ jobs:
       run: |
         set -uo pipefail
         set +e   # GitHub's default bash uses `set -e`; we inspect exit codes manually
-        # Budget nesting - each value must stay below the next:
-        #   MAESTRO_TIMEOUT_MIN  maestro's own polling wait, the primary graceful budget. Its
-        #                        60m default silently killed healthy runs: only 2 cloud runners
-        #                        serve every leg, so queuing ate most of the window before the
-        #                        flows themselves had run. We set it above the real need (~77m
-        #                        for the 38-flow release leg: ~42m queue + ~35m execution).
-        #   ATTEMPT_BUDGET_MIN   outer hard-kill belt; only fires if maestro ignores its own
-        #                        clock (a true hang), surfacing as rc=124, which we retry.
-        #   MAX_ATTEMPTS x ATTEMPT_BUDGET_MIN must fit under the job's timeout-minutes.
-        MAESTRO_TIMEOUT_MIN=110
-        ATTEMPT_BUDGET_MIN=120
+        # Cloud queue time counts against Maestro's polling budget. Keep its timeout below
+        # the hard-kill budget, and both attempts below the job's timeout-minutes.
+        MAESTRO_TIMEOUT_MIN=150
+        ATTEMPT_BUDGET_MIN=160
         MAX_ATTEMPTS=2
         RETRY_DELAY=30
         TIMEOUT_BIN="$(command -v timeout || command -v gtimeout)"

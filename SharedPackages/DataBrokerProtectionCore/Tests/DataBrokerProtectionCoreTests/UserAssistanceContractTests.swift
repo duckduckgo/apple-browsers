@@ -73,13 +73,17 @@ struct UserAssistanceContractTests {
         #expect(steps.index(of: actions[1]) == 1)
         #expect(steps.index(of: actions[2]) == nil)
     }
+#endif
 
     @MainActor
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["success", "error", "userTurnNeeded", "actionError"])
     func staleResponsesDoNotFinishCurrentAction(kind: String) async throws {
         let delegate = AssistanceCommunicationDelegate()
-        let feature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+        let feature = DataBrokerProtectionFeature(delegate: delegate,
+                                                  executionConfig: BrokerJobExecutionConfig(),
+                                                  shouldContinueActionHandler: { true },
+                                                  rejectsStaleReplies: true)
         let broker = UserScriptMessageBroker(context: "contract-test")
         feature.with(broker: broker)
         let webView = WKWebView()
@@ -109,7 +113,25 @@ struct UserAssistanceContractTests {
         #expect(delegate.successIDs == ["current"])
         #expect(acceptedResponses == 1)
     }
-#endif
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func regularRunsAcceptRepliesForAnEarlierAction() async throws {
+        let delegate = AssistanceCommunicationDelegate()
+        let feature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+        let broker = UserScriptMessageBroker(context: "contract-test")
+        feature.with(broker: broker)
+        let webView = WKWebView()
+        Self.push(ClickAction(id: "current", actionType: .click), to: feature, webView: webView)
+        var acceptedResponses = 0
+        feature.onActionResponse = { acceptedResponses += 1 }
+
+        _ = try await feature.onActionCompleted(params: Self.completion(actionID: "old"), original: WKScriptMessage.mock())
+
+        #expect(delegate.successIDs == ["old"])
+        #expect(acceptedResponses == 1)
+    }
 
     @MainActor
     @available(iOS 16, macOS 13, *)

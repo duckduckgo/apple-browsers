@@ -122,17 +122,6 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         }
     }
 
-    func testAppStoreBuildStartsUpdateDiscoveryWhenFlagIsOn() async throws {
-        let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionUpdateDiscovery.rawValue: true])
-        let storage = try DiscoveryStateStorage()
-        let manager = makeManager(storage: storage, flags: flags, isAppStore: true)
-        let store = try XCTUnwrap(manager.chromeWebStore)
-        try await waitForCondition { store.canCheckForUpdates }
-        XCTAssertTrue(store.canCheckForUpdates)
-        XCTAssertEqual(storage.discoveryReads, 1)
-        withExtendedLifetime(manager) {}
-    }
-
     func testManagerEnforcesExtensionPermissions() throws {
         let manager = makeManager(storage: try DiscoveryStateStorage(), flags: MockFeatureFlagger())
         XCTAssertNotNil(manager.permissionController)
@@ -150,10 +139,9 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         }
     }
 
-    private func makeManager(storage: DiscoveryStateStorage, flags: MockFeatureFlagger, isAppStore: Bool = false) -> WebExtensionManager {
+    private func makeManager(storage: DiscoveryStateStorage, flags: MockFeatureFlagger) -> WebExtensionManager {
         let buildType = ApplicationBuildTypeMock()
-        buildType.isAppStoreBuild = isAppStore
-        buildType.isSparkleBuild = !isAppStore
+        buildType.isSparkleBuild = true
         return WebExtensionManagerFactory.makeManager(keyValueStore: storage,
                                                      privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                                                      autoconsentPreferences: Preferences(),

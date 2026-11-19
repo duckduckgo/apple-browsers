@@ -1,0 +1,165 @@
+//
+//  IOSLaunchSettingsTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Testing
+import LaunchProfile
+@_spi(Testing) import Persistence
+import PrivacyConfig
+@testable import Core
+@testable import DuckDuckGo
+@testable import FeatureFlags_iOS
+
+/// Each test applies a profile and reads the result back the way the app reads it.
+@MainActor
+@Suite(.serialized)
+final class IOSLaunchSettingsTests {
+
+    nonisolated private static let suiteName = "testing_iOSLaunchSettings"
+    private let internalUserStore = MockInternalUserStoring()
+    private let tabsPersistence = TabsModelPersistence(normalStore: InMemoryThrowingKeyValueStore(),
+                                                       fireStore: InMemoryThrowingKeyValueStore(),
+                                                       legacyStore: UserDefaults(suiteName: suiteName)!)
+    private var events: [String] = []
+    private var launchArguments: [String: String] = [:]
+
+    deinit {
+        UserDefaults(suiteName: Self.suiteName)?.removePersistentDomain(forName: Self.suiteName)
+    }
+
+    private func apply(_ json: String, flagOverridesNeedInternalUser: Bool = true) throws -> LaunchProfileOutcome {
+        let settings = IOSLaunchSettings.make(
+            internalUserStore: internalUserStore,
+            flagOverridesNeedInternalUser: flagOverridesNeedInternalUser,
+            resetAppState: { [unowned self] in events.append("reset(internalUser=\(internalUserStore.isInternalUser))") },
+            setLaunchArgument: { [unowned self] value, key in launchArguments[key] = value },
+            tabsPersistence: { [tabsPersistence] in tabsPersistence },
+            isPad: false
+        )
+        return settings.apply(try LaunchProfile(json: Data(json.utf8)))
+    }
+
+    private static var overridableFlag: FeatureFlag {
+        FeatureFlag.allCases.first { $0.supportsLocalOverriding && $0.cohortType == nil }!
+    }
+
+    private static var experimentFlag: FeatureFlag {
+        FeatureFlag.allCases.first { $0.supportsLocalOverriding && $0.cohortType != nil }!
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func resetRunsBeforeAnyOtherSetting() throws {
+        internalUserStore.isInternalUser = false
+
+        let outcome = try apply(#"{"internalUser": true, "resetAppState": true}"#)
+
+        #expect(outcome == .applied(keys: ["resetAppState", "internalUser"]))
+        #expect(events == ["reset(internalUser=false)"])
+        #expect(internalUserStore.isInternalUser)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func onboardingCompletedIsReadByLaunchOptionsHandler() throws {
+        _ = try apply(#"{"onboardingCompleted": true}"#)
+
+        #expect(launchArguments == [LaunchOptionsHandler.isOnboardingCompleted: "true"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func featureFlagBecomesTheFFLaunchArgument() throws {
+        let flag = Self.overridableFlag
+
+        _ = try apply(#"{"internalUser": true, "featureFlags": {"\#(flag.rawValue)": true}}"#)
+
+        #expect(launchArguments == ["ff.\(flag.rawValue)": "true"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func featureFlagNeedsInternalUser() throws {
+        let outcome = try apply(#"{"featureFlags": {"\#(Self.overridableFlag.rawValue)": true}}"#)
+
+        #expect(!outcome.isSuccess)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func featureFlagWorksWithoutInternalUserWhenUITesting() throws {
+        let flag = Self.overridableFlag
+
+        let outcome = try apply(#"{"featureFlags": {"\#(flag.rawValue)": true}}"#, flagOverridesNeedInternalUser: false)
+
+        #expect(outcome.isSuccess)
+        #expect(launchArguments == ["ff.\(flag.rawValue)": "true"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func experimentCohortBecomesTheLaunchArgumentOnlyWhenItExists() throws {
+        let flag = Self.experimentFlag
+        let cohortID = try #require(flag.cohortType.flatMap { Self.firstCohortID(of: $0) })
+
+        let unknown = try apply(#"{"internalUser": true, "experiments": {"\#(flag.rawValue)": "not-a-cohort"}}"#)
+        let known = try apply(#"{"internalUser": true, "experiments": {"\#(flag.rawValue)": "\#(cohortID)"}}"#)
+
+        #expect(!unknown.isSuccess)
+        #expect(known.isSuccess)
+        #expect(launchArguments == ["experiment.\(flag.rawValue)": cohortID])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func privacyConfigURLBecomesTheLaunchArgument() throws {
+        let invalid = try apply(#"{"internalUser": true, "privacyConfigURL": "file:///config.json"}"#)
+        let valid = try apply(#"{"internalUser": true, "privacyConfigURL": "http://localhost:8080/ios-config.json"}"#)
+
+        #expect(!invalid.isSuccess)
+        #expect(valid.isSuccess)
+        #expect(launchArguments == ["privacyConfigURL": "http://localhost:8080/ios-config.json"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func tabsAreRestoredWithTheLastOneSelected() throws {
+        _ = try tabsPersistence.saveSynchronously(model: TabsModel(desktop: false, mode: .fire), for: .fire).get()
+
+        _ = try apply(#"{"tabs": ["https://example.com/", "https://duck.ai/"]}"#)
+
+        let model = try #require(try tabsPersistence.getTabsModel(for: .normal))
+        #expect(model.tabs.map(\.link?.url.absoluteString) == ["https://example.com/", "https://duck.ai/"])
+        #expect(model.currentIndex == 1)
+        #expect(try tabsPersistence.getTabsModel(for: .fire) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func tabsMustBeWebPages() throws {
+        let outcome = try apply(#"{"tabs": ["example.com"]}"#)
+
+        #expect(outcome == .rejected([LaunchProfileProblem(key: "tabs",
+                                                           message: #""tabs" is invalid: use http or https URLs, like https://example.com."#)]))
+    }
+
+    private static func firstCohortID<Cohort: FeatureFlagCohortDescribing>(of type: Cohort.Type) -> CohortID? {
+        Cohort.allCases.first?.rawValue
+    }
+}

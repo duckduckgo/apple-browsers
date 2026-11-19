@@ -27,6 +27,7 @@ let package = Package(
     ],
     products: [
         .library(name: "DebugServer", targets: ["DebugServer"]),
+        .library(name: "LaunchProfile", targets: ["LaunchProfile"]),
     ],
     targets: [
         .target(
@@ -40,6 +41,11 @@ let package = Package(
             name: "DebugServerTests",
             dependencies: ["DebugServer"],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
+        .target(name: "LaunchProfile"),
+        .testTarget(
+            name: "LaunchProfileTests",
+            dependencies: ["LaunchProfile"]
         ),
     ]
 )

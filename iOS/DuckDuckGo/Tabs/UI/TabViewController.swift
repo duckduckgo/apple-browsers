@@ -645,7 +645,7 @@ class TabViewController: UIViewController {
         }
     }
 
-    private let rulesCompilationMonitor = RulesCompilationMonitor.shared
+    var rulesCompilationMonitor = RulesCompilationMonitor.shared
     
     private var lastRenderedURL: URL?
 
@@ -4284,8 +4284,8 @@ extension TabViewController: WKNavigationDelegate {
             let isReady = await geolocationInstalled.values.first { _ in true } != nil
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
             guard isReady, !Task.isCancelled, isCurrentWait else {
+                // Rules are not ready, so this is not a finished wait. Keep the tab's waiter: a replacing wait shares it.
                 completion(false)
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
                 return
             }
             if isMainFrame {

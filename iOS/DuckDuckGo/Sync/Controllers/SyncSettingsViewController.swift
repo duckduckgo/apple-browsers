@@ -198,6 +198,21 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         fatalError("init(coder:) has not been implemented")
     }
 
+    func showDeviceActivity() {
+        guard viewModel.isSyncEnabled, viewModel.isDeviceActivityAvailable else { return }
+        let showActivity = { [weak self] in
+            guard let self, self.viewModel.isSyncEnabled, self.viewModel.isDeviceActivityAvailable,
+                  !self.viewModel.isDeviceActivityPresented else { return }
+            self.navigationController?.popToViewController(self, animated: false)
+            self.viewModel.isDeviceActivityPresented = true
+        }
+        if let sheet = navigationController?.presentedViewController ?? presentedViewController {
+            sheet.dismiss(animated: false, completion: showActivity)
+        } else {
+            showActivity()
+        }
+    }
+
     func authenticateUser(completion: @escaping (UserAuthenticator.AuthError?) -> Void) {
         if !userSession.isSessionValid {
             userAuthenticator.logOut()
@@ -239,14 +254,17 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     }
 
     private func setUpDeviceActivityFeatureFlag(_ viewModel: SyncSettingsViewModel) {
+        viewModel.isDeviceActivityAvailable = featureFlagger.isFeatureOn(.syncLoginAuditLog)
         featureFlagger.updatesPublisher
-            .prepend(())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
                 let isAvailable = self.featureFlagger.isFeatureOn(.syncLoginAuditLog)
                 viewModel.isDeviceActivityAvailable = isAvailable
-                if !isAvailable { viewModel.deviceActivityViewModel?.cancelAndClear() }
+                if !isAvailable {
+                    viewModel.isDeviceActivityPresented = false
+                    viewModel.deviceActivityViewModel?.cancelAndClear()
+                }
             }
             .store(in: &cancellables)
     }

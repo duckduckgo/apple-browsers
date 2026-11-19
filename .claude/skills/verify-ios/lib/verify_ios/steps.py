@@ -2,6 +2,9 @@
 
 Every step uses only generic actions and the ids documented in ../../features/. Keep it that way: when the app gets
 an XCUITest target, these port to Swift mechanically, from the feature map, not from this code.
+
+A step that looks for something and doesn't find it raises with runner code NOT_FOUND (TIMEOUT when it waited), like
+the driver does, so `prove --base` can take that miss for the base build's expected failure inside `on_base("fail")`.
 """
 import ast
 import json
@@ -33,7 +36,7 @@ def tap_first_present(ios, locators, timeout=1.5):
     for loc in locators:
         if ios.exists(loc, timeout):
             return ios.tap(loc)
-    raise Failed(f"none of {locators} present")
+    raise Failed(f"none of {locators} present", runner=dict(code="NOT_FOUND"))
 
 
 # ---------------------------------------------------------------- session and pages
@@ -82,8 +85,9 @@ def tab_count(ios):
                 label = nxt.split("label=")[1].split(" value=")[0].strip("'\"") if "label=" in nxt else ""
                 if label.isdigit():
                     return int(label)
-            raise Failed("tab-switcher button found, but no tab-count label right after it in the tree")
-    raise Failed("no tab-switcher button (Browser.Toolbar.Button.TabSwitcher) in the tree")
+            raise Failed("tab-switcher button found, but no tab-count label right after it in the tree",
+                         runner=dict(code="NOT_FOUND"))
+    raise Failed("no tab-switcher button (Browser.Toolbar.Button.TabSwitcher) in the tree", runner=dict(code="NOT_FOUND"))
 
 
 def expect_tab_count(ios, n, timeout=8):
@@ -208,7 +212,7 @@ def read_duckai_answer(ios, timeout=90, settle=2.0):
             since = None
         prev = last
         time.sleep(0.5)
-    raise Failed(f"Duck.ai answer did not settle within {timeout}s", last=last)
+    raise Failed(f"Duck.ai answer did not settle within {timeout}s", last=last, runner=dict(code="TIMEOUT"))
 
 
 # ---------------------------------------------------------------- Duck.ai: chat ids, history, deletion, storage
@@ -401,7 +405,7 @@ def read_contextual_answer(ios, timeout=90, settle=2.0):
             since = None
         prev = last
         time.sleep(0.5)
-    raise Failed(f"contextual answer did not settle within {timeout}s", last=last)
+    raise Failed(f"contextual answer did not settle within {timeout}s", last=last, runner=dict(code="TIMEOUT"))
 
 
 def fire_contextual_chat(ios):

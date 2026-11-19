@@ -210,19 +210,20 @@ devices and the evidence directory. It returns only the verdict per device (pass
 `report.md` path and the evidence folder. The lead still reads `report.md` and looks at the screenshots and the video
 before claiming anything.
 
-**Before and after (bug fixes).** Run the same proof against the base commit: add a worktree at it and run *this*
-checkout's `verify-ios` from inside that worktree. The checkout is taken from the current directory and the skill
-from the script's own path, so the base app is built and proved with today's skill and proof, on that worktree's own
-simulators. Each report's rerun command starts with `cd` into the checkout it proved:
+**Before and after (`--base`).** To show a change against the base build, wrap the checks that should differ there
+in `with ios.on_base("fail"):` (or `"pass"`); every other check should be unchanged.
 
 ```bash
-base=../base-verify; V="$PWD/$V"                     # absolute, so it still names this checkout's skill from there
-git worktree add "$base" "$(git merge-base HEAD origin/main)" && git -C "$base" submodule update --init --recursive
-(cd "$base" && $V --device iphone setup && $V build &&
- $V prove "$proof" --devices iphone --evidence-dir "$dir/before")   # expected to fail: the bug
-$V prove "$proof" --devices iphone --evidence-dir "$dir/after"      # expected to pass: the fix
-(cd "$base" && $V cleanup --all --delete-sims) && git worktree remove --force "$base"   # --force: it has submodules
+$V prove "$proof" --base "$(git merge-base HEAD origin/main)"   # adds a full app build of the base (3–20 min)
 ```
+
+This builds the base revision in its own worktree (own simulators, removed afterwards), proves it there with this
+checkout's skill and proof, then proves this checkout. On the base run a check expected to fail is recorded and the
+proof carries on, but only for an absent element or a failed assertion; any other error makes that run
+inconclusive. `report.md` judges each check against both runs and pairs the key frames Before | After; each run's
+own report is under `before/` and `after/`. Checks line up across runs by name, with tokens left out. Exit `0` as
+expected · `1` unexpected · `2` inconclusive (a run didn't finish, a check wasn't seen on both, or capture conditions
+differ).
 
 Exit codes: `0` pass · `1` a check failed (the product, or the proof) · `2` error: setup, stale build, driver, a proof
 rejected by `check`, or a pass with cleanup/evidence problems · `3` not supported · `75` device busy (another proof
@@ -294,7 +295,7 @@ $V prove .claude/skills/verify-ios/examples/*.py                                
 | path | what |
 |---|---|
 | `bin/verify-ios` | command line: setup, build, new-proof, check, prove, explore, doctor, cleanup (`-h`) |
-| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `steps.py`, `telemetry.py`, `video.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
+| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `compare.py` (`--base`), `steps.py`, `telemetry.py`, `video.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
 | `lib/vrunner_start.sh` | start one runner and report its pids (called by the driver, which also stops it) |
 | `lib/ios_identity.sh` | running-binary sha256 vs build (called by doctor) |
 | `runner/` | Swift XCUITest runner, XcodeGen spec and generated project; regenerate with `cd runner && xcodegen generate` |

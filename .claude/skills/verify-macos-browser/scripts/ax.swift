@@ -37,7 +37,8 @@ if cmd == "grants" {
 guard let target = ProcessInfo.processInfo.environment["VERIFY_APP"], !target.isEmpty else {
     print("Set VERIFY_APP to the app name, e.g. verify-<topic>"); exit(1)
 }
-guard let app = NSWorkspace.shared.runningApplications.first(where: { ($0.localizedName ?? "").contains(target) }) else {
+// By the bundle's file name, not localizedName: under another language the app's InfoPlist.strings name it "DuckDuckGo".
+guard let app = NSWorkspace.shared.runningApplications.first(where: { ($0.bundleURL?.lastPathComponent ?? "").contains(target) }) else {
     print("APP NOT RUNNING: \(target)"); exit(1)
 }
 let root = AXUIElementCreateApplication(app.processIdentifier)

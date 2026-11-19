@@ -200,6 +200,18 @@ final class DockCustomizerTests: XCTestCase {
         XCTAssertTrue(sut.shouldShowNotification)
     }
 
+    func testWhenItemDotShowsBeforeButtonDotRefreshesThenClosingMenuHidesDot() {
+        setFirstLaunchDateThreeDaysAgo()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        let sut = makeSUT(isAppStoreBuild: true)
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+
+        sut.didCloseMoreOptionsMenu()
+
+        XCTAssertFalse(sut.shouldShowNotification)
+    }
+
     func testWhenMoreOptionsMenuClosesWithDotThenDotIsHidden() {
         setFirstLaunchDateThreeDaysAgo()
         featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true

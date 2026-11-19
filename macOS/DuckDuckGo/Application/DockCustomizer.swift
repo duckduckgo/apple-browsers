@@ -158,7 +158,7 @@ final class DockCustomizer: DockCustomization {
     }
 
     func didCloseMoreOptionsMenu() {
-        guard shouldShowNotificationPrivate else { return }
+        guard shouldShowNotificationPrivate || shouldShowNotification else { return }
         shouldShowNotificationPrivate = false
         keyValueStore.set(true, forKey: notificationShownKey)
     }

@@ -114,7 +114,7 @@ jobs:
           SHA256: ${{ inputs.sha256 }}
         run: worker/scripts/agent-worker/blobs.sh plan "$RUNNER_TEMP/plan.md" "$SHA256"
 
-      # The orchestrator copies the pinned auto release here from dub, which this runner can't reach
+      # The orchestrator copies the pinned auto release here, since this runner can't reach where auto is released
       - name: Download auto plugin from artifacts.go
         if: env.AUTO_SHA256 != ''
         run: worker/scripts/agent-worker/blobs.sh auto "$RUNNER_TEMP/auto-claude.zip" "$AUTO_SHA256"
@@ -197,7 +197,7 @@ jobs:
 
       # Besides file tools, the agent can run xc (build, test, lint) and read-only git, so it can check its
       # change and fix it as it goes. Building and testing runs code the agent wrote, which is why the worker
-      # runs from the agent-worker branch (Security Triage MM1) and holds no Azure login while the agent runs.
+      # runs from the agent-worker branch and holds no Azure login while the agent runs.
       # With auto, the agent also gets subagents, local git commits and worktrees, and auto's local scripts.
       # Anything that needs a token or network (PRs, evidence upload, other models, reflect) stays denied
       - name: Run coding agent

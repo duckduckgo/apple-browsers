@@ -107,7 +107,8 @@ extension DebugScreensViewModel {
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
                                 aiChatBonusMessageLog: dependencies.aiChatBonusMessageLog,
                                 featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                tabManager: dependencies.tabManager)
+                                tabManager: dependencies.tabManager,
+                                aiChatLocalModel: dependencies.aiChatLocalModel)
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()

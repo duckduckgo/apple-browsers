@@ -1199,6 +1199,15 @@ public enum WebExtensionAPIStubScript {
             var wrapper = function(descriptor) {
                 var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
                 var hostQuery = splitPermissions(descriptor);
+                var preparation = methodName === "request" && hostQuery.appNames.length > 0
+                    ? askApp({ action: "prepareRequest", permissions: hostQuery.appNames }, null) : null;
+                function cancelPreparation() {
+                    if (preparation === null) { return Promise.resolve(false); }
+                    return preparation.then(function(identifier) {
+                        return typeof identifier === "string" ? askApp({ action: "cancelRequest",
+                            permissions: hostQuery.appNames, requestIdentifier: identifier }, false) : false;
+                    });
+                }
                 var promise;
                 if (hostQuery.isEmpty) {
                     // Only app permissions leave the answer to the app.
@@ -1216,11 +1225,20 @@ public enum WebExtensionAPIStubScript {
                 if (hostQuery.appNames.length > 0) {
                     promise = promise.then(function(hostAnswer) {
                         if (hostAnswer !== true && methodName !== "remove") {
-                            return false;
+                            return cancelPreparation().then(function() { return false; });
+                        }
+                        if (preparation !== null) {
+                            return preparation.then(function(identifier) {
+                                if (typeof identifier !== "string") { return false; }
+                                return askApp({ action: "request", permissions: hostQuery.appNames,
+                                    requestIdentifier: identifier }, false).then(function(answer) { return answer === true; });
+                            });
                         }
                         return askAppAbout(methodName, hostQuery.appNames).then(function(appAnswer) {
                             return hostAnswer === true && appAnswer;
                         });
+                    }, function(error) {
+                        return cancelPreparation().then(function() { throw error; });
                     });
                 }
                 if (typeof callback === "function") {

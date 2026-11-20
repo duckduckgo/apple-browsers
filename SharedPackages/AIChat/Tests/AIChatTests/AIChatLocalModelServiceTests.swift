@@ -132,6 +132,23 @@ final class AIChatLocalModelServiceTests {
         #expect(otherPage.chunks.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A run carries on through the script that replaced its page's old one", .timeLimit(.minutes(1)))
+    func movedRunStreamsToTheReplacement() async throws {
+        storage.pageSummariesModel = .appleIntelligence
+        engine.keepsRunning = true
+        let replacement = RecordingLocalModelPage()
+        _ = try service.startRun(request(), for: page)
+
+        service.moveRuns(from: page, to: replacement)
+        service.cancelRun(requestId: "r1", for: page)
+        service.cancelRun(requestId: "r1", for: replacement)
+        await waitUntil { replacement.chunks.last?.done == true }
+
+        #expect(page.chunks.isEmpty)
+        #expect(replacement.chunks.last?.status == .cancelled)
+    }
+
     // MARK: - Pushes
 
     @available(iOS 16, macOS 13, *)

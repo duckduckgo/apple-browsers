@@ -202,8 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
-            windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            windowControllersManager: windowControllersManager
         )
     }()
 
@@ -512,7 +511,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         BookmarksEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             hasTopLevelEntitiesProvider: { [bookmarkManager] in
                 bookmarkManager.hasTopLevelEntities()
             },
@@ -527,7 +525,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         AutofillEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             isAnyCategoryEmptyProvider: {
                 guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
                 return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
@@ -1652,6 +1649,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)
+
+        // Not in init: creating the Fire view model reads `NSApp.delegate`, which isn't set yet.
+        aiChatBrowserToolsService.revokeChatGrants(whenBurning: fireCoordinator.fireViewModel.fire.burningDataPublisher)
 
         Task {
             await subscriptionManager.loadInitialData()

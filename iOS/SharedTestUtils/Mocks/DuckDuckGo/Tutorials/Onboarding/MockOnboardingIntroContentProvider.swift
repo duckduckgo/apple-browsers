@@ -46,8 +46,11 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
 extension OnboardingVPNActivationContent {
     static let mock = OnboardingVPNActivationContent(
         offTitle: "Off",
+        onTitle: "On",
         turnOnCTA: "Turn On",
+        tryAgainCTA: "Try Again",
         skipCTA: "Skip",
+        nextCTA: "Next",
         daxAnimation: nil
     )
 }
@@ -170,7 +173,8 @@ extension OnboardingComparisonContent {
         ],
         primaryCTA: "Browser Comparison Primary",
         secondaryCTA: "Browser Comparison Secondary",
-        daxAnimation: .wingBottom
+        daxAnimation: .wingBottom,
+        drawsCheckmarks: true
     )
 
     static let mockAI = OnboardingComparisonContent(
@@ -182,7 +186,8 @@ extension OnboardingComparisonContent {
         ],
         primaryCTA: "AI Comparison Primary",
         secondaryCTA: nil,
-        daxAnimation: .wingBottom
+        daxAnimation: .wingBottom,
+        drawsCheckmarks: true
     )
 }
 

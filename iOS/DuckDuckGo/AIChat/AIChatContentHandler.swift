@@ -64,6 +64,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     @MainActor
     func cancelPendingTabContextSubmission()
     @MainActor func cleanUpForReplacement()
+    @MainActor func handOverLocalRuns(to replacement: AIChatUserScriptProviding)
     @MainActor
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -71,6 +72,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitToggleSidebarAction()
     @MainActor
     func submitOpenChatProtectionAction()
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 }
 
 extension AIChatUserScriptProviding {
@@ -181,6 +184,11 @@ protocol AIChatContentHandling: AnyObject {
     /// Submits a chat-protection action, opening the "All chats are private" page.
     @MainActor
     func submitOpenChatProtectionAction()
+
+    /// Asks the page to open a chat in place, without a reload.
+    /// - Returns: the page's answer, or `nil` when it can't take the request or doesn't answer in time.
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -300,6 +308,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
         let replacedTermsOfServiceState = self.userScript?.isTermsOfServiceShownOnPage
+        self.userScript?.handOverLocalRuns(to: userScript)
         self.userScript?.cleanUpForReplacement()
         self.userScript = userScript
         self.userScript?.delegate = self
@@ -461,6 +470,11 @@ final class AIChatContentHandler: AIChatContentHandling {
     @MainActor
     func submitOpenChatProtectionAction() {
         userScript?.submitOpenChatProtectionAction()
+    }
+
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        await userScript?.openChat(chatId: chatId)
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {

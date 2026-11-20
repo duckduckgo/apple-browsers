@@ -18,8 +18,8 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         "ff.uiTestFeatureFlag": "true"
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         "experiment.uiTestExperiment": "treatment"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # Open Debug Menu
 - tapOn: Browsing menu

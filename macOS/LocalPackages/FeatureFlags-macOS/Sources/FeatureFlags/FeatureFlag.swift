@@ -503,25 +503,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Enables the Autofill Toolbar Pinning ("Add passwords shortcut?") promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240260?focus=true
-    case promoQueueAutofillToolbarPinningPromo
-
     /// Enables the Cookie Pop-ups Blocked promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
     case promoQueueCookiePopupsBlockedPromo
 
-    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218325559999462?focus=true
-    case promoQueueDuckPlayerOverlayPromo
-
     /// Enables the "Update available" promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
     case promoQueueUpdateAvailablePromo
-
-    /// Enables the "Browser updated" promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923091?focus=true
-    case promoQueueBrowserUpdatedPromo
 
     /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
@@ -542,14 +530,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
     case promoQueueBookmarkAddedSyncPromo
-
-    /// Enables the import/sync promo on the "No bookmarks yet" empty state in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570477?focus=true
-    case promoQueueBookmarksEmptyStatePromo
-
-    /// Enables the import/sync promo on the Passwords panel empty states in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
-    case promoQueueAutofillEmptyStatePromo
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo
@@ -722,6 +702,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the `searchBookmarks` browser tool.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
     case aiChatBrowserToolSearchBookmarks
+
+    /// Gates `requestAccess`: one prompt for the browser tools a Duck.ai chat expects to use.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolRequestAccess
 
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
@@ -1065,16 +1049,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueueAutofillToolbarPinningPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillToolbarPinningPromo))
         case .promoQueueCookiePopupsBlockedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
-        case .promoQueueDuckPlayerOverlayPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.duckPlayerOverlayPromo))
         case .promoQueueUpdateAvailablePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
-        case .promoQueueBrowserUpdatedPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.browserUpdatedPromo))
         case .promoQueueVPNUpsellPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .promoQueueSyncSetupBookmarksPromo:
@@ -1085,10 +1063,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
         case .promoQueueBookmarkAddedSyncPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
-        case .promoQueueBookmarksEmptyStatePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
-        case .promoQueueAutofillEmptyStatePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .defaultBrowserWinBackPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
@@ -1163,7 +1137,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
         case .aiChatBrowserToolListOpenTabs:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.listOpenTabs), category: .duckAI)
         case .aiChatBrowserToolSearchHistory:
@@ -1188,6 +1162,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchDownloads), category: .duckAI)
         case .aiChatBrowserToolSearchBookmarks:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchBookmarks), category: .duckAI)
+
+        case .aiChatBrowserToolRequestAccess:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.requestAccess), category: .duckAI)
 
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))

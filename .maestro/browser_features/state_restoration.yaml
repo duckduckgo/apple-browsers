@@ -53,7 +53,6 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
 
 - tapOn:
     text: "Tab Switcher"

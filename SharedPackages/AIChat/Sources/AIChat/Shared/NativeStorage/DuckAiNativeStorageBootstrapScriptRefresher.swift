@@ -22,7 +22,7 @@ import UserScript
 import WebKit
 
 /// Rebuilds `DuckAiNativeStorageBootstrapUserScript` with a current snapshot of native storage
-/// and reinstalls it on a `WKUserContentController` alongside the caller-provided static scripts.
+/// and swaps it in for the previously installed bootstrap on a `WKUserContentController`.
 ///
 /// Needed because `WKUserScript.source` is frozen at creation time: a bootstrap installed once at
 /// tab setup goes stale as soon as the FE writes new entry values, causing a flash on reload.
@@ -34,6 +34,8 @@ public final class DuckAiNativeStorageBootstrapScriptRefresher {
     private let diskHandler: DuckAiNativeStorageHandling
     private let originRules: [HostnameMatchingRule]
     private var didLogUnavailableFireModeHandler = false
+    /// The bootstrap installed by the last `refresh`, removed (and only it) on the next one.
+    private weak var installedBootstrap: WKUserScript?
 
     /// Returns the fire-mode storage state for the surrounding webview.
     /// `.notFireMode` uses the normal on-disk store, `.available` uses the isolated
@@ -78,18 +80,53 @@ public final class DuckAiNativeStorageBootstrapScriptRefresher {
         }
     }
 
-    /// Wipes all user scripts from `userContentController`, reinstalls the provided static scripts,
-    /// then appends a freshly built bootstrap script with the current native storage snapshot.
+    /// Returns `true` when a navigation should refresh the bootstrap: only main-frame navigations to
+    /// an https URL in scope. Subframe navigations must not trigger a refresh, since any page can
+    /// embed a Duck.ai frame.
+    public func shouldRefresh(navigatingTo url: URL, isForMainFrame: Bool) -> Bool {
+        guard isForMainFrame, url.scheme?.lowercased() == "https" else { return false }
+        return isInScope(url: url)
+    }
+
+    /// Replaces the previously installed bootstrap script with a freshly built one carrying the current
+    /// native storage snapshot, re-adding any of the provided static scripts that are missing.
+    ///
+    /// Other user scripts (e.g. web extension content scripts, which WebKit installs only once per
+    /// controller) are left in place. Only if the targeted-removal API is unavailable does this fall
+    /// back to wiping all user scripts and reinstalling the static scripts.
     @MainActor
     public func refresh(on userContentController: WKUserContentController, staticScripts: [WKUserScript]) {
         let bootstrap = DuckAiNativeStorageBootstrapUserScript(handler: handler, allowedOrigins: originRules)
         let wkBootstrap = bootstrap.makeWKUserScriptSync()
 
-        userContentController.removeAllUserScripts()
-        for script in staticScripts {
-            userContentController.addUserScript(script)
+        if Self.removeUserScriptSupported(by: userContentController) {
+            if let installedBootstrap {
+                userContentController.perform(NSSelectorFromString(Self.removeUserScriptSelector), with: installedBootstrap)
+            }
+            let installedScripts = userContentController.userScripts
+            for script in staticScripts where !installedScripts.contains(where: { $0 === script }) {
+                userContentController.addUserScript(script)
+            }
+        } else {
+            userContentController.removeAllUserScripts()
+            for script in staticScripts {
+                userContentController.addUserScript(script)
+            }
         }
         userContentController.addUserScript(wkBootstrap)
+        installedBootstrap = wkBootstrap
         Logger.aiChat.debug("[NativeStorage] Bootstrap script refreshed (\(staticScripts.count) static scripts preserved)")
+    }
+
+    /// Private `WKUserContentController` API also used by BSK's `UserContentController` to remove a
+    /// single user script without wiping web extension scripts.
+    static let removeUserScriptSelector = "_removeUserScript:"
+
+    static func removeUserScriptSupported(by userContentController: WKUserContentController) -> Bool {
+#if os(macOS)
+        userContentController.responds(to: NSSelectorFromString(removeUserScriptSelector))
+#else
+        false
+#endif
     }
 }

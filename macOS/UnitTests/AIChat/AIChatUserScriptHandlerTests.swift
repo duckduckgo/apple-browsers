@@ -166,6 +166,18 @@ struct AIChatUserScriptHandlerTests {
         #expect(windowControllersManager.openCalls.map(\.source) == [.link])
     }
 
+    static let nonWebURLs = ["file:///etc/passwd", "duck://settings", "javascript:alert(1)"]
+    @available(iOS 16, macOS 13, *)
+    @Test("openAIChatLink ignores links that aren't http(s) with a host", .timeLimit(.minutes(1)), arguments: nonWebURLs)
+    @MainActor
+    func testThatOpenAIChatLinkIgnoresNonWebLinks(_ url: String) async {
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "same-tab"], message: WKScriptMessage.mock())
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "new-tab"], message: WKScriptMessage.mock())
+
+        #expect(windowControllersManager.showCalled == nil)
+        #expect(windowControllersManager.openCalls.isEmpty)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("An invalid executeClientTool is invalid_arguments and echoes the readable callId", .timeLimit(.minutes(1)))
     @MainActor
@@ -1926,6 +1938,22 @@ struct AIChatUserScriptHandlerTests {
     /// result to a local — `WKScriptMessage.mock` holds the web view weakly.
     private func mockWebView(url: String) -> WKWebView {
         SubscriptionTestingUtilities.MockWKWebView(url: URL(string: url)!)
+    }
+
+    // MARK: - First answer
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The first answer from Duck.ai is published", .timeLimit(.minutes(1)))
+    @MainActor
+    func testResponseReceivedPublishes() {
+        var received = 0
+        let cancellable = handler.responseReceivedPublisher.sink { received += 1 }
+
+        _ = handler.responseReceived(params: [:], message: WKScriptMessage.mock())
+
+        withExtendedLifetime(cancellable) {
+            #expect(received == 1)
+        }
     }
 
     // MARK: - Page context added / removed

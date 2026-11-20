@@ -136,6 +136,9 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .subscriptionUpsell:
             // The upsell reports through the experiment's own metrics instead.
             break
+        case .thatsDuckAI:
+            // To do: pixel
+            break
         }
     }
 
@@ -154,6 +157,9 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .highFive:
             sharedPixelHandler.fire(.end(.clicked(.dismiss)))
         case .subscriptionUpsell:
+            break
+        case .thatsDuckAI:
+            // To do: pixel
             break
         }
     }
@@ -182,6 +188,9 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.end(.shown))
         case .subscriptionUpsell:
             break
+        case .thatsDuckAI:
+            // To do: pixel
+            break
         }
     }
 
@@ -204,6 +213,9 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .tryASearch,
                 .tryASite,
                 .subscriptionUpsell:
+            break
+        case .thatsDuckAI:
+            // To do: pixel
             break
         }
     }

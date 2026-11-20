@@ -2157,10 +2157,6 @@ extension AppDelegate: NSMenuItemValidation {
             #selector(AppDelegate.openHistoryEntryVisit(_:)):
             return isUserInteractionAllowed
 
-        // Delete All History opens the Fire dialog
-        case #selector(AppDelegate.clearAllHistory(_:)):
-            return windowControllersManager.userInteractionLock.allows(.fire)
-
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
             return isUserInteractionAllowed && recentlyClosedCoordinator.canReopenRecentlyClosedTab

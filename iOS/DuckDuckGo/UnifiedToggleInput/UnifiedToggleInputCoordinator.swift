@@ -2897,6 +2897,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func refreshToolsPresentation() {
         let usesSimplifiedPromptBox = isSimplifiedPromptBoxEnabled
+        let wasSimplifiedPromptBox = viewController.usesSimplifiedPromptBox
         let presentation = toolsPresentation
         if toolsController.selectedTool != .imageGeneration {
             footerController?.clearModelSwitchNotice()
@@ -2921,8 +2922,8 @@ private extension UnifiedToggleInputCoordinator {
                 toolsMenu: toolsMenu
             )
         }
-        if usesSimplifiedPromptBox {
-            // The attach menu's tool rows follow the model and the active state.
+        if usesSimplifiedPromptBox || wasSimplifiedPromptBox {
+            // The attach menu's tool rows follow the model and the active state, and leave when the flag turns off.
             attachmentController?.updateAttachButtonPresentation()
         }
         // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the

@@ -163,6 +163,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746472
     case partnershipsHub
 
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1220246123958275
+    case authBackgroundTokenRefresh
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
     case subscriptionPromoForReinstallers
 
@@ -876,6 +879,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls), cohortType: PerformanceOptimizedPaywallsCohort.self)
         case .partnershipsHub:
             Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub))
+        case .authBackgroundTokenRefresh:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(PrivacyProSubfeature.authBackgroundTokenRefresh))
         case .subscriptionPromoForReinstallers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .subscriptionExpirationReminderNotification:

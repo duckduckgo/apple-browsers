@@ -24,21 +24,36 @@ import PrivacyConfig
 import WebKit
 import Core
 import WKAbstractions
+import Persistence
 
 final class SubscriptionService {
 
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
     private let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+    private let tokenRefreshTask: SubscriptionTokenRefreshTask
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         keyValueStore: ThrowingKeyValueStoring,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(
                     privacyConfigurationManager: privacyConfigurationManager,
                     purchasePlatform: .appStore,
                     featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
                 )
+        let debugSettings = SubscriptionTokenRefreshDebugSettings(keyValueStore: keyValueStore)
+        let intervals = SubscriptionTokenRefreshIntervals(debugSettings: debugSettings,
+                                                          isInternalUser: { featureFlagger.internalUserDecider.isInternalUser })
+        let keepAlive = SubscriptionTokenKeepAlive(tokenProvider: subscriptionManager,
+                                                   isEnabled: { featureFlagger.isFeatureOn(.authBackgroundTokenRefresh) },
+                                                   maxRefreshTokenAge: intervals.maxRefreshTokenAge,
+                                                   retryInterval: intervals.retryInterval)
+        tokenRefreshTask = SubscriptionTokenRefreshTask(keepAlive: keepAlive,
+                                                        debugSettings: debugSettings,
+                                                        retryInterval: intervals.retryInterval)
+        tokenRefreshTask.register()
+
         Task {
             await subscriptionManager.loadInitialData()
         }
@@ -46,5 +61,7 @@ final class SubscriptionService {
 
     // MARK: - Resume
 
-    func resume() {}
+    func resume() {
+        tokenRefreshTask.refreshAndSchedule()
+    }
 }

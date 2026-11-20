@@ -283,7 +283,9 @@ struct Launching: LaunchingHandling {
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                             aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
-        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                                      featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()

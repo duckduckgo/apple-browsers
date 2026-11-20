@@ -37,7 +37,7 @@ public protocol SubscriptionPixelHandling {
     func handle(pixel: KeychainManager.Pixel)
 }
 
-public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
+public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionTokenRefreshing {
 
     // Environment
     static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment?

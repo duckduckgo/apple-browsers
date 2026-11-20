@@ -838,6 +838,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// iOS onboarding experiment that adds VPN as a download reason.
     case onboardingVPNDownloadReasonExperiment
+
+    /// Gates the AuthV2 token keep-alive: when on, the iOS app refreshes the token once its refresh token is 15 days old,
+    /// including from a background task, so a session isn't lost when the app isn't opened for a long time.
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1220246123958275
+    case authBackgroundTokenRefresh
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

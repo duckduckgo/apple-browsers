@@ -23,6 +23,7 @@ def main(download_dir: str) -> None:
         locale = path.stem.split('_', 1)[1]
         catalog = json.loads(path.read_text())
         print(f'### {locale}\n')
+        print(f'CATALOG {locale} {json.dumps(catalog, ensure_ascii=False, separators=(",", ":"))}')
         for key, entry in catalog.get('strings', {}).items():
             for catalog_locale, localization in entry.get('localizations', {}).items():
                 if catalog_locale == catalog.get('sourceLanguage', 'en'):

@@ -44,11 +44,20 @@ public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
     public func cookies(for url: URL) async -> [HTTPCookie] {
         // Accessing the default WebKit store can block; defer it until a fetch, not scene creation.
         let cookies = await cookieStore().allCookies()
-        let domain = url.host ?? ""
-        return cookies.filter { cookie in
-            let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
-            return domain.hasSuffix(cookieDomain)
+        guard let host = url.host?.lowercased(), !host.isEmpty else { return [] }
+        return cookies.filter { Self.cookieDomain($0.domain, matchesHost: host) }
+    }
+
+    /// RFC 6265 domain-match: a domain cookie (leading dot) matches its domain and subdomains;
+    /// a host-only cookie (no leading dot) matches its exact host only.
+    nonisolated static func cookieDomain(_ cookieDomain: String, matchesHost host: String) -> Bool {
+        let cookieDomain = cookieDomain.lowercased()
+        guard cookieDomain.hasPrefix(".") else {
+            return host == cookieDomain
         }
+        let domain = String(cookieDomain.dropFirst())
+        guard !domain.isEmpty else { return false }
+        return host == domain || host.hasSuffix(cookieDomain)
     }
 }
 

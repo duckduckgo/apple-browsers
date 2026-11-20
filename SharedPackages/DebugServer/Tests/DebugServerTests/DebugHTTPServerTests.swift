@@ -219,6 +219,87 @@ final class DebugHTTPServerTests: XCTestCase {
         XCTAssertEqual(statusCode, 500)
     }
 
+    func testWhenRequestHasForeignOriginThenReturns403() throws {
+        server = DebugHTTPServer(port: 8101)
+        var handlerCalled = false
+        server.addRoute("/data", method: .POST) { _ in
+            handlerCalled = true
+            return .text("ok")
+        }
+
+        let started = expectation(description: "Server started")
+        server.stateDidChange = { state in
+            if case .running = state { started.fulfill() }
+        }
+
+        try server.start()
+        wait(for: [started], timeout: 5)
+
+        let (statusCode, _) = try performRequestWithStatus(port: 8101, path: "/data", method: "POST", body: "x", headers: ["Origin": "http://attacker.example:8101"])
+        XCTAssertEqual(statusCode, 403)
+        XCTAssertFalse(handlerCalled)
+    }
+
+    func testWhenRequestHasLocalOriginThenHandlerIsCalled() throws {
+        server = DebugHTTPServer(port: 8102)
+        server.addRoute("/data", method: .POST) { _ in
+            .text("ok")
+        }
+
+        let started = expectation(description: "Server started")
+        server.stateDidChange = { state in
+            if case .running = state { started.fulfill() }
+        }
+
+        try server.start()
+        wait(for: [started], timeout: 5)
+
+        let (statusCode, body) = try performRequestWithStatus(port: 8102, path: "/data", method: "POST", body: "x", headers: ["Origin": "http://localhost:8102"])
+        XCTAssertEqual(statusCode, 200)
+        XCTAssertEqual(body, "ok")
+    }
+
+    // MARK: - Host Validation
+
+    func testWhenHostIsLoopbackWithServerPortThenItIsAllowed() {
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("127.0.0.1:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("localhost:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("LOCALHOST:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("[::1]:8473", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenHostIsLANAddressWithServerPortThenItIsAllowed() {
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("192.168.1.20:8474", port: 8474, lanAddress: "192.168.1.20"))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("192.168.1.20:8474", port: 8474, lanAddress: nil))
+    }
+
+    func testWhenHostIsForeignThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("attacker.example:8473", port: 8473, lanAddress: "192.168.1.20"))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("localhost.attacker.example:8473", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenHostHasWrongOrMissingPortThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("localhost:9999", port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("localhost", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenHostIsMissingThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost(nil, port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenOriginIsLocalThenItIsAllowed() {
+        XCTAssertTrue(DebugHTTPServer.isAllowedOrigin("http://127.0.0.1:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedOrigin("http://localhost:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedOrigin("http://192.168.1.20:8473", port: 8473, lanAddress: "192.168.1.20"))
+    }
+
+    func testWhenOriginIsForeignThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedOrigin("http://attacker.example:8473", port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedOrigin("https://localhost:8473", port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedOrigin("null", port: 8473, lanAddress: nil))
+    }
+
     // MARK: - Helpers
 
     private func performRequest(
@@ -235,13 +316,17 @@ final class DebugHTTPServerTests: XCTestCase {
         port: UInt16,
         path: String,
         method: String = "GET",
-        body: String? = nil
+        body: String? = nil,
+        headers: [String: String] = [:]
     ) throws -> (Int, String) {
         let url = URL(string: "http://localhost:\(port)\(path)")!
         var request = URLRequest(url: url)
         request.httpMethod = method
         if let body {
             request.httpBody = body.data(using: .utf8)
+        }
+        for (name, value) in headers {
+            request.setValue(value, forHTTPHeaderField: name)
         }
 
         let responseExpectation = expectation(description: "Response received")

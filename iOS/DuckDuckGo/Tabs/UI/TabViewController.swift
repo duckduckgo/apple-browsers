@@ -1957,7 +1957,7 @@ class TabViewController: UIViewController {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
             }
         }
-        cancelWebExtensionNavigationWait()
+        replaceWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserNavigation()
@@ -1971,7 +1971,7 @@ class TabViewController: UIViewController {
     
     public func load(backForwardListItem: WKBackForwardListItem) {
         cancelPendingAIChatTabAttachmentPrompt()
-        cancelWebExtensionNavigationWait()
+        replaceWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
@@ -2042,7 +2042,7 @@ class TabViewController: UIViewController {
     }
     
     private func load(urlRequest: URLRequest) {
-        cancelWebExtensionNavigationWait()
+        replaceWebExtensionNavigationWait()
         loadViewIfNeeded()
 
         if let url = urlRequest.url, !shouldReissueSearch(for: url) {
@@ -2245,7 +2245,7 @@ class TabViewController: UIViewController {
 
     public func reload() {
         closeDelegateSessionFindInPage()
-        cancelWebExtensionNavigationWait()
+        replaceWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         wasLoadingStoppedExternally = false
@@ -2272,7 +2272,7 @@ class TabViewController: UIViewController {
 
     func goBack() {
         freezeMonitor.didAttemptNavigation()
-        cancelWebExtensionNavigationWait()
+        replaceWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -2347,7 +2347,7 @@ class TabViewController: UIViewController {
 
     func goForward() {
         freezeMonitor.didAttemptNavigation()
-        cancelWebExtensionNavigationWait()
+        replaceWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -3934,16 +3934,23 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
+        let isSetupWaitCandidate = webView === self.webView && navigationAction.isTargetingMainFrame
+            && [.http, .https].contains(navigationAction.request.url?.navigationalScheme)
         if webView === self.webView, navigationAction.isTargetingMainFrame {
-            cancelWebExtensionNavigationWait()
+            // A non-web navigation replacing a waiting one ends the sample; a web one continues it below.
+            if isSetupWaitCandidate {
+                replaceWebExtensionNavigationWait()
+            } else {
+                cancelWebExtensionNavigationWait()
+            }
             sitePermissionsState.cancelContentBlockingWaits()
             firstPaintCover.willDecidePolicy()
         }
 
         let setupWaitID: UUID?
-        if webView === self.webView, navigationAction.isTargetingMainFrame,
-           [.http, .https].contains(navigationAction.request.url?.navigationalScheme) {
-            setupWaitID = rulesCompilationMonitor.begin(isSerp: navigationAction.request.url?.isDuckDuckGoSearch == true)
+        if isSetupWaitCandidate {
+            setupWaitID = rulesCompilationMonitor.begin(isSerp: navigationAction.request.url?.isDuckDuckGoSearch == true,
+                                                        continuing: navigationSetupWaitID)
             navigationSetupWaitID = setupWaitID
         } else {
             setupWaitID = nil
@@ -4001,6 +4008,14 @@ extension TabViewController: WKNavigationDelegate {
                                                  navigationAction: navigationAction,
                                                  setupWaitID: setupWaitID,
                                                  decisionHandler: wrappedHandler)
+    }
+
+    /// For an explicit load that replaces a waiting navigation: stops its waits but keeps the setup-wait sample
+    /// open for the replacing navigation, so the wait the user still sees is measured.
+    func replaceWebExtensionNavigationWait() {
+        navigationSetupWaitID = rulesCompilationMonitor.handOver(navigationSetupWaitID)
+        webExtensionNavigationTask?.cancel()
+        webExtensionNavigationTask = nil
     }
 
     func cancelWebExtensionNavigationWait(outcome: RulesCompilationMonitor.Outcome = .cancelled) {

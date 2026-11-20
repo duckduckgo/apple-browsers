@@ -23,7 +23,8 @@ import PixelKit
 import UIKit
 
 /// Measures how long the first foreground main-frame HTTP(S) navigation of a process waits for the page to be
-/// ready, and how much of that each setup stage adds, in one pixel. Extensions and rules prepare concurrently;
+/// ready, and how much of that each setup stage adds, in one pixel. A navigation that replaces a waiting one in
+/// the same tab continues the sample, so its wait is not cut off. Extensions and rules prepare concurrently;
 /// the navigation waits at their gates in sequence, so each stage reports the time spent waiting at its gate,
 /// not the parallel preparation work.
 @MainActor
@@ -48,9 +49,9 @@ final class RulesCompilationMonitor: NSObject {
     static let shared = RulesCompilationMonitor()
 
     private struct Measurement {
-        let id = UUID()
+        var id = UUID()
         let start: TimeInterval
-        let isSerp: Bool
+        var isSerp: Bool
         var stage: Stage?
         var stageStart: TimeInterval?
         var webExtensionsWait: TimeInterval = 0
@@ -90,11 +91,27 @@ final class RulesCompilationMonitor: NSObject {
     }
 
     /// One navigation owns the sample; its ID survives retries and excludes stale callbacks.
-    func begin(isSerp: Bool) -> UUID? {
+    /// A navigation replacing the owner passes the owner's ID as `continuing` and takes over the open sample
+    /// instead, keeping its start and stage times and reporting its own `isSerp`.
+    func begin(isSerp: Bool, continuing id: UUID? = nil) -> UUID? {
+        if let id, measurement?.id == id {
+            measurement?.isSerp = isSerp
+            return handOver(id)
+        }
         guard !didReport, measurement == nil, !isInBackground() else { return nil }
         let measurement = Measurement(start: now(), isSerp: isSerp)
         self.measurement = measurement
         return measurement.id
+    }
+
+    /// Ends the owner's in-flight stage and gives the open sample a new ID, so the owner's cancelled waits can no
+    /// longer end it. Returns the new ID, or `nil` when `id` does not own the sample.
+    func handOver(_ id: UUID?) -> UUID? {
+        guard let id, measurement?.id == id else { return nil }
+        endStage(for: id)
+        let newID = UUID()
+        measurement?.id = newID
+        return newID
     }
 
     func beginStage(_ stage: Stage, for id: UUID?) {

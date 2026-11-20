@@ -33,14 +33,13 @@
             },
             {
                 "key": "is_serp",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
             }
         ]
     },
     "navigation_setup_wait_cancelled_time": {
-        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The navigation was stopped, replaced or intercepted by policy before release. Reports the partial wait once; a late completion cannot report success.",
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The navigation was stopped, intercepted by policy or cleared before release. A navigation replaced by another in the same tab hands its sample over instead: the wait keeps counting from its start and is_serp reflects the last navigation. Reports the partial wait once; a late completion cannot report success.",
         "owners": ["mallexxx"],
         "triggers": ["user_interaction", "feature_lifecycle", "exception"],
         "suffixes": ["time_bucket", "platform", "form_factor"],
@@ -66,8 +65,7 @@
             },
             {
                 "key": "is_serp",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
             }
         ]
@@ -99,8 +97,7 @@
             },
             {
                 "key": "is_serp",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
             }
         ]
@@ -132,8 +129,7 @@
             },
             {
                 "key": "is_serp",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
             }
         ]
@@ -165,8 +161,7 @@
             },
             {
                 "key": "is_serp",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
             }
         ]
@@ -198,8 +193,7 @@
             },
             {
                 "key": "is_serp",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
             }
         ]

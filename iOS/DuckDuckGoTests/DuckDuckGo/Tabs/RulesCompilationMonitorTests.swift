@@ -235,6 +235,33 @@ final class RulesCompilationMonitorTests: XCTestCase {
         assertSetupPixel(pixelFiring, outcome: "success", state: "onboarding", total: "1", extensions: "0", rules: "1", isSerp: true)
     }
 
+    func testReplacingNavigationContinuesTheSampleAndOwnerCallbacksAreStale() throws {
+        let monitor = makeMonitor()
+        let first = try XCTUnwrap(monitor.begin(isSerp: false))
+        monitor.beginStage(.contentBlocking, for: first)
+        time = 5
+        let second = try XCTUnwrap(monitor.begin(isSerp: true, continuing: first))
+        XCTAssertNotEqual(first, second)
+        monitor.finish(first, outcome: .cancelled)
+        monitor.endStage(for: first)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty, "The replaced navigation's late callbacks cannot end the sample")
+
+        monitor.beginStage(.contentBlocking, for: second)
+        time = 17
+        monitor.endStage(for: second)
+        monitor.finish(second, outcome: .success)
+
+        assertSetupPixel(pixelFiring, outcome: "success", state: "onboarding", total: "20", extensions: "0", rules: "20", isSerp: true)
+    }
+
+    func testContinuingAnUnownedSampleFallsBackToBeginningOne() throws {
+        let monitor = makeMonitor()
+        XCTAssertNil(monitor.handOver(UUID()))
+        let id = try XCTUnwrap(monitor.begin(isSerp: false, continuing: UUID()))
+        monitor.finish(id, outcome: .success)
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+    }
+
     private func assertPixel(outcome: String, total: String, extensions: String, rules: String, appState: String = "onboarding",
                              file: StaticString = #filePath, line: UInt = #line) {
         assertSetupPixel(pixelFiring, outcome: outcome, state: appState, total: total, extensions: extensions, rules: rules,

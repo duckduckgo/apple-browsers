@@ -204,17 +204,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         await fulfillment(of: [cancelled], timeout: 1)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertTrue(newDecisions.isEmpty)
-        XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
-        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_cancelled_time_"), true,
-                       "A superseded wait reports cancelled, not success")
+        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A replaced wait hands its sample to the replacement")
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [continued], timeout: 10)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertEqual(newDecisions.count, 1)
         XCTAssertNotEqual(newDecisions.first, .cancel)
         XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
-        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_cancelled_time_"), true,
-                       "The replacement navigation must not report a second sample")
+        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_success_time_"), true,
+                       "The replacement reports one sample for the whole wait, not a cancelled one")
         XCTAssertFalse(tab.isError, "The superseded wait must not replace the new page with an error")
         XCTAssertEqual(webView.loadCallCount, 0)
     }

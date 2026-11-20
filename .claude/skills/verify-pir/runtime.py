@@ -9,8 +9,10 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import shutil
 import signal
 import socket
+import stat
 import subprocess
 import time
 import urllib.error
@@ -30,6 +32,7 @@ class RuntimeError(builtins.RuntimeError):
 BUNDLES = {"ios": "com.duckduckgo.mobile.ios",
            "macos": "com.duckduckgo.macos.DBP.backgroundAgent.debug"}
 BROWSER_BUNDLE = "com.duckduckgo.macos.browser.debug"
+SCHEDULER_LOCK = Path(f"/tmp/verify-pir-scheduler-{os.getuid()}.lock")
 FLAGS = ["isRunningUITests", "-ff.dbpCustomWebViewUserAgent", "true",
          "-ff.dbpExtractedProfileRefresh", "true"]
 
@@ -86,11 +89,11 @@ def _pidpath(pid):
     return os.fsdecode(buffer.value) if _libproc.proc_pidpath(pid, buffer, len(buffer)) > 0 else None
 
 
-def _process(pid):
+def _process(pid, timeout=5):
     executable = _pidpath(pid)
     if executable is None:
         return None
-    result = subprocess.run(["ps", "-p", str(pid), "-o", "lstart="], capture_output=True, text=True)
+    result = subprocess.run(["ps", "-p", str(pid), "-o", "lstart="], capture_output=True, text=True, timeout=timeout)
     if result.returncode or not result.stdout.strip():
         return None
     return {"pid": int(pid), "started": result.stdout.strip(), "executable": executable}
@@ -136,9 +139,12 @@ class Runtime:
         self.identity = None
         self._child = None
         self._lock = None
+        self._scheduler_lock = None
         self._closed = False
         self._launch_attempted = False
         self._build_destination = None
+        self.snapshots_enabled = False
+        self._simulator_snapshots = None
         self.stdout = self.base / f"native-{instance}.stdout.log"
         self.stderr = self.base / f"native-{instance}.stderr.log"
 
@@ -154,6 +160,9 @@ class Runtime:
             raise RuntimeError("Another PIR run is using this build; retry after it finishes") from error
 
     def _release(self):
+        if self._scheduler_lock is not None:
+            self._scheduler_lock.close()
+            self._scheduler_lock = None
         if self._lock is not None:
             self._lock.close()
             self._lock = None
@@ -253,7 +262,12 @@ class Runtime:
         if metadata.get("CFBundleIdentifier") != expected:
             raise RuntimeError("The built browser has the wrong bundle identity")
         product = browser
+        browser_identity = {}
         if self.platform == "macos":
+            executable = (browser / "Contents/MacOS" / metadata["CFBundleExecutable"]).resolve()
+            if not executable.is_relative_to(browser):
+                raise RuntimeError("The DEBUG browser executable points outside its app bundle")
+            browser_identity = {"browserExecutable": str(executable), "browserSHA256": _sha(executable)}
             name = metadata.get("DBP_BACKGROUND_AGENT_PRODUCT_NAME")
             if not isinstance(name, str) or Path(name).name != name:
                 raise RuntimeError("The DEBUG browser did not name its embedded PIR agent")
@@ -271,7 +285,7 @@ class Runtime:
         if not executable.is_relative_to(product):
             raise RuntimeError("The PIR executable points outside its app bundle")
         return {"path": str(product), "browserPath": str(browser), "bundleId": metadata["CFBundleIdentifier"],
-                "executable": str(executable), "sha256": _sha(executable)}
+                "executable": str(executable), "sha256": _sha(executable), **browser_identity}
 
     def _running_executables(self):
         identifiers = _run(["ps", "-axo", "pid="], self.root).split()
@@ -392,11 +406,7 @@ class Runtime:
             time.sleep(.2)
         raise RuntimeError("The owned PIR debug runner did not become ready")
 
-    def launch(self, access_token=None):
-        if access_token is not None and (not isinstance(access_token, str) or not access_token
-                or len(access_token.encode("utf-8")) > 65_536
-                or any(c.isspace() or ord(c) < 32 or 127 <= ord(c) <= 159 for c in access_token)):
-            raise RuntimeError("Invalid supplied PIR credential")
+    def _verified_build(self):
         if self.app is not None or self._closed:
             raise RuntimeError("A Runtime instance supports one launch")
         self._acquire(False)
@@ -409,6 +419,66 @@ class Runtime:
         product = self._product(metadata["settings"])
         if metadata.get("product") != product:
             raise RuntimeError("The PIR build product changed; rebuild before running")
+        return metadata, product
+
+    def _secure_launch_logs(self):
+        for path in (self.stdout, self.stderr):
+            with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"):
+                pass
+
+    def launch_scheduler(self, mode, profile_json):
+        if self.platform != "macos" or mode not in ("seed", "reseed"):
+            raise RuntimeError("Managed scheduler seeding requires the macOS DEBUG browser")
+        metadata, product = self._verified_build()
+        descriptor = os.open(SCHEDULER_LOCK, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+        lock = os.fdopen(descriptor, "r+")
+        try:
+            info = os.fstat(descriptor)
+            if info.st_uid != os.getuid() or not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
+                raise RuntimeError("The scheduler lock is not a private regular file")
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            lock.close()
+            raise RuntimeError("Another verify-pir command is seeding the DEBUG store") from error
+        except BaseException:
+            lock.close()
+            raise
+        self._scheduler_lock = lock
+        browser = Path(product["browserExecutable"])
+        for executable in self._running_executables():
+            if executable.name == browser.name:
+                bundle = next((parent for parent in executable.parents if parent.suffix == ".app"), None)
+                if bundle and _info(bundle).get("CFBundleIdentifier") == BROWSER_BUNDLE:
+                    raise RuntimeError("A DEBUG browser is already running; close it before seeding")
+        environment = {"PIR_SCHEDULER_MODE": mode, "PIR_SCHEDULER_INSTANCE_ID": self.instance,
+                       "PIR_SCHEDULER_RECEIPT": str(self.evidence / "scheduler-launch.json"), "PIR_PROFILE_JSON": profile_json}
+        self._secure_launch_logs()
+        with self.stdout.open("ab") as stdout, self.stderr.open("ab") as stderr:
+            self._child = subprocess.Popen([str(browser)], cwd=self.root,
+                                           env={**_child_environment(), **environment}, stdout=stdout, stderr=stderr)
+        self._launch_attempted = True
+        self._capture(self._child.pid, {"executable": str(browser), "bundleId": BROWSER_BUNDLE, "sha256": product["browserSHA256"]})
+        return {"platform": "macos", "instanceID": self.instance, "port": self.port, "process": self.identity,
+                "product": product, "sourceSHA256": metadata["sourceSHA256"]}
+
+    def scheduler_receipt(self):
+        path = self.evidence / "scheduler-launch.json"
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
+            try:
+                return json.loads(path.read_bytes())
+            except FileNotFoundError:
+                if self._child.poll() is not None:
+                    raise RuntimeError("The DEBUG browser exited before reporting scheduler setup")
+                time.sleep(.2)
+        raise RuntimeError("The DEBUG browser did not report scheduler setup within 60 seconds")
+
+    def launch(self, access_token=None):
+        if access_token is not None and (not isinstance(access_token, str) or not access_token
+                or len(access_token.encode("utf-8")) > 65_536
+                or any(c.isspace() or ord(c) < 32 or 127 <= ord(c) <= 159 for c in access_token)):
+            raise RuntimeError("Invalid supplied PIR credential")
+        metadata, product = self._verified_build()
         with socket.socket() as probe:
             try:
                 probe.bind(("127.0.0.1", self.port))
@@ -418,12 +488,21 @@ class Runtime:
                        "PIR_DEBUG_INSTANCE_ID": self.instance, "PIR_DEBUG_ENVIRONMENT": self.pir_environment}
         if access_token is not None:
             environment["PIR_DEBUG_ACCESS_TOKEN"] = access_token
-        for path in (self.stdout, self.stderr):
-            with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"):
-                pass
+        if self.snapshots_enabled:
+            directory = self.evidence / "snapshots"
+            directory.mkdir(mode=0o700)
+            environment["PIR_DEBUG_SNAPSHOTS"] = "1"
+            if self.platform == "macos":
+                environment["PIR_DEBUG_SNAPSHOT_DIRECTORY"] = str(directory)
+        self._secure_launch_logs()
         if self.platform == "ios":
             identifier = self._create_simulator()
             self._simctl("install", identifier, product["path"])
+            if self.snapshots_enabled:
+                container = self._simctl("get_app_container", identifier, product["bundleId"], "data").strip()
+                if not Path(container).is_absolute():
+                    raise RuntimeError("Unable to locate the installed simulator app's data container")
+                self._simulator_snapshots = Path(container) / "tmp" / f"pir-snapshots-{self.instance}"
             env = {**_child_environment(), **{f"SIMCTL_CHILD_{key}": value for key, value in environment.items()}}
             self._launch_attempted = True
             try:
@@ -449,6 +528,27 @@ class Runtime:
         return {"platform": self.platform, "instanceID": self.instance, "port": self.port,
                 "process": self.identity, "product": product, "simulator": self.simulator,
                 "sourceSHA256": metadata["sourceSHA256"], "pirEnvironment": self.pir_environment}
+
+    def collect_snapshots(self):
+        """Mirror published simulator snapshots while the app still owns its data container."""
+        source = self._simulator_snapshots
+        if source is None or not source.is_dir():
+            return
+        if source.is_symlink():
+            raise RuntimeError("Unexpected symbolic link for simulator snapshots")
+        directory = self.evidence / "snapshots"
+        for path in sorted(source.iterdir()):
+            if path.name.startswith(".") or path.suffix not in (".png", ".unavailable") or path.is_symlink():
+                continue
+            destination = directory / path.name
+            if destination.exists() or not path.is_file():
+                continue
+            temporary = directory / (".copy-" + path.name)
+            try:
+                shutil.copyfile(path, temporary)
+                temporary.replace(destination)
+            finally:
+                temporary.unlink(missing_ok=True)
 
     def logs(self, path: Path):
         with Path(path).open("wb") as output:

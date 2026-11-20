@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one live PIR broker scan and an explicitly configured opt-out."""
+"""Verify live PIR broker flows or observe persisted scheduler scans."""
 import argparse
 import hashlib
 import json
@@ -30,6 +30,24 @@ def sha256(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def validate_profile(profile):
+    if not isinstance(profile, dict) or not all(k in profile for k in ("names", "addresses", "phones", "birthYear")):
+        raise ValueError("profileFile needs names, addresses, phones, and birthYear")
+    if (not isinstance(profile["names"], list) or not profile["names"]
+            or not isinstance(profile["addresses"], list) or not profile["addresses"]
+            or not isinstance(profile["phones"], list) or type(profile["birthYear"]) is not int
+            or not 1900 <= profile["birthYear"] <= time.localtime().tm_year):
+        raise ValueError("profileFile needs a name, address, phones array and valid birthYear")
+    for field, required, optional in (("names", ("firstName", "lastName"), ("middleName", "suffix")),
+                                      ("addresses", ("city", "state"), ("street", "zipCode"))):
+        for entry in profile[field]:
+            if (not isinstance(entry, dict) or any(not isinstance(entry.get(key), str) or not entry[key] for key in required)
+                    or any(entry.get(key) is not None and not isinstance(entry[key], str) for key in optional)):
+                raise ValueError(f"profileFile {field} must match the native profile fields")
+    if any(not isinstance(phone, str) for phone in profile["phones"]):
+        raise ValueError("profileFile phones must contain strings")
+
+
 def load_inputs(path, needs_auth=False):
     path = Path(path).expanduser().resolve()
     raw_config = path.read_bytes()
@@ -55,21 +73,7 @@ def load_inputs(path, needs_auth=False):
     expected = json.loads(raw["expectedFile"]) if "expectedFile" in raw else {}
     if not isinstance(broker, dict) or not all(broker.get(k) for k in ("name", "url", "version", "steps")):
         raise ValueError("brokerFile needs complete broker JSON including name, url, version, and steps")
-    if not isinstance(profile, dict) or not all(k in profile for k in ("names", "addresses", "phones", "birthYear")):
-        raise ValueError("profileFile needs names, addresses, phones, and birthYear")
-    if (not isinstance(profile["names"], list) or not profile["names"]
-            or not isinstance(profile["addresses"], list) or not profile["addresses"]
-            or not isinstance(profile["phones"], list) or type(profile["birthYear"]) is not int
-            or not 1900 <= profile["birthYear"] <= time.localtime().tm_year):
-        raise ValueError("profileFile needs a name, address, phones array and valid birthYear")
-    for field, required, optional in (("names", ("firstName", "lastName"), ("middleName", "suffix")),
-                                      ("addresses", ("city", "state"), ("street", "zipCode"))):
-        for entry in profile[field]:
-            if (not isinstance(entry, dict) or any(not isinstance(entry.get(key), str) or not entry[key] for key in required)
-                    or any(entry.get(key) is not None and not isinstance(entry[key], str) for key in optional)):
-                raise ValueError(f"profileFile {field} must match the native profile fields")
-    if any(not isinstance(phone, str) for phone in profile["phones"]):
-        raise ValueError("profileFile phones must contain strings")
+    validate_profile(profile)
     if not isinstance(expected, dict) or set(expected) - {"profileUrl"} or not isinstance(expected.get("profileUrl", ""), str):
         raise ValueError("expectedFile may only name the profileUrl of one scan result")
     if not isinstance(config.get("optOut"), bool):
@@ -170,6 +174,7 @@ class Client:
         self.last_get, self.reported = {}, set()
         self.last_run = None
         self.last_status = None
+        self.collect_snapshots = None
         # Redirects could forward the credential header or auth body to another server.
         class NoRedirect(urllib.request.HTTPRedirectHandler):
             def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -177,10 +182,13 @@ class Client:
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
     def request(self, method, path, body=None, timeout=10):
-        if method != "GET" and not self.owned:
+        if method != "GET" and (self.instance is None or not self.owned):
             raise SetupFailed("PIR endpoint ownership has not been verified")
+        headers = {"Content-Type": "application/json"}
+        if self.instance is not None:
+            headers["X-PIR-Debug-Instance"] = self.instance
         request = urllib.request.Request(f"http://127.0.0.1:{self.port}{path}", method=method,
-                                         headers={"Content-Type": "application/json", "X-PIR-Debug-Instance": self.instance},
+                                         headers=headers,
                                          data=json.dumps(body).encode() if body is not None else None)
         try:
             with self.opener.open(request, timeout=timeout) as response:
@@ -207,7 +215,10 @@ class Client:
             self.last_get[path] = (status, safe_result)
         if status not in (200, 202):
             raise Failed(f"PIR HTTP {status}; see pir-http-{self.number:04d}.json")
-        if not isinstance(result, dict):
+        if method == "GET" and urllib.parse.urlsplit(path).path == "/api/logs":
+            if not isinstance(result, list):
+                raise Failed("PIR logs response is not a JSON array")
+        elif not isinstance(result, dict):
             raise Failed("PIR response is not a JSON object")
         if path.startswith("/api/debug/runs/") or path == "/api/debug/scans":
             self.last_run = safe_result
@@ -239,6 +250,8 @@ class Client:
             run = self.request("GET", f"/api/debug/runs/{run_id}", timeout=min(10, max(.01, deadline - time.monotonic())))
             if run.get("id") != run_id:
                 raise Failed("PIR returned a different run")
+            if self.collect_snapshots:
+                self.collect_snapshots()
             for event in run.get("events", []):
                 key = (event.get("timestamp"), event.get("summary"), event.get("profileQuery"))
                 if event.get("kind") == "History" and key not in self.reported:
@@ -364,9 +377,22 @@ def workflow(context, inputs, client, token=None, interactive=False):
     context.unverified("broker removal", "confirmed proves submission and confirmation; removal needs a later scan")
 
 
+def selftest(context, client):
+    snapshot = client.prerequisite()
+    context.write("pir-prerequisites.json", snapshot)
+    verify_auth(snapshot, dict(subscriptionEnvironment="staging", pirEnvironment="staging",
+                               pirEndpoint="https://dbp-staging.duckduckgo.com"), provided=True)
+    context.check("native runner reports the launch credential and staging endpoint", True)
+    context.result["brokerRequests"] = 0
+    context.unverified("PIR broker execution and subscription entitlement",
+                       "selftest uses a dummy launch credential and only reads local debug endpoints")
+
+
 def parser():
     cli = argparse.ArgumentParser(description=__doc__)
-    cli.add_argument("command", choices=("build", "run"))
+    cli.add_argument("command", choices=("build", "run", "selftest", "scheduler"))
+    cli.add_argument("scheduler_mode", nargs="?", choices=("observe", "seed", "reseed"),
+                     help="attach, seed an empty DEBUG store, or replace the DEBUG profile and history")
     cli.add_argument("--platform", choices=("ios", "macos"), required=True)
     cli.add_argument("--config", type=Path, help="scenario JSON, required for run")
     cli.add_argument("--device", choices=("iphone", "ipad"), default="iphone")
@@ -377,6 +403,13 @@ def parser():
     cli.add_argument("--interactive-subscription", action="store_true", help="explicitly allow a manual subscription checkpoint without a token")
     cli.add_argument("--check-config", action="store_true", help="validate inputs without building or launching")
     cli.add_argument("--keep", action="store_true", help="retain simulator after stopping owned app and agent")
+    scheduler = cli.add_argument_group("scheduler")
+    scheduler.add_argument("--profile-file", dest="scheduler_profile", type=Path, help="profile JSON for seed or reseed")
+    scheduler.add_argument("--port", dest="scheduler_port", type=int, help="observe: local DEBUG agent port (default: 8474)")
+    scheduler.add_argument("--since", dest="scheduler_since", help="observe: ISO 8601 timestamp before the scan trigger")
+    scheduler.add_argument("--job", dest="scheduler_jobs", nargs=2, action="append", metavar=("BROKER_URL", "QUERY_ID"),
+                           help="persisted scan to verify, repeat for each broker and profile query pair")
+    scheduler.add_argument("--timeout", dest="scheduler_timeout", type=float, help="observation timeout in seconds (default: 600)")
     return cli
 
 
@@ -395,8 +428,11 @@ def read_token(args):
 
 
 def rerun_command(args):
-    command = ["python3", str(Path(__file__).resolve()), args.command, "--platform", args.platform,
-               "--device", args.device, "--evidence-dir", str(args.evidence_dir.expanduser().resolve())]
+    command = ["python3", str(Path(__file__).resolve()), args.command]
+    if args.scheduler_mode:
+        command.append(args.scheduler_mode)
+    command += ["--platform", args.platform, "--device", args.device,
+                "--evidence-dir", str(args.evidence_dir.expanduser().resolve())]
     if args.config:
         command += ["--config", str(args.config.expanduser().resolve())]
     if args.token_file:
@@ -407,16 +443,44 @@ def rerun_command(args):
         command += ["--interactive-subscription"]
     if args.keep:
         command += ["--keep"]
+    if args.command == "scheduler":
+        if args.scheduler_mode == "observe":
+            command += ["--since", args.scheduler_since]
+            for broker, query in args.scheduler_jobs:
+                command += ["--job", broker, query]
+        else:
+            command += ["--profile-file", str(args.scheduler_profile.expanduser().resolve())]
+        if args.scheduler_port is not None:
+            command += ["--port", str(args.scheduler_port)]
+        if args.scheduler_timeout is not None:
+            command += ["--timeout", str(args.scheduler_timeout)]
     return shlex.join(command)
 
 
 def finish(context, include_manifest=True):
     result = context.result
     result["finishedAt"] = time.time()
+    snapshot_files = []
+    if "snapshots" in result:
+        snapshot_files = sorted(p for p in (context.evidence / "snapshots").glob("*")
+                                if p.is_file() and p.suffix in (".png", ".unavailable"))
+        result["snapshots"]["captured"] = sum(p.suffix == ".png" for p in snapshot_files)
+        result["snapshots"]["unavailable"] = sum(p.suffix == ".unavailable" for p in snapshot_files)
     context.write("result.json", result)
     lines = [f"# PIR {result['status']}", "", f"Platform: {result['platform']}", "",
-             result.get("reason", "Requested broker flow completed."), "", "## Checks", ""]
-    lines += [f"- {'PASS' if c['passed'] else 'FAIL'}: {c['check']}" for c in result["checks"]] or ["No broker assertions completed."]
+             result.get("reason", "Requested broker flow completed.")]
+    if observed := result.get("scheduler"):
+        lines += ["", "## Persisted scans", "", f"Cutoff: {observed['since']}", ""]
+        lines += [f"- {job['brokerURL']} / query {job['profileQueryId']}: "
+                  f"{job.get('terminal') or job.get('reason') or 'not observed yet'}" for job in observed["jobs"]]
+    else:
+        lines += ["", "## Checks", ""]
+        lines += [f"- {'PASS' if c['passed'] else 'FAIL'}: {c['check']}" for c in result["checks"]] or ["No checks completed."]
+    if "snapshots" in result:
+        lines += ["", "## Web view snapshots", ""]
+        lines += [f"- [{p.name}](snapshots/{p.name})" for p in snapshot_files] or ["No snapshots collected."]
+        if error := result["snapshots"].get("collectionError"):
+            lines += ["", f"Snapshot collection error: {error}"]
     lines += ["", "## Unverified", ""]
     lines += [f"- {u['what']}: {u['reason']}" for u in result["unverified"]] or ["None recorded."]
     lines += ["", "## Cleanup", "", "```json", json.dumps(result["cleanup"], indent=2), "```"]
@@ -425,8 +489,9 @@ def finish(context, include_manifest=True):
     lines += ["", "## Rerun", "", "```sh", result["rerun"], "```", ""]
     report = context.redactor.text("\n".join(lines)).encode()
     if include_manifest:
-        files = {p.name: dict(sha256=sha256(p.read_bytes()), bytes=p.stat().st_size)
-                 for p in sorted(context.evidence.iterdir()) if p.is_file() and p.name not in ("manifest.json", "report.md")}
+        artifacts = [p for p in context.evidence.iterdir() if p.is_file() and p.name not in ("manifest.json", "report.md")]
+        files = {str(p.relative_to(context.evidence)): dict(sha256=sha256(p.read_bytes()), bytes=p.stat().st_size)
+                 for p in sorted(artifacts + snapshot_files)}
         files["report.md"] = dict(sha256=sha256(report), bytes=len(report))
         context.write("manifest.json", dict(status=result["status"], files=files))
     # Publish the report only after its required evidence manifest is complete.
@@ -434,7 +499,32 @@ def finish(context, include_manifest=True):
 
 
 def execute(args, runtime_factory=None):
-    token = read_token(args)
+    is_selftest = args.command == "selftest"
+    scope, seed = None, None
+    if args.command == "scheduler":
+        if args.platform != "macos":
+            raise ValueError("scheduler commands currently require macOS")
+        if args.config or args.token_file or args.token_env or args.interactive_subscription or args.check_config or args.keep:
+            raise ValueError("scheduler commands do not accept scenario, credential, interactive, check-config or keep options")
+        import scheduler
+        if args.scheduler_mode == "observe":
+            if args.scheduler_profile is not None:
+                raise ValueError("scheduler observe does not take a profile file")
+            scope = scheduler.parse_scope(args)
+        elif args.scheduler_mode in ("seed", "reseed"):
+            seed = scheduler.parse_seed(args)
+        else:
+            raise ValueError("Choose scheduler observe, seed or reseed")
+    elif any(option is not None for option in (args.scheduler_mode, args.scheduler_profile, args.scheduler_port,
+                                               args.scheduler_since, args.scheduler_jobs, args.scheduler_timeout)):
+        raise ValueError("scheduler mode and options apply only to the scheduler command")
+    if is_selftest and (args.config or args.token_file or args.token_env or args.interactive_subscription or args.check_config or args.keep):
+        raise ValueError("selftest does not accept scenario, credential, interactive, check-config or keep options")
+    token = None
+    if is_selftest:
+        token = "verify-pir-selftest-dummy-credential"
+    elif args.command != "scheduler":
+        token = read_token(args)
     if args.command == "run" and not args.config:
         raise ValueError("run requires --config")
     if args.command == "build" and (args.token_file or args.token_env or args.interactive_subscription):
@@ -442,7 +532,7 @@ def execute(args, runtime_factory=None):
     inputs = load_inputs(args.config, needs_auth=bool(token)) if args.config else None
     if inputs and inputs["config"]["optOut"] and not token and not args.interactive_subscription:
         raise ValueError("opt-out requires --token-file, --token-env or explicit --interactive-subscription")
-    if token and inputs["config"]["subscriptionEnvironment"] != inputs["config"]["pirEnvironment"]:
+    if token and inputs and inputs["config"]["subscriptionEnvironment"] != inputs["config"]["pirEnvironment"]:
         raise ValueError("provided-token subscriptionEnvironment and pirEnvironment must match")
     redactor = Redactor(token)
     if inputs and token and any(any(form.encode() in raw for form in redactor.forms) for raw in inputs["inputBytes"]):
@@ -458,35 +548,83 @@ def execute(args, runtime_factory=None):
     parent.mkdir(parents=True, exist_ok=True)
     evidence = Path(tempfile.mkdtemp(prefix=f"{args.platform}-{args.command}-", dir=parent))
     context = Context(evidence, redactor)
-    instance = str(uuid.uuid4())
-    with socket.socket() as reserved:
-        reserved.bind(("127.0.0.1", 0))
-        port = reserved.getsockname()[1]
+    if scope:
+        instance, port = None, scope.port
+    elif seed:
+        instance, port = str(uuid.uuid4()), seed.port
+    else:
+        instance = str(uuid.uuid4())
+        with socket.socket() as reserved:
+            reserved.bind(("127.0.0.1", 0))
+            port = reserved.getsockname()[1]
     context.result.update(platform=args.platform, command=args.command, instanceID=instance, port=port,
                           startedAt=time.time(), rerun=rerun_command(args), evidence=str(evidence))
     runtime, client = None, None
+
+    def collect_snapshots():
+        try:
+            runtime.collect_snapshots()
+        except Exception as error:
+            context.result["snapshots"]["collectionError"] = f"{type(error).__name__}: {error}"
+
     try:
-        if inputs:
-            context.result["inputs"] = inputs["references"]
-            context.write("pir-inputs.json", dict(references=inputs["references"], policy=inputs["config"]["optOut"],
-                                                 authentication="provided-token" if token else "interactive" if args.interactive_subscription else "none"))
-            (evidence / "pir-broker.json").write_bytes(inputs["brokerBytes"])
-        if runtime_factory is None:
-            from runtime import Runtime
-            runtime_factory = Runtime
-        runtime = runtime_factory(args.platform, evidence, instance, port, device=args.device, keep=args.keep,
-                                  pir_environment=inputs["config"].get("pirEnvironment", "production") if inputs else "production")
-        if args.command == "build":
-            context.result["build"] = runtime.build()
-            context.write("build.json", context.result["build"])
-        else:
-            context.result["launch"] = runtime.launch(access_token=token)
-            context.write("launch.json", context.result["launch"])
+        if seed:
+            context.result["schedulerMode"] = seed.mode
+            context.result["cleanup"] = {"mode": "managed-browser"}
+            with seed.profile_path.open("rb") as profile_file:
+                profile = profile_file.read(65_537)
+            if len(profile) > 65_536:
+                raise ValueError("scheduler profile JSON must be at most 65536 bytes")
+            profile_json = profile.decode()
+            validate_profile(json.loads(profile_json))
+            context.write("pir-inputs.json", dict(profile=dict(reference=str(seed.profile_path), sha256=sha256(profile))))
+            if runtime_factory is None:
+                from runtime import Runtime
+                runtime_factory = Runtime
+            runtime = runtime_factory("macos", evidence, instance, port)
+            launch = runtime.launch_scheduler(seed.mode, profile_json)
+            context.result["launch"] = launch
+            context.write("launch.json", launch)
+            scope = scheduler.receipt_scope(runtime.scheduler_receipt(), seed, instance)
+            client = Client(evidence, port, None, redactor)
+            context.result.update(scheduler.observe(context, client, scope, expected_executable=launch["product"]["executable"]))
+        elif scope:
+            context.result["schedulerMode"] = "observe"
+            context.result["cleanup"] = {"mode": "attached"}
             client = Client(evidence, port, instance, redactor)
-            workflow(context, inputs, client, token, args.interactive_subscription)
-        context.result["status"] = "pass"
+            context.result.update(scheduler.observe(context, client, scope))
+        else:
+            if inputs:
+                context.result["inputs"] = inputs["references"]
+                context.write("pir-inputs.json", dict(references=inputs["references"], policy=inputs["config"]["optOut"],
+                                                     authentication="provided-token" if token else "interactive" if args.interactive_subscription else "none"))
+                (evidence / "pir-broker.json").write_bytes(inputs["brokerBytes"])
+            if runtime_factory is None:
+                from runtime import Runtime
+                runtime_factory = Runtime
+            environment = "staging" if is_selftest else inputs["config"].get("pirEnvironment", "production") if inputs else "production"
+            runtime = runtime_factory(args.platform, evidence, instance, port, device=args.device, keep=args.keep,
+                                      pir_environment=environment)
+            runtime.snapshots_enabled = args.command == "run"
+            if runtime.snapshots_enabled:
+                context.result["snapshots"] = {"directory": "snapshots"}
+                print(f"PIR live web view snapshots: {evidence / 'snapshots'}", flush=True)
+            if args.command == "build":
+                context.result["build"] = runtime.build()
+                context.write("build.json", context.result["build"])
+            else:
+                context.result["launch"] = runtime.launch(access_token=token)
+                context.write("launch.json", context.result["launch"])
+                client = Client(evidence, port, instance, redactor)
+                if is_selftest:
+                    selftest(context, client)
+                else:
+                    client.collect_snapshots = collect_snapshots
+                    workflow(context, inputs, client, token, args.interactive_subscription)
+            context.result["status"] = "pass"
     except KeyboardInterrupt:
-        context.result.update(status="inconclusive", reason="cancelled; submitted broker requests cannot be undone")
+        context.result.update(status="inconclusive", reason="scheduler attempt interrupted" if args.command == "scheduler" else
+                              "cancelled; submitted broker requests cannot be undone")
     except Failed as error:
         context.result.update(status="fail", reason=str(error))
     except Exception as error:
@@ -494,15 +632,17 @@ def execute(args, runtime_factory=None):
     finally:
         # Evidence errors and cancellation during capture must still reach owned cleanup.
         try:
-            if client and client.last_run is not None:
+            if args.command == "run" and client and client.last_run is not None:
                 try:
                     context.write("pir-final-run.json", client.last_run)
                 except (Exception, KeyboardInterrupt) as error:
                     context.result["evidenceErrors"].append(f"final run: {type(error).__name__}: {error}")
-            if runtime and args.command == "run":
+            if runtime and args.command in ("run", "selftest", "scheduler"):
                 try:
-                    if client and client.owned:
-                        client.request("GET", "/api/logs?limit=1000")
+                    if args.command in ("run", "selftest") and client and client.owned:
+                        logs = client.request("GET", "/api/logs?limit=1000")
+                        if is_selftest:
+                            context.check("native debug logs returned a JSON array", isinstance(logs, list))
                 except (Exception, KeyboardInterrupt) as error:
                     context.result["evidenceErrors"].append(f"debug logs: {type(error).__name__}: {error}")
                 try:
@@ -513,10 +653,15 @@ def execute(args, runtime_factory=None):
                         (evidence / "pir-app.log").write_text(redactor.text(log.read_text(errors="replace")))
                 except (Exception, KeyboardInterrupt) as error:
                     context.result["evidenceErrors"].append(f"application logs: {type(error).__name__}: {error}")
+            if args.command == "run" and client and client.collect_snapshots:
+                try:
+                    collect_snapshots()
+                except KeyboardInterrupt:
+                    context.result["snapshots"]["collectionError"] = "interrupted"
         finally:
             if runtime:
                 try:
-                    context.result["cleanup"] = runtime.stop()
+                    context.result["cleanup"].update(runtime.stop())
                 except (Exception, KeyboardInterrupt) as error:
                     context.result["cleanup"] = dict(status="unverified", error=f"{type(error).__name__}: {error}")
                     context.result["evidenceErrors"].append("owned runtime cleanup failed")

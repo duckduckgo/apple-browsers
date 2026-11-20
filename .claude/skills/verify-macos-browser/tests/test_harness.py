@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import types
 import unittest
 import uuid
 from unittest import mock
@@ -453,3 +454,33 @@ class CleanupSignalTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MacGrantTests(unittest.TestCase):
+    def run_on_mac(self, grants):
+        evidence, ran = tempfile.mkdtemp(), []
+
+        def sh(mac, command, *args):
+            ran.append((command, *args))
+            return (0, grants) if (command, *args) == ("ax", "grants") else (0, "")
+        mod = types.SimpleNamespace(__doc__="Claim.", run=lambda mac: None)
+        real = harness.Mac._sh
+        harness.Mac._sh = sh
+        try:
+            rec, _ = harness.run_one(mod, os.path.join(evidence, "p.py"), evidence, "t", "mac", False, harness.ROOT,
+                                     "rerun", evidence)
+        finally:
+            harness.Mac._sh = real
+        return rec, [c[0] for c in ran]
+
+    def test_a_missing_grant_stops_a_mac_run_before_the_build(self):
+        rec, ran = self.run_on_mac("accessibility=true screen-recording=false")
+        self.assertIn("NO GRANT", rec.error)
+        self.assertIn("Screen Recording", rec.error)
+        self.assertNotIn("Accessibility or", rec.error)
+        self.assertNotIn("build", ran)
+        self.assertEqual(harness.label(rec)[0], "INCONCLUSIVE")
+
+    def test_both_grants_let_the_build_start(self):
+        _, ran = self.run_on_mac("accessibility=true screen-recording=true")
+        self.assertIn("build", ran)

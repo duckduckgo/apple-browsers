@@ -68,7 +68,7 @@ public final class AgeSignalRequester {
     }
 
     /// `isReinstall` stays true on every launch after a reinstall, so it only counts until a request succeeds.
-    func isRequestDue(isReinstall: Bool) -> Bool {
+    public func isRequestDue(isReinstall: Bool) -> Bool {
         if isReinstall && (try? storage.handledReinstall) != true {
             return true
         }

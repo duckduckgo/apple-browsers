@@ -61,6 +61,7 @@ struct PromoServiceFactory {
     @MainActor
     static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
+            ageSignal(dependencies: dependencies),
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             updateAvailable(dependencies: dependencies),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),

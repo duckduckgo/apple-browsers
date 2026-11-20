@@ -1131,7 +1131,6 @@ public enum PageTranslationSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .pageTranslation }
 
     /// On-device web page translation (iOS).
-    /// https://app.asana.com/1/137249556945/project/1211767540372501/task/1220194632116854
     case featureEnabled
 }
 

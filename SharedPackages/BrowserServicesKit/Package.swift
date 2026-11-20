@@ -517,11 +517,13 @@ let package = Package(
         .target(
             name: "PixelExperimentKit",
             dependencies: [
+                .product(name: "Common", package: "Common"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 "PrivacyConfig",
                 "Configuration"
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -613,7 +615,8 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Suggestions",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "BookmarksTests",

@@ -1,26 +1,55 @@
 #!/usr/bin/env python3
 """Reject Swift 5 concurrency warnings that become errors in Swift 6.
 
-Read a raw compiler log and limit validation to the supplied source directories.
+Check explicit source directories or the SwiftPM targets that enable StrictConcurrency.
 Other warnings, including concurrency advisories, retain their normal severity.
 """
 
 import argparse
+import json
 from pathlib import Path
 import re
+import subprocess
 import sys
+
+
+def strict_package_sources(package):
+    command = ["swift", "package", "--package-path", str(package)]
+    manifest = json.loads(subprocess.check_output([*command, "dump-package"]))
+    enabled = {
+        target["name"] for target in manifest["targets"]
+        if any(setting["kind"].get("enableExperimentalFeature", {}).get("_0") == "StrictConcurrency"
+               for setting in target.get("settings", []))
+    }
+    if not enabled:
+        return set()
+
+    # SwiftPM resolves custom target paths, explicit source lists and exclusions.
+    description = json.loads(subprocess.check_output([*command, "describe", "--type", "json"]))
+    return {
+        (package / target["path"] / source).resolve()
+        for target in description["targets"] if target["name"] in enabled
+        for source in target["sources"]
+    }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", type=Path)
-    parser.add_argument("sources", type=Path, nargs="+")
+    scope = parser.add_mutually_exclusive_group(required=True)
+    scope.add_argument("sources", type=Path, nargs="*", help="source directories to check")
+    scope.add_argument("--package", type=Path, help="check targets opted in by this package")
     args = parser.parse_args()
     sources = [path.resolve() for path in args.sources]
     if not args.log.is_file() or any(not path.is_dir() for path in sources):
         parser.error("the compiler log and source directories must exist")
     if args.log.stat().st_size == 0:
         parser.error("the compiler log must not be empty")
+
+    owned_files = strict_package_sources(args.package) if args.package else set()
+    if args.package and not owned_files:
+        print("No Swift sources opted in to StrictConcurrency.")
+        return 0
 
     diagnostic = re.compile(r"^(.*\.swift):\d+:\d+: warning: (.*)$")
     swift6_error = re.compile(r"this is an error in (?:the )?Swift 6 language mode")
@@ -33,7 +62,8 @@ def main():
         path, message = match.groups()
         if not swift6_error.search(message) or not concurrency.search(message):
             continue
-        if any(Path(path).resolve().is_relative_to(source) for source in sources):
+        file = Path(path).resolve()
+        if file in owned_files or any(file.is_relative_to(source) for source in sources):
             failures.append(line)
 
     if failures:

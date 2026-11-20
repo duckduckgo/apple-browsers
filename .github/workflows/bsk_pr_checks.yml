@@ -145,9 +145,12 @@ jobs:
             -test-iterations 3 \
             -retry-tests-on-failure \
             CODE_SIGNING_ALLOWED=NO \
-            | tee build-log.txt \
+            2>&1 | tee build-log.txt \
             | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
             | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Check strict concurrency in BrowserServicesKit targets
+        run: python3 ../../scripts/check-swift-concurrency-warnings.py build-log.txt --package .
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -338,8 +341,11 @@ jobs:
             -test-iterations 3 \
             -retry-tests-on-failure \
             CODE_SIGNING_ALLOWED=NO \
-            | tee -a ios-build-log.txt \
+            2>&1 | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+
+      - name: Check strict concurrency in BrowserServicesKit targets
+        run: python3 ../../scripts/check-swift-concurrency-warnings.py ios-build-log.txt --package .
 
       - name: Run shared package tests (iOS)
         if: (success() || failure()) && steps.select-simulator.outcome == 'success'

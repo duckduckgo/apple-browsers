@@ -287,6 +287,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.subscriptionEndpointService = subscriptionEndpointService
         self.subscriptionCachingService = subscriptionCachingService
         self.currentEnvironment = subscriptionEnvironment
+        Logger.subscription.log("Subscription manager created, \(subscriptionEnvironment.description, privacy: .public)")
         self.pixelHandler = pixelHandler
         self.tokenRecoveryHandler = tokenRecoveryHandler
         self.isInternalUserEnabled = isInternalUserEnabled

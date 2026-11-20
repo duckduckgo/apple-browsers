@@ -91,6 +91,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let errorCode = "error_code"
         public static let optOutSubmitSuccessRate = "optout_submit_success_rate"
         public static let childParentRecordDifference = "child-parent-record-difference"
+        public static let emailSent = "email_sent"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
         public static let actionTypeKey = "action_type"
         public static let keystoreField = "keystore_field"
@@ -135,8 +136,8 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutStart(dataBroker: String, attemptId: UUID, parent: String)
 
     // Process Pixels
-    case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, awakeDuration: Double, tries: Int, parent: String, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String)
-    case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String)
+    case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, awakeDuration: Double, tries: Int, parent: String, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String, emailSent: Bool = false)
+    case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String, emailSent: Bool = false)
     case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, awakeDuration: Double, parent: String, errorCategory: String, errorDetails: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String)
 
     // Scan/Search pixels
@@ -442,20 +443,27 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.durationParamKey: String(duration),
                     Consts.parentKey: parent]
-        case .optOutSubmitSuccess(let dataBroker, let attemptId, let duration, let awakeDuration, let tries, let parent, let pattern, let vpnConnectionState, let vpnBypassStatus):
+        case .optOutSubmitSuccess(let dataBroker, let attemptId, let duration, let awakeDuration, let tries, let parent, let pattern, let vpnConnectionState, let vpnBypassStatus, let emailSent):
             var params = [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.awakeDurationParamKey: String(awakeDuration), Consts.triesKey: String(tries), Consts.parentKey: parent, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
             if let pattern = pattern {
                 params[Consts.pattern] = pattern
             }
+            if emailSent {
+                params[Consts.emailSent] = "true"
+            }
             return params
-        case .optOutSuccess(let dataBroker, let attemptId, let duration, let parent, let type, let vpnConnectionState, let vpnBypassStatus):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.attemptIdParamKey: attemptId.uuidString,
-                    Consts.durationParamKey: String(duration),
-                    Consts.parentKey: parent,
-                    Consts.isParent: String(type.rawValue),
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .optOutSuccess(let dataBroker, let attemptId, let duration, let parent, let type, let vpnConnectionState, let vpnBypassStatus, let emailSent):
+            var params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.attemptIdParamKey: attemptId.uuidString,
+                          Consts.durationParamKey: String(duration),
+                          Consts.parentKey: parent,
+                          Consts.isParent: String(type.rawValue),
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+            if emailSent {
+                params[Consts.emailSent] = "true"
+            }
+            return params
         case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let awakeDuration, let parent, let errorCategory, let errorDetails, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus):
             var params = [Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: dataBrokerVersion,

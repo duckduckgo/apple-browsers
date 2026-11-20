@@ -747,6 +747,20 @@ final class BrokerProfileJobTests: XCTestCase {
             XCTAssertNil(sorted[11].preferredRunDate)
         }
 
+    func testOptOutByUserEmail_GivesScanConfirmationPriorityBeforeRetry() {
+        let now = Date()
+        let jobs: [BrokerJobData] = [
+            ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .error(error: .unknown("failed")))], preferredRunDate: now.addingTimeInterval(-100)),
+            ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .optOutByUserEmail)], preferredRunDate: now)
+        ]
+
+        let sorted = jobs.sorted(by: BrokerJobDataComparators.byPriorityForBackgroundTask)
+
+        XCTAssertEqual((sorted[0] as? ScanJobData)?.scanType(), .confirmOptOut)
+        XCTAssertEqual(sorted[0].preferredRunDate, now)
+        XCTAssertEqual((sorted[1] as? ScanJobData)?.scanType(), .retry)
+    }
+
     func testExcludingOptOutsWithEmailConfirmationBeingHalted() {
         let now = Date()
         let brokerId: Int64 = 1

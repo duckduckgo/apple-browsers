@@ -188,6 +188,14 @@ struct BrokerProfileOptOutSubJob {
             return nil
         }
 
+        let hoursUntilNextOptOutAttempt = brokerProfileQueryData.dataBroker.schedulingConfig.hoursUntilNextOptOutAttempt
+        if let latestRequest = events.filter({ $0.isFormSubmittedEvent() }).max(by: { $0.date < $1.date }),
+           latestRequest.type == .optOutByUserEmail,
+           Date().timeIntervalSince(latestRequest.date) < hoursUntilNextOptOutAttempt.hoursToSeconds {
+            Logger.dataBrokerProtection.log("User sent a removal email recently, skipping...")
+            return nil
+        }
+
         return OptOutIdentifiers(brokerId: brokerId,
                                  profileQueryId: profileQueryId,
                                  extractedProfileId: extractedProfileId)

@@ -132,6 +132,9 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    /// The window contextual onboarding locked, so the unlock reaches it even if another window is in front.
+    private weak var onboardingLockedWindowController: MainWindowController?
+
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
     /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
@@ -660,10 +663,12 @@ extension WindowControllersManager: WebNotificationTabFinding {}
 
 extension WindowControllersManager: @preconcurrency ContextualOnboardingUILocking {
     func setUILocked(_ locked: Bool) {
-        guard let mainWindowController else { return }
-        mainWindowController.userInteraction(prevented: locked)
+        let windowController = locked ? mainWindowController : onboardingLockedWindowController
+        onboardingLockedWindowController = locked ? windowController : nil
+        guard let windowController else { return }
+        windowController.userInteraction(prevented: locked)
         // Fire stays enabled: it deletes the chat and unlocks the UI.
-        mainWindowController.mainViewController.tabBarViewController.fireButton.isEnabled = true
+        windowController.mainViewController.tabBarViewController.fireButton.isEnabled = true
     }
 }
 

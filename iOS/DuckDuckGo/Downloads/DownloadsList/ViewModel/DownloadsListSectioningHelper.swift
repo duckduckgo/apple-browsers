@@ -32,13 +32,23 @@ class DownloadsListSectioningHelper {
     }
     
     private let calendar = Calendar.current
+    private let locale: Locale
+    private let monthNameFormatter: DateFormatter
+    private let yearFormatter: DateFormatter
     private let today: Date
     private let yesterday: Date
     private let pastWeek: Date
     private let pastMonth: Date
     private let yearAgo: Date
     
-    init(date: Date = Date()) {
+    init(date: Date = Date(), locale: Locale = .autoupdatingCurrent) {
+        self.locale = locale
+        monthNameFormatter = DateFormatter()
+        monthNameFormatter.locale = locale
+        monthNameFormatter.dateFormat = "LLLL"
+        yearFormatter = DateFormatter()
+        yearFormatter.locale = locale
+        yearFormatter.dateFormat = "y"
         today = calendar.startOfDay(for: date)
         yesterday = today.addingTimeInterval(.days(-1))
         pastWeek = today.addingTimeInterval(.days(-7))
@@ -66,7 +76,7 @@ class DownloadsListSectioningHelper {
                     let components = calendar.dateComponents([.month, .year], from: fileDate)
                     let monthDate = calendar.date(from: components)!
                     
-                    let monthString = DownloadsListSectionViewModel.monthNameFormatter.string(from: monthDate)
+                    let monthString = monthNameFormatter.string(from: monthDate)
                     
                     return RelativeDateRange(date: monthDate, displayName: monthString)
                 } else {
@@ -74,7 +84,7 @@ class DownloadsListSectioningHelper {
                     let components = calendar.dateComponents([.year], from: fileDate)
                     let yearDate = calendar.date(from: components)!
                     
-                    let yearString = DownloadsListSectionViewModel.yearFormatter.string(from: yearDate)
+                    let yearString = yearFormatter.string(from: yearDate)
                     
                     return RelativeDateRange(date: yearDate, displayName: yearString)
                 }
@@ -97,10 +107,10 @@ class DownloadsListSectioningHelper {
         switch downloadRepresentable.type {
         case .ongoing:
             guard let download = downloadRepresentable.wrappedRepresentable as? Download else { fatalError("Ongoing download should be Download") }
-            row = OngoingDownloadRowViewModel(download: download)
+            row = OngoingDownloadRowViewModel(download: download, locale: locale)
         case .complete:
             guard let url = downloadRepresentable.wrappedRepresentable as? URL else { fatalError("Complete download should be URL") }
-            row = CompleteDownloadRowViewModel(fileURL: url)
+            row = CompleteDownloadRowViewModel(fileURL: url, locale: locale)
         }
         
         return row

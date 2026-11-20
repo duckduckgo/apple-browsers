@@ -44,8 +44,8 @@ extension Tab {
         case onboarding
         case none
         case dataBrokerProtection(DataBrokerProtectionTabContext)
-        case subscription(URL)
-        case identityTheftRestoration(URL)
+        case subscription(URL, source: URLSource = .ui)
+        case identityTheftRestoration(URL, source: URLSource = .ui)
         case releaseNotes
         case webExtensionUrl(URL)
         case aiChat(URL, source: URLSource = .ui)
@@ -153,10 +153,11 @@ extension TabContent {
             }
         }
 
-        /// Duck.ai keeps only the sources that tell how it was reached, so every other load of it
-        /// (restoration, reload) still behaves as `.ui` did. It never downloads the page.
-        /// Web view updates are kept so the Address Bar doesn‘t trust a page-initiated provisional navigation.
-        fileprivate var aiChatSource: Self {
+        /// Pages with a trusted Address Bar indicator (Duck.ai, subscription, Identity Theft Restoration) keep only
+        /// the sources that tell how they were reached, so every other load of them (restoration, reload) still
+        /// behaves as `.ui` did. They never download the page.
+        /// Web view updates and links are kept so the Address Bar doesn‘t trust a page-initiated provisional navigation.
+        fileprivate var trustedPageSource: Self {
             switch self {
             case .userEntered(let value, downloadRequested: _):
                 .userEntered(value)
@@ -201,7 +202,7 @@ extension TabContent {
                 return .webExtensionUrl(url)
             }
             if url.isDuckAIURL {
-                return .aiChat(url, source: source.aiChatSource)
+                return .aiChat(url, source: source.trustedPageSource)
             }
 
             let subscriptionManager = Application.appDelegate.subscriptionManager
@@ -210,11 +211,11 @@ extension TabContent {
             let identityTheftRestorationURL = subscriptionManager.url(for: .identityTheftRestoration)
             if url.isChild(of: subscriptionBaseURL) {
                 if environment == .staging, url.getParameter(named: "environment") == nil {
-                    return .subscription(url.appendingParameter(name: "environment", value: "staging"))
+                    return .subscription(url.appendingParameter(name: "environment", value: "staging"), source: source.trustedPageSource)
                 }
-                return .subscription(url)
+                return .subscription(url, source: source.trustedPageSource)
             } else if url.isChild(of: identityTheftRestorationURL) {
-                return .identityTheftRestoration(url)
+                return .identityTheftRestoration(url, source: source.trustedPageSource)
             }
         }
 
@@ -329,7 +330,7 @@ extension TabContent {
     /// `real` URL loaded in the web view
     var urlForWebView: URL? {
         switch self {
-        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url, source: _):
+        case .url(let url, credential: _, source: _), .subscription(let url, source: _), .identityTheftRestoration(let url, source: _), .webExtensionUrl(let url), .aiChat(let url, source: _):
             return url
         case .newtab:
             return .newtab

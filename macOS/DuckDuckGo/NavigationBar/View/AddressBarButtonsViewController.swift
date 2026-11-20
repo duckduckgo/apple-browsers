@@ -1431,7 +1431,7 @@ final class AddressBarButtonsViewController: NSViewController {
         guard !isAnyShieldAnimationPlaying else { return }
 
         switch tabViewModel.tab.content {
-        case .url(let url, _, _), .identityTheftRestoration(let url), .subscription(let url), .aiChat(let url, _):
+        case .url(let url, _, _), .identityTheftRestoration(let url, _), .subscription(let url, _), .aiChat(let url, _):
             guard let host = url.host else { break }
 
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue

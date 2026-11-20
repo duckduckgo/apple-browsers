@@ -61,7 +61,7 @@ struct SubscriptionNavigationCoordinatorTests {
         // Verify tab shower was called to show tab with subscription content
         #expect(mockTabShower.capturedContent != nil)
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -79,7 +79,7 @@ struct SubscriptionNavigationCoordinatorTests {
         // Verify tab shower was called to show tab with subscription content
         #expect(mockTabShower.capturedContent != nil)
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -100,7 +100,7 @@ struct SubscriptionNavigationCoordinatorTests {
         // Verify tab shower was called to show tab with subscription content
         #expect(mockTabShower.capturedContent != nil)
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -122,7 +122,7 @@ struct SubscriptionNavigationCoordinatorTests {
         // Verify tab shower was called to show tab with subscription content
         #expect(mockTabShower.capturedContent != nil)
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -146,7 +146,7 @@ struct SubscriptionNavigationCoordinatorTests {
         // Verify tab shower was called to show tab with subscription content
         #expect(mockTabShower.capturedContent != nil)
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }

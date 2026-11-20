@@ -50,7 +50,7 @@ struct AIChatOmnibarSubscriptionUpsellPresenterTests {
         let routed = presenter.routeGatedSelection(requiredTier: .plus, userTier: .free, origin: .addressBarModelPicker)
 
         #expect(routed == true)
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -67,7 +67,7 @@ struct AIChatOmnibarSubscriptionUpsellPresenterTests {
         let routed = presenter.routeGatedSelection(requiredTier: .pro, userTier: .free, origin: .addressBarReasoningDropdown)
 
         #expect(routed == true)
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -83,7 +83,7 @@ struct AIChatOmnibarSubscriptionUpsellPresenterTests {
         let routed = presenter.routeGatedSelection(requiredTier: .pro, userTier: .plus, origin: .addressBarModelPicker)
 
         #expect(routed == true)
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }

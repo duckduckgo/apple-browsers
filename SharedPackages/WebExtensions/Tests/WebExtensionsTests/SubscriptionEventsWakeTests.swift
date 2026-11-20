@@ -111,12 +111,21 @@ final class SubscriptionEventsWakeTests: XCTestCase {
         }
     }
 
+    /// WebKit wakes service workers and non-persistent background pages through the same path. The embedded extension
+    /// uses a service worker, but WebKit does not start service-worker backgrounds in the iOS test process: they fail to
+    /// load before running any script. So on iOS the test uses a non-persistent background page instead.
+    #if os(iOS)
+    private static let background = #"{ "scripts": ["background.js"], "persistent": false }"#
+    #else
+    private static let background = #"{ "service_worker": "background.js" }"#
+    #endif
+
     private static let manifest = """
     {
         "manifest_version": 3,
         "name": "Subscription Events Wake Test",
         "version": "1.0",
-        "background": { "service_worker": "background.js" },
+        "background": \(background),
         "permissions": ["nativeMessaging", "storage"],
         "commands": {
             "\(WebExtensionSubscriptionEvents.commandIdentifier)": { "description": "Performed by native when it has events" }

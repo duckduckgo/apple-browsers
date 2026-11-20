@@ -1576,6 +1576,43 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                       "Scheduler must not be invoked when the purchase did not complete successfully")
     }
 
+    @MainActor
+    func testSubscriptionSelected_WhenPurchaseCompletes_PostsUserDidStartNewSubscription() async throws {
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(),
+                              scheduler: SubscriptionExpirationReminderSchedulerMock(),
+                              appStorePurchaseFlow: purchaseFlow)
+        let newSubscription = expectation(forNotification: .userDidStartNewSubscription, object: sut)
+
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!))
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        await fulfillment(of: [newSubscription], timeout: 1.0)
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenPurchaseConfirmationFails_DoesNotPostUserDidStartNewSubscription() async throws {
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", isFreeTrial: false, accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .failure(.missingEntitlements)
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(),
+                              scheduler: SubscriptionExpirationReminderSchedulerMock(),
+                              appStorePurchaseFlow: purchaseFlow)
+        let newSubscription = expectation(forNotification: .userDidStartNewSubscription, object: sut)
+        newSubscription.isInverted = true
+
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!))
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        await fulfillment(of: [newSubscription], timeout: 1.0)
+    }
+
     // MARK: - Cancellation flow
 
     func testHandlerForShowFeatureInfoIsRegistered() {

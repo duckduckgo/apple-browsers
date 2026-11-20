@@ -116,7 +116,8 @@ final class OnboardingSharedPixelTests: XCTestCase {
             .downloadReasonSearch: "download_reason_search",
             .downloadReasonAIChat: "download_reason_ai-chat",
             .downloadReasonNoAI: "download_reason_no-ai",
-            .downloadReasonAdBlocking: "download_reason_ad-blocking"
+            .downloadReasonAdBlocking: "download_reason_ad-blocking",
+            .downloadReasonVPN: "download_reason_vpn"
         ]
 
         // WHEN
@@ -141,7 +142,8 @@ final class OnboardingSharedPixelTests: XCTestCase {
             .browserPrivately: .downloadReasonSearch,
             .privateAIChat: .downloadReasonAIChat,
             .noAI: .downloadReasonNoAI,
-            .blockAds: .downloadReasonAdBlocking
+            .blockAds: .downloadReasonAdBlocking,
+            .vpn: .downloadReasonVPN
         ]
 
         // WHEN

@@ -33,6 +33,7 @@ class StatisticsLoaderTests: XCTestCase {
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
     private var fireNewAIPromptExperimentPixelsCalled = false
+    private var fireSearchOnlyExperimentPixelsCalled = false
     private var firedOSDistributionMetrics: [OSDistributionPixel.Metric] = []
 
     override func setUpWithError() throws {
@@ -46,6 +47,7 @@ class StatisticsLoaderTests: XCTestCase {
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
                                   fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true },
+                                  fireSearchOnlyExperimentPixels: { self.fireSearchOnlyExperimentPixelsCalled = true },
                                   fireOSDistributionPixel: { self.firedOSDistributionMetrics.append($0) },
                                   pixelFiring: pixelKitMock)
     }
@@ -113,6 +115,36 @@ class StatisticsLoaderTests: XCTestCase {
         // (via refreshSearchRetentionAtb) in addition to the AI-prompt experiment pixels.
         XCTAssertTrue(fireSearchExperimentPixelsCalled)
         XCTAssertTrue(fireNewAIPromptExperimentPixelsCalled)
+    }
+
+    func testRefreshRetentionAtbOnDuckAIPromptSubmissionDoesNotFireSearchOnlyExperimentPixels() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+
+        XCTAssertFalse(fireSearchOnlyExperimentPixelsCalled)
+    }
+
+    func testRefreshSearchRetentionAtbFiresSearchAndSearchOnlyExperimentPixels() {
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshSearchRetentionAtb {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+
+        XCTAssertTrue(fireSearchExperimentPixelsCalled)
+        XCTAssertTrue(fireSearchOnlyExperimentPixelsCalled)
     }
 
     override func tearDown() {

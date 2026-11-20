@@ -81,3 +81,29 @@ struct DefaultSubscriptionExperimentAttributionProvider: SubscriptionExperimentA
         return mergedExperiments
     }
 }
+
+/// Adds a fixed entry to the experiments sent with purchases made through one paywall, so the backend can report trial
+/// conversion and retention for the people who bought there.
+struct PaywallEntryExperimentAttributionProvider: SubscriptionExperimentAttributionProviding {
+
+    /// Purchases from the paywall opened by the Try VPN onboarding step. Only the treatment cohort sees that step.
+    static let vpnOnboardingPaywallEntry = SubscriptionExperiment(experimentName: "vpnOnboardingPaywall", experimentCohort: "treatment")
+
+    private let wrapped: any SubscriptionExperimentAttributionProviding
+    private let entry: SubscriptionExperiment
+
+    init(wrapping wrapped: any SubscriptionExperimentAttributionProviding, entry: SubscriptionExperiment) {
+        self.wrapped = wrapped
+        self.entry = entry
+    }
+
+    /// Appends the entry to `experiments[]`. Legacy attribution (concurrent experiments off) has a single slot and stays as it is.
+    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
+        let attribution = wrapped.attribution(from: selection)
+        guard case .multiple(let experiments) = attribution,
+              !experiments.contains(where: { $0.experimentName == entry.experimentName }) else {
+            return attribution
+        }
+        return .multiple(experiments + [entry])
+    }
+}

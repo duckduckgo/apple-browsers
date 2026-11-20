@@ -65,6 +65,7 @@ public enum OnboardingPixelParameter {
         case downloadReasonAIChat = "download_reason_ai-chat"
         case downloadReasonNoAI = "download_reason_no-ai"
         case downloadReasonAdBlocking = "download_reason_ad-blocking"
+        case downloadReasonVPN = "download_reason_vpn"
     }
 
     /// The variants of the onboarding flow the user entered at each branching step (fork).
@@ -82,14 +83,14 @@ public enum OnboardingPixelParameter {
 
 public extension OnboardingPixelParameter.DownloadReasonVariant {
     /// Maps the domain download reason to its pixel variant, so the selected reason can be
-    /// recorded on the segmented-onboarding pixels for cohort segmentation. `nil` for reasons that aren't measured yet.
-    init?(_ reason: OnboardingDownloadReason) {
+    /// recorded on the segmented-onboarding pixels for cohort segmentation.
+    init(_ reason: OnboardingDownloadReason) {
         switch reason {
         case .browserPrivately: self = .downloadReasonSearch
         case .privateAIChat:    self = .downloadReasonAIChat
         case .noAI:             self = .downloadReasonNoAI
         case .blockAds:         self = .downloadReasonAdBlocking
-        case .vpn:              return nil
+        case .vpn:              self = .downloadReasonVPN
         }
     }
 }
@@ -341,6 +342,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
             case aiChat = "ai-chat"
             case noAI = "no-ai"
             case adBlocking = "ad-blocking"
+            case vpn
         }
 
         case shown

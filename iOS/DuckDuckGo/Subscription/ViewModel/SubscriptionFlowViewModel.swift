@@ -116,6 +116,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     /// `nil` unless this flow came from `makePurchaseFlowV2`; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
     private let onRequestDuckAIChatHandler: ((String?) -> Bool)?
+    /// Called when "Subscription Found" → Restore succeeds. The restore keeps running if the flow is closed meanwhile.
+    private let onSubscriptionRestored: (() -> Void)?
 
     private var didHandOffToDuckAI = false
 
@@ -243,6 +245,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          onboardingKeyValueStore: ThrowingKeyValueStoring?,
          meetsPIRLocaleRequirement: @escaping () -> Bool,
+         onSubscriptionRestored: (() -> Void)?,
          onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
         self.initialURL = initialURL
         self.flowType = flowType
@@ -257,6 +260,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         self.onRequestDuckAIChatHandler = onRequestDuckAIChat
+        self.onSubscriptionRestored = onSubscriptionRestored
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -562,6 +566,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 
                 data.appleAccountRestoreDuration?.complete()
                 wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+                onSubscriptionRestored?()
                 
                 backButtonEnabled(false)
                 await webViewModel.navigationCoordinator.reload()

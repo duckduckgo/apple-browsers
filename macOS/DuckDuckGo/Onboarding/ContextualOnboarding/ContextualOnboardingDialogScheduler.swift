@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+import Combine
 import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
@@ -48,12 +50,20 @@ final class ContextualOnboardingDialogScheduler {
     /// Set when the user dismissed the dialog or switched tabs, so it isn't shown again when the window becomes key.
     private var wasDismissed = false
 
+    static let firstDuckAIAnswerFailsafeDelay: TimeInterval = 2
+    /// Runs an action after a delay; cancelling the result skips it. Injected so tests control time.
+    private let runAfter: (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable
+    private weak var tabWaitingForFirstDuckAIAnswer: Tab?
+    private var firstDuckAIAnswerFailsafe: AnyCancellable?
+
     init(dialogProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater,
          featureFlagger: FeatureFlagger,
-         isInPopUpWindow: @escaping () -> Bool) {
+         isInPopUpWindow: @escaping () -> Bool,
+         runAfter: @escaping (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable = ContextualOnboardingDialogScheduler.runAfterDelay) {
         self.dialogProvider = dialogProvider
         self.featureFlagger = featureFlagger
         self.isInPopUpWindow = isInPopUpWindow
+        self.runAfter = runAfter
     }
 
     /// A navigation finished in the tab on screen: moves onboarding forward, unless it's a reload.
@@ -65,11 +75,23 @@ final class ContextualOnboardingDialogScheduler {
         }
         lastURL = tab?.url
         lastTab = tab
+        stopWaitingForFirstDuckAIAnswer()
         guard canShowDialog(), let tab else {
             onUpdate(.hide)
             return
         }
-        send(dialogProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo))
+        if tab.url?.isDuckAIURL == true, dialogProvider.state != .onboardingCompleted {
+            onUpdate(.hide)
+            waitForFirstDuckAIAnswer(in: tab)
+            return
+        }
+        send(dialogProvider.dialogTypeForTab(tab))
+    }
+
+    /// Duck.ai's first answer arrived in the tab on screen.
+    func firstDuckAIAnswerReceived() {
+        // To do: pixel (dialog triggered by the first answer)
+        askAfterFirstDuckAIAnswer()
     }
 
     /// The window became key; `displayed` is the dialog on screen, if any.
@@ -103,6 +125,7 @@ final class ContextualOnboardingDialogScheduler {
     /// The selected tab changed. Counts as dismissing the dialog.
     func selectedTabDidChange() {
         wasDismissed = true
+        stopWaitingForFirstDuckAIAnswer()
     }
 
     /// The user dismissed `dialog`, and it's no longer on screen.
@@ -112,6 +135,39 @@ final class ContextualOnboardingDialogScheduler {
         if dialog == .highFive, dialogProvider.lastDialog == .subscriptionUpsell {
             showLastDialog(in: tab)
         }
+    }
+
+    private func waitForFirstDuckAIAnswer(in tab: Tab) {
+        tabWaitingForFirstDuckAIAnswer = tab
+        firstDuckAIAnswerFailsafe = runAfter(Self.firstDuckAIAnswerFailsafeDelay) { [weak self] in
+            // To do: pixel (dialog triggered by the failsafe)
+            self?.askAfterFirstDuckAIAnswer()
+        }
+    }
+
+    private func askAfterFirstDuckAIAnswer() {
+        guard let tab = tabWaitingForFirstDuckAIAnswer else { return }
+        stopWaitingForFirstDuckAIAnswer()
+        guard canShowDialog() else {
+            onUpdate(.hide)
+            return
+        }
+        send(dialogProvider.dialogTypeForTab(tab))
+    }
+
+    private func stopWaitingForFirstDuckAIAnswer() {
+        tabWaitingForFirstDuckAIAnswer = nil
+        firstDuckAIAnswerFailsafe = nil
+    }
+
+    /// Runs `action` on the main actor after `delay`; cancelling the result skips it.
+    static func runAfterDelay(_ delay: TimeInterval, _ action: @escaping @MainActor () -> Void) -> AnyCancellable {
+        let task = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            action()
+        }
+        return AnyCancellable { task.cancel() }
     }
 
     private func canShowDialog() -> Bool {

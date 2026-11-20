@@ -367,7 +367,11 @@ extension TabExtensionsBuilder {
 
         if #available(macOS 15.4, *) {
             add {
-                ChromeWebStoreTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
+                ChromeWebStoreTabExtension(
+                    isFeatureEnabled: { [featureFlagger = dependencies.featureFlagger] in featureFlagger.isFeatureOn(.webExtensions) },
+                    scriptsPublisher: userScripts.compactMap { $0 },
+                    webViewPublisher: args.webViewFuture
+                )
             }
         }
 

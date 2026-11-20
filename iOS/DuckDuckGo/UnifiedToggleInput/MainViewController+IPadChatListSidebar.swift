@@ -62,21 +62,23 @@ extension MainViewController {
                                    onNewChat: { [weak self] in self?.startNewChatFromIPadChatListSidebar() },
                                    onTabWidthChange: { [weak self] in self?.updateIPadChatListButtonPlacement() })
         sidebar.followCurrentChat(of: tab)
+        // Identified actions replace each other, so installing on every Duck.ai tab adds just one.
+        unifiedToggleInputCoordinator?.viewController.aiTabChatsButton.addAction(UIAction(identifier: .iPadChatListInputButton) { [weak self] _ in
+            self?.toggleIPadChatListSidebar()
+        }, for: .touchUpInside)
         updateIPadChatListButtonPlacement()
     }
 
-    /// The floating Chats button covers the page's text in narrow windows, so there it sits beside the collapsed input.
+    /// The floating Chats button covers the page's text in narrow windows, so there the input carries it instead.
     func updateIPadChatListButtonPlacement() {
-        guard let tab = iPadChatListSidebarState.sidebar?.navigationController.parent as? TabViewController,
-              let container = tab.chatListSidebarContainer else { return }
-        let coordinator = unifiedToggleInputCoordinator
-        // The input's leading accessory slot, empty on iPad, which a collapsed pill leaves clear.
-        let slot = coordinator?.aiTabFireButton
-        // Voice and Duck.ai's `hideChatInput` hide the input, which takes the slot with it.
-        let isInputShown = tab.fullTabChatInputContainer?.isHidden == false
-        let isBesideInput = container.floatingButtonCoversPage && isInputShown && slot?.isDescendant(of: tab.view) == true
-        container.placeShowChatsButton(besideInputSlot: isBesideInput ? slot : nil,
-                                       isInputCollapsed: coordinator?.isAITabCollapsed ?? true)
+        let tab = iPadChatListSidebarState.sidebar?.navigationController.parent as? TabViewController
+        let container = tab?.chatListSidebarContainer
+        // Voice and Duck.ai's `hideChatInput` hide the input, and its button with it.
+        let isInputShown = tab?.fullTabChatInputContainer?.isHidden == false
+        let isBesideInput = container?.floatingButtonCoversPage == true && isInputShown
+        container?.setFloatingButtonsHidden(isBesideInput)
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.viewController.setFlankingAccessoriesVisible(isBesideInput && coordinator.isAITabCollapsed ? .chats : [])
     }
 
     /// Loads that skip `addTab`/`loadUrl` (background tabs, links, history) still carry `sidebar=open`.
@@ -173,6 +175,10 @@ extension MainViewController {
             tab.tabModel.discardDuckAIEntrySourceAwaitingPageLoad()
         }
     }
+}
+
+private extension UIAction.Identifier {
+    static let iPadChatListInputButton = UIAction.Identifier("com.duckduckgo.ipad.chatList.inputButton")
 }
 
 private extension TabViewController {
@@ -333,29 +339,17 @@ final class IPadChatListSidebarContainerView: UIView {
     fileprivate(set) var isOpen = false
     fileprivate(set) var isOverlay = false
     private var tabWidth: CGFloat = 0
-    private var besideInputConstraints: [NSLayoutConstraint] = []
-    private var isBesideInput: Bool { !besideInputConstraints.isEmpty }
-    private var isInputCollapsed = true
+    private var areFloatingButtonsHidden = false
 
     /// Measured on the tab, which the chat fills whenever the floating button shows.
     var floatingButtonCoversPage: Bool {
         tabWidth > 0 && tabWidth < Constants.minimumChatWidthForFloatingButton
     }
 
-    /// Moves the Chats button into the input's leading slot, or back to the top corner with `nil`.
-    func placeShowChatsButton(besideInputSlot slot: UIView?, isInputCollapsed: Bool) {
-        self.isInputCollapsed = isInputCollapsed
-        let wasBesideInput = isBesideInput
-        // The top-corner constraints stay active underneath, so removing the input leaves the button placed.
-        NSLayoutConstraint.deactivate(besideInputConstraints)
-        besideInputConstraints = slot.map { slot in
-            [showChatsButton.centerXAnchor.constraint(equalTo: slot.centerXAnchor),
-             showChatsButton.centerYAnchor.constraint(equalTo: slot.centerYAnchor)]
-        } ?? []
-        NSLayoutConstraint.activate(besideInputConstraints)
-        if wasBesideInput != isBesideInput {
-            UIView.performWithoutAnimation { superview?.layoutIfNeeded() }
-        }
+    /// The input carries Chats in narrow windows, in the slot New Chat would take.
+    func setFloatingButtonsHidden(_ isHidden: Bool) {
+        guard isHidden != areFloatingButtonsHidden else { return }
+        areFloatingButtonsHidden = isHidden
         applyOpenState(isOpen)
     }
 
@@ -398,14 +392,13 @@ final class IPadChatListSidebarContainerView: UIView {
         self.isOpen = isOpen
         let closedOffset = isOverlay ? -(superview?.bounds.width ?? Self.width) : -Self.width
         leadingConstraint?.constant = isOpen ? 0 : closedOffset
-        // An expanded input grows over its leading slot.
-        let showsChatsButton = !isOpen && (!isBesideInput || isInputCollapsed)
-        showChatsButton.alpha = showsChatsButton ? 1 : 0
+        showChatsButton.alpha = isOpen ? 0 : 1
         newChatButton.alpha = isOpen ? 0 : 1
         accessibilityElementsHidden = !isOpen
-        showChatsButton.isAccessibilityElement = showsChatsButton
-        // A narrow window's input spans the tab under the button, and beside the input the Chats button takes its place.
-        let hidesNewChatButton = isOverlay || isBesideInput
+        showChatsButton.isHidden = areFloatingButtonsHidden
+        showChatsButton.isAccessibilityElement = !isOpen && !areFloatingButtonsHidden
+        // A narrow window's input spans the tab under the button.
+        let hidesNewChatButton = isOverlay || areFloatingButtonsHidden
         newChatButton.isHidden = hidesNewChatButton
         newChatButton.isAccessibilityElement = !isOpen && !hidesNewChatButton
     }
@@ -447,13 +440,9 @@ final class IPadChatListSidebarContainerView: UIView {
     }
 
     fileprivate func floatingButtonConstraints(in tabView: UIView, below top: NSLayoutYAxisAnchor) -> [NSLayoutConstraint] {
-        let topCorner = [
+        [
             showChatsButton.leadingAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.leadingAnchor, constant: Constants.buttonInset),
             showChatsButton.topAnchor.constraint(equalTo: top, constant: Constants.buttonInset),
-        ]
-        // Yields to `besideInputConstraints`.
-        topCorner.forEach { $0.priority = .defaultHigh }
-        return topCorner + [
             showChatsButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             showChatsButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
             newChatButton.leadingAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.leadingAnchor, constant: Constants.buttonInset),

@@ -253,6 +253,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Shows the Add to Dock instructions video before Set as Default in the App Store build, from Default Browser and Dock prompts that offer both actions.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220622522685112
     case appStoreBothDefaultBrowserAndDockCTA
+
+    /// Declared Age Range: age signal request
+    /// https://app.asana.com/1/137249556945/project/1209824456011305/task/1220710748097010
+    case declaredAgeRange
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

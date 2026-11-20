@@ -31,8 +31,7 @@ extension VPNUpsellPopoverViewModel {
         }
 
         var plusFeaturesSubtitle: String {
-            let plusCount = plus.count
-            return plusCount > 1 ? String(format: UserText.vpnUpsellPopoverPlusFeaturesSubtitleCount, plusCount) : UserText.vpnUpsellPopoverPlusFeaturesSubtitle
+            String(format: UserText.vpnUpsellPopoverPlusFeaturesSubtitleCount, plus.count)
         }
     }
 

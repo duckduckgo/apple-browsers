@@ -1065,7 +1065,7 @@ struct NewTabPageSessionInstrumentationTests {
         let page = NSObject()
         var shown = false
 
-        coordinator.beginCovering()
+        let cover = coordinator.beginCovering()
         coordinator.schedule(for: page, visit: {
             instrumentation.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
         }, shown: { shown = true })
@@ -1078,7 +1078,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(!coordinator.hasPresentedPage)
 
         clock.advance(by: 1.2)
-        coordinator.endCovering()
+        coordinator.endCovering(cover)
         #expect(wideEvent.started.count == 1)
         #expect(shown)
         #expect(coordinator.hasPresentedPage)
@@ -1102,18 +1102,47 @@ struct NewTabPageSessionInstrumentationTests {
         let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { visible })
         let page = NSObject()
 
-        coordinator.beginCovering()
+        let cover = coordinator.beginCovering()
         coordinator.schedule(for: page, visit: {
             instrumentation.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
         })
         visible = false
         coordinator.backgrounded()
-        coordinator.endCovering()
+        coordinator.endCovering(cover)
         visible = true
         coordinator.recordIfVisible()
 
         #expect(wideEvent.started.isEmpty)
         #expect(wideEvent.completions.isEmpty)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving the app releases a cover whose animation never reports its end", .timeLimit(.minutes(1)))
+    func backgroundingReleasesUnendedCover() {
+        let (instrumentation, wideEvent, _) = makeSUT()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { true })
+        let page = NSObject()
+
+        let lostCover = coordinator.beginCovering()
+        coordinator.backgrounded()
+
+        // The next arrival is not held by an overlay that is long gone.
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+        #expect(wideEvent.started.count == 1)
+
+        // A late end for the released cover cannot uncover a newer burn early.
+        let newerCover = coordinator.beginCovering()
+        let newerPage = NSObject()
+        var newerVisits = 0
+        coordinator.schedule(for: newerPage, visit: { newerVisits += 1 })
+        coordinator.endCovering(lostCover)
+        #expect(newerVisits == 0)
+
+        coordinator.endCovering(newerCover)
+        #expect(newerVisits == 1)
     }
 
     @MainActor
@@ -1124,16 +1153,16 @@ struct NewTabPageSessionInstrumentationTests {
         let page = NSObject()
         var visits = 0
 
-        // An unmatched end must not uncover a page someone else still covers.
-        coordinator.endCovering()
-        coordinator.beginCovering()
-        coordinator.beginCovering()
+        let first = coordinator.beginCovering()
+        let second = coordinator.beginCovering()
         coordinator.schedule(for: page, visit: { visits += 1 })
 
-        coordinator.endCovering()
+        // Ending the same cover twice must not uncover a page the other one still covers.
+        coordinator.endCovering(first)
+        coordinator.endCovering(first)
         #expect(visits == 0)
 
-        coordinator.endCovering()
+        coordinator.endCovering(second)
         #expect(visits == 1)
     }
 }

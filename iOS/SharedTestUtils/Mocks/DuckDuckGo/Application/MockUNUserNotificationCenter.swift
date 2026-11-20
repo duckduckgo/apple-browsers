@@ -32,6 +32,7 @@ final class MockUNUserNotificationCenter: UNUserNotificationCenterRepresentable 
     var addRequestError: MockPushNotificationError?
     var requestAuthError: MockPushNotificationError?
     var requestAuthorizationResult: Bool = true
+    var authorizationStatusHandler: (() -> UNAuthorizationStatus)?
     
     // Spies
     private(set) var addedRequests: [UNNotificationRequest] = []
@@ -43,7 +44,7 @@ final class MockUNUserNotificationCenter: UNUserNotificationCenterRepresentable 
     
     func authorizationStatus() async -> UNAuthorizationStatus {
         didCheckAuthorizationStatus = true
-        return authorizationStatus
+        return authorizationStatusHandler?() ?? authorizationStatus
     }
 
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {

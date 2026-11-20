@@ -151,6 +151,8 @@ public struct SubscriptionTokensDebugView: View {
                 ForEach(model.tokens) { token in
                     tokenSection(token)
                 }
+
+                vpnExtensionTokenSection
             }
             .padding(20)
         }
@@ -217,6 +219,26 @@ public struct SubscriptionTokensDebugView: View {
             .padding(4)
         } label: {
             Text(title(for: token.field)).font(.headline)
+        }
+    }
+
+    private var vpnExtensionTokenSection: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("The VPN system extension keeps its own copy of the token in the System keychain, which this window can't read. To remove it:")
+                Text("1. Open the Keychain Access app and select the System keychain.")
+                Text("2. Search for \"DuckDuckGo Network Protection Auth Token Container\".")
+                Text("3. Delete the item whose Account is com.duckduckgo.macos.vpn.network-extension.tokenContainer. Debug, Review and Alpha builds add .debug, .review or .alpha after network-extension. macOS asks for an administrator password.")
+                Text("Items whose Where ends in .authToken are left over from the old sign-in and don't matter. To see the effect, start the VPN again, for example by restarting the Mac.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(4)
+        } label: {
+            Text("VPN Extension Token").font(.headline)
         }
     }
 

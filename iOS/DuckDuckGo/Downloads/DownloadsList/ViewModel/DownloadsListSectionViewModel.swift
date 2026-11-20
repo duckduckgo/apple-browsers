@@ -29,3 +29,19 @@ struct DownloadsListSectionViewModel: Identifiable, Hashable, Comparable {
         lhs.date < rhs.date
     }
 }
+
+extension DownloadsListSectionViewModel {
+    static func monthNameFormatter(locale: Locale) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.dateFormat = "LLLL"
+        return formatter
+    }
+
+    static func yearFormatter(locale: Locale) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.dateFormat = "y"
+        return formatter
+    }
+}

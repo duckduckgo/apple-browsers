@@ -43,12 +43,8 @@ class DownloadsListSectioningHelper {
     
     init(date: Date = Date(), locale: Locale = .autoupdatingCurrent) {
         self.locale = locale
-        monthNameFormatter = DateFormatter()
-        monthNameFormatter.locale = locale
-        monthNameFormatter.dateFormat = "LLLL"
-        yearFormatter = DateFormatter()
-        yearFormatter.locale = locale
-        yearFormatter.dateFormat = "y"
+        monthNameFormatter = DownloadsListSectionViewModel.monthNameFormatter(locale: locale)
+        yearFormatter = DownloadsListSectionViewModel.yearFormatter(locale: locale)
         today = calendar.startOfDay(for: date)
         yesterday = today.addingTimeInterval(.days(-1))
         pastWeek = today.addingTimeInterval(.days(-7))

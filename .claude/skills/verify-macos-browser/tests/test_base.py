@@ -95,6 +95,16 @@ class JudgeTests(unittest.TestCase):
         self.assertEqual([(r["base"], r["before"], r["after"], r["judged"]) for r in rows],
                          [("unchanged", "pass", "pass", "as declared"), ("fail", "fail", "pass", "as declared")])
 
+    def test_tokens_and_local_ports_do_not_split_a_check_across_the_runs(self):
+        b, a = harness.Record(), harness.Record()
+        tb = harness.Mac("t", tempfile.mkdtemp(), b).token()
+        ta = harness.Mac("t", tempfile.mkdtemp(), a).token()
+        b.checks = [(f"URL contains 127.0.0.1:50001/index.html?token={tb}", False, None, "fail")]
+        a.checks = [(f"URL contains 127.0.0.1:50002/index.html?token={ta}", True, None, "fail")]
+        rows = base.judge(b.checks, a.checks, b.tokens + a.tokens)
+        self.assertEqual([(r["check"], r["before"], r["after"], r["judged"]) for r in rows],
+                         [(a.checks[0][0], "fail", "pass", "as declared")])
+
 
 class OnBaseTests(unittest.TestCase):
     def mac(self, as_base):

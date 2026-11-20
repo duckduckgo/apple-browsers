@@ -13,6 +13,7 @@ others not used for STALE_DAYS, since the merge-base moves daily; `clean-base` r
 import copy
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -22,18 +23,29 @@ from harness import HOME, ROOT, ProofError, Record, label
 
 BASE_TREES = os.path.join(HOME, "base")
 AS_DECLARED, UNEXPECTED, NOT_SHOWN = "as declared", "unexpected", "not shown"
+LOCAL_PORT = re.compile(r"(127\.0\.0\.1|localhost|\[::1\]):\d+")   # the fixture's port is new every run
 STALE_DAYS = 3   # longer than any run, so a base worktree another run is using is never removed under it
 
 
 # ---------------------------------------------------------------- judging (pure)
-def judge(base_checks, change_checks):
-    """One row per check of either run, matched by name and occurrence, in this checkout's order (checks only the base
-    run made come last): what the base build should do, what each run did, and whether that is as declared."""
+def match_key(name, tokens):
+    """A check's name with local ports and this run's tokens as placeholders: they differ between the two runs."""
+    key = LOCAL_PORT.sub(r"\1:<port>", name)
+    for token, prefix in tokens:
+        key = key.replace(token, f"<token:{prefix}>")
+    return key
+
+
+def judge(base_checks, change_checks, tokens=()):
+    """One row per check of either run, matched by name (`match_key`, with `tokens` the (token, prefix) pairs both
+    runs issued) and occurrence, in this checkout's order (checks only the base run made come last): what the base
+    build should do, what each run did, and whether that is as declared."""
     def keyed(checks):
         seen, out = {}, {}
         for c in checks:
-            seen[c[0]] = seen.get(c[0], -1) + 1
-            out[(c[0], seen[c[0]])] = c
+            name = match_key(c[0], tokens)
+            seen[name] = seen.get(name, -1) + 1
+            out[(name, seen[name])] = c
         return out
     before, after = keyed(base_checks), keyed(change_checks)
     rows = []
@@ -46,7 +58,7 @@ def judge(base_checks, change_checks):
             judged = NOT_SHOWN
         else:
             judged = AS_DECLARED if was == (now if expect == "unchanged" else expect) else UNEXPECTED
-        rows.append(dict(check=k[0], base=expect, before=was or "not run", after=now or "not run", judged=judged))
+        rows.append(dict(check=(a or b)[0], base=expect, before=was or "not run", after=now or "not run", judged=judged))
     return rows
 
 
@@ -189,7 +201,7 @@ def prove_base(path, ref, target, evidence_dir=None, video=True):
         os.makedirs(os.path.join(evidence, "change"))
         change, change_m = harness.run_one(mod, proof, os.path.join(evidence, "change"), topic, target, video, ROOT,
                                            rerun, shown_dir)
-    rows = judge(base.checks, change.checks if change else [])
+    rows = judge(base.checks, change.checks if change else [], base.tokens + (change.tokens if change else []))
     v, code, reason = verdict(base, change, rows, base_m, change_m)
     manifest = dict(proof="proof.py", base=dict(ref=ref, sha=sha, worktree=tree, revision=base_m.get("revision"),
                                                 unpinned_flags=base.unpinned, pruned=pruned),

@@ -72,6 +72,13 @@ Proof rules:
 - Select pixels by name and order, never by the params you expect. `Skipped` is not `Fired`.
 - Shortcuts inside an `NSPopover` (Esc, Return) only fire when its window is key: test them explicitly.
 
+**Fixture pages and LIVE.** Prefer a local page to a live site: `mac.navigate(mac.fixture_url(mac.token("x")))`
+(`AUTOMATION = True`) opens `fixture/index.html`, served for this run only on 127.0.0.1 (in a VM, via an ssh tunnel to
+its loopback). It shows the token, writes localStorage, links to `target.html`, and has a disabled button, two buttons
+sharing a label and a long list. Name every live service the proof needs in `LIVE`. With `AUTOMATION`, the report
+lists the hosts the app loaded (navigated, read by `url()`, and the front tab's resources at the end; not other tabs
+or the app's own requests), says "local pages only" or "live: …", and flags in bold any host `LIVE` doesn't cover.
+
 **Before and after (bug fixes).** Show the bug on the base revision with the same proof, then the fix. Wrap the
 checks that show the bug in `with mac.on_base("fail"):`; every other check must come out the same on both.
 
@@ -123,8 +130,7 @@ section, link `report.md` as the entry point, with the verdict, and the screensh
 couldn't drive is `unverified`, never "verified through another path". Never fall back to "the code looks right".
 
 **Run it in a subagent.** Hand the verification to a subagent briefed with the claim, the target and the evidence
-folder. It writes the proof, runs `new-proof`, `check` and `prove`, handles retries and build waits, and returns
-only the verdict, the `report.md` path and the evidence folder. The lead reads `report.md` and the screenshots.
+folder. It writes the proof, runs `new-proof`, `check` and `prove`, and returns only the verdict, the `report.md` path and the evidence folder. The lead reads `report.md` and the screenshots.
 
 ## Exploring by hand: `verify.sh`
 

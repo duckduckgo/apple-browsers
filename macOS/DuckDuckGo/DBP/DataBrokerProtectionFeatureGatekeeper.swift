@@ -19,10 +19,12 @@
 import AppKit
 import BrowserServicesKit
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import DataBrokerProtection_macOS
 import Foundation
 import Freemium
+import Networking
 import os.log
 import PrivacyConfig
 import Subscription
@@ -40,6 +42,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     private let subscriptionAvailability: SubscriptionFeatureAvailability
     private let subscriptionManager: any SubscriptionManager
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
+    private let featureFlagger: FeatureFlagger
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          featureDisabler: DataBrokerProtectionFeatureDisabling = DataBrokerProtectionFeatureDisabler(),
@@ -47,7 +50,8 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
          userDefaults: UserDefaults = .standard,
          subscriptionAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
          subscriptionManager: any SubscriptionManager,
-         freemiumDBPUserStateManager: FreemiumDBPUserStateManager) {
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
+         featureFlagger: FeatureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureDisabler = featureDisabler
         self.pixelHandler = pixelHandler
@@ -55,6 +59,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
         self.subscriptionAvailability = subscriptionAvailability
         self.subscriptionManager = subscriptionManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.featureFlagger = featureFlagger
     }
 
     var isUserLocaleAllowed: Bool {
@@ -81,20 +86,30 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
         Logger.dataBrokerProtection.log("Disabling and removing DBP for all users")
     }
 
-    /// Checks DBP prerequisites
-    ///
-    /// Prerequisites are satisfied if either:
-    /// 1. The user is an active freemium user (e.g has activated freemium and is not authenticated)
-    /// 2. The user has a subscription with valid entitlements
-    ///
-    /// - Returns: Bool indicating prerequisites are satisfied
+    /// Whether PIR can run: an activated freemium user without a token, or a token with the PIR entitlement. The token is read through
+    /// `getTokenContainer(policy: .localValid)`, so a missing one is restored first when it can be.
+    /// - Returns: `true` when PIR can run.
+    /// - Throws: The error reading the token, other than `SubscriptionManagerError.noTokenAvailable`.
     func arePrerequisitesSatisfied() async throws -> Bool {
+        guard featureFlagger.isFeatureOn(.dbpEntitlementCheckErrorHandling) else {
+            let isAuthenticated = subscriptionManager.isUserAuthenticated
+            if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
+            let hasEntitlements = try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
+            firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
+            return hasEntitlements && isAuthenticated
+        }
 
-        let isAuthenticated = subscriptionManager.isUserAuthenticated
-        if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
-        let hasEntitlements = try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
-        firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
-        return hasEntitlements && isAuthenticated
+        let tokenContainer: TokenContainer
+        do {
+            tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        } catch SubscriptionManagerError.noTokenAvailable {
+            if freemiumDBPUserStateManager.didActivate { return true }
+            firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: false, isAuthenticatedResult: false)
+            return false
+        }
+        let hasEntitlements = tokenContainer.decodedAccessToken.hasEntitlement(.dataBrokerProtection)
+        firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: true)
+        return hasEntitlements
     }
 }
 

@@ -41,12 +41,13 @@ final class DBPService: NSObject {
          contentBlocking: ContentBlocking,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording) {
-        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-            runTypeProvider: appDependencies.dbpSettings)
-        let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
                                                freemiumPIRDebugSettings: freemiumPIRDebugSettings)
+        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            runTypeProvider: appDependencies.dbpSettings,
+            featureFlagger: featureFlagger)
+        let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
             userDefaults: .dbp,
             isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated },
@@ -215,6 +216,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
 
     var isExtractedProfileRefreshOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
+    }
+
+    var isEntitlementCheckErrorHandlingOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpEntitlementCheckErrorHandling)
     }
 
     var isChallengeSolverOn: Bool {

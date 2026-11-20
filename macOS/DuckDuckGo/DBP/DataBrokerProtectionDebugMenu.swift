@@ -93,9 +93,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
             fatalError("Failed to make secure storage vault")
         }
-        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-            subscriptionManager: Application.appDelegate.subscriptionManager)
         let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
+        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
+            subscriptionManager: Application.appDelegate.subscriptionManager,
+            featureFlagger: featureFlagger)
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: DataBrokerProtectionSettings(defaults: .dbp),
@@ -487,9 +488,11 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func runCustomJSON() {
-        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager)
+        let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
+        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager,
+                                                                                                    featureFlagger: featureFlagger)
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager,
-                                                                   featureFlagger: DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger))
+                                                                   featureFlagger: featureFlagger)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,

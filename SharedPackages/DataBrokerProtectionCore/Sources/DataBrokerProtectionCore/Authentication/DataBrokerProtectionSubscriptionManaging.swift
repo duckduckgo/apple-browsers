@@ -19,11 +19,60 @@
 import Foundation
 import Subscription
 import Common
+import Networking
 import os.log
+import Security
+
+/// Whether the current token carries the PIR entitlement.
+public enum DataBrokerProtectionEntitlementStatus: Equatable {
+    /// The token carries the PIR entitlement.
+    case enabled
+    /// The token doesn't carry the PIR entitlement.
+    case disabled
+    /// The entitlement couldn't be checked.
+    case error(DataBrokerProtectionEntitlementErrorReason)
+}
+
+public enum DataBrokerProtectionEntitlementErrorReason: String {
+    case noToken = "no_token"
+    case keychainLocked = "keychain_locked"
+    case keychainError = "keychain_error"
+    case network
+    case profileRead = "profile_read"
+    case unknown
+
+    public init(_ error: Error) {
+        let underlyingError: Error
+        switch error {
+        case SubscriptionManagerError.noTokenAvailable:
+            self = .noToken
+            return
+        case SubscriptionManagerError.errorRetrievingTokenContainer(let wrappedError?):
+            underlyingError = wrappedError
+        default:
+            underlyingError = error
+        }
+
+        switch underlyingError {
+        case AccountKeychainAccessError.keychainLookupFailure(let status) where status == errSecInteractionNotAllowed:
+            self = .keychainLocked
+        case is AccountKeychainAccessError:
+            self = .keychainError
+        case is URLError, APIRequestV2Error.urlSession:
+            self = .network
+        case OAuthServiceError.invalidResponseCode(let status) where status.isServerError || status == .requestTimeout || status == .tooManyRequests:
+            self = .network
+        default:
+            self = .unknown
+        }
+    }
+}
 
 public protocol DataBrokerProtectionSubscriptionManaging {
     func accessToken() async -> String?
-    func hasValidEntitlement() async throws -> Bool
+    /// Returns whether the current token carries the PIR entitlement.
+    /// - Returns: `.enabled` or `.disabled` from the token's entitlements, or `.error` when no token can be read.
+    func entitlementStatus() async -> DataBrokerProtectionEntitlementStatus
     /// Returns whether the user is eligible for a free trial
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
     func isUserEligibleForFreeTrial() -> Bool
@@ -33,6 +82,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
 
     let subscriptionManager: any SubscriptionManager
     let runTypeProvider: AppRunTypeProviding
+    let featureFlagger: EntitlementCheckErrorHandlingFeatureFlagging
 
     public func accessToken() async -> String? {
         // We use a staging token for DuckDuckGo subscription supplied through a github secret/action
@@ -61,24 +111,29 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         subscriptionManager.isUserEligibleForFreeTrial()
     }
 
-    public init(subscriptionManager: any SubscriptionManager, runTypeProvider: AppRunTypeProviding) {
+    public init(subscriptionManager: any SubscriptionManager,
+                runTypeProvider: AppRunTypeProviding,
+                featureFlagger: EntitlementCheckErrorHandlingFeatureFlagging) {
         self.subscriptionManager = subscriptionManager
         self.runTypeProvider = runTypeProvider
+        self.featureFlagger = featureFlagger
     }
 
-    public func hasValidEntitlement() async throws -> Bool {
+    /// Reads the current token with `getTokenContainer(policy: .localValid)`, which restores a missing one first when it can.
+    /// Always `.enabled` in integration tests.
+    public func entitlementStatus() async -> DataBrokerProtectionEntitlementStatus {
         if runTypeProvider.runType == .integrationTests {
-            return true // real entitlements check are not possible here in AuthV2 because the SubscriptionManager has no token
-        } else {
-            return try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
+            return .enabled
+        }
+        do {
+            guard featureFlagger.isEntitlementCheckErrorHandlingOn else {
+                return try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection) ? .enabled : .disabled
+            }
+            let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            return tokenContainer.decodedAccessToken.hasEntitlement(.dataBrokerProtection) ? .enabled : .disabled
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to read the current token for the PIR entitlement: \(error.localizedDescription, privacy: .public)")
+            return .error(DataBrokerProtectionEntitlementErrorReason(error))
         }
     }
-}
-
-// MARK: - Wrapper Protocols
-
-/// This protocol exists only as a wrapper on top of the AccountManager since it is a concrete type on BSK
-public protocol DataBrokerProtectionAccountManaging {
-    func accessToken() async -> String?
-    func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, Error>
 }

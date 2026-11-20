@@ -100,7 +100,7 @@ public enum DataBrokerProtectionMacOSPixels {
     // Entitlements
     case entitlementCheckValid
     case entitlementCheckInvalid
-    case entitlementCheckError
+    case entitlementCheckError(reason: DataBrokerProtectionEntitlementErrorReason)
 
     // Configuration
     case invalidPayload(Configuration)
@@ -239,11 +239,12 @@ extension DataBrokerProtectionMacOSPixels: PixelKit.Event {
 
                 .entitlementCheckValid,
                 .entitlementCheckInvalid,
-                .entitlementCheckError,
 
                 .invalidPayload,
                 .failedToParsePrivacyConfig:
             return [:]
+        case .entitlementCheckError(let reason):
+            return [DataBrokerProtectionSharedPixels.Consts.reasonParamKey: reason.rawValue]
         case .ipcServerProfileSavedCalledByApp,
                 .ipcServerProfileSavedReceivedByAgent,
                 .ipcServerProfileSavedXPCError,

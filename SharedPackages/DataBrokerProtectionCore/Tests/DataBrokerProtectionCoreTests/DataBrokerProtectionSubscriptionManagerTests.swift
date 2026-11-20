@@ -21,21 +21,26 @@ import XCTest
 import Common
 import SubscriptionTestingUtilities
 import Subscription
+import Security
+@_spi(Testing) import Networking
 
 final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
 
     var subscriptionManager: DataBrokerProtectionSubscriptionManager!
     var mockSubscriptionManager: SubscriptionManagerMock!
     var mockRunTypeProvider: MockAppRunTypeProvider!
+    var mockFeatureFlagger: MockEntitlementCheckErrorHandlingFeatureFlagger!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
         mockRunTypeProvider = MockAppRunTypeProvider()
+        mockFeatureFlagger = MockEntitlementCheckErrorHandlingFeatureFlagger()
         subscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: mockSubscriptionManager,
-            runTypeProvider: mockRunTypeProvider
+            runTypeProvider: mockRunTypeProvider,
+            featureFlagger: mockFeatureFlagger
         )
     }
 
@@ -43,6 +48,7 @@ final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
         subscriptionManager = nil
         mockSubscriptionManager = nil
         mockRunTypeProvider = nil
+        mockFeatureFlagger = nil
         try super.tearDownWithError()
     }
 
@@ -61,6 +67,86 @@ final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
         XCTAssertTrue(subscriptionManager.isUserEligibleForFreeTrial())
     }
+
+    func testEntitlementStatus_tokenWithTheEntitlement_isEnabled() async {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .enabled)
+        XCTAssertEqual(mockSubscriptionManager.getTokenContainerPolicies, [.localValid])
+    }
+
+    func testEntitlementStatus_tokenWithoutTheEntitlement_isDisabled() async {
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeTokenContainer()
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .disabled)
+    }
+
+    func testEntitlementStatus_noTokenCanBeRead_isNoTokenError() async {
+        mockSubscriptionManager.resultTokenContainer = nil
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .error(.noToken))
+    }
+
+    func testEntitlementStatus_flagOff_usesTheCachedEntitlementsWithoutReadingTheToken() async {
+        mockFeatureFlagger.isEntitlementCheckErrorHandlingOn = false
+        mockSubscriptionManager.resultTokenContainer = nil
+        mockSubscriptionManager.resultFeatures = [.dataBrokerProtection]
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .enabled)
+        XCTAssertTrue(mockSubscriptionManager.getTokenContainerPolicies.isEmpty)
+    }
+
+    func testEntitlementStatus_flagOff_withoutTheCachedEntitlement_isDisabled() async {
+        mockFeatureFlagger.isEntitlementCheckErrorHandlingOn = false
+        mockSubscriptionManager.resultTokenContainer = nil
+        mockSubscriptionManager.resultFeatures = []
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .disabled)
+    }
+
+    func testErrorReason_classifiesTheTokenReadError() {
+        let wrapped = { SubscriptionManagerError.errorRetrievingTokenContainer(error: $0) }
+        let cases: [(Error, DataBrokerProtectionEntitlementErrorReason)] = [
+            (SubscriptionManagerError.noTokenAvailable, .noToken),
+            (wrapped(AccountKeychainAccessError.keychainLookupFailure(errSecInteractionNotAllowed)), .keychainLocked),
+            (wrapped(AccountKeychainAccessError.keychainLookupFailure(errSecAuthFailed)), .keychainError),
+            (wrapped(AccountKeychainAccessError.failedToDecodeKeychainData), .keychainError),
+            (wrapped(URLError(.notConnectedToInternet)), .network),
+            (wrapped(APIRequestV2Error.urlSession(URLError(.timedOut))), .network),
+            (wrapped(OAuthServiceError.invalidResponseCode(.serviceUnavailable)), .network),
+            (wrapped(OAuthServiceError.invalidResponseCode(.tooManyRequests)), .network),
+            (wrapped(OAuthServiceError.invalidResponseCode(.badRequest)), .unknown),
+            (wrapped(OAuthClientError.invalidTokenRequest(nil)), .unknown),
+            (SubscriptionManagerError.errorRetrievingTokenContainer(error: nil), .unknown)
+        ]
+
+        for (error, expected) in cases {
+            XCTAssertEqual(DataBrokerProtectionEntitlementErrorReason(error), expected, "\(error)")
+        }
+    }
+
+    func testEntitlementStatus_integrationTests_isEnabledWithoutReadingTheToken() async {
+        mockRunTypeProvider.runType = .integrationTests
+
+        let status = await subscriptionManager.entitlementStatus()
+
+        XCTAssertEqual(status, .enabled)
+        XCTAssertTrue(mockSubscriptionManager.getTokenContainerPolicies.isEmpty)
+    }
+}
+
+final class MockEntitlementCheckErrorHandlingFeatureFlagger: EntitlementCheckErrorHandlingFeatureFlagging {
+    var isEntitlementCheckErrorHandlingOn = true
 }
 
 final class MockAppRunTypeProvider: AppRunTypeProviding {

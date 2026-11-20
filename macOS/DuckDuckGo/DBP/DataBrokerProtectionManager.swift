@@ -136,7 +136,8 @@ public final class DataBrokerProtectionManager {
 
     private init() {
         self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-            subscriptionManager: Application.appDelegate.subscriptionManager)
+            subscriptionManager: Application.appDelegate.subscriptionManager,
+            featureFlagger: DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger))
         self.vpnBypassService = VPNBypassService()
         self.freeTrialConversionService = Application.appDelegate.freeTrialConversionService
     }

@@ -871,7 +871,7 @@ extension MainViewController {
             tabURL: tab.url,
             tabLinkURL: tab.link?.url,
             tabIsVoiceModeRequested: tab.isVoiceModeRequested,
-            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
+            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested || tab.isOpenedForChatList,
             tabRequestsNewChatInput: tab.tabModel.newChatInputRequest != nil,
             coordinatorIsAITabState: coordinator.isAITabState,
             keepsExpandedInputForNewChat: isNewTabTransitionEnabled && coordinator.isAITabExpanded,

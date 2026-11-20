@@ -30,6 +30,7 @@ ROOT = os.path.realpath(os.path.join(SKILL, "..", "..", ".."))   # the checkout 
 VERIFY_SH = os.path.join(SCRIPTS, "verify.sh")
 HOME = os.environ.get("VERIFY_MACOS_HOME", os.path.expanduser("~/.ddg-verify-macos"))
 TARGETS = ("mac", "vm", "vm-1", "vm-2")
+VIDEO = "recording.mp4"
 sys.path.insert(0, SCRIPTS)
 import vhelp  # noqa: E402
 
@@ -86,6 +87,7 @@ class Record:
         self.action_errors = []  # actions or reads that failed, even if the proof caught the error
         self.app_running = None  # at the end of the proof; None when the proof never started
         self.cancelled = False
+        self.video = {}         # None when off (--no-video); else path, seconds, bytes once written, error if it failed
 
 
 def label(rec):
@@ -119,8 +121,15 @@ def report(doc, rec, manifest, evidence):
     m = manifest or {}
     shots = [s for s in (link(s) for s in rec.shots) if s]
     telemetry = [x for x in (link("pixels.json"), link("wide-events.json")) if x]
+    if rec.video is None:
+        recording = "off (--no-video)"
+    elif link(VIDEO):
+        recording = link(VIDEO) + (f" ({rec.video['seconds']:.1f} s)" if rec.video.get("seconds") else "")
+    else:
+        recording = "(none: see Problems)" if rec.video.get("error") else "(none: the proof never started)"
     lines = [f"# Proof: {doc.splitlines()[0]}", "", "## Verified", "", doc, "", "## Evidence", "",
              "Paths are relative to this report.", "",
+             f"- Recording: {recording}",
              f"- Screenshots: {', '.join(shots) or '(none)'}",
              f"- Final screen: {link('final.png') or '(not captured)'}",
              f"- Telemetry: {', '.join(telemetry) or '(none)'}",
@@ -445,7 +454,7 @@ def _alive(pid_file):
         return False
 
 
-def prove(path, target, evidence_dir=None):
+def prove(path, target, evidence_dir=None, video=True):
     """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary).
     Raises Refused, before anything is written, for an --evidence-dir inside a git checkout.
     Without --evidence-dir, a proof in an attempt folder outside HOME (from new-proof --evidence-dir) runs there."""
@@ -462,10 +471,11 @@ def prove(path, target, evidence_dir=None):
     evidence, proof = attempt_dir(path, root)
     topic = topic_of(evidence)
     rec = Record()
+    rec.video = {} if video else None
     mac = Mac(topic, evidence, rec, automation=getattr(mod, "AUTOMATION", False))
     vm = None if target == "mac" else ("auto" if target == "vm" else target)
     shown_dir = root if evidence_dir else None
-    rerun = rerun_command(proof, target, shown_dir)
+    rerun = rerun_command(proof, target, shown_dir, video)
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     running = None
     try:
@@ -476,6 +486,8 @@ def prove(path, target, evidence_dir=None):
         mac._do("build", ROOT, *(["--automation"] if mac.automation else []))
         doctor = mac._do("doctor")
         running = json.loads(re.search(r"^running_hashes=(.*)$", doctor, re.M).group(1))
+        if video:
+            _record(mac, rec, "start")
         rec.phase = "proof"
         mod.run(mac)
         if not rec.checks:
@@ -506,10 +518,24 @@ def prove(path, target, evidence_dir=None):
                       evidence=evidence, report=os.path.join(evidence, "report.md"))
 
 
-def rerun_command(proof, target, evidence_dir=None):
-    """The report's rerun command: same checkout, proof, target and evidence directory; it works pasted into zsh."""
+def rerun_command(proof, target, evidence_dir=None, video=True):
+    """The report's rerun command: same checkout, proof, target, evidence directory and video setting; it works pasted
+    into zsh."""
     return f"cd {_sh_path(ROOT)} && {_sh_path(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
-           f"{_sh_path(proof)} --target {target}" + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "")
+           f"{_sh_path(proof)} --target {target}" + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "") \
+           + ("" if video else " --no-video")
+
+
+def _record(mac, rec, step):
+    """Start or stop the screen recording. A recording that fails is a Problem, never a failed check."""
+    code, out = mac._sh("record", step)
+    written = re.search(r"seconds=([\d.]+) bytes=(\d+)", out)
+    if written:
+        rec.video.update(path=VIDEO, seconds=float(written[1]), bytes=int(written[2]))
+    if code:
+        outcome = "not started" if step == "start" else "cut short" if "CUT:" in out else "failed"
+        rec.video["error"] = f"screen recording {outcome}: {_line(out[-300:])}"
+        rec.problems.append(rec.video["error"])
 
 
 def _finish(mac, rec, evidence):
@@ -526,6 +552,8 @@ def _finish(mac, rec, evidence):
         code, out = mac._sh("shot", "final") if rec.app_running else (1, "app not running")
         if code:
             rec.problems.append(f"final screenshot not taken: {out[-300:]}")
+        if rec.video is not None and "error" not in rec.video:
+            _record(mac, rec, "stop")   # after the final screenshot, so the video ends on the final state
         if mac._marked and not _alive(os.path.join(evidence, "pixel_stream.pid")):
             rec.problems.append("pixel stream died during the run: telemetry checks after that can't be trusted")
         code, out = mac._sh("logs")
@@ -553,7 +581,8 @@ def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=N
     m.update(proof=os.path.relpath(proof, evidence), target=target, evidence_dir=evidence_dir, rerun=rerun, running_hashes=running, live=live,
              verdict=verdict, exit=code, reason=rec.error, phase_reached=rec.phase,
              checks=[dict(check=n, ok=ok, detail=d) for n, ok, d in rec.checks], problems=rec.problems,
-             unverified=[dict(what=w, why=y) for w, y in rec.unverified])
+             unverified=[dict(what=w, why=y) for w, y in rec.unverified],
+             video=dict(off=True) if rec.video is None else rec.video)
     with open(path, "w") as f:
         f.write(_tilde(json.dumps(m, indent=1)))
     return m

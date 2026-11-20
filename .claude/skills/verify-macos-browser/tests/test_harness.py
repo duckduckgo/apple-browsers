@@ -228,6 +228,55 @@ class FinalAppStateTests(unittest.TestCase):
         self.assertIsNone(self.state((255, "ssh: connect to host vm-1 port 22: Operation timed out")))
 
 
+class RecordingTests(unittest.TestCase):
+    def finish(self, stop, video=True):
+        """_finish after a passing proof, with `record stop` answering `stop`; returns (rec, commands run, report)."""
+        rec = record([("2 tab(s) open", True, None)])
+        rec.phase, rec.video = "proof", {} if video else None
+        mac = harness.Mac("t", tempfile.mkdtemp(), rec)
+        ran = []
+        mac._sh = lambda command, *a: ran.append((command, *a)) or (stop if command == "record" else (0, "yes"))
+        harness._finish(mac, rec, mac.evidence)
+        if stop[0] in (0, 1) and video:
+            open(os.path.join(mac.evidence, harness.VIDEO), "w").close()   # what verify.sh record stop leaves
+        rec.app_running = True
+        return rec, ran, harness.report("x", rec, {}, mac.evidence)
+
+    def test_a_recording_links_from_evidence_with_its_length(self):
+        rec, ran, text = self.finish((0, "recording.mp4 seconds=12.34 bytes=5678"))
+        self.assertIn(("record", "stop"), ran)
+        self.assertIn("- Recording: [recording.mp4](recording.mp4) (12.3 s)\n", text)
+        self.assertEqual(rec.video, dict(path="recording.mp4", seconds=12.34, bytes=5678))
+        self.assertEqual(harness.label(rec), ("PASS", 0))
+
+    def test_a_failed_recording_is_a_problem_not_a_failed_check(self):
+        rec, _, text = self.finish((2, "UNPLAYABLE: AVFoundation can't read the movie"))
+        self.assertEqual(harness.label(rec), ("PASS", 2))
+        self.assertEqual([ok for _, ok, _ in rec.checks], [True])
+        self.assertIn("- screen recording failed: UNPLAYABLE: AVFoundation can't read the movie\n", text)
+        self.assertIn("- Recording: (none: see Problems)\n", text)
+        self.assertNotIn("](recording.mp4)", text)
+
+    def test_a_recording_cut_short_is_kept_and_is_a_problem(self):
+        rec, _, text = self.finish((1, "recording.mp4 seconds=3.0 bytes=10\nCUT: another app came in front"))
+        self.assertEqual(harness.label(rec), ("PASS", 2))
+        self.assertIn("- Recording: [recording.mp4](recording.mp4) (3.0 s)\n", text)
+        self.assertIn("CUT: another app came in front", rec.video["error"])
+        self.assertIn("- screen recording cut short: ", text)
+        self.assertNotIn("recording failed", text)
+
+    def test_no_video_records_nothing_and_says_so(self):
+        rec, ran, text = self.finish((0, "recording.mp4 seconds=1 bytes=1"), video=False)
+        self.assertNotIn("record", [c for c, *_ in ran])
+        self.assertIn("- Recording: off (--no-video)\n", text)
+        self.assertEqual(harness.label(rec), ("PASS", 0))
+        self.assertTrue(harness.rerun_command("/p/proof.py", "vm-1", None, video=False).endswith(" --no-video"))
+        self.assertNotIn("--no-video", harness.rerun_command("/p/proof.py", "vm-1"))
+        evidence = tempfile.mkdtemp()
+        harness._manifest(evidence, rec, os.path.join(evidence, "proof.py"), "r", {}, [], "vm-1")
+        self.assertEqual(json.loads(read(os.path.join(evidence, "manifest.json")))["video"], dict(off=True))
+
+
 BIN = os.path.join(harness.SKILL, "bin", "verify-macos-browser")
 
 

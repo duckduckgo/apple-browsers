@@ -11,6 +11,8 @@
 #   doctor  <topic>                     fail if the source, the binaries or the process don't match the build
 #   ax      <topic> <ax-args...>        drive the app through the accessibility tree (see ax.swift)
 #   shot    <topic> <name>              screenshot of the app's window only, if the app is frontmost
+#   record  <topic> start|stop          screen recording to recording.mp4: in a VM its whole screen; on this Mac
+#                                       only the app's window, cut where another app came in front
 #   wait    <topic> <seconds>           sleep, for scripted deadlines
 #   flag    <topic> <caseName> on|off   pin a FeatureFlag (validated against FeatureFlag.swift); before build
 #   set-default <topic> <key> <type> <value>   other defaults, remembered for cleanup; before build
@@ -35,7 +37,7 @@ AX_BIN="$SCRIPTS_DIR/../.bin/ax"
 VM_LOCKS="$VERIFY_HOME/.vm-locks"
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o ServerAliveInterval=15)
 
-usage() { sed -n '4,28p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
+usage() { sed -n '4,30p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
 
 command=${1:-}
 topic=${2:-}
@@ -142,6 +144,16 @@ kill_pidfile() {
 }
 stop_stream() { kill_pidfile pixel_stream.pid; kill_pidfile wide_stream.pid; kill_pidfile tunnel.pid; }
 
+# Stop the screen recorder with SIGINT, the signal screencapture finalizes the movie on; 1 if it had to be killed.
+stop_recorder() {
+    kill_pidfile recording_watch.pid
+    [[ -f "$RUN_DIR/recording.pid" ]] || return 0
+    local pid; pid=$(cat "$RUN_DIR/recording.pid"); rm -f "$RUN_DIR/recording.pid"
+    [[ -n "$pid" ]] || return 0
+    on_target 'kill -INT "$1" 2>/dev/null; for _ in $(seq 60); do kill -0 "$1" 2>/dev/null || exit 0; sleep 0.5; done
+               kill -9 "$1"; exit 1' "$pid"
+}
+
 write_app_log() {
     [[ -f "$RUN_DIR/launch.json" ]] || return 0
     local launched size
@@ -167,6 +179,7 @@ write_default() {  # key type value
 # Wipes the debug app's data in the VM; the keychain is kept. bash, so an unmatched glob is just skipped.
 VM_RESET='shopt -s nullglob
 pkill -f "DuckDuckGo - verify-.*\.app/Contents/MacOS" && sleep 2
+pkill -INT -x screencapture
 cd ~/Library
 rm -rf "Application Support/$1" "Caches/$1" "Containers/$1" "WebKit/$1" "HTTPStorages/$1" \
        "Saved Application State/$1.savedState" "Group Containers/"HKE973VLUW.* Caches/wide-event-validation-log.jsonl
@@ -382,6 +395,82 @@ shot)
     fi
     echo "$RUN_DIR/$name.png"
     ;;
+record)
+    # In a VM its whole screen: nothing on it is the engineer's. On this Mac only the app's window, like shot.
+    mov="$RUN_DIR/recording.mov"; [[ -n "$VM" ]] && mov="verify/recording.mov"
+    [[ -n "${VERIFY_DEBUG_BREAK_RECORDING:-}" ]] && mov="/nonexistent/recording.mov"   # test seam: a recording that fails
+    case "${1:-}" in
+    start)
+        [[ -f "$RUN_DIR/recording.pid" ]] && { echo "ALREADY RECORDING"; exit 2; }
+        rm -f "$RUN_DIR"/recording.{mov,mp4,log,cut}
+        if [[ -n "$VM" ]]; then
+            on_target 'rm -f ~/verify/recording.*; cd ~; nohup screencapture -v -x "$1" > verify/recording.log 2>&1 & echo $!' \
+                "$mov" > "$RUN_DIR/recording.pid"
+        else
+            [[ "$(ax front)" == "yes" ]] || { echo "NOT FRONTMOST: not recording (it could capture another app)"; exit 1; }
+            rect=$(ax winrect)
+            nohup screencapture -v -x -R"$rect" "$mov" > "$RUN_DIR/recording.log" 2>&1 &
+            recorder=$!; echo "$recorder" > "$RUN_DIR/recording.pid"
+            # Stop when the app leaves the front or its window leaves the recorded rectangle (moved, resized, closed):
+            # either way whatever is behind could show. stop then trims the movie to the last moment all was well.
+            # shortcut: a whole-second clock (bash 3.2) and a 0.25 s poll, hence the 2 s margin; ScreenCaptureKit's
+            # window-only capture would need neither, if a window moved over the app's rectangle must never show.
+            (
+                start=$(date +%s); last=$start
+                while kill -0 "$recorder" 2>/dev/null; do
+                    why=
+                    [[ "$(ax front 2>/dev/null)" == yes ]] || why="another app came in front"
+                    [[ -n "$why" || "$(ax winrect 2>/dev/null)" == "$rect" ]] || why="the app's window moved, resized or closed"
+                    if [[ -z "$why" ]]; then last=$(date +%s)
+                    else kill -INT "$recorder"; echo "$(( last - start - 2 )) $why" > "$RUN_DIR/recording.cut"; break; fi
+                    sleep 0.25
+                done
+            ) < /dev/null > /dev/null 2>&1 &
+            echo $! > "$RUN_DIR/recording_watch.pid"
+        fi
+        sleep 1
+        pid=$(cat "$RUN_DIR/recording.pid")
+        if [[ -z "$pid" ]] || ! on_target 'kill -0 "$1" 2>/dev/null' "$pid"; then
+            stop_recorder > /dev/null 2>&1 || true
+            [[ -z "$VM" ]] || scp -q "${SSH_OPTS[@]}" "$VM:verify/recording.log" "$RUN_DIR/recording.log" 2>/dev/null || true
+            if [[ -f "$RUN_DIR/recording.cut" ]]; then read -r _ why < "$RUN_DIR/recording.cut"; echo "CUT at the start: $why"
+            else echo "RECORDER EXITED: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"; fi
+            exit 2
+        fi
+        echo "recording${VM:+ in $VM}"
+        ;;
+    stop)
+        [[ -f "$RUN_DIR/recording.pid" ]] || { echo "NOT RECORDING"; exit 2; }
+        stop_recorder || echo "the recorder did not stop within 30 s and was killed"
+        if [[ -n "$VM" ]]; then
+            scp -q "${SSH_OPTS[@]}" "$VM:verify/recording.log" "$RUN_DIR/recording.log" 2>/dev/null || true
+            scp -q "${SSH_OPTS[@]}" "$VM:$mov" "$RUN_DIR/recording.mov" 2>/dev/null || true
+            on_target 'rm -f ~/verify/recording.*'
+            mov="$RUN_DIR/recording.mov"
+        fi
+        [[ -s "$mov" ]] || { echo "NO MOVIE: the recorder wrote nothing: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"; exit 2; }
+        trim=()
+        if [[ -f "$RUN_DIR/recording.cut" ]]; then
+            read -r cut why < "$RUN_DIR/recording.cut"
+            # The cut keeps only whole seconds before it, minus the margin: nothing left means no movie, not a broken one.
+            (( cut > 0 )) || { rm -f "$mov"; echo "CUT: $why before a whole second could be kept; no movie"; exit 1; }
+            trim=(--duration "$cut")
+        fi
+        # screencapture writes QuickTime whatever the extension; remuxing to mp4 also proves AVFoundation reads it.
+        if ! avconvert -p PresetPassthrough -s "$mov" -o "$RUN_DIR/recording.mp4" --replace ${trim[@]+"${trim[@]}"} > /dev/null 2>&1; then
+            rm -f "$RUN_DIR/recording.mp4"
+            echo "UNPLAYABLE: AVFoundation can't read the movie: $(avmediainfo "$mov" --brief 2>&1 | head -2 | tr '\n' ' ')"
+            exit 2
+        fi
+        rm -f "$mov"
+        seconds=$(avmediainfo "$RUN_DIR/recording.mp4" --brief 2>/dev/null | sed -n 's/^Duration: \([0-9.]*\) seconds.*/\1/p')
+        [[ -n "$seconds" ]] || { echo "UNPLAYABLE: recording.mp4 has no duration"; exit 2; }
+        echo "recording.mp4 seconds=$seconds bytes=$(stat -f %z "$RUN_DIR/recording.mp4")"
+        if [[ -f "$RUN_DIR/recording.cut" ]]; then echo "CUT: $why; the movie ends before that"; exit 1; fi
+        ;;
+    *) echo "record: start or stop"; exit 64 ;;
+    esac
+    ;;
 wait)
     sleep "${1:?wait needs seconds}"
     ;;
@@ -430,6 +519,7 @@ logs)
     tail -20 "$RUN_DIR/log.txt"
     ;;
 cleanup)
+    stop_recorder > /dev/null 2>&1 || true   # still running only when the harness died before stopping it
     write_app_log
     helper manifest "$RUN_DIR" "$SKILL_DIR" "$topic" > /dev/null || echo "MANIFEST FAILED"
     stop_stream

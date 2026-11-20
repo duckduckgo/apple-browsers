@@ -3,7 +3,7 @@
 prompts/pr-auto.md as its PR section, the repository path and the plan
 
 Usage: prompt.py <repo dir> <plan.md> <worktrees dir>
-Env: TASK_GID and DEFAULT_BRANCH, for the PR rules
+Env: TASK_GID and DEFAULT_BRANCH, for the PR rules, and SCRATCH, the agent's scratch dir
 """
 
 import os
@@ -24,7 +24,7 @@ def main():
     repo, plan, worktrees = sys.argv[1:4]
     out = read(os.path.join(HERE, "worker.md")).replace("{{PR}}", read(os.path.join(HERE, "pr-auto.md")).rstrip())
     out = read(os.path.join(HERE, "auto.md")).replace("{{WORKTREES}}", worktrees) + out
-    for key in ("TASK_GID", "DEFAULT_BRANCH"):
+    for key in ("TASK_GID", "DEFAULT_BRANCH", "SCRATCH"):
         out = out.replace("{{" + key + "}}", os.environ.get(key, ""))
     out = out.replace("{{REPO_DIR}}", repo)
     sys.stdout.write(out.replace("{{PLAN}}", read(plan)))

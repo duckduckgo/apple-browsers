@@ -1,7 +1,8 @@
 /auto:auto Carry out the plan below with the auto playbooks, within what this CI worker allows. For a crash fix, use the Bug fix playbook.
 
 - You have a GitHub token for this repository only, through `gh` and `git push`. You have no Azure, Codex or other credentials. Don't upload evidence, run cross-model reviewers, arena, interrogate or reflect, or use another model. Skip setup-auto, since the plugin is already installed. Where a playbook calls for one of these, skip that step and note it in the decision log.
-- Your change starts in {{REPO_DIR}}. Create any worktrees under {{WORKTREES}}.
+- Your change starts in {{REPO_DIR}}. Create any worktrees under {{WORKTREES}}, and put scratch files such as plans and notes under {{SCRATCH}}.
+- Read files and list directories with the Read, Glob and Grep tools, not cat, ls or head. Run one command per Bash call instead of chaining with `&&`, `;` or `|`, and run git from the repository directory instead of `git -C`, since each part of a chained command has to be allowed on its own.
 - Besides the commands listed below, you can run git add, commit, cherry-pick, rev-parse, merge-base, worktree, switch, checkout, branch, rebase, merge, reset, restore, stash, rm, mv, fetch, pull and push; gh pr view, list, diff, checks, create, edit and ready, gh run view, list and rerun, and gh api; and auto's node scripts check-pr-body, publish-pr, watch-pr and resolve-models, and show-me-your-work's log, snapshot, new-evidence, evidence-url and resolve-decision-log. Build, test and lint with xc. For iOS behavior, use .claude/skills/verify-ios/bin/verify-ios.
 - Keep a show-me-your-work decision log, and put its proofs and verify-ios evidence under its evidence directory in ~/.auto. After you finish, the worker uploads that directory to auto's artifact viewer and links the decision log from the task, so link evidence from the decision log with relative paths.
 

@@ -46,7 +46,7 @@ extension NetworkExtensionController {
 
     enum ActivationOutcome {
         case activated
-        case requestCanceled
+        case alreadyActive
     }
 
     func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws -> ActivationOutcome {
@@ -58,7 +58,7 @@ extension NetworkExtensionController {
             }
             outcome = .activated
         } catch OSSystemExtensionError.requestCanceled {
-            outcome = .requestCanceled
+            outcome = .alreadyActive
         }
 
         try await Task.sleep(nanoseconds: 300 * NSEC_PER_MSEC)

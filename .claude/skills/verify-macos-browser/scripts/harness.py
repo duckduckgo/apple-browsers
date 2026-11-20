@@ -92,6 +92,7 @@ class Record:
         self.problems = []      # cleanup or evidence failures: never dropped
         self.warnings = []
         self.notes = []
+        self.unpinned = []      # FLAGS the base revision doesn't define, so its run of prove --base didn't pin them
         self.unverified = []    # (what, why)
         self.shots = []         # screenshot files the proof took, in order
         self.phase = "setup"    # setup | proof | cleanup: how far the run got
@@ -295,8 +296,9 @@ class Mac:
         return [line for line in self._do("ax", "find", target).splitlines() if line.strip()]
 
     def tab_count(self):
+        """Tabs in the front window; other windows' tabs don't count."""
         # The id alone: each tab's close button is TabBarViewItem.closeButton.
-        return sum(" id=TabBarViewItem " in line for line in self.find("TabBarViewItem"))
+        return sum(" id=TabBarViewItem " in line for line in self._do("ax", "findmain", "TabBarViewItem").splitlines())
 
     def url(self):
         """The current tab's URL, through the AutomationServer (AUTOMATION = True)."""
@@ -605,6 +607,10 @@ def _on_signal(signum, _frame):
     raise _Stop(signal.Signals(signum).name)
 
 
+def _ignore(_signum, _frame):
+    pass
+
+
 def _alive(pid_file):
     try:
         os.kill(int(open(pid_file).read().strip()), 0)
@@ -623,7 +629,12 @@ def checkout_of(path):
 
 def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary).
-    Raises Refused, before anything is written, for an --evidence-dir inside a git checkout."""
+    Raises Refused, before anything is written, for an --evidence-dir inside a git checkout.
+    Without --evidence-dir, a proof in an attempt folder outside HOME (from new-proof --evidence-dir) runs there."""
+    parent = os.path.dirname(os.path.realpath(path))
+    if not evidence_dir and ATTEMPT.fullmatch(os.path.basename(parent)) \
+            and os.path.dirname(parent) != os.path.realpath(HOME):
+        evidence_dir = os.path.dirname(parent)
     root = evidence_root(evidence_dir)
     mod, problems = load(path, checkout)
     if problems:
@@ -637,6 +648,15 @@ def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     verdict, code = label(rec)
     return code, dict(ok=code == 0, verdict=verdict, reason=rec.error, problems=rec.problems, proof=proof,
                       evidence=evidence, report=os.path.join(evidence, "report.md"))
+
+
+def flags_to_pin(flags, checkout, as_base):
+    """(FLAGS to pin, FLAGS skipped). The base run of prove --base skips a flag its revision doesn't define, since the
+    change may add it; every other run pins them all, and check refuses one this checkout doesn't define."""
+    if not (as_base and flags):
+        return flags, []
+    names = vhelp.feature_flags(checkout)[0]
+    return {k: v for k, v in flags.items() if k in names}, [k for k in flags if k not in names]
 
 
 def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_dir, as_base=False):
@@ -654,7 +674,10 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
     try:
         if vm:
             mac._do("vm", vm)
-        for name, on in getattr(mod, "FLAGS", {}).items():
+        flags, rec.unpinned = flags_to_pin(getattr(mod, "FLAGS", {}), checkout, as_base)
+        for name in rec.unpinned:
+            rec.notes.append(f"FLAGS: {name} is not defined on the base revision, so this run doesn't pin it")
+        for name, on in flags.items():
             mac._do("flag", name, "on" if on else "off")
         mac._do("build", checkout, *(["--automation"] if mac.automation else []))
         doctor = mac._do("doctor")
@@ -676,7 +699,8 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
                 f.write(traceback.format_exc())
     finally:
         for s in old:   # capture, cleanup and the report must not be interrupted
-            signal.signal(s, signal.SIG_IGN)
+            # A no-op handler, not SIG_IGN: children (ssh, log show) get the default back, so they stay killable.
+            signal.signal(s, _ignore)
     try:
         _finish(mac, rec, evidence)
         manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target, shown_dir)
@@ -703,7 +727,8 @@ def _record(mac, rec, step):
     if written:
         rec.video.update(path=VIDEO, seconds=float(written[1]), bytes=int(written[2]))
     if code:
-        rec.video["error"] = f"screen recording {'not started' if step == 'start' else 'failed'}: {_line(out[-300:])}"
+        outcome = "not started" if step == "start" else "cut short" if "CUT:" in out else "failed"
+        rec.video["error"] = f"screen recording {outcome}: {_line(out[-300:])}"
         rec.problems.append(rec.video["error"])
 
 

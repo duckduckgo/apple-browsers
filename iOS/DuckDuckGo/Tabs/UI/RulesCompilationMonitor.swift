@@ -35,9 +35,11 @@ final class RulesCompilationMonitor: NSObject {
     }
 
     enum Outcome: String {
-        /// The setup gates released navigation, including a bounded extension-gate deadline.
+        /// The setup gates released navigation.
         case success
         case cancelled
+        /// The Web Extension startup gate's deadline released navigation before extensions were ready.
+        case timeout
         case tabClosed = "tab_closed"
         case appQuit = "app_quit"
         case appBackgrounded = "app_backgrounded"
@@ -48,11 +50,13 @@ final class RulesCompilationMonitor: NSObject {
     private struct Measurement {
         let id = UUID()
         let start: TimeInterval
+        let isSerp: Bool
         var stage: Stage?
         var stageStart: TimeInterval?
         var webExtensionsWait: TimeInterval = 0
         var contentBlockingWait: TimeInterval = 0
         var didWait = false
+        var didExtensionGateTimeOut = false
     }
 
     /// Resolved at fire time, so the shared monitor picks up `PixelKit.setUp` whenever it ran.
@@ -86,9 +90,9 @@ final class RulesCompilationMonitor: NSObject {
     }
 
     /// One navigation owns the sample; its ID survives retries and excludes stale callbacks.
-    func begin() -> UUID? {
+    func begin(isSerp: Bool) -> UUID? {
         guard !didReport, measurement == nil, !isInBackground() else { return nil }
-        let measurement = Measurement(start: now())
+        let measurement = Measurement(start: now(), isSerp: isSerp)
         self.measurement = measurement
         return measurement.id
     }
@@ -107,9 +111,12 @@ final class RulesCompilationMonitor: NSObject {
         self.measurement = measurement
     }
 
-    func endStage(for id: UUID?) {
+    /// `extensionGateTimedOut` marks a Web Extension gate released by its deadline, which a later
+    /// `.success` finish reports as `.timeout`.
+    func endStage(for id: UUID?, extensionGateTimedOut: Bool = false) {
         guard let id, var measurement, measurement.id == id,
               let stage = measurement.stage, let start = measurement.stageStart else { return }
+        measurement.didExtensionGateTimeOut = measurement.didExtensionGateTimeOut || extensionGateTimedOut
         let duration = max(0, now() - start)
         switch stage {
         case .webExtensions: measurement.webExtensionsWait += duration
@@ -128,11 +135,13 @@ final class RulesCompilationMonitor: NSObject {
         didReport = true
         // Without a gate wait, policy bookkeeping still reports 0.
         let totalWait = measurement.didWait ? max(0, now() - measurement.start) : 0
-        let pixel = NavigationSetupWaitPixel.finished(outcome: outcome,
+        let reported = outcome == .success && measurement.didExtensionGateTimeOut ? Outcome.timeout : outcome
+        let pixel = NavigationSetupWaitPixel.finished(outcome: reported,
                                                       waitTime: Pixel.Event.BucketAggregation(number: totalWait),
                                                       webExtensionsWait: Pixel.Event.BucketAggregation(number: measurement.webExtensionsWait),
                                                       contentBlockingWait: Pixel.Event.BucketAggregation(number: measurement.contentBlockingWait),
-                                                      isOnboarding: isOnboarding)
+                                                      isOnboarding: isOnboarding,
+                                                      isSerp: measurement.isSerp)
         pixelFiring()?.fire(pixel, frequency: .standard)
     }
 

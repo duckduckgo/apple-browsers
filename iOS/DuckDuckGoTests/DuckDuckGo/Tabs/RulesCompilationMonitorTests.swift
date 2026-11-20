@@ -44,7 +44,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testFullIntervalIncludesExtensionWaitEvenWhenRulesAreAlreadyInstalled() throws {
         let monitor = makeMonitor()
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.webExtensions, for: id)
         time = 0.8
         monitor.endStage(for: id)
@@ -56,7 +56,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testBothSequentialWaitsAreIncludedWithoutAddingParallelPreparation() throws {
         let monitor = makeMonitor(isOnboarding: false)
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.webExtensions, for: id)
         time = 0.4
         monitor.endStage(for: id)
@@ -76,7 +76,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
             time = 0
             let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false,
                                                    now: { [unowned self] in self.time }, notificationCenter: notifications, isInBackground: { false })
-            let id = try XCTUnwrap(monitor.begin())
+            let id = try XCTUnwrap(monitor.begin(isSerp: false))
             monitor.beginStage(.webExtensions, for: id)
             time = testCase.seconds
             monitor.endStage(for: id)
@@ -89,7 +89,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testRulesOnlyWaitAndRetriesUseTheSameSample() throws {
         let monitor = makeMonitor()
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.contentBlocking, for: id)
         time = 0.3
         monitor.endStage(for: id)
@@ -103,20 +103,20 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testAlreadyReadyChecksReportZeroAndOnlyFirstNavigationIsReported() throws {
         let monitor = makeMonitor()
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         time = 0.01
         monitor.finish(id, outcome: .success)
         monitor.finish(id, outcome: .success)
-        XCTAssertNil(monitor.begin())
+        XCTAssertNil(monitor.begin(isSerp: false))
 
         assertPixel(outcome: "success", total: "0", extensions: "0", rules: "0")
     }
 
     func testOtherTabsAndStaleCallbacksCannotFinishOrOverwriteSample() throws {
         let monitor = makeMonitor()
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.webExtensions, for: id)
-        XCTAssertNil(monitor.begin())
+        XCTAssertNil(monitor.begin(isSerp: false))
         time = 0.2
         monitor.beginStage(.contentBlocking, for: UUID())
         monitor.endStage(for: nil)
@@ -130,7 +130,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testExtensionDeadlineIsCountedAsWaitWithoutClaimingSuccessfulPageLoad() throws {
         let monitor = makeMonitor()
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.webExtensions, for: id)
         time = 5
         monitor.endStage(for: id)
@@ -141,7 +141,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testCancelledContentBlockingWaitReportsPartialWaitInsteadOfRelease() throws {
         let monitor = makeMonitor()
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.contentBlocking, for: id)
         time = 15
         monitor.finish(id, outcome: .cancelled)
@@ -156,7 +156,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
             let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false,
                                                   now: { [unowned self] in self.time }, notificationCenter: notifications, isInBackground: { false })
             time = 0
-            let id = try XCTUnwrap(monitor.begin())
+            let id = try XCTUnwrap(monitor.begin(isSerp: false))
             monitor.beginStage(.webExtensions, for: id)
             time = 0.2
             monitor.finish(id, outcome: outcome)
@@ -170,7 +170,7 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
     func testBackgroundStopsSampleBeforeSuspensionAndLateCompletionCannotIncludeBackgroundTime() throws {
         let monitor = makeMonitor()
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.contentBlocking, for: id)
         time = 0.4
         notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
@@ -179,9 +179,9 @@ final class RulesCompilationMonitorTests: XCTestCase {
         notifications.post(name: UIApplication.willEnterForegroundNotification, object: nil)
         monitor.endStage(for: id)
         monitor.finish(id, outcome: .success)
-        XCTAssertNil(monitor.begin())
+        XCTAssertNil(monitor.begin(isSerp: false))
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.parameters?["wait_time"], "0.5")
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.pixel.name, "navigation_setup_wait_app_backgrounded_time_0.5")
     }
 
     func testBackgroundNavigationDoesNotConsumeFirstForegroundSample() throws {
@@ -189,9 +189,9 @@ final class RulesCompilationMonitorTests: XCTestCase {
         let monitor = RulesCompilationMonitor(pixelFiring: { [pixelFiring] in pixelFiring }, isOnboarding: true,
                                                now: { [unowned self] in self.time }, notificationCenter: notifications,
                                                isInBackground: { backgrounded })
-        XCTAssertNil(monitor.begin())
+        XCTAssertNil(monitor.begin(isSerp: false))
         backgrounded = false
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.finish(id, outcome: .success)
 
         assertPixel(outcome: "success", total: "0", extensions: "0", rules: "0")
@@ -201,13 +201,38 @@ final class RulesCompilationMonitorTests: XCTestCase {
         let monitor = makeMonitor()
         notifications.post(name: UIApplication.willTerminateNotification, object: nil)
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
-        let id = try XCTUnwrap(monitor.begin())
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
         monitor.beginStage(.webExtensions, for: id)
         time = 2
         notifications.post(name: UIApplication.willTerminateNotification, object: nil)
         monitor.finish(id, outcome: .success)
 
         assertPixel(outcome: "app_quit", total: "5", extensions: "5", rules: "0")
+    }
+
+    func testExtensionGateDeadlineReportsTimeoutOutcomeOnRelease() throws {
+        let monitor = makeMonitor()
+        let id = try XCTUnwrap(monitor.begin(isSerp: false))
+        monitor.beginStage(.webExtensions, for: id)
+        time = 5
+        monitor.endStage(for: id, extensionGateTimedOut: true)
+        monitor.beginStage(.contentBlocking, for: id)
+        time = 5.5
+        monitor.endStage(for: id)
+        monitor.finish(id, outcome: .success)
+
+        assertPixel(outcome: "timeout", total: "10", extensions: "5", rules: "0.5")
+    }
+
+    func testSerpNavigationIsFlaggedInThePixel() throws {
+        let monitor = makeMonitor()
+        let id = try XCTUnwrap(monitor.begin(isSerp: true))
+        monitor.beginStage(.contentBlocking, for: id)
+        time = 1
+        monitor.endStage(for: id)
+        monitor.finish(id, outcome: .success)
+
+        assertSetupPixel(pixelFiring, outcome: "success", state: "onboarding", total: "1", extensions: "0", rules: "1", isSerp: true)
     }
 
     private func assertPixel(outcome: String, total: String, extensions: String, rules: String, appState: String = "onboarding",
@@ -219,14 +244,14 @@ final class RulesCompilationMonitorTests: XCTestCase {
 
 /// Asserts the single setup-wait pixel was fired once with these bucketed values and no extra parameters.
 private func assertSetupPixel(_ firing: PixelKitMock, outcome: String, state: String, total: String, extensions: String, rules: String,
-                              file: StaticString = #filePath, line: UInt = #line) {
+                              isSerp: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
     XCTAssertEqual(firing.actualFireCalls.count, 1, file: file, line: line)
     let call = firing.actualFireCalls.first
-    XCTAssertEqual(call?.pixel.name, "navigation_setup_wait", file: file, line: line)
+    XCTAssertEqual(call?.pixel.name, "navigation_setup_wait_\(outcome)_time_\(total)", file: file, line: line)
     XCTAssertEqual(call?.frequency, .standard, file: file, line: line)
     XCTAssertEqual(call?.pixel.parameters,
-                   ["outcome": outcome, "state": state, "wait_time": total,
-                    "web_extensions_wait_time": extensions, "content_blocking_wait_time": rules], file: file, line: line)
+                   ["state": state, "web_extensions_wait_time": extensions, "content_blocking_wait_time": rules,
+                    "is_serp": isSerp ? "true" : "false"], file: file, line: line)
     XCTAssertNil(call?.additionalParameters, file: file, line: line)
     XCTAssertEqual(call?.includeAppVersionParameter, true, file: file, line: line)
 }
@@ -251,6 +276,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
                         releaseExtension = continuation
                         extensionStarted.fulfill()
                     }
+                    return .ready
                 }
             }, contentBlockingAssetsPublisher: assets.eraseToAnyPublisher())
             tab.rulesCompilationMonitor = monitor
@@ -306,6 +332,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
                     releaseExtension = continuation
                     extensionStarted.fulfill()
                 }
+                return .ready
             }
         })
         tab.rulesCompilationMonitor = monitor
@@ -332,7 +359,10 @@ final class RulesCompilationPolicyTests: XCTestCase {
         let monitor = RulesCompilationMonitor(pixelFiring: { firing }, isOnboarding: false, now: { time }, isInBackground: { false })
         let tab = try await makeReadyTab(monitor: monitor, sitePermissionsEnabled: true, waiterProvider: {
             time = 0.4 // Preparing WebKit background content can do synchronous work before returning the waiter.
-            return { time = 0.8 }
+            return {
+                time = 0.8
+                return .ready
+            }
         })
         defer { tab.prepareForDataClearing() }
         let decided = expectation(description: "Navigation released")
@@ -368,6 +398,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
                     releaseExtension = continuation
                     started.fulfill()
                 }
+                return .ready
             }
         })
         defer { tab.prepareForDataClearing() }

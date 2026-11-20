@@ -3943,7 +3943,7 @@ extension TabViewController: WKNavigationDelegate {
         let setupWaitID: UUID?
         if webView === self.webView, navigationAction.isTargetingMainFrame,
            [.http, .https].contains(navigationAction.request.url?.navigationalScheme) {
-            setupWaitID = rulesCompilationMonitor.begin()
+            setupWaitID = rulesCompilationMonitor.begin(isSerp: navigationAction.request.url?.isDuckDuckGoSearch == true)
             navigationSetupWaitID = setupWaitID
         } else {
             setupWaitID = nil
@@ -3980,15 +3980,15 @@ extension TabViewController: WKNavigationDelegate {
                     wrappedHandler(.cancel)
                     return
                 }
-                await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isTargetingMainFrame,
-                                                              url: navigationAction.request.url,
-                                                              initialLoadWaiter: initialLoadWaiter)
+                let gateResult = await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isTargetingMainFrame,
+                                                                               url: navigationAction.request.url,
+                                                                               initialLoadWaiter: initialLoadWaiter)
                 guard !Task.isCancelled, let self, webView === self.webView else {
                     wrappedHandler(.cancel)
                     return
                 }
                 webExtensionNavigationTask = nil
-                rulesCompilationMonitor.endStage(for: setupWaitID)
+                rulesCompilationMonitor.endStage(for: setupWaitID, extensionGateTimedOut: gateResult == .timedOut)
                 decidePolicyAfterWebExtensionInitialLoad(webView,
                                                          navigationAction: navigationAction,
                                                          setupWaitID: setupWaitID,

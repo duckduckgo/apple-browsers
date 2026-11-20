@@ -205,7 +205,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertTrue(newDecisions.isEmpty)
         XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
-        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.parameters?["outcome"], "cancelled",
+        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_cancelled_time_"), true,
                        "A superseded wait reports cancelled, not success")
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [continued], timeout: 10)
@@ -213,8 +213,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertEqual(newDecisions.count, 1)
         XCTAssertNotEqual(newDecisions.first, .cancel)
         XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
-        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name, "navigation_setup_wait")
-        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.parameters?["outcome"], "cancelled",
+        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_cancelled_time_"), true,
                        "The replacement navigation must not report a second sample")
         XCTAssertFalse(tab.isError, "The superseded wait must not replace the new page with an error")
         XCTAssertEqual(webView.loadCallCount, 0)
@@ -511,7 +510,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             subscription.cancel()
             XCTAssertEqual(decisions, [.cancel])
             XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
-            XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.parameters?["outcome"], "cancelled",
+            XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_cancelled_time_"), true,
                            "A stopped wait reports cancelled, and late assets must not add a success sample")
             XCTAssertFalse(tab.isError)
             XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)

@@ -28,21 +28,25 @@ enum NavigationSetupWaitPixel: PixelKit.Event {
                   waitTime: Pixel.Event.BucketAggregation,
                   webExtensionsWait: Pixel.Event.BucketAggregation,
                   contentBlockingWait: Pixel.Event.BucketAggregation,
-                  isOnboarding: Bool)
+                  isOnboarding: Bool,
+                  isSerp: Bool)
 
+    /// Outcome and total wait stay in the name: names aggregate long-term, parameters only for 28 days.
     var name: String {
-        "navigation_setup_wait"
+        switch self {
+        case .finished(let outcome, let waitTime, _, _, _, _):
+            return "navigation_setup_wait_\(outcome.rawValue)_time_\(waitTime.rawValue)"
+        }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case .finished(let outcome, let waitTime, let webExtensionsWait, let contentBlockingWait, let isOnboarding):
+        case .finished(_, _, let webExtensionsWait, let contentBlockingWait, let isOnboarding, let isSerp):
             return [
-                "outcome": outcome.rawValue,
                 "state": isOnboarding ? "onboarding" : "regular",
-                "wait_time": waitTime.rawValue,
                 "web_extensions_wait_time": webExtensionsWait.rawValue,
                 "content_blocking_wait_time": contentBlockingWait.rawValue,
+                "is_serp": isSerp ? "true" : "false",
             ]
         }
     }

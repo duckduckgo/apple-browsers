@@ -52,12 +52,15 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
         switch context.duckDuckGoWebExtensionType {
         case .embedded:
-            return [AutoconsentWebExtensionMessageHandler(
-                privacyConfigurationManager: privacyConfigurationManager,
-                autoconsentPreferences: autoconsentPreferences,
-                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                delegate: autoconsentDelegate
-            )]
+            return [
+                AutoconsentWebExtensionMessageHandler(
+                    privacyConfigurationManager: privacyConfigurationManager,
+                    autoconsentPreferences: autoconsentPreferences,
+                    cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                    delegate: autoconsentDelegate
+                ),
+                UserAllowlistWebExtensionMessageHandler(privacyConfigurationManager: privacyConfigurationManager),
+            ]
         case .darkReader:
             guard let provider = darkReaderExcludedDomainsProvider else { return [] }
             return [DarkReaderWebExtensionMessageHandler(excludedDomainsProvider: provider)]

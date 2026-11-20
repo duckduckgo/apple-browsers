@@ -731,6 +731,65 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.downloads.state.then === undefined")
     }
 
+    // MARK: - Downloads
+
+    #if os(macOS)
+    func testWhenDownloadOptionsAreReused_ThenEachRequestUsesItsOriginalURLAndFilename() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var requests = [];
+        var webkit = { messageHandlers: { "\(WebExtensionAPIStubScript.downloadMessageHandlerName)": {
+            postMessage: function(request) {
+                requests.push(request);
+                return Promise.resolve({ id: requests.length, filename: request.filename });
+            }
+        } } };
+        var setTimeout = function() {};
+        var name = 'first';
+        var urlReads = 0, filenameReads = 0;
+        var options = {
+            get url() { urlReads++; return 'data:,' + name; },
+            get filename() { filenameReads++; return name + '.txt'; }
+        };
+        var ids;
+        var first = chrome.downloads.download(options);
+        name = 'second';
+        var second = chrome.downloads.download(options);
+        options.saveAs = true;
+        Promise.all([first, second]).then(function(result) { ids = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("JSON.stringify(ids) === '[1,2]'")
+        try assertTrue("urlReads === 2 && filenameReads === 2")
+        try assertTrue("requests[0].url === 'data:,first' && requests[0].filename === 'first.txt'")
+        try assertTrue("requests[1].url === 'data:,second' && requests[1].filename === 'second.txt'")
+    }
+
+    func testWhenDownloadOptionsAreInvalidAtCallTime_ThenThePromiseAndCallbackReceiveTheError() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseError, callbackError, unsupportedError;
+        var getterError = new Error('Cannot read URL');
+        var options = { get url() { throw getterError; }, filename: 'file.txt' };
+        chrome.downloads.download(options, function(id) {
+            if (id === undefined) { callbackError = chrome.runtime.lastError.message; }
+        }).catch(function(error) { promiseError = error; });
+
+        var unsupported = { url: 'data:,text', filename: 'file.txt', saveAs: true };
+        chrome.downloads.download(unsupported).catch(function(error) { unsupportedError = error.message; });
+        delete unsupported.saveAs;
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseError === getterError && callbackError === getterError.message")
+        try assertTrue("chrome.runtime.lastError === undefined")
+        try assertTrue("unsupportedError === 'Unsupported download options'")
+    }
+    #endif
+
     // MARK: - Idle
 
     func testWhenIdleIsQueried_ThenTheReplyIsHandedToThePromiseAndTheCallback() throws {

@@ -42,6 +42,20 @@ final class WebExtensionDownloadTests: XCTestCase {
         XCTAssertNil(WebExtensionDownload(options: extraOptions, extensionBaseURL: origin))
     }
 
+    func testPreservesJoinControlsInFilenames() {
+        for name in ["می\u{200C}روم.txt", "👩\u{200D}💻.png"] {
+            XCTAssertEqual(request("data:,", filename: name)?.filename, name)
+        }
+    }
+
+    func testJoinControlsCannotMaskUnsafeFilenames() {
+        let tooLong = String(repeating: "a", count: 253) + "\u{200C}"
+        for name in ["\u{200D}", "\u{200C}.hidden", ".\u{200D}hidden", "file.\u{200C}", "\u{200D} file", "a\u{200D}/b",
+                     "a\u{200C}\u{2066}b", "a\u{200D}\u{200B}b", tooLong] {
+            XCTAssertNil(request("data:,", filename: name), name.debugDescription)
+        }
+    }
+
     func testAcceptsDataURLsAndOnlyObjectURLsFromTheCallingExtension() {
         let id = UUID().uuidString
         XCTAssertNotNil(request("data:;base64,"))
@@ -99,7 +113,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
     private let handler = WebExtensionDownloadMessageHandler()
     private var webKit: WKWebExtensionController!
     private var permissionController: WebExtensionPermissionController!
-    private var context: WKWebExtensionContext!
+    private var context: DownloadTestContext!
     private var directory: URL!
     private var view: DownloadTestWebView!
     private var loaded: XCTestExpectation!
@@ -114,7 +128,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
                                        "optional_permissions": ["downloads"], "background": ["page": "page.html"]]
         try JSONSerialization.data(withJSONObject: manifest).write(to: directory.appendingPathComponent("manifest.json"))
         try Data("<p>Download</p>".utf8).write(to: directory.appendingPathComponent("page.html"))
-        context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        context = DownloadTestContext(for: try await WKWebExtension(resourceBaseURL: directory))
         context.uniqueIdentifier = UUID().uuidString
         permissionController = WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore()),
                                                                installationStore: InstalledWebExtensionStoringMock(), prompter: DownloadTestPrompter())
@@ -126,6 +140,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         webKit = WKWebExtensionController(configuration: controllerConfig)
         try webKit.loadCopyingErrors(context)
         handler.contextForOrigin = { [unowned self] url in self.webKit.extensionContext(for: url) }
+        handler.backgroundWebView = { $0.value(forKey: "_backgroundWebView") as? WKWebView }
         handler.presentationWindow = { [unowned self] _, _ in self.window }
         handler.permissionController = { [unowned self] in self.permissionController }
         let config = try XCTUnwrap(context.webViewConfiguration)
@@ -187,6 +202,36 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertNil(properties[kLSQuarantineOriginURLKey as String])
         XCTAssertEqual(getxattr(target.path, "com.apple.metadata:kMDItemWhereFroms", nil, 0, 0, XATTR_NOFOLLOW), -1)
         XCTAssertEqual(errno, ENOATTR)
+    }
+
+    func testBackgroundRefreshesWhileChoosingADestinationAndStopsAfterCancellation() async throws {
+        await grant()
+        try await context.loadBackgroundContentCopyingErrors()
+        let background = try XCTUnwrap(handler.backgroundWebView(context))
+        handler.backgroundRefreshInterval = .milliseconds(10)
+        let refreshes = expectation(description: "Background refreshed twice during the panel")
+        refreshes.expectedFulfillmentCount = 2
+        refreshes.assertForOverFulfill = false
+        handler.chooseDestination = { [unowned self] _, _, _ in
+            self.context.onBackgroundLoad = { refreshes.fulfill() }
+            await self.fulfillment(of: [refreshes], timeout: 2)
+            self.context.onBackgroundLoad = nil
+            return nil
+        }
+        let result = try await background.callAsyncJavaScript("""
+            try { await browser.downloads.download(options); return "saved"; } catch { return "rejected"; }
+            """, arguments: ["options": options], contentWorld: .page)
+        XCTAssertEqual(result as? String, "rejected")
+
+        let unexpectedLoad = expectation(description: "No refresh after cancellation or while a tab saves")
+        unexpectedLoad.isInverted = true
+        context.onBackgroundLoad = { unexpectedLoad.fulfill() }
+        handler.chooseDestination = { [unowned self] _, _, _ in
+            await self.fulfillment(of: [unexpectedLoad], timeout: 0.1)
+            return nil
+        }
+        let tabResult = try await download()
+        XCTAssertEqual(tabResult, "rejected")
     }
 
     func testLargeBlobAndDataURLsSaveAllBytesFromTheExtensionBackground() async throws {
@@ -391,6 +436,16 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertEqual(canceled, "rejected")
         XCTAssertEqual(retry, "rejected")
         XCTAssertEqual(panels, 2)
+    }
+}
+
+@available(macOS 15.4, *)
+private final class DownloadTestContext: WKWebExtensionContext {
+    var onBackgroundLoad: (() -> Void)?
+
+    override func loadBackgroundContent(completionHandler: @escaping (Swift.Error?) -> Void) {
+        onBackgroundLoad?()
+        super.loadBackgroundContent(completionHandler: completionHandler)
     }
 }
 

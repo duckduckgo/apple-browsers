@@ -414,6 +414,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         downloadHandler.contextForOrigin = { [weak self] in self?.extensionContext(for: $0) }
+        downloadHandler.backgroundWebView = { [weak self] in self?.backgroundWebView(in: $0) }
         downloadHandler.presentationWindow = { [weak self] in self?.downloadPresentationWindow(for: $0, context: $1) }
         downloadHandler.permissionController = { [weak self] in self?.permissionController }
         privacyHandler.store = privacySettings

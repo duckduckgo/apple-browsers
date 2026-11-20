@@ -995,19 +995,28 @@ public enum WebExtensionAPIStubScript {
                 hasListener: function(listener) { return listeners.has(listener); },
                 hasListeners: function() { return listeners.size > 0; }
             };
+            // Read the caller's options before it can reuse them. A throwing getter rejects the promise.
+            async function snapshotDownloadOptions(options) {
+                var keys = options && typeof options === "object" && !Array.isArray(options) ? Object.keys(options) : [];
+                if (keys.length !== 2 || !keys.includes("url") || !keys.includes("filename")) {
+                    throw new Error("Unsupported download options");
+                }
+                var url = options.url;
+                var filename = options.filename;
+                if (typeof url !== "string" || typeof filename !== "string" || filename.length > 255) {
+                    throw new Error("Unsupported download options");
+                }
+                if (url.length > \(maximumDataURLLength) && /^data:/i.test(url)) {
+                    throw new Error("Attachment data URL is too long");
+                }
+                return { url: url, filename: filename };
+            }
             // Download events are scoped to the initiating page. The reply contains only the basename and ID.
             downloads.download = function(options, callback) {
-                var promise = Promise.resolve().then(function() {
-                    if (!options || typeof options.url !== "string" ||
-                        typeof options.filename !== "string" || options.filename.length > 255 || Object.keys(options).length !== 2) {
-                        throw new Error("Unsupported download options");
-                    }
-                    if (/^data:/i.test(options.url) && options.url.length > \(maximumDataURLLength)) {
-                        throw new Error("Attachment data URL is too long");
-                    }
+                var promise = snapshotDownloadOptions(options).then(function(request) {
                     var handler = globalThis.webkit && globalThis.webkit.messageHandlers["\(Self.downloadMessageHandlerName)"];
                     if (!handler) { throw new Error("Extension downloads are unavailable"); }
-                    return handler.postMessage(options);
+                    return handler.postMessage(request);
                 }).then(function(result) {
                     // A caller can register its listener after receiving the download ID.
                     setTimeout(function() {

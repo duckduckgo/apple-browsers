@@ -26,11 +26,13 @@ import WebKit
 final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandlerWithReply {
 
     var contextForOrigin: (URL) -> WKWebExtensionContext? = { _ in nil }
+    var backgroundWebView: (WKWebExtensionContext) -> WKWebView? = { _ in nil }
     var permissionController: () -> WebExtensionPermissionController? = { nil }
 
     var presentationWindow: (WKWebView, WKWebExtensionContext) -> NSWindow? = { _, _ in nil }
     var chooseDestination: @MainActor (String, String?, NSWindow) async -> URL? = WebExtensionDownloadMessageHandler.showSavePanel
     var downloadStartTimeout: Duration = .seconds(60)
+    var backgroundRefreshInterval: Duration = .seconds(15)
     private var saving = false
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage,
@@ -60,7 +62,11 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
         }
         saving = true
         Task {
-            defer { saving = false }
+            let keepAlive = keepBackgroundLoaded(context, for: webView)
+            defer {
+                keepAlive?.cancel()
+                saving = false
+            }
             let identifier = context.uniqueIdentifier
             // Older installs can have required downloads in their manifest without a saved grant.
             // Only a recent user interaction can start the normal permission prompt.
@@ -105,6 +111,22 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                 replyHandler(nil, "A file with this name already exists. Choose another name.")
             } catch {
                 replyHandler(nil, "Could not save the download")
+            }
+        }
+    }
+
+    private func keepBackgroundLoaded(_ context: WKWebExtensionContext, for webView: WKWebView) -> Task<Void, Never>? {
+        guard !context.webExtension.hasPersistentBackgroundContent, backgroundWebView(context) === webView else { return nil }
+        return Task {
+            // Loading the existing page resets WebKit's 30-second idle timer while the user chooses a file.
+            // Check identity before every refresh so a closed page is never reopened.
+            while !Task.isCancelled, context.isLoaded, backgroundWebView(context) === webView {
+                do {
+                    try await context.loadBackgroundContentCopyingErrors()
+                    try await Task.sleep(for: backgroundRefreshInterval)
+                } catch {
+                    return
+                }
             }
         }
     }

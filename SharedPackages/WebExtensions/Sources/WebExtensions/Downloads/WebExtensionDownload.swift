@@ -96,11 +96,14 @@ struct WebExtensionDownload: Sendable {
     }
 
     private static func isSafeFilename(_ name: String) -> Bool {
-        guard !name.isEmpty, name.utf8.count <= 255, !name.hasPrefix("."), !name.hasSuffix("."),
-              name == name.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+        guard name.utf8.count <= 255 else { return false }
+        // Join controls shape text and emoji. Ignore them during validation so they cannot mask an unsafe name.
+        let nameWithoutJoiners = String(name.unicodeScalars.filter { !$0.properties.isJoinControl })
+        guard !nameWithoutJoiners.isEmpty, !nameWithoutJoiners.hasPrefix("."), !nameWithoutJoiners.hasSuffix("."),
+              nameWithoutJoiners == nameWithoutJoiners.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
         let disallowed = CharacterSet.controlCharacters.union(CharacterSet(charactersIn: "/\\:"))
             .union(.newlines).union(.illegalCharacters)
-        return name.rangeOfCharacter(from: disallowed) == nil
+        return nameWithoutJoiners.rangeOfCharacter(from: disallowed) == nil
     }
 
     enum DownloadError: Error {

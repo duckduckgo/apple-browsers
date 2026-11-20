@@ -10,12 +10,14 @@ they ran, problems, warnings, notes, unverified items, the phase reached); the v
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import inspect
 import json
 import os
 import re
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -31,6 +33,7 @@ VERIFY_SH = os.path.join(SCRIPTS, "verify.sh")
 HOME = os.environ.get("VERIFY_MACOS_HOME", os.path.expanduser("~/.ddg-verify-macos"))
 TARGETS = ("mac", "vm", "vm-1", "vm-2")
 VIDEO = "recording.mp4"
+BASE_OUTCOMES = ("fail", "pass", "unchanged")
 sys.path.insert(0, SCRIPTS)
 import vhelp  # noqa: E402
 
@@ -76,10 +79,11 @@ class _Stop(BaseException):
 # ---------------------------------------------------------------- the run record and its verdict
 class Record:
     def __init__(self):
-        self.checks = []        # (name, ok, detail) in the order they ran
+        self.checks = []        # (name, ok, detail, what the base build should do) in the order they ran
         self.problems = []      # cleanup or evidence failures: never dropped
         self.warnings = []
         self.notes = []
+        self.unpinned = []      # FLAGS the base revision doesn't define, so its run of prove --base didn't pin them
         self.unverified = []    # (what, why)
         self.shots = []         # screenshot files the proof took, in order
         self.phase = "setup"    # setup | proof | cleanup: how far the run got
@@ -94,11 +98,11 @@ def label(rec):
     """(label, exit code), by fixed rules. Never a pass by default."""
     if rec.cancelled:
         return "INCONCLUSIVE", 130
-    if any(not ok for _, ok, _ in rec.checks):
+    if any(not ok for _, ok, *_ in rec.checks):
         return "FAIL", 1
     if rec.app_running is False:
         return "FAIL", 1
-    if rec.error or rec.action_errors or not any(ok for _, ok, _ in rec.checks) or rec.app_running is not True:
+    if rec.error or rec.action_errors or not any(ok for _, ok, *_ in rec.checks) or rec.app_running is not True:
         return "INCONCLUSIVE", 2
     return "PASS", 2 if rec.problems else 0
 
@@ -137,8 +141,8 @@ def report(doc, rec, manifest, evidence):
              "", "## Outcome", "",
              f"**{verdict}**" + (" with problems (exit 2)" if verdict == "PASS" and code else "")
              + (f" ({_line(rec.error)})" if rec.error else ""), ""]
-    passed = [name for name, ok, _ in rec.checks if ok]
-    failed = [f"{name}" + (f": {_line(detail)}" if detail else "") for name, ok, detail in rec.checks if not ok]
+    passed = [name for name, ok, *_ in rec.checks if ok]
+    failed = [f"{name}" + (f": {_line(detail)}" if detail else "") for name, ok, detail, *_ in rec.checks if not ok]
     if rec.app_running is not None:
         (passed if rec.app_running else failed).append("app still running at the end")
     lines += ["Passed:"] + [f"- {c}" for c in passed or ["(none)"]]
@@ -191,16 +195,19 @@ def _sh_path(path):
 class Mac:
     """User actions, reads, waiting assertions, telemetry and evidence for one run. Each call runs one verify.sh step."""
 
-    def __init__(self, topic, evidence, rec, automation=False):
+    def __init__(self, topic, evidence, rec, automation=False, checkout=ROOT, as_base=False):
         self.topic, self.evidence, self.rec, self.automation = topic, evidence, rec, automation
+        self.checkout = checkout   # the checkout built and proved: this one, or another (prove --checkout)
+        self.as_base = as_base     # the base run of prove --base
+        self.base_outcome = "unchanged"   # what checks made now should do on the base build (on_base)
         self._marked = False
 
     def _sh(self, command, *args):
         """Run `verify.sh <command> <topic> args`; return (exit code, output). Logged to transcript.jsonl."""
         t0 = time.time()
-        p = subprocess.run([VERIFY_SH, command, self.topic, *map(str, args)], cwd=ROOT, text=True,
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={**os.environ, "VERIFY_WORKTREE": ROOT,
-                                                       "VERIFY_RUN_DIR": self.evidence})
+        p = subprocess.run([VERIFY_SH, command, self.topic, *map(str, args)], cwd=self.checkout, text=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                           env={**os.environ, "VERIFY_WORKTREE": self.checkout, "VERIFY_RUN_DIR": self.evidence})
         with open(os.path.join(self.evidence, "transcript.jsonl"), "a") as f:
             f.write(json.dumps(dict(t=time.strftime("%Y-%m-%dT%H:%M:%S%z"), cmd=[command, *map(str, args)],
                                     exit=p.returncode, secs=round(time.time() - t0, 1), out=p.stdout[-2000:])) + "\n")
@@ -254,10 +261,25 @@ class Mac:
     # assert -----------------------------------------------------------------
     def check(self, what, ok, detail=None):
         """Record a named check; stop the proof if it is false."""
-        self.rec.checks.append((what, bool(ok), None if ok else _trim(detail)))
+        self.rec.checks.append((what, bool(ok), None if ok else _trim(detail), self.base_outcome))
         if not ok:
+            if self.as_base and self.base_outcome == "fail":
+                return False   # the bug, as the proof declared: record it and carry on
             raise CheckFailed(what)
         return True
+
+    @contextlib.contextmanager
+    def on_base(self, outcome):
+        """Checks made inside this block should `outcome` ("fail", "pass" or "unchanged") on the base build, for
+        `prove --base`; checks outside any block should be unchanged. On the base run a check expected to fail is
+        recorded and the proof carries on; that check returns False."""
+        if outcome not in BASE_OUTCOMES:
+            raise ValueError(f"on_base takes one of {BASE_OUTCOMES}, got {outcome!r}")
+        outer, self.base_outcome = self.base_outcome, outcome
+        try:
+            yield
+        finally:
+            self.base_outcome = outer
 
     def eventually(self, what, fn, timeout=8, every=0.5):
         """Poll `fn` until it returns a truthy value; record check `what` either way. A ProofError counts as not yet."""
@@ -274,7 +296,7 @@ class Mac:
             if time.time() > end:
                 if isinstance(last, ProofError):
                     raise self._error(f"{what}: can't tell within {timeout}s: {last}")
-                self.check(what, False, f"not true within {timeout}s (last: {last})")
+                return self.check(what, False, f"not true within {timeout}s (last: {last})")
             time.sleep(every)
 
     def expect_tab_count(self, n, timeout=8):
@@ -340,7 +362,7 @@ def _trim(v, n=600):
 
 
 # ---------------------------------------------------------------- check
-def load(path):
+def load(path, checkout=ROOT):
     """Compile and import a proof without running it; return (module, problems). Touches no app or build."""
     try:
         with open(path) as f:
@@ -367,7 +389,7 @@ def load(path):
     if not isinstance(flags, dict) or not all(isinstance(k, str) and isinstance(v, bool) for k, v in flags.items()):
         problems.append("FLAGS must map FeatureFlag case names to True/False")
     elif flags:
-        names, fixed = vhelp.feature_flags(ROOT)
+        names, fixed = vhelp.feature_flags(checkout)
         problems += [f"FLAGS: {k} is not a FeatureFlag case" for k in flags if k not in names]
         problems += [f"FLAGS: {k} has supportsLocalOverriding: false; the app would ignore it" for k in flags if k in fixed]
     live = getattr(mod, "LIVE", [])
@@ -454,7 +476,15 @@ def _alive(pid_file):
         return False
 
 
-def prove(path, target, evidence_dir=None, video=True):
+def checkout_of(path):
+    """--checkout: another checkout of this repo to build and prove with this skill, such as a base revision."""
+    d = os.path.realpath(path)
+    if not os.path.isdir(os.path.join(d, "DuckDuckGo.xcworkspace")):
+        raise Refused(f"--checkout {path} is not a checkout of this repo (no DuckDuckGo.xcworkspace)")
+    return d
+
+
+def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary).
     Raises Refused, before anything is written, for an --evidence-dir inside a git checkout.
     Without --evidence-dir, a proof in an attempt folder outside HOME (from new-proof --evidence-dir) runs there."""
@@ -463,27 +493,50 @@ def prove(path, target, evidence_dir=None, video=True):
             and os.path.dirname(parent) != os.path.realpath(HOME):
         evidence_dir = os.path.dirname(parent)
     root = evidence_root(evidence_dir)
-    mod, problems = load(path)
+    mod, problems = load(path, checkout)
     if problems:
         return 2, dict(proof=path, ok=False, problems=problems)
     if target not in TARGETS:
         return 2, dict(proof=path, ok=False, problems=[f"--target must be one of {TARGETS}"])
     evidence, proof = attempt_dir(path, root)
-    topic = topic_of(evidence)
+    shown_dir = root if evidence_dir else None
+    rec, _ = run_one(mod, proof, evidence, topic_of(evidence), target, video, checkout,
+                     rerun_command(proof, target, shown_dir, video, checkout), shown_dir)
+    verdict, code = label(rec)
+    return code, dict(ok=code == 0, verdict=verdict, reason=rec.error, problems=rec.problems, proof=proof,
+                      evidence=evidence, report=os.path.join(evidence, "report.md"))
+
+
+def flags_to_pin(flags, checkout, as_base):
+    """(FLAGS to pin, FLAGS skipped). The base run of prove --base skips a flag its revision doesn't define, since the
+    change may add it; every other run pins them all, and check refuses one this checkout doesn't define."""
+    if not (as_base and flags):
+        return flags, []
+    names = vhelp.feature_flags(checkout)[0]
+    return {k: v for k, v in flags.items() if k in names}, [k for k in flags if k not in names]
+
+
+def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_dir, as_base=False):
+    """One run of a loaded proof on `checkout`, with its evidence in `evidence`: setup, the proof, capture, cleanup,
+    report.md and manifest.json. Returns (record, manifest)."""
     rec = Record()
     rec.video = {} if video else None
-    mac = Mac(topic, evidence, rec, automation=getattr(mod, "AUTOMATION", False))
+    if as_base:
+        rec.notes.append("the base run of prove --base: a check the proof expects to fail here is recorded and the "
+                         "proof carries on; the comparison is ../report.md")
+    mac = Mac(topic, evidence, rec, getattr(mod, "AUTOMATION", False), checkout, as_base)
     vm = None if target == "mac" else ("auto" if target == "vm" else target)
-    shown_dir = root if evidence_dir else None
-    rerun = rerun_command(proof, target, shown_dir, video)
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     running = None
     try:
         if vm:
             mac._do("vm", vm)
-        for name, on in getattr(mod, "FLAGS", {}).items():
+        flags, rec.unpinned = flags_to_pin(getattr(mod, "FLAGS", {}), checkout, as_base)
+        for name in rec.unpinned:
+            rec.notes.append(f"FLAGS: {name} is not defined on the base revision, so this run doesn't pin it")
+        for name, on in flags.items():
             mac._do("flag", name, "on" if on else "off")
-        mac._do("build", ROOT, *(["--automation"] if mac.automation else []))
+        mac._do("build", checkout, *(["--automation"] if mac.automation else []))
         doctor = mac._do("doctor")
         running = json.loads(re.search(r"^running_hashes=(.*)$", doctor, re.M).group(1))
         if video:
@@ -513,17 +566,15 @@ def prove(path, target, evidence_dir=None, video=True):
     finally:
         for s, h in old.items():
             signal.signal(s, h)
-    verdict, code = label(rec)
-    return code, dict(ok=code == 0, verdict=verdict, reason=rec.error, problems=rec.problems, proof=proof,
-                      evidence=evidence, report=os.path.join(evidence, "report.md"))
+    return rec, manifest
 
 
-def rerun_command(proof, target, evidence_dir=None, video=True):
-    """The report's rerun command: same checkout, proof, target, evidence directory and video setting; it works pasted
-    into zsh."""
-    return f"cd {_sh_path(ROOT)} && {_sh_path(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
-           f"{_sh_path(proof)} --target {target}" + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "") \
-           + ("" if video else " --no-video")
+def rerun_command(proof, target, evidence_dir=None, video=True, checkout=ROOT):
+    """The report's rerun command: it starts in the checkout it proved and names the same proof, target, evidence
+    directory and video setting; it works pasted into zsh."""
+    return f"cd {_sh_path(checkout)} && {_sh_path(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
+           f"{_sh_path(proof)} --target {target}" + (f" --checkout {_sh_path(checkout)}" if checkout != ROOT else "") \
+           + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "") + ("" if video else " --no-video")
 
 
 def _record(mac, rec, step):
@@ -580,7 +631,7 @@ def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=N
     verdict, code = label(rec)
     m.update(proof=os.path.relpath(proof, evidence), target=target, evidence_dir=evidence_dir, rerun=rerun, running_hashes=running, live=live,
              verdict=verdict, exit=code, reason=rec.error, phase_reached=rec.phase,
-             checks=[dict(check=n, ok=ok, detail=d) for n, ok, d in rec.checks], problems=rec.problems,
+             checks=[dict(check=n, ok=ok, detail=d, base=b) for n, ok, d, b in rec.checks], problems=rec.problems,
              unverified=[dict(what=w, why=y) for w, y in rec.unverified],
              video=dict(off=True) if rec.video is None else rec.video)
     with open(path, "w") as f:

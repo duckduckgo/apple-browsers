@@ -20,7 +20,7 @@ import vhelp  # noqa: E402
 
 def record(checks=(), app_running=True, error=None, problems=(), cancelled=False):
     rec = harness.Record()
-    rec.checks = list(checks)
+    rec.checks = [tuple(c) + ("unchanged",) * (4 - len(c)) for c in checks]   # (name, ok, detail[, base])
     rec.app_running, rec.error, rec.problems, rec.cancelled = app_running, error, list(problems), cancelled
     return rec
 
@@ -252,7 +252,7 @@ class RecordingTests(unittest.TestCase):
     def test_a_failed_recording_is_a_problem_not_a_failed_check(self):
         rec, _, text = self.finish((2, "UNPLAYABLE: AVFoundation can't read the movie"))
         self.assertEqual(harness.label(rec), ("PASS", 2))
-        self.assertEqual([ok for _, ok, _ in rec.checks], [True])
+        self.assertEqual([ok for _, ok, *_ in rec.checks], [True])
         self.assertIn("- screen recording failed: UNPLAYABLE: AVFoundation can't read the movie\n", text)
         self.assertIn("- Recording: (none: see Problems)\n", text)
         self.assertNotIn("](recording.mp4)", text)
@@ -369,6 +369,18 @@ class PublishablePathTests(unittest.TestCase):
         words = subprocess.run(["zsh", "-fc", f"print -rl -- {args}"], capture_output=True, text=True).stdout
         self.assertEqual(words.splitlines(), [proof, "--target", "vm-1", "--evidence-dir", evidence_dir])
 
+    def test_a_run_on_another_checkout_reruns_from_that_checkout(self):
+        other = os.path.join(self.HOME, ".ddg-verify-macos", "base", "0123456789ab")
+        rerun = harness.rerun_command("/ev/p/proof.py", "vm-1", checkout=other)
+        self.assertTrue(rerun.startswith("cd ~/.ddg-verify-macos/base/0123456789ab && "), rerun)
+        self.assertIn(" --checkout ~/.ddg-verify-macos/base/0123456789ab", rerun)
+        self.assertNotIn("--checkout", harness.rerun_command("/ev/p/proof.py", "vm-1"))
+
+    def test_a_checkout_without_the_workspace_is_refused(self):
+        with self.assertRaises(harness.Refused):
+            harness.checkout_of(tempfile.mkdtemp())
+        self.assertEqual(harness.checkout_of(harness.ROOT), harness.ROOT)
+
     def test_manifest_and_report_show_home_as_tilde(self):
         evidence = tempfile.mkdtemp()
         with open(os.path.join(evidence, "manifest.json"), "w") as f:
@@ -381,6 +393,25 @@ class PublishablePathTests(unittest.TestCase):
         self.assertEqual(json.loads(written)["evidence_dir"], "~/ev")
         self.assertNotIn(self.HOME + os.sep, harness.report("x", rec, m, evidence))
 
+
+
+class BaseFlagsTests(unittest.TestCase):
+    def checkout(self, *cases):
+        root = tempfile.mkdtemp()
+        path = os.path.join(root, vhelp.FEATURE_FLAG_SWIFT)
+        os.makedirs(os.path.dirname(path))
+        with open(path, "w") as f:
+            f.write("public enum FeatureFlag {\n" + "".join(f"    case {c}\n" for c in cases) + "}\n")
+        return root
+
+    def test_the_base_run_skips_a_flag_the_base_revision_does_not_define(self):
+        flags = {"oldFlag": True, "newFlag": False}
+        self.assertEqual(harness.flags_to_pin(flags, self.checkout("oldFlag"), as_base=True),
+                         ({"oldFlag": True}, ["newFlag"]))
+
+    def test_every_other_run_pins_them_all(self):
+        flags = {"oldFlag": True, "newFlag": False}
+        self.assertEqual(harness.flags_to_pin(flags, self.checkout("oldFlag"), as_base=False), (flags, []))
 
 class CleanupSignalTests(unittest.TestCase):
     def test_a_child_started_during_cleanup_can_still_be_stopped_with_sigterm(self):

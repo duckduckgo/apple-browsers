@@ -16,6 +16,10 @@ EXIT_BUSY = 75
 # proofs never depend on the live privacy configuration. The iPhone ids in steps.py and the feature map assume these.
 PINNED_FLAGS = {"newTabPageRedesign": True}
 
+# The app's language and locale on every launch (`-AppleLanguages (<language>) -AppleLocale <locale>`), because proofs
+# find elements by their English text. A proof that tests localization sets its own `LANGUAGE`.
+LANGUAGE = {"language": "en", "locale": "en_US"}
+
 
 class Failed(Exception):
     """A check failed or an element wasn't found (exit 1)."""
@@ -23,6 +27,11 @@ class Failed(Exception):
     def __init__(self, msg, **extra):
         super().__init__(msg)
         self.extra = extra
+
+
+class Missed(Failed):
+    """An assertion didn't hold: what the proof waited for never came, or what it ruled out happened. With an absent
+    element (runner code NOT_FOUND or TIMEOUT), the only failure that can be the base build's expected one."""
 
 
 class SetupFailed(Failed):

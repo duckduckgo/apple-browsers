@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
+import PixelKit
 import PrivacyStats
 
 protocol PrivacyStatsProviding {
@@ -45,5 +47,56 @@ final class UnavailablePrivacyStats: PrivacyStatsProviding {
 
     func clearPrivacyStats() async -> Result<Void, Error> {
         Result { try PrivacyStatsDatabase.deleteStoreFiles(at: storeLocation) }
+    }
+}
+
+/// Loads the Privacy Stats store on a background queue so launch never waits on Core Data or disk I/O.
+/// Calls made while the store loads wait for it, except the total count, which reads zero until the store has loaded.
+final class DeferredPrivacyStats: PrivacyStatsProviding {
+
+    private let loadTask: Task<PrivacyStatsProviding, Never>
+    /// Lets the count read the loaded store without waiting for the load.
+    private let loaded: Locked<PrivacyStatsProviding?>
+
+    init(load: @escaping () -> PrivacyStatsProviding = { DeferredPrivacyStats.loadStore() }) {
+        let loaded = Locked<PrivacyStatsProviding?>(wrappedValue: nil)
+        self.loaded = loaded
+        // The load blocks on Core Data, so it runs on a GCD queue rather than a Swift concurrency thread.
+        loadTask = Task {
+            await withCheckedContinuation { continuation in
+                DispatchQueue.global(qos: .utility).async {
+                    let stats = load()
+                    loaded.wrappedValue = stats
+                    continuation.resume(returning: stats)
+                }
+            }
+        }
+    }
+
+    /// Opens the store, recovering from corruption, and falls back to `UnavailablePrivacyStats` when it can't be opened.
+    static func loadStore(location: URL = PrivacyStatsDatabase.defaultLocation,
+                          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> PrivacyStatsProviding {
+        assert(!Thread.isMainThread, "The Privacy Stats store must not load on the main thread")
+        if let database = PrivacyStatsDatabase(location: location, pixelFiring: pixelFiring) {
+            return PrivacyStats(databaseProvider: database)
+        }
+        return UnavailablePrivacyStats(storeLocation: location)
+    }
+
+    func recordBlockedTracker(_ name: String) async {
+        await loadTask.value.recordBlockedTracker(name)
+    }
+
+    /// The tab switcher awaits this before it opens, so it reads zero rather than wait for a slow load.
+    func fetchPrivacyStatsTotalCount() async -> Int64 {
+        await loaded.wrappedValue?.fetchPrivacyStatsTotalCount() ?? 0
+    }
+
+    func clearPrivacyStats() async -> Result<Void, Error> {
+        await loadTask.value.clearPrivacyStats()
+    }
+
+    func handleAppTermination() async {
+        await loadTask.value.handleAppTermination()
     }
 }

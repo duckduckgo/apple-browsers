@@ -805,11 +805,21 @@ final class NavigationBarViewController: NSViewController {
                                                            themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
-                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab },
+                                                           nativeMessagingAlertPresenter: makeNativeMessagingAlertPresenter())
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
             subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    @available(macOS 15.4, *)
+    private func makeNativeMessagingAlertPresenter() -> NativeMessagingAlertPresenter {
+        NativeMessagingAlertPresenter(
+            limitationProvider: { NSApp.delegateTyped.webExtensionManager },
+            alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window }, themeManager: appThemeManager),
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
     }
 
     /// Only the window the install started from shows the popover.
@@ -2337,7 +2347,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     // MARK: - Address Bar Update Button
 
-    /// Shows the prominent update button to the left of the browser menu button at the second prompt stage.
+    /// Shows the prominent update button to the left of the browser menu button at the stages that call for it.
     private func setupAddressBarUpdateButton() {
         guard !isInPopUpWindow, let updateController = Application.appDelegate.updateController else { return }
 
@@ -2345,7 +2355,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         updateController.pendingUpdatePromptStagePublisher
             .combineLatest(updateController.updateProgressPublisher)
             .receive(on: DispatchQueue.main)
-            .map { stage, _ in stage == .secondPrompt ? updateController.updatePromptButtonTitle : nil }
+            .map { stage, _ in stage.showsToolbarButton ? updateController.addressBarUpdateButtonTitle : nil }
             .removeDuplicates()
             .sink { [weak self] title in
                 self?.addressBarUpdateButton?.removeFromSuperview()
@@ -2359,6 +2369,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     private func addAddressBarUpdateButton(title: String, for updateController: any UpdateController) {
         let button = AddressBarUpdateButton(title: title) {
+            UpdateClickReporter().reportClick(on: .toolbarButton)
             updateController.runUpdateFromPrompt()
         }.embeddedInHostingView()
 

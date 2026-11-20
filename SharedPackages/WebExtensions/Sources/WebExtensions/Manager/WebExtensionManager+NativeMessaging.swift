@@ -60,15 +60,23 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
     public func webExtensionLoader(_ loader: WebExtensionLoading,
                                    willLoad context: WKWebExtensionContext,
                                    identifier: String) {
-        // Keep Chrome Web Store origins stable across launches while retaining the installation UUID.
+        // Use the installation UUID to keep origins stable without exposing the public store identifier.
         if let identity = installingStoreIdentities[identifier]
             ?? installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity,
            identity.store == .chromeWebStore,
-           let baseURL = URL(string: "webkit-extension://\(identity.id)/") {
+           let baseURL = URL(string: "webkit-extension://\(identifier.lowercased())/") {
             context.baseURL = baseURL
             Logger.webExtensions.debug("Chrome Web Store extension base URL: \(baseURL.absoluteString, privacy: .public)")
         }
         registerHandlersForExtension(identifier: identifier, context: context)
+        // Users who allowed an optional permission (e.g. Bitwarden's nativeMessaging) before this build made it
+        // unavailable still have that grant saved, so the extension never asks again and they never see why the
+        // feature doesn't work. Dropping the grant makes the next request show the explanation.
+        // Required permissions stay, as the extension needs them to load.
+        let revoked = unavailablePermissions.subtracting(context.webExtension.requestedPermissions)
+        if !revoked.isEmpty {
+            context.grantedPermissions = context.grantedPermissions.filter { !revoked.contains($0.key) }
+        }
 #if os(macOS)
         // Saved shortcuts are in place before the extension runs. The app loads extensions on the main thread.
         if let commandShortcuts {
@@ -83,11 +91,6 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
             }
         }
 #endif
-        if context.webExtension.duckDuckGoWebExtensionType == .embedded {
-            MainActor.assumeIsolated {
-                cpmDiagnosticsRecorder?.contextWillLoad(context)
-            }
-        }
     }
 }
 
@@ -194,6 +197,7 @@ extension WebExtensionManager {
                                   for extensionContext: WKWebExtensionContext) async throws -> Any? {
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the message fails")
+            recordNativeMessagingLimitation(for: extensionContext)
             throw WKWebExtension.MessagePort.Error(.notConnected)
         }
 
@@ -252,6 +256,7 @@ extension WebExtensionManager {
 
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the port of \(displayName) stays silent")
+            recordNativeMessagingLimitation(for: extensionContext)
             completionHandler(WKWebExtension.MessagePort.Error(.notConnected))
             return
         }

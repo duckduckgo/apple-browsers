@@ -59,13 +59,10 @@ class MainMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testOnboardingMenuAvailabilityForBlockingAndNonBlocking() throws {
+    func testOnboardingMenuAvailabilityBeforeAndAfterOnboarding() throws {
         let appDelegate = try XCTUnwrap(Application.appDelegate)
-        let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
-        let originalCohort = featureFlagger.resolveCohortStub
         let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
         defer {
-            featureFlagger.resolveCohortStub = originalCohort
             OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
         }
 
@@ -79,18 +76,15 @@ class MainMenuTests: XCTestCase {
             #selector(AppDelegate.showManageBookmarks(_:)),
             #selector(AppDelegate.openImportBrowserDataWindow(_:))
         ]
-        for isNonBlocking in [false, true] {
-            featureFlagger.resolveCohortStub = isNonBlocking ? FeatureFlag.OnboardingNonBlockingCohort.treatment : FeatureFlag.OnboardingNonBlockingCohort.control
-            for finished in [false, true] {
-                OnboardingActionsManager.isOnboardingFinished = finished
-                for action in actions {
-                    let menuItem = NSMenuItem()
-                    menuItem.action = action
-                    let canOpenFirstWindow = action == #selector(AppDelegate.newWindow(_:))
-                        && appDelegate.windowControllersManager.mainWindowControllers.isEmpty
-                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || isNonBlocking || canOpenFirstWindow,
-                                   NSStringFromSelector(action))
-                }
+        for finished in [false, true] {
+            OnboardingActionsManager.isOnboardingFinished = finished
+            for action in actions {
+                let menuItem = NSMenuItem()
+                menuItem.action = action
+                let canOpenFirstWindow = action == #selector(AppDelegate.newWindow(_:))
+                    && appDelegate.windowControllersManager.mainWindowControllers.isEmpty
+                XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || canOpenFirstWindow,
+                               NSStringFromSelector(action))
             }
         }
     }

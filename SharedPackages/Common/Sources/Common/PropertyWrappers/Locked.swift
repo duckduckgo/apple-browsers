@@ -30,7 +30,7 @@ import Foundation
 /// - For mutable collections or compound operations, use dedicated methods that lock the entire operation or a thread-safe container.
 ///
 @propertyWrapper
-public final class Locked<Value> {
+public final class Locked<Value>: @unchecked Sendable {
     private var value: Value
     private let lock = NSLock()
 

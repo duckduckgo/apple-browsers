@@ -83,16 +83,14 @@ public struct ChromeWebStoreManualUpdateTesting {
     public func makeManager(configuration: WebExtensionConfigurationProviding,
                             windowTabProvider: WebExtensionWindowTabProviding,
                             permissionPrompter: WebExtensionPermissionPrompting,
-                            enforcesPermissions: Bool,
                             presenter: ChromeWebStorePresenting,
                             internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                             isUpdateDiscoveryEnabled: @escaping @MainActor @Sendable () -> Bool = { true },
                             updateApplicationPolicy: ((WebExtensionManager) -> (@MainActor (String) -> Bool))? = nil,
                             updateApplicationActivityUpdates: AnyPublisher<Void, Never>? = nil) -> WebExtensionManager {
         let installed = InstalledWebExtensionStore(storage: defaults.keyedStoring())
-        let permissions = enforcesPermissions
-            ? WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: defaults),
-                                               installationStore: installed, prompter: permissionPrompter) : nil
+        let permissions = WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: defaults),
+                                                           installationStore: installed, prompter: permissionPrompter)
         let controller = WKWebExtensionController.Configuration(identifier: persistentIdentifier(for: Self.controllerKey))
         controller.defaultWebsiteDataStore = WKWebsiteDataStore(forIdentifier: persistentIdentifier(for: Self.websiteDataKey))
         let manager = WebExtensionManager(configuration: configuration, controllerConfiguration: controller,
@@ -172,7 +170,6 @@ public struct ChromeWebStoreManualUpdateTesting {
 @MainActor
 private struct ManualUpdateCatalog: ChromeWebStoreCatalogProviding {
     var extensionIDs: [String] { [ChromeWebStoreManualUpdateTesting.extensionID] }
-    var learnMoreURL: URL? { nil }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 

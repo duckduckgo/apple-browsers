@@ -39,7 +39,7 @@ final class WebExtensionsDebugMenuTests: XCTestCase {
                                                              eventHub: RecordingEventHub())
         manager.chromeWebStore = store
         return WebExtensionsDebugMenu(webExtensionManager: manager,
-                                      cpmMessagingHealthMonitor: CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring()))
+                                      cpmMessagingHealthMonitor: CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring(), isUnmeasuredPage: { _ in false }))
     }
 
     private func checkItem(in menu: NSMenu) throws -> NSMenuItem {
@@ -85,7 +85,6 @@ final class WebExtensionsDebugMenuTests: XCTestCase {
     private final class Store: ChromeWebStoreManaging {
         var canCheckForUpdates = false
         var catalogExtensionIDs: [String] = []
-        var learnMoreURL: URL?
         var checkCount = 0
         var onCheck: (() -> Void)?
 

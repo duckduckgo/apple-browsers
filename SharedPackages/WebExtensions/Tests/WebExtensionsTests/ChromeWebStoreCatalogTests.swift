@@ -102,6 +102,19 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         }
     }
 
+    func testAppStoreHiddenExtensionsAreExcludedOnlyFromTheAppStoreBuild() throws {
+        let extensions = ["bitwarden": entry(identifier), "iCloudPasswords": entry(otherIdentifier)]
+        let settings = ["appStoreHiddenExtensionIds": [otherIdentifier]]
+        let appStoreCatalog = try makeCatalog(extensions: extensions, managementSettings: settings, isAppStoreBuild: true)
+        let directCatalog = try makeCatalog(extensions: extensions, managementSettings: settings, isAppStoreBuild: false)
+
+        let appStoreIDs = appStoreCatalog.extensionIDs
+        let directIDs = directCatalog.extensionIDs
+
+        XCTAssertEqual(appStoreIDs, [identifier])
+        XCTAssertEqual(directIDs, [identifier, otherIdentifier])
+    }
+
     // MARK: - Remote gates
 
     func testParentFeaturesGateTheWholeCatalog() throws {
@@ -177,11 +190,13 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
                              catalogState: String = "enabled",
                              webstoreState: String = "enabled",
                              launchedState: String = "enabled",
-                             managementSettings: [String: Any] = [:]) throws -> ChromeWebStoreCatalog {
+                             managementSettings: [String: Any] = [:],
+                             isAppStoreBuild: Bool = false) throws -> ChromeWebStoreCatalog {
         let config = try makeConfiguration(extensions: extensions, catalogState: catalogState, webstoreState: webstoreState,
                                            launchedState: launchedState, managementSettings: managementSettings)
         return ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config,
-                                                                                           internalUserDecider: internalUser))
+                                                                                           internalUserDecider: internalUser),
+                                     isAppStoreBuild: isAppStoreBuild)
     }
 
     // swiftlint:disable:next function_parameter_count

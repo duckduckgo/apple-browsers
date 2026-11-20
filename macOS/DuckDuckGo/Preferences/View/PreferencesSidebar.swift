@@ -120,12 +120,14 @@ extension Preferences {
     struct SidebarBadgeView: View {
         let text: String
 
+        @Environment(\.designSystemPalette) private var palette
+
         var body: some View {
             Text(text.uppercased())
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: .statusYellowTertiary))
+                .background(Color(designSystemColor: .statusYellowTertiary, palette: palette))
                 .foregroundColor(.black)
                 .cornerRadius(9)
         }

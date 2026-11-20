@@ -680,6 +680,17 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(previous.cancelPendingTabContextSubmissionCallCount, 0)
     }
 
+    func testReplacingUserScriptHandsLocalRunsToTheNewScript() {
+        let previous = MockAIChatUserScript()
+        let replacement = MockAIChatUserScript()
+        let webView = WKWebView()
+        handler.setup(with: previous, webView: webView, displayMode: .contextual)
+
+        handler.setup(with: replacement, webView: webView, displayMode: .contextual)
+
+        XCTAssertTrue(previous.localRunsReplacement as? MockAIChatUserScript === replacement)
+    }
+
     func testCancellationIsForwardedToUserScript() {
         let script = MockAIChatUserScript()
         handler.setup(with: script, webView: WKWebView(), displayMode: .contextual)
@@ -1118,6 +1129,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitStartChatActionCallCount = 0
     var cancelPendingTabContextSubmissionCallCount = 0
     var cleanUpForReplacementCallCount = 0
+    var localRunsReplacement: AIChatUserScriptProviding?
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
     var submitOpenChatProtectionActionCallCount = 0
@@ -1200,6 +1212,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         cleanUpForReplacementCallCount += 1
     }
 
+    func handOverLocalRuns(to replacement: AIChatUserScriptProviding) {
+        localRunsReplacement = replacement
+    }
+
     func submitOpenSettingsAction() {
         submitOpenSettingsActionCallCount += 1
     }
@@ -1212,6 +1228,14 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitOpenChatProtectionActionCallCount += 1
     }
 
+    var openChatOutcome: AIChatOpenChatOutcome?
+    private(set) var openedChatIds: [String] = []
+
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        openedChatIds.append(chatId)
+        return openChatOutcome
+    }
+
     func submitPageContext(_ context: AIChatPageContextData?) {
         submitPageContextCallCount += 1
         lastSubmittedPageContextViaSubmit = context
@@ -1220,6 +1244,12 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
 // swiftlint:disable inclusive_language
 final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else { return .invalidRequest(rawParams: params) }
+        return await source?.invokeBrowserTool(request) ?? .failure(callId: request.callId, error: .unavailable)
+    }
+
     var displayMode: AIChatDisplayMode?
     var isFireModeProvider: (() -> Bool)?
     var focusChatInputHandler: (@MainActor () -> Void)?
@@ -1227,7 +1257,8 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?) {}
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {}
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {}
-    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    var nativeConfigResponse: Encodable?
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? { nativeConfigResponse }
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

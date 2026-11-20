@@ -1195,7 +1195,6 @@ extension MainViewController: TabsBarDelegate {
             let tabsToClose = currentModel.tabs.filter { $0 !== keptTab }
             guard !tabsToClose.isEmpty else { return }
             let shouldFocusKeyboard = keptTab !== currentModel.currentTab && keptTab.isHomeTab
-                && self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
             PixelKit.fire(Pixel.Event.tabBarCloseOtherTabs, frequency: .dailyAndCount)
             if shouldFocusKeyboard {
                 self.dismissOmniBar(animated: false)

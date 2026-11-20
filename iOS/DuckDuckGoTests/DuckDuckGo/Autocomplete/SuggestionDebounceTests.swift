@@ -51,7 +51,7 @@ final class SuggestionDebounceTests: XCTestCase {
         let scheduler = DispatchQueue.test
         let subject = PassthroughSubject<String, Never>()
         var received = [SuggestionRequest]()
-        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]), scheduler: scheduler)
+        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.debounceLogic2026]), scheduler: scheduler)
             .sink { received.append($0) }
         defer { subscription.cancel() }
 
@@ -77,7 +77,7 @@ final class SuggestionDebounceTests: XCTestCase {
         let scheduler = DispatchQueue.test
         let subject = PassthroughSubject<String, Never>()
         var received = [SuggestionRequest]()
-        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]), scheduler: scheduler)
+        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.debounceLogic2026]), scheduler: scheduler)
             .sink { received.append($0) }
         defer { subscription.cancel() }
 
@@ -95,7 +95,7 @@ final class SuggestionDebounceTests: XCTestCase {
         let scheduler = DispatchQueue.test
         let subject = PassthroughSubject<String, Never>()
         var received = [SuggestionRequest]()
-        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]), scheduler: scheduler)
+        let subscription = subject.debounceSuggestions(using: MockFeatureFlagger(enabledFeatureFlags: [.debounceLogic2026]), scheduler: scheduler)
             .sink { received.append($0) }
         defer { subscription.cancel() }
 
@@ -123,7 +123,7 @@ final class SuggestionDebounceTests: XCTestCase {
         subject.send("one")
         scheduler.advance(by: .milliseconds(100))
         XCTAssertEqual(received, [SuggestionRequest(query: "one", includeRemoteSuggestions: true)])
-        featureFlagger.enabledFeatureFlags = [.suggestionDebounce200ms]
+        featureFlagger.enabledFeatureFlags = [.debounceLogic2026]
         subject.send("two")
         scheduler.advance(by: .milliseconds(100))
         XCTAssertEqual(received.last, SuggestionRequest(query: "two", includeRemoteSuggestions: false))

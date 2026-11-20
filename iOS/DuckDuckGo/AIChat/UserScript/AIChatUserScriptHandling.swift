@@ -156,6 +156,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
+    @MainActor func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession)
@@ -225,6 +226,15 @@ protocol AIChatUserScriptHandling: AnyObject {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            return .invalidRequest(rawParams: params)
+        }
+        guard let source else { return .failure(callId: request.callId, error: .unavailable) }
+        return await source.invokeBrowserTool(request).limitedToResultBytes()
+    }
+
 
     @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?
 
@@ -531,6 +541,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
     }
 
+    /// With its native chat input on, iPad hands the page's header to native in every display mode.
+    private var isIPadNativeChatInputOn: Bool {
+        !devicePlatform.isIphone && unifiedToggleInputFeature.isFullTabChatInputAvailable
+    }
+
+    /// The iPad native chat list reads chats from native storage, so it needs that flag as well as the native input.
+    private var isIPadNativeChatListOn: Bool {
+        isIPadNativeChatInputOn && featureFlagger.isFeatureOn(.aiChatNativeStorage)
+    }
+
     /// iPad's contextual sheet and sidebar always use the native input; its full-tab chat does once the iPad flag is on.
     private var isNativeChatInputAvailable: Bool {
         unifiedToggleInputFeature.isFullTabChatInputAvailable || displayMode == .contextual
@@ -567,7 +587,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: supportsTabContexts,
-            supportsAIChatFullMode: supportsFullMode,
+            supportsAIChatFullMode: supportsFullMode || isIPadNativeChatInputOn,
             supportsAIChatContextualMode: supportsContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
@@ -588,6 +608,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsCanonicalChatFormat: true
         )
         config.supportsResponseStateReporting = true
+        config.supportsiPadNativeChatList = isIPadNativeChatListOn
         return config
     }
 
@@ -758,30 +779,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return OpenKeyboardResponse(success: false, error: "WebView not available")
         }
 
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.main.async {
-                let javascript = """
-                (function() {
-                    try {
-                        const element = document.querySelector('\(cssSelector)');
-                        element?.focus?.();
-                        return true;
-                    } catch (error) {
-                        console.error('Error focusing element:', error);
-                        return false;
-                    }
-                })();
-                """
+        return await focusElement(matching: cssSelector, in: webView)
+    }
 
-                webView.evaluateJavaScript(javascript) { _, error in
-                    if let error = error {
-                        Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
-                        continuation.resume(returning: OpenKeyboardResponse(success: false, error: "JavaScript execution failed"))
-                    } else {
-                        continuation.resume(returning: OpenKeyboardResponse(success: true))
-                    }
-                }
-            }
+    /// The selector is passed as a script argument, never interpolated into the source, so page-supplied text cannot run as code.
+    @MainActor
+    private func focusElement(matching selector: String, in webView: WKWebView) async -> OpenKeyboardResponse {
+        let javascript = """
+        try {
+            document.querySelector(selector)?.focus?.();
+            return true;
+        } catch (error) {
+            console.error('Error focusing element:', error);
+            return false;
+        }
+        """
+
+        do {
+            _ = try await webView.callAsyncJavaScript(javascript, arguments: ["selector": selector], in: nil, contentWorld: .page)
+            return OpenKeyboardResponse(success: true)
+        } catch {
+            Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+            return OpenKeyboardResponse(success: false, error: "JavaScript execution failed")
         }
     }
 

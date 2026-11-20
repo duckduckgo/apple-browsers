@@ -251,6 +251,11 @@ final class NewTabPagePresentationCoordinator {
     private var pendingFocus: (() -> Void)?
     private(set) var hasPresentedPage = false
 
+    /// Counts the overlays drawn over the whole window, such as the burn animation, that hide the page.
+    /// The window stays visible and key underneath, so `isVisible` alone cannot tell.
+    private var coverCount = 0
+    private var isCovered: Bool { coverCount > 0 }
+
     init(notificationCenter: NotificationCenter = .default, isVisible: @escaping () -> Bool) {
         self.notificationCenter = notificationCenter
         self.isVisible = isVisible
@@ -291,12 +296,26 @@ final class NewTabPagePresentationCoordinator {
         recordIfVisible()
     }
 
+    /// Holds the visit, the shown report and the keyboard request until `endCovering()`, so that a
+    /// visit starts when the user can see the page rather than while an overlay still hides it.
+    /// Each call needs a matching `endCovering()`.
+    func beginCovering() {
+        coverCount += 1
+    }
+
+    /// Runs whatever was held while the page was covered, once the last overlay is gone and the page is visible.
+    func endCovering() {
+        guard coverCount > 0 else { return }
+        coverCount -= 1
+        recordIfVisible()
+    }
+
     func recordIfVisible() {
         guard page != nil else {
             cancel()
             return
         }
-        guard isVisible() else { return }
+        guard !isCovered, isVisible() else { return }
         let visit = pendingVisit
         let shown = pendingShown
         let focus = pendingFocus
@@ -312,7 +331,7 @@ final class NewTabPagePresentationCoordinator {
     /// Marks the page as seen without running pending callbacks: a visit or keyboard request must not start as the app leaves.
     /// A pending `shown` stays queued, as it does across `backgrounded()`, and reports on the next visible presentation.
     func notePresentedIfVisible() {
-        guard page != nil, isVisible() else { return }
+        guard page != nil, !isCovered, isVisible() else { return }
         hasPresentedPage = true
     }
 

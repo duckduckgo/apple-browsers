@@ -104,7 +104,6 @@ struct PIRDebugLaunchOptions {
         ["PIR_SCHEDULER_MODE", "PIR_SCHEDULER_INSTANCE_ID", "PIR_SCHEDULER_RECEIPT"].contains { environment[$0] != nil }
     }
 
-    /// Also resolves a receipt destination for malformed requests whose identity and destination are valid.
     static func managedSeed(environment: [String: String] = ProcessInfo.processInfo.environment) throws -> ManagedSeed? {
         guard hasManagedRequest(environment: environment) else { return nil }
         guard let modeValue = environment["PIR_SCHEDULER_MODE"], let mode = ManagedSeed.Mode(rawValue: modeValue),

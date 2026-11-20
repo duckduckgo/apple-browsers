@@ -1,4 +1,3 @@
-"""Offline coverage of scheduler scope and persisted scan observations."""
 import argparse
 from copy import deepcopy
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer

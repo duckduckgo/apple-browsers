@@ -1,4 +1,3 @@
-"""Lifecycle contracts against Apple command output and real source/build files."""
 import importlib.util
 import io
 import json

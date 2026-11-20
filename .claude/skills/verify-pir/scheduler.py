@@ -1,4 +1,3 @@
-"""Read-only proof of persisted scans from an attached macOS PIR scheduler."""
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import math

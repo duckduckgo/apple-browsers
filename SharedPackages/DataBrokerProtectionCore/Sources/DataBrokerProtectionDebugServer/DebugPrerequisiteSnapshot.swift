@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+#if DEBUG
 import Foundation
 import DataBrokerProtectionCore
 
@@ -64,9 +65,7 @@ public struct DebugPrerequisiteResult: Encodable, Sendable {
     @MainActor
     public static func subscription(_ manager: DataBrokerProtectionSubscriptionManager,
                                     settings: DataBrokerProtectionSettings) async -> DebugPrerequisiteResult {
-        #if DEBUG
         let settings = settings.isolatedDebugSettingsForLaunch()
-        #endif
         let status: Status
         let backend: String
         let environment: String
@@ -106,8 +105,6 @@ public struct DebugPrerequisiteResult: Encodable, Sendable {
     }
 }
 
-/// Owns one generation. The HTTP transport remains synchronous while the normal entitlement reader runs asynchronously.
-/// All mutable state is protected by lock; cancellation and generation checks discard late completions.
 final class DebugPrerequisiteSnapshot: @unchecked Sendable {
     typealias Reader = @MainActor @Sendable () async throws -> DebugPrerequisiteResult
 
@@ -158,7 +155,6 @@ final class DebugPrerequisiteSnapshot: @unchecked Sendable {
                 let result = try await reader()
                 self?.complete(checkID, generation: generation, result: result)
             } catch {
-                // Arbitrary error descriptions can contain credentials or service response bodies.
                 self?.complete(checkID, generation: generation, result: nil, errorCode: "entitlementCheckFailed")
             }
         }
@@ -200,3 +196,4 @@ final class DebugPrerequisiteSnapshot: @unchecked Sendable {
                  checkedAt: nil, errorCode: nil)
     }
 }
+#endif

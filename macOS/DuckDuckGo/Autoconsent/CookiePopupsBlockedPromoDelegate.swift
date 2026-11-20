@@ -131,7 +131,10 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
                 onClose: onClose
             )
 
-            guard presenter.showPopover(viewController: viewController) else {
+            let didShow = presenter.showPopover(viewController: viewController) { [weak self] in
+                self?.hide()
+            }
+            guard didShow else {
                 resolve(with: .noChange)
                 return
             }

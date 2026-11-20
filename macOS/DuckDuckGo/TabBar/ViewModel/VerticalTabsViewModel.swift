@@ -26,6 +26,18 @@ struct VerticalTab: Identifiable, Equatable {
     let favicon: NSImage?
     let url: URL?
     let canBePinned: Bool
+    let canBeDuplicated: Bool
+    let activePermissions: [PermissionType]
+
+    init(_ viewModel: any TabBarViewModel) {
+        id = viewModel.uuid
+        title = viewModel.title
+        favicon = viewModel.favicon
+        url = viewModel.url
+        canBePinned = viewModel.tabContent.canBePinned
+        canBeDuplicated = viewModel.tabContent.canBeDuplicated
+        activePermissions = viewModel.usedPermissions.activeTabIndicators
+    }
 }
 
 /// Lists a window's unpinned tabs for the vertical tabs sidebar. Pinned tabs stay in the tab bar.
@@ -39,13 +51,15 @@ final class VerticalTabsViewModel: ObservableObject {
     }
 
     private let tabCollectionViewModel: TabCollectionViewModel
-    private let aiChatCoordinator: AIChatCoordinating?
+    private let onCloseTab: (TabIndex) -> Void
+    let openNewTab: () -> Void
     private var cancellables = Set<AnyCancellable>()
-    private var tabCancellables = Set<AnyCancellable>()
+    private var tabSubscriptions: [TabIdentifier: (source: any TabBarViewModel, cancellable: AnyCancellable)] = [:]
 
-    init(tabCollectionViewModel: TabCollectionViewModel, aiChatCoordinator: AIChatCoordinating?) {
+    init(tabCollectionViewModel: TabCollectionViewModel, onCloseTab: @escaping (TabIndex) -> Void, openNewTab: @escaping () -> Void) {
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.aiChatCoordinator = aiChatCoordinator
+        self.onCloseTab = onCloseTab
+        self.openNewTab = openNewTab
 
         reloadTabs()
         updateSelectedTabID()
@@ -59,8 +73,7 @@ final class VerticalTabsViewModel: ObservableObject {
 
     func close(_ id: TabIdentifier) {
         guard let index = unpinnedIndex(of: id) else { return }
-        aiChatCoordinator?.closeFloatingWindow(for: id)
-        tabCollectionViewModel.close(at: .unpinned(index))
+        onCloseTab(.unpinned(index))
     }
 
     func closeOtherTabs(except id: TabIdentifier) {
@@ -69,17 +82,14 @@ final class VerticalTabsViewModel: ObservableObject {
     }
 
     func duplicate(_ id: TabIdentifier) {
-        guard let index = unpinnedIndex(of: id) else { return }
+        guard let index = unpinnedIndex(of: id),
+              tabCollectionViewModel.tabCollection.tabs[index].content.canBeDuplicated else { return }
         tabCollectionViewModel.duplicateTab(at: .unpinned(index))
     }
 
     func pin(_ id: TabIdentifier) {
         guard let index = unpinnedIndex(of: id) else { return }
         tabCollectionViewModel.pinTab(at: index)
-    }
-
-    func openNewTab() {
-        tabCollectionViewModel.insertOrAppendNewTab()
     }
 
     /// Moves a tab to another place in the list, as when it is dragged there.
@@ -115,28 +125,28 @@ final class VerticalTabsViewModel: ObservableObject {
     }
 
     private func reloadTabs() {
-        let tabViewModels = tabCollectionViewModel.tabCollection.tabs.compactMap { tabCollectionViewModel.tabViewModels[$0.uuid] }
-        let tabs = tabViewModels.map {
-            VerticalTab(id: $0.uuid, title: $0.title, favicon: $0.favicon, url: $0.url, canBePinned: $0.tabContent.canBePinned)
+        let viewModels = tabCollectionViewModel.tabViewModels
+        // Loading or suspending a tab can replace its view model without changing its UUID.
+        tabSubscriptions = tabSubscriptions.filter { viewModels[$0.key] === $0.value.source }
+        let orderedViewModels = tabCollectionViewModel.tabCollection.tabs.compactMap { viewModels[$0.uuid] }
+        for viewModel in orderedViewModels where tabSubscriptions[viewModel.uuid] == nil {
+            tabSubscriptions[viewModel.uuid] = (viewModel, subscribeToChanges(of: viewModel))
         }
+        let tabs = orderedViewModels.map(VerticalTab.init)
         if self.tabs != tabs {
             self.tabs = tabs
         }
-        tabCancellables = Set(tabViewModels.map(subscribeToChanges(of:)))
     }
 
     private func subscribeToChanges(of tabViewModel: any TabBarViewModel) -> AnyCancellable {
-        let id = tabViewModel.uuid
         return tabViewModel.titleAndLoadingStatusPublisher
-            .combineLatest(tabViewModel.faviconPublisher, tabViewModel.tabContentPublisher)
+            .combineLatest(tabViewModel.faviconPublisher, tabViewModel.tabContentPublisher, tabViewModel.usedPermissionsPublisher)
             .dropFirst()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] titleAndLoadingStatus, favicon, content in
-                self?.update(VerticalTab(id: id,
-                                         title: titleAndLoadingStatus.0,
-                                         favicon: favicon,
-                                         url: content.urlForWebView,
-                                         canBePinned: content.canBePinned))
+            .sink { [weak self, weak tabViewModel] _ in
+                guard let self, let tabViewModel,
+                      tabCollectionViewModel.tabViewModels[tabViewModel.uuid] === tabViewModel else { return }
+                update(VerticalTab(tabViewModel))
             }
     }
 

@@ -22,12 +22,13 @@ import WebKit
 
 final class MainView: NSView {
 
+    static let minimumWebContentWidth: CGFloat = 512
+
     private enum Constants {
         static let bookmarksBarHeight: CGFloat = 28
         static let tabBarHeight: CGFloat = 38
         static let dividerHeight: CGFloat = 1
         static let webContainerMinHeight: CGFloat = 178
-        static let webContainerMinWidth: CGFloat = 512
         static let findInPageContainerWidth: CGFloat = 400
         static let findInPageContainerHeight: CGFloat = 40
         static let findInPageContainerTopOffset: CGFloat = -4
@@ -140,7 +141,7 @@ final class MainView: NSView {
             webContainerTopConstraintToNavigation,
             webContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
             webContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            webContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinWidth),
+            webContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: Self.minimumWebContentWidth),
             webContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinHeight),
 
             findInPageContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor, constant: Constants.findInPageContainerTopOffset),

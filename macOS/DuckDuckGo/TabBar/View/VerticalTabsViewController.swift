@@ -20,9 +20,10 @@ import AppKit
 import SwiftUI
 
 final class VerticalTabsViewController: NSViewController {
+    static let minimumWidth: CGFloat = 80
+
     private enum Constants {
         static let defaultWidth: CGFloat = 200
-        static let minimumWidth: CGFloat = 80
         static let maximumWidth: CGFloat = 500
         static let resizeHandleWidth: CGFloat = 6
     }
@@ -30,6 +31,7 @@ final class VerticalTabsViewController: NSViewController {
     private let viewModel: VerticalTabsViewModel
     private let themeManager: ThemeManager
     private let blurView = NSVisualEffectView()
+    let newTabButtonAnchor = NSView()
     private var widthConstraint: NSLayoutConstraint?
     private var widthAtResizeStart: CGFloat = 0
 
@@ -41,11 +43,10 @@ final class VerticalTabsViewController: NSViewController {
     }
 
     init(
-        tabCollectionViewModel: TabCollectionViewModel,
-        aiChatCoordinator: AIChatCoordinating?,
-        themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+        viewModel: VerticalTabsViewModel,
+        themeManager: ThemeManager
     ) {
-        self.viewModel = VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel, aiChatCoordinator: aiChatCoordinator)
+        self.viewModel = viewModel
         self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
@@ -60,8 +61,9 @@ final class VerticalTabsViewController: NSViewController {
         blurView.blendingMode = .behindWindow
         blurView.material = .sidebar
         blurView.state = .active
-        let hostingView = NSHostingView(rootView: VerticalTabsView(model: viewModel, themeManager: themeManager))
+        let hostingView = NSHostingView(rootView: VerticalTabsView(model: viewModel, themeManager: themeManager, newTabButtonAnchor: newTabButtonAnchor))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
+        hostingView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let resizeHandle = VerticalTabsResizeHandle(
             onDragStart: { [weak self] in
                 self?.startResizing()
@@ -76,15 +78,14 @@ final class VerticalTabsViewController: NSViewController {
         view.addSubview(hostingView)
         view.addSubview(resizeHandle)
 
-        // Gives way to the web view's minimum width when the window is too narrow, but not to
-        // the hosting view, which would otherwise widen the sidebar to fit the longest tab title.
+        // The window must be able to cross the docking threshold during a resize.
         let widthConstraint = view.widthAnchor.constraint(equalToConstant: Constants.defaultWidth)
-        widthConstraint.priority = .init(NSLayoutConstraint.Priority.defaultHigh.rawValue + 1)
+        widthConstraint.priority = .dragThatCannotResizeWindow
         self.widthConstraint = widthConstraint
 
         NSLayoutConstraint.activate([
             widthConstraint,
-            view.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.minimumWidth),
+            view.widthAnchor.constraint(greaterThanOrEqualToConstant: Self.minimumWidth).priority(NSLayoutConstraint.Priority.windowSizeStayPut.rawValue - 1),
 
             blurView.topAnchor.constraint(equalTo: view.topAnchor),
             blurView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -110,7 +111,7 @@ final class VerticalTabsViewController: NSViewController {
     }
 
     private func resize(by distance: CGFloat) {
-        widthConstraint?.constant = min(max(widthAtResizeStart + distance, Constants.minimumWidth), Constants.maximumWidth)
+        widthConstraint?.constant = min(max(widthAtResizeStart + distance, Self.minimumWidth), Constants.maximumWidth)
     }
 }
 

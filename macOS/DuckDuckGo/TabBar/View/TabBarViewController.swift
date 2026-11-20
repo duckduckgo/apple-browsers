@@ -144,7 +144,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     /// Hides the unpinned tabs and their buttons while the window lists tabs in the vertical tabs sidebar,
     /// and lets the blur behind the window show through like it does in the sidebar.
-    var isTabStripHidden: Bool = false {
+    @Published var isTabStripHidden: Bool = false {
         didSet {
             guard oldValue != isTabStripHidden else { return }
             scrollView.isHidden = isTabStripHidden
@@ -154,6 +154,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             updateEmptyTabArea()
             applyThemeStyle()
         }
+    }
+
+    var visibleNewTabButton: NSButton? {
+        guard isViewLoaded, !isTabStripHidden else { return nil }
+        let button = tabMode == .divided ? addNewTabButtonFooter?.addButton : addTabButton
+        guard let button, button.isVisible, !button.visibleRect.isEmpty else { return nil }
+        return button
     }
 
     /// Are tab previews enabled, is window key, is mouse over a tab
@@ -1699,6 +1706,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {
+        openNewTab()
+    }
+
+    func openNewTab() {
         cookiePopupsBlockedPromoDelegate?.dismissDueToNewTabBeingShown()
         tabCollectionViewModel.insertOrAppendNewTab()
     }
@@ -2946,13 +2957,6 @@ extension TabBarViewController: TabBarViewItemDelegate {
         return item.view
     }
 
-    func cell(forTabAt index: Int) -> NSView? {
-        guard let item = collectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem else {
-            return nil
-        }
-        return item.view
-    }
-
     func presentPinnedTabsDiscoveryPopoverIfNecessary() {
         guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
         PinnedTabsDiscoveryPopover.popoverPresented = true
@@ -3030,26 +3034,20 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return
         }
 
-        if tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for: tabIndex) {
+        requestCloseTab(at: tabIndex)
+    }
+
+    func closeWarningAnchor(for tabIndex: TabIndex) -> NSView? {
+        let anchor = isTabStripHidden && tabIndex.isUnpinnedTab ? verticalTabsSidebarButton : tabBarViewItem(for: tabIndex)?.view
+        guard let anchor, anchor.isVisible, !anchor.visibleRect.isEmpty else { return nil }
+        return anchor
+    }
+
+    func requestCloseTab(at tabIndex: TabIndex) {
+        guard tabCollectionViewModel.changesEnabled, let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid else { return }
+        guard aiChatCoordinator?.isChatFloating(for: tabID) == true else {
+            tabCollectionViewModel.close(at: tabIndex)
             return
-        }
-
-        if let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid {
-            aiChatCoordinator?.closeFloatingWindow(for: tabID)
-        }
-        tabCollectionViewModel.close(at: tabIndex)
-    }
-
-    private func shouldWarnBeforeClosingFloatingAIChat(tabID: String) -> Bool {
-        aiChatCoordinator?.isChatFloating(for: tabID) == true
-    }
-
-    @discardableResult
-    func tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for tabIndex: TabIndex) -> Bool {
-        guard let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid,
-              shouldWarnBeforeClosingFloatingAIChat(tabID: tabID),
-              let tabBarViewItem = tabBarViewItem(for: tabIndex) else {
-            return false
         }
 
         dismissAIChatCloseWarningPresenter()
@@ -3058,13 +3056,14 @@ extension TabBarViewController: TabBarViewItemDelegate {
             action: .closeTabWithFloatingAIChat,
             buttonHandlers: [.closeTab: { [weak self] in
                 self?.dismissAIChatCloseWarningPresenter()
-                self?.closeTab(for: tabID)
+                self?.closeTabAfterConfirmation(id: tabID)
             },
             .dismiss: { [weak self] in
                 self?.dismissAIChatCloseWarningPresenter()
             }],
-            anchorViewProvider: {
-                tabBarViewItem.view
+            windowProvider: { [weak self] in self?.parent?.view.window },
+            anchorViewProvider: { [weak self] in
+                self?.closeWarningAnchor(for: tabIndex)
             }
         )
 
@@ -3075,7 +3074,6 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         aiChatCloseWarningPresenter = presenter
         presenter.bindForManualPresentation(to: manager) { }
-        return true
     }
 
     private func dismissAIChatCloseWarningPresenter() {
@@ -3092,9 +3090,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
     }
 
-    private func closeTab(for tabID: String) {
+    func closeTabAfterConfirmation(id tabID: TabIdentifier) {
+        guard tabCollectionViewModel.changesEnabled,
+              let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
         aiChatCoordinator?.closeFloatingWindow(for: tabID)
-        guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
         tabCollectionViewModel.close(at: tabIndex)
     }
 

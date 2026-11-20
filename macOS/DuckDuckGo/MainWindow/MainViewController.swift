@@ -68,6 +68,7 @@ final class MainViewController: NSViewController {
     private let appearancePreferences: AppearancePreferences
     private let duckPlayer: DuckPlayer
     private(set) var verticalTabsSidebarPresenter: VerticalTabsSidebarPresenter?
+    private var hidesTabBarInFullScreen = false
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -92,7 +93,8 @@ final class MainViewController: NSViewController {
 
     private let startupProfiler: StartupProfiler
 
-    let themeManager: ThemeManaging
+    private let windowThemeManager: ThemeManager
+    var themeManager: ThemeManaging { windowThemeManager }
     var themeUpdateCancellable: AnyCancellable?
 
     private var theme: ThemeStyleProviding {
@@ -172,7 +174,7 @@ final class MainViewController: NSViewController {
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
         self.downloadManager = downloadManager
-        self.themeManager = themeManager
+        self.windowThemeManager = themeManager
         self.fireCoordinator = fireCoordinator
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
         self.tabsPreferences = tabsPreferences
@@ -449,6 +451,11 @@ final class MainViewController: NSViewController {
         mainView.setMouseAboveWebViewTrackingAreaEnabled(false)
     }
 
+    override func viewWillLayout() {
+        super.viewWillLayout()
+        verticalTabsSidebarPresenter?.updateForWindowWidth()
+    }
+
     override func viewDidLayout() {
         mainView.findInPageContainerView.applyDropShadow()
     }
@@ -529,13 +536,16 @@ final class MainViewController: NSViewController {
         tabBarViewController.isTabStripHidden = isShown
         guard isShown != (verticalTabsSidebarPresenter != nil) else { return }
         if isShown {
+            let sidebarModel = VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel,
+                                                    onCloseTab: tabBarViewController.requestCloseTab(at:),
+                                                    openNewTab: tabBarViewController.openNewTab)
             let presenter = VerticalTabsSidebarPresenter(
                 mainView: mainView,
                 parentViewController: self,
-                tabCollectionViewModel: tabCollectionViewModel,
-                aiChatCoordinator: aiChatCoordinator
+                viewModel: sidebarModel,
+                themeManager: windowThemeManager
             )
-            presenter.install()
+            presenter.install(hiddenInFullScreen: hidesTabBarInFullScreen)
             verticalTabsSidebarPresenter = presenter
         } else {
             verticalTabsSidebarPresenter?.uninstall()
@@ -545,6 +555,12 @@ final class MainViewController: NSViewController {
 
     @objc func toggleVerticalTabsSidebar(_ sender: Any?) {
         verticalTabsSidebarPresenter?.toggle()
+    }
+
+    func setTabBarShownInFullScreen(_ shown: Bool) {
+        hidesTabBarInFullScreen = !shown
+        verticalTabsSidebarPresenter?.setHiddenInFullScreen(!shown)
+        mainView.setTabBarShown(shown, animated: true)
     }
 
     func windowWillEnterFullScreen() {

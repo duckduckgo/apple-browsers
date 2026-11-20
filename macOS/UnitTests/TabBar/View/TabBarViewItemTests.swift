@@ -363,7 +363,7 @@ final class TabBarViewItemTests: XCTestCase {
     }
 }
 
-private class TabBarViewModelMock: TabBarViewModel {
+final class TabBarViewModelMock: TabBarViewModel {
     let uuid: TabIdentifier = UUID().uuidString
     var width: CGFloat
     var isSelected: Bool

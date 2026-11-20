@@ -33,7 +33,7 @@ struct OtherTabBarViewItemsState {
 
 }
 
-protocol TabBarViewModel {
+protocol TabBarViewModel: AnyObject {
     var uuid: TabIdentifier { get }
     var tabContent: Tab.TabContent { get }
     var isPinned: Bool { get }
@@ -43,6 +43,7 @@ protocol TabBarViewModel {
     var favicon: NSImage? { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { get }
+    var usedPermissions: Permissions { get }
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
@@ -985,18 +986,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateActivePermissionIcons() {
-        // Collect all active permissions (camera, microphone, geolocation)
-        var activeTypes: [PermissionType] = []
-        if usedPermissions.camera.isActive {
-            activeTypes.append(.camera)
-        }
-        if usedPermissions.microphone.isActive {
-            activeTypes.append(.microphone)
-        }
-        if usedPermissions.geolocation.isActive {
-            activeTypes.append(.geolocation)
-        }
-
+        let activeTypes = usedPermissions.activeTabIndicators
         let wasShowingPermissionIcon = !activePermissionTypes.isEmpty
         activePermissionTypes = activeTypes
 

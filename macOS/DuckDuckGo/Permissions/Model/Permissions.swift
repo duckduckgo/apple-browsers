@@ -22,6 +22,11 @@ typealias Permissions = [PermissionType: PermissionState]
 
 extension Dictionary where Key == PermissionType, Value == PermissionState {
 
+    /// Permissions whose active use is indicated in the tab bar, in display order.
+    var activeTabIndicators: [PermissionType] {
+        [.camera, .microphone, .geolocation].filter { self[$0].isActive }
+    }
+
     var microphone: PermissionState? {
         get {
             self[.microphone]

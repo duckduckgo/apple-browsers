@@ -1799,6 +1799,7 @@ struct UserText {
 
     static let tabs = NSLocalizedString("preferences-tabs.title", value: "Tabs", comment: "Title for tabs section in settings")
     static let useVerticalTabs = NotLocalizedString("preferences-tabs.use.vertical.tabs", value: "Use vertical tabs", comment: "Option to show browser tabs in a vertical list on the side of the window instead of horizontally at the top")
+    static let verticalTabActivePermissions = NotLocalizedString("vertical-tabs.active-permissions", value: "Using %@", comment: "The placeholder lists the camera, microphone or location permissions currently in use by the tab.")
     static let showVerticalTabsSidebar = NotLocalizedString("main-menu.view.show-vertical-tabs-sidebar", value: "Show Tabs Sidebar", comment: "Main Menu View item that shows the sidebar listing the window's tabs")
     static let hideVerticalTabsSidebar = NotLocalizedString("main-menu.view.hide-vertical-tabs-sidebar", value: "Hide Tabs Sidebar", comment: "Main Menu View item that hides the sidebar listing the window's tabs")
     static let verticalTabsSidebarTooltip = NotLocalizedString("tooltip.vertical-tabs.sidebar", value: "Show or hide the tabs sidebar ⌘B", comment: "Tooltip for the button that shows or hides the sidebar listing the window's tabs")

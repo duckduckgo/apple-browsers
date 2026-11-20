@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import AppKit
+import Combine
+import Foundation
 
 @MainActor
 protocol AutoconsentStatsPopoverPresenting: AnyObject {
@@ -25,7 +26,7 @@ protocol AutoconsentStatsPopoverPresenting: AnyObject {
     /// Returns `false` if there was no window/anchor to present against, so callers can resolve
     /// their own pending state instead of leaving it hanging on a promo that never actually appeared.
     @discardableResult
-    func showPopover(viewController: PopoverMessageViewController) -> Bool
+    func showPopover(viewController: PopoverMessageViewController, onAnchorHidden: @escaping () -> Void) -> Bool
     func dismissPopover()
 }
 
@@ -34,6 +35,7 @@ final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting 
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private weak var activePopover: PopoverMessageViewController?
+    private var anchorVisibilityCancellable: AnyCancellable?
 
     init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
@@ -44,49 +46,45 @@ final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting 
     }
 
     @discardableResult
-    func showPopover(viewController: PopoverMessageViewController) -> Bool {
+    func showPopover(viewController: PopoverMessageViewController, onAnchorHidden: @escaping () -> Void) -> Bool {
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
             return false
         }
 
-        let tabBarVC = mainWindowController.mainViewController.tabBarViewController
+        let mainViewController = mainWindowController.mainViewController
+        let tabBar = mainViewController.tabBarViewController
+        let anchor: NSView
+        let preferredEdge: NSRectEdge
+        var anchorHidden = tabBar.$isTabStripHidden
+            .removeDuplicates()
+            .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()
 
-        let targetButton: NSView? = {
-            @MainActor
-            func findFooterButton(in view: NSView) -> NSButton? {
-                if let tabBarFooter = view as? TabBarFooter {
-                    return tabBarFooter.addButton
-                }
-                for subview in view.subviews {
-                    if let button = findFooterButton(in: subview) {
-                        return button
-                    }
-                }
-                return nil
-            }
-
-            if let footerButton = findFooterButton(in: tabBarVC.view), !footerButton.isHidden {
-                return footerButton
-            } else if let addTabButton = tabBarVC.addTabButton, addTabButton.isHidden == false {
-                return addTabButton
-            } else {
-                return nil
-            }
-        }()
-
-        guard let button = targetButton else {
-            return false
+        if let sidebar = mainViewController.verticalTabsSidebarPresenter {
+            guard let button = sidebar.dockedNewTabButtonAnchor, button.isVisible, !button.visibleRect.isEmpty else { return false }
+            anchor = button
+            preferredEdge = .maxX
+            let sidebarUndocked = sidebar.$layout.filter { $0 != .docked }.map { _ in () }
+            anchorHidden = anchorHidden.merge(with: sidebarUndocked).eraseToAnyPublisher()
+        } else {
+            guard let button = tabBar.visibleNewTabButton else { return false }
+            anchor = button
+            preferredEdge = .maxY
         }
 
         activePopover = viewController
+        anchorVisibilityCancellable = anchorHidden.first().sink { [weak self, weak viewController] in
+            guard let viewController, self?.activePopover === viewController else { return }
+            onAnchorHidden()
+        }
 
-        viewController.show(onParent: mainWindowController.mainViewController,
-                            relativeTo: button,
-                            behavior: .applicationDefined)
+        viewController.show(onParent: mainViewController, relativeTo: anchor, preferredEdge: preferredEdge, behavior: .applicationDefined)
         return true
     }
 
     func dismissPopover() {
+        anchorVisibilityCancellable = nil
         guard let popover = activePopover else {
             return
         }

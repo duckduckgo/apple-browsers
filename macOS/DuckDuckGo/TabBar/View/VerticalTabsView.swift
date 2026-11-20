@@ -28,9 +28,11 @@ enum VerticalTabsStyle {
 struct VerticalTabsView: View {
     @ObservedObject var model: VerticalTabsViewModel
     @ObservedObject var themeManager: ThemeManager
+    let newTabButtonAnchor: NSView
 
     var body: some View {
-        VerticalTabsList(model: model)
+        VerticalTabsList(model: model, newTabButtonAnchor: newTabButtonAnchor)
+            .frame(minWidth: 0, maxWidth: .infinity)
             .environment(\.designSystemPalette, themeManager.designColorPalette)
     }
 }
@@ -43,6 +45,7 @@ private enum Layout {
     static let rowContentSpacing: CGFloat = 8
     static let cornerRadius: CGFloat = 8
     static let iconSize: CGFloat = 16
+    static let permissionIconInterval: TimeInterval = 4
     static let closeButtonSize: CGFloat = 16
     static let selectedShadowRadius: CGFloat = 1
     static let reorderAnimation = Animation.easeInOut(duration: 0.2)
@@ -63,6 +66,7 @@ private struct VerticalTabsList: View {
     }
 
     @ObservedObject var model: VerticalTabsViewModel
+    let newTabButtonAnchor: NSView
     @Environment(\.designSystemPalette) private var palette
     @State private var drag: TabDrag?
 
@@ -100,6 +104,7 @@ private struct VerticalTabsList: View {
             }
 
             VerticalTabsNewTabButton(action: model.openNewTab)
+                .background(NewTabButtonAnchor(view: newTabButtonAnchor).allowsHitTesting(false))
                 .padding(Layout.listPadding)
         }
         .background(Color(designSystemColor: .surfaceBackdrop, palette: palette).opacity(VerticalTabsStyle.backgroundOpacity))
@@ -145,6 +150,13 @@ private struct VerticalTabsList: View {
     }
 }
 
+private struct NewTabButtonAnchor: NSViewRepresentable {
+    let view: NSView
+
+    func makeNSView(context: Context) -> NSView { view }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 private struct VerticalTabRow: View {
     let tab: VerticalTab
     let isSelected: Bool
@@ -153,6 +165,7 @@ private struct VerticalTabRow: View {
 
     @Environment(\.designSystemPalette) private var palette
     @State private var isHovered = false
+    @State private var permissionRotationStart = Date()
 
     var body: some View {
         HStack(spacing: Layout.rowContentSpacing) {
@@ -189,6 +202,7 @@ private struct VerticalTabRow: View {
         }
         .contextMenu {
             Button(UserText.duplicateTab) { model.duplicate(tab.id) }
+                .disabled(!tab.canBeDuplicated)
             if model.canPinTabs && tab.canBePinned {
                 Button(UserText.pinTab) { model.pin(tab.id) }
             }
@@ -199,6 +213,7 @@ private struct VerticalTabRow: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tab.title)
+        .accessibilityValue(activePermissionDescription)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { model.select(tab.id) }
         .accessibilityAction(named: UserText.closeTab) { model.close(tab.id) }
@@ -207,7 +222,17 @@ private struct VerticalTabRow: View {
 
     @ViewBuilder
     private var favicon: some View {
-        if let favicon = tab.favicon {
+        if let firstPermission = tab.activePermissions.first {
+            if tab.activePermissions.count == 1 {
+                permissionIcon(firstPermission)
+            } else {
+                TimelineView(.periodic(from: permissionRotationStart, by: Layout.permissionIconInterval)) { context in
+                    let elapsed = max(0, context.date.timeIntervalSince(permissionRotationStart))
+                    let tick = Int(elapsed / Layout.permissionIconInterval)
+                    permissionIcon(tab.activePermissions[tick % tab.activePermissions.count])
+                }
+            }
+        } else if let favicon = tab.favicon {
             Image(nsImage: favicon)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -215,6 +240,20 @@ private struct VerticalTabRow: View {
         } else {
             LetterIconView(title: tab.url?.host ?? tab.title, size: Layout.iconSize, characterCount: 1, font: .system(size: 9, weight: .bold), paddingModifier: 0)
         }
+    }
+
+    private func permissionIcon(_ permission: PermissionType) -> some View {
+        Image(nsImage: permission.solidIcon ?? permission.icon)
+            .renderingMode(.template)
+            .foregroundColor(Color(nsColor: .systemRed))
+            .frame(width: Layout.iconSize, height: Layout.iconSize)
+            .help(activePermissionDescription)
+    }
+
+    private var activePermissionDescription: String {
+        guard !tab.activePermissions.isEmpty else { return "" }
+        let names = ListFormatter.localizedString(byJoining: tab.activePermissions.map(\.localizedDescription))
+        return String(format: UserText.verticalTabActivePermissions, names)
     }
 
     private var backgroundColor: Color {

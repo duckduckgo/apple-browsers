@@ -44,11 +44,23 @@ final class VerticalTabsViewModelTests: XCTestCase {
         let closedTabID = model.tabs[1].id
         let tabsUpdated = expectTabsUpdate(of: model)
 
-        model.close(closedTabID)
+        tabCollectionViewModel.close(at: .unpinned(1))
 
         wait(for: [tabsUpdated], timeout: 1)
         XCTAssertEqual(model.tabs.map(\.id), tabIDs(of: tabCollectionViewModel))
         XCTAssertFalse(model.tabs.map(\.id).contains(closedTabID))
+    }
+
+    func testSidebarCloseWaitsForTheWindowToHandleTheRequest() {
+        let collection = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
+        var requestedIndex: TabIndex?
+        let model = VerticalTabsViewModel(tabCollectionViewModel: collection, onCloseTab: { requestedIndex = $0 }, openNewTab: {})
+        let originalIDs = tabIDs(of: collection)
+
+        model.close(originalIDs[1])
+
+        XCTAssertEqual(requestedIndex, .unpinned(1))
+        XCTAssertEqual(tabIDs(of: collection), originalIDs)
     }
 
     func testWhenTabMovesToAnotherPlaceThenTheListFollows() {
@@ -64,6 +76,54 @@ final class VerticalTabsViewModelTests: XCTestCase {
         XCTAssertEqual(model.tabs.map(\.id), [originalIDs[1], originalIDs[2], originalIDs[0]])
     }
 
+    func testDuplicatesRegularTabsAndRejectsSettingsTabs() {
+        let regularTab = Tab(content: .newtab)
+        let settingsTab = Tab(content: .settings(pane: nil))
+        let collection = TabCollection(tabs: [regularTab, settingsTab])
+        let collectionModel = TabCollectionViewModel(tabCollection: collection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        let model = verticalTabsViewModel(for: collectionModel)
+
+        XCTAssertEqual(model.tabs.map(\.canBeDuplicated), [true, false])
+        model.duplicate(settingsTab.uuid)
+        XCTAssertEqual(collection.tabs.map(\.uuid), [regularTab.uuid, settingsTab.uuid])
+
+        model.duplicate(regularTab.uuid)
+        XCTAssertEqual(collection.tabs.map(\.content), [.newtab, .newtab, .settings(pane: nil)])
+    }
+
+    func testContinuesObservingTabAfterItIsLoadedWithTheSameID() throws {
+        let unloaded = UnloadedTab(content: .newtab)
+        let collection = TabCollection(tabs: [.loaded(Tab(content: .newtab)), .unloaded(unloaded)])
+        let collectionModel = TabCollectionViewModel(tabCollection: collection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        let model = verticalTabsViewModel(for: collectionModel)
+        let selected = expectation(description: "Selected the restored tab")
+        model.$selectedTabID
+            .first(where: { $0 == unloaded.uuid })
+            .sink { _ in selected.fulfill() }
+            .store(in: &cancellables)
+
+        model.select(unloaded.uuid)
+        wait(for: [selected], timeout: 1)
+        let loaded = try XCTUnwrap(collectionModel.selectedTabViewModel?.tab)
+        XCTAssertEqual(loaded.uuid, unloaded.uuid)
+
+        let updated = expectation(description: "Sidebar shows the loaded tab's new content")
+        model.$tabs
+            .first(where: { $0.last?.canBeDuplicated == false })
+            .sink { _ in updated.fulfill() }
+            .store(in: &cancellables)
+        loaded.setContent(.settings(pane: nil))
+        wait(for: [updated], timeout: 1)
+    }
+
+    func testDisplaysOnlyActiveCameraMicrophoneAndLocationIndicators() {
+        let source = TabBarViewModelMock(usedPermissions: [.geolocation: .active, .camera: .active, .microphone: .active, .notification: .active])
+        XCTAssertEqual(VerticalTab(source).activePermissions, [.camera, .microphone, .geolocation])
+
+        source.usedPermissions = [.camera: .inactive, .microphone: .paused, .geolocation: .denied]
+        XCTAssertTrue(VerticalTab(source).activePermissions.isEmpty)
+    }
+
     private func tabCollectionViewModel(tabCount: Int, selectedIndex: Int) -> TabCollectionViewModel {
         let tabs = (0..<tabCount).map { _ in Tab(content: .newtab) }
         return TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs),
@@ -72,7 +132,9 @@ final class VerticalTabsViewModelTests: XCTestCase {
     }
 
     private func verticalTabsViewModel(for tabCollectionViewModel: TabCollectionViewModel) -> VerticalTabsViewModel {
-        VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel, aiChatCoordinator: nil)
+        VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel,
+                              onCloseTab: { tabCollectionViewModel.close(at: $0) },
+                              openNewTab: { tabCollectionViewModel.insertOrAppendNewTab() })
     }
 
     private func tabIDs(of tabCollectionViewModel: TabCollectionViewModel) -> [TabIdentifier] {

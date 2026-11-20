@@ -29,6 +29,8 @@ final class MockAutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresent
     var isPopoverBeingPresentedValue = false
     var showPopoverCalled = false
     var showPopoverViewController: PopoverMessageViewController?
+    var onAnchorHidden: (() -> Void)?
+    var popoverShownExpectation: XCTestExpectation?
     var dismissPopoverCalled = false
 
     func isPopoverBeingPresented() -> Bool {
@@ -38,11 +40,13 @@ final class MockAutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresent
     var showPopoverReturnValue = true
 
     @discardableResult
-    func showPopover(viewController: PopoverMessageViewController) -> Bool {
+    func showPopover(viewController: PopoverMessageViewController, onAnchorHidden: @escaping () -> Void) -> Bool {
         showPopoverCalled = true
         showPopoverViewController = viewController
         if showPopoverReturnValue {
             isPopoverBeingPresentedValue = true
+            self.onAnchorHidden = onAnchorHidden
+            popoverShownExpectation?.fulfill()
         }
         return showPopoverReturnValue
     }
@@ -50,6 +54,7 @@ final class MockAutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresent
     func dismissPopover() {
         dismissPopoverCalled = true
         isPopoverBeingPresentedValue = false
+        onAnchorHidden = nil
     }
 }
 
@@ -250,6 +255,23 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
     }
 
     // MARK: - hide()
+
+    func testWhenNewTabButtonIsHiddenWhileShowingThenDismissesAndResolvesNoChange() async {
+        let shown = expectation(description: "Popover shown")
+        let resolved = expectation(description: "Promo queue released")
+        presenter.popoverShownExpectation = shown
+        Task {
+            let result = await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: false)
+            XCTAssertEqual(result, .noChange)
+            resolved.fulfill()
+        }
+        await fulfillment(of: [shown], timeout: 1)
+
+        presenter.onAnchorHidden?()
+
+        await fulfillment(of: [resolved], timeout: 1)
+        XCTAssertTrue(presenter.dismissPopoverCalled)
+    }
 
     func testWhenHiddenTwiceThenNoCrash() {
         sut.hide()

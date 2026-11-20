@@ -508,7 +508,7 @@ extension MainWindowController: NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             guard let self else { return }
             mainViewController.disableTabPreviews()
-            mainViewController.mainView.setTabBarShown(false, animated: true)
+            mainViewController.setTabBarShownInFullScreen(false)
             mainViewController.mainView.webContainerTopBinding = .navigationBar
             mainViewController.updateBookmarksBarViewVisibility(visible: false)
             moveTabBarView(toTitlebarView: false)
@@ -521,7 +521,7 @@ extension MainWindowController: NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             guard let self else { return }
             mainViewController.enableTabPreviews()
-            mainViewController.mainView.setTabBarShown(true, animated: true)
+            mainViewController.setTabBarShownInFullScreen(true)
             mainViewController.mainView.webContainerTopBinding = .tabBar
             mainViewController.updateBookmarksBarViewVisibility(visible: mainViewController.shouldShowBookmarksBar)
             window?.titlebarAppearsTransparent = true

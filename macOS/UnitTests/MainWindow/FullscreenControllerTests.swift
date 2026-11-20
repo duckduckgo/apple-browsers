@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView
@@ -102,6 +103,119 @@ final class MainViewControllerDefaultBrowserPromptUIHostingTests: XCTestCase, Ma
 
 }
 
+@MainActor
+final class MainViewControllerVerticalTabsTests: XCTestCase, MainViewControllerFactory {
+
+    func testClosingTabWithFloatingChatWaitsForConfirmationAndUsesTheOriginalTabAfterReordering() throws {
+        let sessions = AIChatSessionStore(featureFlagger: MockFeatureFlagger())
+        let controller = makeVerticalTabsController(aiChatSessionStore: sessions)
+        let collection = controller.tabCollectionViewModel
+        let tabID = try XCTUnwrap(collection.tabCollection.tabs.first?.uuid)
+        collection.append(tab: Tab(content: .newtab))
+        sessions.getOrCreateSession(for: tabID, burnerMode: .regular).state.setFloating()
+
+        controller.tabBarViewController.requestCloseTab(at: .unpinned(0))
+        guard collection.tabCollection.tabs.count == 2 else {
+            return XCTFail("Closing a tab with a floating chat must wait for confirmation")
+        }
+        XCTAssertTrue(controller.aiChatCoordinator.isChatFloating(for: tabID))
+
+        collection.moveTab(at: .unpinned(0), to: .unpinned(1))
+        controller.tabBarViewController.closeTabAfterConfirmation(id: tabID)
+        XCTAssertEqual(collection.tabCollection.tabs.count, 1)
+        XCTAssertNotEqual(collection.tabCollection.tabs.first?.uuid, tabID)
+    }
+
+    func testNarrowWindowShowsTabsOverThePageAndRestoresDockingWhenWidened() throws {
+        let controller = makeVerticalTabsController()
+        let presenter = try XCTUnwrap(controller.verticalTabsSidebarPresenter)
+        let view = controller.mainView
+        let dockingThreshold = MainView.minimumWebContentWidth + VerticalTabsViewController.minimumWidth
+        let sidebar = try XCTUnwrap(controller.children.compactMap { $0 as? VerticalTabsViewController }.first).view
+
+        let window = NSWindow(contentViewController: controller)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+
+        window.setContentSize(NSSize(width: MainWindow.minWindowWidth, height: 650))
+        view.layoutSubtreeIfNeeded()
+        XCTAssertEqual(view.bounds.width, MainWindow.minWindowWidth, accuracy: 0.5)
+        XCTAssertEqual(presenter.layout, .collapsed)
+        XCTAssertEqual(view.webContainerView.frame.width, view.bounds.width, accuracy: 0.5)
+
+        controller.toggleVerticalTabsSidebar(nil)
+        XCTAssertEqual(presenter.layout, .peeking)
+        XCTAssertTrue(view.contentLeadingConstraints.allSatisfy(\.isActive))
+
+        window.setContentSize(NSSize(width: dockingThreshold, height: 650))
+        view.layoutSubtreeIfNeeded()
+        XCTAssertEqual(view.bounds.width, dockingThreshold, accuracy: 0.5)
+        XCTAssertEqual(presenter.layout, .docked)
+        XCTAssertEqual(sidebar.frame.minX, 0, accuracy: 0.5)
+        XCTAssertEqual(sidebar.frame.width, VerticalTabsViewController.minimumWidth, accuracy: 0.5)
+        XCTAssertEqual(view.webContainerView.frame.minX, sidebar.frame.maxX, accuracy: 0.5)
+        XCTAssertEqual(view.webContainerView.frame.width, MainView.minimumWebContentWidth, accuracy: 0.5)
+    }
+
+    func testFullscreenRestoresDockedAndCollapsedSidebars() throws {
+        let controller = makeVerticalTabsController()
+        let presenter = try XCTUnwrap(controller.verticalTabsSidebarPresenter)
+        let view = controller.mainView
+        let sidebar = try XCTUnwrap(controller.children.compactMap { $0 as? VerticalTabsViewController }.first).view
+        view.layoutSubtreeIfNeeded()
+        let initialWidth = sidebar.frame.width
+        XCTAssertEqual(presenter.layout, .docked)
+        XCTAssertGreaterThanOrEqual(initialWidth, VerticalTabsViewController.minimumWidth)
+        XCTAssertEqual(view.webContainerView.frame.minX, sidebar.frame.maxX, accuracy: 0.5)
+
+        controller.setTabBarShownInFullScreen(false)
+        XCTAssertEqual(presenter.layout, .hidden)
+        controller.toggleVerticalTabsSidebar(nil)
+        XCTAssertEqual(presenter.layout, .hidden)
+        view.layoutSubtreeIfNeeded()
+        XCTAssertEqual(view.webContainerView.frame.width, view.bounds.width, accuracy: 0.5)
+
+        controller.setTabBarShownInFullScreen(true)
+        view.layoutSubtreeIfNeeded()
+        XCTAssertEqual(presenter.layout, .docked)
+        XCTAssertEqual(sidebar.frame.width, initialWidth, accuracy: 0.5)
+        XCTAssertEqual(view.webContainerView.frame.minX, sidebar.frame.maxX, accuracy: 0.5)
+        controller.toggleVerticalTabsSidebar(nil)
+        controller.setTabBarShownInFullScreen(false)
+        controller.setTabBarShownInFullScreen(true)
+        XCTAssertEqual(presenter.layout, .collapsed)
+    }
+
+    func testEnablingVerticalTabsWhileHiddenInFullscreenDefersTheSidebar() throws {
+        let preferences = makeVerticalTabsPreferences(enabled: false)
+        let controller = makeVerticalTabsController(preferences: preferences)
+        controller.setTabBarShownInFullScreen(false)
+
+        preferences.useVerticalTabs = true
+        let presenter = try XCTUnwrap(controller.verticalTabsSidebarPresenter)
+        XCTAssertEqual(presenter.layout, .hidden)
+
+        controller.setTabBarShownInFullScreen(true)
+        XCTAssertEqual(presenter.layout, .docked)
+    }
+
+    private func makeVerticalTabsController(preferences: AppearancePreferences? = nil, aiChatSessionStore: AIChatSessionStore? = nil) -> MainViewController {
+        let controller = makeMainViewController(isPopup: false,
+                                                defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock(),
+                                                appearancePreferences: preferences ?? makeVerticalTabsPreferences(enabled: true),
+                                                aiChatSessionStore: aiChatSessionStore)
+        _ = controller.view
+        return controller
+    }
+
+    private func makeVerticalTabsPreferences(enabled: Bool) -> AppearancePreferences {
+        AppearancePreferences(persistor: AppearancePreferencesPersistorMock(useVerticalTabs: enabled),
+                              privacyConfigurationManager: nil,
+                              featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.verticalTabs.rawValue: true]),
+                              aiChatMenuConfig: MockAIChatConfig())
+    }
+}
+
 private final class WinBackOfferPromptPresentingMock: WinBackOfferPromptPresenting {
     private(set) var tryToShowPromptCallCount = 0
 
@@ -117,18 +231,19 @@ extension MainViewControllerFactory {
     @MainActor
     func makeMainViewController(isPopup: Bool,
                                 defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresenting,
+                                appearancePreferences: AppearancePreferences? = nil,
+                                aiChatSessionStore: AIChatSessionStore? = nil,
                                 winBackOfferPromptPresenter: WinBackOfferPromptPresenting = WinBackOfferPromptPresentingMock()) -> MainViewController {
         let windowControllersManager = WindowControllersManagerMock()
         let tabCollectionViewModel = TabCollectionViewModel(isPopup: isPopup, windowControllersManager: windowControllersManager)
         let featureFlagger = MockFeatureFlagger()
         let fireCoordinator = makeFireCoordinator(windowControllersManager: windowControllersManager, featureFlagger: featureFlagger)
-        let aiChatSessionStore = AIChatSessionStore(featureFlagger: featureFlagger)
-
         return MainViewController(
             tabCollectionViewModel: tabCollectionViewModel,
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
-            aiChatSessionStore: aiChatSessionStore,
+            aiChatSessionStore: aiChatSessionStore ?? AIChatSessionStore(featureFlagger: featureFlagger),
             defaultBrowserAndDockPromptPresenting: defaultBrowserPromptPresenter,
+            appearancePreferences: appearancePreferences ?? NSApp.delegateTyped.appearancePreferences,
             fireCoordinator: fireCoordinator,
             winBackOfferPromptPresenting: winBackOfferPromptPresenter
         )

@@ -1142,9 +1142,7 @@ extension MainViewController {
             if featureFlagger.isFeatureOn(.warnBeforeQuit),
                aiChatCoordinator.isChatFloating(for: tab.uuid) {
                 showFloatingAIChatShortcutCloseConfirmation(at: index, currentEvent: currentEvent) { [weak self] in
-                    guard let self else { return }
-                    self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                    self.tabCollectionViewModel.close(at: index)
+                    self?.tabBarViewController.closeTabAfterConfirmation(id: tab.uuid)
                 }
                 return
             }
@@ -1175,13 +1173,7 @@ extension MainViewController {
             }
         }
 
-        // Reuse tab-bar warn-before flow for keyboard/menu close paths.
-        if tabBarViewController.tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for: index) {
-            return
-        }
-
-        aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-        tabCollectionViewModel.close(at: index)
+        tabBarViewController.requestCloseTab(at: index)
     }
 
     @MainActor
@@ -1227,13 +1219,7 @@ extension MainViewController {
                 manager?.setMouseHovering(isHovering)
             },
             anchorViewProvider: { [weak self] in
-                guard let self else { return nil }
-                switch index {
-                case .pinned(let pinnedIndex):
-                    return self.tabBarViewController.cell(forPinnedTabAt: pinnedIndex)
-                case .unpinned(let unpinnedIndex):
-                    return self.tabBarViewController.cell(forTabAt: unpinnedIndex)
-                }
+                self?.tabBarViewController.closeWarningAnchor(for: index)
             }
         )
         runKeyboardWarnBeforeConfirmationFlow(manager: manager, presenter: presenter, onProceed: onProceed)
@@ -2035,8 +2021,8 @@ extension MainViewController: NSMenuItemValidation {
             return allowsUserInteraction
 
         case #selector(MainViewController.toggleVerticalTabsSidebar(_:)):
-            guard let layout = verticalTabsSidebarPresenter?.layout else { return false }
-            menuItem.title = layout == .docked ? UserText.hideVerticalTabsSidebar : UserText.showVerticalTabsSidebar
+            guard let presenter = verticalTabsSidebarPresenter, presenter.layout != .hidden else { return false }
+            menuItem.title = presenter.toggleWillHideSidebar ? UserText.hideVerticalTabsSidebar : UserText.showVerticalTabsSidebar
             return true
 
         // Duplicate Tab

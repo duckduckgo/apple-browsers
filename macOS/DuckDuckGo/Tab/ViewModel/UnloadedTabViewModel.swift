@@ -61,8 +61,8 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
         Just(unloadedTab.content).eraseToAnyPublisher()
     }
 
-    @Published private var storedUsedPermissions: Permissions = [:]
-    var usedPermissionsPublisher: Published<Permissions>.Publisher { $storedUsedPermissions }
+    @Published private(set) var usedPermissions: Permissions = [:]
+    var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
 
     var audioState: WKWebView.AudioState { .unmuted(isPlayingAudio: false) }
 

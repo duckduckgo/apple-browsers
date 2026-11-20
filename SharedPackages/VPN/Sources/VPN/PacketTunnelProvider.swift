@@ -553,21 +553,23 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         )
         self.keyStore = keyStore
 
+        let networkClient = NetworkProtectionBackendClient { settings.selectedEnvironment }
+
         self.deviceManager = deviceManager ?? NetworkProtectionDeviceManager(
-            environment: settings.selectedEnvironment,
+            networkClient: networkClient,
             tokenHandler: tokenHandlerProvider,
             keyStore: keyStore,
             errorEvents: debugEvents
         )
 
         self.serverStatusMonitor = serverStatusMonitor ?? NetworkProtectionServerStatusMonitor(
-            networkClient: NetworkProtectionBackendClient(environment: settings.selectedEnvironment),
+            networkClient: networkClient,
             tokenHandler: tokenHandlerProvider
         )
 
         self.serverSelectionResolver = serverSelectionResolver ?? {
             let locationRepository = NetworkProtectionLocationListCompositeRepository(
-                environment: settings.selectedEnvironment,
+                client: networkClient,
                 tokenHandler: tokenHandlerProvider,
                 errorEvents: debugEvents
             )
@@ -882,12 +884,16 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     /// Applies the environment in the VPN settings sent with `startupOptions`, when there are any, before the token is loaded,
-    /// so the token is read and refreshed against that environment.
+    /// so the token is read and refreshed against that environment, and logs the environment the tunnel starts with.
     /// - Parameter startupOptions: The options the tunnel was started with.
     @MainActor
     private func applyEnvironment(from startupOptions: StartupOptions) {
-        guard startupOptions.applyEnvironment(to: settings) else { return }
-        Logger.networkProtection.log("Switched environment to \(self.settings.selectedEnvironment.rawValue, privacy: .public) before loading the token")
+        let previousEnvironment = settings.selectedEnvironment
+        if startupOptions.applyEnvironment(to: settings) {
+            Logger.networkProtection.log("Starting the tunnel with environment \(self.settings.selectedEnvironment.rawValue, privacy: .public), switched from \(previousEnvironment.rawValue, privacy: .public)")
+        } else {
+            Logger.networkProtection.log("Starting the tunnel with environment \(self.settings.selectedEnvironment.rawValue, privacy: .public)")
+        }
     }
 
     @MainActor

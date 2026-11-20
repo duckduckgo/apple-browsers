@@ -351,7 +351,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 await subscriptionManager.signOut(notifyUI: true)
             }
             updateServiceEnvironment(newServiceEnvironment)
-            closeTheApp()
+            NSApp.perform(#selector(NSApplication.terminate(_:)), with: self, afterDelay: 0)
         }
     }
 

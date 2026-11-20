@@ -28,6 +28,8 @@ public enum WebExtensionAppPermission: String, CaseIterable, Sendable {
     /// password manager so it can take autofill over.
     case privacy
 #if os(macOS)
+    /// Lets an extension read plain text from the system clipboard without a paste gesture.
+    case clipboardRead
     case downloads
 #endif
 }

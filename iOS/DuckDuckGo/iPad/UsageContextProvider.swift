@@ -55,7 +55,7 @@ struct UsageContextProvider: UsageContextProviding {
     private let windowAndScreenWidths: @MainActor () -> (window: CGFloat, screen: CGFloat)?
 
     init(isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
-         keyboardMonitor: HardwareKeyboardMonitor = .shared,
+         keyboardMonitor: HardwareKeyboardMonitor = HardwareKeyboardMonitor(),
          isLargeWidth: @escaping () -> Bool = { AppWidthObserver.shared.isLargeWidth },
          windowAndScreenWidths: @escaping @MainActor () -> (window: CGFloat, screen: CGFloat)? = Self.keyWindowWidths) {
         self.isPad = isPad
@@ -109,11 +109,9 @@ extension UsageContext {
 ///
 /// GameController stays untouched until the app first becomes active: reading the keyboard, or even observing
 /// its connect and disconnect notifications, starts GameController's device session, which can block launch past
-/// the watchdog. Until then the state is unknown. Use `shared` in production: `Launching` creates it before the
-/// first activation.
+/// the watchdog. Until then the state is unknown, so create it at launch, before the first activation; `Launching`
+/// owns the app's one instance through its `UsageContextProvider`.
 final class HardwareKeyboardMonitor {
-
-    static let shared = HardwareKeyboardMonitor()
 
     private let lock = NSLock()
     private let notificationCenter: NotificationCenter

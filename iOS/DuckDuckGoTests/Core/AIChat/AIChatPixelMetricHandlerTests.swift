@@ -402,19 +402,24 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
                        DuckAIPromptPixelContext(source: nil, surface: .duckAI))
     }
 
-    func testKeyboardMonitorWaitsForTheAppToBecomeActiveBeforeQueryingGameController() {
-        let notificationCenter = NotificationCenter()
-        var queryCount = 0
-        let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, isConnectedNow: {
-            queryCount += 1
+    func testKeyboardMonitorKeepsGameControllerOffTheMainThread() {
+        let notificationCenter = ThreadRecordingNotificationCenter()
+        let queue = DispatchQueue(label: #function)
+        var readsOnMainThread: [Bool] = []
+        let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, queue: queue, isConnectedNow: {
+            readsOnMainThread.append(Thread.isMainThread)
             return true
         })
-        XCTAssertEqual(queryCount, 0)
+        queue.sync {}
+        // Observing GameController notifications starts its device session, which can block for seconds.
+        XCTAssertEqual(notificationCenter.registrationsOnMainThread[.GCKeyboardDidConnect], false)
+        XCTAssertEqual(notificationCenter.registrationsOnMainThread[.GCKeyboardDidDisconnect], false)
         XCTAssertNil(monitor.isConnected)
 
         notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-        XCTAssertEqual(queryCount, 1)
+        queue.sync {}
         XCTAssertEqual(monitor.isConnected, true)
+        XCTAssertEqual(readsOnMainThread, [false])
     }
 
     func testUnknownHardwareKeyboardIsLeftOutOfThePixelParameters() {
@@ -426,15 +431,18 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
     func testKeyboardMonitorFollowsConnectAndDisconnectNotifications() {
         let notificationCenter = NotificationCenter()
         var isConnectedNow = false
-        let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, isConnectedNow: { isConnectedNow })
-        XCTAssertNil(monitor.isConnected)
+        let queue = DispatchQueue(label: #function)
+        let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, queue: queue, isConnectedNow: { isConnectedNow })
+        queue.sync {}
 
         isConnectedNow = true
         notificationCenter.post(name: .GCKeyboardDidConnect, object: nil)
+        queue.sync {}
         XCTAssertEqual(monitor.isConnected, true)
 
         isConnectedNow = false
         notificationCenter.post(name: .GCKeyboardDidDisconnect, object: nil)
+        queue.sync {}
         XCTAssertEqual(monitor.isConnected, false)
     }
 
@@ -456,5 +464,20 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidOpenHistory))
 
         XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"])
+    }
+}
+
+private final class ThreadRecordingNotificationCenter: NotificationCenter, @unchecked Sendable {
+
+    private(set) var registrationsOnMainThread: [Notification.Name: Bool] = [:]
+
+    override func addObserver(forName name: NSNotification.Name?,
+                              object obj: Any?,
+                              queue: OperationQueue?,
+                              using block: @escaping @Sendable (Notification) -> Void) -> NSObjectProtocol {
+        if let name {
+            registrationsOnMainThread[name] = Thread.isMainThread
+        }
+        return super.addObserver(forName: name, object: obj, queue: queue, using: block)
     }
 }

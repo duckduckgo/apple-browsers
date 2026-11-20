@@ -104,33 +104,42 @@ extension UsageContext {
     }
 }
 
-/// GameController reports the hardware keyboard reliably only on the main thread, so pixels fired elsewhere
-/// read this copy, refreshed on each app activation and on keyboard connect and disconnect notifications.
+/// Keeps the hardware keyboard state for Duck.ai pixels and wide events, refreshed on each app activation and on
+/// keyboard connect and disconnect notifications.
 ///
-/// The first read waits until the app becomes active: it starts GameController's device session, which can
-/// block a background launch past the launch watchdog. Until then the state is unknown, so create it at launch,
-/// before the first activation; `Launching` owns the app's one instance through its `UsageContextProvider`.
+/// All GameController work runs on a background queue: its first use, including observing its notifications,
+/// starts a device session that can block for seconds, past the launch watchdog. Nothing on the main thread may
+/// touch GameController, or it waits for that setup. The state is unknown until the first activation or keyboard
+/// notification. A read straight after setup can say false with a keyboard attached, until the connect notification
+/// arrives a moment later.
 final class HardwareKeyboardMonitor {
 
     private let lock = NSLock()
+    private let queue: DispatchQueue
     private let isConnectedNow: () -> Bool
     private var isKeyboardConnected: Bool?
-    private var observers: [NSObjectProtocol] = []
 
     init(notificationCenter: NotificationCenter = .default,
+         queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.hardware-keyboard-monitor", qos: .utility),
          isConnectedNow: @escaping () -> Bool = { GCKeyboard.coalesced != nil }) {
+        self.queue = queue
         self.isConnectedNow = isConnectedNow
-        let names: [Notification.Name] = [UIApplication.didBecomeActiveNotification, .GCKeyboardDidConnect, .GCKeyboardDidDisconnect]
-        observers = names.map { name in
-            notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                self?.refresh()
-            }
+        observe(UIApplication.didBecomeActiveNotification, in: notificationCenter)
+        queue.async { [weak self] in
+            self?.observe(.GCKeyboardDidConnect, in: notificationCenter)
+            self?.observe(.GCKeyboardDidDisconnect, in: notificationCenter)
         }
     }
 
     /// Nil until the first read.
     var isConnected: Bool? {
         lock.withLock { isKeyboardConnected }
+    }
+
+    private func observe(_ name: Notification.Name, in notificationCenter: NotificationCenter) {
+        _ = notificationCenter.addObserver(forName: name, object: nil, queue: nil) { [weak self] _ in
+            self?.queue.async { self?.refresh() }
+        }
     }
 
     /// Re-read rather than taking the notification's direction: another keyboard may still be attached.

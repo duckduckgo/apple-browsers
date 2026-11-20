@@ -202,8 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
-            windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            windowControllersManager: windowControllersManager
         )
     }()
 
@@ -342,7 +341,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncService: syncService,
         pinningManager: pinningManager,
         promoService: promoService,
-        dockCustomization: dockCustomization
+        dockCustomization: dockCustomization,
+        addToDockVideoPresenter: addToDockVideoPresenter
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -403,7 +403,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
 
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater & ContextualOnboardingPathStarting
 
     @MainActor
     var isOnboardingReadyForPrompts: Bool {
@@ -512,7 +512,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         BookmarksEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             hasTopLevelEntitiesProvider: { [bookmarkManager] in
                 bookmarkManager.hasTopLevelEntities()
             },
@@ -527,7 +526,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         AutofillEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             isAnyCategoryEmptyProvider: {
                 guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
                 return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
@@ -642,6 +640,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var updateController: UpdateController?
     private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
     let dockCustomization: DockCustomization
+    let addToDockVideoPresenter: AddToDockVideoPresenting
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -674,7 +673,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization) {
+    override init() {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -682,7 +681,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
-        self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
             keyStore = (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
@@ -850,6 +848,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        self.dockCustomization = DockCustomizer(featureFlagger: featureFlagger)
+        self.addToDockVideoPresenter = AddToDockVideoPresenter()
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
@@ -1059,10 +1059,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
-        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
-                                                              windowControllersManager: windowControllersManager,
-                                                              historyCoordinator: historyCoordinator,
-                                                              bookmarkManager: bookmarkManager)
         localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
@@ -1109,6 +1105,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
 #endif
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager,
+                                                              historyCoordinator: historyCoordinator,
+                                                              bookmarkManager: bookmarkManager,
+                                                              permissionManager: permissionManager)
         notificationService = UserNotificationAuthorizationService()
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
@@ -1214,6 +1215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 configurationStore: configurationStore,
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
+                onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
                 appearancePreferences: appearancePreferences,
                 themeManager: themeManager,
                 startupPreferences: startupPreferences,
@@ -1250,6 +1252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configurationStore: configurationStore,
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,
+            onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
             appearancePreferences: appearancePreferences,
             themeManager: themeManager,
             startupPreferences: startupPreferences,
@@ -1306,7 +1309,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 notificationPresenter: notificationPresenter,
                                                                                 uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
-                                                                                dockCustomization: dockCustomization)
+                                                                                dockCustomization: dockCustomization,
+                                                                                addToDockVideoFeatureFlagger: featureFlagger,
+                                                                                addToDockVideoPresenter: addToDockVideoPresenter)
         // Dedicated store: EventHub flushes often and `KeyValueFileStore.set` rewrites the whole file.
         // `try?` — telemetry runs in memory rather than failing launch.
         eventHubIntegration = MacOSEventHubIntegration(
@@ -1649,6 +1654,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)
+
+        // Not in init: creating the Fire view model reads `NSApp.delegate`, which isn't set yet.
+        aiChatBrowserToolsService.revokeChatGrants(whenBurning: fireCoordinator.fireViewModel.fire.burningDataPublisher)
 
         Task {
             await subscriptionManager.loadInitialData()

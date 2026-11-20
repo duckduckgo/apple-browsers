@@ -67,7 +67,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
         storage.blockedTrackerSeen = false
     }
 
-    func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision {
+    func dialog(for tab: Tab) -> ContextualOnboardingDecision {
         // 1. Once the final dialog was seen, the ending decides (upsell or completed).
         if case .decided(let decision) = ending.decisionForNextDialog() { return decision }
         // 2. Otherwise pick today's dialog for this tab, without writing anything.
@@ -82,7 +82,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
             } else {
                 // For website visit, decide dialog also based on the tracker type.
                 let trackerType = trackerMessageProvider.trackersType(privacyInfo: tab.privacyInfo)
-                dialog = dialogForRegularUrl(trackerType: trackerType, privacyInfo: privacyInfo)
+                dialog = dialogForRegularUrl(trackerType: trackerType, privacyInfo: tab.privacyInfo)
             }
         default:
             dialog = nil

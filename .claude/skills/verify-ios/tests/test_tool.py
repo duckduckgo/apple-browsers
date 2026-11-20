@@ -1,7 +1,7 @@
 """Tests for verify-ios's own logic that need no simulator: locks, process ownership, state, preflight, telemetry
 parsing, evidence. Run: python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'
 """
-import json, multiprocessing, os, shlex, signal, subprocess, sys, tempfile, textwrap, time, unittest
+import json, multiprocessing, os, re, shlex, shutil, signal, struct, subprocess, sys, tempfile, textwrap, time, unittest, zlib
 from unittest import mock
 
 TMP = tempfile.mkdtemp(prefix="verify-ios-test-")
@@ -9,7 +9,7 @@ os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import device, env, harness, telemetry, video  # noqa: E402
+from verify_ios import compare, device, env, gallery, harness, page, steps, telemetry, video, web  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -425,6 +425,11 @@ class FakeDevice:
     def snapshot(self):
         return dict(tree="", focused=None)
 
+    def wait(self, locator, state="visible", timeout=5):
+        if locator in getattr(self, "absent", ()):
+            raise env.Failed(f"{locator} not {state} within {timeout}s", runner={"code": "TIMEOUT"})
+        return dict(ok=True)
+
     def data_container(self):
         return TMP
 
@@ -470,6 +475,9 @@ class FakePixels:
 
     def mark(self):
         pass
+
+    def fired(self, name, occurrence=0, timeout=10):
+        raise env.Missed(f"pixel {name} did not fire")
 
     def all(self):
         return []
@@ -564,10 +572,22 @@ class HarnessTests(unittest.TestCase):
         harness.fixture_release = lambda user: {}
         harness.Pixels = FakePixels
         harness.WideEvents = lambda container: telemetry.WideEvents(container)
+        self.saved_compose, self.composed, self.compose_fails = gallery.compose, [], {}
+        gallery.compose = self.fake_compose
+
+    def fake_compose(self, jobs):
+        """Stands in for compose.swift: 'draws' each job as an empty file unless told it fails."""
+        self.composed += jobs
+        for j in jobs:
+            if os.path.basename(j["out"]) not in self.compose_fails:
+                open(j["out"], "w").close()
+        return {j["out"]: self.compose_fails[os.path.basename(j["out"])] for j in jobs
+                if os.path.basename(j["out"]) in self.compose_fails}
 
     def tearDown(self):
         harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release, \
             harness.Video = self.saved
+        gallery.compose = self.saved_compose
 
     def run_proof(self, run, keep=False, video=True, **fake):
         self.fake.__dict__.update(fake)
@@ -604,6 +624,75 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual((r["status"], r["video"], r["problems"]), ("pass", None, []), r)
         self.assertEqual(FakeVideo.made, [])
 
+    def prove_file(self, body, devices='["iphone"]'):
+        proof = os.path.join(tempfile.mkdtemp(dir=TMP), "scenario.py")
+        with open(proof, "w") as f:
+            f.write(f'"""The thing works.\n\nMore about it."""\nDEVICES = {devices}\n\ndef run(ios):\n{body}')
+        return harness.prove(proof, evidence_dir=tempfile.mkdtemp(dir=TMP))
+
+    def test_an_image_not_drawn_is_an_evidence_problem_not_a_failed_proof(self):
+        self.compose_fails = {"key-frames.png": "cannot read shot.png"}
+        code, out = self.prove_file('    ios.shot("shot")\n    ios.check("the thing", True)\n')
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["results"][0]["status"], "pass")
+        problem = "could not draw iphone/key-frames.png: cannot read shot.png"
+        self.assertIn(problem, out["results"][0]["problems"])
+        with open(os.path.join(out["evidence"], "iphone", "result.json")) as f:
+            self.assertIn(problem, json.load(f)["problems"], "prove --base reads problems from result.json")
+        with open(out["report"]) as f:
+            report = f.read()
+        self.assertIn(problem, report)
+        self.assertIn('[<img src="iphone/final.png" width="200" alt="Key frames on iphone">]', report,
+                      "without a strip, the final screen stands in")
+
+    def test_a_page_that_fails_still_leaves_the_report(self):
+        with mock.patch.object(harness.page, "proof_page", side_effect=KeyError("boom")):
+            code, out = self.prove_file('    ios.check("the thing", True)\n')
+        self.assertEqual(code, 2, out)
+        self.assertIn("could not write index.html: KeyError: 'boom'", out["results"][0]["problems"])
+        self.assertTrue(os.path.isfile(out["report"]))
+
+    def test_a_shot_cannot_take_the_name_of_a_generated_image(self):
+        for name in ("poster", "key-frames", "final"):
+            r = self.run_proof(lambda ios, name=name: (ios.shot(name), ios.check("x", True)))
+            self.assertEqual(r["status"], "error", r)
+            self.assertIn("kept for an image prove writes itself", r["reason"])
+
+    def test_screenshots_are_recorded_in_the_order_taken(self):
+        code, out = self.prove_file('    ios.shot("second")\n    ios.shot("first")\n    ios.shot("second")\n'
+                                    '    ios.check("the thing", True)\n')
+        with open(os.path.join(out["evidence"], "iphone", "result.json")) as f:
+            self.assertEqual(json.load(f)["shots"], ["first.png", "second.png"], "a retaken shot moves to the end")
+
+    def test_index_page_puts_failures_first_and_links_only_inside_the_attempt(self):
+        code, out = self.prove_file('    ios.shot("menu")\n    ios.check("fine thing", True)\n'
+                                    '    try:\n        ios.check("broken thing", False)\n    except Exception:\n        pass\n'
+                                    '    ios.unverified("the other thing", "needs a live service")\n')
+        self.assertEqual(code, 1, out)
+        with open(os.path.join(out["evidence"], "index.html")) as f:
+            html = f.read()
+        self.assertIn("<h1>The thing works.</h1>", html)
+        self.assertIn('<span class="badge fail">iPhone: FAIL</span>', html)
+        self.assertIn('poster="iphone/poster.png" src="iphone/recording.mp4"', html)
+        self.assertIn('<a href="iphone/key-frames.png"><img src="iphone/key-frames.png"', html)
+        self.assertLess(html.index("broken thing"), html.index("fine thing"), "failures come first")
+        self.assertIn("iphone: the other thing: needs a live service", html)
+        self.assertIn('<a href="scenario.py">proof.py</a>', html)
+        links = re.findall(r'(?:src|href)="([^"]*)"', html)
+        self.assertTrue(links)
+        for link in links:
+            self.assertFalse(re.match(r"[a-z]+:|/", link), f"{link}: every link stays inside the attempt folder")
+            self.assertTrue(os.path.exists(os.path.join(out["evidence"], urllib_unquote(link))), link)
+        self.assertNotIn("<script", html)
+
+    def test_two_devices_get_a_side_by_side_image(self):
+        code, out = self.prove_file('    ios.check("the thing", True)\n', devices='["iphone", "ipad"]')
+        self.assertEqual(code, 0, out)
+        sides = [j for j in self.composed if j["out"].endswith("/devices.png")]
+        self.assertEqual([c["caption"] for c in sides[0]["rows"][0]["cells"]], ["iPhone", "iPad"])
+        with open(out["report"]) as f:
+            self.assertIn('[<img src="devices.png" width="200" alt="Final screen per device">](devices.png)', f.read())
+
     def test_report_is_one_scenario_with_relative_evidence_links(self):
         proof = os.path.join(tempfile.mkdtemp(dir=TMP), "scenario.py")
         with open(proof, "w") as f:
@@ -618,9 +707,13 @@ class HarnessTests(unittest.TestCase):
             report = f.read()
         sections = [line for line in report.splitlines() if line.startswith("## ")]
         self.assertEqual(sections, ["## Verified", "## Evidence", "## Outcome", "## Details", "## Unverified"])
-        for link in ("[recording.mp4](iphone/recording.mp4)", "[final.png](iphone/final.png)",
-                     "[after-tap.png](iphone/after-tap.png)", "[transcript.jsonl](iphone/transcript.jsonl)"):
+        for link in ("[▶ Watch video](iphone/recording.mp4)", "[final.png](iphone/final.png)",
+                     "[after-tap.png](iphone/after-tap.png)", "[transcript.jsonl](iphone/transcript.jsonl)",
+                     '[<img src="iphone/poster.png" width="200" alt="Recording on iphone">](iphone/recording.mp4)',
+                     '[<img src="iphone/key-frames.png" width="200" alt="Key frames on iphone">](iphone/key-frames.png)',
+                     "[index.html](index.html)"):
             self.assertIn(link, report)
+        self.assertTrue(os.path.isfile(os.path.join(out["evidence"], "index.html")))
         self.assertIn("More about what it covers.", report)
         self.assertIn("- iphone: the other thing: needs a live service", report)
         with open(os.path.join(out["evidence"], "manifest.json")) as f:
@@ -943,6 +1036,19 @@ class SelftestTests(unittest.TestCase):
         finally:
             env.update_state(lambda st: st.get("devices", {}).pop("ipad", None))
 
+    def test_proofs_write_their_attempts_in_the_given_evidence_dir(self):
+        from verify_ios import selftest
+        calls, out_dir = [], tempfile.mkdtemp(dir=TMP)
+        passed = dict(proofs=[dict(proof="p.py", report="r.md", results=[dict(device="iphone", status="pass")])])
+        with mock.patch.object(selftest, "_cli", side_effect=lambda *a, **k: calls.append(a) or (0, passed, "")), \
+                mock.patch.object(selftest.Device, "check_build_current"), \
+                mock.patch.object(selftest.Device, "_all", return_value=[]), \
+                mock.patch.object(selftest.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "", "OK")):
+            code, out = selftest.run(["iphone"], out_dir)
+        self.assertEqual(code, 0, out)
+        prove = next(c for c in calls if c[0] == "prove")
+        self.assertEqual(prove[-2:], ("--evidence-dir", out_dir))
+
 
 class CliTests(unittest.TestCase):
     def test_check_rejects_a_bad_proof_with_exit_2(self):
@@ -952,6 +1058,531 @@ class CliTests(unittest.TestCase):
         cli = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin", "verify-ios")
         p = subprocess.run([cli, "--json", "check", bad], capture_output=True, text=True, env={**os.environ, "VERIFY_IOS_HOME": TMP})
         self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+
+    def test_selftest_refuses_an_evidence_dir_inside_the_checkout_before_setup(self):
+        cli = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin", "verify-ios")
+        p = subprocess.run([cli, "--json", "selftest", "--evidence-dir", os.path.join(env.ROOT, "evidence")],
+                           capture_output=True, text=True, env={**os.environ, "VERIFY_IOS_HOME": TMP}, timeout=30)
+        self.assertEqual(p.returncode, 1, p.stdout + p.stderr)   # as new-proof and prove refuse it
+        self.assertIn("outside this checkout", p.stdout)
+        self.assertNotIn("simulator ready", p.stderr)
+
+
+class BaseExpectationTests(HarnessTests):
+    """What a proof declares for the base build, and how the base run of `prove --base` treats it."""
+
+    def run_base(self, run, **fake):
+        self.fake.__dict__.update(fake)
+        mod = type("Proof", (), {"run": staticmethod(run)})
+        return harness._run_device(mod, "iphone", tempfile.mkdtemp(dir=TMP), keep=False, flags={}, device_obj=self.fake,
+                                   video=False, as_base=True)
+
+    @staticmethod
+    def bug_fix_proof(ios):
+        ios.check("set up", True)
+        with ios.on_base("fail"):
+            ios.expect_visible("id=fixed")
+            with ios.on_base("pass"):
+                ios.check("still there", True)
+            ios.check("the fix", False)
+        ios.check("after the fix", True)
+
+    @staticmethod
+    def outcomes(r):
+        return [(c["check"], c["ok"], c["base"]) for c in r["checks"]]
+
+    def test_base_run_records_an_expected_failure_and_carries_on(self):
+        r = self.run_base(self.bug_fix_proof, absent={"id=fixed"})
+        self.assertEqual(r["status"], "fail", r)
+        self.assertEqual(self.outcomes(r), [("set up", True, "unchanged"), ("id=fixed visible", False, "fail"),
+                                            ("still there", True, "pass"), ("the fix", False, "fail"),
+                                            ("after the fix", True, "unchanged"),
+                                            ("app still in the foreground at the end", True, "unchanged")])
+
+    def test_the_same_failure_stops_a_normal_run(self):
+        r = self.run_proof(self.bug_fix_proof, absent={"id=fixed"})
+        self.assertEqual(r["status"], "fail", r)
+        self.assertEqual(self.outcomes(r)[:2], [("set up", True, "unchanged"), ("id=fixed visible", False, "fail")])
+        self.assertNotIn("after the fix", [c["check"] for c in r["checks"]])
+
+    def test_base_run_stops_at_a_failure_the_proof_did_not_expect(self):
+        def run(ios):
+            ios.check("should be unchanged", False)
+            ios.check("never reached", True)
+        r = self.run_base(run)
+        self.assertEqual(r["status"], "fail", r)
+        self.assertNotIn("never reached", [c["check"] for c in r["checks"]])
+
+    def test_failed_waits_and_telemetry_are_recorded_as_failed_checks(self):
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_hidden("id=gone")
+                ios.expect_keyboard(shown=True)
+                ios.expect_pixel("m_x")
+        r = self.run_base(run, absent={"id=gone", "role=keyboard"})
+        self.assertEqual([(c["check"], c["ok"]) for c in r["checks"]][:3],
+                         [("id=gone gone", False), ("keyboard shown", False), ("pixel m_x fired", False)])
+
+    def test_check_keys_leave_out_this_runs_tokens_and_local_ports(self):
+        def run(ios):
+            ios.check(f"tab loaded http://127.0.0.1:20412/index.html?token={ios.token('demo')}", True)
+        self.assertEqual(self.run_proof(run)["checks"][0]["key"],
+                         "tab loaded http://127.0.0.1:<port>/index.html?token=<token:demo>")
+
+    def test_base_run_never_takes_a_runner_refusal_for_the_expected_failure(self):
+        def wait(locator, state="visible", timeout=5):
+            raise env.Failed("2 elements match", runner={"code": "AMBIGUOUS"})
+
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_visible('label="twin"')
+            ios.check("never reached", True)
+        self.fake.wait = wait
+        r = self.run_base(run)
+        self.assertEqual(r["status"], "error", r)
+        self.assertIn("not observed on the base build", r["reason"])
+        self.assertEqual(r["checks"], [], "a refused check was never observed, so it is not recorded as failed")
+
+    def judge_base_run(self, run, **fake):
+        """The device's `prove --base` verdict when this checkout passes every check the base run was meant to make."""
+        before = self.run_base(run, **fake)
+        after = [dict(c, ok=True) for c in before["checks"]] or [check("expected miss", True, "fail")]
+        return before, compare.verdict(before["status"], "pass", compare.judge(before["checks"], after))[0]
+
+    @staticmethod
+    def live_pixel_stream(ios, dead=False):
+        ios.pixels = telemetry.Pixels("-", os.path.join(tempfile.mkdtemp(dir=TMP), "pixels.ndjson"))
+        ios.pixels.proc = subprocess.Popen(["true" if dead else "sleep", *([] if dead else ["30"])])
+        if dead:
+            ios.pixels.proc.wait()
+        ios.pixels.since = 0
+
+    def test_a_dead_pixel_stream_on_the_base_run_is_inconclusive_not_the_expected_failure(self):
+        def run(ios):
+            self.live_pixel_stream(ios, dead=True)
+            with ios.on_base("fail"):
+                ios.expect_pixel("m_new_pixel", timeout=0)
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual(before["status"], "error", before)
+        self.assertIn("pixel log stream is not running", before["reason"])
+        self.assertEqual(verdict, "INCONCLUSIVE")
+
+    def test_a_harness_error_inside_on_base_fail_is_inconclusive_too(self):
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_wide_event("data-clearing", timeout=0)   # no ios.mark(): a proof bug, not a miss
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual((before["status"], verdict), ("error", "INCONCLUSIVE"), before)
+
+    def test_a_pixel_that_really_did_not_fire_on_the_base_run_is_as_expected(self):
+        def run(ios):
+            self.live_pixel_stream(ios)
+            try:
+                with ios.on_base("fail"):
+                    ios.expect_pixel("m_new_pixel", timeout=0)
+                ios.check("after the pixel", True)
+            finally:
+                ios.pixels.stop()
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual(before["status"], "fail", before)
+        self.assertEqual([(c["check"], c["ok"]) for c in before["checks"]][:2],
+                         [("pixel m_new_pixel fired", False), ("after the pixel", True)])
+        self.assertEqual(verdict, "AS EXPECTED")
+
+    def test_eventually_keeps_the_last_errors_runner_code(self):
+        def read(code):
+            def fn():
+                raise env.Failed(code, runner={"code": code})
+            return fn
+        raised = []
+
+        def run(ios):
+            try:
+                ios.eventually("reads the token", read("AMBIGUOUS"), timeout=0)
+            except env.Failed as e:
+                raised.append(e)
+        self.run_proof(run)
+        self.assertEqual(harness._code(raised[0]), "AMBIGUOUS")
+        self.assertNotIsInstance(raised[0], env.Missed)
+
+        def on_base(code):
+            def run(ios):
+                with ios.on_base("fail"):
+                    ios.eventually("reads the token", read(code), timeout=0)
+                ios.check("after", True)
+            return self.run_base(run)
+        self.assertEqual(on_base("AMBIGUOUS")["status"], "error")
+        absent = on_base("NOT_FOUND")
+        self.assertEqual([(c["check"], c["ok"]) for c in absent["checks"]][:2], [("reads the token", False), ("after", True)])
+
+    def test_base_run_carries_on_past_an_expected_alert(self):
+        def alert(action, button=None, timeout=5):
+            raise env.Failed("cannot answer", runner={"code": "NOT_FOUND", "alert": "Allow?"})
+
+        def run(ios):
+            with ios.on_base("fail"):
+                ios.expect_no_alert()
+            ios.check("after the alert", True)
+        self.fake.alert = alert
+        self.assertIn("after the alert", [c["check"] for c in self.run_base(run)["checks"]])
+
+    def test_a_step_that_does_not_find_what_it_looks_for_is_the_expected_failure_on_the_base_run(self):
+        class Driver:   # nothing on screen: every lookup comes back empty
+            def find(self, sel):
+                return []
+
+            def swipe(self, direction, sel=None):
+                return {}
+        dev = device.Device.__new__(device.Device)
+        dev._driver = Driver()
+        self.fake.scroll_to = dev.scroll_to
+        self.fake.web.eval = lambda js: {"t": ""}   # Duck.ai never answers
+        page = web.Web(0, "-")
+        page.page_url = lambda: None                 # the tab shows no web page
+        misses = {
+            "tab count": lambda ios: steps.expect_tab_count(ios, 2, timeout=0),   # no tab-switcher button in the tree
+            "alternative controls": lambda ios: ios.eventually(
+                "a New Tab control", lambda: steps.tap_first_present(ios, steps.NEW_TAB, timeout=0), timeout=0),
+            "scrolling": lambda ios: ios.eventually("row reachable", lambda: ios.scroll_to('label="row"'), timeout=0),
+            "Duck.ai answer": lambda ios: ios.eventually(
+                "Duck.ai answered", lambda: steps.read_duckai_answer(ios, timeout=0), timeout=0),
+            "page URL": lambda ios: ios.eventually("page shows the token", lambda: "t-1" in page.url(), timeout=0),
+        }
+        for name, miss in misses.items():
+            def run(ios, miss=miss):
+                with ios.on_base("fail"):
+                    miss(ios)
+                ios.check("after the miss", True)
+            with self.subTest(name):
+                before, verdict = self.judge_base_run(run, absent=set(steps.NEW_TAB))
+                self.assertEqual((before["status"], verdict), ("fail", "AS EXPECTED"), before)
+                self.assertIn("after the miss", [c["check"] for c in before["checks"]])
+
+    def test_a_step_stopped_by_a_refusal_is_still_inconclusive_on_the_base_run(self):
+        def snapshot():
+            raise env.Failed("the app is not running", runner={"code": "APP_NOT_RUNNING"})
+
+        def run(ios):
+            with ios.on_base("fail"):
+                steps.expect_tab_count(ios, 2, timeout=0)
+        self.fake.snapshot = snapshot
+        before, verdict = self.judge_base_run(run)
+        self.assertEqual((before["status"], verdict), ("error", "INCONCLUSIVE"), before)
+
+    def test_an_unknown_base_outcome_is_an_error(self):
+        def run(ios):
+            with ios.on_base("different"):
+                ios.check("x", True)
+        self.assertEqual(self.run_proof(run)["status"], "error")
+
+
+def check(name, ok, base="unchanged", key=None):
+    return dict(check=name, ok=ok, base=base, key=key or name)
+
+
+class JudgeTests(unittest.TestCase):
+    @staticmethod
+    def judged(before, after):
+        return [(r["check"], r["before"], r["after"], r["judged"]) for r in compare.judge(before, after)]
+
+    def test_each_declared_outcome_against_the_base_run(self):
+        after = [check("bug fixed", True, "fail"), check("menu works", True, "pass"), check("page loads", True)]
+        self.assertEqual(self.judged([check("bug fixed", False, "fail"), check("menu works", True, "pass"),
+                                      check("page loads", True)], after),
+                         [("bug fixed", "fail", "pass", "as expected"), ("menu works", "pass", "pass", "as expected"),
+                          ("page loads", "pass", "pass", "as expected")])
+        self.assertEqual(self.judged([check("bug fixed", True, "fail"), check("menu works", False, "pass"),
+                                      check("page loads", False)], after),
+                         [("bug fixed", "pass", "pass", "unexpected"), ("menu works", "fail", "pass", "unexpected"),
+                          ("page loads", "fail", "pass", "unexpected")])
+
+    def test_a_check_the_base_run_never_made_is_not_shown(self):
+        rows = self.judged([check("set up", True)], [check("set up", True), check("bug fixed", True, "fail")])
+        self.assertEqual(rows[1], ("bug fixed", "not run", "pass", "not shown"))
+
+    def test_a_declared_check_this_checkout_never_made_is_not_shown(self):
+        rows = self.judged([check("bug", False, "fail")], [])
+        self.assertEqual(rows, [("bug", "fail", "not run", "not shown")])
+
+    def test_checks_only_the_base_run_made_come_last(self):
+        rows = self.judged([check("old path", True), check("set up", True)], [check("set up", True)])
+        self.assertEqual(rows, [("set up", "pass", "pass", "as expected"), ("old path", "pass", "not run", "not shown")])
+
+    def test_checks_line_up_by_token_free_key_and_occurrence(self):
+        before = [check("reads a-1", True, key="reads <t>"), check("reads a-2", False, "fail", key="reads <t>")]
+        after = [check("reads b-1", True, key="reads <t>"), check("reads b-2", True, "fail", key="reads <t>")]
+        self.assertEqual(self.judged(before, after), [("reads b-1", "pass", "pass", "as expected"),
+                                                      ("reads b-2", "fail", "pass", "as expected")])
+
+    def test_verdicts(self):
+        ok = [dict(check="x", judged="as expected")]
+        self.assertEqual(compare.verdict("fail", "pass", ok)[0], "AS EXPECTED")
+        self.assertEqual(compare.verdict("fail", "pass", [dict(check="x", judged="unexpected")])[0], "UNEXPECTED")
+        self.assertEqual(compare.verdict("fail", "fail", ok)[0], "UNEXPECTED")
+        self.assertEqual(compare.verdict("error", "pass", ok)[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("fail", "busy", ok)[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("fail", "pass", [dict(check="x", judged="not shown")])[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("fail", "pass", ok, ["appearance"])[0], "INCONCLUSIVE")
+        self.assertEqual(compare.verdict("cancelled", "pass", ok)[0], "CANCELLED")
+
+    def test_capture_conditions_compare_every_key(self):
+        self.assertEqual(compare.capture_differs(dict(appearance="light", textSize="large"),
+                                                 dict(appearance="dark", textSize="large", locale="en_US")),
+                         ["appearance", "locale"])
+
+    def test_exit_codes(self):
+        self.assertEqual(compare.exit_code(["AS EXPECTED", "AS EXPECTED"]), 0)
+        self.assertEqual(compare.exit_code(["AS EXPECTED"], problems=True), 2)
+        self.assertEqual(compare.exit_code(["AS EXPECTED", "UNEXPECTED"]), 1)
+        self.assertEqual(compare.exit_code(["UNEXPECTED", "INCONCLUSIVE"]), 2)
+        self.assertEqual(compare.exit_code(["INCONCLUSIVE", "CANCELLED"]), 130)
+
+
+class CompareReportTests(unittest.TestCase):
+    @staticmethod
+    def run_dir(attempt, name, status, checks, shots):
+        d = os.path.join(attempt, name, "iphone")
+        os.makedirs(d)
+        for shot in shots + ["final.png", "recording.mp4"]:
+            open(os.path.join(d, shot), "w").close()
+        return dict(status=status, reason=None, checks=checks, video="recording.mp4", capture=dict(appearance="light"))
+
+    def test_before_after_key_frames_and_judged_checks(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        b = self.run_dir(attempt, "before/run1", "fail", [check("hint | text", False, "fail")], ["menu.png"])
+        a = self.run_dir(attempt, "after/run2", "pass", [check("hint | text", True, "fail")], ["menu.png", "extra.png"])
+        rows = compare.judge(b["checks"], a["checks"])
+        devices = dict(iphone=dict(verdict="AS EXPECTED", reason=None, rows=rows, before=b, after=a, captureDiffers=[]))
+        cmp = dict(base=dict(ref="origin/main", sha="a" * 40), before="before/run1", after="after/run2", problems=[],
+                   rerun="cd x && verify-ios prove p --base aaa")
+        mod = type("Proof", (), {"__doc__": "The hint names the demo.\n\nDetails."})
+        text = compare.report(mod, cmp, devices, attempt)
+        self.assertEqual([line for line in text.splitlines() if line.startswith("## ")],
+                         ["## Verified", "## Evidence", "## Outcome", "## Details", "## Unverified"])
+        self.assertIn("| | Before | After |", text)
+        self.assertIn('| menu | [<img src="before/run1/iphone/menu.png" width="200" alt="Before: menu on iphone">]'
+                      '(before/run1/iphone/menu.png) | [<img src="after/run2/iphone/menu.png"', text)
+        self.assertIn("| extra | not captured | [<img", text)
+        self.assertIn("| final | [<img", text)
+        self.assertIn("[▶ Watch video](before/run1/iphone/recording.mp4)", text)
+        self.assertIn("### iphone: AS EXPECTED", text)
+        self.assertIn("| hint \\| text | fail | fail | pass | as expected |", text)
+        self.assertIn("[report](before/run1/report.md)", text)
+
+    def test_drawing_errors_become_one_line_problems(self):
+        proc = subprocess.CompletedProcess([], 0, json.dumps(dict(ok=[], failed={"/a/x.png": "Error (\n  Duration\n)"})), "")
+        with mock.patch.object(gallery.subprocess, "run", return_value=proc):
+            self.assertEqual(gallery.compose([dict(kind="poster", out="/a/x.png"), dict(kind="grid", out="/a/y.png")]),
+                             {"/a/x.png": "Error ( Duration )", "/a/y.png": "not drawn"})
+
+    def test_ctrl_c_while_drawing_the_comparison_still_writes_the_report(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        def compose(jobs):
+            os.kill(os.getpid(), signal.SIGINT)   # Ctrl-C lands while compose.swift draws
+            return {os.path.join(attempt, "before-after-iphone.png"): "interrupted"}
+        b = self.run_dir(attempt, "b/r", "fail", [check("hint", False, "fail")], [])
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(lambda: {})), \
+                mock.patch.object(compare, "_prove_base", return_value=(os.path.join(attempt, "b/r"), None)), \
+                mock.patch.object(compare, "_remove_worktree", return_value=[]), \
+                mock.patch.object(compare.harness, "prove", return_value=(0, dict(evidence=None))), \
+                mock.patch.object(compare.harness, "_new_attempt", return_value=attempt), \
+                mock.patch.object(gallery, "compose", compose), \
+                mock.patch.object(compare, "_result", return_value=b), \
+                mock.patch.object(page, "comparison_page", side_effect=KeyError("boom")):
+            proof = ProveAgainstBaseTests.proof()
+            compare.prove_against_base(proof, "HEAD", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        with open(os.path.join(attempt, "report.md")) as f:
+            report = f.read()
+        self.assertIn("could not draw before-after-iphone.png: interrupted", report)
+        self.assertIn("could not write index.html: KeyError: 'boom'", report)
+        self.assertFalse(os.path.exists(os.path.join(attempt, "index.html")), "no empty page left behind")
+        self.assertTrue(os.path.isfile(os.path.join(attempt, "comparison.json")))
+
+    def test_comparison_page_and_report_lead_with_the_before_after_image(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        b = self.run_dir(attempt, "before/run1", "fail", [check("hint", False, "fail"), check("loads", True)], [])
+        a = self.run_dir(attempt, "after/run2", "pass", [check("hint", True, "fail"), check("loads", False)], [])
+        for name in ("before-after-iphone.png", "after/run2/iphone/poster.png"):
+            open(os.path.join(attempt, name), "w").close()
+        rows = compare.judge(b["checks"], a["checks"])
+        devices = dict(iphone=dict(verdict="UNEXPECTED", reason="x", rows=rows, before=b, after=a, captureDiffers=[]))
+        cmp = dict(base=dict(ref="origin/main", sha="a" * 40), before="before/run1", after="after/run2", problems=[],
+                   rerun="cd x && verify-ios prove p --base aaa")
+        mod = type("Proof", (), {"__doc__": "The hint names the demo."})
+        text = compare.report(mod, cmp, devices, attempt)
+        self.assertIn('[<img src="before-after-iphone.png" width="200" alt="Before and after on iphone">]'
+                      '(before-after-iphone.png)', text)
+        self.assertIn('| Video | [▶ Watch video](before/run1/iphone/recording.mp4) | [<img src="after/run2/iphone/poster.png" '
+                      'width="200" alt="Recording on iphone">](after/run2/iphone/recording.mp4) '
+                      '[▶ Watch video](after/run2/iphone/recording.mp4) |', text)
+        html = page.comparison_page(mod, cmp, devices, attempt)
+        self.assertIn('<span class="badge fail">iPhone: UNEXPECTED</span>', html)
+        self.assertIn('<img src="before-after-iphone.png"', html)
+        self.assertIn('src="before/run1/iphone/recording.mp4"', html)
+        self.assertIn('poster="after/run2/iphone/poster.png" src="after/run2/iphone/recording.mp4"', html)
+        self.assertLess(html.index("<td class=\"\">loads</td>"), html.index("<td class=\"\">hint</td>"),
+                        "the unexpected check comes first")
+        self.assertIn('<a href="before/run1/index.html">page</a>', html)
+
+
+def urllib_unquote(path):
+    import urllib.parse
+    return urllib.parse.unquote(path)
+
+
+def write_png(path, width, height, rgb=(200, 80, 40)):
+    """A solid-colour PNG, written without any imaging library."""
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xffffffff)
+    raw = b"".join(b"\x00" + bytes(rgb) * width for _ in range(height))
+    with open(path, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+                + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+def png_size(path):
+    with open(path, "rb") as f:
+        head = f.read(24)
+    assert head[:8] == b"\x89PNG\r\n\x1a\n", f"{path} is not a PNG"
+    return struct.unpack(">II", head[16:24])
+
+
+class GalleryTests(unittest.TestCase):
+    @staticmethod
+    def device_dir(root, name, shots):
+        d = os.path.join(root, name)
+        os.makedirs(d)
+        for i, shot in enumerate(shots):   # taken in this order, whatever their names
+            open(os.path.join(d, shot), "w").close()
+            os.utime(os.path.join(d, shot), (1000 + i, 1000 + i))
+        return d
+
+    def test_key_frames_follow_the_order_taken_then_the_final_screen(self):
+        d = self.device_dir(tempfile.mkdtemp(dir=TMP), "iphone", ["z-first.png", "a-second.png", "final.png",
+                                                                  "key-frames.png", "poster.png"])
+        self.assertEqual(gallery.key_frames(d), ["z-first.png", "a-second.png", "final.png"])
+        self.assertEqual(gallery.key_frames(None), [])
+
+    def test_the_recorded_order_survives_a_copy_that_resets_file_times(self):
+        d = self.device_dir(tempfile.mkdtemp(dir=TMP), "iphone", ["b.png", "a.png", "final.png"])
+        self.assertEqual(gallery.key_frames(d, ["a.png", "b.png", "gone.png"]), ["a.png", "b.png", "final.png"])
+
+    def test_proof_jobs(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        phone = self.device_dir(attempt, "iphone", ["menu.png", "final.png", "recording.mp4"])
+        pad = self.device_dir(attempt, "ipad", ["final.png"])
+        jobs = {os.path.relpath(j["out"], attempt): j for j in gallery.proof_jobs(attempt, [
+            dict(device="iphone", evidence=phone, video="recording.mp4"), dict(device="ipad", evidence=pad, video=None),
+            dict(device="-", evidence=None)])}
+        self.assertEqual(sorted(jobs), ["devices.png", "iphone/key-frames.png", "iphone/poster.png"],
+                         "a single frame is no strip, and no video means no poster")
+        self.assertEqual([c["caption"] for c in jobs["iphone/key-frames.png"]["rows"][0]["cells"]], ["menu", "final"])
+        self.assertEqual(jobs["iphone/poster.png"]["video"], os.path.join(phone, "recording.mp4"))
+        self.assertEqual(gallery.proof_jobs(attempt, [dict(device="iphone", evidence=phone, video=None)])[0]["out"],
+                         os.path.join(phone, "key-frames.png"), "one device: no side-by-side image")
+
+    def test_before_after_lines_frames_up_by_name(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        self.device_dir(attempt, "before/r1/iphone", ["menu.png", "gone.png", "final.png"])
+        self.device_dir(attempt, "after/r2/iphone", ["extra.png", "menu.png", "final.png"])
+        outcomes = dict(iphone=dict(before={}, after={}), ipad=dict(before={}, after={}))
+        [job] = gallery.comparison_jobs(attempt, "before/r1", "after/r2", outcomes)
+        self.assertEqual(job["out"], os.path.join(attempt, "before-after-iphone.png"))
+        before, after = job["rows"]
+        self.assertEqual((before["label"], after["label"]), ("Before\n(base build)", "After\n(this checkout)"))
+        self.assertEqual([c["caption"] for c in after["cells"]], ["extra", "menu", "gone", "final"])
+        self.assertEqual([c["path"] is not None for c in before["cells"]], [False, True, True, True])
+        self.assertEqual([c["path"] is not None for c in after["cells"]], [True, True, False, True])
+        self.assertEqual(gallery.comparison_jobs(attempt, None, "after/r2", outcomes), [], "no base run: no image")
+
+    @unittest.skipUnless(sys.platform == "darwin" and shutil.which("xcrun"), "compose.swift needs Xcode")
+    def test_compose_draws_with_xcode_alone_and_reports_each_failure(self):
+        d = tempfile.mkdtemp(dir=TMP)
+        write_png(os.path.join(d, "a.png"), 60, 130)
+        write_png(os.path.join(d, "b.png"), 90, 130, (40, 80, 200))
+        grid = os.path.join(d, "out dir", "grid.png")
+        os.makedirs(os.path.dirname(grid))
+        cells = lambda *paths: [dict(path=p and os.path.join(d, p), caption=f"c{i}") for i, p in enumerate(paths)]
+        failed = gallery.compose([
+            dict(kind="grid", out=grid, height=100, rows=[dict(label="Before", cells=cells("a.png", None)),
+                                                          dict(label="After", cells=cells("a.png", "b.png"))]),
+            dict(kind="poster", out=os.path.join(d, "poster.png"), video=os.path.join(d, "missing.mp4")),
+            dict(kind="grid", out=os.path.join(d, "bad.png"), rows=[dict(label=None, cells=cells("nope.png"))])])
+        self.assertEqual(sorted(os.path.basename(k) for k in failed), ["bad.png", "poster.png"], failed)
+        self.assertIn("cannot read", failed[os.path.join(d, "bad.png")])
+        width, height = png_size(grid)
+        self.assertGreater(height, 2 * 100, "two rows of 100 px frames")
+        self.assertGreater(width, 100 * 90 // 130 + 100 * 60 // 130, "two columns plus the row labels")
+
+
+class ProveAgainstBaseTests(unittest.TestCase):
+    @staticmethod
+    def proof():
+        path = os.path.join(tempfile.mkdtemp(dir=TMP), "p.py")
+        with open(path, "w") as f:
+            f.write('"""Proves a thing."""\nDEVICES = ["iphone"]\n\ndef run(ios):\n    ios.check("x", True)\n')
+        return path
+
+    def test_a_stale_build_here_fails_before_the_base_is_touched(self):
+        def stale():
+            raise env.Failed("the app source changed since the last build: run build --app-only")
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(stale)), \
+                mock.patch.object(compare, "_prove_base") as base:
+            code, out = compare.prove_against_base(self.proof(), "HEAD", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        self.assertEqual((code, out["code"]), (2, "BUILD_NOT_CURRENT"))
+        base.assert_not_called()
+
+    def test_a_ref_that_is_not_a_commit_is_refused(self):
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(lambda: {})), \
+                mock.patch.object(compare, "_prove_base") as base:
+            code, out = compare.prove_against_base(self.proof(), "no-such-ref-xyz", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        self.assertEqual((code, out["code"]), (2, "BAD_BASE"))
+        base.assert_not_called()
+
+    def test_a_base_worktree_another_run_is_using_is_left_in_place(self):
+        worktree = tempfile.mkdtemp(dir=TMP)
+        log = os.path.join(worktree, "log")
+        with mock.patch.object(compare, "_step", return_value=(env.EXIT_BUSY, "")) as step:
+            problems = compare._remove_worktree(worktree, log)
+        self.assertEqual(step.call_count, 1, "only the cleanup ran: the worktree was not removed")
+        self.assertIn("in use", problems[0])
+
+    def test_ctrl_c_during_the_worktree_cleanup_does_not_cut_it_short(self):
+        """The cleanup child runs in its own session (the terminal's Ctrl-C can't reach it) and the parent ignores
+        signals from the first step to the last, then puts its handlers back."""
+        worktree, scripts = tempfile.mkdtemp(dir=TMP), tempfile.mkdtemp(dir=TMP)
+        log, seen, cleanup = os.path.join(worktree, "log"), os.path.join(scripts, "seen"), os.path.join(scripts, "cleanup")
+        with open(cleanup, "w") as f:   # stands in for `verify-ios cleanup`: Ctrl-C reaches the parent while it runs
+            f.write(f"import os, signal, time\nopen({seen!r}, 'w').write(str(os.getsid(0)))\n"
+                    "os.kill(os.getppid(), signal.SIGINT)\ntime.sleep(0.2)\n")
+        runs = []
+        real_step = compare._step
+
+        def step(cmd, cwd, log, interruptible=True):
+            runs.append(cmd)
+            if cmd[-1] == "--delete-sims":
+                return real_step([sys.executable, cleanup], cwd, log, interruptible)
+            os.kill(os.getpid(), signal.SIGINT)   # between the steps and during the second
+            return 0, ""
+        before = signal.getsignal(signal.SIGINT)
+        with mock.patch.object(compare, "_step", step):
+            problems = compare._remove_worktree(worktree, log)
+        self.assertEqual(problems, [])
+        self.assertEqual(len(runs), 2, "the worktree was removed after its simulators")
+        with open(seen) as f:
+            self.assertNotEqual(int(f.read()), os.getsid(0), "the cleanup child shares the terminal's session")
+        self.assertIs(signal.getsignal(signal.SIGINT), before)
+
+    def test_without_a_base_run_the_verdict_is_inconclusive_and_this_checkout_is_not_proved(self):
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(lambda: {})), \
+                mock.patch.object(compare, "_prove_base", return_value=(None, "the base build failed (exit 1)")), \
+                mock.patch.object(compare.harness, "prove") as after:
+            code, out = compare.prove_against_base(self.proof(), "HEAD", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        after.assert_not_called()
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["devices"]["iphone"]["verdict"], "INCONCLUSIVE")
+        with open(out["report"]) as f:
+            self.assertIn("the base build failed", f.read())
 
 
 if __name__ == "__main__":

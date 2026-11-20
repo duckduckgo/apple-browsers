@@ -30,7 +30,6 @@ final class ListOpenTabsBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.listOpenTabs`, which is how the catalog gates it.
     let name = "listOpenTabs"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "Duck.ai wants to see your open tabs."
 
     let inputSchema: JSONValue = [
         "type": "object",

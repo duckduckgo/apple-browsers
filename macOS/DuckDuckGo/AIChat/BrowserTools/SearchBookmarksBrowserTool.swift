@@ -27,7 +27,6 @@ final class SearchBookmarksBrowserTool: BrowserTool {
 
     let name = "searchBookmarks"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "It will see the titles, addresses and folders of your bookmarks."
 
     let inputSchema: JSONValue = [
         "type": "object",

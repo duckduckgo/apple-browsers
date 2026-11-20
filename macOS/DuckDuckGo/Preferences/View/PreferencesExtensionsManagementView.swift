@@ -479,17 +479,15 @@ extension Preferences {
 
         private var nativeMessagingRow: some View {
             HStack(spacing: Const.noteSpacing) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
-                    .resizable()
-                    .frame(width: Const.noteIconSize, height: Const.noteIconSize)
+                WarningIcon(size: Const.noteIconSize)
                     .frame(width: Const.noteIconFrameSize, height: Const.noteIconFrameSize)
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: Const.noteTextSpacing) {
-                    Text(UserText.extensionsSettingsNativeMessagingTitle)
+                    Text(UserText.webExtensionNativeMessagingUnavailableTitle(entry.listing.name))
                         .font(.system(size: Const.titleFontSize, weight: .regular))
                         .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                    Text(String(format: UserText.extensionsSettingsNativeMessagingMessage, entry.listing.name))
+                    Text(UserText.webExtensionNativeMessagingUnavailableMessage)
                         .font(.system(size: Const.detailsFontSize, weight: .regular))
                         .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
                         .lineSpacing(Const.noteMessageLineSpacing)
@@ -618,13 +616,27 @@ extension Preferences {
         }
 
         private var warningBadge: some View {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
-                .resizable()
-                .frame(width: Const.warningBadgeSize, height: Const.warningBadgeSize)
+            WarningIcon(size: Const.warningBadgeSize)
                 .offset(x: Const.warningBadgeOverhang, y: -Const.warningBadgeOverhang)
                 .accessibilityLabel(UserText.extensionsSettingsNativeMessagingTitle)
                 .accessibilityIdentifier("Preferences.Extensions.\(item.id).NativeMessagingBadge")
         }
+    }
+}
+
+/// A warning icon in the same yellow as the sidebar's BETA badge.
+private struct WarningIcon: View {
+    let size: CGFloat
+
+    @Environment(\.designSystemPalette) private var palette
+
+    var body: some View {
+        Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationSolid)
+            .renderingMode(.template)
+            .resizable()
+            .foregroundColor(Color(designSystemColor: .statusYellowTertiary, palette: palette))
+            .background(Circle().fill(Color.black).padding(size / 8))
+            .frame(width: size, height: size)
     }
 }
 

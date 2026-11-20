@@ -479,7 +479,11 @@ class MacReset:
                     os.rename(path, os.path.join(items, i))
                 except OSError:
                     pass
-        checks["app data and temp files removed"] = not self.data()
+        left = self.data()
+        checks["app data and temp files removed"] = not left
+        if left:   # seen on a real Mac: other apps' containers are protected from a shell without Full Disk Access
+            names = ", ".join(os.path.basename(p) for p in left)
+            checks[f"macOS refused to move {names}: give the app that runs prove Full Disk Access, or prove in a VM"] = False
         checks["app defaults and pinned flags removed"] = self._defaults_empty()
         with open(os.path.join(self.run_dir, "downloads-before.json"), "w") as f:
             json.dump(dict(since=time.time(), entries=listing(self.downloads)), f)

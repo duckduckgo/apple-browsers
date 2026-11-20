@@ -75,6 +75,11 @@ extension MainViewController {
         var deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption?
         if isDeleteAllChatsEligible(for: tab, context: context) {
             let result = await readNativeChatCount(isFireMode: isFireMode)
+#if DEBUG
+            if DuckAiChatsUITestSeed.isRequested {
+                DuckAiChatsUITestSeed.lastReadChatCount = try? result.get()
+            }
+#endif
             guard !Task.isCancelled, tab === tabManager.currentTabsModel.currentTab, tab?.fireTab == isFireMode,
                   browsingMode == tabManager.currentBrowsingMode else { return nil }
             if isDeleteAllChatsEligible(for: tab, context: context) {

@@ -165,6 +165,10 @@ struct Launching: LaunchingHandling {
             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
+#if DEBUG
+        try DuckAiChatsUITestSeed.applyIfRequested(normal: duckAiNativeStorageHandler, fire: fireModeStorageController)
+#endif
+
         let adBlockingAvailabilityStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
         let adBlockingAvailability: AdBlockingAvailabilityProviding = AdBlockingAvailability(
             featureFlagger: featureFlagger,

@@ -67,7 +67,7 @@ protocol ContextualOnboardingPathStarting: AnyObject {
 
 /// Locks the browser UI while contextual onboarding needs the user to stay on one tab.
 protocol ContextualOnboardingUILocking: AnyObject {
-    func setUILocked(_ locked: Bool)
+    func setUILock(_ lock: UserInteractionLock)
 }
 
 /// Protocol for storing onboarding state data.
@@ -101,7 +101,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath
     private weak var uiLocker: ContextualOnboardingUILocking?
     /// The lock last sent to `uiLocker`, so it's only told about changes.
-    private var isUILockApplied = false
+    private var appliedUILock = UserInteractionLock.none
 
     /// The path chosen at the junction. No saved path means search.
     /// Built on first use, so a finished onboarding never builds one.
@@ -194,16 +194,16 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         updateUILock()
     }
 
-    /// Whether the active path keeps the browser UI locked. Always false on the search path and once onboarding ends.
-    var isUILocked: Bool {
-        state != .onboardingCompleted && activePath.isUILocked
+    /// The lock the active path keeps on the browser UI. None on the search path and once onboarding ends.
+    var uiLock: UserInteractionLock {
+        state == .onboardingCompleted ? .none : activePath.uiLock
     }
 
     private func updateUILock() {
-        let locked = isUILocked
-        guard locked != isUILockApplied else { return }
-        isUILockApplied = locked
-        uiLocker?.setUILocked(locked)
+        let lock = uiLock
+        guard lock != appliedUILock else { return }
+        appliedUILock = lock
+        uiLocker?.setUILock(lock)
     }
 
     /// Called from the junction with the path the user picked.

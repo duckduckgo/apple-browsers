@@ -82,13 +82,13 @@ struct DuckAIOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The UI is locked until Fire is used", .timeLimit(.minutes(1)))
-    func uiLockedUntilFire() {
-        #expect(sut.isUILocked)
+    @Test("Only Fire is usable until Fire is used", .timeLimit(.minutes(1)))
+    func uiLockedExceptFireUntilFire() {
+        #expect(sut.uiLock == .locked(except: [.fire]))
 
         progress.fireButtonUsedOnce = true
 
-        #expect(!sut.isUILocked)
+        #expect(sut.uiLock == UserInteractionLock.none)
     }
 
     @available(iOS 16, macOS 13, *)

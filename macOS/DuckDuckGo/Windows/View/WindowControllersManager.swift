@@ -132,8 +132,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
-    /// The window contextual onboarding locked, so the unlock reaches it even if another window is in front.
-    private weak var onboardingLockedWindowController: MainWindowController?
+    /// The one lock on browser interaction during onboarding. Windows and menus read it.
+    private(set) var userInteractionLock = UserInteractionLock.none
+    /// The window that holds the lock, so the unlock reaches it even if another window is in front.
+    private weak var lockedWindowController: MainWindowController?
 
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
@@ -661,21 +663,26 @@ extension WindowControllersManagerProtocol {
 
 extension WindowControllersManager: WebNotificationTabFinding {}
 
+extension WindowControllersManager {
+    /// Locks `windowController` (by default the window already locked, else the one in front), or unlocks the locked window.
+    func setUserInteractionLock(_ lock: UserInteractionLock, in windowController: MainWindowController? = nil) {
+        let target = lock.isLocked ? (windowController ?? lockedWindowController ?? mainWindowController) : lockedWindowController
+        userInteractionLock = lock
+        lockedWindowController = lock.isLocked ? target : nil
+        target?.userInteraction(lock: lock)
+    }
+}
+
 extension WindowControllersManager: @preconcurrency ContextualOnboardingUILocking {
-    func setUILocked(_ locked: Bool) {
-        let windowController = locked ? mainWindowController : onboardingLockedWindowController
-        onboardingLockedWindowController = locked ? windowController : nil
-        guard let windowController else { return }
-        windowController.userInteraction(prevented: locked)
-        // Fire stays enabled: it deletes the chat and unlocks the UI.
-        windowController.mainViewController.tabBarViewController.fireButton.isEnabled = true
+    func setUILock(_ lock: UserInteractionLock) {
+        setUserInteractionLock(lock)
     }
 }
 
 extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     func updatePreventUserInteraction(prevent: Bool) {
-        mainWindowController?.userInteraction(prevented: prevent)
+        setUserInteractionLock(prevent ? .locked() : .none)
     }
 
     @MainActor

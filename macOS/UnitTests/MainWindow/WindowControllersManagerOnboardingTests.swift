@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -73,11 +74,70 @@ final class WindowControllersManagerOnboardingTests: XCTestCase {
         XCTAssertFalse(viewModel.tabCollection.contains(tab: onboardingTab))
         XCTAssertEqual(viewModel.tabCollection.tabs.count, 2)
     }
+
+    func testDuckAILock_LocksTheWindowButLeavesFireEnabled() {
+        let windowController = registerLoadedWindow()
+
+        sut.setUILock(.locked(except: [.fire]))
+
+        XCTAssertEqual(sut.userInteractionLock, .locked(except: [.fire]))
+        XCTAssertFalse(windowController.mainViewController.tabCollectionViewModel.changesEnabled)
+        XCTAssertTrue(windowController.mainViewController.tabBarViewController.fireButton.isEnabled)
+    }
+
+    func testOnboardingLock_LocksFireToo() {
+        let windowController = registerLoadedWindow()
+
+        sut.updatePreventUserInteraction(prevent: true)
+
+        XCTAssertEqual(sut.userInteractionLock, .locked())
+        XCTAssertFalse(windowController.mainViewController.tabBarViewController.fireButton.isEnabled)
+    }
+
+    func testLock_DisablesTheWindowMenuItemsUntilUnlocked() {
+        let mainViewController = registerLoadedWindow().mainViewController
+        let newTab = NSMenuItem(title: "", action: #selector(MainViewController.newTab(_:)), keyEquivalent: "")
+        let sidebar = NSMenuItem(title: "", action: #selector(MainViewController.toggleDuckAISidebar(_:)), keyEquivalent: "")
+
+        sut.setUILock(.locked(except: [.fire]))
+
+        XCTAssertFalse(mainViewController.validateMenuItem(newTab))
+        XCTAssertFalse(mainViewController.validateMenuItem(sidebar))
+
+        sut.setUILock(UserInteractionLock.none)
+
+        XCTAssertTrue(mainViewController.validateMenuItem(newTab))
+        XCTAssertTrue(mainViewController.validateMenuItem(sidebar))
+    }
+
+    func testUnlock_ReachesTheLockedWindowWhenAnotherIsInFront() {
+        let lockedWindowController = registerLoadedWindow()
+        sut.setUILock(.locked(except: [.fire]))
+        (lockedWindowController.window as? MockWindow)?.isMainWindow = false
+        let frontWindowController = registerLoadedWindow()
+
+        sut.setUILock(UserInteractionLock.none)
+
+        XCTAssertEqual(sut.userInteractionLock, UserInteractionLock.none)
+        XCTAssertTrue(lockedWindowController.mainViewController.tabCollectionViewModel.changesEnabled)
+        XCTAssertTrue(lockedWindowController.mainViewController.tabBarViewController.fireButton.isEnabled)
+        XCTAssertTrue(frontWindowController.mainViewController.tabCollectionViewModel.changesEnabled)
+    }
 }
 
 private extension WindowControllersManagerOnboardingTests {
 
+    func registerLoadedWindow() -> MainWindowController {
+        let windowController = registerWindowController(tabs: [Tab(content: .newtab)], selectedIndex: 0)
+        _ = windowController.mainViewController.view
+        return windowController
+    }
+
     func registerWindow(tabs: [Tab], selectedIndex: Int) -> TabCollectionViewModel {
+        registerWindowController(tabs: tabs, selectedIndex: selectedIndex).mainViewController.tabCollectionViewModel
+    }
+
+    func registerWindowController(tabs: [Tab], selectedIndex: Int) -> MainWindowController {
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), windowControllersManager: WindowControllersManagerMock())
         tabCollectionViewModel.select(at: .unpinned(selectedIndex))
         let mainViewController = MainViewController(
@@ -94,6 +154,6 @@ private extension WindowControllersManagerOnboardingTests {
         )
         windowController.window = window
         sut.register(windowController)
-        return tabCollectionViewModel
+        return windowController
     }
 }

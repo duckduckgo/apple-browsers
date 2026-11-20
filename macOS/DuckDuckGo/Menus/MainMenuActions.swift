@@ -1982,6 +1982,10 @@ extension MainViewController: NSMenuItemValidation {
         guard fireViewController.fireViewModel.fire.burningData == nil else {
             return true
         }
+        // While onboarding locks the window, none of its menu actions are allowed. Fire's are handled by AppDelegate.
+        guard allowsUserInteraction else {
+            return false
+        }
         switch menuItem.action {
         // Back/Forward
         case #selector(MainViewController.back(_:)):
@@ -2141,16 +2145,24 @@ extension AppDelegate: NSMenuItemValidation {
             #selector(AppDelegate.openLocation(_:)),
             #selector(AppDelegate.openPreferences),
             #selector(AppDelegate.showManageBookmarks(_:)),
-            #selector(AppDelegate.openImportBrowserDataWindow(_:)):
+            #selector(AppDelegate.openImportBrowserDataWindow(_:)),
+            #selector(AppDelegate.openImportBookmarksWindow(_:)),
+            #selector(AppDelegate.openImportPasswordsWindow(_:)),
+            #selector(AppDelegate.recentlyClosedAction(_:)),
+            #selector(AppDelegate.openHistoryEntryVisit(_:)):
             return isUserInteractionAllowed
+
+        // Delete All History opens the Fire dialog
+        case #selector(AppDelegate.clearAllHistory(_:)):
+            return windowControllersManager.userInteractionLock.allows(.fire)
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
-            return recentlyClosedCoordinator.canReopenRecentlyClosedTab
+            return isUserInteractionAllowed && recentlyClosedCoordinator.canReopenRecentlyClosedTab
 
         // Reopen All Windows and Tabs From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):
-            return stateRestorationManager.canRestoreLastSessionState
+            return isUserInteractionAllowed && stateRestorationManager.canRestoreLastSessionState
 
         // Enables and disables export bookmarks items
         case #selector(AppDelegate.openExportBookmarks(_:)):
@@ -2174,8 +2186,9 @@ extension AppDelegate: NSMenuItemValidation {
     }
 
     @MainActor
+    @MainActor
     private var isUserInteractionAllowed: Bool {
-        OnboardingActionsManager.isOnboardingFinished
+        !windowControllersManager.userInteractionLock.isLocked
     }
 
     private var areTherePasswords: Bool {

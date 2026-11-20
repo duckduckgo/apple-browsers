@@ -53,30 +53,30 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The search path never locks the UI", .timeLimit(.minutes(1)))
     func searchPathDoesNotLock() {
-        #expect(!manager.isUILocked)
+        #expect(manager.uiLock == UserInteractionLock.none)
 
         manager.startPath(.search)
         manager.state = .ongoing
         manager.fireButtonUsed()
         manager.state = .onboardingCompleted
 
-        #expect(!manager.isUILocked)
+        #expect(manager.uiLock == UserInteractionLock.none)
         #expect(uiLocker.calls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The Duck.ai path locks the UI once, until Fire is used", .timeLimit(.minutes(1)))
+    @Test("The Duck.ai path locks all but Fire once, until Fire is used", .timeLimit(.minutes(1)))
     func duckAIPathLocksUntilFire() {
         manager.startPath(.duckAI)
         manager.state = .ongoing
 
-        #expect(manager.isUILocked)
-        #expect(uiLocker.calls == [true])
+        #expect(manager.uiLock == .locked(except: [.fire]))
+        #expect(uiLocker.calls == [.locked(except: [.fire])])
 
         manager.fireButtonUsed()
 
-        #expect(!manager.isUILocked)
-        #expect(uiLocker.calls == [true, false])
+        #expect(manager.uiLock == UserInteractionLock.none)
+        #expect(uiLocker.calls == [.locked(except: [.fire]), UserInteractionLock.none])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -87,8 +87,8 @@ struct ContextualDialogsManagerPathTests {
 
         manager.state = newState
 
-        #expect(!manager.isUILocked)
-        #expect(uiLocker.calls == [true, false])
+        #expect(manager.uiLock == UserInteractionLock.none)
+        #expect(uiLocker.calls == [.locked(except: [.fire]), UserInteractionLock.none])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -126,9 +126,9 @@ struct ContextualDialogsManagerPathTests {
 }
 
 final class CapturingUILocker: ContextualOnboardingUILocking {
-    private(set) var calls: [Bool] = []
+    private(set) var calls: [UserInteractionLock] = []
 
-    func setUILocked(_ locked: Bool) {
-        calls.append(locked)
+    func setUILock(_ lock: UserInteractionLock) {
+        calls.append(lock)
     }
 }

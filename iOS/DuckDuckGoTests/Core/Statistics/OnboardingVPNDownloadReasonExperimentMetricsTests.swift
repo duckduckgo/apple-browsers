@@ -84,13 +84,13 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
     // MARK: - Per download reason
 
-    @Test("App use fires per reason on D1, D5-7 and D8-14", .timeLimit(.minutes(1)))
+    @Test("App use fires per reason on D0, D1, D5-7 and D8-14", .timeLimit(.minutes(1)))
     func appUseByReason() {
         reasonToken = "vpn"
 
         makeSUT().fireAppUseMetrics()
 
-        #expect(windows(for: "download_reason_app_use_vpn", threshold: 1) == [1...1, 5...7, 8...14])
+        #expect(windows(for: "download_reason_app_use_vpn", threshold: 1) == [0...0, 1...1, 5...7, 8...14])
         #expect(thresholdCalls.allSatisfy { $0.metric == "download_reason_app_use_vpn" })
         #expect(subfeatureIDs == ["onboardingVPNDownloadReasonExperiment"])
     }

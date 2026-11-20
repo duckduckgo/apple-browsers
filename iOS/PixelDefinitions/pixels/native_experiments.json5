@@ -50,23 +50,23 @@
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_app_use_search": {
-                    "description": "App use retention for the 'search' download-reason segment on D1, D5-7 and D8-14",
+                    "description": "App use retention for the 'search' download-reason segment on D0, D1, D5-7 and D8-14",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_ai-chat": {
-                    "description": "App use retention for the 'ai-chat' download-reason segment on D1, D5-7 and D8-14",
+                    "description": "App use retention for the 'ai-chat' download-reason segment on D0, D1, D5-7 and D8-14",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_no-ai": {
-                    "description": "App use retention for the 'no-ai' download-reason segment on D1, D5-7 and D8-14",
+                    "description": "App use retention for the 'no-ai' download-reason segment on D0, D1, D5-7 and D8-14",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_ad-blocking": {
-                    "description": "App use retention for the 'ad-blocking' download-reason segment on D1, D5-7 and D8-14",
+                    "description": "App use retention for the 'ad-blocking' download-reason segment on D0, D1, D5-7 and D8-14",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_vpn": {
-                    "description": "App use retention for the 'vpn' download-reason segment on D1, D5-7 and D8-14",
+                    "description": "App use retention for the 'vpn' download-reason segment on D0, D1, D5-7 and D8-14",
                     "enum": ["1"]
                 },
                 "download_reason_ai_prompt_search": {

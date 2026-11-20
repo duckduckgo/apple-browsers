@@ -57,8 +57,9 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
     typealias ThresholdWindows = [NumberOfCalls: [ConversionWindow]]
 
     enum Windows {
-        /// Per download reason. D0 is left out: every user uses the app on the day they install it.
-        static let appUseByReason: ThresholdWindows = [1: [1...1, 5...7, 8...14]]
+        /// Per download reason. Unlike the standard `app_use`, D0 is included: users are enrolled during onboarding,
+        /// after the app's first foreground, so D0 counts users who come back to the app later on their first day.
+        static let appUseByReason: ThresholdWindows = [1: [0...0, 1...1, 5...7, 8...14]]
         static let searchByReason: ThresholdWindows = [
             1: [0...0, 1...1, 5...7, 8...14],
             4: [5...7],

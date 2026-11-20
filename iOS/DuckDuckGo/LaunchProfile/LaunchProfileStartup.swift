@@ -19,18 +19,19 @@
 
 #if DEBUG || ALPHA
 
+import AIChat
 import Core
 import Foundation
 import LaunchProfile
 import os.log
 import UIKit
 
-/// Applies `-launchProfile` at the top of `didFinishLaunching`, before any dependency is built,
+/// Applies `-launchProfile` on the way into `Launching`, before any dependency is built,
 /// so every service reads the profile's state on its first read.
 @MainActor
 enum LaunchProfileStartup {
 
-    static func applyIfRequested(arguments: [String] = ProcessInfo.processInfo.arguments) {
+    static func applyIfNeeded(arguments: [String] = ProcessInfo.processInfo.arguments) {
         let outcome: LaunchProfileOutcome
         do {
             guard let profile = try LaunchProfile.load(arguments: arguments) else { return }
@@ -42,14 +43,17 @@ enum LaunchProfileStartup {
     }
 
     private static func liveSettings() -> LaunchSettings {
-        IOSLaunchSettings.make(
+        IOSLaunchSettings.make(.init(
             internalUserStore: InternalUserStore(),
             flagOverridesNeedInternalUser: !LaunchOptionsHandler().isUITesting,
-            resetAppState: { AppStateReset().reset() },
             setLaunchArgument: setForThisLaunch(_:forKey:),
             tabsPersistence: { try TabsModelPersistence() },
-            isPad: UIDevice.current.userInterfaceIdiom == .pad
-        )
+            isPad: UIDevice.current.userInterfaceIdiom == .pad,
+            appSettings: AppUserDefaults(),
+            appDefaults: .app,
+            appConfigurationDefaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
+            aiChatDebugSettings: AIChatDebugSettings()
+        ))
     }
 
     /// Reads exactly like a launch argument: the argument domain is never saved, so the value lasts one launch.

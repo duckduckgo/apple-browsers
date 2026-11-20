@@ -218,7 +218,7 @@ extension LaunchOptionsHandler {
 extension LaunchOptionsHandler {
 
     /// `-clearAllDefaults` wipes saved state. Called first at launch, so a launch profile and every service start from it.
-    public func resetAppStateIfRequested() {
+    public func resetAppStateIfNeeded() {
         guard arguments.contains("-clearAllDefaults") else { return }
         AppStateReset(userDefaults: userDefaults).reset()
     }

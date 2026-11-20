@@ -36,15 +36,44 @@ public struct LaunchSetting {
                                   requires requirements: [String: LaunchProfileValue] = [:],
                                   validate: @escaping (Value) throws -> Void = { _ in },
                                   write: @escaping (Value) throws -> Void) {
+        self.init(key, summary: summary, requires: requirements, parse: { (value: Value) in
+            try validate(value)
+            return value
+        }, write: write)
+    }
+
+    /// For values the app stores as a different type than the JSON holds, for example a name that maps to an enum case.
+    public init<JSONValue: Decodable, Value>(_ key: String,
+                                             summary: String,
+                                             requires requirements: [String: LaunchProfileValue] = [:],
+                                             parse: @escaping (JSONValue) throws -> Value,
+                                             write: @escaping (Value) throws -> Void) {
         self.key = key
         self.summary = summary
         self.requirements = requirements
-        self.valueType = String(describing: Value.self)
+        self.valueType = String(describing: JSONValue.self)
         self.prepare = { json in
-            let value = try json.decoded(as: Value.self)
-            try validate(value)
+            let value = try parse(json.decoded(as: JSONValue.self))
             return { try write(value) }
         }
+    }
+
+    /// A setting whose JSON value names one of `options`, for example `"dark"` for a theme.
+    public static func choice<Option, Name: Decodable & Equatable & CustomStringConvertible>(
+        _ key: String,
+        summary: String,
+        options: [Option],
+        name: @escaping (Option) -> Name,
+        write: @escaping (Option) throws -> Void
+    ) -> LaunchSetting {
+        let names = options.map(name)
+        let allowed = names.map(\.description).joined(separator: ", ")
+        return LaunchSetting(key, summary: "\(summary) One of: \(allowed).", parse: { (chosen: Name) in
+            guard let index = names.firstIndex(of: chosen) else {
+                throw LaunchSettingInvalidValue("use one of \(allowed).")
+            }
+            return options[index]
+        }, write: write)
     }
 }
 

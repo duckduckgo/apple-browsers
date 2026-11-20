@@ -19,6 +19,7 @@
 
 #if DEBUG || ALPHA
 
+import AIChat
 import Common
 import Configuration
 import Core
@@ -28,39 +29,47 @@ import LaunchProfile
 import PrivacyConfig
 
 /// Every key a `-launchProfile` can set on iOS. Settings apply in the order listed in `make`.
-/// To add a key, add a factory here that takes only the store it writes, and list it in `make`.
+/// To add a key, add a factory that takes only the store it writes and list it in `make`, or in the group it belongs to:
+/// `IOSLaunchSettings+Settings.swift` for the Settings screen, `+DuckAI.swift` for Duck.ai, `+Debug.swift` for the Debug menu.
 @MainActor
 enum IOSLaunchSettings {
 
     /// Sets a value for this launch only, exactly as passing `-<key> <value>` would.
     typealias SetLaunchArgument = (_ value: String, _ key: String) -> Void
 
-    static func make(internalUserStore: InternalUserStoring,
-                     flagOverridesNeedInternalUser: Bool,
-                     resetAppState: @escaping () -> Void,
-                     setLaunchArgument: @escaping SetLaunchArgument,
-                     tabsPersistence: @escaping () throws -> TabsModelPersisting,
-                     isPad: Bool) -> LaunchSettings {
-        let flagRequirements = flagOverridesNeedInternalUser ? requiresInternalUser : [:]
+    /// The stores launch keys write to. Live values come from `LaunchProfileStartup`; tests pass their own.
+    struct Dependencies {
+        var internalUserStore: InternalUserStoring
+        var flagOverridesNeedInternalUser: Bool
+        var setLaunchArgument: SetLaunchArgument
+        var tabsPersistence: () throws -> TabsModelPersisting
+        var isPad: Bool
+        var appSettings: AppSettings
+        var appDefaults: UserDefaults
+        /// The app-configuration group: Duck.ai settings and custom configuration URLs.
+        var appConfigurationDefaults: UserDefaults
+        var aiChatDebugSettings: AIChatDebugSettingsHandling
+    }
+
+    static func make(_ dependencies: Dependencies) -> LaunchSettings {
+        let flagRequirements = dependencies.flagOverridesNeedInternalUser ? requiresInternalUser : [:]
         return LaunchSettings(
-            [Self.resetAppState(reset: resetAppState),
-             internalUser(store: internalUserStore),
-             onboardingCompleted(setLaunchArgument: setLaunchArgument)]
-            + featureFlags(setLaunchArgument: setLaunchArgument, requires: flagRequirements)
-            + experiments(setLaunchArgument: setLaunchArgument, requires: flagRequirements)
-            + [privacyConfigURL(setLaunchArgument: setLaunchArgument),
-               tabs(persistence: tabsPersistence, isPad: isPad)]
+            [internalUser(store: dependencies.internalUserStore),
+             onboardingCompleted(setLaunchArgument: dependencies.setLaunchArgument)]
+            + featureFlags(setLaunchArgument: dependencies.setLaunchArgument, requires: flagRequirements)
+            + experiments(setLaunchArgument: dependencies.setLaunchArgument, requires: flagRequirements)
+            + [privacyConfigURL(setLaunchArgument: dependencies.setLaunchArgument)]
+            + settingsScreen(dependencies.appSettings)
+            + duckAI(dependencies.appConfigurationDefaults)
+            + debugMenu(appSettings: dependencies.appSettings,
+                        appDefaults: dependencies.appDefaults,
+                        aiChatDebugSettings: dependencies.aiChatDebugSettings,
+                        customConfigurationURLs: CustomConfigurationURLStorage(defaults: dependencies.appConfigurationDefaults))
+            + [tabs(persistence: dependencies.tabsPersistence, isPad: dependencies.isPad)]
         )
     }
 
-    private static let requiresInternalUser: [String: LaunchProfileValue] = ["internalUser": .bool(true)]
-
-    static func resetAppState(reset: @escaping () -> Void) -> LaunchSetting {
-        LaunchSetting("resetAppState",
-                      summary: "true deletes saved settings, flag overrides, statistics and tabs before the rest of the profile applies.") { (shouldReset: Bool) in
-            if shouldReset { reset() }
-        }
-    }
+    static let requiresInternalUser: [String: LaunchProfileValue] = ["internalUser": .bool(true)]
 
     static func internalUser(store: InternalUserStoring) -> LaunchSetting {
         LaunchSetting("internalUser", summary: "Makes the app treat this user as internal, which feature flag overrides need.") { (isInternal: Bool) in
@@ -75,6 +84,7 @@ enum IOSLaunchSettings {
         }
     }
 
+    /// Saved, not one launch: `LaunchOptionsHandler.applyFlagOverrides` copies these arguments into the override store.
     static func featureFlags(setLaunchArgument: @escaping SetLaunchArgument, requires requirements: [String: LaunchProfileValue]) -> [LaunchSetting] {
         FeatureFlag.allCases.filter(\.supportsLocalOverriding).map { flag in
             LaunchSetting("featureFlags.\(flag.rawValue)",
@@ -120,9 +130,7 @@ enum IOSLaunchSettings {
         LaunchSetting("tabs",
                       summary: "Replaces the open tabs with these URLs and closes Fire tabs; the last one is selected.",
                       validate: { (urls: [URL]) in
-            guard urls.allSatisfy(\.isWebPage) else {
-                throw LaunchSettingInvalidValue("use http or https URLs, like https://example.com.")
-            }
+            try urls.forEach(requireWebPage)
         }, write: { urls in
             let tabs = urls.map { Tab(link: Link(title: nil, url: $0), desktop: isPad, fireTab: false) }
             let model = TabsModel(tabs: tabs, currentIndex: max(tabs.count - 1, 0), desktop: isPad)
@@ -132,15 +140,14 @@ enum IOSLaunchSettings {
         })
     }
 
+    static func requireWebPage(_ url: URL) throws {
+        guard (url.isHttp || url.isHttps) && url.host?.isEmpty == false else {
+            throw LaunchSettingInvalidValue("use http or https URLs, like https://example.com.")
+        }
+    }
+
     private static func cohortIDs<Cohort: FeatureFlagCohortDescribing>(of type: Cohort.Type) -> [String] {
         Cohort.allCases.map(\.rawValue)
-    }
-}
-
-private extension URL {
-
-    var isWebPage: Bool {
-        (isHttp || isHttps) && host?.isEmpty == false
     }
 }
 

@@ -21,7 +21,7 @@ import FeatureFlags_iOS
 import Foundation
 
 /// Deletes saved settings, feature flag overrides, statistics, tabs and app files, so the next launch starts like a fresh install.
-/// Used by the `-clearAllDefaults` launch argument and by launch profiles.
+/// Used by the `-clearAllDefaults` launch argument.
 public struct AppStateReset {
 
     private let userDefaults: UserDefaults

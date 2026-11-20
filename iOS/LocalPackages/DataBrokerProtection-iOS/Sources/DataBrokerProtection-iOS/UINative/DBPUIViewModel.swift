@@ -48,6 +48,9 @@ public final class DBPUIViewModel {
     private let freeScanEntryPoint: FreemiumDBPEntryPoint?
     private let emailOptOutFeatureFlagger: EmailOptOutFeatureFlagging
     private let emailComposer: DBPOptOutEmailComposing
+#if DEBUG
+    var emailOptOutDebugSettings = DBPEmailOptOutDebugSettings()
+#endif
 
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
@@ -271,13 +274,18 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     }
 
     public func canSendEmail() -> Bool {
-        emailComposer.canSendMail
+        emailComposer.canSendMail || isCanSendEmailForcedForDebug
     }
 
     @MainActor
     public func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult {
         guard isEmailOptOutEnabled() else { return DBPUIOpenOptOutEmailResult(sent: false) }
 
+#if DEBUG
+        if !emailComposer.canSendMail, isCanSendEmailForcedForDebug {
+            return DBPUIOpenOptOutEmailResult(sent: await emailComposer.simulateSend(request))
+        }
+#endif
         let result = await emailComposer.compose(request)
         return DBPUIOpenOptOutEmailResult(sent: result == .sent)
     }
@@ -290,5 +298,13 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
         } catch {
             Logger.dataBrokerProtection.error("Failed to record the user-sent opt-out email: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private var isCanSendEmailForcedForDebug: Bool {
+#if DEBUG
+        privacyConfigManager.internalUserDecider.isInternalUser && emailOptOutDebugSettings.isCanSendEmailForced
+#else
+        false
+#endif
     }
 }

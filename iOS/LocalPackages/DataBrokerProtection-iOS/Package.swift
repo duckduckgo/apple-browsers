@@ -19,6 +19,12 @@
 //
 
 import PackageDescription
+import Foundation
+
+// Set by the "Build and test" step in .github/workflows/ios_pr_checks.yml. Under CI the package builds
+// in release configuration (SPM maps the CI configuration to .release), so `.when(configuration: .debug)` below
+// doesn't fire and the DEBUG-only debug menu code wouldn't compile. This forces DEBUG on for that CI build.
+let forceDebug = ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1"
 
 let package = Package(
     name: "DataBrokerProtection-iOS",
@@ -57,7 +63,7 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
-            ]
+            ] + (forceDebug ? [.define("DEBUG")] : [])
         ),
         .testTarget(
             name: "DataBrokerProtection-iOSTests",

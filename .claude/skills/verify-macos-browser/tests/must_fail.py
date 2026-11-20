@@ -2,7 +2,8 @@
 
 Run it after changing harness.py, vhelp.py, verify.sh or ax.swift, in a VM (it quits and relaunches the app):
     bin/verify-macos-browser prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1
-It passes only when every probe was refused as it should be; a probe that wasn't fails the run and names it. To trigger
+It passes only when every probe was refused as it should be; a probe that wasn't fails the run and names it. It brings
+Finder to the front for a moment, and its report's Warnings must list the deliberate no-op click. To trigger
 doctor's refusals it edits README.md, adds an untracked file, and rewrites this run's build.json, launch.json and
 pixel_stream.pid for a moment; each is restored in a finally block, so a failure or Ctrl-C leaves the checkout as it was.
 """
@@ -17,7 +18,7 @@ import vhelp
 
 FLAGS = {}
 LIVE = []
-AUTOMATION = False
+AUTOMATION = True   # for the fixture page and url()
 
 
 def refused(mac, what, fn, expect):
@@ -73,6 +74,20 @@ def tabs(mac):
     return [line for line in mac.find("TabBarViewItem") if " id=TabBarViewItem " in line]
 
 
+def on_target(mac, *command):
+    """Run a command where the app runs: in its VM over ssh, or on this Mac."""
+    vm = json.loads(read(os.path.join(mac.evidence, "launch.json"))).get("vm")
+    subprocess.run(["ssh", "-o", "BatchMode=yes", vm, *command] if vm else list(command), check=True)
+
+
+def wait_front(mac, answer):
+    """Wait until `ax front` answers `answer` ("yes", "no" or "APP NOT RUNNING")."""
+    for _ in range(20):
+        if mac._sh("ax", "front")[1].startswith(answer):
+            return
+        time.sleep(0.5)
+
+
 def doctor_ok(mac, what):
     mac.check(f"doctor accepts {what}", mac._do("doctor").splitlines()[-1] == "OK")
 
@@ -91,6 +106,40 @@ def run(mac):
     refused(mac, "press a match that isn't there (nth)", lambda: mac.press("TabBarViewItem", nth=5), "NOT FOUND")
     refused(mac, "an unknown key", lambda: mac.key("cmd+nosuchkey"), "unknown key")
     mac.check("tabs unchanged by the refused actions", tabs(mac) == before, dict(before=before, after=tabs(mac)))
+
+    # The fixture page: targets the user couldn't act on, typing with nothing focused, and an action that changes nothing.
+    token = mac.token("mf")
+    mac.navigate(mac.fixture_url(token))
+    mac.expect_url_contains(token)
+    mac.eventually("the fixture page shows", lambda: mac.find("bottom marker"))
+
+    def page():
+        return mac.url(), tabs(mac), mac.find("status")
+    before = page()
+    refused(mac, "press a disabled button", lambda: mac.press("disabled button"), "DISABLED")
+    refused(mac, "click a disabled button", lambda: mac.click("disabled button"), "DISABLED")
+    refused(mac, "press an element scrolled out of the window", lambda: mac.press("bottom marker"), "OFF WINDOW")
+    refused(mac, "click an element scrolled out of the window", lambda: mac.click("bottom marker"), "OFF WINDOW")
+    mac.click("token")   # the page takes the focus from the address bar; nothing focused there takes text
+    warned = len(mac.rec.warnings)
+    mac.click("token")   # again: nothing changes, so it must be listed under Warnings
+    mac.check("an action that changed nothing is listed under Warnings",
+              len(mac.rec.warnings) == warned + 1 and "click('token') changed nothing" in mac.rec.warnings[-1],
+              mac.rec.warnings)
+    refused(mac, "type with nothing focused that takes text", lambda: mac.type("x"), "NOT FOCUSED")
+    mac.check("the page unchanged by the refused actions", page() == before, dict(before=before, after=page()))
+
+    # Another app in front: nothing is read or done, so a "gone" read can't pass on a closed popover or a lost focus.
+    on_target(mac, "open", "-a", "Finder")
+    wait_front(mac, "no")
+    refused(mac, "press while another app is in front", lambda: mac.press("TabBarViewItem", nth=0), "NOT FRONTMOST")
+    refused(mac, "type while another app is in front", lambda: mac.type("x"), "NOT FRONTMOST")
+    refused(mac, "an AX read while another app is in front", lambda: mac.find("TabBarViewItem"), "NOT FRONTMOST")
+    refused(mac, "a URL read while another app is in front", lambda: mac.url(), "NOT FRONTMOST")
+    mac._do("ax", "activate")
+    wait_front(mac, "yes")
+    mac.check("tabs unchanged while another app was in front", tabs(mac) == before[1],
+              dict(before=before[1], after=tabs(mac)))
 
     flags = os.path.join(ev, "flags")
     pinned = read(flags)
@@ -124,16 +173,10 @@ def run(mac):
     mac.expect_no_pixel("m_mac_verify_no_such_pixel", within=1)   # the restored stream still answers
 
     # Last, as it relaunches the app: with the app gone nothing passes, and doctor refuses.
-    launch = json.loads(read(os.path.join(ev, "launch.json")))
-    vm = launch.get("vm")
-    subprocess.run(["ssh", "-o", "BatchMode=yes", vm, "kill", str(launch["pid"])] if vm else ["kill", str(launch["pid"])],
-                   check=True)
-    for _ in range(20):
-        if mac._sh("ax", "front")[1].startswith("APP NOT RUNNING"):
-            break
-        time.sleep(0.5)
+    on_target(mac, "kill", str(json.loads(read(os.path.join(ev, "launch.json")))["pid"]))
+    wait_front(mac, "APP NOT RUNNING")
     refused(mac, "a check after the app quit", lambda: mac.eventually("tabs closed", lambda: mac.tab_count() == 0,
                                                                        timeout=2), "APP NOT RUNNING")
     refused(mac, "doctor after the app quit", lambda: mac._do("doctor"), "NOT RUNNING")
-    mac._do("build", mac.checkout)
+    mac._do("build", mac.checkout, "--automation")
     doctor_ok(mac, "the relaunched build")

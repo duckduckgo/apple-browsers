@@ -317,23 +317,34 @@ class Mac:
         return out
 
     # act --------------------------------------------------------------------
+    def _act(self, what, *args):
+        """One action through ax. Its last line says whether the accessibility tree changed; one that changed nothing
+        is a Warning, not a failure: the proof's own reads must then show the effect."""
+        out = self._do("ax", *args)
+        if out.splitlines()[-1:] == ["changed=no"]:
+            self.rec.warnings.append(f"{what} changed nothing in the accessibility tree: the proof's own reads must "
+                                     "show its effect")
+        return out
+
     def press(self, target, nth=None):
-        """AX press on the one element `target` names (id, then title); several matches are refused unless nth=."""
-        return self._do("ax", "press", target, *([f"nth={nth}"] if nth is not None else []))
+        """AX press on the one element `target` names (id, then title); several matches are refused unless nth=, and
+        a disabled or off-window target is refused."""
+        return self._act(f"press({target!r})", "press", target, *([f"nth={nth}"] if nth is not None else []))
 
     def click(self, target, nth=None):
         """A real mouse click at the element's center."""
-        return self._do("ax", "clickel", target, *([f"nth={nth}"] if nth is not None else []))
+        return self._act(f"click({target!r})", "clickel", target, *([f"nth={nth}"] if nth is not None else []))
 
     def type(self, text):
-        return self._do("ax", "type", text)
+        """Typed into the focused text element; refused when nothing that takes text has keyboard focus."""
+        return self._act(f"type({text!r})", "type", text)
 
     def key(self, combo):
         """A key with modifiers, e.g. "cmd+t", "escape", "cmd+shift+n"."""
         *mods, key = combo.lower().split("+")
         if key not in KEYS or any(m not in MODIFIERS for m in mods):
             raise self._error(f"key({combo!r}): unknown key or modifier (keys: {sorted(KEYS)}, modifiers: {MODIFIERS})")
-        return self._do("ax", "key", KEYS[key], *mods)
+        return self._act(f"key({combo!r})", "key", KEYS[key], *mods)
 
     # read -------------------------------------------------------------------
     def find(self, target):
@@ -659,7 +670,7 @@ def _ignore(_signum, _frame):
 
 def _alive(pid_file):
     try:
-        os.kill(int(open(pid_file).read().strip()), 0)
+        os.kill(int(open(pid_file).readline()), 0)   # the first line; the rest is its identity (verify.sh)
         return True
     except (OSError, ValueError):
         return False

@@ -34,15 +34,18 @@ extension MainViewController {
     }
 
     /// The "Chats" entry points (address bar menu, app menu, contextual "View all") load `sidebar=open`. The page would
-    /// open its own chats drawer under this list too, so the page loads without it and the request opens this list.
-    /// Returns the URL to load and whether it asked for the list.
-    func routingChatListRequestToIPadSidebar(_ url: URL) -> (url: URL, requestsChatList: Bool) {
+    /// open its own chats drawer under this list too, so the page loads without it; the caller opens this list instead.
+    func nativeChatListRequest(for url: URL) -> (url: URL, requestsChatList: Bool) {
         // The host check also takes a debug Duck.ai URL, which `isDuckAIURL` doesn't know.
         guard isIPadChatListSidebarAvailable,
               url.isDuckAIURL || url.host == aiChatSettings.aiChatURL.host,
               Self.requestsChatList(url) else { return (url, false) }
-        iPadChatListSidebarState.isOpen = true
         return (url.removingParameters(named: [AIChatURLParameters.sidebarName]), true)
+    }
+
+    /// The list opens when the next Duck.ai tab installs it, so a tab still being built shows it from the start.
+    func openIPadChatListSidebarOnNextInstall() {
+        iPadChatListSidebarState.isOpen = true
     }
 
     private static func requestsChatList(_ url: URL?) -> Bool {
@@ -60,12 +63,12 @@ extension MainViewController {
         sidebar.followCurrentChat(of: tab)
     }
 
-    /// Loads that skip `routingChatListRequestToIPadSidebar` (background tabs, links, history) still carry `sidebar=open`.
+    /// Loads that skip `addTab`/`loadUrl` (background tabs, links, history) still carry `sidebar=open`.
     private func openIPadChatListSidebarIfRequested(by tab: TabViewController) {
         let requestsChatList = Self.requestsChatList(tab.url ?? tab.link?.url)
         defer { tab.hasOpenedChatListSidebarFromURL = requestsChatList }
         guard requestsChatList, !tab.hasOpenedChatListSidebarFromURL else { return }
-        iPadChatListSidebarState.isOpen = true
+        openIPadChatListSidebarOnNextInstall()
     }
 
     func detachIPadChatListSidebar() {

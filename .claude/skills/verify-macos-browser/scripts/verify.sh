@@ -35,6 +35,9 @@
 set -euo pipefail
 
 BUNDLE_ID="com.duckduckgo.macos.browser.debug"
+# The app reads pinned flags (FeatureFlagLocalOverrides) from UserDefaults.appConfiguration: this app group's
+# preferences, kept in its group container, not in the $BUNDLE_ID domain.
+CONFIG_SUITE="HKE973VLUW.com.duckduckgo.macos.browser.app-configuration.debug"
 VERIFY_HOME="${VERIFY_MACOS_HOME:-$HOME/.ddg-verify-macos}"
 SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_DIR="$(cd "$SCRIPTS_DIR/.." && pwd)"
@@ -189,9 +192,13 @@ write_app_log() {
     fi
 }
 
-write_default() {  # key type value
-    on_target 'defaults write "$1" "$2" "-$3" "$4"' "$BUNDLE_ID" "$1" "$2" "$3"
-    grep -qxF "$1" "$RUN_DIR/defaults_written" 2>/dev/null || echo "$1" >> "$RUN_DIR/defaults_written"
+# On the target, sets $d to the defaults domain named by $1 (app: the app's own, config: its app-configuration group's).
+TARGET_DOMAIN='if [[ $1 == config ]]; then d="$HOME/Library/Group Containers/'"$CONFIG_SUITE"'/Library/Preferences/'"$CONFIG_SUITE"'"
+else d='"$BUNDLE_ID"'; fi; shift'
+
+write_default() {  # app|config key type value
+    on_target "$TARGET_DOMAIN"'; mkdir -p "$(dirname "$d")"; defaults write "$d" "$1" "-$2" "$3"' "$@"
+    grep -qxF "$1 $2" "$RUN_DIR/defaults_written" 2>/dev/null || echo "$1 $2" >> "$RUN_DIR/defaults_written"
 }
 
 # Resets everything a run can leave in the VM, so each run (both sides of prove --base) starts from the same state:
@@ -556,7 +563,7 @@ flag)
     worktree=$(cd "${VERIFY_WORKTREE:-.}" && pwd)
     if ! key=$(helper flag "$worktree" "$name"); then echo "$key"; exit 2; fi
     [[ "$state" == on ]] && value=true || value=false
-    write_default "$key" bool "$value"
+    write_default config "$key" bool "$value"
     { grep -v "^$name=" "$RUN_DIR/flags" 2>/dev/null || true; echo "$name=$state"; } > "$RUN_DIR/flags.tmp"
     mv "$RUN_DIR/flags.tmp" "$RUN_DIR/flags"
     echo "pinned $name $state ($key)${VM:+ in $VM}"
@@ -567,7 +574,7 @@ reset)
     ;;
 set-default)
     key=${1:?key}; type=${2:?type, e.g. bool}; value=${3:?value}
-    write_default "$key" "$type" "$value"
+    write_default app "$key" "$type" "$value"
     echo "wrote $key${VM:+ in $VM}"
     ;;
 mark)
@@ -607,8 +614,8 @@ cleanup)
     stop_stream
     pid=$(app_pid); if [[ -n "$pid" ]]; then on_target 'kill "$1"' "$pid"; echo "killed $pid${VM:+ in $VM}"; fi
     if [[ -f "$RUN_DIR/defaults_written" ]]; then
-        while read -r key; do
-            on_target 'defaults delete "$1" "$2" 2>/dev/null' "$BUNDLE_ID" "$key" && echo "deleted default $key"
+        while read -r where key; do
+            on_target "$TARGET_DOMAIN"'; defaults delete "$d" "$1" 2>/dev/null' "$where" "$key" && echo "deleted default $key"
         done < "$RUN_DIR/defaults_written"
         rm "$RUN_DIR/defaults_written"
     fi

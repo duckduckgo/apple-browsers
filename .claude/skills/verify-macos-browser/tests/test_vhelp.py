@@ -216,6 +216,21 @@ class FlagTests(unittest.TestCase):
     def test_an_overridable_flag_gets_its_override_key(self):
         self.assertEqual(run([sys.executable, "-I", VHELP, "flag", self.root, "plainFlag"]), (0, "localOverridePlainFlag\n"))
 
+    def test_a_pinned_flag_is_written_where_the_app_reads_overrides(self):
+        # A stand-in `defaults`: the real one drops writes to a group container under a made-up HOME.
+        home, bin_dir = tmp(), tmp()
+        with open(os.path.join(bin_dir, "defaults"), "w") as f:
+            f.write('#!/bin/bash\nprintf "%s\\n" "$@" > "$HOME/defaults_args"\n')
+        os.chmod(os.path.join(bin_dir, "defaults"), 0o755)
+        code, out = run([VERIFY_SH, "flag", "flag-test", "plainFlag", "on"],
+                        env={"HOME": home, "PATH": bin_dir + ":" + PATH, "VERIFY_WORKTREE": self.root,
+                             "VERIFY_MACOS_HOME": home, "VERIFY_RUN_DIR": home})
+        self.assertEqual(code, 0, out)
+        suite = "HKE973VLUW.com.duckduckgo.macos.browser.app-configuration.debug"
+        domain = os.path.join(home, "Library/Group Containers", suite, "Library/Preferences", suite)
+        self.assertEqual(read(home, "defaults_args").splitlines(), ["write", domain, "localOverridePlainFlag", "-bool", "true"])
+        self.assertEqual(read(home, "defaults_written"), "config localOverridePlainFlag\n")
+
     def test_an_unknown_flag_is_refused(self):
         code, out = self.flag("noSuchFlag")
         self.assertEqual(code, 2)

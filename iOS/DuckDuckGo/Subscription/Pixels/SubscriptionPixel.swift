@@ -39,7 +39,7 @@ enum SubscriptionCancellationEntry: String {
     case manage
 }
 
-enum SubscriptionDaysSincePurchaseBucket: String {
+enum SubscriptionDaysSincePurchaseBucket: String, Codable {
     case d1
     case d2To7 = "d2_7"
     case d8To30 = "d8_30"

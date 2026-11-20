@@ -41,7 +41,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
     func testWhenLastFavoriteIsRemovedThenEmptyModulesYieldToLogo() {
         let presentation = makePresentation()
         let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
-        host.setUsesRedesignedNewTabPageLayout(true)
+        host.setRedesignedFocusedSurface(.newTabPage)
         XCTAssertTrue(presentation.showsSearchModules)
         XCTAssertFalse(host.isShowingLogo)
 
@@ -54,7 +54,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
     func testWhenMessagesRemainAfterRemovingLastFavoriteThenModulesStayVisible() {
         let presentation = makePresentation()
         let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
-        host.setUsesRedesignedNewTabPageLayout(true)
+        host.setRedesignedFocusedSurface(.newTabPage)
 
         inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: true, hasRecents: false, resultsPending: false))
 
@@ -87,7 +87,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         for usesScrollableEscapeHatch in [false, true] {
             let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher(), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
             let parent = UIViewController()
-            host.setUsesRedesignedNewTabPageLayout(true)
+            host.setRedesignedFocusedSurface(.newTabPage)
             host.start(in: parent.view, parentViewController: parent, textPublisher: Just(""))
             defer { host.tearDown() }
             host.onContentChanged = {
@@ -129,19 +129,19 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertEqual(host?.isShowingLogo, true)
 
         for _ in 0..<3 {
-            host?.setUsesRedesignedNewTabPageLayout(true)
+            host?.setRedesignedFocusedSurface(.newTabPage)
             XCTAssertEqual(host?.isShowingLogo, true)
             XCTAssertEqual(activeSubscriptions, 2)
-            host?.setUsesRedesignedNewTabPageLayout(true)
+            host?.setRedesignedFocusedSurface(.newTabPage)
             XCTAssertEqual(activeSubscriptions, 2)
 
-            host?.setUsesRedesignedNewTabPageLayout(false)
+            host?.setRedesignedFocusedSurface(nil)
             XCTAssertEqual(host?.isShowingLogo, true)
             XCTAssertEqual(activeSubscriptions, 1)
-            host?.setUsesRedesignedNewTabPageLayout(false)
+            host?.setRedesignedFocusedSurface(nil)
             XCTAssertEqual(activeSubscriptions, 1)
         }
-        host?.setUsesRedesignedNewTabPageLayout(true)
+        host?.setRedesignedFocusedSurface(.newTabPage)
         XCTAssertEqual(activeSubscriptions, 2)
         host?.tearDown()
         XCTAssertEqual(activeSubscriptions, 1)

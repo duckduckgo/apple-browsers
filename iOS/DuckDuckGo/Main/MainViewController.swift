@@ -3987,6 +3987,7 @@ class MainViewController: UIViewController {
             }
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
+            self.refreshFocusedNewTabPagePose()
         } completion: { [weak self] _ in
             guard let self else {
                 assertionFailure()
@@ -3997,6 +3998,7 @@ class MainViewController: UIViewController {
                 isKeyboardShowing: isKeyboardShowing,
                 isShowingToolbar: isShowingToolbar,
                 targetSize: size)
+            self.refreshFocusedNewTabPagePose()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()

@@ -1285,7 +1285,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return brokerProfileQueryDataToReturn.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
     }
 
+    public var scopedProfileFetchCount = 0
+    public var scopedProfileFetchHandler: ((Int64) throws -> [BrokerProfileQueryData])?
+
     public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        scopedProfileFetchCount += 1
+        if let scopedProfileFetchHandler { return try scopedProfileFetchHandler(brokerId) }
         if let fetchAllBrokerProfileQueryDataError {
             throw fetchAllBrokerProfileQueryDataError
         }

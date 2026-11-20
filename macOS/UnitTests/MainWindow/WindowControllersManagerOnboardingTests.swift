@@ -35,7 +35,6 @@ final class WindowControllersManagerOnboardingTests: XCTestCase {
             pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
             internalUserDecider: MockInternalUserDecider(),
-            featureFlagger: MockFeatureFlagger(),
             pinningManager: MockPinningManager()
         )
     }

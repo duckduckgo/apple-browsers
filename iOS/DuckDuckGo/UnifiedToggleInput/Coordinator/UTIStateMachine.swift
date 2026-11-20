@@ -228,7 +228,7 @@ final class UTIStateMachine {
                             inputMode: TextEntryMode,
                             isToggleEnabled: Bool) -> UnifiedToggleInputCardLayout {
         guard isExpanded else {
-            if isAITabState { return .flanked(.all) }
+            if isAITabState { return .flanked(.aiTab) }
             if isContextualChatState, !contextualCollapsedAccessories.isEmpty { return .flanked(contextualCollapsedAccessories) }
             return .collapsed
         }

@@ -229,7 +229,7 @@ final class MainMenu: NSMenu {
 
     private let featureFlagger: FeatureFlagger
     private let isLazyMenuRebuild: Bool
-    private let dockCustomizer: DockCustomization
+    private let addToDockMenuAction: AddToDockMenuAction
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSuggestionsReader: AIChatSuggestionsReading
@@ -259,6 +259,7 @@ final class MainMenu: NSMenu {
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization,
+         addToDockVideoPresenter: AddToDockVideoPresenting,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          aiChatSuggestionsReader: AIChatSuggestionsReading,
@@ -281,7 +282,9 @@ final class MainMenu: NSMenu {
         self.appearancePreferences = appearancePreferences
         self.privacyConfigurationManager = privacyConfigurationManager
         self.appVersion = appVersion
-        self.dockCustomizer = dockCustomizer
+        self.addToDockMenuAction = AddToDockMenuAction(dockCustomization: dockCustomizer,
+                                                       featureFlagger: featureFlagger,
+                                                       videoPresenter: addToDockVideoPresenter)
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSuggestionsReader = aiChatSuggestionsReader
@@ -642,7 +645,7 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-        addToDockMenuItem.isHidden = !dockCustomizer.supportsAddingToDock || dockCustomizer.isAddedToDock
+        addToDockMenuItem.isHidden = !addToDockMenuAction.canShowMenuItem
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.

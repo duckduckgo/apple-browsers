@@ -715,6 +715,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
     case appStoreAddToDockOnlyCTA
 
+    /// Shows the Add to Dock instructions video before Set as Default in the App Store build, from Default Browser and Dock prompts that offer both actions.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220622522685112
+    case appStoreBothDefaultBrowserAndDockCTA
+
     /// Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220338615600254?focus=true
     case aiChatLimitExtensionPromo
@@ -1170,6 +1174,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         case .appStoreAddToDockOnlyCTA:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreAddToDockOnlyCTA))
+        case .appStoreBothDefaultBrowserAndDockCTA:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreBothDefaultBrowserAndDockCTA))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), category: .duckAI)
         case .fastTrackingParameterFilter:

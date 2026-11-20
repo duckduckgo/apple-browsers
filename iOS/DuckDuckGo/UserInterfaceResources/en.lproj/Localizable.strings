@@ -313,6 +313,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "This file type is not supported, please attach a %@.";
 
+/* accessibility label for closing the tab attachment picker without applying changes */
+"aichat.choose-tabs.close.accessibility-label" = "Close";
+
+/* accessibility label for applying the tab attachment selection */
+"aichat.choose-tabs.confirm.accessibility-label" = "Attach selected tabs";
+
 /* empty state shown when no tabs match the search query */
 "aichat.choose-tabs.no-matches" = "No matching tabs";
 

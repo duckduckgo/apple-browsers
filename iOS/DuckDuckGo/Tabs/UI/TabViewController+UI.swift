@@ -94,7 +94,6 @@ extension TabViewController {
             ? containerStackView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
             : containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor)
         containerStackViewTopConstraint = containerStackViewTop
-        containerStackViewLeadingConstraint = containerStackViewLeading
         NSLayoutConstraint.activate([
             containerStackViewTop,
             containerStackViewLeading,

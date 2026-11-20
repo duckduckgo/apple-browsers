@@ -90,6 +90,7 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { inputBarView.aiTabFireButton }
+    var aiTabChatsButton: UIButton { inputBarView.aiTabChatsButton }
 
     /// Dims the input bar for the fire-education onboarding step without affecting the fire button.
     func setOnboardingDimmed(_ dimmed: Bool) {

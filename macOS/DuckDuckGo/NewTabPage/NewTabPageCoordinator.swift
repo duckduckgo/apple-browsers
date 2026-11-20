@@ -75,7 +75,8 @@ final class NewTabPageCoordinator {
         pinningManager: PinningManager,
         fireDailyPixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) },
         promoService: PromoService? = nil,
-        dockCustomization: DockCustomization
+        dockCustomization: DockCustomization,
+        addToDockVideoPresenter: AddToDockVideoPresenting
     ) {
 
         actionsManager = NewTabPageActionsManager(
@@ -109,7 +110,8 @@ final class NewTabPageCoordinator {
             syncService: syncService,
             pinningManager: pinningManager,
             promoService: promoService,
-            dockCustomization: dockCustomization
+            dockCustomization: dockCustomization,
+            addToDockVideoPresenter: addToDockVideoPresenter
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

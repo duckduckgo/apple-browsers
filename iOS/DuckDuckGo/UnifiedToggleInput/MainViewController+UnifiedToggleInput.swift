@@ -198,6 +198,7 @@ extension MainViewController {
         }
         if isIPadFullTabChatInput {
             currentTab?.setFullTabChatInputHidden(hidesInputBar)
+            updateIPadChatListButtonPlacement()
             return
         }
         viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)
@@ -1125,8 +1126,8 @@ extension MainViewController {
     /// screen — reads the coordinator's live display state; the chrome below it still trusts `renderState`.
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
         if isIPadFullTabChatInput {
-            // iPad keeps its own address bar and tabs bar, which already carry fire and the app menu.
-            coordinator.viewController.setFlankingAccessoriesVisible([])
+            // iPad keeps its own address bar and tabs bar, which already carry fire and the app menu; only Chats can flank.
+            updateIPadChatListButtonPlacement()
             return
         }
         let isOnAITab = currentTab?.isAITab == true

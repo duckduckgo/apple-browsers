@@ -28,7 +28,11 @@ struct UnifiedToggleInputFlankingAccessories: OptionSet, Equatable {
 
     static let fire = UnifiedToggleInputFlankingAccessories(rawValue: 1 << 0)
     static let menu = UnifiedToggleInputFlankingAccessories(rawValue: 1 << 1)
+    /// iPad's Chats button, in the leading slot iPhone gives fire.
+    static let chats = UnifiedToggleInputFlankingAccessories(rawValue: 1 << 2)
     static let all: UnifiedToggleInputFlankingAccessories = [.fire, .menu]
+    /// Everything a Duck.ai tab's collapsed pill may show; the host picks which.
+    static let aiTab: UnifiedToggleInputFlankingAccessories = [.fire, .menu, .chats]
 }
 
 enum UnifiedToggleInputCardLayout: Equatable {

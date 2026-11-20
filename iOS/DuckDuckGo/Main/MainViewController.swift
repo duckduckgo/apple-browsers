@@ -9597,15 +9597,7 @@ extension MainViewController {
         ActionMessageView.present(message: message, presentationLocation: location)
     }
     
-    private func refreshUIAfterClear(trigger: FireRequest.Trigger) {
-        // Set here rather than when the burn starts, because that callback arrives only once the
-        // tabs are gone and this screen has already been rebuilt. Also set before the empty-tabs
-        // branch below: burning every tab shows the switcher first, but the page the user reaches
-        // from there is still a post-burn arrival. Consumed by the next New Tab Page attach.
-        if trigger.reportsNewTabPageArrivalAfterFire {
-            isAttachingNewTabPageAfterFire = true
-        }
-
+    private func refreshUIAfterClear() {
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             tabSwitcherController?.updateUIForSelectionMode()
@@ -9814,7 +9806,13 @@ extension MainViewController: FireExecutorDelegate {
                 
         switch fireRequest.scope {
         case .all, .fireMode, .normalMode:
-            refreshUIAfterClear(trigger: fireRequest.trigger)
+            // Set here rather than when the burn starts, because this callback arrives only once the
+            // tabs are gone and this screen has already been rebuilt. Also covers burning every tab,
+            // which shows the switcher first: the page the user reaches from there is still a post-burn
+            // arrival. Automatic clearing refreshes the UI without this, so its page reports an app open.
+            // Consumed by the next New Tab Page attach.
+            isAttachingNewTabPageAfterFire = true
+            refreshUIAfterClear()
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
             return
@@ -9862,13 +9860,13 @@ extension MainViewController: FireExecutorDelegate {
         case .autoClearOnLaunch:
             autoClearInProgress = false
             if fireRequest.options.contains(.tabs), hasLoadedInitialView, autoClearShouldRefreshUIAfterClear {
-                refreshUIAfterClear(trigger: fireRequest.trigger)
+                refreshUIAfterClear()
             }
             autoClearShouldRefreshUIAfterClear = true
         case .autoClearOnForeground:
             autoClearInProgress = false
             if autoClearShouldRefreshUIAfterClear {
-                refreshUIAfterClear(trigger: fireRequest.trigger)
+                refreshUIAfterClear()
             }
             autoClearShouldRefreshUIAfterClear = true
         case .fireModeAutoClear:

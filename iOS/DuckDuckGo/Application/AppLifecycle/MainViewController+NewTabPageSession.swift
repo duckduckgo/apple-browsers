@@ -239,21 +239,6 @@ extension MainViewController {
     }
 }
 
-extension FireRequest.Trigger {
-
-    /// Whether the New Tab Page a clear lands on is reported as `new_tab_opened_after_fire`.
-    ///
-    /// Only a burn the user asked for counts. Automatic clearing runs as the app opens, so the page it
-    /// lands on is the surface the app opened into and keeps the `app_open` trigger.
-    var reportsNewTabPageArrivalAfterFire: Bool {
-        switch self {
-        case .manualFire:
-            return true
-        case .autoClearOnLaunch, .autoClearOnForeground, .fireModeAutoClear:
-            return false
-        }
-    }
-}
 
 @MainActor
 final class NewTabPagePresentationCoordinator {

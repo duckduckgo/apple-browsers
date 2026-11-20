@@ -1116,19 +1116,6 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(wideEvent.completions.isEmpty)
     }
 
-    @available(iOS 16, *)
-    @Test("Only a burn the user asked for lands on an after-fire New Tab Page",
-          .timeLimit(.minutes(1)),
-          arguments: [
-            (FireRequest.Trigger.manualFire, true),
-            (.autoClearOnLaunch, false),
-            (.autoClearOnForeground, false),
-            (.fireModeAutoClear, false)
-          ])
-    func onlyManualFireReportsAfterFireArrival(trigger: FireRequest.Trigger, expected: Bool) {
-        #expect(trigger.reportsNewTabPageArrivalAfterFire == expected)
-    }
-
     @MainActor
     @available(iOS 16, macOS 13, *)
     @Test("Leaving the app releases a cover whose animation never reports its end", .timeLimit(.minutes(1)))

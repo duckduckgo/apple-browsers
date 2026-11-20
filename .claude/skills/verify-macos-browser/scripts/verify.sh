@@ -401,14 +401,18 @@ record)
             rect=$(ax winrect)
             nohup screencapture -v -x -R"$rect" "$mov" > "$RUN_DIR/recording.log" 2>&1 &
             recorder=$!; echo "$recorder" > "$RUN_DIR/recording.pid"
-            # Stop when the app leaves the front; stop then trims the movie to the last moment it was seen in front.
+            # Stop when the app leaves the front or its window leaves the recorded rectangle (moved, resized, closed):
+            # either way whatever is behind could show. stop then trims the movie to the last moment all was well.
             # shortcut: a whole-second clock (bash 3.2) and a 0.25 s poll, hence the 2 s margin; ScreenCaptureKit's
             # window-only capture would need neither, if a window moved over the app's rectangle must never show.
             (
                 start=$(date +%s); last=$start
                 while kill -0 "$recorder" 2>/dev/null; do
-                    if [[ "$(ax front 2>/dev/null)" == yes ]]; then last=$(date +%s)
-                    else kill -INT "$recorder"; echo $(( last - start - 2 )) > "$RUN_DIR/recording.cut"; break; fi
+                    why=
+                    [[ "$(ax front 2>/dev/null)" == yes ]] || why="another app came in front"
+                    [[ -n "$why" || "$(ax winrect 2>/dev/null)" == "$rect" ]] || why="the app's window moved, resized or closed"
+                    if [[ -z "$why" ]]; then last=$(date +%s)
+                    else kill -INT "$recorder"; echo "$(( last - start - 2 )) $why" > "$RUN_DIR/recording.cut"; break; fi
                     sleep 0.25
                 done
             ) < /dev/null > /dev/null 2>&1 &
@@ -435,7 +439,7 @@ record)
         fi
         [[ -s "$mov" ]] || { echo "NO MOVIE: the recorder wrote nothing: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"; exit 2; }
         trim=()
-        if [[ -f "$RUN_DIR/recording.cut" ]]; then cut=$(cat "$RUN_DIR/recording.cut"); trim=(--duration $(( cut > 0 ? cut : 0 ))); fi
+        if [[ -f "$RUN_DIR/recording.cut" ]]; then read -r cut why < "$RUN_DIR/recording.cut"; trim=(--duration $(( cut > 0 ? cut : 0 ))); fi
         # screencapture writes QuickTime whatever the extension; remuxing to mp4 also proves AVFoundation reads it.
         if ! avconvert -p PresetPassthrough -s "$mov" -o "$RUN_DIR/recording.mp4" --replace ${trim[@]+"${trim[@]}"} > /dev/null 2>&1; then
             rm -f "$RUN_DIR/recording.mp4"
@@ -446,7 +450,7 @@ record)
         seconds=$(avmediainfo "$RUN_DIR/recording.mp4" --brief 2>/dev/null | sed -n 's/^Duration: \([0-9.]*\) seconds.*/\1/p')
         [[ -n "$seconds" ]] || { echo "UNPLAYABLE: recording.mp4 has no duration"; exit 2; }
         echo "recording.mp4 seconds=$seconds bytes=$(stat -f %z "$RUN_DIR/recording.mp4")"
-        if [[ -f "$RUN_DIR/recording.cut" ]]; then echo "CUT: another app came in front; the movie ends before that"; exit 1; fi
+        if [[ -f "$RUN_DIR/recording.cut" ]]; then echo "CUT: $why; the movie ends before that"; exit 1; fi
         ;;
     *) echo "record: start or stop"; exit 64 ;;
     esac

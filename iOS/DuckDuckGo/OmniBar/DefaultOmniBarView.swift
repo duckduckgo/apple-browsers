@@ -111,6 +111,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         set { passwordsButtonView.isHidden = newValue }
     }
 
+    /// Duck.ai's Chats button, for windows too narrow to float it beside the chat.
+    var isChatListButtonHidden: Bool {
+        get { chatListButtonView.isHidden }
+        set { chatListButtonView.isHidden = newValue }
+    }
+
+    var showsLeadingButtons: Bool { layoutMode != .compact }
+
+    var onLayoutModeChange: (() -> Void)?
+
     var isMenuButtonHidden: Bool {
         get { menuButtonView.isHidden }
         set { menuButtonView.isHidden = newValue }
@@ -268,6 +278,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
         stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
         updateVerticalSpacing()
+        onLayoutModeChange?()
     }
 
     var isUsingSmallTopSpacing: Bool = false {
@@ -342,6 +353,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// Needed because UIStackView doesn't support reparenting — one in leading, one in trailing.
     let leadingBookmarksButtonView = BrowserChromeButton()
     let passwordsButtonView = BrowserChromeButton()
+    let chatListButtonView = BrowserChromeButton()
     let menuButtonView = BrowserChromeButton()
     let forwardButtonView = BrowserChromeButton()
     let backButtonView = BrowserChromeButton()
@@ -1115,6 +1127,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.addArrangedSubview(searchAreaAlignmentView)
         stackView.addArrangedSubview(trailingButtonsContainer)
 
+        leadingButtonsContainer.addArrangedSubview(chatListButtonView)
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
         leadingButtonsContainer.addArrangedSubview(externalRefreshButtonView)
@@ -1252,6 +1265,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         DefaultOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: leadingBookmarksButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: passwordsButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: chatListButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: fireButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
@@ -1320,6 +1334,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         passwordsButtonView.setImage(DesignSystemImages.Glyphs.Size24.key)
         DefaultOmniBarView.setUpCommonProperties(for: passwordsButtonView)
         passwordsButtonView.isHidden = true
+
+        chatListButtonView.setImage(DesignSystemImages.Glyphs.Size24.chats)
+        DefaultOmniBarView.setUpCommonProperties(for: chatListButtonView)
+        chatListButtonView.isHidden = true
 
         menuButtonView.setImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
         DefaultOmniBarView.setUpCommonProperties(for: menuButtonView)
@@ -1479,6 +1497,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         passwordsButtonView.accessibilityLabel = "Passwords"
         passwordsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Passwords"
         passwordsButtonView.accessibilityTraits = .button
+
+        chatListButtonView.accessibilityLabel = UserText.aiChatHistorySidebarShowAccessibilityLabel
+        chatListButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.ChatList"
+        chatListButtonView.accessibilityTraits = .button
 
         menuButtonView.accessibilityLabel = "Browsing Menu"
         menuButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowsingMenu"

@@ -40,8 +40,36 @@ extension MainViewController {
         tab.installChatListSidebar(sidebar.navigationController,
                                    isOpen: iPadChatListSidebarState.isOpen,
                                    onToggle: { [weak self] in self?.toggleIPadChatListSidebar() },
-                                   onNewChat: { [weak self] in self?.startNewChatFromIPadChatListSidebar() })
+                                   onNewChat: { [weak self] in self?.startNewChatFromIPadChatListSidebar() },
+                                   onTabWidthChange: { [weak self] in self?.updateIPadChatListButtonPlacement() })
         sidebar.followCurrentChat(of: tab)
+        setUpIPadChatListChromeButton()
+        updateIPadChatListButtonPlacement()
+    }
+
+    private var chatListChromeBarView: DefaultOmniBarView? {
+        viewCoordinator.omniBar.barView as? DefaultOmniBarView
+    }
+
+    private func setUpIPadChatListChromeButton() {
+        guard let barView = chatListChromeBarView else { return }
+        // Identified actions replace each other, so installing on every Duck.ai tab adds just one.
+        barView.chatListButtonView.addAction(UIAction(identifier: .iPadChatListChromeButton) { [weak self] _ in
+            self?.toggleIPadChatListSidebar()
+        }, for: .touchUpInside)
+        barView.onLayoutModeChange = { [weak self] in
+            self?.updateIPadChatListButtonPlacement()
+        }
+    }
+
+    /// The floating Chats button covers the page's text in narrow windows, so there it moves next to Back.
+    func updateIPadChatListButtonPlacement() {
+        let container = (iPadChatListSidebarState.sidebar?.navigationController.parent as? TabViewController)?
+            .chatListSidebarContainer
+        let barView = chatListChromeBarView
+        let isInChrome = container?.floatingButtonCoversPage == true && barView?.showsLeadingButtons == true
+        barView?.isChatListButtonHidden = !isInChrome
+        container?.setFloatingButtonHidden(isInChrome)
     }
 
     /// The "Chats" entry points (address bar menu, app menu, contextual "View all") load `sidebar=open`; on iPad that's this list.
@@ -57,6 +85,7 @@ extension MainViewController {
         guard let sidebar = iPadChatListSidebarState.sidebar else { return }
         (sidebar.navigationController.parent as? TabViewController)?.removeChatListSidebar()
         sidebar.stopFollowingCurrentChat()
+        chatListChromeBarView?.isChatListButtonHidden = true
     }
 
     func toggleIPadChatListSidebar() {
@@ -139,6 +168,10 @@ extension MainViewController {
             tab.tabModel.discardDuckAIEntrySourceAwaitingPageLoad()
         }
     }
+}
+
+private extension UIAction.Identifier {
+    static let iPadChatListChromeButton = UIAction.Identifier("com.duckduckgo.ipad.chatList.chromeButton")
 }
 
 private extension TabViewController {
@@ -276,6 +309,8 @@ final class IPadChatListSidebarContainerView: UIView {
         static let animationDuration: TimeInterval = 0.35
         /// Below this the chat beside the column gets too narrow to read.
         static let minimumChatWidth: CGFloat = 450
+        /// Duck.ai centers a ~663 pt column; below this its left edge passes under the floating Chats button.
+        static let minimumChatWidthForFloatingButton: CGFloat = 800
     }
 
     fileprivate let showChatsButton = IPadChatListSidebarContainerView.makeFloatingButton(
@@ -293,8 +328,22 @@ final class IPadChatListSidebarContainerView: UIView {
     fileprivate weak var standaloneContentLeadingConstraint: NSLayoutConstraint?
     fileprivate var onToggle: (() -> Void)?
     fileprivate var onNewChat: (() -> Void)?
+    fileprivate var onTabWidthChange: (() -> Void)?
     fileprivate(set) var isOpen = false
     fileprivate(set) var isOverlay = false
+    private var tabWidth: CGFloat = 0
+    private var isFloatingButtonHidden = false
+
+    /// Measured on the tab, which the chat fills whenever the floating button shows.
+    var floatingButtonCoversPage: Bool {
+        tabWidth > 0 && tabWidth < Constants.minimumChatWidthForFloatingButton
+    }
+
+    func setFloatingButtonHidden(_ isHidden: Bool) {
+        guard isHidden != isFloatingButtonHidden else { return }
+        isFloatingButtonHidden = isHidden
+        applyOpenState(isOpen)
+    }
 
     private let separator: UIView = {
         let separator = UIView()
@@ -318,6 +367,7 @@ final class IPadChatListSidebarContainerView: UIView {
         newChatButton.addTarget(self, action: #selector(newChatTapped), for: .touchUpInside)
         widthProbe.onWidthChange = { [weak self] width in
             self?.applyLayoutMode(forTabWidth: width)
+            self?.onTabWidthChange?()
         }
     }
 
@@ -337,7 +387,8 @@ final class IPadChatListSidebarContainerView: UIView {
         showChatsButton.alpha = isOpen ? 0 : 1
         newChatButton.alpha = isOpen ? 0 : 1
         accessibilityElementsHidden = !isOpen
-        showChatsButton.isAccessibilityElement = !isOpen
+        showChatsButton.isHidden = isFloatingButtonHidden
+        showChatsButton.isAccessibilityElement = !isOpen && !isFloatingButtonHidden
         // A narrow window's input spans the tab under the button.
         newChatButton.isHidden = isOverlay
         newChatButton.isAccessibilityElement = !isOpen && !isOverlay
@@ -345,6 +396,7 @@ final class IPadChatListSidebarContainerView: UIView {
 
     /// Follows live window resizes: a narrow tab trades the column for a list over the whole tab.
     private func applyLayoutMode(forTabWidth tabWidth: CGFloat) {
+        self.tabWidth = tabWidth
         let isOverlay = tabWidth < Self.width + Constants.minimumChatWidth
         if isOverlay != self.isOverlay {
             self.isOverlay = isOverlay
@@ -445,10 +497,12 @@ extension TabViewController {
     func installChatListSidebar(_ listViewController: UIViewController,
                                 isOpen: Bool,
                                 onToggle: @escaping () -> Void,
-                                onNewChat: @escaping () -> Void) {
+                                onNewChat: @escaping () -> Void,
+                                onTabWidthChange: @escaping () -> Void) {
         if let chatListSidebarContainer, listViewController.parent === self {
             chatListSidebarContainer.onToggle = onToggle
             chatListSidebarContainer.onNewChat = onNewChat
+            chatListSidebarContainer.onTabWidthChange = onTabWidthChange
             bringChatListSidebarControlsToFront()
             if chatListSidebarContainer.isOpen != isOpen {
                 setChatListSidebarOpen(isOpen, animated: false)
@@ -462,6 +516,7 @@ extension TabViewController {
         container.translatesAutoresizingMaskIntoConstraints = false
         container.onToggle = onToggle
         container.onNewChat = onNewChat
+        container.onTabWidthChange = onTabWidthChange
         view.insertSubview(container.widthProbe, at: 0)
         view.addSubview(container)
         view.addSubview(container.showChatsButton)

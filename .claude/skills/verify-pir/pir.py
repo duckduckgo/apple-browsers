@@ -53,8 +53,7 @@ def load_inputs(path, needs_auth=False):
     raw_config = path.read_bytes()
     config = json.loads(raw_config)
     allowed = {"brokerFile", "profileFile", "expectedFile", "optOut", "emailConfirmation",
-               "subscriptionEnvironment", "pirEnvironment", "pirEndpoint", "checkpointTimeout",
-               "activityTimeout", "emailTimeout"}
+               "subscriptionEnvironment", "pirEnvironment", "pirEndpoint", "activityTimeout", "emailTimeout"}
     if not isinstance(config, dict) or set(config) - allowed:
         raise ValueError("configuration must be an object containing only documented fields; keep credentials separate")
     raw = {}
@@ -93,7 +92,7 @@ def load_inputs(path, needs_auth=False):
     for key in ("subscriptionEnvironment", "pirEnvironment"):
         if (config["optOut"] or needs_auth or key in config) and config.get(key) not in ("production", "staging"):
             raise ValueError(f"{key} must explicitly be production or staging")
-    for key, default, maximum in (("checkpointTimeout", 900, 3600), ("activityTimeout", 600, 3600), ("emailTimeout", 300, 1800)):
+    for key, default, maximum in (("activityTimeout", 600, 3600), ("emailTimeout", 300, 1800)):
         value = config.setdefault(key, default)
         if isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value) or not 0 < value <= maximum:
             raise ValueError(f"{key} must be positive and no more than {maximum} seconds")
@@ -126,7 +125,7 @@ class Context:
     def __init__(self, evidence, redactor=None):
         self.evidence = Path(evidence)
         self.redactor = redactor or Redactor()
-        self.result = dict(status="inconclusive", checks=[], unverified=[], cleanup={}, evidenceErrors=[], humanSteps=[])
+        self.result = dict(status="inconclusive", checks=[], unverified=[], cleanup={}, evidenceErrors=[])
 
     def write(self, name, value):
         (self.evidence / name).write_text(json.dumps(self.redactor.value(value), indent=2) + "\n")
@@ -138,35 +137,6 @@ class Context:
 
     def unverified(self, what, reason):
         self.result["unverified"].append(dict(what=what, reason=reason))
-
-
-def checkpoint(context, instruction, timeout):
-    checkpoint_id = uuid.uuid4().hex
-    ack = context.evidence / f"ack-{checkpoint_id}"
-    cancel = context.evidence / f"cancel-{checkpoint_id}"
-    record = dict(instruction=instruction, id=checkpoint_id, acknowledge=str(ack), cancel=str(cancel),
-                  timeout=timeout, status="pending")
-    context.result["humanSteps"].append(record)
-    context.write("checkpoint.json", record)
-    print(f"{instruction}\nAcknowledge: touch {shlex.quote(str(ack))}\nCancel: touch {shlex.quote(str(cancel))}", flush=True)
-    deadline = time.monotonic() + timeout
-    try:
-        while True:
-            if cancel.exists():
-                record["status"] = "cancelled"
-                raise SetupFailed("manual checkpoint cancelled")
-            if ack.exists():
-                record.update(status="acknowledged", acknowledgedAt=time.time())
-                return checkpoint_id
-            if time.monotonic() >= deadline:
-                record["status"] = "timedOut"
-                raise SetupFailed("manual checkpoint timed out")
-            time.sleep(.2)
-    finally:
-        if record["status"] == "pending":
-            record["status"] = "interrupted"
-        record["finishedAt"] = time.time()
-        context.write("checkpoint.json", record)
 
 
 class Client:
@@ -295,29 +265,36 @@ def history(run, summary, query=None):
 
 
 
-def verify_auth(snapshot, config, provided):
+def verify_auth(snapshot, config, *, provided):
     result = snapshot.get("result", {})
+    backend, status, entitled = (("provided-token", "credentialProvided", None) if provided
+                                 else ("subscription-auth-v2", "ready", True))
     valid = (result.get("authenticated") is True
+             and result.get("backend") == backend
+             and result.get("status") == status
+             and result.get("entitled") is entitled
              and result.get("environment") == config["subscriptionEnvironment"]
              and result.get("pirEnvironment") == config["pirEnvironment"]
              and result.get("pirEndpoint") == config["pirEndpoint"])
+    if valid:
+        return
     if provided:
-        valid = valid and (result.get("backend") == "provided-token" and result.get("status") == "credentialProvided"
-                           and result.get("entitled") is None)
-    else:
-        valid = valid and result.get("status") == "ready" and result.get("entitled") is True
-    if not valid:
         raise SetupFailed("authentication diagnostics or configured backend do not match; see pir-prerequisites.json")
+    raise SetupFailed("saved subscription is not ready for the configured PIR backend; "
+                      "supply --token-file or --token-env; see pir-prerequisites.json")
 
 
-def workflow(context, inputs, client, token=None, interactive=False):
+def workflow(context, inputs, client, token):
     config, broker, profile, expected = (inputs[k] for k in ("config", "broker", "profile", "expected"))
-    snapshots = {"before": client.prerequisite()}
-    context.write("pir-prerequisites.json", snapshots)
+    snapshot = client.prerequisite()
+    context.write("pir-prerequisites.json", {"before": snapshot})
     if token:
-        verify_auth(snapshots["before"], config, provided=True)
+        verify_auth(snapshot, config, provided=True)
         context.check("launch credential supplied for configured backend", True)
         context.unverified("subscription entitlement", "credentialProvided confirms injection; backend acceptance is exercised by broker work")
+    elif config["optOut"]:
+        verify_auth(snapshot, config, provided=False)
+        context.check("saved subscription has PIR entitlement for the configured backend", True)
     context.unverified("PIR UI and production scheduler", "debug jobs run directly through the PIR debug server")
     context.unverified("PIR worker and backend traffic", "this workflow records debug-server responses and application logs, without network interception")
     started = client.request("POST", "/api/debug/scans", dict(broker=broker, profile=profile, hidesWebView=True))
@@ -342,14 +319,6 @@ def workflow(context, inputs, client, token=None, interactive=False):
     if not isinstance(result_id, str) or not re.fullmatch(r"[A-Za-z0-9-]+", result_id):
         raise Failed("invalid result ID")
     context.check("scan selected one record to opt out", True)
-    if not token:
-        if not interactive:
-            raise SetupFailed("opt-out requires a token source or --interactive-subscription")
-        checkpoint(context, "Activate or restore the authorized test subscription in the running app. "
-                   "Do not reset or relaunch. Acknowledge when ready.", config["checkpointTimeout"])
-        snapshots["after"] = client.prerequisite()
-        context.write("pir-prerequisites.json", snapshots)
-        verify_auth(snapshots["after"], config, provided=False)
     path = f"/api/debug/runs/{run_id}"
     client.request("POST", f"{path}/optouts/{result_id}")
     opted = client.idle(run_id, config["activityTimeout"])
@@ -400,12 +369,11 @@ def parser():
     token = cli.add_mutually_exclusive_group()
     token.add_argument("--token-file", type=Path, help="read token from this file; never place credentials in config")
     token.add_argument("--token-env", metavar="NAME", help="read token from this environment variable")
-    cli.add_argument("--interactive-subscription", action="store_true", help="explicitly allow a manual subscription checkpoint without a token")
     cli.add_argument("--check-config", action="store_true", help="validate inputs without building or launching")
     cli.add_argument("--keep", action="store_true", help="retain simulator after stopping owned app and agent")
     scheduler = cli.add_argument_group("scheduler")
     scheduler.add_argument("--profile-file", dest="scheduler_profile", type=Path, help="profile JSON for seed or reseed")
-    scheduler.add_argument("--port", dest="scheduler_port", type=int, help="observe: local DEBUG agent port (default: 8474)")
+    scheduler.add_argument("--port", dest="scheduler_port", type=int, help="observe: local PIR debug server port (default: 8474)")
     scheduler.add_argument("--since", dest="scheduler_since", help="observe: ISO 8601 timestamp before the scan trigger")
     scheduler.add_argument("--job", dest="scheduler_jobs", nargs=2, action="append", metavar=("BROKER_URL", "QUERY_ID"),
                            help="persisted scan to verify, repeat for each broker and profile query pair")
@@ -439,8 +407,6 @@ def rerun_command(args):
         command += ["--token-file", str(args.token_file.expanduser().resolve())]
     if args.token_env:
         command += ["--token-env", args.token_env]
-    if args.interactive_subscription:
-        command += ["--interactive-subscription"]
     if args.keep:
         command += ["--keep"]
     if args.command == "scheduler":
@@ -501,24 +467,24 @@ def execute(args, runtime_factory=None):
     is_selftest = args.command == "selftest"
     scope, seed = None, None
     if args.command == "scheduler":
-        if args.platform != "macos":
-            raise ValueError("scheduler commands currently require macOS")
-        if args.config or args.token_file or args.token_env or args.interactive_subscription or args.check_config or args.keep:
-            raise ValueError("scheduler commands do not accept scenario, credential, interactive, check-config or keep options")
+        if args.config or args.token_file or args.token_env or args.check_config or args.keep:
+            raise ValueError("scheduler commands do not accept scenario, credential, check-config or keep options")
         import scheduler
         if args.scheduler_mode == "observe":
             if args.scheduler_profile is not None:
                 raise ValueError("scheduler observe does not take a profile file")
             scope = scheduler.parse_scope(args)
         elif args.scheduler_mode in ("seed", "reseed"):
+            if args.platform != "macos":
+                raise ValueError("scheduler seed and reseed require macOS")
             seed = scheduler.parse_seed(args)
         else:
             raise ValueError("Choose scheduler observe, seed or reseed")
     elif any(option is not None for option in (args.scheduler_mode, args.scheduler_profile, args.scheduler_port,
                                                args.scheduler_since, args.scheduler_jobs, args.scheduler_timeout)):
         raise ValueError("scheduler mode and options apply only to the scheduler command")
-    if is_selftest and (args.config or args.token_file or args.token_env or args.interactive_subscription or args.check_config or args.keep):
-        raise ValueError("selftest does not accept scenario, credential, interactive, check-config or keep options")
+    if is_selftest and (args.config or args.token_file or args.token_env or args.check_config or args.keep):
+        raise ValueError("selftest does not accept scenario, credential, check-config or keep options")
     token = None
     if is_selftest:
         token = "verify-pir-selftest-dummy-credential"
@@ -526,11 +492,9 @@ def execute(args, runtime_factory=None):
         token = read_token(args)
     if args.command == "run" and not args.config:
         raise ValueError("run requires --config")
-    if args.command == "build" and (args.token_file or args.token_env or args.interactive_subscription):
+    if args.command == "build" and (args.token_file or args.token_env):
         raise ValueError("authentication options apply only to run")
     inputs = load_inputs(args.config, needs_auth=bool(token)) if args.config else None
-    if inputs and inputs["config"]["optOut"] and not token and not args.interactive_subscription:
-        raise ValueError("opt-out requires --token-file, --token-env or explicit --interactive-subscription")
     if token and inputs and inputs["config"]["subscriptionEnvironment"] != inputs["config"]["pirEnvironment"]:
         raise ValueError("provided-token subscriptionEnvironment and pirEnvironment must match")
     redactor = Redactor(token)
@@ -595,8 +559,12 @@ def execute(args, runtime_factory=None):
         else:
             if inputs:
                 context.result["inputs"] = inputs["references"]
-                context.write("pir-inputs.json", dict(references=inputs["references"], policy=inputs["config"]["optOut"],
-                                                     authentication="provided-token" if token else "interactive" if args.interactive_subscription else "none"))
+                opt_out = inputs["config"]["optOut"]
+                authentication = "saved-subscription" if opt_out else "none"
+                if token:
+                    authentication = "provided-token"
+                context.write("pir-inputs.json", dict(references=inputs["references"], policy=opt_out,
+                                                     authentication=authentication))
                 (evidence / "pir-broker.json").write_bytes(inputs["brokerBytes"])
             if runtime_factory is None:
                 from runtime import Runtime
@@ -619,7 +587,7 @@ def execute(args, runtime_factory=None):
                     selftest(context, client)
                 else:
                     client.collect_snapshots = collect_snapshots
-                    workflow(context, inputs, client, token, args.interactive_subscription)
+                    workflow(context, inputs, client, token)
             context.result["status"] = "pass"
     except KeyboardInterrupt:
         context.result.update(status="inconclusive", reason="scheduler attempt interrupted" if args.command == "scheduler" else

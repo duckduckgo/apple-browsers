@@ -31,7 +31,7 @@ class WorkflowTests(unittest.TestCase):
         (self.input_directory / "profile.json").write_text(json.dumps(dict(names=[dict(firstName="Test", lastName="Person")],
                                                                        addresses=[dict(city="City", state="CA")], phones=[], birthYear=1980)))
         self.config = dict(brokerFile="broker.json", profileFile="profile.json", optOut=False,
-                           activityTimeout=2, checkpointTimeout=1, emailTimeout=1)
+                           activityTimeout=2, emailTimeout=1)
         self.calls = []
         self.instances = []
         self.authenticated = False
@@ -139,7 +139,7 @@ class WorkflowTests(unittest.TestCase):
                              checkedAt="now", debugRunnerReady=True, result=auth)
         if path == "/api/debug/scans":
             if self.config["optOut"]:
-                self.assertTrue(self.authenticated)
+                self.assertTrue(self.auth_diagnostics.get("authenticated", self.authenticated))
             self.event("Scan Started")
             if self.no_matches:
                 self.event("No Match")
@@ -178,17 +178,20 @@ class WorkflowTests(unittest.TestCase):
         with patch.object(pir, "Client", side_effect=client), contextlib.redirect_stdout(io.StringIO()):
             return pir.execute(args, self.Runtime)
 
-    def auth_options(self, opt_out=True):
+    def configure_auth(self, opt_out=True):
         self.config.update(optOut=opt_out, emailConfirmation=True, subscriptionEnvironment="staging", pirEnvironment="staging",
                            pirEndpoint="https://backend.test")
+
+    def auth_options(self, opt_out=True):
+        self.configure_auth(opt_out)
         token_file = self.directory / "credential"
         token_file.write_text(self.token + "\n")
         return ["--token-file", str(token_file)]
 
-    def test_scan_without_token_has_no_auth_or_subscription_checkpoint(self):
+    def test_scan_without_token_uses_no_injected_credential(self):
         result = self.execute()
         self.assertEqual(result["status"], "pass")
-        self.assertEqual(result["humanSteps"], [])
+        self.assertIsNone(self.instances[-1].access_token)
         self.assertFalse(any(path == "/api/debug/auth" or "/optouts/" in path for _, path, _, _ in self.calls))
         evidence = Path(result["evidence"])
         self.assertEqual((evidence / "pir-broker.json").read_bytes(), self.broker_bytes)
@@ -323,7 +326,7 @@ class WorkflowTests(unittest.TestCase):
 
     def test_selftest_rejects_scenario_and_auth_options_before_reading_files(self):
         for option in (["--config", "/does-not-exist"], ["--token-file", "/does-not-exist"],
-                       ["--token-env", "PRIVATE_ACCOUNT"], ["--interactive-subscription"], ["--check-config"], ["--keep"]):
+                       ["--token-env", "PRIVATE_ACCOUNT"], ["--check-config"], ["--keep"]):
             with self.subTest(option=option):
                 args = pir.parser().parse_args(["selftest", "--platform", "macos", *option])
                 with patch.object(pir, "read_token", side_effect=AssertionError("credential source read")):
@@ -376,11 +379,32 @@ class WorkflowTests(unittest.TestCase):
             self.config = original
         self.assertEqual(self.instances, [])
 
-    def test_optout_requires_token_or_explicit_interactive_mode_before_runtime(self):
-        self.auth_options()
-        with self.assertRaisesRegex(ValueError, "interactive-subscription"):
-            pir.execute(self.args(), self.Runtime)
-        self.assertEqual(self.instances, [])
+    def test_optout_can_use_existing_subscription_without_injected_token(self):
+        self.configure_auth()
+        self.auth_diagnostics.update(authenticated=True, backend="subscription-auth-v2", status="ready", entitled=True)
+        result = self.execute("--platform", "macos")
+        self.assertEqual(result["status"], "pass", result)
+        self.assertIsNone(self.instances[-1].access_token)
+        paths = [path for method, path, *_ in self.calls if method == "POST"]
+        self.assertIn("/api/debug/runs/run/optouts/record", paths)
+        evidence = Path(result["evidence"])
+        self.assertEqual(json.loads((evidence / "pir-inputs.json").read_text())["authentication"], "saved-subscription")
+
+    def test_optout_without_injected_token_requires_ready_saved_subscription_before_scan(self):
+        self.configure_auth()
+        ready = dict(authenticated=True, backend="subscription-auth-v2", status="ready", entitled=True)
+        for change in (dict(authenticated=False, status="unauthenticated", entitled=None),
+                       dict(status="notEntitled", entitled=False), dict(status="error", entitled=None),
+                       dict(status="bypass"), dict(backend="provided-token"), dict(environment="production"),
+                       dict(pirEndpoint="https://wrong.test")):
+            with self.subTest(change=change):
+                self.calls.clear()
+                self.auth_diagnostics = {**ready, **change}
+                result = self.execute()
+                self.assertEqual(result["status"], "inconclusive")
+                self.assertIn("--token-file or --token-env", result["reason"])
+                self.assertFalse(any(method == "POST" for method, *_ in self.calls))
+                self.assertTrue(self.instances[-1].stopped)
 
     def test_malformed_endpoint_error_omits_input_url(self):
         self.config["pirEndpoint"] = "https://sensitive-fixture＠backend.test"
@@ -532,30 +556,6 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result["status"], "inconclusive")
         self.assertTrue(self.instances[-1].stopped)
 
-    def test_interactive_subscription_is_explicit_and_requires_fresh_entitlement(self):
-        self.auth_options()
-        self.auth_diagnostics.update(backend="normal", status="ready", entitled=True)
-        def acknowledge(context, instruction, timeout):
-            self.authenticated = True
-            context.result["humanSteps"].append(dict(status="acknowledged"))
-        original_handle = self.handle
-        def handle(method, path, headers, body):
-            if path == "/api/debug/scans":
-                self.assertFalse(self.authenticated)
-                self.calls.append((method, path, headers, body))
-                self.event("Scan Started")
-                return 202, self.run_state()
-            return original_handle(method, path, headers, body)
-        self.server_port = self.server(handle)
-        with patch.object(pir, "checkpoint", side_effect=acknowledge) as paused:
-            result = self.execute("--interactive-subscription")
-        self.assertEqual(result["status"], "pass", result)
-        self.assertEqual(paused.call_count, 1)
-        self.assertFalse(any(path == "/api/debug/auth" for _, path, _, _ in self.calls))
-        checks = [path for _, path, _, _ in self.calls if path.startswith("/api/debug/prerequisites")]
-        self.assertEqual(len(checks), 2)
-        self.assertNotEqual(checks[0], checks[1])
-
     def test_launch_error_still_collects_logs_and_stops_runtime(self):
         self.launch_error = "stale build"
         result = self.execute()
@@ -614,31 +614,6 @@ class WorkflowTests(unittest.TestCase):
             with self.assertRaisesRegex(pir.Failed, "timed out"):
                 client.idle("run", .05)
         self.assertEqual(len(list(self.directory.glob("pir-http-*"))), 1)
-
-    def test_manual_checkpoint_ack_cancel_timeout_ignore_stale_ack(self):
-        for action in ("acknowledge", "cancel", "timeout"):
-            evidence = self.directory / action
-            evidence.mkdir()
-            (evidence / "ack-old").touch()
-            context = pir.Context(evidence)
-            def respond(_):
-                record = json.loads((evidence / "checkpoint.json").read_text())
-                Path(record[action]).touch()
-            with contextlib.redirect_stdout(io.StringIO()):
-                if action == "timeout":
-                    with patch.object(pir.time, "monotonic", side_effect=[0, 2]), self.assertRaises(pir.SetupFailed):
-                        pir.checkpoint(context, "test", 1)
-                else:
-                    with patch.object(pir.time, "sleep", side_effect=respond):
-                        if action == "cancel":
-                            with self.assertRaises(pir.SetupFailed):
-                                pir.checkpoint(context, "test", 1)
-                        else:
-                            pir.checkpoint(context, "test", 1)
-            record = json.loads((evidence / "checkpoint.json").read_text())
-            self.assertEqual(record["status"], {"acknowledge": "acknowledged", "cancel": "cancelled", "timeout": "timedOut"}[action])
-            self.assertIn("finishedAt", record)
-            self.assertEqual(context.result["humanSteps"], [record])
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ class Job:
 
 @dataclass(frozen=True)
 class Scope:
+    platform: str
     port: int
     since: datetime
     jobs: tuple[Job, ...]
@@ -73,7 +74,8 @@ def parse_scope(args):
     port = 8474 if args.scheduler_port is None else args.scheduler_port
     if type(port) is not int or not 1 <= port <= 65535:
         raise ValueError("scheduler port must be between 1 and 65535")
-    return Scope(port, _date(args.scheduler_since), _jobs(args.scheduler_jobs or []), _timeout(args.scheduler_timeout))
+    return Scope(args.platform, port, _date(args.scheduler_since),
+                 _jobs(args.scheduler_jobs or []), _timeout(args.scheduler_timeout))
 
 
 def parse_seed(args):
@@ -95,7 +97,7 @@ def receipt_scope(receipt, request, instance):
             raise RuntimeError("Scheduler seeding requires a signed-out DEBUG account for Freemium scans")
         raise RuntimeError("The DEBUG browser did not complete scheduler setup; see scheduler-launch.json")
     jobs = _jobs((job.get("brokerURL"), job.get("profileQueryId")) for job in _rows(receipt, "jobs"))
-    return Scope(request.port, _date(receipt.get("since")), jobs, request.timeout, managed=True)
+    return Scope("macos", request.port, _date(receipt.get("since")), jobs, request.timeout, managed=True)
 
 
 def _remaining(deadline):
@@ -105,7 +107,7 @@ def _remaining(deadline):
     return seconds
 
 
-def _identity(port, deadline):
+def _identity(platform, port, deadline):
     try:
         result = subprocess.run(["/usr/sbin/lsof", "-nP", "-a", f"-iTCP@127.0.0.1:{port}",
                                  "-sTCP:LISTEN", "-t"], capture_output=True, text=True, timeout=min(5, _remaining(deadline)))
@@ -117,10 +119,13 @@ def _identity(port, deadline):
             raise RuntimeError("scheduler listener process is unavailable")
         executable = Path(identity["executable"]).resolve()
         bundle = next(parent for parent in executable.parents if parent.suffix == ".app")
-        info = runtime._info(bundle)
-        if (info.get("CFBundleIdentifier") != runtime.BUNDLES["macos"]
-                or executable != (bundle / "Contents/MacOS" / info["CFBundleExecutable"]).resolve()):
-            raise RuntimeError("scheduler listener is not the DEBUG macOS PIR agent")
+        info = runtime._info(bundle, platform)
+        executable_directory = bundle if platform == "ios" else bundle / "Contents/MacOS"
+        if (info.get("CFBundleIdentifier") != runtime.BUNDLES[platform]
+                or executable != (executable_directory / info["CFBundleExecutable"]).resolve()):
+            raise RuntimeError(f"scheduler listener does not match the requested {platform} PIR app")
+        if platform == "ios" and info.get("DTPlatformName") != "iphonesimulator":
+            raise RuntimeError("iOS scheduler observation requires a direct simulator listener")
         return dict(identity, bundleId=info["CFBundleIdentifier"], bundlePath=str(bundle))
     except (OSError, subprocess.SubprocessError, StopIteration, KeyError, ValueError) as error:
         raise RuntimeError("unable to verify scheduler listener identity") from error
@@ -182,7 +187,7 @@ def _read(client, path, timeout):
 def observe(context, client, scope, expected_executable=None):
     if not scope.jobs:
         raise ValueError("scheduler observation requires at least one exact job")
-    summary = dict(port=scope.port, since=scope.since.isoformat(), timeout=scope.timeout,
+    summary = dict(platform=scope.platform, port=scope.port, since=scope.since.isoformat(), timeout=scope.timeout,
                    jobs=[dict(brokerURL=job.broker_url, profileQueryId=job.query_id) for job in scope.jobs], polls=0)
     context.result["scheduler"] = summary
     context.unverified("recurring scheduler", "one observation does not prove future scheduling")
@@ -193,11 +198,11 @@ def observe(context, client, scope, expected_executable=None):
     deadline = time.monotonic() + scope.timeout
     outcome = dict(status="inconclusive", reason="scheduler observation did not complete")
     try:
-        summary["identity"] = _identity(scope.port, deadline)
+        summary["identity"] = _identity(scope.platform, scope.port, deadline)
         if expected_executable and Path(summary["identity"]["executable"]).resolve() != Path(expected_executable).resolve():
             raise RuntimeError("The normal PIR listener is not the agent embedded in this attempt's DEBUG build")
         while True:
-            if _identity(scope.port, deadline) != summary["identity"]:
+            if _identity(scope.platform, scope.port, deadline) != summary["identity"]:
                 raise RuntimeError("scheduler listener identity changed during observation")
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -220,7 +225,7 @@ def observe(context, client, scope, expected_executable=None):
             summary.update(observedAt=datetime.now(timezone.utc).isoformat(),
                            schedulerState=snapshot["schedulerState"], jobs=states, polls=summary["polls"] + 1)
             context.write("scheduler.json", summary)
-            if _identity(scope.port, deadline) != summary["identity"]:
+            if _identity(scope.platform, scope.port, deadline) != summary["identity"]:
                 raise RuntimeError("scheduler listener identity changed while collecting jobs")
             if time.monotonic() >= deadline:
                 outcome = dict(status="inconclusive", reason="scheduler observation timed out before completion")

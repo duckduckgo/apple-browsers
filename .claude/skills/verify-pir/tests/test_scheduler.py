@@ -27,7 +27,7 @@ def event(kind, second=1):
 
 
 def arguments(**kwargs):
-    values = dict(scheduler_port=None, scheduler_since=CUTOFF,
+    values = dict(platform='macos', scheduler_port=None, scheduler_since=CUTOFF,
                   scheduler_jobs=[[BROKER, '1']], scheduler_timeout=None)
     values.update(kwargs)
     return argparse.Namespace(**values)
@@ -178,16 +178,35 @@ class SchedulerTests(unittest.TestCase):
                 patch.object(scheduler.runtime, '_process', return_value=IDENTITY), \
                 patch.object(scheduler.runtime, '_info', return_value=info):
             deadline = time.monotonic() + 20
-            self.assertEqual(scheduler._identity(8474, deadline)['pid'], 42)
+            self.assertEqual(scheduler._identity('macos', 8474, deadline)['pid'], 42)
             self.assertEqual(command.call_args.kwargs['timeout'], 5)
             for stdout in ('', '42\n43\n'):
                 completed.stdout = stdout
                 with self.assertRaises(RuntimeError):
-                    scheduler._identity(8474, deadline)
+                    scheduler._identity('macos', 8474, deadline)
             completed.stdout = '42\n'
             info['CFBundleIdentifier'] = 'com.duckduckgo.macos.DBP.backgroundAgent'
             with self.assertRaises(RuntimeError):
-                scheduler._identity(8474, deadline)
+                scheduler._identity('macos', 8474, deadline)
+
+    def test_ios_listener_requires_the_simulator_app_executable(self):
+        completed = subprocess.CompletedProcess([], 0, '42\n', '')
+        identity = dict(IDENTITY, executable='/tmp/DuckDuckGo.app/DuckDuckGo')
+        info = dict(CFBundleIdentifier='com.duckduckgo.mobile.ios', CFBundleExecutable='DuckDuckGo',
+                    DTPlatformName='iphonesimulator')
+        with patch.object(scheduler.subprocess, 'run', return_value=completed), \
+                patch.object(scheduler.runtime, '_process', return_value=identity), \
+                patch.object(scheduler.runtime, '_info', return_value=info) as read_info:
+            deadline = time.monotonic() + 20
+            result = scheduler._identity('ios', 8474, deadline)
+            self.assertEqual(result['pid'], 42)
+            self.assertEqual(result['bundleId'], 'com.duckduckgo.mobile.ios')
+            read_info.assert_called_once_with(Path(identity['executable']).resolve().parent, 'ios')
+            with self.assertRaisesRegex(RuntimeError, 'requested macos'):
+                scheduler._identity('macos', 8474, deadline)
+            info['DTPlatformName'] = 'iphoneos'
+            with self.assertRaisesRegex(RuntimeError, 'direct simulator listener'):
+                scheduler._identity('ios', 8474, deadline)
 
     def test_scheduler_cli_records_read_only_observation_and_report(self):
         source = Client([[event('scanStarted'), event('noMatchFound', 2)]])
@@ -213,25 +232,38 @@ class SchedulerTests(unittest.TestCase):
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
-                args = pir.parser().parse_args(['scheduler', 'observe', '--platform', 'macos', '--port', str(server.server_port),
-                                                '--job', BROKER, '1', '--since', CUTOFF, '--evidence-dir', evidence])
-                with patch.object(scheduler, '_identity', return_value=IDENTITY), \
-                        patch.object(pir, 'read_token', side_effect=AssertionError('read credential')):
-                    result = pir.execute(args, runtime_factory=lambda *a, **kw: self.fail('launched runtime'))
+                for platform in ('macos', 'ios'):
+                    with self.subTest(platform=platform):
+                        calls.clear()
+                        args = pir.parser().parse_args(['scheduler', 'observe', '--platform', platform, '--port', str(server.server_port),
+                                                        '--job', BROKER, '1', '--since', CUTOFF, '--evidence-dir', evidence])
+                        with patch.object(scheduler, '_identity', return_value=IDENTITY) as identity, \
+                                patch.object(pir, 'read_token', side_effect=AssertionError('read credential')):
+                            result = pir.execute(args, runtime_factory=lambda *a, **kw: self.fail('launched runtime'))
+                        self.assertEqual(result['status'], 'pass', result)
+                        self.assertEqual(result['cleanup'], {'mode': 'attached'})
+                        self.assertEqual(calls, [('GET', '/api', None), ('GET', expected_path, None)])
+                        self.assertEqual(identity.call_args.args[0], platform)
+                        attempt = Path(result['evidence'])
+                        observation = json.loads((attempt / 'scheduler.json').read_text())
+                        self.assertEqual(observation['platform'], platform)
+                        self.assertEqual(observation['jobs'][0]['terminal'], 'noMatchFound')
+                        report = (attempt / 'report.md').read_text()
+                        self.assertTrue(report.startswith('# PIR pass\n'))
+                        self.assertIn(f'{BROKER} / query 1: noMatchFound', report)
+                        manifest = json.loads((attempt / 'manifest.json').read_text())
+                        self.assertIn('scheduler.json', manifest['files'])
+                        self.assertIn('pir-http-0002.json', manifest['files'])
             finally:
                 server.shutdown()
                 thread.join()
-            self.assertEqual(result['status'], 'pass', result)
-            self.assertEqual(result['cleanup'], {'mode': 'attached'})
-            self.assertEqual(calls, [('GET', '/api', None), ('GET', expected_path, None)])
-            attempt = Path(result['evidence'])
-            self.assertEqual(json.loads((attempt / 'scheduler.json').read_text())['jobs'][0]['terminal'], 'noMatchFound')
-            report = (attempt / 'report.md').read_text()
-            self.assertTrue(report.startswith('# PIR pass\n'))
-            self.assertIn(f'{BROKER} / query 1: noMatchFound', report)
-            manifest = json.loads((attempt / 'manifest.json').read_text())
-            self.assertIn('scheduler.json', manifest['files'])
-            self.assertIn('pir-http-0002.json', manifest['files'])
+
+    def test_ios_rejects_managed_seeding_before_launch(self):
+        for mode in ('seed', 'reseed'):
+            with self.subTest(mode=mode):
+                args = pir.parser().parse_args(['scheduler', mode, '--platform', 'ios', '--profile-file', '/profile.json'])
+                with self.assertRaisesRegex(ValueError, 'seed and reseed require macOS'):
+                    pir.execute(args, runtime_factory=lambda *a, **kw: self.fail('launched runtime'))
 
     def test_managed_modes_take_scope_from_the_owned_native_receipt(self):
         for mode in ('seed', 'reseed'):

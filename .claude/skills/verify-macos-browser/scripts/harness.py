@@ -447,7 +447,12 @@ def _alive(pid_file):
 
 def prove(path, target, evidence_dir=None):
     """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary).
-    Raises Refused, before anything is written, for an --evidence-dir inside a git checkout."""
+    Raises Refused, before anything is written, for an --evidence-dir inside a git checkout.
+    Without --evidence-dir, a proof in an attempt folder outside HOME (from new-proof --evidence-dir) runs there."""
+    parent = os.path.dirname(os.path.realpath(path))
+    if not evidence_dir and ATTEMPT.fullmatch(os.path.basename(parent)) \
+            and os.path.dirname(parent) != os.path.realpath(HOME):
+        evidence_dir = os.path.dirname(parent)
     root = evidence_root(evidence_dir)
     mod, problems = load(path)
     if problems:

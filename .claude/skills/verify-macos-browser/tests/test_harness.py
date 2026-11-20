@@ -297,6 +297,15 @@ class AttemptFolderTests(unittest.TestCase):
         self.assertRegex(harness.topic_of(folder), r"^duck-ai-s-[0-9a-f]{4}$")
         self.assertLessEqual(len(harness.topic_of(folder)), 14)
 
+    def test_prove_without_the_option_keeps_a_proof_made_with_it_in_its_evidence_dir(self):
+        evidence_dir, home = tempfile.mkdtemp(), tempfile.mkdtemp()
+        proof = harness.new_proof("tabs", harness.evidence_root(evidence_dir))
+        with mock.patch.object(harness, "HOME", home), \
+                mock.patch.object(harness.Mac, "_sh", lambda self, *a: (2, "NO VM FREE")):
+            _, out = harness.prove(proof, "vm")
+        self.assertEqual(os.path.dirname(out["evidence"]), os.path.realpath(evidence_dir))
+        self.assertEqual(os.listdir(home), [])
+
 
 class PublishablePathTests(unittest.TestCase):
     HOME = os.path.expanduser("~")

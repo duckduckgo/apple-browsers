@@ -6,7 +6,7 @@ usage: verify-macos-browser new-proof <name> [--evidence-dir <dir>]  a proof tem
        verify-macos-browser check <proof>...                         compile + shape + FLAGS; no app, no build
        verify-macos-browser prove <proof> --target mac|vm|vm-1|vm-2 [--evidence-dir <dir>]
 --evidence-dir: a directory outside any git checkout; each run writes a fresh <stamp>-<name>-<id>/ attempt folder in
-       it (default ~/.ddg-verify-macos)
+       it (default: the folder that holds the proof's attempt folder, else ~/.ddg-verify-macos)
 exit:  0 pass · 1 a check failed · 2 inconclusive: setup, an action or read that failed, nothing checked, a proof
        rejected by check, an --evidence-dir refused, or a pass with cleanup/evidence problems · 130 cancelled
        (report still written)

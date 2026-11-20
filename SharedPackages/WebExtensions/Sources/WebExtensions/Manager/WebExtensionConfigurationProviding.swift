@@ -26,4 +26,9 @@ public protocol WebExtensionConfigurationProviding {
 
     /// Whether extension contexts should be inspectable via Safari's Web Inspector.
     var isInspectable: Bool { get }
+
+#if os(macOS)
+    /// A nil directory asks the user to choose where to save.
+    @MainActor var automaticDownloadDirectory: URL? { get }
+#endif
 }

@@ -168,6 +168,9 @@ binary's sha256 per device as verified at launch, pinned flags, capture conditio
 each device's `app.log`, skill sha256, Xcode, simulators, live services and live hosts seen, video per device, rerun
 command), `report.md`, and per device `recording.mp4`, `transcript.jsonl`, your screenshots, `final.png`,
 `final-snapshot.txt`, `app.log`, `pixels.json`, `pixels.ndjson` (raw), `wide-events.json`, `result.json`.
+Then PR-ready images: per device `key-frames.png` and `poster.png` (the video's last frame), `devices.png` (final
+screens side by side), with `--base` `before-after-<device>.png`; and `index.html`, the entry page (inline videos,
+key frames, checks with failures first, telemetry, details). An image not drawn is a Problem (exit 2).
 
 `app.log` is the app's own log (`log show`, process DuckDuckGo) from the start of that device's run, kept on pass,
 fail and cancel, so a failed proof can be diagnosed without running it again (about 1 MB a minute; the UI-test
@@ -184,31 +187,30 @@ manifest and rerun command record it:
 
 Either one inside the checkout is refused, so evidence never lands in the repo.
 
-**Publishing it in a PR.** Allocate a fresh directory per attempt from the evidence store your PR tooling uploads
-from, pass it as `--evidence-dir` to `new-proof` and `prove`, then publish it with that tooling. Upload the whole
-attempt folder, since `report.md` links its evidence by relative path. In the PR's Verification section, link
-`report.md` as the entry point, each device's `recording.mp4`, and `final.png` or your screenshots as key frames.
+**Publishing it in a PR.** Pass `new-proof` and `prove` a fresh `--evidence-dir` per attempt from the evidence store
+your PR tooling uploads, and upload the whole attempt folder (its pages use relative links). In the PR tooling's
+scenario format: one sentence of what was proved; per device the `poster.png` thumbnail linking `recording.mp4` and
+the `key-frames.png` thumbnail (`devices.png` for both; `before-after-<device>.png` with `--base`); the outcome;
+`index.html` as the full check.
 
 **Video.** `prove` records each device's screen to `<device>/recording.mp4` (h264) from launch until the final
-screenshot, on pass, fail and cancel. Your `shot()` screenshots and `final.png` are the key frames. A recording that
-fails is listed under Problems (exit 2), never as a failed proof. `--no-video` turns it off.
+screenshot, on pass, fail and cancel. Your `shot()` screenshots and `final.png` are the key frames. A failed
+recording is a Problem (exit 2), not a failed proof. `--no-video` turns it off.
 
 **`report.md`** is one verification scenario, in the order a PR description presents it: **Verified** (the proof's
-docstring), **Evidence** (relative links per device: video, final screen, screenshots, telemetry, transcript),
+docstring), **Evidence** (relative links per device: video, key frames, screenshots, telemetry, transcript),
 **Outcome** (passed and failed checks, problems and warnings per device), **Details** (revision and dirty flag, build,
 devices, live services or local fixture, pinned flags, capture conditions, rerun command), then **Unverified**. Write
 the docstring's first line as the claim a reviewer reads: what the user sees, under which conditions.
 
 Report to the user from `report.md`: **passed, failed and unverified** behavior per device, whether the evidence used
-live services or only the local fixture, the revision, the rerun command, and links to the evidence. Look at the
-screenshots before claiming anything about appearance. The report's **Problems** section lists cleanup and evidence
-failures; pass them on, never hide them.
+live services or only the local fixture, the revision, the rerun command, and links to the evidence. The report's
+**Problems** section lists cleanup and evidence failures; pass them on, never hide them.
 
-**Run it in a subagent.** An agent verifying its own change hands the proof to a subagent: writing it, `new-proof`,
-`check`, `prove`, retries and build waits, whose output would fill the lead's context. Brief it with the claim, the
-devices and the evidence directory. It returns only the verdict per device (pass, fail or INCONCLUSIVE), the
-`report.md` path and the evidence folder. The lead still reads `report.md` and looks at the screenshots and the video
-before claiming anything.
+**Run it in a subagent.** An agent verifying its own change hands the proof (writing, `check`, `prove`, retries,
+build waits) to a subagent briefed with the claim, the devices and the evidence directory. It returns the verdict
+per device (pass, fail or INCONCLUSIVE) and the evidence folder. The lead still reads `report.md` and looks at the
+images and the video before claiming anything.
 
 **Before and after (`--base`).** To show a change against the base build, wrap the checks that should differ there
 in `with ios.on_base("fail"):` (or `"pass"`); every other check should be unchanged.
@@ -220,8 +222,8 @@ $V prove "$proof" --base "$(git merge-base HEAD origin/main)"   # adds a full ap
 This builds the base revision in its own worktree (own simulators, removed afterwards), proves it there with this
 checkout's skill and proof, then proves this checkout. On the base run a check expected to fail is recorded and the
 proof carries on, but only for an absent element or a failed assertion; any other error makes that run
-inconclusive. `report.md` judges each check against both runs and pairs the key frames Before | After; each run's
-own report is under `before/` and `after/`. Checks line up across runs by name, with tokens left out. Exit `0` as
+inconclusive. `report.md` and `index.html` judge each check against both runs and pair the key frames Before |
+After; each run's own pages are under `before/` and `after/`. Checks line up across runs by name, with tokens left out. Exit `0` as
 expected · `1` unexpected · `2` inconclusive (a run didn't finish, a check wasn't seen on both, or capture conditions
 differ).
 
@@ -295,7 +297,7 @@ $V prove .claude/skills/verify-ios/examples/*.py                                
 | path | what |
 |---|---|
 | `bin/verify-ios` | command line: setup, build, new-proof, check, prove, explore, doctor, cleanup (`-h`) |
-| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `compare.py` (`--base`), `steps.py`, `telemetry.py`, `video.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
+| `lib/verify_ios/` | library: `harness.py` (ios handle, prove, report), `compare.py` (`--base`), `gallery.py` (images, drawn by `lib/compose.swift`), `page.py` (`index.html`), `steps.py`, `telemetry.py`, `video.py`, `device.py`, `driver.py`, `web.py`, `env.py` |
 | `lib/vrunner_start.sh` | start one runner and report its pids (called by the driver, which also stops it) |
 | `lib/ios_identity.sh` | running-binary sha256 vs build (called by doctor) |
 | `runner/` | Swift XCUITest runner, XcodeGen spec and generated project; regenerate with `cd runner && xcodegen generate` |

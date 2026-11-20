@@ -409,6 +409,8 @@ struct OnboardingComparisonContent: Equatable {
     /// When set, renders a secondary skip button below the primary CTA.
     let secondaryCTA: String?
     let daxAnimation: DaxAnimation?
+    /// When false, checkmarks spring in already drawn, matching the subscription badges.
+    let drawsCheckmarks: Bool
 
     init(
         title: String,
@@ -418,7 +420,8 @@ struct OnboardingComparisonContent: Equatable {
         footer: String? = nil,
         primaryCTA: String,
         secondaryCTA: String?,
-        daxAnimation: DaxAnimation?
+        daxAnimation: DaxAnimation?,
+        drawsCheckmarks: Bool
     ) {
         self.title = title
         self.subHeader = subHeader
@@ -428,6 +431,7 @@ struct OnboardingComparisonContent: Equatable {
         self.primaryCTA = primaryCTA
         self.secondaryCTA = secondaryCTA
         self.daxAnimation = daxAnimation
+        self.drawsCheckmarks = drawsCheckmarks
     }
 }
 
@@ -447,7 +451,8 @@ extension OnboardingIntroContentProvider {
             features: RebrandedComparisonTableModel.defaultBrowserFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
-            daxAnimation: .wingBottom
+            daxAnimation: .wingBottom,
+            drawsCheckmarks: true
         )
     }
 
@@ -487,7 +492,8 @@ extension OnboardingIntroContentProvider {
             footer: reason == .vpn ? UserText.Onboarding.BrowsersComparison.vpnSubscriptionFooter : nil,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
-            daxAnimation: nil
+            daxAnimation: nil,
+            drawsCheckmarks: reason != .vpn
         )
     }
 
@@ -499,7 +505,8 @@ extension OnboardingIntroContentProvider {
             features: RebrandedComparisonTableModel.defaultAIFeatures,
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
             secondaryCTA: nil,
-            daxAnimation: .wingBottom
+            daxAnimation: .wingBottom,
+            drawsCheckmarks: true
         )
     }
 

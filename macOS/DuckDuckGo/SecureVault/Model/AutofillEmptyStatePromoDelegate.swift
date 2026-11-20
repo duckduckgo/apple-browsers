@@ -18,20 +18,16 @@
 
 import Combine
 import DDGSync
-import FeatureFlags_macOS
 import Foundation
-import PrivacyConfig
 
 /// Shows the import/sync CTAs of the Passwords panel empty states through the promo queue.
 final class AutofillEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncEmptyStatePromoPresenting {
 
-    private let featureFlagger: FeatureFlagger
     private let isAnyCategoryEmptyProvider: () -> Bool
     private let recordResult: @MainActor (_ promoID: String, PromoResult) -> Void
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
     private let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
-    private let eligibilityQueue = DispatchQueue(label: "com.duckduckgo.autofillEmptyStatePromo.eligibility", qos: .utility)
     private var cancellables = Set<AnyCancellable>()
     private var isImportFromEmptyStateInProgress = false
     private var isSyncSetupFromEmptyStateInProgress = false
@@ -41,21 +37,12 @@ final class AutofillEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncEm
     ///     Must be synchronous and safe to call off the main thread.
     ///   - dataImportCompletedPublisher: Emits when an import of every selected data type succeeds.
     ///   - recordResult: Records a result with the promo queue, including after the promo has been hidden.
-    init(featureFlagger: FeatureFlagger,
-         isAnyCategoryEmptyProvider: @escaping () -> Bool,
+    init(isAnyCategoryEmptyProvider: @escaping () -> Bool,
          dataImportCompletedPublisher: AnyPublisher<Void, Never>,
          syncService: DDGSyncing?,
          recordResult: @escaping @MainActor (_ promoID: String, PromoResult) -> Void) {
-        self.featureFlagger = featureFlagger
         self.isAnyCategoryEmptyProvider = isAnyCategoryEmptyProvider
         self.recordResult = recordResult
-
-        featureFlagger.updatesPublisher
-            .receive(on: eligibilityQueue)
-            .sink { [weak self] in
-                self?.refreshEligibility()
-            }
-            .store(in: &cancellables)
 
         dataImportCompletedPublisher
             .receive(on: DispatchQueue.main)
@@ -88,7 +75,7 @@ final class AutofillEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncEm
     }
 
     func refreshEligibility() {
-        isEligibleSubject.send(featureFlagger.isFeatureOn(.promoQueueAutofillEmptyStatePromo) && isAnyCategoryEmptyProvider())
+        isEligibleSubject.send(isAnyCategoryEmptyProvider())
     }
 
     // MARK: - Promo queue result

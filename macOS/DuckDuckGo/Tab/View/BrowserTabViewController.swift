@@ -851,7 +851,7 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.layoutSubtreeIfNeeded()
         webViewContainer?.layoutSubtreeIfNeeded()
 
-        if dialogType == .tryFireButton {
+        if dialogType == .tryFireButton || dialogType == .thatsDuckAI {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()
@@ -1071,6 +1071,13 @@ final class BrowserTabViewController: NSViewController {
             self.abandonContextualOnboardingDialog()
             self.contextualOnboardingScheduler.navigationDidFinish(in: self.tabViewModel?.tab)
         }.store(in: &tabViewModelCancellables)
+
+        tabViewModel?.tab.aiChat?.responseReceivedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.contextualOnboardingScheduler.firstDuckAIAnswerReceived()
+            }
+            .store(in: &tabViewModelCancellables)
 
         // Same-document (SPA) navigations don't emit on webViewDidFinishNavigationPublisher,
         // so reconcile the web content layout for them here too.

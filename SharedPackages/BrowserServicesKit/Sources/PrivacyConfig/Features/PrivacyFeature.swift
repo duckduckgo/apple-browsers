@@ -250,6 +250,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
     case appStoreAddToDockOnlyCTA
+
+    /// Shows the Add to Dock instructions video before Set as Default in the App Store build, from Default Browser and Dock prompts that offer both actions.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220622522685112
+    case appStoreBothDefaultBrowserAndDockCTA
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -684,6 +688,10 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
     /// Searches bookmarks by title, URL and folder, optionally within a folder path.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
     case searchBookmarks
+
+    /// One prompt for the browser tools a chat expects to use, granted for that chat.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1220527012152895
+    case requestAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -1062,9 +1070,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
     case bookmarkAddedSyncPromo
-
-    /// Kill switch for the import/sync promo on the Passwords panel empty states.
-    case autofillEmptyStatePromo
 
     /// Kill switch for the default browser win-back modal.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true

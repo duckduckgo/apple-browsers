@@ -24,7 +24,7 @@ import Testing
 struct ClientToolPermissionCoordinatorTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.allowOnce, .always, .never, .dismiss])
+    @Test(.timeLimit(.minutes(1)), arguments: [ClientToolPermissionDecision.allowOnce, .always, .never, .dontAllow, .dismiss])
     func decisionsFinishMatchingCall(decision: ClientToolPermissionDecision) async throws {
         let harness = ClientToolTestHarness()
         let task = try harness.start()
@@ -32,10 +32,10 @@ struct ClientToolPermissionCoordinatorTests {
         harness.answer(harness.source.prompts[0], decision: decision)
         let result = await task.value
         switch decision {
-        case .allowOnce, .always:
+        case .allowOnce, .allowForChat, .allowAccess, .always:
             #expect(result == .success(callId: "call", value: ["content": "page"]))
             #expect(harness.tool.calls.count == 1)
-        case .never:
+        case .never, .dontAllow:
             #expect(result == .failure(callId: "call", error: .denied))
             #expect(harness.tool.calls.isEmpty)
         case .dismiss:

@@ -535,10 +535,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
     case promoQueueBookmarkAddedSyncPromo
 
-    /// Enables the import/sync promo on the Passwords panel empty states in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
-    case promoQueueAutofillEmptyStatePromo
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo
 
@@ -711,6 +707,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
     case aiChatBrowserToolSearchBookmarks
 
+    /// Gates `requestAccess`: one prompt for the browser tools a Duck.ai chat expects to use.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolRequestAccess
+
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
@@ -718,6 +718,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
     case appStoreAddToDockOnlyCTA
+
+    /// Shows the Add to Dock instructions video before Set as Default in the App Store build, from Default Browser and Dock prompts that offer both actions.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220622522685112
+    case appStoreBothDefaultBrowserAndDockCTA
 
     /// Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220338615600254?focus=true
@@ -1069,8 +1073,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
         case .promoQueueBookmarkAddedSyncPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
-        case .promoQueueAutofillEmptyStatePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .defaultBrowserWinBackPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
@@ -1145,7 +1147,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
         case .aiChatBrowserToolListOpenTabs:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.listOpenTabs), category: .duckAI)
         case .aiChatBrowserToolSearchHistory:
@@ -1171,10 +1173,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatBrowserToolSearchBookmarks:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchBookmarks), category: .duckAI)
 
+        case .aiChatBrowserToolRequestAccess:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.requestAccess), category: .duckAI)
+
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         case .appStoreAddToDockOnlyCTA:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreAddToDockOnlyCTA))
+        case .appStoreBothDefaultBrowserAndDockCTA:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreBothDefaultBrowserAndDockCTA))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), category: .duckAI)
         case .fastTrackingParameterFilter:

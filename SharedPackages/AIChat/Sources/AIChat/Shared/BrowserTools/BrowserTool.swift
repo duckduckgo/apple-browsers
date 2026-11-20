@@ -25,10 +25,10 @@ public protocol BrowserTool: AnyObject {
     /// Stable capability identifier.
     var name: String { get }
 
-    /// `auto` never prompts; `ask` is subject to a stored Always/Never decision.
+    /// The default when the user hasn't chosen one in the prompt or in settings.
     var permissionMode: BrowserToolPermissionMode { get }
 
-    /// A tool that changes the browser: it prompts on every call and a stored Always is ignored.
+    /// A tool that changes the browser: it prompts on every call, a stored Always is ignored, and `requestAccess` never grants it.
     var asksEveryTime: Bool { get }
 
     var inputSchema: JSONValue { get }
@@ -51,7 +51,6 @@ public extension BrowserTool {
     func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { nil }
 }
 
-/// A tool's declared default. Distinct from the *stored* decision, which only Ask tools have.
 public enum BrowserToolPermissionMode: String, Equatable, Sendable {
     case auto
     case ask
@@ -101,4 +100,11 @@ public protocol BrowserToolsConfiguration: AnyObject {
 
     /// The tool's own sub-feature, already combined with the parent.
     func isToolEnabled(named name: String) -> Bool
+
+    /// The `requestAccess` sub-feature, already combined with the parent.
+    var isRequestAccessEnabled: Bool { get }
+}
+
+public extension BrowserToolsConfiguration {
+    var isRequestAccessEnabled: Bool { false }
 }

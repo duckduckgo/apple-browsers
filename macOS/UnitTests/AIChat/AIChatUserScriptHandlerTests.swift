@@ -243,6 +243,7 @@ struct AIChatUserScriptHandlerTests {
 
         let response = await handler.captureScreenshot(params: ["mode": "dragToSelect"], message: WKScriptMessage.mock())
         #expect(provider.capturedModes == ["dragToSelect"])
+        #expect(provider.capturedSources == [.duckai])
         #expect(response as? AIChatCaptureScreenshotResponse == AIChatCaptureScreenshotResponse.failed)
     }
 
@@ -256,6 +257,18 @@ struct AIChatUserScriptHandlerTests {
         let response = await handler.captureScreenshot(params: [:], message: WKScriptMessage.mock())
         #expect(provider.capturedModes.isEmpty)
         #expect(response as? AIChatCaptureScreenshotResponse == AIChatCaptureScreenshotResponse.cancelled)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("captureScreenshot reports the sidebar as its source", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatCaptureScreenshotFromTheSidebarPassesSidebarSource() async {
+        let provider = MockAIChatScreenshotProvider()
+        let handler = makeHandler(screenshotProvider: provider)
+        handler.isSidebarProvider = { true }
+
+        _ = await handler.captureScreenshot(params: ["mode": "selectWindowOrDisplay"], message: WKScriptMessage.mock())
+        #expect(provider.capturedSources == [.sidebar])
     }
 
     @MainActor
@@ -2807,9 +2820,13 @@ private final class MockAIChatScreenshotProvider: AIChatScreenshotProviding {
     var screenshotModes: [String]?
     var response: AIChatCaptureScreenshotResponse = .cancelled
     private(set) var capturedModes: [String] = []
+    private(set) var capturedSources: [AIChatScreenshotSource] = []
 
-    func captureScreenshot(mode: String, requestingWebView: WKWebView?) async -> AIChatCaptureScreenshotResponse {
+    func captureScreenshot(mode: String,
+                           requestingWebView: WKWebView?,
+                           source: AIChatScreenshotSource) async -> AIChatCaptureScreenshotResponse {
         capturedModes.append(mode)
+        capturedSources.append(source)
         return response
     }
 }

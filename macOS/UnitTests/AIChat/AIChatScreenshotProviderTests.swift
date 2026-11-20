@@ -44,14 +44,14 @@ struct AIChatScreenshotProviderTests {
     @Test("A capture with the flag off is a cancel", .timeLimit(.minutes(1)))
     func captureWithFlagOffCancels() async {
         let provider = AIChatScreenshotProvider(featureFlagger: MockFeatureFlagger())
-        #expect(await provider.captureScreenshot(mode: "dragToSelect", requestingWebView: nil) == .cancelled)
+        #expect(await provider.captureScreenshot(mode: "dragToSelect", requestingWebView: nil, source: .duckai) == .cancelled)
     }
 
     @available(macOS 13, *)
     @Test("An unknown mode is a cancel", .timeLimit(.minutes(1)))
     func unknownModeCancels() async {
         let provider = AIChatScreenshotProvider(featureFlagger: makeFeatureFlagger(enabled: true))
-        #expect(await provider.captureScreenshot(mode: "wholeDesk", requestingWebView: nil) == .cancelled)
+        #expect(await provider.captureScreenshot(mode: "wholeDesk", requestingWebView: nil, source: .sidebar) == .cancelled)
     }
 
     @available(macOS 13, *)
@@ -61,6 +61,18 @@ struct AIChatScreenshotProviderTests {
         #expect(try json(.failed) == #"{"error":"screenshotFailed"}"#)
         let image = AIChatCaptureScreenshotResponse(image: .init(data: "AAA=", format: "png", kind: "window"), error: nil)
         #expect(try json(image) == #"{"image":{"data":"AAA=","format":"png","kind":"window"}}"#)
+    }
+
+    @available(macOS 13, *)
+    @Test("The pixels carry kind or reason, and source", .timeLimit(.minutes(1)))
+    func pixelsCarryTheirParameters() {
+        let taken = AIChatPixel.aiChatDuckAiScreenshotTaken(kind: .selection, source: .sidebar)
+        #expect(taken.name == "aichat_duckai_screenshot_taken")
+        #expect(taken.parameters == ["kind": "selection", "source": "sidebar"])
+
+        let failed = AIChatPixel.aiChatDuckAiScreenshotFailed(reason: .failed, source: .duckai)
+        #expect(failed.name == "aichat_duckai_screenshot_failed")
+        #expect(failed.parameters == ["reason": "failed", "source": "duckai"])
     }
 
     private func makeFeatureFlagger(enabled: Bool) -> MockFeatureFlagger {

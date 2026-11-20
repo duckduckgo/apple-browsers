@@ -379,7 +379,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatCaptureScreenshotResponse.cancelled
         }
         return await resolvedScreenshotProvider().captureScreenshot(mode: request.mode,
-                                                                    requestingWebView: message.messageWebView)
+                                                                    requestingWebView: message.messageWebView,
+                                                                    source: isSidebarProvider?() == true ? .sidebar : .duckai)
     }
 
     /// Created here rather than as a default argument, which would be evaluated off the main actor.

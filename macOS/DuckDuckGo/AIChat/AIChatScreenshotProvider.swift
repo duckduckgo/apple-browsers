@@ -19,8 +19,15 @@
 import AppKit
 import Combine
 import FeatureFlags_macOS
+import PixelKit
 import PrivacyConfig
 import WebKit
+
+/// Which surface hosted the Duck.ai page that asked for the screenshot. Raw values are the pixel `source` parameter.
+enum AIChatScreenshotSource: String {
+    case sidebar
+    case duckai
+}
 
 /// Params of Duck.ai's `captureScreenshot` request.
 struct AIChatCaptureScreenshotRequest: Decodable {
@@ -52,7 +59,9 @@ protocol AIChatScreenshotProviding: AnyObject {
     var screenshotModes: [String]? { get }
 
     /// Replies once the capture is taken, fails or is cancelled, however long the user takes.
-    func captureScreenshot(mode: String, requestingWebView: WKWebView?) async -> AIChatCaptureScreenshotResponse
+    func captureScreenshot(mode: String,
+                           requestingWebView: WKWebView?,
+                           source: AIChatScreenshotSource) async -> AIChatCaptureScreenshotResponse
 }
 
 @MainActor
@@ -60,15 +69,19 @@ final class AIChatScreenshotProvider: AIChatScreenshotProviding {
 
     private let featureFlagger: FeatureFlagger
     private let injectedCaptureService: AIChatScreenshotCaptureService?
+    private let pixelFiring: PixelFiring?
 
     /// Read only when a capture starts, so building the config never touches the app delegate.
     private var captureService: AIChatScreenshotCaptureService {
         injectedCaptureService ?? NSApp.delegateTyped.aiChatScreenshotCaptureService
     }
 
-    init(featureFlagger: FeatureFlagger, captureService: AIChatScreenshotCaptureService? = nil) {
+    init(featureFlagger: FeatureFlagger,
+         captureService: AIChatScreenshotCaptureService? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.featureFlagger = featureFlagger
         self.injectedCaptureService = captureService
+        self.pixelFiring = pixelFiring
     }
 
     var screenshotModes: [String]? {
@@ -76,7 +89,9 @@ final class AIChatScreenshotProvider: AIChatScreenshotProviding {
         return [AIChatScreenshotMode.dragToSelect.rawValue, AIChatScreenshotMode.selectWindowOrDisplay.rawValue]
     }
 
-    func captureScreenshot(mode: String, requestingWebView webView: WKWebView?) async -> AIChatCaptureScreenshotResponse {
+    func captureScreenshot(mode: String,
+                           requestingWebView webView: WKWebView?,
+                           source: AIChatScreenshotSource) async -> AIChatCaptureScreenshotResponse {
         guard screenshotModes != nil, let mode = AIChatScreenshotMode(rawValue: mode) else { return .cancelled }
 
         // Switching tabs hides the chat that asked (a sidebar or a Duck.ai tab), so it ends the capture.
@@ -96,6 +111,7 @@ final class AIChatScreenshotProvider: AIChatScreenshotProviding {
 
         switch result {
         case .image(let screenshot):
+            pixelFiring?.fire(AIChatPixel.aiChatDuckAiScreenshotTaken(kind: screenshot.kind, source: source), frequency: .dailyAndCount)
             return .init(image: .init(data: screenshot.data.base64EncodedString(),
                                       format: screenshot.format.rawValue,
                                       kind: screenshot.kind.rawValue),
@@ -106,7 +122,8 @@ final class AIChatScreenshotProvider: AIChatScreenshotProviding {
             // The alert explains, so the capture itself is a cancel and the page shows no error.
             captureService.presentPermissionAlert(on: window)
             return .cancelled
-        case .failed:
+        case .failed(let reason):
+            pixelFiring?.fire(AIChatPixel.aiChatDuckAiScreenshotFailed(reason: reason, source: source), frequency: .dailyAndCount)
             return .failed
         }
     }

@@ -3,6 +3,7 @@
   {"path": "AutomationServer", "testTargets": ["AutomationServerTests"]},
   {"path": "Common", "macosTestOnly": true},
   {"path": "DDGError"},
+  {"path": "DebugServer", "testTargets": ["DebugServerTests"]},
   {"path": "ICSParser"},
   {"path": "LocalModels"},
   {"path": "Infrastructure/DesignResourcesKit"},

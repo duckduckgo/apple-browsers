@@ -921,7 +921,8 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "AutoconsentStats",
                 .product(name: "Persistence", package: "Persistence"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ],
     cxxLanguageStandard: .cxx11

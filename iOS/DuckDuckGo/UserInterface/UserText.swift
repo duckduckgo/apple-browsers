@@ -1082,6 +1082,13 @@ public struct UserText {
         return "Your trial ends in \(daysUntilTrialEnds) \(unit)"
     }
     public static let subscriptionExpirationReminderNotificationBody = NotLocalizedString("subscription.expiration-reminder.notification.body", value: "Try all your new premium protections before your trial ends!", comment: "Body for the Privacy Pro free-trial expiration reminder notification. Used for en_US locale only.")
+    public static let subscriptionNotificationsDeniedDialogTitle = NotLocalizedString("subscription.notifications-denied-dialog.title", value: "Get Notified About Your Trial?", comment: "Title of the dialog asking users who turned off notifications to enable them for the free-trial reminder. Used for en_US locale only.")
+    public static func subscriptionNotificationsDeniedDialogMessage(daysBeforeTrialEnds: Int) -> String {
+        let unit = daysBeforeTrialEnds == 1 ? "day" : "days"
+        return "If you turn on notifications in Settings, we'll send you a notification \(daysBeforeTrialEnds) \(unit) before your free trial ends."
+    }
+    public static let subscriptionNotificationsDeniedDialogNotNow = NotLocalizedString("subscription.notifications-denied-dialog.not-now", value: "Not Now", comment: "Button that dismisses the free-trial reminder notifications dialog. Used for en_US locale only.")
+    public static let subscriptionNotificationsDeniedDialogOpenSettings = NotLocalizedString("subscription.notifications-denied-dialog.open-settings", value: "Open Settings", comment: "Button that opens the app's notification settings from the free-trial reminder notifications dialog. Used for en_US locale only.")
 
     // MARK: Settings Screen
 

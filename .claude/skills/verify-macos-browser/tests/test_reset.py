@@ -147,20 +147,20 @@ class MacResetTests(unittest.TestCase):
 
     def test_begin_dying_halfway_loses_nothing(self):
         sh = FakeMac(self.root, defaults={"themeName": "dark"})
-        real_move = vhelp.shutil.move
+        real_rename = vhelp.os.rename
         moved = []
 
         def move_once(src, dst):   # the second move never happens: the run died there
             if moved:
                 raise KeyboardInterrupt
             moved.append(src)
-            return real_move(src, dst)
-        vhelp.shutil.move = move_once
+            return real_rename(src, dst)
+        vhelp.os.rename = move_once
         try:
             with self.assertRaises(KeyboardInterrupt):
                 self.reset(sh, owner=999999).begin()
         finally:
-            vhelp.shutil.move = real_move
+            vhelp.os.rename = real_rename
         r = self.reset(sh)
         r.begin()
         r.end()
@@ -168,16 +168,35 @@ class MacResetTests(unittest.TestCase):
         self.assertEqual(read(self.mine_state), "engineer's windows.plist")
         self.assertEqual(sh.domain, {"themeName": "dark"})
 
-    def test_mac_reset_never_lists_group_containers_or_other_apps(self):
+    def test_mac_reset_never_lists_group_containers_other_apps_or_webkit_temp(self):
         sh = FakeMac(self.root)
-        write(os.path.join(sh.temp, B, "t"))
-        write(os.path.join(sh.temp, "com.apple.WebKit.GPU+" + B, "t"))
-        write(os.path.join(sh.temp, "com.duckduckgo.macos.browser", "t"))
+        for d, name in ((sh.temp, B), (sh.temp, "com.apple.WebKit.GPU+" + B), (sh.cache, "com.apple.WebKit.GPU+" + B),
+                        (sh.temp, "com.duckduckgo.macos.browser"), (sh.cache, "com.duckduckgo.macos.browser")):
+            write(os.path.join(d, name, "t"))
         data = self.reset(sh).data()
         self.assertEqual(sorted(data), sorted([os.path.join(self.lib, "Application Support", B),
                                                os.path.join(self.lib, "Saved Application State", B + ".savedState"),
                                                os.path.join(sh.temp, B),
-                                               os.path.join(sh.temp, "com.apple.WebKit.GPU+" + B)]))
+                                               os.path.join(sh.cache, "com.apple.WebKit.GPU+" + B)]))
+
+    def test_a_folder_macos_will_not_move_stays_and_fails_the_check(self):
+        sh = FakeMac(self.root)
+        real_rename = vhelp.os.rename
+
+        def refuse(src, dst):
+            if src.endswith(".savedState"):
+                raise PermissionError(1, "Operation not permitted")
+            return real_rename(src, dst)
+        vhelp.os.rename = refuse
+        try:
+            r = self.reset(sh)
+            r.begin()
+        finally:
+            vhelp.os.rename = real_rename
+        self.assertFalse(self.checks()["app data and temp files removed"])
+        r.end()
+        self.assertEqual(read(self.mine), "engineer's bookmarks.db")
+        self.assertEqual(read(self.mine_state), "engineer's windows.plist")
 
     def test_end_without_a_snapshot_is_a_failed_check(self):
         self.reset(FakeMac(self.root)).end()

@@ -190,7 +190,7 @@ data() { local t c; t=$(getconf DARWIN_USER_TEMP_DIR) c=$(getconf DARWIN_USER_CA
     printf "%s\n" "Application Support/$1" "Caches/$1" "Containers/$1" "WebKit/$1" "HTTPStorages/$1" \
         "Saved Application State/$1.savedState" "Group Containers/"HKE973VLUW.* Caches/wide-event-validation-log.jsonl \
         "$t$1" "$t"*"+$1" "$c$1" "$c"*"+$1"; }
-data "$1" | while IFS= read -r p; do rm -rf "$p"; done
+data "$1" | while IFS= read -r p; do rm -rf "$p" 2>/dev/null; done   # macOS keeps the WebKit T/*+<bundle> folders: emptied
 defaults delete "$1" >/dev/null 2>&1; defaults delete com.duckduckgo.wide-pixel.storage >/dev/null 2>&1
 rm -f "Preferences/$1.plist" Preferences/com.duckduckgo.wide-pixel.storage.plist
 killall -u "$USER" cfprefsd 2>/dev/null; sleep 1
@@ -198,7 +198,7 @@ find ~/Downloads -mindepth 1 -delete 2>/dev/null; [[ -n "$2" ]] && touch ~/Downl
 pbcopy < /dev/null
 mkdir -p ~/verify; for d in ~/verify/*/; do rm -rf "$d"; done
 check() { local what=$1; shift; if "$@" >/dev/null 2>&1; then printf "check\t%s\tok\n" "$what"; else printf "check\t%s\tfail\n" "$what"; fi; }
-none() { while IFS= read -r p; do [[ -e "$p" ]] && return 1; done; return 0; }
+none() { while IFS= read -r p; do [[ -e "$p" && ( ! -d "$p" || -n "$(ls -A "$p")" ) ]] && return 1; done; return 0; }
 check "app and recorders stopped" eval "! pgrep -f \"DuckDuckGo - verify-.*\\.app/Contents/MacOS\" && ! pgrep -x screencapture"
 check "app data and temp files removed" eval "data \"$1\" | none"
 check "app defaults and pinned flags removed" eval "! defaults read \"$1\""

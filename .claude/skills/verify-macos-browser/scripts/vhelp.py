@@ -383,12 +383,12 @@ def cmd_reset_record(run_dir, where):
 
 
 def app_data(home, temp, cache, bundle=BUNDLE):
-    """The Debug app's own data on this Mac that exists now. Never its group containers: the release app shares them."""
+    """The Debug app's own data on this Mac that exists now. Never its group containers: the release app shares them.
+    Nor WebKit's <temp>/com.apple.WebKit.*+<bundle> folders: macOS refuses to move them (seen in a VM)."""
     lib = os.path.join(home, "Library")
     paths = [os.path.join(lib, d, bundle) for d in ("Application Support", "Caches", "Containers", "WebKit", "HTTPStorages")]
-    paths.append(os.path.join(lib, "Saved Application State", bundle + ".savedState"))
-    for d in (temp, cache):
-        paths += [os.path.join(d, bundle)] + sorted(glob.glob(os.path.join(glob.escape(d), "*+" + bundle)))
+    paths += [os.path.join(lib, "Saved Application State", bundle + ".savedState"), os.path.join(temp, bundle),
+              os.path.join(cache, bundle)] + sorted(glob.glob(os.path.join(glob.escape(cache), "*+" + bundle)))
     return [p for p in paths if os.path.lexists(p)]
 
 
@@ -466,7 +466,10 @@ class MacReset:
                     f.write("exported" if had else "absent")
                 self.sh("defaults", "delete", BUNDLE)
             for i, path in moved.items():
-                shutil.move(path, os.path.join(items, i))
+                try:   # rename: all or nothing; a folder macOS refuses to move stays, and the check below fails
+                    os.rename(path, os.path.join(items, i))
+                except OSError:
+                    pass
         checks["app data and temp files removed"] = not self.data()
         checks["app defaults and pinned flags removed"] = self._defaults_empty()
         with open(os.path.join(self.run_dir, "downloads-before.json"), "w") as f:
@@ -520,7 +523,7 @@ class MacReset:
         for i, path in moved.items():
             if os.path.lexists(os.path.join(items, i)):
                 os.makedirs(os.path.dirname(path), exist_ok=True)
-                shutil.move(os.path.join(items, i), path)
+                os.rename(os.path.join(items, i), path)
         if os.path.exists(os.path.join(self.park, "defaults.parked")):
             self.sh("defaults", "delete", BUNDLE)
             plist = os.path.join(self.park, "defaults.plist")

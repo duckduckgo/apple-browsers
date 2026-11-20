@@ -59,6 +59,16 @@ struct ContextualDialogsManagerPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Starting the Duck.ai path saves it and asks for no search dialogs", .timeLimit(.minutes(1)))
+    func startDuckAIPath() async throws {
+        manager.startPath(.duckAI)
+
+        #expect(try store.object(forKey: "contextual-onboarding_path-kind") as? String == "duckAI")
+        let newTab = await Tab(content: .newtab)
+        #expect(manager.dialogTypeForTab(newTab) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Restarting onboarding forgets the chosen path", .timeLimit(.minutes(1)))
     func restartClearsThePath() throws {
         manager.startPath(.search)

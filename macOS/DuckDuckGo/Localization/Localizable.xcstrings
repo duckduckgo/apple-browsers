@@ -24038,6 +24038,798 @@
         }
       }
     },
+    "browser-tool.access.allow" : {
+      "comment" : "Button in the Duck.ai browser tools prompt that allows the listed tools in the current chat until the browser quits",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow in This Chat"
+          }
+        }
+      }
+    },
+    "browser-tool.access.detail" : {
+      "comment" : "Text under the title of the prompt Duck.ai shows once for the browser tools a chat will use",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai can take these actions without asking again in this chat, until you close the browser."
+          }
+        }
+      }
+    },
+    "browser-tool.access.dont-allow" : {
+      "comment" : "Button in the Duck.ai browser tools prompt that refuses the listed tools this time, without remembering the choice",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't Allow"
+          }
+        }
+      }
+    },
+    "browser-tool.access.remove-tool" : {
+      "comment" : "Tooltip and accessibility label of the X button beside one tool in the Duck.ai browser tools prompt. It takes that tool out of the ones being allowed. Parameter is the tool name, e.g. Read Tab Content",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't allow %@"
+          }
+        }
+      }
+    },
+    "browser-tool.access.removed-note" : {
+      "comment" : "Shown in the Duck.ai browser tools prompt after the user takes tools out of it. Parameter is the tools' names joined with or, e.g. Read Tab Content or List Open Tabs. Followed by an Undo link",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai won’t %@ this time."
+          }
+        }
+      }
+    },
+    "browser-tool.access.title" : {
+      "comment" : "Title of the prompt Duck.ai shows once for the browser tools it expects to use in a chat. The tools are listed under it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to do the following:"
+          }
+        }
+      }
+    },
+    "browser-tool.access.undo" : {
+      "comment" : "Link in the Duck.ai browser tools prompt that puts back every tool the user took out of it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Undo"
+          }
+        }
+      }
+    },
+    "browser-tool.in-use" : {
+      "comment" : "Tooltip on the tab bar icon shown while Duck.ai runs a browser tool",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai is using a browser tool"
+          }
+        }
+      }
+    },
+    "browser-tool.panel.all-default" : {
+      "comment" : "Note at the bottom of the Browser Permissions panel once every browser tool permission is back to its default",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All browser permissions are back to their defaults."
+          }
+        }
+      }
+    },
+    "browser-tool.panel.close" : {
+      "comment" : "Tooltip of the tab bar button that closes the Browser Permissions panel",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Browser Access"
+          }
+        }
+      }
+    },
+    "browser-tool.panel.manage-in-settings" : {
+      "comment" : "Link in the Browser Permissions panel that opens the Browser Permissions section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage in Settings"
+          }
+        }
+      }
+    },
+    "browser-tool.panel.scope" : {
+      "comment" : "Note at the bottom of the Browser Permissions panel opened from the Duck.ai button menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "These apply to every site and chat."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.allow-once" : {
+      "comment" : "Duck.ai browser tool permission prompt button that lets one tool call run",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow once"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.close-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will do",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will close tabs in this window. Pinned tabs stay open."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.find-in-other-tab" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see that tab's title, address and short snippets around each match."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.find-in-page" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see short snippets around each match."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.list-open-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the title and address of each tab in this window."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.read-other-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see that tab's title, address and text."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.read-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the page's title, address, and text."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.search-bookmarks" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the titles, addresses and folders of your bookmarks."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.search-downloads" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the names and source addresses of files you've downloaded."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.search-history" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see sites you've visited, including before this chat."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.bookmark-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai bookmark a tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to bookmark a tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.close-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to close tabs?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.find-in-other-tab" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to use Find in Page on another tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.find-in-page" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to use Find in Page on this tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.highlight-in-page" : {
+      "comment" : "Title of the prompt asking to let Duck.ai highlight text on a page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to highlight text on this page?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.list-open-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to see your open tabs?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.open-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai open a new tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to open a new tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.other" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to use a browser tool?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.pin-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai pin a tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to pin a tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.read-other-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to read the content of another tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.read-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to read the content of this tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.search-bookmarks" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to search your bookmarks?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.search-downloads" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to search your downloads?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.search-history" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to search your browsing history?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.switch-to-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai switch tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to switch to another tab?"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.bookmark-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmark pages and add bookmark folders."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.bookmark-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmark Page"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.caption" : {
+      "comment" : "Caption of the settings section for what Duck.ai can do in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose what actions Duck.ai can take in the browser, and whether it can act without asking for permission each time. These settings apply to every site and chat."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.close-tabs.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close tabs you ask it to. Pinned tabs stay open."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.close-tabs.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Tabs"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.find-in-page.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find text on a page and see short snippets around each match."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.find-in-page.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find in Page"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.highlight-in-page.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Highlight text on a page so it’s easy to spot."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.highlight-in-page.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Highlight in Page"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.list-open-tabs.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See the title and address of each open tab."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.list-open-tabs.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "List Open Tabs"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.open-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open a page in a new tab."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.open-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Tab"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.pin-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pin tabs to the start of the tab bar."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.pin-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pin Tabs"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.read-tab-content.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read the title, address, and text of a tab."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.read-tab-content.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read Tab Content"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.reset" : {
+      "comment" : "Accessibility label of the button that resets one browser tool permission to its default",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset to default"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.reset-all" : {
+      "comment" : "Button that resets every browser tool permission to its default",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset All"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.reset-tool" : {
+      "comment" : "Accessibility label of the button that resets one browser tool permission to its default. Parameter is the tool name, e.g. Search Downloads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset %@ to default"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-bookmarks.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search your bookmarks and their folders."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-bookmarks.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Bookmarks"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-downloads.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the names and sources of files you’ve downloaded."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-downloads.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Downloads"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-history.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the sites you’ve visited, including before this chat."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-history.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Browsing History"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.switch-to-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bring one of your open tabs to the front."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.switch-to-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch to Tab"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.title" : {
+      "comment" : "Title of the settings section for what Duck.ai can do in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser Access"
+          }
+        }
+      }
+    },
     "burn.fireproofing.explanation.message" : {
       "comment" : "Explanation of what Fireproofing site cookies and data means.",
       "localizations" : {
@@ -126473,6 +127265,30 @@
         }
       }
     },
+    "webExtensions.nativeMessagingUnavailable.dontShowAgain" : {
+      "comment" : "Checkbox in the alert shown when an extension tries to communicate with a desktop app in the App Store version of the browser. When ticked, the alert isn't shown again for that extension. %@ is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t show again for %@"
+          }
+        }
+      }
+    },
+    "webExtensions.nativeMessagingUnavailable.title" : {
+      "comment" : "Title of the alert shown when an extension asks to communicate with a desktop app, which the App Store version of the browser can't allow. %@ is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ can’t connect to other apps on your Mac"
+          }
+        }
+      }
+    },
     "webExtensions.permissions.allow" : {
       "comment" : "Approve additional extension permissions",
       "extractionState" : "extracted_with_value",
@@ -127793,6 +128609,18 @@
         }
       }
     },
+    "webExtensions.permissions.nativeMessagingUnavailable" : {
+      "comment" : "Note below the permission list when an extension also asks to communicate with a desktop app, which the App Store version of the browser can't allow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Communicating with other apps on your Mac isn’t available in the App Store version of DuckDuckGo."
+          }
+        }
+      }
+    },
     "webExtensions.permissions.none" : {
       "comment" : "Extension requests no permissions",
       "extractionState" : "extracted_with_value",
@@ -129109,6 +129937,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Другие параметры"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.message" : {
+      "comment" : "Explanation in an extension's details in Settings > Extensions after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow. A Learn More link follows it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extensions in the App Store version of DuckDuckGo can't connect to other apps, so features that rely on this won't work."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.message.download" : {
+      "comment" : "Text at the bottom of the native mesasging limitation alert.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "To use all of this extension's features, download DuckDuckGo directly from duckduckgo.com/mac."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.title" : {
+      "comment" : "Title of a row in an extension's details in Settings > Extensions, and the accessibility label of the warning badge on its icon, after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can’t connect to other apps on your Mac"
           }
         }
       }

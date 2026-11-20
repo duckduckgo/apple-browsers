@@ -31,6 +31,67 @@
         ],
         "parameters": ["appVersion"]
     },
+    "debug_permission_dialog_closed_without_choice": {
+        "description": "Temporary debug pixel. Fires once when an on-site permission dialog that was visible to the user is removed without a selection, to explain why dialogs close without a choice. Dialogs removed before they were visible do not fire.",
+        "owners": ["bkunat"],
+        "triggers": ["feature_lifecycle", "user_interaction", "exception"],
+        "suffixes": [
+            [
+                {
+                    "description": "Permission type requested by the site.",
+                    "enum": ["camera", "microphone", "geolocation"]
+                },
+                "platform",
+                "form_factor"
+            ],
+            [
+                {
+                    "description": "First word of the camera_and_microphone permission type.",
+                    "enum": ["camera"]
+                },
+                {
+                    "description": "Literal separator.",
+                    "enum": ["and"]
+                },
+                {
+                    "description": "Last word of the camera_and_microphone permission type.",
+                    "enum": ["microphone"]
+                },
+                "platform",
+                "form_factor"
+            ]
+        ],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "type": "string",
+                "enum": [
+                    "navigation_reload",
+                    "navigation_same_site",
+                    "navigation_cross_site",
+                    "process_terminated",
+                    "tab_closed",
+                    "data_cleared",
+                    "cancelled"
+                ],
+                "description": "Why the dialog was removed: the main frame reloaded the same URL or navigated within the same site or to another site, the web content process ended, the tab was closed or unloaded, the Fire button cleared data, or the request was cancelled or replaced."
+            },
+            {
+                "key": "visible_for",
+                "type": "string",
+                "enum": ["lt_1s", "1_5s", "5_30s", "gt_30s"],
+                "description": "How long the dialog was visible before it was removed, in coarse buckets."
+            },
+            {
+                "key": "frame",
+                "type": "string",
+                "enum": ["main", "iframe"],
+                "description": "Whether the main frame or an iframe requested the permission."
+            }
+        ],
+        "expires": "2027-01-31"
+    },
     "permission_dialog_click": {
         "description": "Fires when the user selects an option in the on-site permission dialog or dismisses it.",
         "owners": ["bkunat"],

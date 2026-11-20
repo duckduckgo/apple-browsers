@@ -57,6 +57,7 @@ struct MultiTabAttachmentPage {
         let isLoaded: Bool
         let isAttachable: Bool
         var hasTerminatedProcess = false
+        var isInitialRequestPending = false
     }
 
     let state: () -> State?

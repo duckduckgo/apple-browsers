@@ -117,6 +117,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextAddedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { get }
     var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
@@ -138,6 +139,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
+    func responseReceived(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
@@ -195,6 +197,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let pageContextRemovedPublisher: AnyPublisher<Void, Never>
     public let pageContextAddedPublisher: AnyPublisher<Void, Never>
     public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
+    public let responseReceivedPublisher: AnyPublisher<Void, Never>
     public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
@@ -205,6 +208,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
     private let pageContextAddedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    private let responseReceivedSubject = PassthroughSubject<Void, Never>()
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
     private var syncObserverCancellable: AnyCancellable?
     private var storage: AIChatPreferencesStorage
@@ -324,6 +328,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
         self.pageContextAddedPublisher = pageContextAddedSubject.eraseToAnyPublisher()
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
+        self.responseReceivedPublisher = responseReceivedSubject.eraseToAnyPublisher()
         self.syncStatusPublisher = syncStatusSubject.eraseToAnyPublisher()
 
         setUpSyncStatusObserverIfNeeded()
@@ -534,8 +539,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor func openAIChatLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
-        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
-        else { return nil }
+        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params),
+              let url = openLinkParams.url.url,
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host != nil else {
+            return nil
+        }
 
         let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
         // Duck.ai linking to itself isn't a direct navigation; the chat it opens is attributed to the link.
@@ -821,6 +831,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             group.cancelAll()
             return result
         }
+    }
+
+    func responseReceived(params: Any, message: UserScriptMessage) -> Encodable? {
+        responseReceivedSubject.send()
+        return nil
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {
@@ -1458,7 +1473,8 @@ extension AIChatUserScriptHandler {
         let context = BrowserToolCallContext(
             ownerTabID: ownerTabID,
             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
-            isBurner: ownerCollection.isBurner
+            isBurner: ownerCollection.isBurner,
+            isDetached: message.messageWebView?.window is AIChatFloatingWindow
         )
         let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
         return response.limitedToResultBytes()

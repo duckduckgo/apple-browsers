@@ -281,6 +281,50 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         }
     }
 
+    func testWhenTheRootCloseButtonIsTappedThenTheRootIsReportedClosedAndTheFlowFinishes() {
+        let spy = SpyInstrumentation()
+        var didFinish = false
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy, onFinish: { didFinish = true })
+
+        sut.navigationButton(for: .orderConfirmation).action()
+
+        XCTAssertEqual(spy.closed, [.orderConfirmation])
+        XCTAssertTrue(didFinish)
+    }
+
+    func testWhenSettingsReEntryRootIsClosedThenTheFirstUnfinishedSectionIsReportedClosed() throws {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn], instrumentation: spy)
+        let root = try XCTUnwrap(sut.sequence.first)
+
+        sut.navigationButton(for: root).action()
+
+        XCTAssertEqual(spy.closed, [root])
+    }
+
+    func testWhenTheCompletionScreenPrimaryButtonIsTappedThenProgressIsReportedCompletedAndClosedAndTheFlowFinishes() {
+        let spy = SpyInstrumentation()
+        var didFinish = false
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy, onFinish: { didFinish = true })
+        let factory = SubscriptionOnboardingViewFactory(flow: sut)
+
+        factory.completeAndCloseProgress()
+
+        XCTAssertEqual(spy.completed, [.progress])
+        XCTAssertEqual(spy.closed, [.progress])
+        XCTAssertTrue(didFinish)
+    }
+
+    func testWhenABackButtonIsTappedThenNothingIsReportedClosed() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+        sut.proceed()
+
+        sut.navigationButton(for: .welcome).action()
+
+        XCTAssertTrue(spy.closed.isEmpty)
+    }
+
     func testWhenSectionIsAnOverviewOrSummaryThenItHasNoStepIndicator() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
@@ -632,10 +676,12 @@ private final class SpyInstrumentation: SubscriptionOnboardingInstrumenting {
     private(set) var shown: [SubscriptionOnboardingSection] = []
     private(set) var completed: [SubscriptionOnboardingSection] = []
     private(set) var skipped: [SubscriptionOnboardingSection] = []
+    private(set) var closed: [SubscriptionOnboardingSection] = []
 
     func stepShown(_ section: SubscriptionOnboardingSection) { shown.append(section) }
     func stepCompleted(_ section: SubscriptionOnboardingSection) { completed.append(section) }
     func stepSkipped(_ section: SubscriptionOnboardingSection) { skipped.append(section) }
+    func stepClosed(_ section: SubscriptionOnboardingSection) { closed.append(section) }
 }
 
 /// The `makeSUT` default for tests that aren't about instrumentation at all.
@@ -643,6 +689,7 @@ private struct NullInstrumentation: SubscriptionOnboardingInstrumenting {
     func stepShown(_ section: SubscriptionOnboardingSection) {}
     func stepCompleted(_ section: SubscriptionOnboardingSection) {}
     func stepSkipped(_ section: SubscriptionOnboardingSection) {}
+    func stepClosed(_ section: SubscriptionOnboardingSection) {}
 }
 
 /// A reference-typed persistor so a test can observe writes the flow makes through its own copy.

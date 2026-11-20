@@ -1405,7 +1405,6 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-ff.newTabPageRedesign", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
@@ -1433,10 +1432,15 @@ class FloatingUIXCUITestCase: XCTestCase {
             XCTAssertTrue(tabSwitcherButton.exists)
             XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarMenu).exists)
         }
-        let dismissButton = element(withIdentifier: AccessibilityID.utiDismiss)
-        if dismissButton.exists, dismissButton.isHittable {
-            dismissButton.tap()
-            XCTAssertTrue(dismissButton.waitForNotHittable(timeout: timeout))
+        // The New Tab page raises the keyboard a moment after launch. Wait for it so it can't cover the toolbar
+        // after this check, then close whichever input it focused.
+        _ = app.keyboards.firstMatch.waitForExistence(timeout: 5)
+        for identifier in [AccessibilityID.utiDismiss, "Browser.OmniBar.Button.Dismiss"] {
+            let dismissButton = element(withIdentifier: identifier)
+            if dismissButton.exists, dismissButton.isHittable {
+                dismissButton.tap()
+                XCTAssertTrue(dismissButton.waitForNotHittable(timeout: timeout))
+            }
         }
         if barPosition == .bottom {
             moveAddressBar(to: .bottom)

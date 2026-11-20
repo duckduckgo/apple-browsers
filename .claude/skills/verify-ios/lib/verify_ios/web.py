@@ -47,7 +47,8 @@ class Web:
         """The current tab's URL; fails when the tab has no web page, so "token not in url()" can't pass vacuously."""
         u = self.page_url()
         if u is None:
-            raise Failed("the current tab shows no web page (no URL); use page_url() to test for that")
+            raise Failed("the current tab shows no web page (no URL); use page_url() to test for that",
+                         runner=dict(code="NOT_FOUND"))
         return u
 
     def navigate(self, url):

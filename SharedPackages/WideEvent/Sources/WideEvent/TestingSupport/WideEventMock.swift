@@ -55,6 +55,10 @@ public final class WideEventMock: WideEventManaging {
         updates.append(data)
     }
 
+    public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, options: PixelKit.Options, onComplete: @escaping PixelKit.CompletionBlock) {
+        completeFlow(data, status: status, onComplete: onComplete)
+    }
+
     public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         completions.append((data, status))
         completedIDs.insert(data.globalData.id)

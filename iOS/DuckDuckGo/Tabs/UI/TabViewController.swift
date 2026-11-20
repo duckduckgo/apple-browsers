@@ -162,11 +162,19 @@ class TabViewController: UIViewController {
     var containerStackView: UIStackView!
     /// Driven by `applyContextualOnboardingTopInset(_:)` to clear the floating chrome.
     var containerStackViewTopConstraint: NSLayoutConstraint?
+    /// Released while the iPad Duck.ai chats sidebar sits beside the chat.
+    var containerStackViewLeadingConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewContainerBottomConstraint: NSLayoutConstraint?
     /// Holds the native Duck.ai chat input on iPad while this tab shows a full-tab chat.
     var fullTabChatInputContainer: FullTabChatInputContainerView?
+    /// Holds the native Duck.ai chats sidebar on iPad while this tab shows a full-tab chat.
+    var chatListSidebarContainer: IPadChatListSidebarContainerView?
+    /// Set once this tab's `sidebar=open` load has opened the chats sidebar, so later page URL changes don't reopen it.
+    var hasOpenedChatListSidebarFromURL = false
+    /// Opened for the iPad chats list, so its empty chat keeps the input down on every visit, as `sidebar=open` does.
+    var isOpenedForChatList = false
     private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
@@ -645,7 +653,7 @@ class TabViewController: UIViewController {
         }
     }
 
-    private let rulesCompilationMonitor = RulesCompilationMonitor.shared
+    var rulesCompilationMonitor = RulesCompilationMonitor.shared
     
     private var lastRenderedURL: URL?
 
@@ -841,7 +849,6 @@ class TabViewController: UIViewController {
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     let sitePermissionsState = SitePermissionsState()
-    var sitePermissionsNavigationTimeout: TimeInterval = 10
     var contentBlockingWaitPixelTimeout: TimeInterval = 10
     var contentBlockingWaitNotificationCenter: NotificationCenter = .default
 
@@ -849,6 +856,22 @@ class TabViewController: UIViewController {
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
     var browserToolsService: AIChatBrowserToolsService?
+    private var browserToolsSurfaceVisible = false
+    private var browserToolsPermissionPresenter: AIChatNativePermissionPresenter?
+
+    func browserToolsDidBecomeActive() {
+        browserToolsSurfaceVisible = true
+    }
+
+    func browserToolsWillLeaveScreen() {
+        browserToolsSurfaceVisible = false
+        cancelPendingBrowserToolRequests()
+    }
+
+    private func cancelPendingBrowserToolRequests() {
+        if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
+    }
+
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -877,12 +900,15 @@ class TabViewController: UIViewController {
         guard let webView else { return nil }
         return MultiTabAttachmentPage(state: { [weak self] in
             guard let self, let webView = self.webView else { return nil }
+            let isInitialRequestPending = self.pageContextInitialRequestPending
+                || (self.pageContextRestoredPageNeedsLoad && !self.pageContextNavigationInProgress && webView.isLoading)
             return .init(identity: .init(webView: ObjectIdentifier(webView), navigation: self.pageContextNavigationID),
                          url: webView.url,
                          isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
                          isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
                          isAttachable: self.pageContextHandler.isCurrentPageAttachable(),
-                         hasTerminatedProcess: self.pageContextProcessTerminated)
+                         hasTerminatedProcess: self.pageContextProcessTerminated,
+                         isInitialRequestPending: isInitialRequestPending)
         }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
                                      webView.publisher(for: \.isLoading).map { _ in () }).eraseToAnyPublisher(),
         collect: { [weak self] url, isValid in
@@ -1155,6 +1181,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if browserToolsPermissionPresenter?.isPresentingPermission != true { cancelPendingBrowserToolRequests() }
         closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         duckAISwipeNewChat?.cancel()
@@ -2635,6 +2662,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        browserToolsWillLeaveScreen()
         closeDelegateSessionFindInPage()
         setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
@@ -4233,7 +4261,7 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         guard isSitePermissionsEnabled else {
-            // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
+            // iOS 15 has no site permissions, so it keeps the existing content-blocking wait.
             if isMainFrame {
                 startContentBlockingWaitTimeoutPixel(until: userContentController.$contentBlockingAssets.filter { $0 != nil })
             }
@@ -4249,47 +4277,31 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
-        // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
+        // Like the legacy wait, this has no deadline: a slow rules compile means a slow load, not an error page.
+        // Stop, a replacing navigation and tab teardown cancel these tasks, which resolves WebKit's pending decisions.
         rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()
-        let timeout = sitePermissionsNavigationTimeout
         let geolocationInstalled = userContentController.$contentBlockingAssets
             .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
         if isMainFrame {
             startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
         }
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
-            defer {
-                state?.contentBlockingWaitTasks[waitID] = nil
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
-            }
-            guard !Task.isCancelled else {
-                completion(false)
-                return
-            }
-            // Only readiness may reset the deadline; unrelated asset updates must not extend it.
-            let readiness = geolocationInstalled
-                .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
-                .first()
-            var isReady = false
-            for await _ in readiness.values {
-                isReady = true
-                break
-            }
-            // Remove before completion: success re-enters the navigation policy delegate.
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
+            // The assets publisher never finishes, so this returns nil only when the wait is cancelled.
+            let isReady = await geolocationInstalled.values.first { _ in true } != nil
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
-            guard !Task.isCancelled, isCurrentWait else {
+            guard isReady, !Task.isCancelled, isCurrentWait else {
+                // Rules are not ready, so this is not a finished wait. Keep the tab's waiter: a replacing wait shares it.
                 completion(false)
                 return
             }
             if isMainFrame {
                 state?.contentBlockingWaitTimeoutPixel = nil
             }
-            if !isReady, isMainFrame {
-                self?.showSitePermissionsAssetsTimeout(for: url)
-            }
-            completion(isReady)
+            // Resuming navigation re-enters policy and can record a zero-second wait.
+            rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
+            completion(true)
         }
         return true
     }
@@ -4317,17 +4329,6 @@ extension TabViewController: WKNavigationDelegate {
             }, receiveValue: { [pixelFiring] in
                 pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
             })
-    }
-
-    private func showSitePermissionsAssetsTimeout(for failedURL: URL) {
-        let error = URLError(.timedOut, userInfo: [NSURLErrorFailingURLErrorKey: failedURL])
-        lastError = error
-        pendingNativeLoadURL = nil
-        shouldReloadOnError = false
-        url = failedURL
-        hideProgressIndicator()
-        showError(message: error.localizedDescription)
-        webpageDidFailToLoad()
     }
 
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (TabNavigationDecision) -> Void) {
@@ -5359,7 +5360,9 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
         userScripts.browserUiLockSubfeature.delegate = self
-        configureSitePermissionsMediaCapture(with: userScripts.mediaCaptureUserScript)
+        if let mediaCaptureUserScript = userScripts.mediaCaptureUserScript {
+            configureSitePermissionsMediaCapture(with: mediaCaptureUserScript)
+        }
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement
@@ -5383,7 +5386,14 @@ extension TabViewController: UserContentControllerDelegate {
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         if let browserToolsService, let browserToolScopeFactory,
            let webView, webView.configuration.userContentController === userContentController {
-            userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel, makeScope: browserToolScopeFactory)
+            if browserToolsPermissionPresenter == nil {
+                browserToolsPermissionPresenter = AIChatNativePermissionPresenter { [weak self] in
+                    guard let self, self.browserToolsSurfaceVisible, self.isTabCurrentlyPresented() else { return nil }
+                    return self
+                }
+            }
+            userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel,
+                                                        presenter: browserToolsPermissionPresenter, makeScope: browserToolScopeFactory)
         }
         userScripts.aiChatUserScript.connectInitialPromptSession(initialAIChatPromptSession)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()

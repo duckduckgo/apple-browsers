@@ -482,6 +482,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     func setFocusedPose(_ pose: NewTabPageFocusedPose?) {
         if pose == nil {
             UIView.performWithoutAnimation { unsettleFocusedPose() }
+            restorePinnedEditingContentOffset()
         }
         let showedModules = focusedPose?.showsModules
         focusedPose = pose
@@ -517,10 +518,13 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.contentInset.bottom = 0
         scrollView.keyboardDismissMode = .none
         scrollView.isScrollEnabled = inputEditingLayout == nil
-        if let pinnedEditingContentOffset, scrollView.contentOffset != pinnedEditingContentOffset {
-            hideFocusedModules(animated: false)
-            scrollView.contentOffset = pinnedEditingContentOffset
-        }
+    }
+
+    /// Scrolls back to the offset the page had before editing, inside the caller's animation so the visible rows travel
+    /// back with the pose rather than jumping.
+    private func restorePinnedEditingContentOffset() {
+        guard let pinnedEditingContentOffset, scrollView.contentOffset != pinnedEditingContentOffset else { return }
+        scrollView.contentOffset = pinnedEditingContentOffset
     }
 
     private var pinnedEditingContentOffset: CGPoint? {
@@ -637,7 +641,7 @@ private final class TransformedBlocksStackView: UIStackView {
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         super.point(inside: point, with: event) || arrangedSubviews.contains { blockView in
-            !blockView.isHidden && blockView.alpha > 0 && blockView.frame.contains(point)
+            !blockView.isHidden && blockView.alpha > 0 && blockView.bounds.contains(blockView.convert(point, from: self))
         }
     }
 }

@@ -727,8 +727,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.setEscapeHatch(escapeHatchModel)
         host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
         host.onContentChanged = { [weak self] in
-            self?.updateFocusedContent()
-            self?.refreshVisibleContent(animateContentUpdates: true)
+            guard let self else { return }
+            // Each update rebuilds the host and forces a layout. Off screen, defer it to the next activation's refresh.
+            guard isContentActive else {
+                markNeedsVisibleRefresh()
+                return
+            }
+            updateFocusedContent()
+            refreshVisibleContent(animateContentUpdates: true)
         }
 
         let containerView = UIView()

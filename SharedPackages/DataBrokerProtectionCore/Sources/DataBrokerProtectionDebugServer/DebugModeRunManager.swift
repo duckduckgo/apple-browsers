@@ -63,6 +63,7 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
         }
     }
 
+    #if DEBUG
     public func applyingDebugPIRSettings(to result: DebugPrerequisiteResult) -> DebugPrerequisiteResult {
         let settings = runner.settings
         var endpoint = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: false)
@@ -74,6 +75,7 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
                                        pirEnvironment: settings.selectedEnvironment.rawValue, pirEndpoint: endpoint?.string,
                                        authenticated: result.authenticated, errorCode: result.errorCode)
     }
+    #endif
 
     // MARK: - DataBrokerProtectionDebugModeRunning
 

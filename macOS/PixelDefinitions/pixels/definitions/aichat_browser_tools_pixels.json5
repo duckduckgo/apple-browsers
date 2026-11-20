@@ -1,0 +1,136 @@
+{
+    "aichat_tools_call_macos": {
+        "description": "Fired when a Duck.ai browser tool call finishes, whatever its result. Not fired for requestAccess or in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool called",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "result",
+                "description": "The result Duck.ai received. A success over the 512 KB result limit is execution_failed",
+                "enum": ["success", "denied", "cancelled", "unavailable", "not_found", "invalid_arguments", "execution_failed"]
+            },
+            {
+                "key": "permission_path",
+                "description": "What let the call run or stopped it: auto = the tool doesn't ask, always = stored Always allow, chat = allowed for this chat earlier, prompt = the user was asked for this call, never = stored Never allow, none = refused before permission was looked at",
+                "enum": ["auto", "always", "chat", "prompt", "never", "none"]
+            },
+            {
+                "key": "duration",
+                "description": "How long the tool ran, without the wait for permission. Absent when it never ran",
+                "enum": ["lt_100ms", "lt_500ms", "lt_2s", "lt_10s", "gte_10s"]
+            }
+        ]
+    },
+    "aichat_tools_used_macos": {
+        "description": "Fired at most once a day, on the first successful Duck.ai browser tool call of any tool.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_list_open_tabs_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool list_open_tabs.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_read_tab_content_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool read_tab_content.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_search_history_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool search_history.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_find_in_page_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool find_in_page.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_highlight_in_page_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool highlight_in_page.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_switch_to_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool switch_to_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_pin_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool pin_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_open_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool open_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_bookmark_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool bookmark_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_close_tabs_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool close_tabs.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_search_downloads_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool search_downloads.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_search_bookmarks_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool search_bookmarks.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    }
+}

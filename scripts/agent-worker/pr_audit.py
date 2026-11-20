@@ -6,7 +6,8 @@ Env: TASK_GID, RUN_STARTED (UTC, ISO 8601), GITHUB_REPOSITORY, GH (the gh to run
 
 The agent names its branches agent/<task gid>-..., so PRs from those branches opened since the run started are its
 own. For each, it checks:
-- links in the title and body: only the task, this repo, links already in the PR template and auto's evidence viewer
+- links in the title and body: only the task, this repo, links already in the PR template, auto's evidence viewer and
+  Claude Code's own "Generated with Claude Code" footer link
 - images attached to the PR, which would make evidence public
 - changed files under .github/ or scripts/agent-worker/
 - text copied from the agent's instructions (leak_check.py), in the title, body and added lines
@@ -46,7 +47,8 @@ def allowed_links(template, task, repo):
     ok = (f"https://app.asana.com/0/0/{task}/f", f"https://app.asana.com/0/0/{task}")
     return lambda url: (url.rstrip(".,") in known or url.startswith(ok)
                         or url.startswith(f"https://github.com/{repo}/")
-                        or url.startswith("https://artifacts.go.duckduckgo.com/view/auto/"))
+                        or url.startswith("https://artifacts.go.duckduckgo.com/view/auto/")
+                        or url.startswith("https://claude.com/"))
 
 
 def stray_pushes(repo, started):

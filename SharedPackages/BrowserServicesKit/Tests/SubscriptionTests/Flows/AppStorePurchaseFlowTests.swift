@@ -261,34 +261,6 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         await fulfillment(of: [notificationPosted], timeout: 1.0)
     }
 
-    func test_completeSubscriptionPurchase_withSuccess_postsNoIsTierChange() async {
-        subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        let subscription = SubscriptionMockFactory.appleSubscription
-        subscriptionManagerMock.resultSubscription = .success(subscription)
-        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
-
-        let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default) { notification in
-            notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isTierChange] == nil
-        }
-
-        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", isFreeTrial: true, experimentAttribution: nil)
-
-        await fulfillment(of: [notificationPosted], timeout: 1.0)
-    }
-
-    func test_changeTier_withSuccess_postsIsTierChangeTrue() async {
-        subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        storePurchaseManagerMock.purchaseSubscriptionResult = .success((transactionJWS: "transactionJWS", isFreeTrial: false))
-
-        let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default) { notification in
-            notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isTierChange] as? Bool == true
-        }
-
-        _ = await sut.changeTier(to: "newTierSubscriptionID")
-
-        await fulfillment(of: [notificationPosted], timeout: 1.0)
-    }
-
     // MARK: - PendingTransactionHandler Tests
 
     func test_completeSubscriptionPurchase_withSuccess_callsHandleSubscriptionActivated() async {

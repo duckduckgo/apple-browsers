@@ -175,6 +175,7 @@ struct SettingsRootView: View {
                                                              meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
                                                              subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
                                                                 featureFlagger: featureFlagger),
+                                                             onSubscriptionRestored: nil,
                                                              onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
     }
 

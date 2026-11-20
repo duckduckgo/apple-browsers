@@ -807,31 +807,21 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
 final class OnboardingSubscriptionFlowNavigationController: UINavigationController, SubscriptionFlowNavigationStyling {
 
     var onDismiss: (() -> Void)?
-    /// Called when the user restores a subscription they already had ("Subscription Found" → Restore) in this paywall.
-    var onRestore: (() -> Void)?
-    private var cancellables = Set<AnyCancellable>()
+    private var purchaseCancellable: AnyCancellable?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         applySubscriptionFlowStyle()
-        NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
+        purchaseCancellable = NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.dismiss(animated: true)
             }
-            .store(in: &cancellables)
-        NotificationCenter.default.publisher(for: .subscriptionFlowDidRestoreSubscription)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.onRestore?()
-            }
-            .store(in: &cancellables)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         guard isBeingDismissed else { return }
-        onRestore = nil
         onDismiss?()
         onDismiss = nil
     }

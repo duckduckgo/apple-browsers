@@ -283,7 +283,7 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
                                                               isAlreadyAssigned: false)
         let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock())
-        let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger)
+        let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger, onSubscriptionRestored: nil)
 
         await sut.setupTransactionObserver()
         subFeature.onAppStoreTransactionCompleted?(true)
@@ -292,11 +292,13 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     }
 
     @MainActor
-    func test_restoreAppstoreTransaction_restoreSucceeds_postsDidRestoreSubscription() async {
+    func test_restoreAppstoreTransaction_restoreSucceeds_callsOnSubscriptionRestored() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreAccountFromPastPurchaseResult = .success("transactionJWS")
-        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow), featureFlagger: PrivacyConfig.MockFeatureFlagger())
-        let restored = expectation(forNotification: .subscriptionFlowDidRestoreSubscription, object: sut)
+        let restored = expectation(description: "onSubscriptionRestored called")
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onSubscriptionRestored: { restored.fulfill() })
 
         sut.restoreAppstoreTransaction()
 
@@ -304,12 +306,14 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     }
 
     @MainActor
-    func test_restoreAppstoreTransaction_restoreFails_doesNotPostDidRestoreSubscription() async {
+    func test_restoreAppstoreTransaction_restoreFails_doesNotCallOnSubscriptionRestored() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreAccountFromPastPurchaseResult = .failure(.missingAccountOrTransactions)
-        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow), featureFlagger: PrivacyConfig.MockFeatureFlagger())
-        let restored = expectation(forNotification: .subscriptionFlowDidRestoreSubscription, object: sut)
+        let restored = expectation(description: "onSubscriptionRestored called")
         restored.isInverted = true
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onSubscriptionRestored: { restored.fulfill() })
 
         sut.restoreAppstoreTransaction()
 
@@ -343,7 +347,8 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
 
     @MainActor
     private func makeViewModel(subFeature: DefaultSubscriptionPagesUseSubscriptionFeature,
-                               featureFlagger: FeatureFlagger) -> SubscriptionFlowViewModel {
+                               featureFlagger: FeatureFlagger,
+                               onSubscriptionRestored: (() -> Void)?) -> SubscriptionFlowViewModel {
         SubscriptionFlowViewModel(initialURL: URL(string: "https://duckduckgo.com/subscriptions")!,
                                   flowType: .firstPurchase,
                                   userScript: SubscriptionPagesUserScript(),
@@ -354,7 +359,8 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
                                   wideEvent: WideEventMock(),
                                   dataBrokerProtectionViewControllerProvider: nil,
                                   onboardingKeyValueStore: InMemoryOnboardingStore(),
-                                  meetsPIRLocaleRequirement: { false })
+                                  meetsPIRLocaleRequirement: { false },
+                                  onSubscriptionRestored: onSubscriptionRestored)
     }
 }
 

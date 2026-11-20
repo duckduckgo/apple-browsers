@@ -72,6 +72,7 @@ enum SubscriptionContainerViewFactory {
                                     onboardingKeyValueStore: ThrowingKeyValueStoring?,
                                     meetsPIRLocaleRequirement: @escaping () -> Bool,
                                     subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
+                                    onSubscriptionRestored: (() -> Void)?,
                                     onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
@@ -127,6 +128,7 @@ enum SubscriptionContainerViewFactory {
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: onboardingKeyValueStore,
             meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+            onSubscriptionRestored: onSubscriptionRestored,
             onRequestDuckAIChat: onRequestDuckAIChat
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -151,6 +153,7 @@ enum SubscriptionContainerViewFactory {
                                    onboardingKeyValueStore: ThrowingKeyValueStoring?,
                                    meetsPIRLocaleRequirement: @escaping () -> Bool,
                                    subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
+                                   onSubscriptionRestored: (() -> Void)?,
                                    onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
@@ -180,6 +183,7 @@ enum SubscriptionContainerViewFactory {
                                 onboardingKeyValueStore: onboardingKeyValueStore,
                                 meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
                                 subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
+                                onSubscriptionRestored: onSubscriptionRestored,
                                 onRequestDuckAIChat: onRequestDuckAIChat)
         }
     }
@@ -232,7 +236,8 @@ enum SubscriptionContainerViewFactory {
                                                        subFeature: subscriptionPagesUseSubscriptionFeature,
                                                        dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                                        onboardingKeyValueStore: nil,
-                                                       meetsPIRLocaleRequirement: { false })
+                                                       meetsPIRLocaleRequirement: { false },
+                                                       onSubscriptionRestored: nil)
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .restore, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -304,7 +309,8 @@ enum SubscriptionContainerViewFactory {
                                                                            featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
+            meetsPIRLocaleRequirement: { false },
+            onSubscriptionRestored: nil
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -356,7 +362,8 @@ enum SubscriptionContainerViewFactory {
                                                                            featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
+            meetsPIRLocaleRequirement: { false },
+            onSubscriptionRestored: nil
         )
     }
 
@@ -408,7 +415,8 @@ enum SubscriptionContainerViewFactory {
                                                                            featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
+            meetsPIRLocaleRequirement: { false },
+            onSubscriptionRestored: nil
         )
 
         viewModel.email.setEmailFlowMode(emailFlow)

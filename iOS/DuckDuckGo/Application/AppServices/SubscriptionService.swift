@@ -49,14 +49,12 @@ final class SubscriptionService {
                                                   notificationCenter: notificationCenter)
     }
 
-    /// New subscriptions from any entry point count. Restores don't post `.userDidPurchaseSubscription`, and tier changes
-    /// of an existing subscription are skipped.
+    /// New subscriptions from any entry point count. Restores and plan changes of an existing subscription don't.
     private func recordPurchasesForOnboardingVPNExperiment(metrics: OnboardingVPNDownloadReasonExperimentMetrics,
                                                            featureFlagger: FeatureFlagger,
                                                            notificationCenter: NotificationCenter) {
         let subfeatureID = PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue
-        notificationCenter.publisher(for: .userDidPurchaseSubscription)
-            .filter { $0.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isTierChange] as? Bool != true }
+        notificationCenter.publisher(for: .userDidStartNewSubscription)
             .sink { _ in
                 metrics.recordSubscriptionPurchase(enrollmentDate: featureFlagger.allActiveExperiments[subfeatureID]?.enrollmentDate,
                                                    now: Date())

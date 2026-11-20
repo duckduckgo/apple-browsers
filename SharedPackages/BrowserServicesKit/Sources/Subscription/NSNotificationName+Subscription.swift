@@ -38,9 +38,6 @@ public extension NSNotification.Name {
 public enum UserDidPurchaseSubscriptionUserInfoKey {
     /// `Bool`, whether the purchase started a free trial. Absent when unknown.
     public static let isFreeTrial = "isFreeTrial"
-    /// `Bool`, `true` when the purchase changed the tier of an existing subscription rather than starting a new one.
-    /// Absent for new subscriptions.
-    public static let isTierChange = "isTierChange"
 }
 
 public struct EntitlementsDidChangePayload {

@@ -235,6 +235,12 @@ class AppBuildPackagesTests(unittest.TestCase):
         self.assertEqual(cmd[i + 1], "/resolved/packages")
         self.assertIn("-disableAutomaticPackageResolution", cmd)
 
+    def test_a_relative_packages_dir_is_made_absolute_for_every_build(self):
+        script = "import os; from verify_ios import env; print(env.PACKAGES); print(os.environ['VERIFY_IOS_PACKAGES'])"
+        p = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, cwd=TMP,
+                           env={**os.environ, "VERIFY_IOS_PACKAGES": "pkgs", "PYTHONPATH": os.path.join(env.SKILL, "lib")})
+        self.assertEqual(p.stdout.split(), [os.path.join(os.path.realpath(TMP), "pkgs")] * 2, p.stderr)
+
     def test_without_packages_dir_the_build_resolves_its_own(self):
         cmd = self.app_build_command("")
         self.assertNotIn("-clonedSourcePackagesDirPath", cmd)

@@ -67,8 +67,11 @@ APP_DD = f"{BUILD}/app"
 RUNNER_DD = f"{BUILD}/runner"
 APP = f"{APP_DD}/Build/Products/Debug-iphonesimulator/DuckDuckGo.app"
 # Swift packages already resolved into this dir, for machines that can't fetch the private ones (the CI agent worker
-# resolves them before its deploy key is removed). Unset, the app build resolves its own
+# resolves them before its deploy key is removed). Unset, the app build resolves its own. Made absolute and exported,
+# so the base build of `prove --base`, which runs from another directory, uses the same packages
 PACKAGES = os.environ.get("VERIFY_IOS_PACKAGES", "")
+if PACKAGES:
+    PACKAGES = os.environ["VERIFY_IOS_PACKAGES"] = os.path.abspath(os.path.expanduser(PACKAGES))
 EVIDENCE = f"{HOME}/evidence"
 BASE_PORT = 20000 + int(hashlib.sha1(ROOT.encode()).hexdigest(), 16) % 1000 * 8
 

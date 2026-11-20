@@ -27,6 +27,8 @@ import Foundation
 /// reports calls to placeholders to the API compatibility log.
 ///
 /// Some namespaces are implemented rather than placeholders:
+/// - On macOS, `chrome.downloads.download` saves base64 attachments through a browser-owned Save panel.
+///   Its completion event is delivered to the page that requested the download.
 /// - `chrome.idle`, on macOS: the state (`locked`, `idle` or `active`) comes from the app through
 ///   `idleMessageHandlerName`, and `onStateChanged` polls while it has listeners.
 /// - `chrome.offscreen`: `createDocument` loads the document in a hidden iframe, so the offscreen
@@ -52,7 +54,7 @@ import Foundation
 /// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
 /// are defined where missing. `chrome.permissions` grants `idle` and `offscreen` itself, since the script
 /// implements them, and `webRequestAuthProvider`, since WebKit implements `webRequest.onAuthRequired` under
-/// `webRequest`. It asks the app about `privacy`, so the user decides whether an extension gets it.
+/// `webRequest`. The app asks the user about `privacy` and, on macOS, `downloads`.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -62,6 +64,8 @@ public enum WebExtensionAPIStubScript {
     /// Name of the script message handler `chrome.idle.queryState` asks for the idle state. It is
     /// optional: a page with no handler of this name hears `active`.
     public static let idleMessageHandlerName = "ddgWebExtensionIdle"
+
+    public static let downloadMessageHandlerName = "ddgWebExtensionDownload"
 
     /// Name of the script message handler `chrome.privacy.services` settings go through. It is
     /// optional: without it the settings stay in the extension's own storage.
@@ -90,6 +94,13 @@ public enum WebExtensionAPIStubScript {
 
     /// Permissions WebKit doesn't know that the script or the app implements.
     static let providedPermissionNames = Set(localPermissionNames + WebExtensionAppPermission.allCases.map(\.rawValue))
+#if os(macOS)
+    private static let downloadBridgeEnabled = true
+    private static let maximumDownloadURLLength = WebExtensionDownload.maximumURLLength
+#else
+    private static let downloadBridgeEnabled = false
+    private static let maximumDownloadURLLength = 0
+#endif
 
     /// `names` as a JavaScript array literal.
     private static func jsArray(_ names: [String]) -> String {
@@ -281,7 +292,7 @@ public enum WebExtensionAPIStubScript {
         var missingNamespaces = [
             { name: "notifications" },
             { name: "offscreen", kind: "offscreen" },
-            { name: "downloads" },
+            { name: "downloads", kind: "downloads" },
             { name: "idle", kind: "idle" },
             { name: "management" },
             { name: "privacy", kind: "privacy" },
@@ -973,7 +984,45 @@ public enum WebExtensionAPIStubScript {
             return value !== null && typeof value === "object" ? Object.freeze(value) : value;
         }
 
+        function makeDownloads() {
+            var placeholder = makeStub("downloads", true);
+            if (!\(downloadBridgeEnabled)) { return placeholder; }
+            var listeners = new Set();
+            var downloads = Object.create(placeholder);
+            downloads.onChanged = {
+                addListener: function(listener) { if (typeof listener === "function") { listeners.add(listener); } },
+                removeListener: function(listener) { listeners.delete(listener); },
+                hasListener: function(listener) { return listeners.has(listener); },
+                hasListeners: function() { return listeners.size > 0; }
+            };
+            // Download events are scoped to the initiating page. Only a basename crosses the bridge.
+            downloads.download = function(options, callback) {
+                var promise = Promise.resolve().then(function() {
+                    if (!options || typeof options.url !== "string" || options.url.length > \(maximumDownloadURLLength) ||
+                        typeof options.filename !== "string" || options.filename.length > 255 || Object.keys(options).length !== 2) {
+                        throw new Error("Unsupported download options or file size");
+                    }
+                    var handler = globalThis.webkit && globalThis.webkit.messageHandlers["\(Self.downloadMessageHandlerName)"];
+                    if (!handler) { throw new Error("Extension downloads are unavailable"); }
+                    return handler.postMessage(options);
+                }).then(function(result) {
+                    // A caller can register its listener after receiving the download ID.
+                    setTimeout(function() {
+                        listeners.forEach(function(listener) {
+                            invokeCallback(listener, { id: result.id, filename: { current: result.filename }, state: { current: "complete" } });
+                        });
+                    }, 0);
+                    return result.id;
+                });
+                return answerBothStyles(promise, callback);
+            };
+            return downloads;
+        }
+
         function makeMember(entry, path) {
+            if (entry.kind === "downloads") {
+                return makeDownloads();
+            }
             if (entry.kind === "event") {
                 return makeEvent(path);
             }

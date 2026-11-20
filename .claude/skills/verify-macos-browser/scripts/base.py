@@ -20,6 +20,7 @@ from harness import HOME, ROOT, ProofError, Record, label
 
 BASE_TREES = os.path.join(HOME, "base")
 AS_DECLARED, UNEXPECTED, NOT_SHOWN = "as declared", "unexpected", "not shown"
+BY_DESIGN = ["app under test", "output folder"]   # all that should differ between the two runs
 
 
 # ---------------------------------------------------------------- judging (pure)
@@ -89,6 +90,24 @@ def base_topic(topic):
     return f"b-{name[:7].strip('-')}-{uid}"
 
 
+def _host(m):
+    return (m.get("vm") or {}).get("host")
+
+
+def between_runs(base_m, change_m):
+    """What differs between the two runs' starts, from their manifests: the app under test and the output folder by
+    design; anything else (another VM, a reset that failed or is missing, a condition) is named."""
+    differ = list(BY_DESIGN)
+    if _host(base_m) != _host(change_m):
+        differ.append(f"VM: {_host(base_m) or 'this Mac'} then {_host(change_m) or 'this Mac'}")
+    for side, m in (("before", base_m), ("after", change_m)):
+        reset = m.get("reset")
+        failed = [w for w, ok in (reset or {}).get("checks", {}).items() if not ok]
+        if reset is None or failed:
+            differ.append(f"start state {side}: " + ("not reset" if reset is None else "; ".join(failed) + " failed"))
+    return differ + [f"condition {c}" for c in harness.conditions_differ(base_m, change_m)]
+
+
 # ---------------------------------------------------------------- the base worktree
 def _git(cwd, *args):
     return subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True)
@@ -155,11 +174,11 @@ def prove_base(path, ref, target, evidence_dir=None, video=True):
         os.makedirs(os.path.join(evidence, "base"))
         base, base_m = harness.run_one(mod, proof, os.path.join(evidence, "base"), base_topic(topic), target, video,
                                        tree, harness.rerun_command(proof, target, shown_dir, video, tree), shown_dir,
-                                       as_base=True)
+                                       as_base=True, reset=True)
     if not base_could_not_tell(base):
         os.makedirs(os.path.join(evidence, "change"))
         change, change_m = harness.run_one(mod, proof, os.path.join(evidence, "change"), topic, target, video, ROOT,
-                                           rerun, shown_dir)
+                                           rerun, shown_dir, reset=True, prefer_vm=_host(base_m))
     rows = judge(base.checks, change.checks if change else [])
     differ = harness.conditions_differ(base_m, change_m) if base_m and change_m else []
     v, code, reason = verdict(base, change, rows, differ)
@@ -167,6 +186,7 @@ def prove_base(path, ref, target, evidence_dir=None, video=True):
                     change=dict(revision=(change_m or {}).get("revision"), dirty=(change_m or {}).get("dirty")),
                     before="base/manifest.json" if base_m else None, after="change/manifest.json" if change_m else None,
                     target=target, verdict=v, exit=code, reason=reason, rows=rows, rerun=rerun, conditions_differ=differ,
+                    between_runs=between_runs(base_m, change_m) if change_m else None,
                     clean=f"{harness._sh_path(os.path.join(harness.SKILL, 'bin', 'verify-macos-browser'))} clean-base")
     with open(os.path.join(evidence, "manifest.json"), "w") as f:
         f.write(harness._tilde(json.dumps(manifest, indent=1)))
@@ -218,6 +238,9 @@ def report(doc, base, change, base_m, change_m, m, evidence):
               f"- After: `{after_rev[:12]}`" + (f", on {target(change_m)}" if change_m else ", not run"),
               f"- Pinned flags: {', '.join(change_m.get('flags') or base_m.get('flags') or []) or '(none)'}",
               f"- Conditions: {conditions}",
+              "- Between the runs: " + ("only the app under test and the output folder differ; each run started from "
+                                        "a reset (`reset` in each manifest)" if m.get("between_runs") == BY_DESIGN
+                                        else f"**differ: {'; '.join(m.get('between_runs') or ['(after not run)'])}**"),
               f"- Rerun: `{m['rerun']}`",
               f"- The base worktree is kept for the next run on that revision; remove them all: `{m['clean']}`",
               f"- Manifest: [manifest.json](manifest.json)", "", "## Unverified", ""]

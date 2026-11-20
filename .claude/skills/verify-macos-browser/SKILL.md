@@ -70,8 +70,8 @@ Proof rules:
 
 **Fixture pages and LIVE.** Prefer a local page to a live site: `mac.navigate(mac.fixture_url(mac.token("x")))`
 (`AUTOMATION = True`) opens `fixture/index.html`, served for this run only on 127.0.0.1 (in a VM, via an ssh tunnel to
-its loopback). It shows the token, writes localStorage, links to `target.html`, and has a disabled button, two buttons
-sharing a label and a long list. Name every live service the proof needs in `LIVE`. With `AUTOMATION`, the report
+its loopback). It shows the token, writes localStorage, links to `target.html` and a download, and has a disabled
+button, two buttons sharing a label and a long list. Name every live service the proof needs in `LIVE`. With `AUTOMATION`, the report
 lists the hosts the app loaded (navigated, read by `url()`, and the front tab's resources at the end; not other tabs
 or the app's own requests), says "local pages only" or "live: …", and flags in bold any host `LIVE` doesn't cover.
 
@@ -83,8 +83,8 @@ $V prove <proof> --target vm-1 --base "$(git merge-base HEAD origin/main)" [--ev
 ```
 
 It proves the base in a worktree kept at `~/.ddg-verify-macos/base/<sha12>` (its own DerivedData: the first build is
-cold, 5 to 20+ min; later runs on that revision are incremental; `$V clean-base` removes them), then this checkout, with
-the same target, flags and conditions (any that differ: INCONCLUSIVE). On the base a check declared `fail` is recorded and the proof carries on; any
+cold, 5 to 20+ min, then incremental; `$V clean-base` removes them), then this checkout, with
+the same VM, flags and conditions (any that differ: INCONCLUSIVE), each from a reset. On the base a check declared `fail` is recorded and the proof carries on; any
 other error there is INCONCLUSIVE. **PASS** needs this checkout to pass and the base to do what each check declares,
 with at least one declared `fail`; a `fail` check that passes on the base is **FAIL**: the proof doesn't reproduce
 the bug. `report.md` shows each check and screenshot Before | After; each run's evidence is in `base/` and `change/`.
@@ -151,11 +151,11 @@ for code that is there is a stale module in DerivedData: move it out and rebuild
 
 ## Running in a VM
 
-- `vm` reserves a free VM (a lock per VM in `~/.ddg-verify-macos/.vm-locks/`), wipes the Debug app's data there
-  (the keychain stays) and copies `ax`. `cleanup` releases it. `NO VM FREE` lists who holds each lock.
+- `vm` reserves a free VM (a lock per VM in `~/.ddg-verify-macos/.vm-locks/`), resets the app, its data,
+  Downloads, pasteboard (keychain kept) and copies `ax`. `cleanup` releases it. `NO VM FREE` lists who holds each lock.
 - `build` compiles here (one build at a time), copies the app with `tar`, checks its hashes, launches it in the VM
   and presses Debug → Skip Onboarding (`--keep-onboarding` to test onboarding). Pixels stream back over ssh.
-- Every ssh call goes to the local network, which Claude Code's sandbox blocks: run it outside the sandbox.
+- ssh goes to the local network, which Claude Code's sandbox blocks: run it unsandboxed.
 - `NOT LAUNCHED` in a VM is usually AMFI: its Provisioning UDID isn't in the profile (VM-SETUP.md step 4).
   `NOT READY` with no window: a keychain dialog waits in the VM (VM-SETUP.md step 5).
 - A window can be frontmost without keyboard focus after the VM boots: `click` the field before `type`.

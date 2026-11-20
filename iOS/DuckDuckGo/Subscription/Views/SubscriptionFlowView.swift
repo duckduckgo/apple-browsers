@@ -41,6 +41,7 @@ struct SubscriptionFlowView: View {
     // Local View State
     @State private var errorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
     @State private var isPresentingError: Bool = false
+    @State private var isPresentingNotificationsDeniedDialog: Bool = false
 
     // MARK: - Onboarding state
 
@@ -180,6 +181,10 @@ struct SubscriptionFlowView: View {
         .onAppear {
             viewModel.onAppear()
         }
+
+        .onDisappear {
+            viewModel.onDisappear()
+        }
                 
         .alert(isPresented: $isPresentingError) {
             SubscriptionTransactionErrorAlert.alert(
@@ -202,6 +207,22 @@ struct SubscriptionFlowView: View {
             if viewModel.state.transactionStatus != .idle {
                 PurchaseInProgressView(status: getTransactionStatus())
             }
+        }
+        .onChange(of: viewModel.state.notificationsDeniedDialogDays) { days in
+            isPresentingNotificationsDeniedDialog = days != nil
+        }
+        .alert(UserText.subscriptionNotificationsDeniedDialogTitle,
+               isPresented: $isPresentingNotificationsDeniedDialog,
+               presenting: viewModel.state.notificationsDeniedDialogDays) { _ in
+            Button(UserText.subscriptionNotificationsDeniedDialogNotNow, role: .cancel) {
+                viewModel.notificationsDeniedDialogDidSelect(.notNow)
+            }
+            Button(UserText.subscriptionNotificationsDeniedDialogOpenSettings) {
+                viewModel.notificationsDeniedDialogDidSelect(.openSettings)
+            }
+            .keyboardShortcut(.defaultAction)
+        } message: { daysBeforeCancel in
+            Text(UserText.subscriptionNotificationsDeniedDialogMessage(daysBeforeTrialEnds: daysBeforeCancel))
         }
     }
 

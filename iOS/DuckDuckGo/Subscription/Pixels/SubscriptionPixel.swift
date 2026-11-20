@@ -60,7 +60,10 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionWithdrawalConfirmClick,
                 .subscriptionWithdrawalKeepClick,
                 .subscriptionWithdrawalFailure,
-                .subscriptionWithdrawalEligibilityFailure:
+                .subscriptionWithdrawalEligibilityFailure,
+                .subscriptionNotificationsDeniedDialogNotNowClick,
+                .subscriptionNotificationsDeniedDialogOpenSettingsClick,
+                .subscriptionNotificationsDeniedDialogSettingsReturn:
             return .standard
         default:
             return .legacyOmitted
@@ -111,6 +114,10 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionWithdrawalKeepClick
     case subscriptionWithdrawalFailure(Error)
     case subscriptionWithdrawalEligibilityFailure(Error)
+    // Notifications Denied Dialog
+    case subscriptionNotificationsDeniedDialogNotNowClick
+    case subscriptionNotificationsDeniedDialogOpenSettingsClick
+    case subscriptionNotificationsDeniedDialogSettingsReturn(notificationsPermission: String)
 
     var name: String {
         switch self {
@@ -156,6 +163,10 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionWithdrawalKeepClick: return "subscription_withdrawal_keep_click"
         case .subscriptionWithdrawalFailure: return "subscription_withdrawal_failure"
         case .subscriptionWithdrawalEligibilityFailure: return "subscription_withdrawal_eligibility_failure"
+            // Notifications Denied Dialog
+        case .subscriptionNotificationsDeniedDialogNotNowClick: return "subscription_notifications-denied-dialog_not-now_click"
+        case .subscriptionNotificationsDeniedDialogOpenSettingsClick: return "subscription_notifications-denied-dialog_open-settings_click"
+        case .subscriptionNotificationsDeniedDialogSettingsReturn: return "subscription_notifications-denied-dialog_settings_return"
         }
     }
 
@@ -170,6 +181,7 @@ enum SubscriptionPixel: PixelKit.Event {
         static let entryKey = "entry"
         static let freeTrialKey = "free_trial"
         static let daysSincePurchaseKey = "days_since_purchase"
+        static let notificationsPermissionKey = "notifications_permission"
     }
 
     private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
@@ -210,6 +222,8 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.entryKey: entry.rawValue,
                     SubscriptionPixelsDefaults.freeTrialKey: String(isTrial),
                     SubscriptionPixelsDefaults.daysSincePurchaseKey: daysSincePurchase.rawValue]
+        case .subscriptionNotificationsDeniedDialogSettingsReturn(let notificationsPermission):
+            return [SubscriptionPixelsDefaults.notificationsPermissionKey: notificationsPermission]
         default:
             return nil
         }
@@ -252,7 +266,10 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionWithdrawalConfirmClick,
                 .subscriptionWithdrawalKeepClick,
                 .subscriptionWithdrawalFailure,
-                .subscriptionWithdrawalEligibilityFailure:
+                .subscriptionWithdrawalEligibilityFailure,
+                .subscriptionNotificationsDeniedDialogNotNowClick,
+                .subscriptionNotificationsDeniedDialogOpenSettingsClick,
+                .subscriptionNotificationsDeniedDialogSettingsReturn:
             return [.pixelSource]
         }
     }

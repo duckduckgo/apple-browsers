@@ -530,6 +530,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.refreshFireMode(fireMode: fireMode)
     }
 
+    func setUsesNewTabPageCardBackground(_ usesNewTabPageCardBackground: Bool) {
+        inputBarView.usesNewTabPageCardBackground = usesNewTabPageCardBackground
+    }
+
     // MARK: - Page-Context Chip
 
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {

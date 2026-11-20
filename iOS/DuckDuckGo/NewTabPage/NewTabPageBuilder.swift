@@ -84,6 +84,7 @@ struct NewTabPageBuilder {
                 // Must match the address bar's home-tab mode resolution.
                 defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
         })
+        let usesLiquidGlass = floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
         let searchInputView = NewTabPageSearchInputView(
             model: searchInputModel,
             onActivate: { textEntryMode in
@@ -92,7 +93,7 @@ struct NewTabPageBuilder {
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             },
-            usesLiquidGlass: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
+            usesLiquidGlass: usesLiquidGlass,
             aiChatMenu: {
                 newTabPage?.duckAIMenu()
             })
@@ -143,11 +144,13 @@ struct NewTabPageBuilder {
                 onAddFavorite: {
                     guard let newTabPage else { return }
                     newTabPage.delegate?.newTabPageDidRequestAddFavorite(newTabPage)
-                })),
+                }), usesLiquidGlass: usesLiquidGlass),
             NewTabPageSwiftUIBlock(id: .escapeHatch,
-                                  rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
+                                  rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel),
+                                  usesLiquidGlass: usesLiquidGlass),
             NewTabPageSwiftUIBlock(id: .messages,
-                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
+                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel),
+                                  usesLiquidGlass: usesLiquidGlass)
         ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
            onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
                                                                   daxDialogsManager: daxDialogsManager,

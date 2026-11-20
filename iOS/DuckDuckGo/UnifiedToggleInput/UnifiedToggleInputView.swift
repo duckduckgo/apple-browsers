@@ -881,8 +881,18 @@ final class UnifiedToggleInputView: UIView {
         cardPosition == .bottom ? Constants.collapsedCardHeight / 2 : Constants.cardCornerRadiusCollapsed
     }
 
+    var usesNewTabPageCardBackground = false {
+        didSet {
+            guard oldValue != usesNewTabPageCardBackground else { return }
+            applyFireModeAppearance(isFireTab: handler.isFireTab)
+        }
+    }
+
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
-        UIColor(singleUseColor: isFireTab ? .fireModeCardBackground : .unifiedToggleInputCardBackground)
+        if isFireTab {
+            return UIColor(singleUseColor: .fireModeCardBackground)
+        }
+        return UIColor(singleUseColor: usesNewTabPageCardBackground ? .newTabPageSearchCardBackground : .unifiedToggleInputCardBackground)
     }
 
     // MARK: - Constraints

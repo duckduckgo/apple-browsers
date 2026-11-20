@@ -23,7 +23,6 @@ extension MainViewController {
 
     func showInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator, height: CGFloat, pendingHeight: CGFloat?) {
         let showsFocusedSurfaceDirectly = isPerformingOnboardingInputHandoff || isPresentingNewTabInputDirectly
-        let restingSnapshot = showsFocusedSurfaceDirectly ? nil : makeRestingNewTabPageSnapshot()
         coordinator.contentViewController.refreshSuggestionsCaches()
         coordinator.viewController.omnibarPillWindowFrame = nil
         coordinator.cacheOmnibarPlaceholderWindowX(nil, windowSize: view.window?.bounds.size)
@@ -54,17 +53,17 @@ extension MainViewController {
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         inputContainer.transform = .identity
         let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
-        // The keyboard already moves bottom input. Translating it from the resting card as
-        // well makes it travel down before reversing direction as the keyboard arrives.
-        if !showsFocusedSurfaceDirectly, !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled,
-           let restingFrame = transitionSource?.searchInputTransitionFrame(in: view) {
-            let editingFrame = coordinator.viewController.inputCardFrame(in: view)
-            inputContainer.transform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
+        transitionSource?.onFocusedModeSwitchSwipe = { [weak coordinator] mode in
+            coordinator?.contentViewController.switchMode(to: mode)
+        }
+        let focusedPose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
+        if !showsFocusedSurfaceDirectly, !UIAccessibility.isReduceMotionEnabled, let focusedPose {
+            inputContainer.transform = focusedPose.focusedInputRestingTransform
         }
         inputContainer.alpha = 0
-        if let restingSnapshot {
-            view.insertSubview(restingSnapshot, aboveSubview: viewCoordinator.unifiedInputContentContainer)
-        }
+        let restingInput = transitionSource?.searchInputView
+        let restingCardHandoff = RestingSearchCardHandoff(cardPosition: coordinator.cardPosition)
+        restingInput?.alpha = 1
 
         let contentOffset = UIAccessibility.isReduceMotionEnabled ? 0 : InlineNTPTransitionMetrics.contentTravel
         contentContainer.transform = CGAffineTransform(translationX: 0, y: contentOffset)
@@ -72,23 +71,30 @@ extension MainViewController {
             isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         let animations = { [weak self] in
             inputContainer.transform = .identity
-            self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
+            UIView.animateOnOwnTiming(duration: NewTabPageInputPresentation.inlineInputCardSwapDuration, options: .curveEaseOut) {
+                inputContainer.alpha = 1
+            }
             self?.viewCoordinator.focusedStateBackground.alpha = 1
             contentContainer.alpha = 1
             contentContainer.transform = .identity
-            restingSnapshot?.alpha = 0
-            restingSnapshot?.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
+            transitionSource?.setFocusedPose(focusedPose)
+            restingCardHandoff.fadeOutWhileShowing(restingInput, transitionDuration: duration)
         }
         if showsFocusedSurfaceDirectly {
             // Automatic new-tab focus and onboarding handoffs must not fade through resting modules.
             // Stage the opaque focused pose synchronously.
             UIView.performWithoutAnimation(animations)
+            restingInput?.alpha = 0
+            transitionSource?.settleFocusedPose()
             refreshFloatingToolbarBackdrop()
             return
         }
         let animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: animations)
-        animator.addCompletion { [weak self] _ in
-            restingSnapshot?.removeFromSuperview()
+        animator.addCompletion { [weak self] position in
+            restingInput?.alpha = 0
+            if position == .end {
+                transitionSource?.settleFocusedPose()
+            }
             self?.refreshFloatingToolbarBackdrop()
         }
         animator.startAnimation()
@@ -100,12 +106,8 @@ extension MainViewController {
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
         let source = transitionSource?.searchInputView
-        var restingTransform = CGAffineTransform.identity
-        if !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled,
-           let restingFrame = transitionSource?.searchInputTransitionFrame(in: view) {
-            let editingFrame = coordinator.viewController.inputCardFrame(in: view)
-            restingTransform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
-        }
+        let restingTransform = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)?
+            .focusedInputRestingTransform ?? .identity
         let contentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let contentOffset = UIAccessibility.isReduceMotionEnabled ? 0 : InlineNTPTransitionMetrics.contentTravel
         let finish: () -> Void = { [weak self] in
@@ -121,42 +123,30 @@ extension MainViewController {
         }
 
         // Resigning the input can change the live host's safe area and scroll layout.
-        // Keep the outgoing page in its current screen position while those updates settle.
-        // Both page snapshots share one overlay so interruption removes them together.
-        let transitionSnapshot = UIView(frame: view.bounds)
-        transitionSnapshot.isUserInteractionEnabled = false
-        transitionSnapshot.accessibilityElementsHidden = true
+        // Keep the outgoing focused layer in its current screen position while those updates settle.
         let focusedSnapshot = contentContainer.snapshotView(afterScreenUpdates: false)
         if let focusedSnapshot {
             focusedSnapshot.frame = contentContainer.convert(contentContainer.bounds, to: view)
-            transitionSnapshot.addSubview(focusedSnapshot)
+            focusedSnapshot.isUserInteractionEnabled = false
+            focusedSnapshot.accessibilityElementsHidden = true
+            view.insertSubview(focusedSnapshot, aboveSubview: contentContainer)
             contentContainer.alpha = 0
         }
         let outgoingContent = focusedSnapshot ?? contentContainer
-        let restingSnapshot = makeRestingNewTabPageSnapshot()
-        if let restingSnapshot {
-            restingSnapshot.alpha = 0
-            restingSnapshot.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
-            transitionSnapshot.addSubview(restingSnapshot)
-        }
-        view.insertSubview(transitionSnapshot, aboveSubview: contentContainer)
+        let focusedPose = transitionSource?.focusedPose
+        source?.alpha = RestingSearchCardHandoff(cardPosition: coordinator.cardPosition).alphaWhenDismissStarts
 
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             transition: .inlineInput,
-            contentSnapshot: transitionSnapshot,
+            contentSnapshot: focusedSnapshot,
             additionalAnimations: {
                 inputContainer.transform = restingTransform
                 outgoingContent.transform = CGAffineTransform(translationX: 0, y: contentOffset)
-                restingSnapshot?.transform = .identity
+                transitionSource?.setFocusedPose(nil)
             },
             inlineInputHandoffAnimations: {
                 outgoingContent.alpha = 0
-                restingSnapshot?.alpha = 1
-                if restingSnapshot == nil {
-                    // Appearance or size changes invalidate the cached page. Reveal the live
-                    // input during the final handoff while keeping its editing interaction state.
-                    source?.alpha = 1
-                }
+                source?.alpha = 1
             },
             interruptCleanup: { [weak self, weak coordinator] in
                 inputContainer.transform = .identity
@@ -165,9 +155,9 @@ extension MainViewController {
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
                 self?.viewCoordinator.focusedStateBackground.alpha = 1
-                if restingSnapshot == nil {
-                    source?.alpha = 0
-                }
+                source?.alpha = 0
+                transitionSource?.setFocusedPose(focusedPose)
+                transitionSource?.settleFocusedPose()
             },
             resigningInput: { [weak coordinator] in
                 coordinator?.viewController.deactivateInput()
@@ -175,50 +165,96 @@ extension MainViewController {
             completion: finish)
     }
 
-    func captureRestingNewTabPageSnapshot() {
-        restingNewTabPageSnapshot = nil
-        guard let page = newTabPageViewController, page.hasInlineSearchInput else { return }
-        (page as? RedesignedNewTabPageViewController)?.finishEntranceAnimation()
+    func refreshFocusedNewTabPagePose() {
+        guard let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource,
+              let currentPose = transitionSource.focusedPose,
+              let coordinator = unifiedToggleInputCoordinator else { return }
         view.layoutIfNeeded()
-        let bounds = page.view.bounds
-        guard !bounds.isEmpty else { return }
-
-        // Capture before editing hides the resting controls. Dismissal must not reveal the
-        // live search field just to build its transition overlay.
-        let renderer = UIGraphicsImageRenderer(bounds: bounds)
-        var didDraw = false
-        let image = renderer.image { _ in
-            didDraw = page.view.drawHierarchy(in: bounds, afterScreenUpdates: true)
+        guard let pose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource), pose != currentPose else { return }
+        guard !UIAccessibility.isReduceMotionEnabled else {
+            transitionSource.setFocusedPose(pose)
+            return
         }
-        guard didDraw else { return }
-        let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false
-        let favoritesVisible = NewTabPageCustomizationStore().isFavoritesSectionVisible
-        restingNewTabPageSnapshot = (image, page.view.convert(bounds, to: view), view.bounds.size, (favoritesExpanded, favoritesVisible))
+        UIView.animate(withDuration: InlineNTPTransitionMetrics.focusedPoseRefreshDuration,
+                       delay: 0,
+                       options: [.beginFromCurrentState, .curveEaseInOut]) {
+            transitionSource.setFocusedPose(pose)
+        }
     }
 
-    private func makeRestingNewTabPageSnapshot() -> UIView? {
-        guard (newTabPageViewController as? NewTabPageInputTransitionSource)?.canAnimateSearchInput == true else {
-            restingNewTabPageSnapshot = nil
-            return nil
-        }
-        guard let cached = restingNewTabPageSnapshot else { return nil }
-        // Layout or favorites changes invalidate the captured page; hand off to the current live page instead.
-        let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false
-        guard cached.viewportSize == view.bounds.size,
-              cached.favoritesState.expanded == favoritesExpanded,
-              cached.favoritesState.visible == NewTabPageCustomizationStore().isFavoritesSectionVisible else {
-            restingNewTabPageSnapshot = nil
-            return nil
-        }
-        let snapshot = UIImageView(image: cached.image)
-        snapshot.frame = cached.frame
-        snapshot.isUserInteractionEnabled = false
-        snapshot.accessibilityElementsHidden = true
-        return snapshot
+    private func measureFocusedPose(coordinator: UnifiedToggleInputCoordinator,
+                                    transitionSource: NewTabPageInputTransitionSource?) -> NewTabPageFocusedPose? {
+        guard let transitionSource, let restingFrame = transitionSource.searchInputTransitionFrame(in: view) else { return nil }
+        let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
+        let focusedFrame = inputContainer.untransformedFrame(of: coordinator.viewController.inputCardFrame(in: inputContainer), in: view)
+        return NewTabPageFocusedPose(restingInputFrame: restingFrame,
+                                     focusedInputFrame: focusedFrame,
+                                     cardPosition: coordinator.cardPosition,
+                                     safeAreaTop: view.safeAreaInsets.top,
+                                     bottomInputHeight: coordinator.editingHeight(),
+                                     showsModules: coordinator.contentViewController.isShowingRedesignedSearchModules)
     }
 }
 
+enum RestingSearchCardHandoff: Equatable {
+    case staysUnderTravellingCard
+    case hidesWithFocusedCard
+
+    init(cardPosition: UnifiedToggleInputCardPosition) {
+        self = cardPosition.isBottom ? .hidesWithFocusedCard : .staysUnderTravellingCard
+    }
+
+    func showFadeTiming(transitionDuration: TimeInterval) -> (delay: TimeInterval, duration: TimeInterval) {
+        switch self {
+        case .hidesWithFocusedCard:
+            return (0, transitionDuration)
+        case .staysUnderTravellingCard:
+            let swapDuration = min(NewTabPageInputPresentation.inlineInputCardSwapDuration, transitionDuration)
+            return (swapDuration, transitionDuration - swapDuration)
+        }
+    }
+
+    func fadeOutWhileShowing(_ restingInput: UIView?, transitionDuration: TimeInterval) {
+        let timing = showFadeTiming(transitionDuration: transitionDuration)
+        UIView.animateOnOwnTiming(duration: timing.duration, delay: timing.delay, options: .curveEaseInOut) {
+            restingInput?.alpha = 0
+        }
+    }
+
+    var alphaWhenDismissStarts: CGFloat {
+        switch self {
+        case .staysUnderTravellingCard: 1
+        case .hidesWithFocusedCard: 0
+        }
+    }
+}
+
+extension NewTabPageInputPresentation {
+    static let inlineInputCardSwapDuration: TimeInterval = 0.1
+}
+
 private enum InlineNTPTransitionMetrics {
-    /// A small directional cue without trying to morph duplicate controls between layouts.
     static let contentTravel: CGFloat = 12
+    static let focusedPoseRefreshDuration: TimeInterval = 0.2
+}
+
+extension UIView {
+
+    static func animateOnOwnTiming(duration: TimeInterval,
+                                   delay: TimeInterval = 0,
+                                   options: UIView.AnimationOptions,
+                                   animations: @escaping () -> Void) {
+        animate(withDuration: duration,
+                delay: delay,
+                options: options.union([.overrideInheritedDuration, .overrideInheritedCurve]),
+                animations: animations)
+    }
+
+    func untransformedFrame(of rect: CGRect, in targetView: UIView) -> CGRect {
+        guard let superview else { return rect }
+        let origin = CGPoint(x: center.x - bounds.width * layer.anchorPoint.x,
+                             y: center.y - bounds.height * layer.anchorPoint.y)
+        let rectInSuperview = rect.offsetBy(dx: origin.x - bounds.origin.x, dy: origin.y - bounds.origin.y)
+        return superview.convert(rectInSuperview, to: targetView)
+    }
 }

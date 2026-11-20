@@ -75,6 +75,18 @@ class RenderPromptTests(unittest.TestCase):
         self.assertIn("ddg-remove-feature-flag/SKILL.md", prompt)
 
 
+class MarkdownToAsanaHtmlTests(unittest.TestCase):
+    def test_converts_the_prompt_to_rich_text(self):
+        removal = ffc.FlagRemoval("1", "someFlag", "macOS", True, None)
+
+        html = ffc.markdown_to_asana_html(ffc.render_prompt(removal, TEMPLATE))
+
+        self.assertTrue(html.startswith("<body>Remove the <code>someFlag</code> feature flag"))
+        self.assertIn("<ul><li><strong>Decision:</strong> the flag was approved.", html)
+        self.assertTrue(html.endswith("</li></ul></body>"))
+        self.assertNotIn("**", html)
+
+
 class QueueRemovalsTests(unittest.TestCase):
     def test_skips_queued_flags_and_stops_at_the_limit(self):
         asana = FakeAsana(

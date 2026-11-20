@@ -20,6 +20,7 @@ Environment:
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 import os
@@ -51,6 +52,8 @@ AGENT_PROJECT_GIDS = {
 PLATFORMS = {"iOS", "macOS"}
 
 FLAG_NAME_PATTERN = re.compile(r"Flag name:\s*`?([A-Za-z_][A-Za-z0-9_]*)")
+BOLD_PATTERN = re.compile(r"\*\*(.+?)\*\*")
+CODE_PATTERN = re.compile(r"`([^`]+)`")
 
 REGISTRY_TASK_FIELDS = "notes,assignee.gid,custom_fields.gid,custom_fields.enum_value.gid,custom_fields.enum_value.name"
 
@@ -110,7 +113,7 @@ class AsanaClient:
     def create_ready_subtask(self, removal: FlagRemoval, notes: str) -> str:
         body = {
             "name": removal.subtask_name,
-            "notes": notes,
+            "html_notes": markdown_to_asana_html(notes),
             "parent": removal.registry_task_gid,
             "projects": [removal.agent_project_gid],
             "custom_fields": {AGENT_STATUS_FIELD_GID: AGENT_STATUS_READY_OPTION_GID},
@@ -176,6 +179,28 @@ def render_prompt(removal: FlagRemoval, template: str) -> str:
         decision="approved" if removal.keep_enabled_path else "rejected",
         kept_path="enabled" if removal.keep_enabled_path else "disabled",
     )
+
+
+def markdown_to_asana_html(markdown: str) -> str:
+    """Convert the prompt's Markdown (paragraphs, "- " lists, bold, code) to Asana rich text."""
+    def inline(text: str) -> str:
+        text = CODE_PATTERN.sub(r"<code>\1</code>", html.escape(text, quote=False))
+        return BOLD_PATTERN.sub(r"<strong>\1</strong>", text)
+
+    blocks: list[str] = []
+    items: list[str] = []
+    for line in markdown.strip().splitlines():
+        if line.startswith("- "):
+            items.append(f"<li>{inline(line[2:])}</li>")
+            continue
+        if items:
+            blocks.append(f"<ul>{''.join(items)}</ul>")
+            items = []
+        if line.strip():
+            blocks.append(inline(line) + "\n")
+    if items:
+        blocks.append(f"<ul>{''.join(items)}</ul>")
+    return f"<body>{''.join(blocks)}</body>"
 
 
 def queue_removals(

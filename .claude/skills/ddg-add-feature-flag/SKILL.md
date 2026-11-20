@@ -1,6 +1,6 @@
 ---
 name: ddg-add-feature-flag
-description: Use when adding, removing or changing a feature flag or an A/B/N experiment on iOS or macOS.
+description: Use when adding or changing a feature flag or an A/B/N experiment on iOS or macOS.
 ---
 
 # Add or change a feature flag

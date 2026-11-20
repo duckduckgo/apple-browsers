@@ -23,24 +23,17 @@ import PixelKit
 extension DebugModeRunner {
 
     convenience init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                     featureFlagger: DBPFeatureFlagging,
-                     isolated: Bool = false) throws {
+                     featureFlagger: DBPFeatureFlagging) throws {
         let privacyConfigManager = DBPPrivacyConfigurationManager()
         let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler, privacyConfigManager: privacyConfigManager)
-        let vault: (any DataBrokerProtectionSecureVault)?
-        if isolated {
-            vault = nil
-        } else {
-            let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-            let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-            vault = try vaultFactory.makeVault(reporter: reporter)
-        }
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         self.init(authenticationManager: authenticationManager,
                   featureFlagger: featureFlagger,
                   privacyConfigManager: privacyConfigManager,
                   pixelHandler: pixelHandler,
-                  vault: vault,
+                  vault: try vaultFactory.makeVault(reporter: reporter),
                   settings: DataBrokerProtectionSettings(defaults: .dbp))
     }
 }

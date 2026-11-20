@@ -20,6 +20,7 @@
 import DataBrokerProtectionCore
 import DataBrokerProtectionDebugServer
 import Foundation
+import PixelKit
 import Subscription
 
 /// A launch-owned host with no scheduler, XPC service, or access to the saved PIR profile.
@@ -28,18 +29,22 @@ public final class StandalonePIRDebugServer: DataBrokerProtectionDebugReadProvid
     private let settings: DataBrokerProtectionSettings
 
     @MainActor
-    public init(subscriptionManager: any SubscriptionManager, featureFlagger: DBPFeatureFlagging, configuration: DebugModeLaunchConfiguration) throws {
+    public init(subscriptionManager: any SubscriptionManager, featureFlagger: DBPFeatureFlagging,
+                privacyConfigManager: DBPPrivacyConfigurationManager, configuration: DebugModeLaunchConfiguration) throws {
         settings = DataBrokerProtectionSettings(defaults: .dbp, debugEnvironment: configuration.environment)
         let settings = self.settings
-        let subscription = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, runTypeProvider: settings)
+        let subscription = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, runTypeProvider: settings).debugRunnerManager()
         let authentication = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscription)
-        let runner = try DebugModeRunner(authenticationManager: authentication, featureFlagger: StandaloneFeatureFlagger(fallback: featureFlagger),
-                                         isolated: true)
+        let runner = DebugModeRunner(standaloneAuthenticationManager: authentication,
+                                     featureFlagger: StandaloneFeatureFlagger(fallback: featureFlagger),
+                                     privacyConfigManager: privacyConfigManager,
+                                     pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS),
+                                     settings: settings)
         let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader(),
-                                                         runManager: DebugModeRunManager(runner: runner), port: configuration.port, instanceID: configuration.instanceID,
-                                                         prerequisiteReader: {
+                                                         runManager: DebugModeRunManager(runner: runner), port: configuration.port, instanceID: configuration.instanceID)
+        server.prerequisiteReader = {
             await DebugPrerequisiteResult.subscription(subscription, settings: settings)
-        })
+        }
         self.server = server
         try server.start()
     }
@@ -57,8 +62,8 @@ private struct StandaloneFeatureFlagger: DBPFeatureFlagging {
     let fallback: DBPFeatureFlagging
     var isForegroundRunningOnAppActiveFeatureOn: Bool { false }
     var isContinuedProcessingFeatureOn: Bool { false }
-    var isCustomWebViewUserAgentOn: Bool { true }
-    var isExtractedProfileRefreshOn: Bool { true }
+    var isCustomWebViewUserAgentOn: Bool { fallback.isCustomWebViewUserAgentOn }
+    var isExtractedProfileRefreshOn: Bool { fallback.isExtractedProfileRefreshOn }
     var isOptOutRetryErrorFrequencyExperimentOn: Bool { fallback.isOptOutRetryErrorFrequencyExperimentOn }
     var isChallengeSolverOn: Bool { fallback.isChallengeSolverOn }
 }

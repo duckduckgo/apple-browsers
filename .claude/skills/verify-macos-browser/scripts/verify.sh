@@ -357,7 +357,8 @@ build)
     else
         ready=0
         for _ in $(seq 60); do
-            if (( $(window_count "$pid") > 0 )); then ready=1; break; fi
+            # Both reads: right after launch System Events can list a window the AX tree doesn't have yet (seen on a Mac).
+            if (( $(window_count "$pid") > 0 )) && ax winrect > /dev/null 2>&1; then ready=1; break; fi
             sleep 1
         done
         if (( ! ready )); then   # a prompt (keychain, notifications) in front of the app blocks its first window

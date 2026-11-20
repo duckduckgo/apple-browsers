@@ -140,6 +140,69 @@ struct AIChatUserScriptHandlerTests {
         #expect(windowControllersManager.showTabCalls == [.settings(pane: .aiChat)])
     }
 
+    // MARK: - Browser tools answer metrics
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A finished answer that used tools fires one pixel per known tool plus any", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAFinishedToolAnswerFiresToolRowsAndAny() async {
+        let params: [String: Any] = [
+            "metricName": "browserToolsAnswerCompleted",
+            "modelTier": "plus",
+            "browserTools": [
+                ["name": "listOpenTabs", "result": "success"],
+                ["name": "searchHistory", "result": "not_allowed"],
+                ["name": "https://example.com", "result": "success"],
+                ["name": "pinTab", "result": "maybe"]
+            ]
+        ]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == Array(repeating: "aichat_tools_answer_completed_macos", count: 3))
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.parameters) == [
+            ["tool": "list_open_tabs", "tool_result": "success", "tools_in_answer": "2", "model_tier": "plus"],
+            ["tool": "search_history", "tool_result": "not_allowed", "tools_in_answer": "2", "model_tier": "plus"],
+            ["tool": "any", "tool_result": "success", "tools_in_answer": "2", "model_tier": "plus"]
+        ])
+        #expect(userScriptErrorEventMapper.events.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A rated answer without tools fires one none pixel with the rating", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatARatedAnswerWithoutToolsFiresNone() async {
+        let params: [String: Any] = ["metricName": "browserToolsAnswerRated", "modelTier": "free", "browserTools": [], "rating": "down"]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == ["aichat_tools_answer_rated_macos"])
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["tool": "none", "tools_in_answer": "0", "model_tier": "free", "rating": "down"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A rating other than up or down fires nothing", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAnUnknownRatingFiresNothing() async {
+        let params: [String: Any] = ["metricName": "browserToolsAnswerRated", "modelTier": "free", "browserTools": [], "rating": "sideways"]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A Fire window fires no answer pixel", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAFireWindowFiresNoAnswerPixel() async {
+        handler.isFireWindowProvider = { true }
+        let params: [String: Any] = ["metricName": "browserToolsAnswerCompleted", "modelTier": "free", "browserTools": []]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("A Duck.ai link opens with the link as its source", .timeLimit(.minutes(1)))
     @MainActor

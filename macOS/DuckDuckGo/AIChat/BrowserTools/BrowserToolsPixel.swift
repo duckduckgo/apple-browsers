@@ -38,6 +38,19 @@ enum BrowserToolsPixel: PixelKit.Event {
     /// Event Trigger: The user reset every tool permission in Settings.
     case permissionsReset
 
+    /// Event Trigger: Duck.ai reported that an answer finished in a chat with browser tools. One per row of `answerRows`.
+    case answerCompleted(AnswerRow, modelTier: String)
+
+    /// Event Trigger: The user rated such an answer with a thumb. One per row of `answerRows`.
+    case answerRated(AnswerRow, modelTier: String, rating: String)
+
+    /// `tool` is a slug, `any` (the answer used tools) or `none` (it used none, and has no `toolResult`).
+    struct AnswerRow: Equatable {
+        let tool: String
+        let toolResult: String?
+        let toolsInAnswer: String
+    }
+
     enum PermissionSource: String {
         case settings, panel
     }
@@ -67,6 +80,8 @@ enum BrowserToolsPixel: PixelKit.Event {
         case .usedTool(let tool): "aichat_tools_used_\(tool)_macos"
         case .permissionChanged: "aichat_tools_permission_changed_macos"
         case .permissionsReset: "aichat_tools_permissions_reset_macos"
+        case .answerCompleted: "aichat_tools_answer_completed_macos"
+        case .answerRated: "aichat_tools_answer_rated_macos"
         }
     }
 
@@ -78,9 +93,48 @@ enum BrowserToolsPixel: PixelKit.Event {
             return parameters
         case .permissionChanged(let tool, let from, let to, let source):
             return ["tool": tool, "from": from.rawValue, "to": to.rawValue, "source": source.rawValue]
+        case .answerCompleted(let row, let modelTier):
+            return row.parameters(modelTier: modelTier)
+        case .answerRated(let row, let modelTier, let rating):
+            return row.parameters(modelTier: modelTier).merging(["rating": rating]) { $1 }
         case .used, .usedTool, .permissionsReset:
             return nil
         }
+    }
+
+    /// The pixels for a browser tools answer metric from Duck.ai. Unknown tools and results are dropped;
+    /// a rating other than `up` or `down` drops the metric.
+    static func answerPixels(for metric: AIChatMetric) -> [BrowserToolsPixel] {
+        let rows = answerRows(metric.browserTools ?? [])
+        let modelTier = (metric.modelTier ?? .unknown).rawValue
+        switch metric.metricName {
+        case .browserToolsAnswerCompleted:
+            return rows.map { .answerCompleted($0, modelTier: modelTier) }
+        case .browserToolsAnswerRated:
+            guard let rating = metric.rating, ["up", "down"].contains(rating) else { return [] }
+            return rows.map { .answerRated($0, modelTier: modelTier, rating: rating) }
+        default:
+            return []
+        }
+    }
+
+    /// Results from worst to best.
+    private static let answerResultRanks = ["error": 0, "not_allowed": 1, "success": 2]
+
+    /// One row per known tool, plus `any`, whose result is the best of them. An answer without known tools is one `none` row.
+    static func answerRows(_ tools: [AIChatBrowserToolAnswerTool]) -> [AnswerRow] {
+        var ranks: [String: Int] = [:]
+        for tool in tools {
+            guard let slug = toolSlugs[tool.name], let rank = answerResultRanks[tool.result] else { continue }
+            ranks[slug] = max(ranks[slug] ?? rank, rank)
+        }
+        let count = ranks.count < 4 ? String(ranks.count) : "4_plus"
+        let result = { (rank: Int) in answerResultRanks.first { $0.value == rank }?.key }
+        guard let best = ranks.values.max() else {
+            return [AnswerRow(tool: "none", toolResult: nil, toolsInAnswer: count)]
+        }
+        return ranks.sorted { $0.key < $1.key }.map { AnswerRow(tool: $0.key, toolResult: result($0.value), toolsInAnswer: count) }
+            + [AnswerRow(tool: "any", toolResult: result(best), toolsInAnswer: count)]
     }
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
@@ -93,6 +147,14 @@ enum BrowserToolsPixel: PixelKit.Event {
         case ..<10: "lt_10s"
         default: "gte_10s"
         }
+    }
+}
+
+private extension BrowserToolsPixel.AnswerRow {
+    func parameters(modelTier: String) -> [String: String] {
+        var parameters = ["tool": tool, "tools_in_answer": toolsInAnswer, "model_tier": modelTier]
+        parameters["tool_result"] = toolResult
+        return parameters
     }
 }
 

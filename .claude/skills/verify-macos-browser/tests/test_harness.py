@@ -302,6 +302,16 @@ class EvidenceDirTests(unittest.TestCase):
         with self.assertRaises(harness.Refused):
             harness.evidence_root(os.path.join(link, "proofs"))
 
+    def test_an_unknown_target_is_refused_before_anything_is_written(self):
+        d = os.path.realpath(tempfile.mkdtemp())
+        proof = self.cli("new-proof", "x", "--evidence-dir", d).stdout.strip()
+        before = sorted(os.listdir(d))
+        p = self.cli("prove", proof, "--target", "vm-3", "--evidence-dir", d)
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertIn("--target must be one of", p.stdout)
+        self.assertEqual(sorted(os.listdir(d)), before)
+        self.assertEqual(os.listdir(os.path.dirname(proof)), ["proof.py"])
+
     def test_an_evidence_dir_outside_any_checkout_is_used_as_given(self):
         d = os.path.join(tempfile.mkdtemp(), "not-yet")
         proof = self.cli("new-proof", "Cmd T", "--evidence-dir", d).stdout.strip()

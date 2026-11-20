@@ -143,6 +143,9 @@ Call it as a single command (one permission rule covers it). Exit codes: `0` ok,
 `UITEST_MODE=1`. On a build failure, report the first error; after switching branches, "type X has no member Y"
 for code that is there is a stale module in DerivedData: move it out and rebuild. Don't build in Xcode meanwhile.
 
+**Changed the harness, `verify.sh`, `vhelp.py` or `ax.swift`?** Run the unit tests (`tests/`), then
+`$V prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1`: PASS means every refusal still refuses.
+
 ## Running in a VM
 
 - `vm` reserves a free VM (a lock per VM in `~/.ddg-verify-macos/.vm-locks/`), wipes the Debug app's data there

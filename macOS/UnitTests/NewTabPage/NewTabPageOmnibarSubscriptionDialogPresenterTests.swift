@@ -70,7 +70,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
         dialog.onSubscribe?()
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -96,7 +96,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
         dialog.onHaveSubscription?()
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -120,7 +120,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
         dialog.onSubscribe?()
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
@@ -140,7 +140,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
             presenter.makeUpsellDialog(userTier: .free, source: source).onSubscribe?()
 
-            guard case let .subscription(url) = mockTabShower.capturedContent else {
+            guard case let .subscription(url, _) = mockTabShower.capturedContent else {
                 Issue.record("Expected .subscription tab content for \(source)")
                 return
             }
@@ -219,7 +219,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
         dialog.onHaveSubscription?()
 
-        guard case let .subscription(url) = mockTabShower.capturedContent else {
+        guard case let .subscription(url, _) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }

@@ -287,7 +287,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let uiHandlerExpectation = expectation(description: "UI handler show tab called")
 
         mockUIHandler.setDidPerformActionCallback { action in
-            if case .didShowTab(.identityTheftRestoration(let url)) = action {
+            if case .didShowTab(.identityTheftRestoration(let url, _)) = action {
                 XCTAssertNotNil(url)
                 uiHandlerExpectation.fulfill()
             }
@@ -308,7 +308,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let uiHandlerExpectation = expectation(description: "UI handler show tab called")
 
         mockUIHandler.setDidPerformActionCallback { action in
-            if case .didShowTab(.identityTheftRestoration(let url)) = action {
+            if case .didShowTab(.identityTheftRestoration(let url, _)) = action {
                 XCTAssertNotNil(url)
                 uiHandlerExpectation.fulfill()
             }

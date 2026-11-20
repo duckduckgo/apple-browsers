@@ -220,7 +220,7 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testWhenWebPageStartsNavigationToSubscriptionThenTrustedIndicatorIsNotDisplayedUntilSecurityOriginMatches() {
         let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
-        let tab = Tab(content: .subscription(subscriptionURL), securityOrigin: URL(string: "https://example.com")!.securityOrigin)
+        let tab = Tab(content: .contentFromURL(subscriptionURL, source: .webViewUpdated), securityOrigin: URL(string: "https://example.com")!.securityOrigin)
         let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
 
         XCTAssertFalse(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
@@ -239,15 +239,57 @@ final class TabViewModelTests: XCTestCase {
         XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
     }
 
-    /// An opaque-origin (sandboxed) frame opens its child Tab with an empty Security Origin, the same
-    /// as a Tab opened from the UI; having a parent Tab is what tells them apart.
+    /// Typing, a bookmark or a history entry is the user's own navigation, so the Address Bar shows it at once,
+    /// even in a Tab already showing another site.
+    @MainActor
+    func testWhenUserOpensSubscriptionInExistingTabThenTrustedIndicatorIsDisplayedInstantly() {
+        let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        let sources: [TabContent.URLSource] = [.userEntered(subscriptionURL.absoluteString), .bookmark(isFavorite: false), .historyEntry]
+
+        for source in sources {
+            let tab = Tab(content: .contentFromURL(subscriptionURL, source: source), securityOrigin: URL(string: "https://example.com")!.securityOrigin)
+            let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+
+            XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName), "\(source)")
+        }
+    }
+
+    @MainActor
+    func testWhenUserOpensIdentityTheftRestorationFromBookmarkThenTrustedIndicatorIsDisplayedInstantly() {
+        let restorationURL = SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production)
+        let tab = Tab(content: .contentFromURL(restorationURL, source: .bookmark(isFavorite: false)), securityOrigin: URL(string: "https://example.com")!.securityOrigin)
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+
+        XCTAssertEqual(tab.content, .identityTheftRestoration(restorationURL, source: .bookmark(isFavorite: false)))
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.identityTheftRestorationOptionsMenuItem))
+    }
+
+    /// A child Tab opened by an opaque-origin (sandboxed) frame starts with an empty Security Origin, and the page,
+    /// not the user, navigates it, so it waits.
     @MainActor
     func testWhenOpaqueOriginFrameOpensSubscriptionInChildTabThenTrustedIndicatorIsNotDisplayedUntilSecurityOriginMatches() {
         let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
         let parentTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
-        let tab = Tab(content: .subscription(subscriptionURL), parentTab: parentTab)
+        let tab = Tab(content: .contentFromURL(subscriptionURL, source: .webViewUpdated), parentTab: parentTab)
         let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
         XCTAssertTrue(tab.securityOrigin.isEmpty)
+
+        XCTAssertFalse(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+
+        tabViewModel.simulateLoadingCompletion(subscriptionURL, in: tab.webView)
+
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+    }
+
+    /// A sandboxed top-level page also has an empty Security Origin and no parent Tab. When it navigates itself to
+    /// the subscription page, it must not get the trusted indicator before the page commits.
+    @MainActor
+    func testWhenOpaqueOriginTopLevelPageNavigatesToSubscriptionThenTrustedIndicatorIsNotDisplayedUntilSecurityOriginMatches() {
+        let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        let tab = Tab(content: .contentFromURL(subscriptionURL, source: .webViewUpdated))
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+        XCTAssertTrue(tab.securityOrigin.isEmpty)
+        XCTAssertNil(tab.parentTab)
 
         XCTAssertFalse(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
 

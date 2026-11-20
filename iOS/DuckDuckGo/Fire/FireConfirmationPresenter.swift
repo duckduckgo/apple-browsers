@@ -35,10 +35,8 @@ struct FireConfirmationPresenter {
                                  pixelSource: FireRequest.Source,
                                  fireContext: ScopedFireConfirmationViewModel.FireContext,
                                  isSingleTab: Bool = false,
-                                 chatCount: Int? = nil,
                                  browsingMode: BrowsingMode,
-                                 isChatSyncEnabled: Bool = false,
-                                 onDeleteAllChats: (() -> Void)? = nil,
+                                 deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption? = nil,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
@@ -50,10 +48,8 @@ struct FireConfirmationPresenter {
                                       pixelSource: pixelSource,
                                       fireContext: fireContext,
                                       isSingleTab: isSingleTab,
-                                      chatCount: chatCount,
                                       browsingMode: browsingMode,
-                                      isChatSyncEnabled: isChatSyncEnabled,
-                                      onDeleteAllChats: onDeleteAllChats,
+                                      deleteAllChats: deleteAllChats,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)
     }
@@ -65,10 +61,8 @@ struct FireConfirmationPresenter {
                                  pixelSource: FireRequest.Source,
                                  fireContext: ScopedFireConfirmationViewModel.FireContext,
                                  isSingleTab: Bool = false,
-                                 chatCount: Int? = nil,
                                  browsingMode: BrowsingMode,
-                                 isChatSyncEnabled: Bool = false,
-                                 onDeleteAllChats: (() -> Void)? = nil,
+                                 deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption? = nil,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard let window = UIApplication.shared.firstKeyWindow else {
@@ -82,10 +76,8 @@ struct FireConfirmationPresenter {
                                       pixelSource: pixelSource,
                                       fireContext: fireContext,
                                       isSingleTab: isSingleTab,
-                                      chatCount: chatCount,
                                       browsingMode: browsingMode,
-                                      isChatSyncEnabled: isChatSyncEnabled,
-                                      onDeleteAllChats: onDeleteAllChats,
+                                      deleteAllChats: deleteAllChats,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)
     }
@@ -101,20 +93,16 @@ struct FireConfirmationPresenter {
                                                pixelSource: FireRequest.Source,
                                                fireContext: ScopedFireConfirmationViewModel.FireContext,
                                                isSingleTab: Bool,
-                                               chatCount: Int?,
                                                browsingMode: BrowsingMode,
-                                               isChatSyncEnabled: Bool,
-                                               onDeleteAllChats: (() -> Void)?,
+                                               deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption?,
                                                onConfirm: @escaping (FireRequest) -> Void,
                                                onCancel: @escaping () -> Void) {
         let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                         source: pixelSource,
                                                         fireContext: fireContext,
                                                         isSingleTab: isSingleTab,
-                                                        chatCount: chatCount,
                                                         browsingMode: browsingMode,
-                                                        isChatSyncEnabled: isChatSyncEnabled,
-                                                        onDeleteAllChats: onDeleteAllChats,
+                                                        deleteAllChats: deleteAllChats,
                                                         onConfirm: { [weak viewController] fireOptions in
                                                             viewController?.dismiss(animated: true) {
                                                                 onConfirm(fireOptions)

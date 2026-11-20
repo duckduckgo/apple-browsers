@@ -190,11 +190,9 @@ final class UserScripts: UserScriptsProvider {
         )
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
-        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
 

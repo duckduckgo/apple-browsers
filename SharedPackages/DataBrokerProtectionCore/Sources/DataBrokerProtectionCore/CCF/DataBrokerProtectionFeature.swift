@@ -32,6 +32,12 @@ public protocol CCFCommunicationDelegate: AnyObject {
     func success(actionId: String, actionType: ActionType) async
     func conditionSuccess(actions: [Action]) async
     func onError(error: Error) async
+    /// The page reached a step only the user can do, so the app should hand the page over.
+    func userTurnNeeded(actionID: String) async
+}
+
+public extension CCFCommunicationDelegate {
+    func userTurnNeeded(actionID: String) async {}
 }
 
 public enum CCFSubscribeActionName: String {
@@ -41,6 +47,7 @@ public enum CCFSubscribeActionName: String {
 public enum CCFReceivedMethodName: String {
     case actionCompleted
     case actionError
+    case userTurnNeeded
 }
 
 public class DataBrokerProtectionFeature: Subfeature {
@@ -55,14 +62,25 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     private var shouldContinueAction: () -> Bool
 
+    /// The action last sent to the page. When `rejectsStaleReplies` is on, a reply carrying a different action ID is ignored.
+    @MainActor private var currentActionID: String?
+
+    // Limited to assisted runs so regular scans and opt-outs keep accepting every reply as they always have.
+    private let rejectsStaleReplies: Bool
+
+    /// Called when the page answers the current action, so the web view stops re-sending a pending userAssist.
+    @MainActor var onActionResponse: (() -> Void)?
+
     private let executionConfig: BrokerJobExecutionConfig
 
     public init(delegate: CCFCommunicationDelegate,
                 executionConfig: BrokerJobExecutionConfig,
-                shouldContinueActionHandler shouldContinueAction: @escaping () -> Bool) {
+                shouldContinueActionHandler shouldContinueAction: @escaping () -> Bool,
+                rejectsStaleReplies: Bool = false) {
         self.delegate = delegate
         self.executionConfig = executionConfig
         self.shouldContinueAction = shouldContinueAction
+        self.rejectsStaleReplies = rejectsStaleReplies
     }
 
     deinit {
@@ -82,6 +100,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             switch actionResult {
             case .actionCompleted: return onActionCompleted
             case .actionError: return onActionError
+            case .userTurnNeeded: return onUserTurnNeeded
             }
         } else {
             Logger.action.log("Cant parse method: \(methodName, privacy: .public)")
@@ -90,7 +109,7 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionCompleted(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        await removeTimers()
+        guard await acceptActionResponse(actionID: Self.actionID(inCompletedParams: params)) else { return nil }
 
         Logger.action.log("Action completed")
 
@@ -132,7 +151,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             await delegate?.captchaInformation(captchaInfo: captchaInfo)
         case .solveCaptcha(let response):
             await delegate?.solveCaptcha(with: response)
-        case .fillForm, .click, .expectation, .executeScript:
+        case .fillForm, .click, .expectation, .executeScript, .userAssist:
             await delegate?.success(actionId: success.actionID, actionType: success.actionType)
         case .conditionSuccess(let response):
             await delegate?.conditionSuccess(actions: response.actions)
@@ -142,13 +161,41 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionError(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        await removeTimers()
+        let actionID = (params as? [String: Any])?["actionID"] as? String
+        guard await acceptActionResponse(actionID: actionID) else { return nil }
 
         let error = DataBrokerProtectionError.parse(params: params)
         Logger.action.log("Action Error: \(String(describing: error.localizedDescription), privacy: .public)")
 
         await delegate?.onError(error: error)
         return nil
+    }
+
+    func onUserTurnNeeded(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let actionID = (params as? [String: Any])?["actionID"] as? String,
+              !(await isStale(actionID: actionID)) else { return nil }
+        await delegate?.userTurnNeeded(actionID: actionID)
+        return nil
+    }
+
+    private static func actionID(inCompletedParams params: Any) -> String? {
+        guard let result = (params as? [String: Any])?["result"] as? [String: Any] else { return nil }
+        let response = (result["success"] ?? result["error"]) as? [String: Any]
+        return response?["actionID"] as? String
+    }
+
+    @MainActor
+    private func isStale(actionID: String) -> Bool {
+        guard rejectsStaleReplies, let currentActionID else { return false }
+        return actionID != currentActionID
+    }
+
+    @MainActor
+    private func acceptActionResponse(actionID: String?) -> Bool {
+        if let actionID, isStale(actionID: actionID) { return false }
+        removeTimers()
+        onActionResponse?()
+        return true
     }
 
     public func with(broker: UserScriptMessageBroker) {
@@ -171,9 +218,12 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         Logger.action.log("Pushing into WebView: \(method.rawValue) params \(DebugHelper.prettyPrintedJSON(from: params), privacy: .public)")
 
+        let action = (params as? Params)?.state.action
+        currentActionID = action?.id
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
 
-        installActionTimer(for: (params as? Params)?.state.action)
+        // C-S-S has no timeout for userAssist; the assisted attempt owns it.
+        installActionTimer(for: action is UserAssistAction ? nil : action)
     }
 
     @MainActor
@@ -229,6 +279,15 @@ public class DataBrokerProtectionFeature: Subfeature {
         removeTimers()
         Task {
             await delegate?.onError(error: DataBrokerProtectionError.cancelled)
+        }
+    }
+
+    /// Fails the current action when the page can't answer for itself, such as when it crashes during a userAssist.
+    @MainActor
+    func failCurrentAction(with error: Error) {
+        removeTimers()
+        Task {
+            await delegate?.onError(error: error)
         }
     }
 

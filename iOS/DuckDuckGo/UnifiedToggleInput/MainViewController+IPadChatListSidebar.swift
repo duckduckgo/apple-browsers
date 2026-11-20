@@ -72,7 +72,9 @@ extension MainViewController {
         let coordinator = unifiedToggleInputCoordinator
         // The input's leading accessory slot, empty on iPad, which a collapsed pill leaves clear.
         let slot = coordinator?.aiTabFireButton
-        let isBesideInput = container.floatingButtonCoversPage && slot?.isDescendant(of: tab.view) == true
+        // Voice and Duck.ai's `hideChatInput` hide the input, which takes the slot with it.
+        let isInputShown = tab.fullTabChatInputContainer?.isHidden == false
+        let isBesideInput = container.floatingButtonCoversPage && isInputShown && slot?.isDescendant(of: tab.view) == true
         container.placeShowChatsButton(besideInputSlot: isBesideInput ? slot : nil,
                                        isInputCollapsed: coordinator?.isAITabCollapsed ?? true)
     }

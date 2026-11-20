@@ -198,6 +198,7 @@ extension MainViewController {
         }
         if isIPadFullTabChatInput {
             currentTab?.setFullTabChatInputHidden(hidesInputBar)
+            updateIPadChatListButtonPlacement()
             return
         }
         viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)

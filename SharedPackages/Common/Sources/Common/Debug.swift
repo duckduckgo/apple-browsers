@@ -62,7 +62,7 @@ public func callingSymbol(after lastSymbolName: String? = nil) -> String {
 /// The symbol in one `Thread.callStackSymbols` line: `<index> <module> 0x<address> <symbol> + <offset>`.
 /// Read after the address, because the module column is cut at 35 characters and a module name can contain spaces
 /// (e.g. "DuckDuckGo - verify-cmd-t-wrong-abcd.debug.dylib" shows as "DuckDuckGo - verify-cmd-t-wrong-abc").
-public func stackSymbol(fromCallStackLine line: String) -> String {
+func stackSymbol(fromCallStackLine line: String) -> String {
     guard let address = line.range(of: #" 0x[0-9a-fA-F]+ "#, options: .regularExpression) else { return line }
     return line[address.upperBound...].components(separatedBy: " + ")[0]
 }

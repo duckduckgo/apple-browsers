@@ -18,7 +18,7 @@
 
 #if DEBUG
 
-import Common
+@testable import Common
 import Foundation
 import Testing
 

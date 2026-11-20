@@ -69,8 +69,8 @@ class FixTests(unittest.TestCase):
 
     def test_vm_setup_steps_point_into_vm_setup(self):
         for step, section in (("ssh without a prompt", "section 3"), ("same macOS major as this Mac", "section 1"),
-                              ("auto-login session up", "section 2"), ("AX tree over ssh", "Accessibility"),
-                              ("screencapture over ssh", "Screen & System Audio Recording"),
+                              ("auto-login session up", "section 2"), ("Accessibility grant over ssh", "Accessibility"),
+                              ("Screen Recording grant over ssh", "Screen & System Audio Recording"),
                               ("Provisioning UDID in the app's profile", "section 4")):
             self.assertIn("VM-SETUP.md", selftest.fix_for(step, "x"), step)
             self.assertIn(section, selftest.fix_for(step, "x"), step)
@@ -85,6 +85,14 @@ class FixTests(unittest.TestCase):
         self.assertEqual([n for n, _ in setup][:2], ["ssh without a prompt", "VM free and reserved"])
         self.assertEqual([n for n, _ in rest], ["prove must_fail.py", "prove t3_fixture_page.py", "nothing left running",
                                                 "VM lock released at the end"])
+
+    def test_vm_grant_steps_read_both_grants_from_one_ax_grants_over_ssh(self):
+        run, calls = selftest.Run("/tmp/20261119-120000-selftest-abcd"), []
+        run.ssh = lambda host, script, timeout=120: calls.append((host, script)) or (0, "accessibility=true screen-recording=false\n")
+        steps = dict(run.vm_steps("vm-1", [], set())[0])
+        self.assertIsNone(steps["Accessibility grant over ssh"]())
+        self.assertEqual(steps["Screen Recording grant over ssh"](), "the process that drives has no screen-recording grant")
+        self.assertEqual(calls, [("vm-1", "cd ~/verify && ./ax grants")])
 
 
 class JudgeTests(unittest.TestCase):
@@ -114,18 +122,6 @@ class JudgeTests(unittest.TestCase):
         self.assertIsNone(selftest.judge_display_sleep(" sleep                 0\n displaysleep         0\n"))
         self.assertEqual(selftest.judge_display_sleep(" displaysleep         10\n"), "display sleeps after 10 min")
         self.assertEqual(selftest.judge_display_sleep(" sleep 0\n"), "pmset -g shows no displaysleep")
-
-    def test_ax_tree(self):
-        self.assertIsNone(selftest.judge_ax_tree(0, 'AXApplication title="Finder"\n  AXMenuBar id=_NS:1085\n'))
-        self.assertEqual(selftest.judge_ax_tree(0, 'AXApplication title=""\n'),
-                         'ax dump of Finder read 1 line(s): AXApplication title=""')
-        self.assertIsNotNone(selftest.judge_ax_tree(1, "APP NOT RUNNING: Finder\n"))
-
-    def test_screencapture(self):
-        self.assertIsNone(selftest.judge_screencapture(0, "17110562\n"))
-        self.assertEqual(selftest.judge_screencapture(1, "could not create image from display\n"),
-                         "screencapture wrote no image: could not create image from display")
-        self.assertIsNotNone(selftest.judge_screencapture(0, "0\n"))
 
     def test_udid(self):
         devices = selftest.profile_devices(plistlib.dumps({"ProvisionedDevices": ["AAA111", "fa22a9"]}).decode())

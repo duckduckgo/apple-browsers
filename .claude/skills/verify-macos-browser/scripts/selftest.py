@@ -4,7 +4,8 @@ Run it on a new Mac, a new checkout, after an Xcode or macOS update, or after se
 a target stops at its first failure:
   this Mac: Xcode, the build (incremental, into the DerivedData `build` picks), the unit tests;
   each VM: ssh without a prompt, its lock, the same macOS major as this Mac, an auto-login session, a display that
-    never sleeps, an unlocked screen, the AX tree and screencapture over ssh, its Provisioning UDID in the built
+    never sleeps, an unlocked screen, the Accessibility and Screen Recording grants over ssh (`ax grants`), its
+    Provisioning UDID in the built
     app's profile, a launch that shows a window; then the must-fail proof and the offline example through `prove`,
     nothing left running and the VM released;
   --target mac: the Accessibility and Screen Recording grants of the process that will drive (read only, never a
@@ -45,8 +46,8 @@ FIX = {
                              "then restart the VM",
     "display never sleeps": f"{STEPS_DOC} section 2, Lock Screen: Turn display off → Never (`pmset -g` shows displaysleep 0)",
     "screen not locked": f"unlock it in the VM window, then {STEPS_DOC} section 2, Lock Screen: Require password → Never",
-    "AX tree over ssh": f"{STEPS_DOC} section 2, Accessibility: add /usr/libexec/sshd-keygen-wrapper",
-    "screencapture over ssh": f"{STEPS_DOC} section 2, Screen & System Audio Recording: add /usr/libexec/sshd-keygen-wrapper",
+    "Accessibility grant over ssh": f"{STEPS_DOC} section 2, Accessibility: add /usr/libexec/sshd-keygen-wrapper",
+    "Screen Recording grant over ssh": f"{STEPS_DOC} section 2, Screen & System Audio Recording: add /usr/libexec/sshd-keygen-wrapper",
     "Provisioning UDID in the app's profile": f"{STEPS_DOC} section 4 (register the UDID, rebuild with "
                                                "-allowProvisioningUpdates)",
     "app launches and shows a window": {
@@ -142,21 +143,6 @@ def judge_display_sleep(pmset_out):
     if m and m[1] == "0":
         return None
     return f"display sleeps after {m[1]} min" if m else "pmset -g shows no displaysleep"
-
-
-def judge_ax_tree(code, out):
-    """`ax dump` of Finder: without the Accessibility grant it reads nothing below the application."""
-    lines = [line for line in out.splitlines() if line.strip()]
-    if code == 0 and len(lines) > 1:
-        return None
-    return f"ax dump of Finder read {len(lines)} line(s): {_last(out) or 'nothing'}"
-
-
-def judge_screencapture(code, out):
-    size = _last(out)
-    if code == 0 and size.isdigit() and int(size) > 0:
-        return None
-    return f"screencapture wrote no image: {size or f'exit {code}'}"
 
 
 def profile_devices(profile_xml):
@@ -284,6 +270,11 @@ class Run:
                     raise RuntimeError(f"ioreg over ssh: {_last(out)}")
             return state["ioreg"]
 
+        def grants():
+            if "grants" not in state:
+                remote("grants", "cd ~/verify && ./ax grants")
+            return state["grants"]
+
         def udid():
             code, out = _run(["security", "cms", "-D", "-i", os.path.join(self.info["app"], "Contents", "embedded.provisionprofile")])
             if code:
@@ -317,10 +308,9 @@ class Run:
             ("auto-login session up", lambda: judge_logged_in(ioreg())),
             ("display never sleeps", lambda: judge_display_sleep(remote("pmset", "pmset -g")[1])),
             ("screen not locked", lambda: judge_unlocked(ioreg())),
-            ("AX tree over ssh", lambda: judge_ax_tree(*remote("ax", "cd ~/verify && VERIFY_APP=Finder ./ax dump 2"))),
-            ("screencapture over ssh", lambda: judge_screencapture(*remote(
-                "shot", "screencapture -x ~/verify/selftest.png && stat -f %z ~/verify/selftest.png; "
-                        "s=$?; rm -f ~/verify/selftest.png; exit $s"))),
+            # the grants themselves: a screencapture without Screen Recording still writes the wallpaper
+            ("Accessibility grant over ssh", lambda: judge_grant(grants(), "accessibility")),
+            ("Screen Recording grant over ssh", lambda: judge_grant(grants(), "screen-recording")),
             ("Provisioning UDID in the app's profile", udid),
             ("app launches and shows a window", launch),
             ("VM released", release),

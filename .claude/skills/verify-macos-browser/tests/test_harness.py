@@ -254,6 +254,17 @@ class ConditionsRunTests(unittest.TestCase):
         self.assertEqual(ran[-2:], [("appearance", "restore"), ("cleanup",)])
         self.assertEqual(rec.action_errors, [])
 
+    def test_a_failed_restore_is_a_problem_when_no_appearance_was_declared(self):
+        mac, rec, ran, _ = self.fake(fail=("appearance",))
+        harness.set_conditions(mac, {}, "vm-1", launched=False)
+        self.assertEqual(rec.problems, ["appearance not restored (exit 2): APPEARANCE BROKEN"])
+        self.assertEqual(rec.conditions, {})
+
+    def test_a_failed_restore_stops_the_run_when_an_appearance_was_declared(self):
+        mac, rec, ran, _ = self.fake(fail=("appearance",))
+        with self.assertRaises(harness.ProofError):
+            harness.set_conditions(mac, dict(appearance="dark"), "vm-1", launched=False)
+
     def test_a_condition_that_does_not_take_is_setup_trouble(self):
         mac, rec, ran, _ = self.fake(fail=("window",))
         with self.assertRaises(harness.ProofError):

@@ -360,7 +360,6 @@ def cmd_manifest(run_dir, skill_dir, topic):
 
 # ---------------------------------------------------------------- reset: each run starts from the same state
 BUNDLE = "com.duckduckgo.macos.browser.debug"
-VERIFY_APP = r"DuckDuckGo - verify-.*\.app/Contents/MacOS"
 
 
 def parse_checks(text):
@@ -382,11 +381,19 @@ def cmd_reset_record(run_dir, where):
     write_reset(run_dir, where, parse_checks(sys.stdin.read()))
 
 
+# The Debug app's own app groups (DeveloperID.xcconfig gives Debug `.debug` ones): the downloaded privacy config and its
+# ETags, internal-user and remote-messaging state, the subscription. Not network-protection or dbp: the Debug VPN
+# extension and DBP agent can run without the app and keep using them.
+DEBUG_GROUPS = ("app-configuration", "subscription")
+
+
 def app_data(home, temp, cache, bundle=BUNDLE):
-    """The Debug app's own data on this Mac that exists now. Never its group containers: the release app shares them.
-    Nor WebKit's <temp>/com.apple.WebKit.*+<bundle> folders: macOS refuses to move them (seen in a VM)."""
+    """The Debug app's own data on this Mac that exists now, its own .debug group containers included.
+    Not WebKit's <temp>/com.apple.WebKit.*+<bundle> folders: macOS refuses to move them (seen in a VM)."""
     lib = os.path.join(home, "Library")
     paths = [os.path.join(lib, d, bundle) for d in ("Application Support", "Caches", "Containers", "WebKit", "HTTPStorages")]
+    groups = glob.escape(os.path.join(lib, "Group Containers"))
+    paths += sorted(p for g in DEBUG_GROUPS for p in glob.glob(os.path.join(groups, f"*.com.duckduckgo.macos.browser.{g}.debug")))
     paths += [os.path.join(lib, "Saved Application State", bundle + ".savedState"), os.path.join(temp, bundle),
               os.path.join(cache, bundle)] + sorted(glob.glob(os.path.join(glob.escape(cache), "*+" + bundle)))
     return [p for p in paths if os.path.lexists(p)]
@@ -416,11 +423,12 @@ class MacReset:
     begin parks the Debug app's own data (app_data, and its defaults domain exported then deleted) under
     <verify home>/.mac-park and snapshots ~/Downloads; end moves the run's new Downloads files to the Trash, deletes what
     the run created and moves the parked data back. Nothing is deleted unless it was parked first, a park left by a run
-    that died is put back first, and nothing is parked while a Debug app outside this skill is open (it would write
-    into the moved folders)."""
+    that died is put back first, and nothing is parked while another Debug app is open, another worktree's verify app
+    included (it would write into the moved folders). Only this run's own app is ever quit."""
 
-    def __init__(self, run_dir, verify_home, home=os.path.expanduser("~"), owner=None, sh=_sh):
+    def __init__(self, run_dir, verify_home, app_name, home=os.path.expanduser("~"), owner=None, sh=_sh):
         self.run_dir, self.home, self.sh = run_dir, home, sh
+        self.app = re.escape(app_name) + r"\.app/Contents/MacOS"
         self.park = os.path.join(verify_home, ".mac-park")
         self.owner = int(owner or os.environ.get("VERIFY_OWNER_PID") or os.getppid())
         self.temp, self.cache = (sh("getconf", v).stdout.strip() for v in ("DARWIN_USER_TEMP_DIR", "DARWIN_USER_CACHE_DIR"))
@@ -436,7 +444,8 @@ class MacReset:
             return None
 
     def _defaults_empty(self):
-        return self.sh("defaults", "read", BUNDLE).returncode != 0
+        read = self.sh("defaults", "read", BUNDLE)   # after `defaults delete`, macOS 27 reads back `{}` with exit 0
+        return read.returncode != 0 or "".join(read.stdout.split()) in ("", "{}")
 
     def begin(self):
         checks = {}
@@ -447,12 +456,12 @@ class MacReset:
             else:
                 self.restore()   # left by a run that died
         for _ in range(10):
-            if self.sh("pkill", "-f", VERIFY_APP).returncode:
+            if self.sh("pkill", "-f", self.app).returncode:
                 break
             time.sleep(1)
-        checks["app stopped"] = self.sh("pgrep", "-f", VERIFY_APP).returncode != 0
+        checks["app stopped"] = self.sh("pgrep", "-f", self.app).returncode != 0
         other = f'bundleID="{BUNDLE}"' in self.sh("lsappinfo", "list").stdout
-        checks["no Debug app open outside this skill"] = not other
+        checks["no other Debug app open (another worktree's verify app counts)"] = not other
         if all(checks.values()) and not os.path.isdir(self.park):
             items = os.path.join(self.park, "items")
             os.makedirs(items)
@@ -475,7 +484,9 @@ class MacReset:
         with open(os.path.join(self.run_dir, "downloads-before.json"), "w") as f:
             json.dump(dict(since=time.time(), entries=listing(self.downloads)), f)
         write_reset(self.run_dir, "mac", checks, kept=[
-            "the engineer's Downloads files", "group containers (shared with the release app)", "the pasteboard"])
+            "the engineer's Downloads files", "the pasteboard",
+            "the Debug network-protection and dbp group containers (the VPN extension and DBP agent run without the app)",
+            "wide-event storage (defaults domain com.duckduckgo.wide-pixel.storage, shared with the release app)"])
 
     def end(self):
         checks = {}
@@ -511,7 +522,7 @@ class MacReset:
             shutil.rmtree(self.park)
             return True
         for _ in range(10):
-            if self.sh("pkill", "-f", VERIFY_APP).returncode:
+            if self.sh("pkill", "-f", self.app).returncode:
                 break
             time.sleep(1)
         items = os.path.join(self.park, "items")
@@ -533,10 +544,10 @@ class MacReset:
         return not os.path.exists(self.park) and all(os.path.lexists(p) for p in moved.values())
 
 
-def cmd_reset(step, run_dir, verify_home):
+def cmd_reset(step, run_dir, verify_home, app_name):
     if step not in ("begin", "end"):
         die("reset: begin or end")
-    getattr(MacReset(run_dir, verify_home), step)()
+    getattr(MacReset(run_dir, verify_home, app_name), step)()
     checks = read_json(os.path.join(run_dir, "reset.json"))["checks"]
     for what, ok in checks.items():
         print(f"check\t{what}\t{'ok' if ok else 'fail'}")

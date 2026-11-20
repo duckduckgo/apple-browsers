@@ -46,10 +46,11 @@ class FakeMac:
             out = self.temp if args[1] == "DARWIN_USER_TEMP_DIR" else self.cache
         elif args[0] in ("pkill", "pgrep"):
             code = 1   # no verify app running
+            assert args[2] == r"DuckDuckGo\ \-\ verify\-t\.app/Contents/MacOS", args   # only this run's app
         elif args[0] == "lsappinfo":
             out = f'bundleID="{B}"' if self.other_app_open else 'bundleID="com.apple.finder"'
-        elif args[:2] == ("defaults", "read"):
-            code = 0 if self.domain else 1
+        elif args[:2] == ("defaults", "read"):   # an emptied domain reads back {} with exit 0, as on macOS 27
+            out = json.dumps(self.domain) if self.domain else "{\n}"
         elif args[:2] == ("defaults", "export"):
             write(args[3], json.dumps(self.domain))
         elif args[:2] == ("defaults", "delete"):
@@ -69,14 +70,18 @@ class MacResetTests(unittest.TestCase):
         # The engineer's own Debug app data, defaults and Downloads, and what the reset must never touch.
         self.mine = os.path.join(self.lib, "Application Support", B, "bookmarks.db")
         self.mine_state = os.path.join(self.lib, "Saved Application State", B + ".savedState", "windows.plist")
-        self.group = os.path.join(self.lib, "Group Containers", "HKE973VLUW.com.duckduckgo", "shared.db")
+        groups = os.path.join(self.lib, "Group Containers")
+        self.debug_group = os.path.join(groups, "HKE973VLUW.com.duckduckgo.macos.browser.app-configuration.debug", "c.json")
+        self.group = os.path.join(groups, "HKE973VLUW.com.duckduckgo.macos.browser.app-configuration", "release.json")
+        self.vpn_group = os.path.join(groups, "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.system-extension"
+                                              ".debug", "vpn.db")
         self.release = os.path.join(self.lib, "Application Support", "com.duckduckgo.macos.browser", "real.db")
         self.user_dl = os.path.join(self.home, "Downloads", "tax-return.pdf")
-        for p in (self.mine, self.mine_state, self.group, self.release, self.user_dl):
+        for p in (self.mine, self.mine_state, self.debug_group, self.group, self.vpn_group, self.release, self.user_dl):
             write(p, "engineer's " + os.path.basename(p))
 
     def reset(self, sh, owner=111):
-        return vhelp.MacReset(self.run_dir, self.vhome, home=self.home, owner=owner, sh=sh)
+        return vhelp.MacReset(self.run_dir, self.vhome, "DuckDuckGo - verify-t", home=self.home, owner=owner, sh=sh)
 
     def checks(self):
         return json.loads(read(os.path.join(self.run_dir, "reset.json")))["checks"]
@@ -94,10 +99,13 @@ class MacResetTests(unittest.TestCase):
         write(os.path.join(self.lib, "WebKit", B, "run-only"), "run's")
         write(os.path.join(sh.temp, B, "tmp"), "run's")
         sh.domain = {"verifyProbe": "1"}
+        self.assertFalse(os.path.exists(self.debug_group))
+        write(self.debug_group, "run's privacy config")
         write(os.path.join(self.home, "Downloads", "probe.txt"), "run's")
         write(self.user_dl, "engineer's, edited during the run")
         r.end()
         self.assertEqual(read(self.mine), "engineer's bookmarks.db")
+        self.assertEqual(read(self.debug_group), "engineer's c.json")
         self.assertEqual(read(self.mine_state), "engineer's windows.plist")
         self.assertTrue(os.path.exists(os.path.join(sh.cache, "com.apple.WebKit.Networking+" + B, "cache.db")))
         self.assertFalse(os.path.exists(os.path.join(self.lib, "WebKit", B)))
@@ -106,7 +114,8 @@ class MacResetTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.home, "Downloads", "probe.txt")))
         self.assertEqual(read(os.path.join(self.home, ".Trash", "probe.txt")), "run's")
         self.assertEqual(read(self.user_dl), "engineer's, edited during the run")
-        self.assertEqual(read(self.group), "engineer's shared.db")
+        self.assertEqual(read(self.group), "engineer's release.json")
+        self.assertEqual(read(self.vpn_group), "engineer's vpn.db")
         self.assertEqual(read(self.release), "engineer's real.db")
         self.assertFalse(os.path.exists(os.path.join(self.vhome, ".mac-park")))
         self.assertTrue(all(self.checks().values()), self.checks())
@@ -117,7 +126,7 @@ class MacResetTests(unittest.TestCase):
         r.begin()
         self.assertEqual(read(self.mine), "engineer's bookmarks.db")
         self.assertEqual(sh.domain, {"themeName": "dark"})
-        self.assertFalse(self.checks()["no Debug app open outside this skill"])
+        self.assertFalse(self.checks()["no other Debug app open (another worktree's verify app counts)"])
         self.assertFalse(self.checks()["app data and temp files removed"])
         r.end()
         self.assertEqual(read(self.mine), "engineer's bookmarks.db")
@@ -168,13 +177,14 @@ class MacResetTests(unittest.TestCase):
         self.assertEqual(read(self.mine_state), "engineer's windows.plist")
         self.assertEqual(sh.domain, {"themeName": "dark"})
 
-    def test_mac_reset_never_lists_group_containers_other_apps_or_webkit_temp(self):
+    def test_mac_reset_lists_only_the_debug_apps_own_data(self):
         sh = FakeMac(self.root)
         for d, name in ((sh.temp, B), (sh.temp, "com.apple.WebKit.GPU+" + B), (sh.cache, "com.apple.WebKit.GPU+" + B),
                         (sh.temp, "com.duckduckgo.macos.browser"), (sh.cache, "com.duckduckgo.macos.browser")):
             write(os.path.join(d, name, "t"))
         data = self.reset(sh).data()
         self.assertEqual(sorted(data), sorted([os.path.join(self.lib, "Application Support", B),
+                                               os.path.dirname(self.debug_group),
                                                os.path.join(self.lib, "Saved Application State", B + ".savedState"),
                                                os.path.join(sh.temp, B),
                                                os.path.join(sh.cache, "com.apple.WebKit.GPU+" + B)]))
@@ -264,6 +274,27 @@ class ProblemTests(unittest.TestCase):
             return (end_code, "PARK BROKEN") if command == "reset" else (0, "")
         mac._sh = sh
         return mac, rec, ran
+
+    def test_a_failed_reset_before_the_run_stops_it_before_the_build_and_still_ends(self):
+        evidence, ran = tempfile.mkdtemp(), []
+
+        def sh(mac, command, *args):
+            ran.append((command, *args))
+            if (command, *args) == ("reset", "begin"):
+                return 0, "check\tapp stopped\tok\ncheck\tno other Debug app open (another worktree's verify app counts)\tfail"
+            return 0, ""
+        mod = types.SimpleNamespace(__doc__="Claim.", run=lambda mac: self.fail("the proof ran"))
+        real = harness.Mac._sh
+        harness.Mac._sh = sh
+        try:
+            rec, _ = harness.run_one(mod, os.path.join(evidence, "p.py"), evidence, "t", "mac", False, harness.ROOT,
+                                     "rerun", evidence, reset=True)
+        finally:
+            harness.Mac._sh = real
+        self.assertIn("no other Debug app open", rec.error)
+        self.assertEqual(harness.label(rec)[0], "INCONCLUSIVE")
+        self.assertNotIn("build", [c[0] for c in ran])
+        self.assertEqual(ran[-1], ("reset", "end"))
 
     def test_a_failed_reset_makes_a_pass_exit_2_and_ends_after_cleanup(self):
         mac, rec, ran = self.fake(dict(where="mac", checks={"app data and temp files removed": False}))

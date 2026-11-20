@@ -25,6 +25,8 @@ import Persistence
 /// Coordinates server-side AI Chat deletion to mirror local clears (Fire/AutoClear).
 /// Stores a timestamp when local data is cleared and retries the DELETE on next trigger until it succeeds.
 public protocol AIChatSyncCleaning: AnyObject {
+    var canUseAIChatSyncDelete: Bool { get }
+
     func recordAutoClearBackgroundTimestamp(date: Date?) async
     func recordLocalClear(date: Date?) async
     func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async
@@ -33,6 +35,10 @@ public protocol AIChatSyncCleaning: AnyObject {
     func recordChatUpdate(chatID: String) async
     func updateIfNeeded() async
     func scheduleSync()
+}
+
+public extension AIChatSyncCleaning {
+    var canUseAIChatSyncDelete: Bool { false }
 }
 
 public final class AIChatSyncCleaner: AIChatSyncCleaning {
@@ -52,7 +58,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     private let storageHandler: DuckAiNativeStorageHandling?
     private let httpRequestErrorHandler: ((Error) -> Void)?
 
-    private var canUseAIChatSyncDelete: Bool {
+    public var canUseAIChatSyncDelete: Bool {
         guard featureFlagProvider.isAIChatSyncEnabled() else {
             return false
         }
@@ -254,6 +260,7 @@ private actor AIChatSyncState {
     }
 
     func setLastClear(timestamp: Double) {
+        if let lastClear = readLastClear(), lastClear >= timestamp { return }
         try? store.set(timestamp, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
     }
 
@@ -262,7 +269,7 @@ private actor AIChatSyncState {
             return
         }
 
-        try? store.set(timestampValue, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
+        setLastClear(timestamp: timestampValue)
         try? store.removeObject(forKey: AIChatSyncCleaner.Keys.autoClearBackgroundTimestamp)
     }
 

@@ -62,6 +62,20 @@ final class AIChatSyncCleanerTests: XCTestCase {
         )
     }
 
+    func testDeleteCapabilityTracksChangesToChatHistorySync() {
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = false
+        let cleaner: AIChatSyncCleaning = makeSUT()
+
+        XCTAssertFalse(cleaner.canUseAIChatSyncDelete)
+        mockSync.isAIChatHistoryEnabled = true
+        XCTAssertTrue(cleaner.canUseAIChatSyncDelete)
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = false
+        XCTAssertFalse(cleaner.canUseAIChatSyncDelete)
+    }
+
     // MARK: - recordLocalClear Tests
 
     func testGivenFeatureFlagDisabled_WhenRecordLocalClear_ThenNothingIsStored() async {
@@ -143,6 +157,26 @@ final class AIChatSyncCleanerTests: XCTestCase {
         // Then
         let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
         XCTAssertEqual(storedValue, expectedTimestamp, "Current timestamp from dateProvider should be stored")
+    }
+
+    func testWhenAnEarlierClearFinishesLast_ThenSyncStillDeletesUpToTheLaterClear() async {
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        await sut.recordLocalClear(date: fixedDate)
+        await sut.recordLocalClear(date: fixedDate.addingTimeInterval(-1))
+
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
+        XCTAssertEqual(storedValue, fixedDate.timeIntervalSince1970)
+
+        await sut.recordAutoClearBackgroundTimestamp(date: fixedDate.addingTimeInterval(-1))
+        await sut.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+
+        let promotedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
+        XCTAssertEqual(promotedValue, fixedDate.timeIntervalSince1970)
     }
 
     // MARK: - recordLocalClearFromAutoClearBackgroundTimestampIfPresent Tests

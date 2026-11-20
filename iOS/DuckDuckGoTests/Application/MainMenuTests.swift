@@ -18,7 +18,6 @@
 //
 
 import Bookmarks
-import Combine
 import Core
 import CoreData
 import DesignResourcesKitIcons
@@ -247,28 +246,6 @@ struct MainMenuTests {
             #expect(onboarding.removedMenus == browsing.removedMenus)
         }
         #expect(!browsing.mainMenus.isEmpty)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func firstValueIsNilWhenPublisherSendsNothingInTime() async {
-        let silentPublisher = PassthroughSubject<Int, Error>()
-        #expect(await silentPublisher.firstValue(within: .milliseconds(10)) == nil)
-        withExtendedLifetime(silentPublisher) {}
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func firstValueReturnsTheFirstValueSentInTime() async {
-        let publisher = [1, 2].publisher.setFailureType(to: Error.self)
-        #expect(await publisher.firstValue(within: .seconds(1)) == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func firstValueIsNilWhenPublisherFails() async {
-        let failingPublisher = Fail<Int, Error>(error: CancellationError())
-        #expect(await failingPublisher.firstValue(within: .seconds(1)) == nil)
     }
 
     @available(iOS 16, macOS 13, *)

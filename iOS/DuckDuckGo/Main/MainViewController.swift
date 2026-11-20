@@ -3005,7 +3005,7 @@ class MainViewController: UIViewController {
         recordNewTabPageSessionAction { $0.tapFireButton() }
         let wasContextualFireOnboardingDialogVisible = daxDialogsManager.isShowingFireDialog
 
-        func showFireConfirmation() {
+        func showFireConfirmation(_ preparation: FireChatConfirmationPreparation) {
             let presenter = FireConfirmationPresenter()
             let tabsBarFireButton = viewCoordinator.tabBarContainer.isHidden ? nil : tabsBarController?.fireButton
             let source: UIView = tabsBarFireButton ?? findFireButton() ?? viewCoordinator.toolbar
@@ -3017,7 +3017,9 @@ class MainViewController: UIViewController {
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
                 isSingleTab: tabManager.currentTabsModel.count == 1,
-                browsingMode: tabManager.currentBrowsingMode,
+                browsingMode: preparation.browsingMode,
+                deleteAllChats: preparation.deleteAllChats,
+                onShown: preparation.reportShownIfOffered,
                 onConfirm: { [weak self] fireRequest in
                     guard let self else { return }
                     if wasContextualFireOnboardingDialogVisible {
@@ -3062,7 +3064,7 @@ class MainViewController: UIViewController {
             return
         }
 
-        showFireConfirmation()
+        prepareFireChatConfirmation(showFireConfirmation)
 
         performCancel()
     }
@@ -8909,6 +8911,14 @@ extension MainViewController: TabDelegate {
     
     func tabDidRequestFireButtonPulse(tab: TabViewController) {
         showFireButtonPulse()
+    }
+
+    @MainActor
+    func tabPrepareContextualFireChatConfirmation(_ tab: TabViewController,
+                                                  onDeleteAllChatsSucceeded: @escaping () -> Void) async -> FireChatConfirmationPreparation? {
+        await prepareFireChatConfirmation(for: tab.tabModel,
+                                          context: .contextual,
+                                          onDeleteAllChatsSucceeded: onDeleteAllChatsSucceeded)
     }
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {

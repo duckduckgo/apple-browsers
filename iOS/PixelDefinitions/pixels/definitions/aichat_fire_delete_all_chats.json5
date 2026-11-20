@@ -1,0 +1,60 @@
+{
+    "aichat_fire_delete-all-chats_shown": {
+        "description": "The Fire confirmation offered Delete All Chats in a Duck.ai tab or contextual chat.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "layout",
+                "type": "string",
+                "description": "Whether Delete All Chats appears alongside Delete This Chat or alone.",
+                "enum": ["with_this_chat", "all_chats_only"]
+            },
+            {
+                "key": "context",
+                "type": "string",
+                "description": "Whether the Fire confirmation was opened in a Duck.ai tab or contextual chat.",
+                "enum": ["tab", "contextual"]
+            }
+        ]
+    },
+    "aichat_fire_delete-all-chats_executed": {
+        "description": "The user chose Delete All Chats in the Fire confirmation for a Duck.ai tab or contextual chat.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            {
+                "key": "layout",
+                "type": "string",
+                "description": "Whether Delete All Chats appears alongside Delete This Chat or alone.",
+                "enum": ["with_this_chat", "all_chats_only"]
+            },
+            {
+                "key": "context",
+                "type": "string",
+                "description": "Whether the Fire confirmation was opened in a Duck.ai tab or contextual chat.",
+                "enum": ["tab", "contextual"]
+            }
+        ]
+    },
+    "aichat_fire_delete-all-chats_count-unavailable": {
+        "description": "An eligible Duck.ai Fire confirmation could not read a reliable native chat count and offers only the single-chat action.",
+        "owners": ["bkunat"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Native storage is disabled or absent, migration is incomplete, the overall one-second deadline expired, or the publisher failed or completed without a value.",
+                "enum": ["storage_unavailable", "not_migrated", "timeout", "read_failed"]
+            }
+        ]
+    }
+}

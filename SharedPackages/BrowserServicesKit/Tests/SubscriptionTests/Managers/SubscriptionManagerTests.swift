@@ -294,7 +294,7 @@ class SubscriptionManagerTests: XCTestCase {
                                     appStoreSucceeds: Bool,
                                     purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .appStore) {
         mockOAuthClient.restoreFromBackupResponse = backupResult
-        let backup = BackupTokenRecovery(oAuthClient: mockOAuthClient, onRestored: { _ in })
+        let backup = BackupTokenRecovery(oAuthClient: mockOAuthClient, pixelHandler: mockPixelHandler)
         let appStore = AppStoreTokenRecovery(purchasePlatform: purchasePlatform,
                                              restoreFlow: mockAppStoreRestoreFlowV2)
         if !appStoreSucceeds {

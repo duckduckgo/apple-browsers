@@ -522,7 +522,8 @@ def _record(mac, rec, step):
     if written:
         rec.video.update(path=VIDEO, seconds=float(written[1]), bytes=int(written[2]))
     if code:
-        rec.video["error"] = f"screen recording {'not started' if step == 'start' else 'failed'}: {_line(out[-300:])}"
+        outcome = "not started" if step == "start" else "cut short" if "CUT:" in out else "failed"
+        rec.video["error"] = f"screen recording {outcome}: {_line(out[-300:])}"
         rec.problems.append(rec.video["error"])
 
 

@@ -295,7 +295,6 @@ jobs:
         if: env.rc == '0'
         working-directory: target
         run: |
-          # What the agent was told, so text copied from it is kept out of the PR and the patch
           "$GITHUB_WORKSPACE/worker/scripts/agent-worker/export_patch.sh" "$RUNNER_TEMP/evidence"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

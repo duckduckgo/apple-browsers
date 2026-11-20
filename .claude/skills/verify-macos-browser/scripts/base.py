@@ -1,7 +1,7 @@
 """`prove PROOF --base REF`: run one proof on the base revision, then on this checkout, and judge each check against both.
 
 A check carries what it should do on the base build (`with mac.on_base("fail"):`, or "pass"; "unchanged" outside any
-block). Both runs use this checkout's skill and proof, the same target, flags, language and video setting. Their
+block). Both runs use this checkout's skill and proof, the same target, flags, CONDITIONS and video setting. Their
 evidence is kept as `base/` and `change/` inside one attempt folder, next to the comparison's report.md and
 manifest.json, so the folder uploads as one.
 
@@ -68,9 +68,10 @@ def where(m):
     return f"VM {vm.get('host')} (macOS {vm.get('macos')})" if vm else f"this Mac (macOS {m.get('macos') or '?'})"
 
 
-def verdict(base, change, rows, base_m=None, change_m=None):
+def verdict(base, change, rows, differ=(), base_m=None, change_m=None):
     """(label, exit code, reason) for the pair. PASS only when this checkout passes and the base build did what the proof
-    declared, including at least one check it declared to fail there (the bug), both on the same macOS version."""
+    declared, including at least one check it declared to fail there (the bug), under the same conditions (`differ`
+    names those that weren't: then the screenshots don't compare) and on the same macOS version."""
     if base.cancelled or (change and change.cancelled):
         return "INCONCLUSIVE", 130, "cancelled"
     if base_could_not_tell(base):
@@ -80,6 +81,8 @@ def verdict(base, change, rows, base_m=None, change_m=None):
     if base_m and change_m and (base_m.get("vm") or base_m).get("macos") != (change_m.get("vm") or change_m).get("macos"):
         return "INCONCLUSIVE", 2, f"the runs used different macOS versions, so a check could flip because of the OS: " \
                                   f"before on {where(base_m)}, after on {where(change_m)}; pin one VM with --target vm-N"
+    if differ:
+        return "INCONCLUSIVE", 2, f"conditions differ between the runs: {', '.join(differ)}"
     missed = [r["check"] for r in rows if r["base"] == "fail" and r["before"] == "pass"]
     if missed:
         return "FAIL", 1, f"the proof doesn't reproduce the bug: expected to fail on the base build, passed: {missed}"
@@ -202,12 +205,13 @@ def prove_base(path, ref, target, evidence_dir=None, video=True):
         change, change_m = harness.run_one(mod, proof, os.path.join(evidence, "change"), topic, target, video, ROOT,
                                            rerun, shown_dir)
     rows = judge(base.checks, change.checks if change else [], base.tokens + (change.tokens if change else []))
-    v, code, reason = verdict(base, change, rows, base_m, change_m)
+    differ = harness.conditions_differ(base_m, change_m) if base_m and change_m else []
+    v, code, reason = verdict(base, change, rows, differ, base_m, change_m)
     manifest = dict(proof="proof.py", base=dict(ref=ref, sha=sha, worktree=tree, revision=base_m.get("revision"),
                                                 unpinned_flags=base.unpinned, pruned=pruned),
                     change=dict(revision=(change_m or {}).get("revision"), dirty=(change_m or {}).get("dirty")),
                     before="base/manifest.json" if base_m else None, after="change/manifest.json" if change_m else None,
-                    target=target, verdict=v, exit=code, reason=reason, rows=rows, rerun=rerun,
+                    target=target, verdict=v, exit=code, reason=reason, rows=rows, rerun=rerun, conditions_differ=differ,
                     clean=f"{harness._sh_path(os.path.join(harness.SKILL, 'bin', 'verify-macos-browser'))} clean-base")
     with open(os.path.join(evidence, "manifest.json"), "w") as f:
         f.write(harness._tilde(json.dumps(manifest, indent=1)))
@@ -244,14 +248,18 @@ def report(doc, base, change, base_m, change_m, m, evidence):
               for r in m["rows"]] or ["| (no checks ran) | | | | |"]
     problems = [f"before: {p}" for p in base.problems] + [f"after: {p}" for p in (change.problems if change else [])]
     lines += ["", "Problems (cleanup or evidence):"] + [f"- {p}" for p in problems or ["(none)"]]
-    launch = change_m.get("launch") or base_m.get("launch") or {}
+    if m.get("conditions_differ"):
+        conditions = (f"**differ: {', '.join(m['conditions_differ'])}**; before {harness.conditions_line(base_m)}; "
+                      f"after {harness.conditions_line(change_m)}")
+    else:
+        conditions = harness.conditions_line(change_m or base_m)
     lines += ["", "## Details", "",
               f"- Before: `{(m['base']['revision'] or sha)[:12]}`, built in {harness._tilde(m['base']['worktree'] or '(no worktree)')}"
               + (f", on {where(base_m)}" if base_m else ""),
               f"- After: `{after_rev[:12]}`" + (f", on {where(change_m)}" if change_m else ", not run"),
               f"- Pinned flags: {', '.join(change_m.get('flags') or base_m.get('flags') or []) or '(none)'}"
               + (f"; not pinned before, the base revision doesn't define {', '.join(base.unpinned)}" if base.unpinned else ""),
-              f"- Language: {launch.get('language', '?')}, locale {launch.get('locale', '?')}",
+              f"- Conditions: {conditions}",
               f"- Rerun: `{m['rerun']}`",
               f"- The base worktree is kept for the next run on that revision; those not used for {STALE_DAYS} days are "
               f"removed" + (f" (this run: {', '.join(map(harness._tilde, m['base']['pruned']))})"

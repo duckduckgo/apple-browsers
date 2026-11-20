@@ -13,6 +13,9 @@
 #   shot    <topic> <name>              screenshot of the app's window only, if the app is frontmost
 #   record  <topic> start|stop          screen recording to recording.mp4: in a VM its whole screen; on this Mac
 #                                       only the app's window, cut where another app came in front
+#   appearance <topic> light|dark|restore   in a VM the system appearance (restore: light); on this Mac the app's
+#                                       own setting, never the system's (restore: the value it had before); read back
+#   window  <topic> <x> <y> <w> <h>     move and resize the app's window (points, top-left origin); read back
 #   wait    <topic> <seconds>           sleep, for scripted deadlines
 #   flag    <topic> <caseName> on|off   pin a FeatureFlag (validated against FeatureFlag.swift); before build
 #   set-default <topic> <key> <type> <value>   other defaults, remembered for cleanup; before build
@@ -37,7 +40,7 @@ AX_BIN="$SCRIPTS_DIR/../.bin/ax"
 VM_LOCKS="$VERIFY_HOME/.vm-locks"
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o ServerAliveInterval=15)
 
-usage() { sed -n '4,30p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
+usage() { sed -n '4,33p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
 
 command=${1:-}
 topic=${2:-}
@@ -472,6 +475,42 @@ record)
         ;;
     *) echo "record: start or stop"; exit 64 ;;
     esac
+    ;;
+appearance)
+    want=${1:?appearance needs light, dark or restore}
+    [[ "$want" =~ ^(light|dark|restore)$ ]] || { echo "appearance: light, dark or restore"; exit 64; }
+    if [[ -n "$VM" ]]; then
+        # Nothing in a VM is the engineer's: the whole system, and its default is light.
+        [[ "$want" == restore ]] && want=light
+        now=$(ax appearance "$want") || { echo "$now"; exit 2; }
+        echo "appearance=$now (system)"
+    else
+        # This Mac's system setting is the engineer's: never touched. The Debug app's theme, with its earlier value kept
+        # in a marker until restore, so a run killed before its undo is put back by the next run's restore.
+        key=com.duckduckgo.macos.currentThemeNameKey; marker="$VERIFY_HOME/.mac-appearance"
+        if [[ "$want" == restore ]]; then
+            if [[ -f "$marker" ]]; then
+                was=$(cat "$marker")
+                if [[ "$was" == unset ]]; then defaults delete "$BUNDLE_ID" "$key" 2>/dev/null || true
+                else defaults write "$BUNDLE_ID" "$key" -string "$was"; fi
+                rm "$marker"
+            fi
+        else
+            [[ -f "$marker" ]] || { defaults read "$BUNDLE_ID" "$key" 2>/dev/null || echo unset; } > "$marker"
+            defaults write "$BUNDLE_ID" "$key" -string "$want"
+        fi
+        now=$(defaults read "$BUNDLE_ID" "$key" 2>/dev/null || echo unset)
+        echo "appearance=$now (app setting)"
+    fi
+    [[ "$want" == restore || "$now" == "$want" ]] || { echo "APPEARANCE NOT SET: wanted $want, read back $now"; exit 2; }
+    ;;
+window)
+    (( $# == 4 )) || { echo "window: x y w h"; exit 64; }
+    out=$(ax setwin "$@") || echo "$out"   # the read-back decides
+    sleep 0.5
+    now=$(ax winrect)
+    echo "window=$now"
+    [[ "$now" == "$1,$2,$3,$4" ]] || { echo "WINDOW NOT SET: wanted $1,$2,$3,$4, read back $now"; exit 2; }
     ;;
 wait)
     sleep "${1:?wait needs seconds}"

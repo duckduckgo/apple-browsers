@@ -10,8 +10,7 @@ Prove the change on the running app, not by reading code. A proof is: the action
 state, and a second, independent read that shows it (AX state, page URL, a log line, a pixel). No
 evidence, no verdict.
 
-**How it gets used.** Agents don't pick this skill on their own (`disable-model-invocation`), so name it when you
-start a task ("… and verify it with verify-macos-browser"), or invoke `/verify-macos-browser`.
+**How it gets used.** Agents don't pick this skill on their own: name it in the task, or invoke `/verify-macos-browser`.
 
 ## 0. Before you start
 
@@ -37,13 +36,18 @@ $V check <proof>                                 # compile, shape, FLAGS; no app
 $V prove <proof> --target vm-1 [--evidence-dir <dir>]   # vm, vm-1, vm-2 or mac
 ```
 
-**Copy the closest example.** `examples/` holds worked proofs of the harness, kept passing, not feature recipes:
-`t1_launch_doctor`, `t2_tabs` (Cmd+T, Cmd+W, tab count), `t3_fixture_page` (fixture page and link, no live service),
-`t4_pixel` (`mark`, `expect_pixel`, `expect_no_pixel`). The docstring is the claim (report.md's Verified line);
-`FLAGS`, `LIVE` and `AUTOMATION` are explained in the `new-proof` template.
+**Copy the closest example.** `examples/` are worked proofs of the harness, kept passing, not recipes:
+`t1_launch_doctor`, `t2_tabs` (Cmd+T, Cmd+W, tab count), `t3_fixture_page` (local page, no live service),
+`t4_pixel` (`mark`, `expect_pixel`, `expect_no_pixel`), `t5_dark_window` (`CONDITIONS`). The docstring is the claim
+(report.md's Verified line); the `new-proof` template explains the rest.
 
-`prove` reserves the VM, pins `FLAGS`, builds (incremental; uncommitted edits included), launches in en-US as an
-internal user, skips onboarding in a VM, runs `doctor`, runs the proof, takes `final.png`, writes the logs and
+**Conditions.** So screenshots compare between runs and with `--base`, declare
+`CONDITIONS = dict(appearance="dark", window=(40, 60, 1280, 800), language="de", locale="de_DE")`: each is set, read
+back, recorded and undone after the proof, and every run starts light. Appearance: a VM's system setting; on this Mac,
+the app's own.
+
+`prove` reserves the VM, pins `FLAGS`, builds (incremental; uncommitted edits included), launches as an internal user
+(en-US by default), skips onboarding in a VM, runs `doctor`, runs the proof, takes `final.png`, writes the logs and
 `report.md`, and always cleans up: on pass, fail and Ctrl-C. A proof is throwaway: it stays with its evidence,
 never in the repo (only `examples/` are kept).
 
@@ -80,7 +84,7 @@ $V prove <proof> --target vm-1 --base "$(git merge-base HEAD origin/main)" [--ev
 
 It proves the base in a worktree kept at `~/.ddg-verify-macos/base/<sha12>` (its own DerivedData: the first build is
 cold, 5 to 20+ min; later runs on that revision are incremental; `$V clean-base` removes them), then this checkout, with
-the same target, flags and language. On the base a check declared `fail` is recorded and the proof carries on; any
+the same target, flags and conditions (any that differ: INCONCLUSIVE). On the base a check declared `fail` is recorded and the proof carries on; any
 other error there is INCONCLUSIVE. **PASS** needs this checkout to pass and the base to do what each check declares,
 with at least one declared `fail`; a `fail` check that passes on the base is **FAIL**: the proof doesn't reproduce
 the bug. `report.md` shows each check and screenshot Before | After; each run's evidence is in `base/` and `change/`.
@@ -103,7 +107,7 @@ cut where another app came in front. `prove --no-video` turns it off; the report
 
 `report.md` is one PR verification scenario: **Verified** (the docstring), **Evidence**, **Outcome** (label,
 passed, failed, problems, warnings, notes), **Details** (revision, build and running binary, target and its
-macOS, flags, language, rerun), **Unverified**. The verdict comes from what ran, by fixed rules:
+macOS, flags, conditions, rerun), **Unverified**. The verdict comes from what ran, by fixed rules:
 - **PASS** (exit 0): at least one passing check, no failing check, the app still running at the end.
 - **FAIL** (exit 1): a check failed, or the app was gone at the end.
 - **INCONCLUSIVE** (exit 2): setup broke (VM, build, doctor, launch, readiness), an action or read failed, or
@@ -121,8 +125,8 @@ relative path. Paths in `report.md` and `manifest.json` show your home folder as
 section, link `report.md` as the entry point, with the verdict, and the screenshots that show the claim. An entry point you
 couldn't drive is `unverified`, never "verified through another path". Never fall back to "the code looks right".
 
-**Run it in a subagent.** Hand the verification to a subagent briefed with the claim, the target and the evidence
-folder. It writes the proof, runs `new-proof`, `check` and `prove`, and returns only the verdict, the `report.md` path and the evidence folder. The lead reads `report.md` and the screenshots.
+**Run it in a subagent** briefed with the claim, the target and the evidence folder; it returns the verdict and the
+`report.md` path. The lead reads `report.md` and the screenshots.
 
 ## Exploring by hand: `verify.sh`
 

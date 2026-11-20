@@ -62,6 +62,7 @@ class LabelTests(unittest.TestCase):
 class ReportTests(unittest.TestCase):
     MANIFEST = dict(revision="0123456789abcdef", dirty=False, macos="26.0", flags=["someFlag=on"],
                     launch=dict(language="en", locale="en_US", automation_port=None),
+                    conditions=dict(appearance="light (system)", language="en", locale="en_US"),
                     vm=dict(host="vm-1", macos="27.2.1"), rerun="cd /x && prove p.py --target vm-1",
                     build_hashes={"App": "a" * 64, "App.debug.dylib": "b" * 64},
                     running_hashes={"App": "a" * 64, "App.debug.dylib": "b" * 64})
@@ -159,6 +160,140 @@ class CheckTests(unittest.TestCase):
 
     def test_reports_a_syntax_error_without_running(self):
         self.assertTrue(self.problems('"""x"""\ndef run(mac)\n')[0].startswith("does not compile"))
+
+
+class ConditionsDeclarationTests(unittest.TestCase):
+    def problems(self, conditions):
+        with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
+            f.write(f'"""x"""\nCONDITIONS = {conditions}\n\n\ndef run(mac):\n    pass\n')
+        return harness.load(f.name)[1]
+
+    def test_every_condition_declared_well_is_accepted(self):
+        self.assertEqual(self.problems('dict(appearance="dark", window=(40, 60, 1280, 800), language="pt-BR", '
+                                       'locale="pt_BR")'), [])
+        self.assertEqual(self.problems("{}"), [])
+
+    def test_each_bad_condition_is_refused_by_check(self):
+        for bad in ('dict(appearance="sepia")', 'dict(theme="dark")', "dict(window=(0, 0, 1280))",
+                    "dict(window=(0, -5, 1280, 800))", "dict(window=(0, 0, 0, 800))", "dict(window=(0, 0, 1280.5, 800))",
+                    'dict(language="English")', 'dict(locale="en-US")', '["dark"]'):
+            with self.subTest(bad=bad):
+                self.assertTrue(self.problems(bad))
+
+
+class ConditionsRunTests(unittest.TestCase):
+    """set_conditions and _finish against a fake verify.sh: what is set, read back, recorded and undone."""
+    def fake(self, target="vm-1", fail=()):
+        rec = harness.Record()
+        mac = harness.Mac("t", tempfile.mkdtemp(), rec)
+        ran, state = [], dict(appearance="light", window="0,38,1200,700")
+
+        def sh(command, *args):
+            ran.append((command, *map(str, args)))
+            if command in fail:
+                return 2, f"{command.upper()} BROKEN"
+            if command == "appearance":
+                state["appearance"] = "light" if args[0] == "restore" else args[0]
+                return 0, f"appearance={state['appearance']} (system)"
+            if command == "window":
+                state["window"] = ",".join(map(str, args))
+                return 0, f"window={state['window']}"
+            if command == "ax" and args[0] == "winrect":
+                return 0, state["window"]
+            return 0, "yes" if command == "ax" else ""
+        mac._sh = sh
+        return mac, rec, ran, state
+
+    def test_a_run_always_starts_from_the_default_appearance_even_undeclared(self):
+        mac, rec, ran, state = self.fake()
+        state["appearance"] = "dark"   # left by a run killed before its undo
+        harness.set_conditions(mac, {}, "vm-1", launched=False)
+        self.assertEqual(ran, [("appearance", "restore")])
+        self.assertEqual(rec.conditions, dict(appearance="light (system)"))
+        self.assertEqual(mac.undo, [])
+
+    def test_declared_conditions_are_set_read_back_and_recorded(self):
+        mac, rec, ran, state = self.fake()
+        c = dict(appearance="dark", window=(40, 60, 1280, 800))
+        harness.set_conditions(mac, c, "vm-1", launched=False)
+        harness.set_conditions(mac, c, "vm-1", launched=True)
+        self.assertEqual(rec.conditions, dict(appearance="dark (system)", window="40,60,1280,800"))
+        self.assertEqual(state["appearance"], "dark")
+
+    def test_undeclared_window_is_recorded_as_the_app_opened_it(self):
+        mac, rec, ran, _ = self.fake()
+        harness.set_conditions(mac, {}, "vm-1", launched=True)
+        self.assertEqual(rec.conditions, dict(window="0,38,1200,700"))
+        self.assertNotIn("window", [c[0] for c in ran])
+
+    def test_everything_set_is_undone_last_first_before_cleanup_even_when_setup_failed(self):
+        mac, rec, ran, state = self.fake(target="mac")
+        c = dict(appearance="dark", window=(40, 60, 1280, 800))
+        harness.set_conditions(mac, c, "mac", launched=False)
+        harness.set_conditions(mac, c, "mac", launched=True)
+        rec.phase = "setup"   # e.g. doctor failed after the window moved: the proof never started
+        harness._finish(mac, rec, mac.evidence)
+        after = ran[ran.index(("window", "40", "60", "1280", "800")) + 1:]
+        undo = [c for c in after if c[0] in ("window", "appearance")]
+        self.assertEqual(undo, [("window", "0", "38", "1200", "700"), ("appearance", "restore")])
+        self.assertLess(after.index(undo[-1]), after.index(("cleanup",)))
+        self.assertEqual((state["appearance"], state["window"]), ("light", "0,38,1200,700"))
+        self.assertEqual(rec.problems, [])
+
+    def test_a_vm_window_needs_no_undo(self):
+        mac, rec, ran, _ = self.fake()
+        harness.set_conditions(mac, dict(window=(40, 60, 1280, 800)), "vm-1", launched=True)
+        self.assertEqual(mac.undo, [])
+
+    def test_an_undo_that_fails_is_a_problem_and_the_rest_still_run(self):
+        mac, rec, ran, _ = self.fake(target="mac")
+        harness.set_conditions(mac, dict(appearance="dark"), "mac", launched=False)
+        mac.undo.append(("window", ("window", "0", "38", "1200", "700")))
+        real = mac._sh
+        mac._sh = lambda command, *a: (2, "APP NOT RUNNING") if command == "window" else real(command, *a)
+        harness._finish(mac, rec, mac.evidence)
+        self.assertEqual(len(rec.problems), 1)
+        self.assertIn("window not undone (exit 2): APP NOT RUNNING", rec.problems[0])
+        self.assertEqual(ran[-2:], [("appearance", "restore"), ("cleanup",)])
+        self.assertEqual(rec.action_errors, [])
+
+    def test_a_failed_restore_is_a_problem_when_no_appearance_was_declared(self):
+        mac, rec, ran, _ = self.fake(fail=("appearance",))
+        harness.set_conditions(mac, {}, "vm-1", launched=False)
+        self.assertEqual(rec.problems, ["appearance not restored (exit 2): APPEARANCE BROKEN"])
+        self.assertEqual(rec.conditions, {})
+
+    def test_a_failed_restore_stops_the_run_when_an_appearance_was_declared(self):
+        mac, rec, ran, _ = self.fake(fail=("appearance",))
+        with self.assertRaises(harness.ProofError):
+            harness.set_conditions(mac, dict(appearance="dark"), "vm-1", launched=False)
+
+    def test_a_condition_that_does_not_take_is_setup_trouble(self):
+        mac, rec, ran, _ = self.fake(fail=("window",))
+        with self.assertRaises(harness.ProofError):
+            harness.set_conditions(mac, dict(window=(40, 60, 1280, 800)), "vm-1", launched=True)
+
+    def test_manifest_and_report_record_each_condition_and_which_were_declared(self):
+        mac, rec, ran, _ = self.fake()
+        c = dict(appearance="dark", window=(40, 60, 1280, 800), language="de", locale="de_DE")
+        harness.set_conditions(mac, c, "vm-1", launched=False)
+        harness.set_conditions(mac, c, "vm-1", launched=True)
+        evidence = tempfile.mkdtemp()
+        with open(os.path.join(evidence, "manifest.json"), "w") as f:
+            json.dump(dict(launch=dict(language="de", locale="de_DE", pid=1)), f)
+        m = harness._manifest(evidence, rec, "p.py", "r", {}, [], "vm-1", None, sorted(c))
+        saved = json.loads(read(os.path.join(evidence, "manifest.json")))
+        self.assertEqual(saved["conditions"], dict(appearance="dark (system)", window="40,60,1280,800",
+                                                   language="de", locale="de_DE"))
+        self.assertEqual(saved["conditions_declared"], ["appearance", "language", "locale", "window"])
+        self.assertIn("- Conditions: appearance dark (system) (declared), window 40,60,1280,800 (declared), "
+                      "language de (declared), locale de_DE (declared); automation off\n",
+                      harness.report("x", rec, m, evidence))
+
+    def test_report_marks_only_declared_conditions(self):
+        m = dict(conditions=dict(appearance="light (system)", window="0,38,1200,700", language="en", locale="en_US"))
+        self.assertEqual(harness.conditions_line(m),
+                         "appearance light (system), window 0,38,1200,700, language en, locale en_US")
 
 
 class TabCountTests(unittest.TestCase):
@@ -462,7 +597,9 @@ class MacGrantTests(unittest.TestCase):
 
         def sh(mac, command, *args):
             ran.append((command, *args))
-            return (0, grants) if (command, *args) == ("ax", "grants") else (0, "")
+            if (command, *args) == ("ax", "grants"):
+                return 0, grants
+            return (0, "appearance=unset (app setting)") if command == "appearance" else (0, "")
         mod = types.SimpleNamespace(__doc__="Claim.", run=lambda mac: None)
         real = harness.Mac._sh
         harness.Mac._sh = sh

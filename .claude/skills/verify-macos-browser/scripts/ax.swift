@@ -25,7 +25,8 @@ import ApplicationServices
 // Target: the app whose name contains $VERIFY_APP (e.g. "verify-tool-prompt").
 // Usage: ax dump [depth] [web] | find <text> | findmain <text> | press <idOrText> [nth=<n>]
 //        | clickel <idOrText> [nth=<n>] | hover <idOrText> [nth=<n>] | click x y [cmd]
-//        | type <text> | key <code> [cmd|shift|opt|ctrl]... | activate | frame | front | winrect | grants
+//        | type <text> | key <code> [cmd|shift|opt|ctrl]... | activate | frame | front | winrect | setwin x y w h
+//        | grants | appearance [light|dark]
 let args = CommandLine.arguments.dropFirst()
 let cmd = args.first ?? "dump"
 let rest = Array(args.dropFirst())
@@ -34,10 +35,26 @@ let rest = Array(args.dropFirst())
 if cmd == "grants" {
     print("accessibility=\(AXIsProcessTrusted()) screen-recording=\(CGPreflightScreenCaptureAccess())"); exit(0)
 }
+// appearance [light|dark]: the system-wide appearance, set if given, then read back. Needs no app. Only verify.sh calls
+// it, and only in a VM. SkyLight's own switch, as System Settings uses it: osascript to System Events would raise an
+// Automation prompt in an ssh session.
+if cmd == "appearance" {
+    let sky = dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_NOW)
+    guard let set = dlsym(sky, "SLSSetAppearanceThemeLegacy"), let get = dlsym(sky, "SLSGetAppearanceThemeLegacy") else {
+        print("NO APPEARANCE SWITCH: SkyLight's SLSSetAppearanceThemeLegacy is missing on this macOS"); exit(2)
+    }
+    if let want = rest.first {
+        guard want == "light" || want == "dark" else { print("appearance: light or dark"); exit(64) }
+        unsafeBitCast(set, to: (@convention(c) (Bool) -> Void).self)(want == "dark")
+        usleep(500_000)
+    }
+    print(unsafeBitCast(get, to: (@convention(c) () -> Bool).self)() ? "dark" : "light"); exit(0)
+}
 guard let target = ProcessInfo.processInfo.environment["VERIFY_APP"], !target.isEmpty else {
     print("Set VERIFY_APP to the app name, e.g. verify-<topic>"); exit(1)
 }
-guard let app = NSWorkspace.shared.runningApplications.first(where: { ($0.localizedName ?? "").contains(target) }) else {
+// By the bundle's file name, not localizedName: under another language the app's InfoPlist.strings name it "DuckDuckGo".
+guard let app = NSWorkspace.shared.runningApplications.first(where: { ($0.bundleURL?.lastPathComponent ?? "").contains(target) }) else {
     print("APP NOT RUNNING: \(target)"); exit(1)
 }
 let root = AXUIElementCreateApplication(app.processIdentifier)
@@ -208,6 +225,17 @@ case "winrect":
     guard let w = (attr(root, kAXWindowsAttribute) as? [AXUIElement])?.first else { print("NO WINDOW"); exit(2) }
     let f = frame(w)
     print("\(Int(f.minX)),\(Int(f.minY)),\(Int(f.width)),\(Int(f.height))")
+case "setwin":
+    // Move and resize the first window to x y w h (top-left origin, points); winrect reads it back.
+    let n = rest.compactMap { Double($0) }
+    guard n.count == 4, let w = (attr(root, kAXWindowsAttribute) as? [AXUIElement])?.first else { print("setwin x y w h: NO WINDOW or bad args"); exit(2) }
+    var p = CGPoint(x: n[0], y: n[1]), s = CGSize(width: n[2], height: n[3])
+    // Size, move, size again: a move can't take a window past the screen's edge at its old size, nor a resize at its old origin.
+    let size = { AXUIElementSetAttributeValue(w, kAXSizeAttribute as CFString, AXValueCreate(.cgSize, &s)!) }
+    _ = size()
+    let moved = AXUIElementSetAttributeValue(w, kAXPositionAttribute as CFString, AXValueCreate(.cgPoint, &p)!)
+    let sized = size()
+    guard moved == .success, sized == .success else { print("setwin: AX refused (move \(moved.rawValue), size \(sized.rawValue))"); exit(2) }
 case "frame":
     for w in (attr(root, kAXWindowsAttribute) as? [AXUIElement]) ?? [] { print(describe(w)) }
 default:

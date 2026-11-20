@@ -81,11 +81,11 @@ class VerdictTests(unittest.TestCase):
         b, a = run([SETUP, BUG]), run([SETUP, FIXED])
         rows = base.judge(b.checks, a.checks)
         on = lambda host, macos: dict(vm=dict(host=host, macos=macos))   # noqa: E731
-        verdict, code, reason = base.verdict(b, a, rows, on("vm-1", "15.5"), on("vm-2", "26.1"))
+        verdict, code, reason = base.verdict(b, a, rows, base_m=on("vm-1", "15.5"), change_m=on("vm-2", "26.1"))
         self.assertEqual((verdict, code), ("INCONCLUSIVE", 2))
         self.assertIn("VM vm-1 (macOS 15.5)", reason)
         self.assertIn("VM vm-2 (macOS 26.1)", reason)
-        self.assertEqual(base.verdict(b, a, rows, on("vm-1", "26.1"), on("vm-2", "26.1")), ("PASS", 0, None))
+        self.assertEqual(base.verdict(b, a, rows, base_m=on("vm-1", "26.1"), change_m=on("vm-2", "26.1")), ("PASS", 0, None))
 
 
 class JudgeTests(unittest.TestCase):
@@ -188,6 +188,53 @@ class ReportTests(unittest.TestCase):
         text = self.write(["base/menu.png", "change/menu.png", "change/final.png"])
         self.assertIn("| menu | ![Before: menu.png](base/menu.png) | ![After: menu.png](change/menu.png) |", text)
         self.assertIn("| final | (none) | ![After: final.png](change/final.png) |", text)
+
+
+class ConditionsTests(unittest.TestCase):
+    SAME = dict(conditions=dict(appearance="dark (system)", window="40,60,1280,800", language="en", locale="en_US"),
+                conditions_declared=["appearance", "window"])
+
+    def side(self, **changed):
+        return dict(self.SAME, conditions=dict(self.SAME["conditions"], **changed))
+
+    def test_the_same_conditions_on_both_sides_do_not_differ(self):
+        self.assertEqual(harness.conditions_differ(self.SAME, self.side()), [])
+
+    def test_any_condition_that_differs_is_named(self):
+        self.assertEqual(harness.conditions_differ(self.SAME, self.side(appearance="light (system)", locale="de_DE")),
+                         ["appearance", "locale"])
+        self.assertEqual(harness.conditions_differ(self.SAME, self.side(window="0,38,1200,700")), ["window"])
+
+    def test_a_window_neither_side_declared_may_differ(self):
+        a = dict(self.SAME, conditions_declared=["appearance"])
+        self.assertEqual(harness.conditions_differ(a, dict(a, conditions=dict(a["conditions"], window="0,38,1200,700"))),
+                         [])
+
+    def test_conditions_that_differ_make_the_pair_inconclusive(self):
+        b, a = run([SETUP, BUG]), run([SETUP, FIXED])
+        verdict, code, reason = base.verdict(b, a, base.judge(b.checks, a.checks), ["appearance"])
+        self.assertEqual((verdict, code), ("INCONCLUSIVE", 2))
+        self.assertIn("conditions differ between the runs: appearance", reason)
+
+    def report(self, base_m, change_m):
+        b, a = run([SETUP, BUG]), run([SETUP, FIXED])
+        rows = base.judge(b.checks, a.checks)
+        differ = harness.conditions_differ(base_m, change_m)
+        v, code, reason = base.verdict(b, a, rows, differ)
+        m = dict(base=dict(ref="main", sha="a" * 40, worktree="/w", revision="a" * 40), conditions_differ=differ,
+                 change=dict(revision="b" * 40, dirty=False), verdict=v, reason=reason, rows=rows, rerun="r", clean="c")
+        return base.report("x", b, a, base_m, change_m, m, tempfile.mkdtemp()).split("## Details")[1]
+
+    def test_report_shows_the_same_conditions_once(self):
+        details = self.report(self.SAME, self.side())
+        self.assertIn("- Conditions: appearance dark (system) (declared), window 40,60,1280,800 (declared), "
+                      "language en, locale en_US\n", details)
+        self.assertEqual(details.count("appearance dark"), 1)
+
+    def test_report_flags_conditions_that_differ_with_both_sides(self):
+        details = self.report(self.SAME, self.side(appearance="light (system)"))
+        self.assertIn("- Conditions: **differ: appearance**; before appearance dark (system) (declared)", details)
+        self.assertIn("after appearance light (system) (declared)", details)
 
 
 class BaseWorktreeTests(unittest.TestCase):

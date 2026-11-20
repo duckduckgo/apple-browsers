@@ -270,6 +270,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                        jobType: jobType,
                                        priorityDate: priorityDate,
                                        sortPredicate: jobDependencies.jobSortPredicate)
+            .excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: brokerProfileQueriesData,
+                                                 runningAttempts: jobDependencies.runningAssistedOptOuts)
             .filter { jobData in
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
@@ -333,6 +335,23 @@ private extension Array where Element == BrokerJobData {
     func excludingOptOutsWithEmailConfirmationBeingHalted() -> [BrokerJobData] {
         filter { jobData in
             jobData.historyEvents.max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
+        }
+    }
+}
+
+extension Array where Element == BrokerJobData {
+    /// Drops opt-outs for brokers that need the user, and any record an assisted run is already working on.
+    /// A scheduled run can't finish them, so they wait for the user even while user assistance is off.
+    func excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: [BrokerProfileQueryData],
+                                              runningAttempts: RunningAssistedOptOuts) -> [BrokerJobData] {
+        filter { jobData in
+            guard let optOut = jobData as? OptOutJobData else { return true }
+            if let extractedProfileId = optOut.extractedProfile.id,
+               runningAttempts.contains(AssistedOptOutID(brokerId: optOut.brokerId,
+                                                        profileQueryId: optOut.profileQueryId,
+                                                        extractedProfileId: extractedProfileId)) { return false }
+            guard let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker else { return true }
+            return !broker.requiresUserAssistance
         }
     }
 }

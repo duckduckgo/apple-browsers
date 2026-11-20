@@ -2239,6 +2239,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
     public let isExtractedProfileRefreshOn: Bool
+    public var isUserAssistanceOn: Bool
     public let isChallengeSolverOn: Bool
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
@@ -2247,7 +2248,8 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false,
                 isExtractedProfileRefreshOn: Bool = true,
-                isChallengeSolverOn: Bool = false) {
+                isChallengeSolverOn: Bool = false,
+                isUserAssistanceOn: Bool = false) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isCustomWebViewUserAgentOn = isCustomWebViewUserAgentOn
@@ -2255,6 +2257,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
         self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
         self.isChallengeSolverOn = isChallengeSolverOn
+        self.isUserAssistanceOn = isUserAssistanceOn
     }
 }
 
@@ -2319,6 +2322,9 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var featureFlagger: DBPFeatureFlagging
     public var wideEvent: WideEventManaging?
     public var contentBlocking: DBPWebViewContentBlocking?
+    public var runningAssistedOptOuts = RunningAssistedOptOuts()
+    public var assistedRunnerObserver: OptOutAssistanceObserving?
+    public var mockAssistedOptOutRunner = MockOptOutSubJobWebRunner()
     public var isAuthenticatedUserProvider: () async -> Bool = { true }
 
     public var mockScanRunner = MockScanSubJobWebRunner()
@@ -2348,6 +2354,14 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
                                    stageDurationCalculator: any StageDurationCalculator,
                                    shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileOptOutSubJobWebRunning {
         return mockOptOutRunner
+    }
+
+    public func createAssistedOptOutRunner(profileQuery: SubJobContextProviding,
+                                           stageDurationCalculator: StageDurationCalculator,
+                                           observer: OptOutAssistanceObserving,
+                                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
+        assistedRunnerObserver = observer
+        return mockAssistedOptOutRunner
     }
 
     public func isAuthenticatedUser() async -> Bool {

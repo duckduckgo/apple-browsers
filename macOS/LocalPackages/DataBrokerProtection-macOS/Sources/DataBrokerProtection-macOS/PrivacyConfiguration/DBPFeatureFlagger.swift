@@ -47,6 +47,10 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
+    public var isUserAssistanceOn: Bool {
+        featureFlagger.isFeatureOn(.dbpUserAssistance)
+    }
+
     public var isChallengeSolverOn: Bool {
         featureFlagger.isFeatureOn(.dbpChallengeSolver)
     }

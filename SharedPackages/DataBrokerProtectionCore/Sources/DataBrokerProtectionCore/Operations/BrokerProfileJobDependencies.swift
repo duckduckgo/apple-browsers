@@ -39,6 +39,12 @@ public protocol BrokerProfileJobDependencyProviding {
     var featureFlagger: DBPFeatureFlagging { get }
     var wideEvent: WideEventManaging? { get }
     var contentBlocking: DBPWebViewContentBlocking? { get }
+    var runningAssistedOptOuts: RunningAssistedOptOuts { get }
+
+    func createAssistedOptOutRunner(profileQuery: SubJobContextProviding,
+                                    stageDurationCalculator: StageDurationCalculator,
+                                    observer: OptOutAssistanceObserving,
+                                    shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning
 
     func isAuthenticatedUser() async -> Bool
 
@@ -66,6 +72,8 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
     public let featureFlagger: DBPFeatureFlagging
     public let wideEvent: WideEventManaging?
+    /// Shared by every job, so scheduled and assisted runs see which records the other is working on.
+    public let runningAssistedOptOuts: RunningAssistedOptOuts
     public let contentBlocking: DBPWebViewContentBlocking?
     public let isAuthenticatedUserProvider: () async -> Bool
 
@@ -84,6 +92,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
                 wideEvent: WideEventManaging? = nil,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
+                runningAssistedOptOuts: RunningAssistedOptOuts = RunningAssistedOptOuts(),
                 isAuthenticatedUserProvider: @escaping () async -> Bool = { true }
     ) {
         self.database = database
@@ -101,6 +110,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.featureFlagger = featureFlagger
         self.wideEvent = wideEvent
         self.contentBlocking = contentBlocking
+        self.runningAssistedOptOuts = runningAssistedOptOuts
         self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
     }
 
@@ -137,6 +147,27 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             executionConfig: self.executionConfig,
             actionsHandlerMode: .optOut,
             contentBlocking: self.contentBlocking,
+            shouldRunNextStep: shouldRunNextStep
+        )
+    }
+
+    public func createAssistedOptOutRunner(profileQuery: SubJobContextProviding,
+                                           stageDurationCalculator: StageDurationCalculator,
+                                           observer: OptOutAssistanceObserving,
+                                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
+        BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: privacyConfig,
+            prefs: contentScopeProperties,
+            context: profileQuery,
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: featureFlagger,
+            stageCalculator: stageDurationCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: executionConfig,
+            actionsHandlerMode: .optOut,
+            contentBlocking: contentBlocking,
+            assistanceObserver: observer,
             shouldRunNextStep: shouldRunNextStep
         )
     }

@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import Networking
+@_spi(Testing) @testable import Networking
 
 final class AuthServiceTests: XCTestCase {
 
@@ -107,5 +107,93 @@ final class AuthServiceTests: XCTestCase {
 
         XCTAssertEqual(bodyError.errorCode, .invalidAuthorizationRequest)
         XCTAssertNil(bodyError.tokenStatus)
+    }
+
+    func testBodyErrorDecoding_serverAndLoginScopeErrors() throws {
+        let expected: [String: OAuthRequest.BodyErrorCode] = [
+            "service_unavailable": .serviceUnavailable,
+            "internal_server_error": .internalServerError,
+            "incompatible_login_authorization_scopes": .incompatibleLoginAuthorizationScopes
+        ]
+
+        for (rawValue, errorCode) in expected {
+            let data = Data(#"{"error":"\#(rawValue)"}"#.utf8)
+            let bodyError = try JSONDecoder().decode(OAuthRequest.BodyError.self, from: data)
+
+            XCTAssertEqual(bodyError.errorCode, errorCode)
+            XCTAssertEqual(OAuthRequestError(from: bodyError).bodyError, bodyError)
+        }
+    }
+
+    func testCreateAccount_serviceUnavailable_throwsTheAuthAPIError() async {
+        let service = makeService(status: 500, body: #"{"error":"service_unavailable"}"#)
+
+        do {
+            _ = try await service.createAccount(authSessionID: "session")
+            XCTFail("Expected error")
+        } catch {
+            guard case OAuthServiceError.authAPIError(let apiError) = error else {
+                return XCTFail("Unexpected error \(error)")
+            }
+            XCTAssertEqual(apiError.bodyError.errorCode, .serviceUnavailable)
+            XCTAssertEqual(apiError.errorCode, 11719)
+        }
+    }
+
+    // MARK: - Error status codes
+
+    private func makeService(status: Int, body: String?) -> DefaultOAuthService {
+        let apiService = MockAPIService { request in
+            let httpResponse = HTTPURLResponse(url: request.urlRequest.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+            return .success(APIResponseV2(data: body?.data(using: .utf8), httpResponse: httpResponse))
+        }
+        return DefaultOAuthService(baseURL: baseURL, apiService: apiService)
+    }
+
+    func testRefreshAccessToken_serverErrorWithBodyError_throwsTheStatus() async {
+        let service = makeService(status: 500, body: #"{"error":"invalid_request"}"#)
+
+        do {
+            _ = try await service.refreshAccessToken(clientID: "client", refreshToken: "refresh")
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(.internalServerError))
+        }
+    }
+
+    func testRefreshAccessToken_serverErrorWithoutBody_throwsTheStatus() async {
+        let service = makeService(status: 500, body: nil)
+
+        do {
+            _ = try await service.refreshAccessToken(clientID: "client", refreshToken: "refresh")
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(.internalServerError))
+        }
+    }
+
+    func testRefreshAccessToken_badRequestWithBodyError_throwsTheAuthAPIError() async {
+        let service = makeService(status: 400, body: #"{"error":"invalid_token_request"}"#)
+
+        do {
+            _ = try await service.refreshAccessToken(clientID: "client", refreshToken: "refresh")
+            XCTFail("Expected error")
+        } catch {
+            guard case OAuthServiceError.authAPIError(let apiError) = error else {
+                return XCTFail("Unexpected error \(error)")
+            }
+            XCTAssertEqual(apiError.bodyError.errorCode, .invalidTokenRequest)
+        }
+    }
+
+    func testGetJWTSigners_serverError_throwsTheStatus() async {
+        let service = makeService(status: 500, body: #"{"error":"invalid_request"}"#)
+
+        do {
+            _ = try await service.getJWTSigners()
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(.internalServerError))
+        }
     }
 }

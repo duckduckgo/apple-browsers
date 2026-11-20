@@ -156,6 +156,7 @@ final class WireGuardAdapterEventHandlerTests: XCTestCase {
         func showSupersededNotification() {}
         func showTestNotification() {}
         func showEntitlementNotification() {}
+        func showSignedOutNotification() {}
 
         func showDebugEventNotification(message: String) {
             shownMessages.append(message)

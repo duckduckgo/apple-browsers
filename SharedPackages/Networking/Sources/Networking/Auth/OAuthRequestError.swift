@@ -41,6 +41,9 @@ public enum OAuthRequestError: DDGError {
     case accountChangeEmailAddressFailed(bodyError: OAuthRequest.BodyError)
     case invalidToken(bodyError: OAuthRequest.BodyError)
     case expiredToken(bodyError: OAuthRequest.BodyError)
+    case serviceUnavailable(bodyError: OAuthRequest.BodyError)
+    case internalServerError(bodyError: OAuthRequest.BodyError)
+    case incompatibleLoginAuthorizationScopes(bodyError: OAuthRequest.BodyError)
 
     public init(from bodyError: OAuthRequest.BodyError) {
         switch bodyError.errorCode {
@@ -82,6 +85,12 @@ public enum OAuthRequestError: DDGError {
             self = .invalidToken(bodyError: bodyError)
         case .expiredToken:
             self = .expiredToken(bodyError: bodyError)
+        case .serviceUnavailable:
+            self = .serviceUnavailable(bodyError: bodyError)
+        case .internalServerError:
+            self = .internalServerError(bodyError: bodyError)
+        case .incompatibleLoginAuthorizationScopes:
+            self = .incompatibleLoginAuthorizationScopes(bodyError: bodyError)
         }
     }
 
@@ -105,7 +114,10 @@ public enum OAuthRequestError: DDGError {
              .invalidLinkSignature(let bodyError),
              .accountChangeEmailAddressFailed(let bodyError),
              .invalidToken(let bodyError),
-             .expiredToken(let bodyError):
+             .expiredToken(let bodyError),
+             .serviceUnavailable(let bodyError),
+             .internalServerError(let bodyError),
+             .incompatibleLoginAuthorizationScopes(let bodyError):
             return bodyError
         }
     }
@@ -152,6 +164,12 @@ public enum OAuthRequestError: DDGError {
             return 11717
         case .expiredToken:
             return 11718
+        case .serviceUnavailable:
+            return 11719
+        case .internalServerError:
+            return 11720
+        case .incompatibleLoginAuthorizationScopes:
+            return 11721
         }
     }
 

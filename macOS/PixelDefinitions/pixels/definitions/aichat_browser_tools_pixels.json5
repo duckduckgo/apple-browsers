@@ -47,6 +47,49 @@
             }
         ]
     },
+    "aichat_tools_prompt_answered_macos": {
+        "description": "Fired when a Duck.ai browser tool permission prompt for one tool closes, answered or not. requestAccess prompts are not included.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool the prompt asked for",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "answer",
+                "description": "How the prompt closed: allow_once, allow_for_chat, always or never = that button, dismiss = closed without a choice, timeout = unanswered until the 120 s deadline, withdrawn = closed because the call was cancelled or its chat went away",
+                "enum": ["allow_once", "allow_for_chat", "always", "never", "dismiss", "timeout", "withdrawn"]
+            },
+            {
+                "key": "prompt_number_in_chat",
+                "description": "Which single-tool prompt this was in its Duck.ai chat since launch or the last Fire. Sent only while batch access (requestAccess) is on",
+                "enum": ["1", "2", "3", "4_plus"]
+            },
+            {
+                "key": "time_to_answer",
+                "description": "Time from showing the prompt to closing it",
+                "enum": ["lt_2s", "lt_10s", "lt_60s", "gte_60s"]
+            }
+        ]
+    },
     "aichat_tools_enabled_macos": {
         "description": "Fired at most once a day, when Duck.ai is offered browser tools: its page reads the native config, or the offered tools change while it is open. Not fired in Fire windows.",
         "owners": ["jotaemepereira"],

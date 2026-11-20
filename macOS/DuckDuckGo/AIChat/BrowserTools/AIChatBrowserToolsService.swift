@@ -21,6 +21,7 @@ import Combine
 import FeatureFlags_macOS
 import Foundation
 import History
+import PixelKit
 import PrivacyConfig
 import WebKit
 
@@ -59,6 +60,7 @@ final class AIChatBrowserToolsService {
         let catalog = BrowserToolCatalog(tools: tools, configuration: configuration)
         let permissions = BrowserToolSitePermissions(permissionManager: permissionManager)
         let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
+        clientToolPermissions.instrumentation = BrowserToolsPixelInstrumentation(pixelFiring: PixelKit.shared)
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog

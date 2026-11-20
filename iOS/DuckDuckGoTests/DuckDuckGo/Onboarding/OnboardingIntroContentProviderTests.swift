@@ -1286,8 +1286,8 @@ struct OnboardingIntroContentProviderTests {
         func aiModelPersonalizationContent() {
             // GIVEN
             let expected = OnboardingAIModelContent(
-                title: "Your chats, your way.",
-                message: "Choose an AI to start with, change anytime during chat.",
+                title: "Pick an AI to try first",
+                message: "With Duck.ai, you can swap anytime.",
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
             )

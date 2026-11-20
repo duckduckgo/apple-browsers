@@ -30,6 +30,18 @@ enum BrowserToolsPixel: PixelKit.Event {
     /// Event Trigger: A browser tool call succeeded. Fired daily.
     case used
 
+    /// Event Trigger: Duck.ai was offered browser tools. Fired daily.
+    case enabled
+
+    /// Event Trigger: Duck.ai sent a tool call native could not read, or for a capability this app doesn't know.
+    /// `tool` is the raw capability name, sent only as a slug from `toolSlugs`, otherwise as `unknown`.
+    case protocolError(ProtocolErrorReason, tool: String?)
+
+    enum ProtocolErrorReason: String {
+        case invalidRequest = "invalid_request"
+        case unknownCapability = "unknown_capability"
+    }
+
     /// Event Trigger: A call to this tool succeeded. Fired daily. `tool` is a slug from `toolSlugs`.
     case usedTool(String)
 
@@ -55,11 +67,16 @@ enum BrowserToolsPixel: PixelKit.Event {
         switch self {
         case .call: "aichat_tools_call_macos"
         case .used: "aichat_tools_used_macos"
+        case .enabled: "aichat_tools_enabled_macos"
+        case .protocolError: "aichat_tools_protocol_error_macos"
         case .usedTool(let tool): "aichat_tools_used_\(tool)_macos"
         }
     }
 
     var parameters: [String: String]? {
+        if case .protocolError(let reason, let tool) = self {
+            return ["reason": reason.rawValue, "tool": tool.flatMap { Self.toolSlugs[$0] } ?? "unknown"]
+        }
         guard case .call(let tool, let result, let permissionPath, let duration, let resultCount) = self else { return nil }
         var parameters = ["tool": tool, "result": result?.rawValue ?? "success", "permission_path": permissionPath.rawValue]
         parameters["duration"] = duration.map(Self.durationBucket)

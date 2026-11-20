@@ -1458,8 +1458,20 @@ extension AIChatUserScriptHandler {
     ///   use client tools, so the call is `unavailable`.
     @MainActor
     func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable? {
+        let reportsProtocolErrors = isFireWindowProvider?() != true
         guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            if reportsProtocolErrors {
+                let name = ((params as? [String: Any])?["capability"] as? [String: Any])?["name"] as? String
+                pixelFiring?.fire(BrowserToolsPixel.protocolError(.invalidRequest, tool: name))
+            }
             return ExecuteClientToolResponse.invalidRequest(rawParams: params)
+        }
+        // A name or version this app has never shipped; a known tool turned off remotely is not one.
+        guard (ClientToolCapability.browserTools + [.requestAccess]).contains(request.capability) else {
+            if reportsProtocolErrors {
+                pixelFiring?.fire(BrowserToolsPixel.protocolError(.unknownCapability, tool: request.capability.name))
+            }
+            return ExecuteClientToolResponse.failure(callId: request.callId, error: .unavailable)
         }
 
         // Scoped by the owner tab, never the key window, so a backgrounded chat cannot act on another window.

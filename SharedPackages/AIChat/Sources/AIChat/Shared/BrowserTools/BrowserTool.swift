@@ -43,12 +43,16 @@ public protocol BrowserTool: AnyObject {
 
     /// The exact address the call acts on, shown in its prompt.
     func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String?
+
+    /// How many items a search or list tool returned in a `clientToolResult` value. Nil for every other tool.
+    func resultCount(of value: JSONValue) -> Int?
 }
 
 public extension BrowserTool {
     var asksEveryTime: Bool { false }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
     func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { nil }
+    func resultCount(of value: JSONValue) -> Int? { nil }
 }
 
 public enum BrowserToolPermissionMode: String, Equatable, Sendable {

@@ -87,4 +87,6 @@ final class ListOpenTabsBrowserTool: BrowserTool {
             return .object(fields)
         })])
     }
+
+    func resultCount(of value: JSONValue) -> Int? { value["tabs"]?.arrayValue?.count }
 }

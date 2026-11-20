@@ -660,7 +660,10 @@ extension WindowControllersManager: WebNotificationTabFinding {}
 
 extension WindowControllersManager: @preconcurrency ContextualOnboardingUILocking {
     func setUILocked(_ locked: Bool) {
-        updatePreventUserInteraction(prevent: locked)
+        guard let mainWindowController else { return }
+        mainWindowController.userInteraction(prevented: locked)
+        // Fire stays enabled: it deletes the chat and unlocks the UI.
+        mainWindowController.mainViewController.tabBarViewController.fireButton.isEnabled = true
     }
 }
 

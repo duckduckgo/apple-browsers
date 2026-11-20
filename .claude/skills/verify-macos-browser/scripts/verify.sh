@@ -530,7 +530,7 @@ flag)
     ;;
 reset)
     [[ -z "$VM" ]] || { echo "reset: this Mac only; vm resets the VM when it reserves it"; exit 64; }
-    helper reset "${1:?reset: begin or end}" "$RUN_DIR" "$VERIFY_HOME"
+    helper reset "${1:?reset: begin or end}" "$RUN_DIR" "$VERIFY_HOME" "$APP_NAME"
     ;;
 set-default)
     key=${1:?key}; type=${2:?type, e.g. bool}; value=${3:?value}

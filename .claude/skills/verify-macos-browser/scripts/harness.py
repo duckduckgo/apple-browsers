@@ -700,10 +700,12 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
     try:
         if vm:
             mac._do("vm", vm, *([prefer_vm] if vm == "auto" and prefer_vm else []))
-        if mac.reset:   # a reset that fails is a Problem, like cleanup: the run itself can still tell
+        if mac.reset:   # a failed reset stops the run: it would run on the engineer's own Debug data
             code, out = mac._sh("reset", "begin")
-            if code:
-                rec.problems.append(f"reset before the run failed (exit {code}): {_line(out[-300:])}")
+            failed = re.findall(r"^check\t(.*)\tfail$", out, re.M)
+            if code or failed:
+                raise ProofError("reset before the run failed, so the run stopped before launching: "
+                                 + ("; ".join(failed) if failed else f"exit {code}: {_line(out[-300:])}"))
         set_conditions(mac, conditions, target, launched=False)
         for name, on in getattr(mod, "FLAGS", {}).items():
             mac._do("flag", name, "on" if on else "off")

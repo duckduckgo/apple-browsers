@@ -416,7 +416,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         downloadHandler.automaticDownloadDirectory = { configuration.automaticDownloadDirectory }
         downloadHandler.contextForOrigin = { [weak self] in self?.extensionContext(for: $0) }
         downloadHandler.backgroundWebView = { [weak self] in self?.backgroundWebView(in: $0) }
-        downloadHandler.presentationWindow = { [weak self] in self?.downloadPresentationWindow(for: $0, context: $1, selection: $2) }
+        downloadHandler.presentationWindow = { [weak self] in self?.downloadPresentationWindow(for: $0, context: $1, boundTo: $2) }
         downloadHandler.permissionController = { [weak self] in self?.permissionController }
         privacyHandler.store = privacySettings
         privacyHandler.extensionIdentifier = { [weak self] url in
@@ -1581,30 +1581,20 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
 #if os(macOS)
     @MainActor
-    func downloadPresentationWindow(for webView: WKWebView, context: WKWebExtensionContext,
-                                    selection: WebExtensionDownloadMessageHandler.WindowSelection = .savePanel) -> NSWindow? {
-        let isBackground = backgroundWebView(in: context) === webView
-        let focusedWindow = NSApp.keyWindow ?? NSApp.mainWindow
+    func downloadPresentationWindow(for webView: WKWebView, context: WKWebExtensionContext, boundTo originalWindow: NSWindow? = nil) -> NSWindow? {
         let source: NSWindow?
-        switch selection {
-        case .savePanel:
-            source = isBackground ? focusedWindow : webView.window
-        case .automatic(let boundWindow):
-            // 1Password fetches the attachment before its background page calls downloads.download.
-            let browserWindow = focusedWindow ?? windowTabProvider.lastActiveWindowForDownload
-            source = isBackground ? (boundWindow ?? browserWindow) : webView.window
+        if backgroundWebView(in: context) === webView {
+            // A background request can arrive after the user switches apps while 1Password fetches the attachment.
+            source = originalWindow ?? NSApp.keyWindow ?? NSApp.mainWindow ?? windowTabProvider.lastActiveWindowForDownload
+        } else {
+            source = webView.window
         }
         guard let source else { return nil }
         for window in sequence(first: source, next: { $0.parent ?? $0.sheetParent }) {
             guard let controller = window.windowController as? any WKWebExtensionWindow else { continue }
-            guard controller.isPrivate?(for: context) == false || context.hasAccessToPrivateData else { return nil }
-            switch selection {
-            case .savePanel:
-                return window.isKeyWindow || window.isMainWindow ? window : nil
-            case .automatic(let boundWindow):
-                guard boundWindow == nil || boundWindow === window else { return nil }
-                return window.isVisible || window.isMiniaturized ? window : nil
-            }
+            guard originalWindow == nil || originalWindow === window,
+                  controller.isPrivate?(for: context) == false || context.hasAccessToPrivateData else { return nil }
+            return window.isVisible || window.isMiniaturized ? window : nil
         }
         return nil
     }

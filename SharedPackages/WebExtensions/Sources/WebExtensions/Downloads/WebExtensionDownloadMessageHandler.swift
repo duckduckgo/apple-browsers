@@ -30,14 +30,8 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
     var backgroundWebView: (WKWebExtensionContext) -> WKWebView? = { _ in nil }
     var permissionController: () -> WebExtensionPermissionController? = { nil }
 
-    enum WindowSelection {
-        case savePanel
-        case automatic(boundTo: NSWindow?)
-    }
-
-    var presentationWindow: (WKWebView, WKWebExtensionContext, WindowSelection) -> NSWindow? = { _, _, _ in nil }
+    var presentationWindow: (WKWebView, WKWebExtensionContext, NSWindow?) -> NSWindow? = { _, _, _ in nil }
     var automaticDownloadDirectory: () -> URL? = { nil }
-    var canChooseDestination: (NSWindow) -> Bool = { NSApp.isActive && $0.isVisible && $0.attachedSheet == nil }
     var chooseDestination: @MainActor (String, String?, NSWindow) async -> URL? = WebExtensionDownloadMessageHandler.showSavePanel
     var downloadStartTimeout: Duration = .seconds(60)
     var backgroundRefreshInterval: Duration = .seconds(15)
@@ -67,8 +61,7 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
         }
         let directory = automaticDownloadDirectory()
         let isAutomatic = directory != nil
-        let selection: WindowSelection = isAutomatic ? .automatic(boundTo: nil) : .savePanel
-        guard let window = presentationWindow(webView, context, selection) else {
+        guard let window = presentationWindow(webView, context, nil) else {
             replyHandler(nil, "Extension downloads are unavailable")
             return
         }
@@ -81,10 +74,9 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
             }
             let identifier = context.uniqueIdentifier
             await requestRequiredPermissionIfNeeded(for: context, using: controller)
-            let authorizationWindow: WindowSelection = isAutomatic ? .automatic(boundTo: window) : .savePanel
             @MainActor func authorized() -> Bool {
                 isCurrent(context, in: webView) && permissionController() === controller &&
-                    presentationWindow(webView, context, authorizationWindow) === window && controller.isGranted(.downloads, to: identifier)
+                    presentationWindow(webView, context, window) === window && controller.isGranted(.downloads, to: identifier)
             }
             @MainActor func checkAuthorization() throws {
                 guard authorized() else { throw WebExtensionDownload.DownloadError.canceled }
@@ -144,7 +136,7 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
         if let automaticDirectory {
             return automaticDirectory.appendingPathComponent(filename, isDirectory: false)
         }
-        guard canChooseDestination(window) else { throw WebExtensionDownload.DownloadError.canceled }
+        guard window.isVisible, window.attachedSheet == nil else { throw WebExtensionDownload.DownloadError.canceled }
         guard let chosen = await chooseDestination(filename, context.webExtension.displayName, window) else {
             throw WebExtensionDownload.DownloadError.canceled
         }

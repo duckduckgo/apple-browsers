@@ -128,7 +128,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
     private var directory: URL!
     private var view: DownloadTestWebView!
     private var loaded: XCTestExpectation!
-    private let window = NSWindow()
+    private let window = DownloadTestWindow()
     private let options = ["url": "data:attachment/file;base64,AAEC", "filename": "sample.bin"]
 
     override func setUp() async throws {
@@ -153,7 +153,6 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         handler.contextForOrigin = { [unowned self] url in self.webKit.extensionContext(for: url) }
         handler.backgroundWebView = { $0.value(forKey: "_backgroundWebView") as? WKWebView }
         handler.presentationWindow = { [unowned self] _, _, _ in self.window }
-        handler.canChooseDestination = { _ in true }
         handler.chooseDestination = { _, _, _ in nil }
         handler.permissionController = { [unowned self] in self.permissionController }
         let config = try XCTUnwrap(context.webViewConfiguration)
@@ -235,12 +234,8 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
     func testAutomaticDownloadContinuesAfterFocusChanges() async throws {
         await grant()
         handler.automaticDownloadDirectory = { [unowned self] in self.directory }
-        handler.canChooseDestination = { _ in false }
         view.didStartDownload = { [unowned self] in
-            self.handler.presentationWindow = { _, _, selection in
-                if case .automatic(let boundWindow) = selection { return boundWindow }
-                return nil
-            }
+            self.handler.presentationWindow = { _, _, boundWindow in boundWindow }
         }
 
         let result = try await download()
@@ -265,9 +260,9 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertIdentical(manager.downloadPresentationWindow(for: view, context: context), popup)
 
         popup.isFocused = false
-        XCTAssertIdentical(manager.downloadPresentationWindow(for: view, context: context, selection: .automatic(boundTo: popup)), popup)
+        XCTAssertIdentical(manager.downloadPresentationWindow(for: view, context: context, boundTo: popup), popup)
         context.hasAccessToPrivateData = false
-        XCTAssertNil(manager.downloadPresentationWindow(for: view, context: context, selection: .automatic(boundTo: popup)))
+        XCTAssertNil(manager.downloadPresentationWindow(for: view, context: context, boundTo: popup))
     }
 
     func testBackgroundRefreshesWhileChoosingADestinationAndStopsAfterCancellation() async throws {
@@ -424,18 +419,19 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertFalse(FileManager.default.fileExists(atPath: target.path))
     }
 
-    func testChangingThePresentationWindowDuringConsentCancelsTheDownload() async throws {
+    func testManualDownloadKeepsTheOriginalWindowAfterChoosingDestination() async throws {
         await grant()
-        let target = directory.appendingPathComponent("canceled.bin")
+        let target = directory.appendingPathComponent("saved.bin")
         let otherWindow = NSWindow()
+        window.isFocused = false
         handler.chooseDestination = { [unowned self] _, _, window in
             XCTAssertTrue(window === self.window)
-            self.handler.presentationWindow = { _, _, _ in otherWindow }
+            self.handler.presentationWindow = { _, _, boundWindow in boundWindow ?? otherWindow }
             return target
         }
         let result = try await download()
-        XCTAssertEqual(result, "rejected")
-        XCTAssertFalse(FileManager.default.fileExists(atPath: target.path))
+        XCTAssertEqual(result, "saved")
+        XCTAssertEqual(try Data(contentsOf: target), Data([0, 1, 2]))
     }
 
     func testRevocationWhenWebKitStartsPreventsPublication() async throws {

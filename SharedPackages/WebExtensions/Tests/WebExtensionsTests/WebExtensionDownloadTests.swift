@@ -81,6 +81,17 @@ final class WebExtensionDownloadTests: XCTestCase {
         }
     }
 
+    func testPlainDataURLPreservesEscapesWhenLiteralBytesNeedEncoding() throws {
+        let cases = [("caf%C3%A9☕", "caf%C3%A9%E2%98%95"),
+                     ("50%25%20off now", "50%25%20off%20now"),
+                     ("50%25%20off%", "50%25%20off%25"),
+                     ("%FF%00 %2523%23#fragment", "%FF%00%20%2523%23")]
+        for (input, expected) in cases {
+            let download = try XCTUnwrap(request("data:," + input))
+            XCTAssertEqual(download.makeDownloadURL()?.absoluteString, "data:," + expected, input)
+        }
+    }
+
     func testRejectsMalformedBase64() throws {
         for payload in ["%20!", "QQ=0", "YQ=", "A", "%252F"] {
             let download = try XCTUnwrap(request("data:attachment/file;base64," + payload))
@@ -294,6 +305,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         let target = directory.appendingPathComponent("data.bin")
         handler.chooseDestination = { _, _, _ in target }
         let cases = [("data:text/plain;base64;x=y,QQ==%23#ignored", Data("QQ==#".utf8)),
+                     ("data:,caf%C3%A9☕%00%FF", Data("café☕".utf8) + Data([0, 255])),
                      ("data:; base64,%41%20AE#ignored", Data([0, 1]))]
         for (url, expected) in cases {
             let result = try await download(url: url)

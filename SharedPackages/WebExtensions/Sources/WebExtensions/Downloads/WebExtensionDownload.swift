@@ -64,7 +64,10 @@ struct WebExtensionDownload: Sendable {
               header[header.index(after: separator)...].trimmingCharacters(in: Self.headerWhitespace).lowercased() == "base64"
         else {
             // Only a final base64 marker changes the file bytes in Chrome. WebKit also honors earlier markers.
-            return URL(string: "data:," + payload)
+            // The payload may mix %HH escapes with literal UTF-8. Preserve the escapes when constructing the URL.
+            var dataURL = Data("data:,".utf8)
+            dataURL.append(contentsOf: payload.utf8)
+            return URL(dataRepresentation: dataURL, relativeTo: nil)
         }
 
         guard let normalized = Self.normalizedBase64(payload) else { return nil }

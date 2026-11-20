@@ -242,6 +242,22 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func fetchDevices() async throws -> [RegisteredDevice]
 
     /**
+     Creates a reader bound to the current account for one Device Activity screen visit.
+     */
+    @MainActor
+    func makeAuditLogReader() throws -> any SyncAuditLogReading
+
+    /**
+     Returns the locally persisted review state for this account, or nil if no state has been stored.
+     */
+    func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState?
+
+    /**
+     Updates this account's review state without moving its reviewed-through date backwards.
+     */
+    func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws
+
+    /**
      Updated the device name.
      */
     func updateDeviceName(_ name: String) async throws -> [RegisteredDevice]
@@ -294,6 +310,7 @@ public protocol DDGSyncingDebuggingSupport {
     func auditLogDumpForDebug() async throws -> String
     func isDeviceInfoMigrationCompleteForDebug() throws -> Bool
     func resetDeviceInfoMigrationForDebug()
+    func resetAuditLogReviewStateForDebug(to date: Date) throws
 }
 
 public extension DDGSyncingDebuggingSupport {
@@ -314,6 +331,10 @@ public extension DDGSyncingDebuggingSupport {
     }
 
     func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
+        throw SyncError.accountNotFound
+    }
+
+    func resetAuditLogReviewStateForDebug(to date: Date) throws {
         throw SyncError.accountNotFound
     }
 

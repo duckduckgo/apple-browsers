@@ -1296,8 +1296,8 @@
             {
                 "key": "notifications_permission",
                 "type": "string",
-                "description": "Whether notifications are allowed when the user comes back from Settings",
-                "enum": ["granted", "denied"]
+                "description": "Notification permission when the user comes back from Settings, as reported to the subscription page by getUserSettings",
+                "enum": ["granted", "denied", "notDetermined"]
             }
         ]
     },

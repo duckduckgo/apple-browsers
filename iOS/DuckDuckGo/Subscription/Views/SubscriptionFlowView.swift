@@ -183,7 +183,7 @@ struct SubscriptionFlowView: View {
         }
 
         .onDisappear {
-            viewModel.dismissNotificationsDeniedDialog()
+            viewModel.onDisappear()
         }
                 
         .alert(isPresented: $isPresentingError) {

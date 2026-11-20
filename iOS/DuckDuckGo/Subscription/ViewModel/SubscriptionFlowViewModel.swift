@@ -296,10 +296,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
             .store(in: &cancellables)
         
         
-        subFeature.onShowNotificationsDeniedDialog = { [weak self] daysBeforeTrialCancel in
-            await self?.showNotificationsDeniedDialog(daysBeforeTrialCancel: daysBeforeTrialCancel) ?? .notNow
-        }
-
         subFeature.onBackToSettings = { [weak self] in
             DispatchQueue.main.async {
                 self?.state.shouldGoBackToSettings = true
@@ -526,6 +522,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
     func onAppear() {
         self.state.selectedFeature = .none
         self.state.shouldGoBackToSettings = false
+        subFeature.onShowNotificationsDeniedDialog = { [weak self] daysBeforeTrialCancel in
+            await self?.showNotificationsDeniedDialog(daysBeforeTrialCancel: daysBeforeTrialCancel) ?? .notNow
+        }
     }
     
     func onFirstAppear() async {
@@ -624,7 +623,8 @@ extension SubscriptionFlowViewModel {
         }
     }
 
-    func dismissNotificationsDeniedDialog() {
+    func onDisappear() {
+        subFeature.onShowNotificationsDeniedDialog = nil
         resolveNotificationsDeniedDialog(with: .notNow)
     }
 
@@ -657,7 +657,7 @@ extension SubscriptionFlowViewModel {
     private func handleReturnFromNotificationSettings() async {
         guard didBecomeActiveCancellable != nil else { return }
         didBecomeActiveCancellable = nil
-        guard let isGranted = await subFeature.pushNotificationsPermissionChanged(into: webViewModel.navigationCoordinator.webView) else { return }
-        pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogSettingsReturn(isNotificationsPermissionGranted: isGranted))
+        guard let permission = await subFeature.pushNotificationsPermissionChanged(into: webViewModel.navigationCoordinator.webView) else { return }
+        pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogSettingsReturn(notificationsPermission: permission.rawValue))
     }
 }

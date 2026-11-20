@@ -158,7 +158,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func requestNotificationsPermission(params: Any, original: WKScriptMessage) async -> Encodable?
 
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async
-    func pushNotificationsPermissionChanged(into webView: WKWebView?) async -> Bool?
+    func pushNotificationsPermissionChanged(into webView: WKWebView?) async -> DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionStatus?
     func restoreAccountFromAppStorePurchase() async throws
     func cleanup()
 }
@@ -891,14 +891,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         pushAction(method: .onPurchaseUpdate, webView: webView, params: purchaseUpdate)
     }
 
-    func pushNotificationsPermissionChanged(into webView: WKWebView?) async -> Bool? {
+    func pushNotificationsPermissionChanged(into webView: WKWebView?) async -> NotificationsPermissionStatus? {
         guard isExpirationReminderFeatureEnabled() else { return nil }
-        let isGranted = await userNotificationCenter.authorizationStatus() == .authorized
+        let permission = Self.permissionStatus(from: await userNotificationCenter.authorizationStatus())
         if let webView {
-            let event = NotificationsPermissionChangedEvent(notificationsPermission: isGranted ? .granted : .denied)
+            let event = NotificationsPermissionChangedEvent(notificationsPermission: permission)
             pushAction(method: .onNotificationsPermissionChanged, webView: webView, params: event)
         }
-        return isGranted
+        return permission
     }
 
     func pushAction(method: SubscribeActionName, webView: WKWebView, params: Encodable) {

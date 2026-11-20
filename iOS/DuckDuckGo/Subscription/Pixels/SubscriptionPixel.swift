@@ -117,7 +117,7 @@ enum SubscriptionPixel: PixelKit.Event {
     // Notifications Denied Dialog
     case subscriptionNotificationsDeniedDialogNotNowClick
     case subscriptionNotificationsDeniedDialogOpenSettingsClick
-    case subscriptionNotificationsDeniedDialogSettingsReturn(isNotificationsPermissionGranted: Bool)
+    case subscriptionNotificationsDeniedDialogSettingsReturn(notificationsPermission: String)
 
     var name: String {
         switch self {
@@ -222,8 +222,8 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.entryKey: entry.rawValue,
                     SubscriptionPixelsDefaults.freeTrialKey: String(isTrial),
                     SubscriptionPixelsDefaults.daysSincePurchaseKey: daysSincePurchase.rawValue]
-        case .subscriptionNotificationsDeniedDialogSettingsReturn(let isGranted):
-            return [SubscriptionPixelsDefaults.notificationsPermissionKey: isGranted ? "granted" : "denied"]
+        case .subscriptionNotificationsDeniedDialogSettingsReturn(let notificationsPermission):
+            return [SubscriptionPixelsDefaults.notificationsPermissionKey: notificationsPermission]
         default:
             return nil
         }

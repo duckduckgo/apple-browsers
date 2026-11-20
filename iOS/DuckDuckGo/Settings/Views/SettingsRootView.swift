@@ -157,48 +157,29 @@ struct SettingsRootView: View {
             featureFlagger: featureFlagger
         )
         let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: viewModel.keyValueStore)
-        SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
-                                                             landingURL: landingURL,
-                                                             navigationCoordinator: subscriptionNavigationCoordinator,
-                                                             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                                                             subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                             subscriptionDataReporter: viewModel.subscriptionDataReporter,
-                                                             userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                             tld: AppDependencyProvider.shared.storageCache.tld,
-                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                             dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                             wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             featureFlagger: featureFlagger,
-                                                             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
-                                                             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
-                                                             onboardingKeyValueStore: viewModel.keyValueStore,
-                                                             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
-                                                             onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
+        let purchaseDependencies = SubscriptionPurchaseDependencies(
+            subscriptionDataReporter: viewModel.subscriptionDataReporter,
+            tld: AppDependencyProvider.shared.storageCache.tld,
+            isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
+            performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
+            onboardingKeyValueStore: viewModel.keyValueStore,
+            meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
+            onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
+        SubscriptionContainerViewFactory.makeView(for: .subscribe(redirectURLComponents: redirectURLComponents, landingURL: landingURL, dependencies: purchaseDependencies),
+                                                  context: viewModel.subscriptionFlowContext,
+                                                  navigationCoordinator: subscriptionNavigationCoordinator)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
-        SubscriptionContainerViewFactory.makePlansFlowV2(redirectURLComponents: redirectURLComponents,
-                                                         navigationCoordinator: subscriptionNavigationCoordinator,
-                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                                                         subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                         userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                         dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                         wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                         featureFlagger: viewModel.featureFlagger)
+        SubscriptionContainerViewFactory.makeView(for: .plans(redirectURLComponents: redirectURLComponents),
+                                                  context: viewModel.subscriptionFlowContext,
+                                                  navigationCoordinator: subscriptionNavigationCoordinator)
     }
 
     @ViewBuilder func emailFlowNavigationDestination() -> some View {
-        SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                                                         subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                         userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                         emailFlow: .restoreFlow,
-                                                         dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
-                                                         wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                         featureFlagger: viewModel.featureFlagger,
-                                                         onDisappear: {})
+        SubscriptionContainerViewFactory.makeView(for: .email(.restoreFlow),
+                                                  context: viewModel.subscriptionFlowContext,
+                                                  navigationCoordinator: subscriptionNavigationCoordinator)
     }
 
     /// Determines the subscription settings view configuration based on current subscription state

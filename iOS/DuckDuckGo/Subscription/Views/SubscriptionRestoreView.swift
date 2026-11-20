@@ -123,7 +123,7 @@ struct SubscriptionRestoreView: View {
             
             .onChange(of: viewModel.state.shouldShowPlans) { result in
                 if result {
-                    currentView = .subscribe
+                    currentView = .subscriptionFlowView
                 }
             }
         

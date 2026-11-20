@@ -61,8 +61,9 @@ Preconditions:
 
 Per sub-feature:
 
-- `duckai-tab-new-chat`: from one tab, `key("opt+cmd+n")`. Proof: two tabs, and the new tab's `url()` contains
-  `duck.ai`. Proved by `examples/t6_duckai_tab.py`. The tab bar pill's New Chat and Cmd-click are covered by
+- `duckai-tab-new-chat`: from one tab, `key("opt+cmd+n")`. Proof: two tabs, the new tab's `url()` contains
+  `duck.ai`, and Duck.ai's input ("Ask anything privately") shows. The URL changes while the page is still a grey
+  skeleton: wait for the input before a screenshot. Proved by `examples/t6_duckai_tab.py`. The tab bar pill's New Chat and Cmd-click are covered by
   `macOS/UITests/AIChat/AIChatMenuButtonTests.swift` (`test_menu_newChat_opensNewTab`,
   `test_pillCommandClick_opensNewChatTab_withoutDropdown`).
 - `duckai-tab-omnibar`: `key("cmd+t")` (the new tab's address bar is focused), `type(prompt)`, `key("shift+return")`
@@ -95,4 +96,6 @@ Per sub-feature:
 - A fresh container has Duck.ai's own "recent chats" setting off (`isRecentChatsOn = "0"`, a setting of the web app,
   not the browser): chats don't persist. That isn't broken native storage.
 - Debug and DMG builds keep chats in different containers; don't compare across bundles.
+- "Ask anything privately", "Continue" and the chat's text are labels of Duck.ai's web app, which ships apart from the
+  browser: a front-end change can break a check that reads them, and it fails loudly.
 - `find("Duck.ai")` matches the menu bar's Duck.ai menu, the tab bar pill and the tab title: use ids.

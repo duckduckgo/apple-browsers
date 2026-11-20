@@ -59,7 +59,9 @@ Per sub-feature:
 
 - `duckai-sidebar-ask-page`: on the fixture page, `click("TabBarViewController.duckAIChromeTitleButton")`, then
   `click("duckAIMenuSidebarAction")`. Proof: `AIChatViewController.closeButton` appears, the tab's `url()` is still
-  the fixture page and there is still one tab. Proved by `examples/t7_duckai_sidebar.py`.
+  the fixture page and there is still one tab. Proved by `examples/t7_duckai_sidebar.py`. Not proved: that the page
+  is attached. In a wiped VM container the sidebar's empty chat showed an "Ask about this page" chip above the input,
+  with no attachment the harness could read.
   `macOS/UITests/AIChat/AIChatMenuButtonTests.swift` (`test_menu_onWebsite_showsAskAboutPage_andOpensSidebar`)
   covers it too.
 - `duckai-sidebar-open`: not driven here; covered by `AIChatMenuButtonTests`

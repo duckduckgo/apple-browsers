@@ -11,6 +11,8 @@ def run(mac):
     mac.key("opt+cmd+n")
     mac.expect_tab_count(2)
     mac.expect_url_contains("duck.ai")
+    # Duck.ai's input placeholder, a label of its web app: the page has loaded past its skeleton
+    mac.eventually("Duck.ai's input shows", lambda: mac.find("Ask anything privately"), timeout=20)
     mac.shot("new-chat-tab")
 
     # duckai-tab-omnibar: a new tab's focused address bar, switched to Duck.ai mode, sends the prompt to duck.ai

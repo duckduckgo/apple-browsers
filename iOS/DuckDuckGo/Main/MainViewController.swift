@@ -9598,12 +9598,6 @@ extension MainViewController {
     }
     
     private func refreshUIAfterClear() {
-        // Set here rather than when the burn starts, because that callback arrives only once the
-        // tabs are gone and this screen has already been rebuilt. Also set before the empty-tabs
-        // branch below: burning every tab shows the switcher first, but the page the user reaches
-        // from there is still a post-burn arrival. Consumed by the next New Tab Page attach.
-        isAttachingNewTabPageAfterFire = true
-
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             tabSwitcherController?.updateUIForSelectionMode()
@@ -9812,6 +9806,12 @@ extension MainViewController: FireExecutorDelegate {
                 
         switch fireRequest.scope {
         case .all, .fireMode, .normalMode:
+            // Set here rather than when the burn starts, because this callback arrives only once the
+            // tabs are gone and this screen has already been rebuilt. Also covers burning every tab,
+            // which shows the switcher first: the page the user reaches from there is still a post-burn
+            // arrival. Automatic clearing refreshes the UI without this, so its page reports an app open.
+            // Consumed by the next New Tab Page attach.
+            isAttachingNewTabPageAfterFire = true
             refreshUIAfterClear()
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()

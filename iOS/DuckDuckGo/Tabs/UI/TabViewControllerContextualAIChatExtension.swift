@@ -146,6 +146,14 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
         delegate?.tabDidRequestDownloads(tab: self)
     }
 
+    @MainActor
+    func aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(
+        _ coordinator: AIChatContextualSheetCoordinator,
+        onDeleteAllChatsSucceeded: @escaping () -> Void
+    ) async -> FireChatConfirmationPreparation? {
+        await delegate?.tabPrepareContextualFireChatConfirmation(self, onDeleteAllChatsSucceeded: onDeleteAllChatsSucceeded)
+    }
+
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
         delegate?.tabDidRequestDeleteContextualChat(tab: self, chatID: chatID)
     }

@@ -9,7 +9,7 @@
             {
                 "key": "source",
                 "description": "Where the delete came from.",
-                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all"]
+                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all", "fire_button_all"]
             },
             {
                 "key": "retried",
@@ -35,7 +35,7 @@
             {
                 "key": "source",
                 "description": "Where the delete came from.",
-                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all"]
+                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all", "fire_button_all"]
             },
             "errorDomain",
             "errorCode",

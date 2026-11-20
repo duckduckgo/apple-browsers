@@ -90,6 +90,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     let headerTitle: String
     let showAnimation: Bool
     let buttons: [FireConfirmationButton]
+    /// The Delete All Chats option the sheet offers, or `nil` when it doesn't apply.
+    let deleteAllChats: DeleteAllChatsOption?
 
     // MARK: - Private Variables
 
@@ -126,6 +128,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         let deleteAllChats = Self.applicableDeleteAllChats(deleteAllChats,
                                                            fireContext: fireContext,
                                                            isChatConfirmation: isChatConfirmation)
+        self.deleteAllChats = deleteAllChats
 
         self.headerTitle = Self.computeHeaderTitle(fireContext: fireContext,
                                                    isChatConfirmation: isChatConfirmation,

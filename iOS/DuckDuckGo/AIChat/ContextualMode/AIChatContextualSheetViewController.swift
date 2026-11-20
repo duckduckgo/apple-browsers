@@ -97,6 +97,10 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     func aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(_ viewController: AIChatContextualSheetViewController)
 
+    func aiChatContextualSheetViewControllerPrepareFireChatConfirmation(
+        _ viewController: AIChatContextualSheetViewController
+    ) async -> FireChatConfirmationPreparation?
+
     /// Called when the user confirms chat deletion from the fire button confirmation
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController)
 }
@@ -220,8 +224,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Dimming view added to the presenting view controller's view for contrast
     private var dimmingView: UIView?
 
-    /// Whether the fire confirmation is currently shown
-    private var isShowingFireConfirmation = false
+    private var fireConfirmationTask: Task<Void, Never>?
+    private weak var fireConfirmationController: UIViewController?
 
     /// Prevents showing the preloaded Duck.ai start surface before the frontend switches into a response state.
     private var isWaitingForInitialPromptResponseState = false
@@ -522,6 +526,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     @Published private(set) var isChangingSurface = false
 
     func beginSurfaceChange() {
+        fireConfirmationTask?.cancel()
         isChangingSurface = true
     }
 
@@ -732,11 +737,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, entrySource: .contextualChat)
     }
 
-    @objc private func fireButtonTapped() {
-        pixelHandler.fireFireButtonTapped()
-        showFireConfirmation()
-    }
-
     @objc private func closeButtonTapped() {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
@@ -885,30 +885,51 @@ private extension AIChatContextualSheetViewController {
 
     // MARK: - Fire Confirmation
 
-    func showFireConfirmation() {
-        isShowingFireConfirmation = true
+    private var canPresentFireConfirmation: Bool {
+        isFireButtonShown && viewIfLoaded?.window != nil && viewIfLoaded?.isUserInteractionEnabled == true
+            && !isClosing && !isChangingSurface && presentedViewController == nil
+    }
 
-        let presentConfirmation = { [weak self] in
+    @objc private func fireButtonTapped() {
+        pixelHandler.fireFireButtonTapped()
+        guard fireConfirmationTask == nil, canPresentFireConfirmation else { return }
+        fireConfirmationTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            self.presentFireConfirmationController()
-        }
+            defer { fireConfirmationTask = nil }
 
-        if DevicePlatform.isIpad {
-            expandToLargeDetent(completion: presentConfirmation)
-        } else {
-            expandToLargeDetent()
-            presentConfirmation()
+            if DevicePlatform.isIpad {
+                await withCheckedContinuation { continuation in
+                    expandToLargeDetent { continuation.resume() }
+                }
+            } else {
+                expandToLargeDetent()
+            }
+            guard !Task.isCancelled, canPresentFireConfirmation else { return }
+
+            var preparation: FireChatConfirmationPreparation?
+            if featureFlagger.isFeatureOn(.fireButtonDeleteAllChats), let delegate {
+                guard let prepared = await delegate.aiChatContextualSheetViewControllerPrepareFireChatConfirmation(self) else { return }
+                preparation = prepared
+            }
+            guard !Task.isCancelled, canPresentFireConfirmation else { return }
+            presentFireConfirmationController(preparation: preparation)
         }
     }
 
-    private func presentFireConfirmationController() {
+    private func presentFireConfirmationController(preparation: FireChatConfirmationPreparation?) {
         let viewModel = ScopedFireConfirmationViewModel(
             tabViewModel: nil,
             source: .browsing,
             fireContext: .contextualChat(onDelete: { [weak self] in
                 self?.handleDeleteChatConfirmed()
             }),
-            browsingMode: .normal,
+            appSettings: appSettings,
+            dataClearingCapability: DataClearingCapability.create(using: featureFlagger),
+            featureFlagger: featureFlagger,
+            browsingMode: preparation?.browsingMode ?? .normal,
+            deleteAllChats: preparation?.deleteAllChats?.wrappingDelete { [weak self] action in
+                self?.dismissFireConfirmation(completion: action)
+            },
             onConfirm: { _ in },
             onCancel: { [weak self] in
                 self?.dismissFireConfirmation()
@@ -929,7 +950,10 @@ private extension AIChatContextualSheetViewController {
             configureIPhoneSheetPresentation(for: hostingController, confirmationView: confirmationView)
         }
 
-        present(hostingController, animated: true)
+        fireConfirmationController = hostingController
+        present(hostingController, animated: true) {
+            preparation?.reportShownIfOffered(by: viewModel)
+        }
     }
 
     private func configureIPadPopoverPresentation<Content: View>(for hostingController: UIHostingController<Content>,
@@ -969,15 +993,15 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    func dismissFireConfirmation() {
-        isShowingFireConfirmation = false
-        dismiss(animated: true)
+    private func dismissFireConfirmation(completion: (() -> Void)? = nil) {
+        guard let fireConfirmationController, !fireConfirmationController.isBeingDismissed else { return }
+        self.fireConfirmationController = nil
+        fireConfirmationController.dismiss(animated: true, completion: completion)
     }
 
-    func handleDeleteChatConfirmed() {
+    private func handleDeleteChatConfirmed() {
         pixelHandler.fireFireButtonConfirmed()
-        isShowingFireConfirmation = false
-        dismiss(animated: true) { [weak self] in
+        dismissFireConfirmation { [weak self] in
             self?.playFireAnimationAndDismiss()
         }
     }
@@ -1466,6 +1490,7 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func prepareForDismissal() {
+        fireConfirmationTask?.cancel()
         guard canProcessSuggestionSubmission else { return }
         canProcessSuggestionSubmission = false
         submissionAwaitingAppearance = nil
@@ -1628,6 +1653,9 @@ private extension AIChatContextualSheetViewController {
 
     private func setFireButtonVisible(_ visible: Bool) {
         isFireButtonShown = visible
+        if !visible {
+            fireConfirmationTask?.cancel()
+        }
         if showsFireByInput {
             // While the floating input borrows the host, Fire waits for the sheet to mount it again.
             guard let persistentUTIHost, persistentUTIHost.isMounted(in: self) else { return }

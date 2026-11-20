@@ -24,6 +24,8 @@ import WebKit
 
 public protocol HistoryCleaning {
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
+    /// Fails before clearing JS data if native storage is unavailable.
+    @MainActor func cleanAIChatHistoryRequiringNativeStorage() async -> Result<Void, Error>
     @MainActor func deleteAIChat(chatID: String) async -> Result<Void, Error>
     @MainActor func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error>
     /// What happened during the most recent JS clear (retries, timings), or `nil` if none ran.
@@ -32,6 +34,10 @@ public protocol HistoryCleaning {
 
 public extension HistoryCleaning {
     @MainActor var lastClearingReport: AIChatClearingReport? { nil }
+
+    @MainActor func cleanAIChatHistoryRequiringNativeStorage() async -> Result<Void, Error> {
+        .failure(ChatHistoryError.storageUnavailable)
+    }
 }
 
 /// Splits `deleteAIChat`'s two phases so a caller can await the fast native delete without the slow JS clear.
@@ -58,8 +64,7 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     ///
     /// When `nativeStorageHandler` and `featureFlagProvider` are provided and the feature flag is enabled
     /// with migration done, chats and files are deleted from native storage. The JS clearing path
-    /// (localStorage + IndexedDB) always runs, since JS-side data is kept in sync regardless of whether
-    /// native storage is in use — without it, fire button cleanup leaves traces behind.
+    /// (localStorage + IndexedDB) also removes chat data kept in the web store.
     ///
     /// The first successful full clear of the default store also removes the IndexedDB blob files WebKit left on
     /// disk; see `AIChatIndexedDBBlobCleaner`. `onBlobCleanup` reports what it removed.
@@ -91,6 +96,11 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
         return await performClear(chatID: nil)
     }
 
+    @MainActor
+    public func cleanAIChatHistoryRequiringNativeStorage() async -> Result<Void, Error> {
+        await performClear(chatID: nil, requiresNativeStorage: true)
+    }
+
     /// Deletes a single Duck.ai chat.
     @MainActor
     public func deleteAIChat(chatID: String) async -> Result<Void, Error> {
@@ -111,8 +121,11 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     }
 
     @MainActor
-    private func performClear(chatID: String?) async -> Result<Void, Error> {
+    private func performClear(chatID: String?, requiresNativeStorage: Bool = false) async -> Result<Void, Error> {
         let nativeResult = clearLocalStorageIfAvailable(chatID: chatID)
+        if requiresNativeStorage, nativeResult == nil {
+            return .failure(ChatHistoryError.storageUnavailable)
+        }
         let jsResult = await clearJSData(chatID: chatID)
 
         if case .failure = nativeResult {

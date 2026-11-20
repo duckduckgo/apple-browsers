@@ -73,6 +73,12 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to open a downloaded file.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String)
 
+    @MainActor
+    func aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(
+        _ coordinator: AIChatContextualSheetCoordinator,
+        onDeleteAllChatsSucceeded: @escaping () -> Void
+    ) async -> FireChatConfirmationPreparation?
+
     /// Called when the user confirmed deletion of the contextual chat, providing the chat ID to delete server-side.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String)
 
@@ -1706,6 +1712,18 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         guard let context = await collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout) else { return }
         guard isSheetPresented else { return }
         sessionState.attachContextFromSuggestionTap(AIChatPageContext(contextData: context, favicon: nil))
+    }
+
+    func aiChatContextualSheetViewControllerPrepareFireChatConfirmation(
+        _ viewController: AIChatContextualSheetViewController
+    ) async -> FireChatConfirmationPreparation? {
+        guard isSheetPresented, sheetViewController === viewController, parkedSheetViewController == nil else { return nil }
+        let preparation = await delegate?.aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(self) { [weak self, weak viewController] in
+            guard let self, let viewController, isSheetPresented, sheetViewController === viewController else { return }
+            dismissSurface(of: viewController)
+        }
+        guard isSheetPresented, sheetViewController === viewController, parkedSheetViewController == nil else { return nil }
+        return preparation
     }
 
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController) {

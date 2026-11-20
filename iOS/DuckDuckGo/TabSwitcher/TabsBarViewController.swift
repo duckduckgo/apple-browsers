@@ -37,6 +37,8 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBar(_ controller: TabsBarViewController, didRequestCloseOtherTabsForTabAtIndex index: Int)
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
+    @MainActor func tabsBar(_ controller: TabsBarViewController,
+                            prepareFireChatConfirmation present: @escaping @MainActor (FireChatConfirmationPreparation) -> Void)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
@@ -372,7 +374,7 @@ class TabsBarViewController: UIViewController {
 
     @objc private func onFireButtonPressed() {
         
-        func showClearDataAlert() {
+        func showClearDataAlert(_ preparation: FireChatConfirmationPreparation) {
             guard let tabManager, let daxDialogsManager else {
                 assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
                 return
@@ -385,7 +387,9 @@ class TabsBarViewController: UIViewController {
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
                 isSingleTab: tabManager.currentTabsModel.count == 1,
-                browsingMode: tabManager.currentBrowsingMode,
+                browsingMode: preparation.browsingMode,
+                deleteAllChats: preparation.deleteAllChats,
+                onShown: preparation.reportShownIfOffered,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
@@ -396,7 +400,7 @@ class TabsBarViewController: UIViewController {
 
         delegate?.tabsBarDidRequestFireEducationDialog(self)
         delegate?.tabsBarDidRequestDismissContextualSheet(self) {
-            showClearDataAlert()
+            self.delegate?.tabsBar(self, prepareFireChatConfirmation: showClearDataAlert)
         }
     }
 
@@ -1294,6 +1298,11 @@ extension MainViewController: TabsBarDelegate {
 
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {
         segueToSettingsAIChat()
+    }
+
+    func tabsBar(_ controller: TabsBarViewController,
+                 prepareFireChatConfirmation present: @escaping @MainActor (FireChatConfirmationPreparation) -> Void) {
+        prepareFireChatConfirmation(present)
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

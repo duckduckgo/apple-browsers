@@ -243,6 +243,12 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
+    func chatCountPublisher() -> AnyPublisher<Int, Error> {
+        guard let observing = inner as? DuckAiNativeChatsObserving else {
+            return Fail(error: ChatHistoryError.storageUnavailable).eraseToAnyPublisher()
+        }
+        return observing.chatCountPublisher()
+    }
     func deleteChat(chatId: String) throws { try inner.deleteChat(chatId: chatId) }
     func deleteAllChats() throws { try inner.deleteAllChats() }
 

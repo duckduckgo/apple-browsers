@@ -104,6 +104,8 @@ protocol FireExecuting {
     /// True for the duration of a `burn(...)` call. Read it to avoid re-entering the executor from a delegate callback.
     var burnInProgress: Bool { get }
 
+    @MainActor var fireModeDataStoreID: UUID? { get }
+
     /// Burn a single Duck.ai chat by id. Peer to `burn(request:)` so the chat-history
     /// sheet's swipe-to-delete can stay on the same execution path as fire-mode clears.
     @discardableResult
@@ -120,11 +122,15 @@ protocol FireExecuting {
     /// "Delete All" stays off `burn(request:)` (no tab/data orchestration, no delegate).
     @discardableResult
     @MainActor
-    func burnAllChats(isFireMode: Bool) async -> Result<Void, Error>
+    func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error>
 
     /// Flush a pending chat deletion to sync now, so it isn't re-pulled on the next sync cycle.
     @MainActor
     func scheduleSync()
+}
+
+extension FireExecuting {
+    @MainActor var fireModeDataStoreID: UUID? { nil }
 }
 
 class FireExecutor: FireExecuting {
@@ -152,6 +158,7 @@ class FireExecutor: FireExecuting {
 
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
+    @MainActor var fireModeDataStoreID: UUID? { idManager.currentFireModeID }
     private let dataStoreWarmupWorker: DataStoreWarmupWorker
     private let backgroundTask: FireBackgroundTasking
     private let historyCleanerProvider: HistoryCleanerProvider
@@ -450,12 +457,12 @@ class FireExecutor: FireExecuting {
 
     @discardableResult
     @MainActor
-    func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+    func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
         let browserToolsToken = isFireMode ? nil : beginBrowserToolsClearing(.all)
         defer {
             if let browserToolsToken { tabManager.browserToolsService.endClearing(browserToolsToken) }
         }
-        let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode)
+        let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode, source: source)
         if case .success = result, let browserToolsToken { tabManager.browserToolsService.didClear(browserToolsToken) }
         return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }

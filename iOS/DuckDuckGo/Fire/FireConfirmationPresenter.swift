@@ -37,6 +37,7 @@ struct FireConfirmationPresenter {
                                  isSingleTab: Bool = false,
                                  browsingMode: BrowsingMode,
                                  deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption? = nil,
+                                 onShown: ((ScopedFireConfirmationViewModel) -> Void)? = nil,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
@@ -50,6 +51,7 @@ struct FireConfirmationPresenter {
                                       isSingleTab: isSingleTab,
                                       browsingMode: browsingMode,
                                       deleteAllChats: deleteAllChats,
+                                      onShown: onShown,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)
     }
@@ -63,6 +65,7 @@ struct FireConfirmationPresenter {
                                  isSingleTab: Bool = false,
                                  browsingMode: BrowsingMode,
                                  deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption? = nil,
+                                 onShown: ((ScopedFireConfirmationViewModel) -> Void)? = nil,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard let window = UIApplication.shared.firstKeyWindow else {
@@ -78,6 +81,7 @@ struct FireConfirmationPresenter {
                                       isSingleTab: isSingleTab,
                                       browsingMode: browsingMode,
                                       deleteAllChats: deleteAllChats,
+                                      onShown: onShown,
                                       onConfirm: onConfirm,
                                       onCancel: onCancel)
     }
@@ -95,14 +99,18 @@ struct FireConfirmationPresenter {
                                                isSingleTab: Bool,
                                                browsingMode: BrowsingMode,
                                                deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption?,
+                                               onShown: ((ScopedFireConfirmationViewModel) -> Void)?,
                                                onConfirm: @escaping (FireRequest) -> Void,
                                                onCancel: @escaping () -> Void) {
+        guard viewController.presentedViewController == nil else { return }
         let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                         source: pixelSource,
                                                         fireContext: fireContext,
                                                         isSingleTab: isSingleTab,
                                                         browsingMode: browsingMode,
-                                                        deleteAllChats: deleteAllChats,
+                                                        deleteAllChats: deleteAllChats?.wrappingDelete { [weak viewController] action in
+                                                            viewController?.dismiss(animated: true, completion: action)
+                                                        },
                                                         onConfirm: { [weak viewController] fireOptions in
                                                             viewController?.dismiss(animated: true) {
                                                                 onConfirm(fireOptions)
@@ -144,7 +152,9 @@ struct FireConfirmationPresenter {
                                       limitsLandscapeWidth: true)
             }
         }
-        viewController.present(hostingController, animated: true)
+        viewController.present(hostingController, animated: true) {
+            onShown?(viewModel)
+        }
     }
     
     // MARK: - Shared Presentation Helpers

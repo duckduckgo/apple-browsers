@@ -88,6 +88,7 @@ enum RefreshButtonPosition: String, CaseIterable, CustomStringConvertible {
     }
 }
 
+/// New stored option? Also add a launch profile key (see .claude/skills/ddg-ios-launch-profile).
 protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var autocomplete: Bool { get set }
     var recentlyVisitedSites: Bool { get set }

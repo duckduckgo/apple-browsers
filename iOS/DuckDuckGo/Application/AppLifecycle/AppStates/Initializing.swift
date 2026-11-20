@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import UIKit
 
 /// The initial setup phase of the app, where basic services or components are initialized.
@@ -36,7 +37,16 @@ struct Initializing: InitializingHandling {
 extension Initializing {
 
     func makeLaunchingState() throws -> any LaunchingHandling {
-        try Launching()
+        applyLaunchArguments()
+        return try Launching()
+    }
+
+    /// Runs before `Launching` builds any dependency, so every service starts from the state these arguments set.
+    private func applyLaunchArguments() {
+        LaunchOptionsHandler().resetAppStateIfNeeded()
+#if DEBUG || ALPHA
+        LaunchProfileStartup.applyIfNeeded()
+#endif
     }
 
 }

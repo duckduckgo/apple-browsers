@@ -170,3 +170,27 @@ struct LaunchSettingsTests {
                 == "LAUNCH_PROFILE_FAILED applied=a Second.")
     }
 }
+
+@Suite("Choosing one of a setting's options")
+struct LaunchSettingChoiceTests {
+
+    private enum Theme: String, CaseIterable {
+        case light, dark
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A known name writes its option; an unknown one lists the options", .timeLimit(.minutes(1)))
+    func choice() throws {
+        var chosen: [Theme] = []
+        let settings = LaunchSettings([
+            .choice("theme", summary: "Theme.", options: Theme.allCases, name: \.rawValue) { chosen.append($0) }
+        ])
+
+        let unknown = settings.apply(try LaunchProfile(json: Data(#"{"theme": "blue"}"#.utf8)))
+        let known = settings.apply(try LaunchProfile(json: Data(#"{"theme": "dark"}"#.utf8)))
+
+        #expect(unknown == .rejected([LaunchProfileProblem(key: "theme", message: #""theme" is invalid: use one of light, dark."#)]))
+        #expect(known.isSuccess)
+        #expect(chosen == [.dark])
+    }
+}

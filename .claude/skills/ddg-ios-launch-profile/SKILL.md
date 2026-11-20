@@ -1,16 +1,22 @@
 ---
 name: ddg-ios-launch-profile
-description: Use when starting the iOS app on a simulator in a given state — feature flags, experiments, internal user, onboarding skipped, a clean start, a privacy config URL or open tabs — for example to follow a PR's testing steps or to reproduce a bug. Also use when writing iOS PR testing steps that need such a state.
+description: Use when starting the iOS app on a simulator in a given state — feature flags, experiments, internal user, onboarding skipped, Settings or Duck.ai settings, Debug menu values, a privacy config URL or open tabs — for example to follow a PR's testing steps or to reproduce a bug. Also use when writing iOS PR testing steps that need such a state, or when adding a Settings or Debug menu option.
 ---
 
 # iOS launch profile
 
 Start the app in a known state with one JSON value instead of tapping through Settings and the Debug menu.
-Works in DEBUG and ALPHA builds only.
+Works in Debug and Alpha builds only.
+
+## Launch
+
+1. Install the build. When you switch to a different PR or bug, uninstall first
+   (`xcrun simctl uninstall <udid> com.duckduckgo.mobile.ios`): a profile sets only the keys it lists, and saved values
+   from the previous one, such as flag overrides, would otherwise still apply. For the same PR, install over it.
+2. Launch with the profile:
 
 ```bash
 xcrun simctl launch --terminate-running-process <udid> com.duckduckgo.mobile.ios -launchProfile '{
-  "resetAppState": true,
   "internalUser": true,
   "onboardingCompleted": true,
   "featureFlags": { "sitePermissions": true },
@@ -18,46 +24,70 @@ xcrun simctl launch --terminate-running-process <udid> com.duckduckgo.mobile.ios
 }'
 ```
 
-`-launchProfile` takes inline JSON or an absolute path to a `.json` file. In XCUITest, append
-`["-launchProfile", json]` to `app.launchArguments`.
+`-launchProfile` takes inline JSON or an absolute path to a `.json` file. In XCUITest, which can't reinstall
+between tests, append `["-clearAllDefaults", "-launchProfile", json]` to `app.launchArguments`.
 
 ## Keys
 
 Keys are JSON paths: `{"featureFlags": {"x": true}}` and `{"featureFlags.x": true}` are the same.
+Keys marked * need `"internalUser": true` in the same profile (flags and experiments don't in UI tests).
 
-| Key | Value | Effect |
-|---|---|---|
-| `resetAppState` | Bool | `true` deletes saved settings, flag overrides, statistics and tabs first |
-| `internalUser` | Bool | Internal user, needed by every key marked * (flags and experiments also work without it in UI tests) |
-| `onboardingCompleted` | Bool | `true` skips onboarding, `false` shows it, this launch only |
-| `featureFlags.<name>` * | Bool | Overrides a `FeatureFlag` case (raw value), like the Debug menu |
-| `experiments.<name>` * | String | Puts the user in a cohort of that experiment flag |
-| `privacyConfigURL` * | http(s) URL | Privacy configuration from this URL, this launch only |
-| `tabs` | [http(s) URL] | Replaces the open tabs and closes Fire tabs; the last one is selected |
+| Key | Value | Lasts | Effect |
+|---|---|---|---|
+| `internalUser` | Bool | Saved | Internal user |
+| `onboardingCompleted` | Bool | One launch | `true` skips onboarding, `false` shows it |
+| `featureFlags.<name>` * | Bool | Saved | Overrides a `FeatureFlag` that supports local overriding, like the Debug menu; other flags have no key |
+| `experiments.<name>` * | String | Saved | Puts the user in a cohort of that experiment; a wrong cohort lists the valid ones |
+| `privacyConfigURL` * | http(s) URL | One launch | Privacy configuration from this URL |
+| `tabs` | [http(s) URL] | Saved | Replaces the open tabs and closes Fire tabs; the last one is selected |
+| `settings.addressBarPosition` | `top`, `bottom` | Saved | Address bar position (iPad is always top) |
+| `settings.theme` | `systemDefault`, `light`, `dark` | Saved | App theme |
+| `settings.textZoom` | 50, 60, … 170 | Saved | Website text size in percent |
+| `settings.fireAnimation` | `fireRising`, `fireRisingLegacy`, `waterSwirl`, `airstream`, `none` | Saved | Fire button animation; `none` speeds up Fire repros |
+| `settings.autoClear.options` | any of `tabs`, `data`, `aiChats` | Saved | What Automatically Clear Data clears; `[]` turns it off |
+| `settings.autoClear.timing` | `termination`, `delay5min`, `delay15min`, `delay30min`, `delay60min` | Saved | When it clears |
+| `duckAI.enabled` | Bool | Saved | Duck.ai on or off everywhere |
+| `duckAI.addressBar`, `.searchInput`, `.browsingMenu`, `.voiceSearch`, `.tabSwitcher` | Bool | Saved | Duck.ai entry points; `searchInput` is the search and Duck.ai toggle in the address bar |
+| `duckAI.defaultOmnibarMode` | `search`, `duckAI`, `lastUsed` | Saved | Mode the address bar starts in (needs the `aiChatOmnibarDefaultPosition` flag) |
+| `debug.onboarding.userType` | `notSet`, `newUser`, `returningUser` | Saved | Onboarding treats the install as new or returning |
+| `debug.onboarding.flowType` | `default`, `duckAI` | Saved | Forces an onboarding flow |
+| `debug.duckAI.customURL` | http(s) URL | Saved | Loads Duck.ai from this URL |
+| `debug.idleReturnThresholdSeconds` | Int > 0 | Saved | Seconds in the background before the app returns to a new tab page |
+| `debug.syncEnvironment` | `Production`, `Development` | Saved | Sync server; use it signed out of Sync |
+| `debug.configURLs.<name>` * | http(s) URL | Saved | Custom configuration URL; `<name>` is `privacyConfiguration`, `trackerDataSet`, `surrogates`, `remoteMessagingConfig`, `bloomFilterSpec`, `bloomFilterBinary` or `bloomFilterExcludedDomains` |
 
-The catalog is `iOS/DuckDuckGo/LaunchProfile/IOSLaunchSettings.swift`.
+"Saved" values stay until the app changes them or is reinstalled. For a privacy config used once, use
+`privacyConfigURL`; for one that must survive relaunches, use `debug.configURLs.privacyConfiguration`.
 
-## Rules
-
-- Start with `"resetAppState": true` unless the test needs earlier state. Values otherwise persist like a Debug
-  menu change, so leftovers from earlier sessions would decide what you test.
-- State in your result which profile you launched with.
-- A profile is checked as a whole: one unknown key, wrong type or missing `"internalUser": true` and nothing
-  is written.
-- If the profile fails, a key's meaning is unclear, or a PR's summary and JSON disagree: when the intent is clear,
-  fix it, carry on and flag what you changed in your result; when it isn't, stop and ask. Quote the
-  `LAUNCH_PROFILE_FAILED` line either way.
+The catalog is `iOS/DuckDuckGo/LaunchProfile/IOSLaunchSettings.swift`, with the other keys in
+`IOSLaunchSettings+Settings.swift`, `+DuckAI.swift` and `+Debug.swift`.
 
 ## Result
 
-The app logs one line and prints it to stderr:
+The app logs one line and prints it to stderr (`xcrun simctl launch --console-pty` shows it). Otherwise read it with
+`xcrun simctl spawn <udid> log show --last 1m --predicate 'category == "LaunchProfile"'`.
 
-```
-LAUNCH_PROFILE_APPLIED keys=resetAppState,internalUser,featureFlags.sitePermissions
-LAUNCH_PROFILE_FAILED Unknown key "featureFlag.x".
-```
+| Line | Meaning |
+|---|---|
+| `LAUNCH_PROFILE_APPLIED keys=internalUser,featureFlags.sitePermissions` | Everything was written |
+| `LAUNCH_PROFILE_FAILED Unknown key "featureFlag.x".` | Nothing was written. Fix the profile and launch again |
+| `LAUNCH_PROFILE_FAILED applied=internalUser,tabs <problem>` | A write failed after the listed keys were written. Reinstall and launch again |
+| No line | A Release build, or the argument didn't reach the app |
 
-Read it with `xcrun simctl spawn <udid> log show --last 1m --predicate 'category == "LaunchProfile"'`.
+The whole profile is checked before anything is written: one unknown key (an empty object `{}` counts as one),
+wrong type or missing `"internalUser": true` and nothing changes.
+
+## Relaunching
+
+A relaunch without the profile shows onboarding again and drops `privacyConfigURL`. To relaunch mid-test, pass the
+same profile without `tabs`, so the open tabs stay. XCUITest sends `launchArguments` on every `app.launch()`.
+
+## Rules
+
+- State in your result which profile you launched with.
+- If the profile fails, a key's meaning is unclear, or a PR's summary and JSON disagree: when the intent is clear,
+  fix it, carry on and flag what you changed in your result; when it isn't, stop and ask. Quote the
+  `LAUNCH_PROFILE_FAILED` line either way.
 
 ## In a PR
 
@@ -80,7 +110,6 @@ numbered in order with full URLs and the selected one marked.
 
 ```json
 {
-  "resetAppState": true,
   "internalUser": true,
   "onboardingCompleted": true,
   "featureFlags": { "sitePermissions": true, "floatingUIiOS27": false },
@@ -92,5 +121,18 @@ numbered in order with full URLs and the selected one marked.
 
 ## Adding a key
 
-Add one factory to `IOSLaunchSettings` that takes only the store it writes, list it in `make`, and cover what it
-writes in `IOSLaunchSettingsTests`. Put checks that can fail in `validate`, so a bad profile writes nothing.
+Every new Settings or Debug menu option that stores a value gets a launch key in the same PR.
+
+1. Add a factory to the file for its area and list it in that file's group function:
+   `+Settings.swift` (`settings.<name>`, `settingsScreen`), `+DuckAI.swift` (`duckAI.<name>`, `duckAI`) or
+   `+Debug.swift` (`debug.<name>`, `debugMenu`). It takes only the store it writes.
+2. Write through the API the screen uses (`AppSettings` or the feature's store). If that API sends pixels, write
+   under the key constants the store exports instead, like `+DuckAI.swift`.
+3. Use `LaunchSetting.choice` for enums. For other values, put checks that can fail in `validate` or `parse`, so a
+   bad profile writes nothing. Don't use `setLaunchArgument` for settings: it hides changes the tester makes later.
+4. If the store isn't in `IOSLaunchSettings.Dependencies`, add it there and in `LaunchProfileStartup`.
+5. Test it in `IOSLaunchSettingsTests` by reading the value back through the store the screen reads, and add a
+   row to the table above.
+
+If the store can't be written before the app's services start (it needs `AppDependencyProvider` or sends pixels
+with no exported keys), skip the key and say why in the PR description.

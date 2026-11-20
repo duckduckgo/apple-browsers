@@ -17,6 +17,9 @@
 //  limitations under the License.
 //
 
+import AIChat
+import Configuration
+import DDGSync
 import Foundation
 import Testing
 import LaunchProfile
@@ -32,26 +35,32 @@ import PrivacyConfig
 final class IOSLaunchSettingsTests {
 
     nonisolated private static let suiteName = "testing_iOSLaunchSettings"
+    nonisolated private static let appConfigurationSuiteName = "testing_iOSLaunchSettings_appConfiguration"
     private let internalUserStore = MockInternalUserStoring()
     private let tabsPersistence = TabsModelPersistence(normalStore: InMemoryThrowingKeyValueStore(),
                                                        fireStore: InMemoryThrowingKeyValueStore(),
                                                        legacyStore: UserDefaults(suiteName: suiteName)!)
-    private var events: [String] = []
+    private let appSettings = AppSettingsMock()
+    private let defaults = UserDefaults(suiteName: suiteName)!
+    private let appConfigurationDefaults = UserDefaults(suiteName: appConfigurationSuiteName)!
     private var launchArguments: [String: String] = [:]
 
     deinit {
-        UserDefaults(suiteName: Self.suiteName)?.removePersistentDomain(forName: Self.suiteName)
+        [Self.suiteName, Self.appConfigurationSuiteName].forEach { UserDefaults(suiteName: $0)?.removePersistentDomain(forName: $0) }
     }
 
     private func apply(_ json: String, flagOverridesNeedInternalUser: Bool = true) throws -> LaunchProfileOutcome {
-        let settings = IOSLaunchSettings.make(
+        let settings = IOSLaunchSettings.make(.init(
             internalUserStore: internalUserStore,
             flagOverridesNeedInternalUser: flagOverridesNeedInternalUser,
-            resetAppState: { [unowned self] in events.append("reset(internalUser=\(internalUserStore.isInternalUser))") },
             setLaunchArgument: { [unowned self] value, key in launchArguments[key] = value },
             tabsPersistence: { [tabsPersistence] in tabsPersistence },
-            isPad: false
-        )
+            isPad: false,
+            appSettings: appSettings,
+            appDefaults: defaults,
+            appConfigurationDefaults: appConfigurationDefaults,
+            aiChatDebugSettings: AIChatDebugSettings(userDefault: defaults)
+        ))
         return settings.apply(try LaunchProfile(json: Data(json.utf8)))
     }
 
@@ -61,18 +70,6 @@ final class IOSLaunchSettingsTests {
 
     private static var experimentFlag: FeatureFlag {
         FeatureFlag.allCases.first { $0.supportsLocalOverriding && $0.cohortType != nil }!
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func resetRunsBeforeAnyOtherSetting() throws {
-        internalUserStore.isInternalUser = false
-
-        let outcome = try apply(#"{"internalUser": true, "resetAppState": true}"#)
-
-        #expect(outcome == .applied(keys: ["resetAppState", "internalUser"]))
-        #expect(events == ["reset(internalUser=false)"])
-        #expect(internalUserStore.isInternalUser)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -157,6 +154,103 @@ final class IOSLaunchSettingsTests {
 
         #expect(outcome == .rejected([LaunchProfileProblem(key: "tabs",
                                                            message: #""tabs" is invalid: use http or https URLs, like https://example.com."#)]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func settingsScreenOptionsAreWrittenThroughAppSettings() throws {
+        let outcome = try apply(#"""
+        {"settings": {"addressBarPosition": "bottom", "theme": "dark", "textZoom": 120, "fireAnimation": "none",
+                      "autoClear": {"options": ["tabs", "aiChats"], "timing": "delay30min"}}}
+        """#)
+
+        #expect(outcome.isSuccess)
+        #expect(appSettings.currentAddressBarPosition == .bottom)
+        #expect(appSettings.currentThemeStyle == .dark)
+        #expect(appSettings.defaultTextZoomLevel == .percent120)
+        #expect(appSettings.currentFireButtonAnimation == .none)
+        #expect(appSettings.autoClearAction == [.tabs, .aiChats])
+        #expect(appSettings.autoClearTiming == .delay30min)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func settingsMustNameAKnownOption() throws {
+        let theme = try apply(#"{"settings.theme": "blue"}"#)
+        let autoClear = try apply(#"{"settings.autoClear.options": ["tabs", "cookies"]}"#)
+
+        #expect(theme == .rejected([LaunchProfileProblem(key: "settings.theme",
+                                                         message: #""settings.theme" is invalid: use one of systemDefault, light, dark."#)]))
+        #expect(autoClear == .rejected([LaunchProfileProblem(key: "settings.autoClear.options",
+                                                             message: #""settings.autoClear.options" is invalid: use any of aiChats, data, tabs."#)]))
+        #expect(appSettings.currentThemeStyle == .systemDefault)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func duckAISettingsAreReadBackByAIChatSettings() throws {
+        let outcome = try apply(#"""
+        {"duckAI": {"enabled": true, "addressBar": false, "searchInput": true, "tabSwitcher": false, "defaultOmnibarMode": "duckAI"}}
+        """#)
+
+        let aiChatSettings = AIChatSettings(privacyConfigurationManager: PrivacyConfigurationManagerMock(),
+                                            debugSettings: MockAIChatDebugSettings(),
+                                            keyValueStore: appConfigurationDefaults,
+                                            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatOmnibarDefaultPosition]),
+                                            pixelFiring: nil)
+        #expect(outcome.isSuccess)
+        #expect(aiChatSettings.isAIChatEnabled)
+        #expect(!aiChatSettings.isAIChatAddressBarUserSettingsEnabled)
+        #expect(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        #expect(!aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled)
+        #expect(aiChatSettings.defaultOmnibarMode == .duckAI)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func duckAICanBeTurnedOff() throws {
+        _ = try apply(#"{"duckAI.enabled": false}"#)
+
+        let aiChatSettings = AIChatSettings(privacyConfigurationManager: PrivacyConfigurationManagerMock(),
+                                            debugSettings: MockAIChatDebugSettings(),
+                                            keyValueStore: appConfigurationDefaults,
+                                            featureFlagger: MockFeatureFlagger(),
+                                            pixelFiring: nil)
+        #expect(!aiChatSettings.isAIChatEnabled)
+        #expect(!aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func debugMenuOptionsAreReadBackByTheApp() throws {
+        let outcome = try apply(#"""
+        {"internalUser": true,
+         "debug": {"onboarding": {"userType": "returningUser", "flowType": "duckAI"},
+                   "duckAI": {"customURL": "http://localhost:8080/chat"},
+                   "idleReturnThresholdSeconds": 5,
+                   "syncEnvironment": "Development",
+                   "configURLs": {"remoteMessagingConfig": "http://localhost:8080/rmf.json"}}}
+        """#)
+
+        #expect(outcome.isSuccess)
+        #expect(appSettings.onboardingUserType == .returningUser)
+        #expect(appSettings.onboardingFlowType == .duckAI)
+        #expect(AIChatDebugSettings(userDefault: defaults).customURL == "http://localhost:8080/chat")
+        let idleReturnOverrides: some KeyedStoring<IdleReturnDebugOverridesKeys> = defaults.keyedStoring()
+        #expect(idleReturnOverrides.thresholdSecondsOverride == 5)
+        #expect(ServerEnvironment(UserDefaultsWrapper(key: .syncEnvironment, defaultValue: "", container: defaults).wrappedValue) == .development)
+        #expect(CustomConfigurationURLStorage(defaults: appConfigurationDefaults).customRemoteMessagingConfigURL == URL(string: "http://localhost:8080/rmf.json"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func customConfigurationURLsNeedInternalUser() throws {
+        let outcome = try apply(#"{"debug.configURLs.privacyConfiguration": "http://localhost:8080/config.json"}"#)
+
+        #expect(outcome == .rejected([LaunchProfileProblem(
+            key: "debug.configURLs.privacyConfiguration",
+            message: #""debug.configURLs.privacyConfiguration" needs "internalUser": true in the same profile."#)]))
+        #expect(CustomConfigurationURLStorage(defaults: appConfigurationDefaults).customPrivacyConfigurationURL == nil)
     }
 
     private static func firstCohortID<Cohort: FeatureFlagCohortDescribing>(of type: Cohort.Type) -> CohortID? {

@@ -19,7 +19,6 @@
 
 import UIKit
 import Common
-import Core
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
@@ -41,11 +40,6 @@ import Core
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // SwiftUI Previews run without the app group container, so skip app initialization to avoid crashing.
         guard AppVersion.runType != .xcPreviews else { return true }
-
-        LaunchOptionsHandler().resetAppStateIfRequested()
-#if DEBUG || ALPHA
-        LaunchProfileStartup.applyIfRequested()
-#endif
 
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
         appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))

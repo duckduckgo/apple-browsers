@@ -51,5 +51,9 @@ enum NavigationSetupWaitPixel: PixelKit.Event {
         }
     }
 
+    /// Bucket labels such as `0.5` keep the existing `time_bucket` values, so the name contains a dot.
+    /// PixelKit asserts in debug builds on dots in names unless the event opts in.
+    var allowsDotInName: Bool { true }
+
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

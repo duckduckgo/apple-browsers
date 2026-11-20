@@ -249,6 +249,8 @@ private func assertSetupPixel(_ firing: PixelKitMock, outcome: String, state: St
     let call = firing.actualFireCalls.first
     XCTAssertEqual(call?.pixel.name, "navigation_setup_wait_\(outcome)_time_\(total)", file: file, line: line)
     XCTAssertEqual(call?.frequency, .standard, file: file, line: line)
+    XCTAssertEqual(call?.pixel.allowsDotInName, true, "Bucket labels put dots in the name; PixelKit asserts on them otherwise",
+                   file: file, line: line)
     XCTAssertEqual(call?.pixel.parameters,
                    ["state": state, "web_extensions_wait_time": extensions, "content_blocking_wait_time": rules,
                     "is_serp": isSerp ? "true" : "false"], file: file, line: line)

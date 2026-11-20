@@ -398,7 +398,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
-    func testWhenEnabledThenDuckAIHostMatrixIsPreservedWithoutConstructingCoordinator() throws {
+    func testWhenEnabledThenOnlyDuckAIMainFrameMicrophoneIsGrantedWithoutConstructingCoordinator() throws {
         let sut = makeSUT()
         var didRequestDependencies = false
         sut.sitePermissionsDependenciesProvider = {
@@ -412,29 +412,84 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         for host in hosts {
             for captureType in captureTypes {
-                for audioStatus in audioStatuses {
-                    try Phase3AVCaptureAuthorizationStatusStub.withAudioStatus(audioStatus) {
-                        var decisions = [WKPermissionDecision]()
+                for isMainFrame in [true, false] {
+                    for audioStatus in audioStatuses {
+                        try Phase3AVCaptureAuthorizationStatusStub.withAudioStatus(audioStatus) {
+                            var decisions = [WKPermissionDecision]()
 
-                        requestPermission(on: sut,
-                                          originHost: host,
-                                          captureType: captureType,
-                                          decisionHandler: { decisions.append($0) })
+                            requestPermission(on: sut,
+                                              originHost: host,
+                                              captureType: captureType,
+                                              isMainFrame: isMainFrame,
+                                              decisionHandler: { decisions.append($0) })
 
-                        let consultsAudio = captureType != .camera
-                        let expectedDecision: WKPermissionDecision = consultsAudio && audioStatus == .authorized
-                            ? .grant
-                            : (consultsAudio ? .deny : .prompt)
-                        let expectedMediaTypes: [AVMediaType] = consultsAudio ? [.audio] : []
-                        let message = "\(host) \(captureType) with audio status \(audioStatus)"
-                        XCTAssertEqual(decisions, [expectedDecision], message)
-                        XCTAssertEqual(Phase3AVCaptureAuthorizationStatusStub.requestedMediaTypes, expectedMediaTypes, message)
+                            let isEligible = host != "subdomain.duckduckgo.com" && captureType == .microphone && isMainFrame
+                            // Ineligible requests take the normal path, which denies without a bridge preapproval.
+                            let expectedDecision: WKPermissionDecision = isEligible && audioStatus == .authorized ? .grant : .deny
+                            let expectedMediaTypes: [AVMediaType] = isEligible ? [.audio] : []
+                            let message = "\(host) \(captureType) mainFrame: \(isMainFrame) with audio status \(audioStatus)"
+                            XCTAssertEqual(decisions, [expectedDecision], message)
+                            XCTAssertEqual(Phase3AVCaptureAuthorizationStatusStub.requestedMediaTypes, expectedMediaTypes, message)
+                        }
                     }
                 }
             }
         }
 
         XCTAssertFalse(didRequestDependencies)
+    }
+
+    func testDuckAIMicrophoneAutoGrantEligibilityIsLimitedToHTTPSMainFrameMicrophoneOnExactHosts() {
+        func isEligible(_ protocolName: String = "https",
+                        _ host: String = "duck.ai",
+                        isMainFrame: Bool = true,
+                        _ permissionTypes: Set<SitePermissionType>? = [.microphone]) -> Bool {
+            TabViewController.isDuckAIMicrophoneAutoGrantEligible(protocolName: protocolName,
+                                                                  host: host,
+                                                                  isMainFrame: isMainFrame,
+                                                                  permissionTypes: permissionTypes)
+        }
+
+        XCTAssertTrue(isEligible())
+        XCTAssertTrue(isEligible("HTTPS", "Duck.AI"))
+        XCTAssertTrue(isEligible("https", "duckduckgo.com"))
+
+        XCTAssertFalse(isEligible("http"))
+        XCTAssertFalse(isEligible("https", "subdomain.duckduckgo.com"))
+        XCTAssertFalse(isEligible("https", "subdomain.duck.ai"))
+        XCTAssertFalse(isEligible("https", "duck.ai.example"))
+        XCTAssertFalse(isEligible(isMainFrame: false))
+        XCTAssertFalse(isEligible("https", "duck.ai", [.camera]))
+        XCTAssertFalse(isEligible("https", "duck.ai", [.camera, .microphone]))
+        XCTAssertFalse(isEligible("https", "duck.ai", nil))
+    }
+
+    func testDuckAIBridgeBypassesOnlyMainFrameMicrophoneAndPromptsForCamera() async {
+        let committedURL = URL(string: "https://duck.ai/chat")!
+        let scenarios: [(WKMediaCaptureType, Bool, Bool)] = [
+            (.microphone, true, false),
+            (.microphone, false, true),
+            (.camera, true, true),
+            (.cameraAndMicrophone, true, true)
+        ]
+
+        for (captureType, isMainFrame, expectsPrompt) in scenarios {
+            let sut = makeSUT(committedURL: committedURL)
+            var didPrompt = false
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in
+                didPrompt = true
+                completion(.denyOnce)
+            }
+
+            let decision = await makeBridgeRequestTask(on: sut,
+                                                       originURL: URL(string: "https://duck.ai")!,
+                                                       captureType: captureType,
+                                                       isMainFrame: isMainFrame).value
+
+            let message = "\(captureType) mainFrame: \(isMainFrame)"
+            XCTAssertEqual(didPrompt, expectsPrompt, message)
+            XCTAssertEqual(decision, expectsPrompt ? .deny : .bypass, message)
+        }
     }
 
     func testWhenUnsupportedOSThenReplacedWebViewKeepsLegacyRouting() throws {
@@ -455,6 +510,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                               webView: staleWebView,
                               originHost: "duck.ai",
                               captureType: .microphone,
+                              isMainFrame: true,
                               decisionHandler: { decisions.append($0) })
         }
 

@@ -1228,6 +1228,14 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitOpenChatProtectionActionCallCount += 1
     }
 
+    var openChatOutcome: AIChatOpenChatOutcome?
+    private(set) var openedChatIds: [String] = []
+
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        openedChatIds.append(chatId)
+        return openChatOutcome
+    }
+
     func submitPageContext(_ context: AIChatPageContextData?) {
         submitPageContextCallCount += 1
         lastSubmittedPageContextViaSubmit = context

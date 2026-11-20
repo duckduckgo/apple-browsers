@@ -37,10 +37,17 @@ import WebKit
 @available(macOS 15.4, *)
 final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessageHandlerWithReply {
 
+    private let managerProvider: @MainActor () -> WebExtensionManager?
+
+    init(managerProvider: @escaping @MainActor () -> WebExtensionManager?) {
+        self.managerProvider = managerProvider
+    }
+
     /// Third-party extensions can only be installed by internal users, so nobody else needs the
     /// script.
-    static func make(isInternalUser: Bool) -> WebExtensionPageStubUserScript? {
-        isInternalUser ? WebExtensionPageStubUserScript() : nil
+    static func make(isInternalUser: Bool,
+                     managerProvider: @escaping @MainActor () -> WebExtensionManager?) -> WebExtensionPageStubUserScript? {
+        isInternalUser ? WebExtensionPageStubUserScript(managerProvider: managerProvider) : nil
     }
 
     /// The same scripts, in the same order, as `WebExtensionLoader` installs on the controller.
@@ -65,7 +72,7 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
                                   WebExtensionAPIStubScript.permissionsMessageHandlerName]
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handleAPICompatibilityMessage(message)
+        managerProvider()?.handleAPICompatibilityMessage(message)
     }
 
     /// A script registered with a reply handler receives all its messages here, so the compatibility
@@ -73,7 +80,7 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping (Any?, String?) -> Void) {
-        guard let manager = NSApp.delegateTyped.webExtensionManager as? WebExtensionManager else {
+        guard let manager = managerProvider() else {
             replyHandler(nil, "Web extensions are unavailable")
             return
         }
@@ -87,5 +94,24 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
             manager.handleAPICompatibilityMessage(message)
             replyHandler(nil, nil)
         }
+    }
+}
+
+/// The companion isolated script records input without exposing its handler to extension code.
+@available(macOS 15.4, *)
+final class WebExtensionPermissionUserGestureUserScript: NSObject, UserScript {
+    private let managerProvider: @MainActor () -> WebExtensionManager?
+
+    init(managerProvider: @escaping @MainActor () -> WebExtensionManager?) {
+        self.managerProvider = managerProvider
+    }
+
+    let source = WebExtensionPermissionUserGestureScript.source
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly = false
+    let messageNames = [WebExtensionPermissionUserGestureScript.messageHandlerName]
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        managerProvider()?.handlePermissionUserGestureMessage(message)
     }
 }

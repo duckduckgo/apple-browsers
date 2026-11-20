@@ -4,6 +4,7 @@
   {"path": "Common", "macosTestOnly": true},
   {"path": "DDGError"},
   {"path": "DebugServer", "testTargets": ["DebugServerTests"]},
+  {"path": "HangMetrics", "testTargets": ["HangMetricsTests"]},
   {"path": "ICSParser"},
   {"path": "LocalModels"},
   {"path": "Infrastructure/DesignResourcesKit"},

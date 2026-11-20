@@ -314,6 +314,26 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "RemoteMessagingTests"
+               BuildableName = "RemoteMessagingTests"
+               BlueprintName = "RemoteMessagingTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "UserScriptTests"
+               BuildableName = "UserScriptTests"
+               BlueprintName = "UserScriptTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SuggestionsTests"
                BuildableName = "SuggestionsTests"
                BlueprintName = "SuggestionsTests"

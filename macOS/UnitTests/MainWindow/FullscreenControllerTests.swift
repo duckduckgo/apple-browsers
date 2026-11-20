@@ -186,6 +186,34 @@ final class MainViewControllerVerticalTabsTests: XCTestCase, MainViewControllerF
         XCTAssertEqual(presenter.layout, .collapsed)
     }
 
+    func testSwitchingToHorizontalTabsDuringDragRemovesPreviewAndCancelsTearOff() throws {
+        let preferences = makeVerticalTabsPreferences(enabled: true)
+        let controller = makeVerticalTabsController(preferences: preferences)
+        let window = NSWindow(contentViewController: controller)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let sidebar = try XCTUnwrap(controller.children.compactMap { $0 as? VerticalTabsViewController }.first)
+        let collection = controller.tabCollectionViewModel
+        let draggedTab = Tab(content: .bookmarks)
+        collection.append(tab: draggedTab)
+        let originalIDs = collection.tabs.map(\.uuid)
+        let outside = NSPoint(x: window.frame.maxX + 30, y: window.frame.midY)
+
+        sidebar.dragSession.beginDragging(draggedTab.uuid)
+        sidebar.dragSession.update(at: outside)
+        let preview = try XCTUnwrap(window.childWindows?.first { $0 is NSPanel })
+
+        preferences.useVerticalTabs = false
+
+        XCTAssertFalse(controller.tabBarViewController.isTabStripHidden)
+        XCTAssertNil(controller.verticalTabsSidebarPresenter)
+        XCTAssertFalse(sidebar.dragSession.isDragging)
+        XCTAssertNil(preview.parent)
+        XCTAssertFalse(preview.isVisible)
+        sidebar.dragSession.end(at: outside)
+        XCTAssertEqual(collection.tabs.map(\.uuid), originalIDs)
+    }
+
     func testEnablingVerticalTabsWhileHiddenInFullscreenDefersTheSidebar() throws {
         let preferences = makeVerticalTabsPreferences(enabled: false)
         let controller = makeVerticalTabsController(preferences: preferences)

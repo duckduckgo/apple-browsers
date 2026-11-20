@@ -130,7 +130,19 @@ final class FaviconTests: XCTestCase {
     func testSVGWithFilterIsDetected() {
         XCTAssertTrue(Data("<svg><filter id=\"f\"/></svg>".utf8).containsSVGFilter)
         XCTAssertTrue(Data("<svg><rect style=\"FILTER: blur(2px)\"/></svg>".utf8).containsSVGFilter)
+        XCTAssertTrue(Data("<svg><FiLtEr id=\"f\"/></svg>".utf8).containsSVGFilter)
         XCTAssertFalse(Data("<svg><rect width=\"1\" height=\"1\"/></svg>".utf8).containsSVGFilter)
+        XCTAssertFalse(Data().containsSVGFilter)
+    }
+
+    func testOversizedSVGIsRejectedAndOversizedNonSVGIsNot() {
+        let padding = Data(repeating: UInt8(ascii: " "), count: Data.maxSVGFaviconSize)
+        let oversizedSVG = Data("<svg xmlns=\"http://www.w3.org/2000/svg\"/>".utf8) + padding
+        XCTAssertTrue(oversizedSVG.containsSVGFilter)
+        XCTAssertNil(NSImage(dataUsingCIImage: oversizedSVG, maxPixelSize: nil))
+
+        let oversizedNonSVG = Data(repeating: 0x42, count: Data.maxSVGFaviconSize + 1)
+        XCTAssertFalse(oversizedNonSVG.containsSVGFilter)
     }
 
     func testFullyTransparentBitmapHasNoVisiblePixels() throws {

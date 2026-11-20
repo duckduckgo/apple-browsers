@@ -255,6 +255,8 @@ class RecordingTests(unittest.TestCase):
         self.assertEqual(harness.label(rec), ("PASS", 2))
         self.assertIn("- Recording: [recording.mp4](recording.mp4) (3.0 s)\n", text)
         self.assertIn("CUT: another app came in front", rec.video["error"])
+        self.assertIn("- screen recording cut short: ", text)
+        self.assertNotIn("recording failed", text)
 
     def test_no_video_records_nothing_and_says_so(self):
         rec, ran, text = self.finish((0, "recording.mp4 seconds=1 bytes=1"), video=False)

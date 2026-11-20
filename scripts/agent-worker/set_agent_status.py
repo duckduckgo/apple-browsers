@@ -8,9 +8,8 @@ When the run ends:
 
 Env: ASANA_APP_CLIENT_ID, ASANA_APP_CLIENT_SECRET, ASANA_APP_REFRESH_TOKEN, TASK_GID, RUN_URL,
 EVIDENCE_URL, DECISION_LOG_URL (auto's, when it kept one), STATUS_FIELD (Agent Status field gid), STATUS_OPTIONS
-(JSON map of status to option gid), and at the end AGENT and PUBLISH (job results), CANCELLED, BUILD_OK, FAILURE,
-PR_URL (from publish, without auto), and with auto PR_URLS (the agent's own PRs, bottom of the stack first),
-AUDIT_FLAGS and TOOL_ISSUES (counts), and AUTO
+(JSON map of status to option gid), and at the end AGENT (job result), CANCELLED, BUILD_OK, FAILURE, PR_URLS (the
+agent's own PRs, bottom of the stack first), and AUDIT_FLAGS and TOOL_ISSUES (counts)
 """
 
 import html
@@ -71,10 +70,8 @@ PR = re.compile(r"https://github\.com/[^\s/]+/[^\s/]+/pull/[0-9]+")
 
 
 def prs(e):
-    """The PRs this run opened: the agent's own with auto, or the one publish opened"""
-    if e.get("AUTO") == "true":
-        return [u for u in e.get("PR_URLS", "").split() if PR.fullmatch(u)]
-    return [e["PR_URL"]] if e.get("PUBLISH") == "success" and PR.fullmatch(e.get("PR_URL", "")) else []
+    """The PRs the agent opened in this run"""
+    return [u for u in e.get("PR_URLS", "").split() if PR.fullmatch(u)]
 
 
 def count(e, key):
@@ -109,7 +106,7 @@ def outcome(e):
             steps += ("<li>It's a stack of " + str(len(opened)) + " PRs. Review them from the bottom: "
                       + ", ".join(a(u, u) for u in opened) + ".</li>")
         steps += f"<li>Review the PR. The agent's {summary} has the problem, the fix and its build and test results.</li>"
-        if e.get("AUTO") == "true" and e.get("BUILD_OK") != "true":
+        if e.get("BUILD_OK") != "true":
             steps += (f"<li>The agent's last build or test run before the PR didn't pass ({esc(e.get('FAILURE') or 'no result')}), "
                       "so check the PR checks closely.</li>")
         if e.get("CANCELLED") == "true":
@@ -128,14 +125,11 @@ def outcome(e):
         return "needs_attention", (f"{ATTENTION}<strong>{esc(what)}.</strong>\n"
                                    f"<ol>{warnings(e)}<li>Open {page} and the {run} to see why.{more}</li>"
                                    "<li>Fix the cause, or add what the agent needs as a comment.</li>" + AGAIN + "</ol></body>")
-    if e.get("AUTO") == "true":
-        _, summary = evidence(e)
-        more = f" You can also open {how(e)}." if how(e) else ""
-        return "needs_attention", (f"{ATTENTION}<strong>The agent didn't open a PR.</strong>\n"
-                                   f"<ol>{warnings(e)}<li>Open the agent's {summary} and the {run} to see why.{more}</li>"
-                                   + AGAIN + "</ol></body>")
-    return "needs_attention", (f"{ATTENTION}<strong>The agent's change wasn't published.</strong> The publish step failed or was skipped.\n"
-                               f"<ol>{warnings(e)}<li>Open the {run} to see why.</li>" + AGAIN + "</ol></body>")
+    _, summary = evidence(e)
+    more = f" You can also open {how(e)}." if how(e) else ""
+    return "needs_attention", (f"{ATTENTION}<strong>The agent didn't open a PR.</strong>\n"
+                               f"<ol>{warnings(e)}<li>Open the agent's {summary} and the {run} to see why.{more}</li>"
+                               + AGAIN + "</ol></body>")
 
 
 def access_token(e):

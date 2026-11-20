@@ -4,9 +4,9 @@
 Usage: leak_check.py patch <changes.patch> <out file>
 Env: LEAK_CORPUS, colon-separated files or directories whose .md files the agent was given
 
-A line leaks when it shares a run of WORDS words with the corpus, so short common phrases don't count. pr_text.py
-drops leaking lines from the PR text. For the patch, the added lines that leak go to <out file> in evidence, and the
-log only gets a count, since this repo's logs are public
+A line leaks when it shares a run of WORDS words with the corpus, so short common phrases don't count. pr_audit.py
+uses corpus() and leaks() on what the agent published. The patch command writes the added lines that leak to
+<out file>, and the log only gets a count, since this repo's logs are public
 """
 
 import os

@@ -46,6 +46,13 @@ extension MainViewController {
             }
             .sink { [weak self] _ in self?.collapseUnfocusedIPadFullTabChatInput() }
             .store(in: &unifiedToggleInputCancellables)
+        NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification)
+            .filter { [weak coordinator] notification in
+                guard let coordinator, let textView = notification.object as? UIView else { return false }
+                return textView.isDescendant(of: coordinator.viewController.view)
+            }
+            .sink { [weak self] _ in self?.closeIPadChatListSidebarForFocusedInput() }
+            .store(in: &unifiedToggleInputCancellables)
         if let currentTab {
             refreshUnifiedToggleInput(for: currentTab)
         }

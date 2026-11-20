@@ -39,6 +39,7 @@ final class AIChatBrowserToolsService {
     private let pushers = NSHashTable<AnyObject>.weakObjects()
     private var lastClientToolsConfiguration: ClientToolsConfiguration?
     private var featureFlagChanges: AnyCancellable?
+    private var fireBurns: AnyCancellable?
 
     /// Whether browser tools are enabled by the parent feature flag.
     var isEnabled: Bool { configuration.isEnabled }
@@ -73,6 +74,13 @@ final class AIChatBrowserToolsService {
             Task { @MainActor in
                 self?.pushClientToolsChangedIfNeeded()
             }
+        }
+    }
+
+    /// `requestAccess` grants last for a chat until quit; the Fire Button clears them too.
+    func revokeChatGrants(whenBurning burns: AnyPublisher<Fire.BurningData?, Never>) {
+        fireBurns = burns.compactMap { $0 }.sink { [weak self] _ in
+            Task { @MainActor in self?.clientToolPermissions.revokeChatGrants() }
         }
     }
 
@@ -172,6 +180,10 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         featureFlagger.isFeatureOn(.aiChatBrowserTools)
     }
 
+    var isRequestAccessEnabled: Bool {
+        isEnabled && featureFlagger.isFeatureOn(.aiChatBrowserToolRequestAccess)
+    }
+
     func isToolEnabled(named name: String) -> Bool {
         guard isEnabled,
               let subfeature = AIChatBrowserToolsSubfeature(rawValue: name),
@@ -195,6 +207,7 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .bookmarkTab: .aiChatBrowserToolBookmarkTab
         case .searchDownloads: .aiChatBrowserToolSearchDownloads
         case .searchBookmarks: .aiChatBrowserToolSearchBookmarks
+        case .requestAccess: nil // Not a tool: see `isRequestAccessEnabled`.
         }
     }
 }

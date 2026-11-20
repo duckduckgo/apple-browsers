@@ -33,7 +33,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
     private var confirmationMonitor: MockDefaultBrowserConfirmationMonitor!
     private var pixelFiring: PixelKitMock!
     private var isFeatureEnabled = true
-    private let now = Date(timeIntervalSince1970: 1_700_000_000)
+    private var now = Date(timeIntervalSince1970: 1_700_000_000)
     private var capturedTypes: [DefaultBrowserAndDockPromptType] = []
     private var onConfirm: (() -> Void)?
     private var onDismiss: (() -> Void)?
@@ -223,6 +223,32 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(firedPixels, [.shown(type: .bothDefaultBrowserAndDockPrompt),
                                      .confirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt)])
+    }
+
+    func testWhenConfirmAndSetAsDefaultNotRequestedThenConfirmationCheckDoesNotStart() async throws {
+        actionPerformer.requestsSetAsDefault = false
+        let delegate = makeDelegate()
+        let task = await startShow(delegate)
+
+        try XCTUnwrap(onConfirm)()
+        let result = await task.value
+
+        XCTAssertEqual(result, .actioned())
+        XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 1)
+        XCTAssertTrue(confirmationMonitor.startClickDates.isEmpty)
+    }
+
+    func testWhenSetAsDefaultRequestedAfterConfirmThenConfirmationCheckStartsAtRequestTime() async throws {
+        actionPerformer.requestsSetAsDefault = false
+        let delegate = makeDelegate()
+        let task = await startShow(delegate)
+        try XCTUnwrap(onConfirm)()
+        _ = await task.value
+
+        now = now.addingTimeInterval(30)
+        try XCTUnwrap(actionPerformer.onSetAsDefaultRequested)()
+
+        XCTAssertEqual(confirmationMonitor.startClickDates, [now])
     }
 
     func testWhenDismissThenIgnored() async throws {

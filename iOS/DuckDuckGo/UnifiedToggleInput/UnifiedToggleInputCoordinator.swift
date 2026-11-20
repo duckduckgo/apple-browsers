@@ -687,7 +687,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func bindToTab(_ userScript: AIChatUserScript, hasExistingChat: Bool = false) {
         let newIdentifier = ObjectIdentifier(userScript)
-        if boundUserScriptIdentifier == newIdentifier {
+        // A freed script's address can be reused by the next one, so a matching identifier alone doesn't prove it's the same script.
+        if boundUserScriptIdentifier == newIdentifier, boundUserScript === userScript {
             boundUserScript = userScript
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)

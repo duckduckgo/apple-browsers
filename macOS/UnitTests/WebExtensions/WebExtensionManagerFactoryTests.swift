@@ -122,22 +122,6 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         }
     }
 
-    func testAppStoreBuildDoesNotStartUpdateDiscoveryWhenFlagIsOn() async throws {
-        let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionUpdateDiscovery.rawValue: true])
-        let storage = try DiscoveryStateStorage()
-        let manager = makeManager(storage: storage, flags: flags, isAppStore: true)
-        let store = try XCTUnwrap(manager.chromeWebStore)
-        XCTAssertFalse(store.canCheckForUpdates)
-        await store.checkForUpdatesNow()
-        flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = false
-        flags.triggerUpdate()
-        flags.featuresStub[FeatureFlag.webExtensionUpdateDiscovery.rawValue] = true
-        flags.triggerUpdate()
-        await store.checkForUpdatesNow()
-        XCTAssertFalse(store.canCheckForUpdates)
-        XCTAssertEqual(storage.discoveryReads, 0)
-    }
-
     func testManagerEnforcesExtensionPermissions() throws {
         let manager = makeManager(storage: try DiscoveryStateStorage(), flags: MockFeatureFlagger())
         XCTAssertNotNil(manager.permissionController)
@@ -155,16 +139,13 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
         }
     }
 
-    private func makeManager(storage: DiscoveryStateStorage, flags: MockFeatureFlagger, isAppStore: Bool = false) -> WebExtensionManager {
-        let buildType = ApplicationBuildTypeMock()
-        buildType.isAppStoreBuild = isAppStore
-        buildType.isSparkleBuild = !isAppStore
-        return WebExtensionManagerFactory.makeManager(keyValueStore: storage,
-                                                     privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-                                                     autoconsentPreferences: Preferences(),
-                                                     themeManager: ThemeManager(appearancePreferences: .mock),
-                                                     buildType: buildType, featureFlagger: flags,
-                                                     eventHub: RecordingEventHub())
+    private func makeManager(storage: DiscoveryStateStorage, flags: MockFeatureFlagger) -> WebExtensionManager {
+        WebExtensionManagerFactory.makeManager(keyValueStore: storage,
+                                              privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                                              autoconsentPreferences: Preferences(),
+                                              themeManager: ThemeManager(appearancePreferences: .mock),
+                                              featureFlagger: flags,
+                                              eventHub: RecordingEventHub())
     }
 
     private struct Preferences: AutoconsentPreferencesProviding {

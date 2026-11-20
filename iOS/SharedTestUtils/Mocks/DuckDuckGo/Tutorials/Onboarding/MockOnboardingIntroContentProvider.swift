@@ -37,9 +37,32 @@ class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var searchExperienceContent: OnboardingSearchExperienceContent = .mock
     var duckAIQueryContent: OnboardingDuckAIQueryContent = .mock
     var tryVPNContent: OnboardingTryVPNContent = .mock
+    var vpnActivationContent: OnboardingVPNActivationContent = .mock
+    var subscriptionReminderContent: OnboardingSubscriptionReminderContent = .mock
 }
 
 // MARK: - Helpers
+
+extension OnboardingVPNActivationContent {
+    static let mock = OnboardingVPNActivationContent(
+        offTitle: "Off",
+        onTitle: "On",
+        turnOnCTA: "Turn On",
+        tryAgainCTA: "Try Again",
+        skipCTA: "Skip",
+        nextCTA: "Next",
+        daxAnimation: nil
+    )
+}
+
+extension OnboardingSubscriptionReminderContent {
+    static let mock = OnboardingSubscriptionReminderContent(
+        title: "Reminder",
+        message: AttributedString("Message"),
+        cta: "Next",
+        daxAnimation: nil
+    )
+}
 
 extension OnboardingTryVPNContent {
     static let mock = OnboardingTryVPNContent(
@@ -150,7 +173,8 @@ extension OnboardingComparisonContent {
         ],
         primaryCTA: "Browser Comparison Primary",
         secondaryCTA: "Browser Comparison Secondary",
-        daxAnimation: .wingBottom
+        daxAnimation: .wingBottom,
+        drawsCheckmarks: true
     )
 
     static let mockAI = OnboardingComparisonContent(
@@ -162,7 +186,8 @@ extension OnboardingComparisonContent {
         ],
         primaryCTA: "AI Comparison Primary",
         secondaryCTA: nil,
-        daxAnimation: .wingBottom
+        daxAnimation: .wingBottom,
+        drawsCheckmarks: true
     )
 }
 

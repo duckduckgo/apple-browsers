@@ -196,10 +196,15 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
-        isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
         favicons: sitePermissionsFavicons,
         callbacks: makeSitePermissionsCallbacks()
     )
+
+    @MainActor
+    private(set) lazy var localModelAccessSettingsViewModel: LocalModelAccessSettingsViewModel? = {
+        guard let service = userScriptsDependencies.aiChatLocalModel?.service else { return nil }
+        return LocalModelAccessSettingsViewModel(service: service)
+    }()
 
     // View State
     @Published private(set) var state: SettingsState

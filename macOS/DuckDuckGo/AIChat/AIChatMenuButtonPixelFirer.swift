@@ -47,6 +47,10 @@ struct AIChatMenuButtonPixelFirer {
         pixelFiring?.fire(AIChatPixel.aiChatTitleBarMenuShown(sidebarEntry: sidebarEntry), frequency: .dailyAndCount)
     }
 
+    func fireMenuOutcome(_ choice: AIChatMenuButtonChoice, context: AIChatMenuButtonContext) {
+        pixelFiring?.fire(AIChatPixel.aiChatTitleBarMenuOutcome(choice: choice, context: context), frequency: .dailyAndCount)
+    }
+
     func fireNewChat(via gesture: NewChatGesture) {
         switch gesture {
         case .menuItem:

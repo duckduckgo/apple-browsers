@@ -7,10 +7,10 @@
 // Swift owns the saved choices, dialogs, and OS authorization. It records a short-lived
 // approval before replying allow. We then call WebKit, and TabViewController consumes that
 // approval in the later WKUIDelegate callback. A bypass reply restores WebKit's
-// flow when the feature is off or the native handler selects the Duck.ai exception.
+// flow on iOS 15 or the native handler selects the Duck.ai exception.
 //
 // Keep message fields in sync with MediaCaptureUserScript.swift. Verify changes with
-// MediaCaptureUserScriptTests in the iOS Browser scheme, including flag transitions.
+// MediaCaptureUserScriptTests in the iOS Browser scheme.
 (() => {
     // Save native methods before page scripts can replace them.
     const apply = Reflect.apply;
@@ -234,7 +234,7 @@
         }
 
         const isCrossOrigin = !isSameOriginAsTopLevel;
-        // Send ineligible requests too: Swift checks rollback before denying custom-flow requests.
+        // Send ineligible requests too: Swift returns them to WebKit when site permissions is off.
         const isEligibleContext = this === mediaDevices && hasNonOpaqueOrigin && (isDuckAIHost || (isSecureContext &&
             !isSyntheticDocument &&
             (isCrossOrigin || ((!video || policyAllows("camera")) &&

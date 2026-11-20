@@ -19,10 +19,10 @@ name: test_contextual_web_uti_auto_attach_regression
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "false"
         ff.aiChatAutoAttachContextByDefault: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+@_spi(Testing) import PixelKit
 import WebExtensions
 import WebKit
 import XCTest
@@ -28,6 +29,7 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
     private var alertPresenter: WebExtensionAlertPresenterMock!
     private var limitation: NativeMessagingLimitationMock!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var pixels: PixelKitMock!
     private var presenter: NativeMessagingAlertPresenter!
 
     override func setUp() {
@@ -35,15 +37,18 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         alertPresenter = WebExtensionAlertPresenterMock()
         limitation = NativeMessagingLimitationMock()
         windowControllersManager = WindowControllersManagerMock()
+        pixels = PixelKitMock()
         presenter = NativeMessagingAlertPresenter(
             limitationProvider: { [unowned self] in limitation },
             alertPresenter: alertPresenter,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixels
         )
     }
 
     override func tearDown() {
         presenter = nil
+        pixels = nil
         windowControllersManager = nil
         limitation = nil
         alertPresenter = nil
@@ -58,10 +63,10 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         await explain(bitwarden, bitwarden, onePassword)
 
         XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), [
-            "Bitwarden can’t connect to apps on your Mac",
-            "1Password can’t connect to apps on your Mac"
+            "Bitwarden can’t connect to other apps on your Mac",
+            "1Password can’t connect to other apps on your Mac"
         ])
-        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show this again for Bitwarden"))
+        XCTAssertEqual(alertPresenter.presentedConfigurations.first?.checkbox, .suppression("Don’t show again for Bitwarden"))
         XCTAssertEqual(limitation.suppressed, [bitwarden.uniqueIdentifier, onePassword.uniqueIdentifier])
     }
 
@@ -74,6 +79,10 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.showCalled?.url, .ddgLearnMore)
         XCTAssertEqual(windowControllersManager.showCalled?.newTab, true)
         XCTAssertEqual(limitation.suppressed, [bitwarden.uniqueIdentifier])
+        XCTAssertEqual(pixels.actualFireCalls, [
+            alertShownPixel(source: .permissionRequest),
+            ExpectedFireCall(pixel: WebExtensionPixel.nativeMessagingAlertLearnMoreClicked(extension: .catalog(.bitwarden)), frequency: .dailyAndCount)
+        ])
     }
 
     func testWhenTheActionIsClickedThenOnlyLimitedExtensionsThatRequireNativeMessagingShowTheAlert() async throws {
@@ -83,7 +92,12 @@ final class NativeMessagingAlertPresenterTests: XCTestCase {
 
         await clickAction(of: onePassword, bitwarden, neverLimited)
 
-        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), ["1Password can’t connect to apps on your Mac"])
+        XCTAssertEqual(alertPresenter.presentedConfigurations.map(\.title), ["1Password can’t connect to other apps on your Mac"])
+        XCTAssertEqual(pixels.actualFireCalls, [alertShownPixel(source: .toolbarClick)])
+    }
+
+    private func alertShownPixel(source: NativeMessagingAlertSource) -> ExpectedFireCall {
+        ExpectedFireCall(pixel: WebExtensionPixel.nativeMessagingAlertShown(extension: .catalog(.bitwarden), source: source), frequency: .dailyAndCount)
     }
 
     private func explain(_ contexts: WKWebExtensionContext...) async {
@@ -144,4 +158,5 @@ private final class NativeMessagingLimitationMock: NativeMessagingLimitationProv
     func hasHitNativeMessagingLimitation(identifier: String) -> Bool { limited.contains(identifier) }
     func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { suppressed.contains(identifier) }
     func suppressNativeMessagingAlert(identifier: String) { suppressed.append(identifier) }
+    func pixelExtension(identifier: String) -> WebExtensionPixelExtension { .catalog(.bitwarden) }
 }

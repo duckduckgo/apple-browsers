@@ -190,6 +190,48 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A call native can't read or for a capability it never shipped fires a protocol error without the raw name",
+          .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatProtocolErrorsFireWithASlugOrUnknown() async {
+        let unreadable: [String: Any] = ["callId": "call-1", "capability": ["name": "searchHistory", "version": 1], "input": [:], "extra": true]
+        let unknownName: [String: Any] = ["callId": "call-2", "capability": ["name": "madeUpTool", "version": 1], "input": [:]]
+        let unknownVersion: [String: Any] = ["callId": "call-3", "capability": ["name": "listOpenTabs", "version": 9], "input": [:]]
+
+        _ = await handler.executeClientTool(params: unreadable, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        let unknownNameResponse = await handler.executeClientTool(params: unknownName, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        _ = await handler.executeClientTool(params: unknownVersion, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        _ = await handler.executeClientTool(params: "not an object", message: WKScriptMessage.mock(), permissionPrompter: nil)
+        let rawName: [String: Any] = ["callId": "call-4", "capability": ["name": "https://example.com", "version": 1], "input": [:]]
+        _ = await handler.executeClientTool(params: rawName, message: WKScriptMessage.mock(), permissionPrompter: nil)
+
+        #expect(unknownNameResponse as? ExecuteClientToolResponse == .failure(callId: "call-2", error: .unavailable))
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == Array(repeating: "aichat_tools_protocol_error_macos", count: 5))
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.parameters) == [
+            ["reason": "invalid_request", "tool": "search_history"],
+            ["reason": "unknown_capability", "tool": "unknown"],
+            ["reason": "unknown_capability", "tool": "list_open_tabs"],
+            ["reason": "invalid_request", "tool": "unknown"],
+            ["reason": "invalid_request", "tool": "unknown"]
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A known tool and Fire windows fire no protocol error", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatKnownToolsAndFireWindowsFireNoProtocolError() async {
+        let known: [String: Any] = ["callId": "call-1", "capability": ["name": "searchBookmarks", "version": 1], "input": [:]]
+        let unknown: [String: Any] = ["callId": "call-2", "capability": ["name": "madeUp", "version": 1], "input": [:]]
+
+        _ = await handler.executeClientTool(params: known, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        handler.isFireWindowProvider = { true }
+        _ = await handler.executeClientTool(params: unknown, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        _ = await handler.executeClientTool(params: ["extra": true], message: WKScriptMessage.mock(), permissionPrompter: nil)
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("executeClientTool from a page without a permission source is unavailable", .timeLimit(.minutes(1)))
     @MainActor
     func testThatExecuteClientToolWithoutAPermissionSourceIsUnavailable() async {

@@ -12,7 +12,8 @@ Removing a flag turns one of its two code paths into the only one. Know which be
   deletes the feature's code entirely.
 
 - **Experiment** (has a cohort enum): "approved" doesn't say which cohort won. Keep the winning
-  cohort's path, and ask if you weren't told which one it is.
+  cohort's path, and ask if you weren't told which one it is. The experiment must already have
+  ended in the remote configuration: enrolled users keep sending its metrics until it does.
 
 If you weren't told which, ask. Don't infer it from the flag's default value.
 

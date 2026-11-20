@@ -23,8 +23,8 @@ import ApplicationServices
 // verify.sh builds it into ../.bin/ax and calls it; in a VM it runs over ssh.
 // The process that runs it needs the Accessibility grant (and Screen Recording for screenshots).
 // Target: the app whose name contains $VERIFY_APP (e.g. "verify-tool-prompt").
-// Usage: ax dump [depth] [web] | find <text> | press <idOrText> [nth=<n>] | clickel <idOrText> [nth=<n>]
-//        | hover <idOrText> [nth=<n>] | click x y [cmd]
+// Usage: ax dump [depth] [web] | find <text> | findmain <text> | press <idOrText> [nth=<n>]
+//        | clickel <idOrText> [nth=<n>] | hover <idOrText> [nth=<n>] | click x y [cmd]
 //        | type <text> | key <code> [cmd|shift|opt|ctrl]... | activate | frame | front | winrect | setwin x y w h
 //        | grants | appearance [light|dark]
 // Refusals exit nonzero before anything is done: APP NOT RUNNING, NOT FRONTMOST, NOT FOUND, AMBIGUOUS, DISABLED, OFF WINDOW,
@@ -231,6 +231,14 @@ case "dump":
 case "find":
     let q = rest.joined(separator: " ")
     walk(root, depth: 0, max: 60) { e, _ in
+        if matches(e, q) { print(describe(e)) }
+        return true
+    }
+case "findmain":
+    // find, in the main (front) window only: other windows' tabs and toolbars don't count.
+    guard let w = attr(root, kAXMainWindowAttribute) else { print("NO MAIN WINDOW"); exit(2) }
+    let q = rest.joined(separator: " ")
+    walk(w as! AXUIElement, depth: 0, max: 60) { e, _ in
         if matches(e, q) { print(describe(e)) }
         return true
     }

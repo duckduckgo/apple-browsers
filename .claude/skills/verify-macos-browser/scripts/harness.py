@@ -134,6 +134,7 @@ class Record:
         self.problems = []      # cleanup or evidence failures: never dropped
         self.warnings = []
         self.notes = []
+        self.unpinned = []      # FLAGS the base revision doesn't define, so its run of prove --base didn't pin them
         self.unverified = []    # (what, why)
         self.shots = []         # screenshot files the proof took, in order
         self.phase = "setup"    # setup | proof | cleanup: how far the run got
@@ -144,6 +145,7 @@ class Record:
         self.video = {}         # None when off (--no-video); else path, seconds, bytes once written, error if it failed
         self.hosts = None       # hosts the app loaded pages or resources from; None when not collected (AUTOMATION off)
         self.conditions = {}    # appearance and window as read back from the target, for the manifest
+        self.tokens = []        # (token, prefix) issued this run, left out of prove --base's match keys
 
 
 # ---------------------------------------------------------------- hosts the app loaded
@@ -166,11 +168,12 @@ def undeclared(hosts, live):
 
 
 def evidence_kind(live, hosts):
-    """What the evidence rests on: declared or undeclared live services, local pages only, or unknown."""
+    """What the evidence rests on: declared or undeclared live services, none observed, or unknown. Hosts are read from
+    navigate(), url() and the last page, so a live page opened and left in between goes unseen."""
     services = list(live) + undeclared(hosts, live)
     if services:
         return "live: " + ", ".join(services)
-    return "local pages only" if hosts is not None else "unknown: hosts not collected (AUTOMATION is off)"
+    return "no live hosts observed" if hosts is not None else "unknown: hosts not collected (AUTOMATION is off)"
 
 
 def label(rec):
@@ -349,8 +352,9 @@ class Mac:
         return [line for line in self._do("ax", "find", target).splitlines() if line.strip()]
 
     def tab_count(self):
+        """Tabs in the front window; other windows' tabs don't count."""
         # The id alone: each tab's close button is TabBarViewItem.closeButton.
-        return sum(" id=TabBarViewItem " in line for line in self.find("TabBarViewItem"))
+        return sum(" id=TabBarViewItem " in line for line in self._do("ax", "findmain", "TabBarViewItem").splitlines())
 
     def url(self):
         """The current tab's URL, through the AutomationServer (AUTOMATION = True)."""
@@ -466,7 +470,9 @@ class Mac:
     # fixture pages ----------------------------------------------------------
     def token(self, prefix="t"):
         """A fresh token for this run, e.g. "t-1a2b3c4d"; never reuse one."""
-        return f"{prefix}-{uuid.uuid4().hex[:8]}"
+        token = f"{prefix}-{uuid.uuid4().hex[:8]}"
+        self.rec.tokens.append((token, prefix))
+        return token
 
     def fixture_url(self, token):
         """The skill's fixture page showing `token`, served for this run only at 127.0.0.1, for the app on this Mac
@@ -658,6 +664,10 @@ def _on_signal(signum, _frame):
     raise _Stop(signal.Signals(signum).name)
 
 
+def _ignore(_signum, _frame):
+    pass
+
+
 def _alive(pid_file):
     try:
         os.kill(int(open(pid_file).readline()), 0)   # the first line; the rest is its identity (verify.sh)
@@ -676,7 +686,12 @@ def checkout_of(path):
 
 def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary).
-    Raises Refused, before anything is written, for an --evidence-dir inside a git checkout."""
+    Raises Refused, before anything is written, for an --evidence-dir inside a git checkout.
+    Without --evidence-dir, a proof in an attempt folder outside HOME (from new-proof --evidence-dir) runs there."""
+    parent = os.path.dirname(os.path.realpath(path))
+    if not evidence_dir and ATTEMPT.fullmatch(os.path.basename(parent)) \
+            and os.path.dirname(parent) != os.path.realpath(HOME):
+        evidence_dir = os.path.dirname(parent)
     root = evidence_root(evidence_dir)
     mod, problems = load(path, checkout)
     if problems:
@@ -690,6 +705,15 @@ def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
     verdict, code = label(rec)
     return code, dict(ok=code == 0, verdict=verdict, reason=rec.error, problems=rec.problems, proof=proof,
                       evidence=evidence, report=os.path.join(evidence, "report.md"))
+
+
+def flags_to_pin(flags, checkout, as_base):
+    """(FLAGS to pin, FLAGS skipped). The base run of prove --base skips a flag its revision doesn't define, since the
+    change may add it; every other run pins them all, and check refuses one this checkout doesn't define."""
+    if not (as_base and flags):
+        return flags, []
+    names = vhelp.feature_flags(checkout)[0]
+    return {k: v for k, v in flags.items() if k in names}, [k for k in flags if k not in names]
 
 
 def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_dir, as_base=False, reset=False,
@@ -718,7 +742,10 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
                 raise ProofError("reset before the run failed, so the run stopped before launching: "
                                  + ("; ".join(failed) if failed else f"exit {code}: {_line(out[-300:])}"))
         set_conditions(mac, conditions, target, launched=False)
-        for name, on in getattr(mod, "FLAGS", {}).items():
+        flags, rec.unpinned = flags_to_pin(getattr(mod, "FLAGS", {}), checkout, as_base)
+        for name in rec.unpinned:
+            rec.notes.append(f"FLAGS: {name} is not defined on the base revision, so this run doesn't pin it")
+        for name, on in flags.items():
             mac._do("flag", name, "on" if on else "off")
         mac._do("build", checkout, *(["--automation"] if mac.automation else []),
                 "--language", conditions.get("language", "en"), "--locale", conditions.get("locale", "en_US"))
@@ -742,7 +769,8 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
                 f.write(traceback.format_exc())
     finally:
         for s in old:   # capture, cleanup and the report must not be interrupted
-            signal.signal(s, signal.SIG_IGN)
+            # A no-op handler, not SIG_IGN: children (ssh, log show) get the default back, so they stay killable.
+            signal.signal(s, _ignore)
     try:
         _finish(mac, rec, evidence)
         manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target, shown_dir,
@@ -774,10 +802,16 @@ def set_conditions(mac, conditions, target, launched):
     registered before the change, so a change that fails halfway is still undone."""
     rec = mac.rec
     if not launched:
-        rec.conditions["appearance"] = _readback(mac._do("appearance", "restore"), "appearance")
-        if "appearance" in conditions:
-            mac.undo.append(("appearance", ("appearance", "restore")))
-            rec.conditions["appearance"] = _readback(mac._do("appearance", conditions["appearance"]), "appearance")
+        if "appearance" not in conditions:   # nothing declared: a restore that fails can't spoil the proof
+            code, out = mac._sh("appearance", "restore")
+            if code:
+                rec.problems.append(f"appearance not restored (exit {code}): {_line(out[-300:])}")
+            else:
+                rec.conditions["appearance"] = _readback(out, "appearance")
+            return
+        mac._do("appearance", "restore")
+        mac.undo.append(("appearance", ("appearance", "restore")))
+        rec.conditions["appearance"] = _readback(mac._do("appearance", conditions["appearance"]), "appearance")
         return
     if "window" in conditions:
         if target == "mac":   # this Mac's Debug app keeps its window frame; a VM's app data is wiped at reservation
@@ -802,7 +836,8 @@ def _record(mac, rec, step):
     if written:
         rec.video.update(path=VIDEO, seconds=float(written[1]), bytes=int(written[2]))
     if code:
-        rec.video["error"] = f"screen recording {'not started' if step == 'start' else 'failed'}: {_line(out[-300:])}"
+        outcome = "not started" if step == "start" else "cut short" if "CUT:" in out else "failed"
+        rec.video["error"] = f"screen recording {outcome}: {_line(out[-300:])}"
         rec.problems.append(rec.video["error"])
 
 

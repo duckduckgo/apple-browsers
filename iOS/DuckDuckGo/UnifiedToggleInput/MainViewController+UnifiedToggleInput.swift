@@ -1127,6 +1127,7 @@ extension MainViewController {
         if isIPadFullTabChatInput {
             // iPad keeps its own address bar and tabs bar, which already carry fire and the app menu.
             coordinator.viewController.setFlankingAccessoriesVisible([])
+            updateIPadChatListButtonPlacement()
             return
         }
         let isOnAITab = currentTab?.isAITab == true

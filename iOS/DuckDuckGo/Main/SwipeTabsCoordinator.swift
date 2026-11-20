@@ -353,6 +353,13 @@ class SwipeTabsCoordinator: NSObject {
     private var pendingSettleCleanup: DispatchWorkItem?
     private var pendingSnapCommit: DispatchWorkItem?
 
+    /// `refresh` reloads the collection view, which UIKit doesn't allow while that collection view is
+    /// still inside its own scroll callback or a reload. Calls made then are coalesced into one
+    /// refresh on the next main queue turn.
+    private var isRefreshing = false
+    private var isHandlingScrollCallback = false
+    private var pendingRefresh: (tabsModel: TabsModelManaging, scrollToSelected: Bool)?
+
     /// Chrome views (e.g. UTI bar overlay, AI tab header) snapshotted and slid in lockstep with
     /// `currentView` during an external pan — sliding the live views breaks `UIVisualEffectView`
     /// blur and exposes nested shadow/card layers as "stacked screens." See
@@ -1356,6 +1363,12 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
 
+        // Selecting or opening a tab below calls back into `refresh`; this can run from inside a
+        // focus change (e.g. a text field scrolling itself visible), so that reload must wait.
+        let wasHandlingScrollCallback = isHandlingScrollCallback
+        isHandlingScrollCallback = true
+        defer { isHandlingScrollCallback = wasHandlingScrollCallback }
+
         // Defer cleanup to the next runloop tick. `selectTab` synchronously triggers the tab
         // swap (adding the destination's webview / NTP to `contentContainer`), but the new
         // view typically needs one runloop iteration to lay out and produce its first paint.
@@ -1422,6 +1435,13 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 extension SwipeTabsCoordinator {
 
     func refresh(tabsModel: TabsModelManaging, scrollToSelected: Bool = false) {
+        guard !isRefreshing, !isHandlingScrollCallback else {
+            deferRefresh(tabsModel: tabsModel, scrollToSelected: scrollToSelected)
+            return
+        }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
         if liveDestinationController != nil || liveSourceChromeView != nil || !liveChromeControllers.isEmpty {
             cleanUpViews()
             state = .idle
@@ -1435,6 +1455,22 @@ extension SwipeTabsCoordinator {
             scrollToCurrent()
             collectionView.layoutIfNeeded()
         }
+    }
+
+    private func deferRefresh(tabsModel: TabsModelManaging, scrollToSelected: Bool) {
+        let isAlreadyScheduled = pendingRefresh != nil
+        pendingRefresh = (tabsModel: tabsModel,
+                          scrollToSelected: scrollToSelected || pendingRefresh?.scrollToSelected == true)
+        guard !isAlreadyScheduled else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.performPendingRefresh()
+        }
+    }
+
+    private func performPendingRefresh() {
+        guard let pendingRefresh else { return }
+        self.pendingRefresh = nil
+        refresh(tabsModel: pendingRefresh.tabsModel, scrollToSelected: pendingRefresh.scrollToSelected)
     }
 
     func addressBarPositionChanged(isTop: Bool) {

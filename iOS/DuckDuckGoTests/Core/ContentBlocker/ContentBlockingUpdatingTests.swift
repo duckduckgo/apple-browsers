@@ -129,103 +129,58 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRequiredAssetsTimeOutThenNavigationCancelsOnceAndRefreshRetriesItsURL() async throws {
+    func testWhenAssetsArriveWithoutGeolocationThenNavigationKeepsWaiting() async throws {
+        let assets = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        let controller = UserContentController(assetsPublisher: assets, privacyConfigurationManager: configManager)
+        defer { controller.cleanUpBeforeClosing() }
+        let pixelFiring = PixelKitMock()
+        let notifications = NotificationCenter()
+        let tab = TabViewController.fake(customWebView: { configuration in
+            (configuration.userContentController as? UserContentController)?.cleanUpBeforeClosing()
+            configuration.userContentController = controller
+            return MockWebView(frame: .zero, configuration: configuration)
+        }, featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true, pixelFiring: pixelFiring)
+        tab.contentBlockingWaitNotificationCenter = notifications
+        tab.contentBlockingWaitPixelTimeout = 0
+
+        let cancelled = expectation(description: "Only teardown ends the wait")
+        cancelled.assertForOverFulfill = true
+        var decisions = [Bool]()
+        XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
+            decisions.append(ready)
+            cancelled.fulfill()
+        }, for: URL(string: "https://example.com")!))
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        let installed = expectation(description: "Assets without geolocation are installed")
+        let subscription = controller.$contentBlockingAssets.compactMap { $0 }.first().sink { _ in installed.fulfill() }
+        defer { subscription.cancel() }
+        assets.send(.init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
+                          sourceProvider: makeScriptSourceProvider(),
+                          duckAiNativeStorageHandler: nil,
+                          sponsorBlockPreferences: sponsorBlockPreferences))
+        await fulfillment(of: [installed], timeout: 10)
+
+        notifications.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        try await assertTimeoutPixelFires(pixelFiring)
+        XCTAssertTrue(decisions.isEmpty, "Assets without geolocation must not resume the navigation")
+
+        tab.closeSitePermissions()
+        await fulfillment(of: [cancelled], timeout: 2)
+        XCTAssertEqual(decisions, [false])
+        XCTAssertFalse(tab.isError)
+    }
+
+    @MainActor
+    func testWhenMainFrameNavigationReplacesAWaitThenOnlyTheNewDecisionCanResume() async throws {
         let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
                                         featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 0.03
+        tab.contentBlockingWaitPixelTimeout = 3600
+        let compilationPixels = PixelKitMock()
+        tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
         let webView = try XCTUnwrap(tab.webView as? MockWebView)
-        let failedURL = try XCTUnwrap(URL(string: "https://example.com/failed"))
-        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", request: URLRequest(url: failedURL))
-        let action = MockNavigationAction(request: URLRequest(url: failedURL), navigationType: .other, targetFrame: frame)
-        let cancelled = expectation(description: "Timed-out navigation cancelled")
-        cancelled.assertForOverFulfill = true
-        var decisions = [WKNavigationActionPolicy]()
-        tab.webView(webView, decidePolicyFor: action) { policy in
-            decisions.append(policy)
-            cancelled.fulfill()
-        }
-        await fulfillment(of: [cancelled], timeout: 1)
-        XCTAssertEqual(decisions, [.cancel])
-        XCTAssertTrue(tab.isError)
-        XCTAssertEqual(tab.errorText, URLError(.timedOut).localizedDescription)
-        XCTAssertEqual(tab.url, failedURL)
-        XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
-        XCTAssertEqual(webView.loadCallCount, 0, "Timeout must not automatically retry")
-
-        let controller = try XCTUnwrap(webView.configuration.userContentController as? UserContentController)
-        let installed = expectation(description: "Late assets installed")
-        let subscription = controller.$contentBlockingAssets.compactMap { $0 }.first().sink { _ in installed.fulfill() }
-        rulesManager.updatesSubject.send(Self.testUpdate())
-        await fulfillment(of: [installed], timeout: 10)
-        subscription.cancel()
-        XCTAssertEqual(decisions, [.cancel], "Late readiness must not resume a timed-out decision")
-        XCTAssertTrue(tab.isError)
-        XCTAssertEqual(webView.loadCallCount, 0)
-
-        let retried = expectation(description: "Refresh retries attempted URL")
-        webView.loadCompletionHandler = { retried.fulfill() }
-        tab.refresh()
-        await fulfillment(of: [retried], timeout: 1)
-        XCTAssertEqual(webView.lastLoadedRequest?.url, failedURL)
-        XCTAssertEqual(webView.loadCallCount, 1)
-    }
-
-    @MainActor
-    func testWhenUnrelatedAssetsKeepArrivingThenTheyDoNotExtendTheGeolocationDeadline() async throws {
-        let originalReleased = expectation(description: "Displaced content controller released")
-        let replacementReleased = expectation(description: "Fixture content controller released after timeout")
-        func exerciseTimeout() async throws {
-            let assets = PassthroughSubject<NonGeolocationContent, Never>()
-            let controller = UserContentController(assetsPublisher: assets, privacyConfigurationManager: configManager)
-            controller.onDeinit { replacementReleased.fulfill() }
-            let tab = TabViewController.fake(customWebView: { configuration in
-                if let originalController = configuration.userContentController as? UserContentController {
-                    originalController.onDeinit { originalReleased.fulfill() }
-                    // Replacing the controller transfers its teardown responsibility to this fixture.
-                    originalController.cleanUpBeforeClosing()
-                } else {
-                    XCTFail("Tab must install its content controller before creating the web view")
-                }
-                configuration.userContentController = controller
-                return WKWebView(frame: .zero, configuration: configuration)
-            }, featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true)
-            tab.specialErrorPageNavigationHandler.delegate = nil
-            defer { tab.prepareForDataClearing() }
-            tab.sitePermissionsNavigationTimeout = 0.3
-            var installedCount = 0
-            let installedSubscription = controller.$contentBlockingAssets.compactMap { $0 }.sink { _ in installedCount += 1 }
-            let updates = Timer.publish(every: 0.02, on: .main, in: .common).autoconnect().sink { _ in
-                assets.send(NonGeolocationContent())
-            }
-            defer {
-                updates.cancel()
-                installedSubscription.cancel()
-            }
-            let cancelled = expectation(description: "Nonready updates cannot postpone deadline")
-            cancelled.assertForOverFulfill = true
-            XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
-                XCTAssertFalse(ready)
-                cancelled.fulfill()
-            }, for: URL(string: "https://example.com")!))
-            await fulfillment(of: [cancelled], timeout: 2)
-            XCTAssertGreaterThan(installedCount, 1)
-            XCTAssertTrue(tab.isError)
-            XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
-        }
-        try await exerciseTimeout()
-        await fulfillment(of: [originalReleased, replacementReleased], timeout: 2)
-    }
-
-    @MainActor
-    func testWhenMainFrameNavigationReplacesAWaitThenOnlyTheNewDecisionCanResume() async throws {
-        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
-                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
-        tab.specialErrorPageNavigationHandler.delegate = nil
-        defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 0.25
         let cancelled = expectation(description: "Superseded main-frame decision cancelled")
         cancelled.assertForOverFulfill = true
         let continued = expectation(description: "Replacement decision resumes with required assets")
@@ -237,27 +192,28 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             return MockNavigationAction(request: request, navigationType: .other,
                                         targetFrame: .mock(isMainFrame: true, securityOriginHost: "example.com", request: request))
         }
-        tab.webView(tab.webView, decidePolicyFor: action(path: "old")) { policy in
+        tab.webView(webView, decidePolicyFor: action(path: "old")) { policy in
             oldDecisions.append(policy)
             cancelled.fulfill()
         }
         await Task.yield()
-        tab.sitePermissionsNavigationTimeout = 10
-        tab.webView(tab.webView, decidePolicyFor: action(path: "new")) { policy in
+        tab.webView(webView, decidePolicyFor: action(path: "new")) { policy in
             newDecisions.append(policy)
             continued.fulfill()
         }
         await fulfillment(of: [cancelled], timeout: 1)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertTrue(newDecisions.isEmpty)
+        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A superseded wait must not report the rules as compiled")
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [continued], timeout: 10)
-        try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertEqual(newDecisions.count, 1)
         XCTAssertNotEqual(newDecisions.first, .cancel)
-        XCTAssertFalse(tab.isError, "The cancelled deadline must not replace the new page with an error")
-        XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
+        XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
+        XCTAssertTrue(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("m_compilation_result_success_") == true)
+        XCTAssertFalse(tab.isError, "The superseded wait must not replace the new page with an error")
+        XCTAssertEqual(webView.loadCallCount, 0)
     }
 
     @MainActor
@@ -266,7 +222,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                         featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 0.25
+        tab.contentBlockingWaitPixelTimeout = 3600
         let webView = try XCTUnwrap(tab.webView as? MockWebView)
         let oldRequest = URLRequest(url: URL(string: "https://example.com/old")!)
         let action = MockNavigationAction(request: oldRequest, navigationType: .other,
@@ -286,11 +242,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
         // MockWebView.load does not invoke a navigation delegate: replacement itself must cancel the wait.
         await fulfillment(of: [cancelled, loaded], timeout: 1)
-        try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(decisions, [.cancel])
         XCTAssertEqual(webView.lastLoadedRequest?.url, replacementURL)
         XCTAssertEqual(tab.url, replacementURL)
-        XCTAssertFalse(tab.isError, "The old deadline must not replace the new URL with a timeout page")
+        XCTAssertFalse(tab.isError, "The replaced wait must not show an error page")
     }
 
     @MainActor
@@ -348,10 +303,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenGeolocationWaitTimesOutThenPixelCountsOnlyForegroundStalls() async throws {
-        let cases = [(true, "https://example.com", false), (true, "https://duckduckgo.com/?q=maps", false),
-                     (false, "https://example.com", false), (false, "https://duckduckgo.com/?q=maps", true)]
-        for (contentBlockingEnabled, url, backgrounded) in cases {
+    func testWhenGeolocationWaitStallsThenPixelCountsOnlyForegroundTimeAndDoesNotEndTheWait() async throws {
+        let cases = [(true, "https://example.com"), (true, "https://duckduckgo.com/?q=maps"),
+                     (false, "https://example.com"), (false, "https://duckduckgo.com/?q=maps")]
+        for (contentBlockingEnabled, url) in cases {
             let pixelFiring = PixelKitMock()
             let notifications = NotificationCenter()
             let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
@@ -361,21 +316,26 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             let config = try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
             config.enabledFeaturesForVersions = contentBlockingEnabled ? [.contentBlocking: [AppVersionProvider().appVersion() ?? ""]] : [:]
             tab.contentBlockingWaitNotificationCenter = notifications
-            // Equal deadlines mirror production; await the navigation decision instead of racing a sleep.
             tab.contentBlockingWaitPixelTimeout = 0
-            tab.sitePermissionsNavigationTimeout = 0
-            let cancelled = expectation(description: "Geolocation wait times out")
+            let cancelled = expectation(description: "Teardown ends the stalled wait")
+            var decisions = [Bool]()
             XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
-                XCTAssertFalse(ready)
+                decisions.append(ready)
                 cancelled.fulfill()
             }, for: URL(string: url)!))
-            if backgrounded { notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil) }
-            await fulfillment(of: [cancelled], timeout: 10)
-            XCTAssertTrue(tab.isError)
-            XCTAssertNil(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel, "Finished navigations must no longer be measured")
+
+            notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+            try await Task.sleep(nanoseconds: 100_000_000)
+            XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty, "Time in the background must not count")
             notifications.post(name: UIApplication.willEnterForegroundNotification, object: nil)
-            let expected = backgrounded ? [] : [ExpectedFireCall(pixel: ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)]
-            XCTAssertEqual(pixelFiring.actualFireCalls, expected)
+            try await assertTimeoutPixelFires(pixelFiring)
+            XCTAssertTrue(decisions.isEmpty, "Emitting the pixel must not resolve navigation")
+            XCTAssertFalse(tab.isError)
+
+            tab.closeSitePermissions()
+            await fulfillment(of: [cancelled], timeout: 2)
+            XCTAssertEqual(decisions, [false])
+            XCTAssertNil(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel, "Finished navigations must no longer be measured")
         }
     }
 
@@ -390,11 +350,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTabClosesDuringAssetWaitThenCancellationDoesNotPresentTimeoutError() async throws {
+    func testWhenTabClosesDuringAssetWaitThenCancellationDoesNotPresentAnErrorPage() async throws {
         let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 3600
         tab.contentBlockingWaitPixelTimeout = 3600
         try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock).enabledFeaturesForVersions = [:]
         let cancelled = expectation(description: "Teardown cancels the pending decision")
@@ -520,8 +479,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             controller.onDeinit { controllerReleased.fulfill() }
             tab.specialErrorPageNavigationHandler.delegate = nil
             defer { tab.prepareForDataClearing() }
-            tab.sitePermissionsNavigationTimeout = 3600
             tab.contentBlockingWaitPixelTimeout = 3600
+            let compilationPixels = PixelKitMock()
+            tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
             try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock).enabledFeaturesForVersions = [:]
             let request = URLRequest(url: URL(string: "https://example.com/stopped")!)
             let action = MockNavigationAction(request: request, navigationType: .other,
@@ -546,6 +506,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             await fulfillment(of: [installed], timeout: 10)
             subscription.cancel()
             XCTAssertEqual(decisions, [.cancel])
+            XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A stopped wait must not report the rules as compiled")
             XCTAssertFalse(tab.isError)
             XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
         }
@@ -562,7 +523,6 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let config = try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
         config.enabledFeaturesForVersions = [:]
         tab.contentBlockingWaitPixelTimeout = 3600
-        tab.sitePermissionsNavigationTimeout = 3600
         let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
         XCTAssertNil(controller.contentBlockingAssets)
 
@@ -579,17 +539,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertTrue(decisions.isEmpty)
 
         let mainTimer = ObjectIdentifier(try XCTUnwrap(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel))
-        tab.sitePermissionsNavigationTimeout = 0
-        let subframe = expectation(description: "Subframe timeout does not end the main-frame measurement")
+        let subframe = expectation(description: "Subframe wait resumes with the same assets")
         XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
-            XCTAssertFalse(ready)
+            XCTAssertTrue(ready)
             subframe.fulfill()
         }, for: URL(string: "https://example.com")!, isMainFrame: false))
-        XCTAssertEqual(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel.map(ObjectIdentifier.init), mainTimer)
-        await fulfillment(of: [subframe], timeout: 10)
-        XCTAssertEqual(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel.map(ObjectIdentifier.init), mainTimer)
+        XCTAssertEqual(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel.map(ObjectIdentifier.init), mainTimer,
+                       "A subframe wait must not restart the main-frame measurement")
         rulesManager.updatesSubject.send(Self.testUpdate())
-        await fulfillment(of: [resumed], timeout: 10)
+        await fulfillment(of: [resumed, subframe], timeout: 10)
         await pendingTask.value
         XCTAssertNil(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel)
         XCTAssertEqual(decisions, [true])
@@ -642,8 +600,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationPolicyUserScript })
     }
 
+    /// The site permissions navigation wait has no deadline, so every bundle must carry the geolocation script
+    /// it waits for; otherwise a navigation could wait forever once assets have arrived.
     @MainActor
-    func testWhenContentUpdatesThenScriptsKeepLaunchAvailability() {
+    func testWhenContentUpdatesThenEveryBundleCarriesTheLaunchTimeScripts() {
         for enabledAtLaunch in [false, true] {
             let mediaCaptureUserScript = MediaCaptureUserScript()
             let geolocationUserScript = GeolocationUserScript()
@@ -982,18 +942,6 @@ private final class SuspendedGeolocationWebView: WKWebView {
             completionHandler?(String(repeating: "b", count: 32), nil)
         }
     }
-}
-
-private struct NonGeolocationContent: UserContentControllerNewContent {
-    let rulesUpdate = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: [:], completionTokens: [])
-    let sourceProvider: Void = ()
-    var makeUserScripts: @MainActor (()) -> NonGeolocationScripts { { _ in NonGeolocationScripts() } }
-}
-
-@MainActor
-private final class NonGeolocationScripts: UserScriptsProvider {
-    var userScripts: [UserScript] { [] }
-    func loadWKUserScripts() async -> [WKUserScript] { [] }
 }
 
 extension UserContentControllerNewContent {

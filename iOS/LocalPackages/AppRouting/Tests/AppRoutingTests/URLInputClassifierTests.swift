@@ -130,6 +130,15 @@ final class URLInputClassifierTests: XCTestCase {
         XCTAssertTrue(URLInputClassifier.isValidAddressBarURLInput("https://example.com/path"))
         XCTAssertTrue(URLInputClassifier.isValidAddressBarURLInput("example.com"))
     }
+
+    func testWhenAddressBarInputHasNonWebSchemeThenIsValidAddressBarURLInputIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("file:///etc/hosts"))
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("data:text/html,hello"))
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("blob:https://example.com/uuid"))
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("about:blank"))
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("mailto:someone@example.com"))
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("javascript:void(0)"))
+    }
 }
 
 private extension URLInputClassifier {

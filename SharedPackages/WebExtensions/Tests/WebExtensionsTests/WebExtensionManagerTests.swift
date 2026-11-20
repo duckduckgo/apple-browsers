@@ -1313,13 +1313,18 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenPermissionsAreDisabled_ThenDDGIdentityIsPreservedWithoutBundleLookup() async throws {
-        let manager = makeManager()
+    func testWhenPermissionsAreDisabled_ThenUnbundledManifestDoesNotSetEmbeddedIdentity() async throws {
+        var checkedBundle = false
+        let manager = makeManager(bundledExtensionURL: { _ in
+            checkedBundle = true
+            return nil
+        })
         let sourceURL = try makeTestExtensionDirectory(embeddedType: .embedded)
 
         try await manager.installExtension(from: sourceURL)
 
-        XCTAssertEqual(installedExtensionStoringMock.addedExtension?.embeddedType, .embedded)
+        XCTAssertTrue(checkedBundle)
+        XCTAssertNil(installedExtensionStoringMock.addedExtension?.embeddedType)
     }
 
     @MainActor
@@ -3146,6 +3151,18 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(userScripts.contains { WebExtensionLoader.thirdPartyScriptSources.contains($0.source) })
     }
 
+#if os(macOS)
+    @MainActor
+    func testGestureScriptIsInstalledInTheIsolatedWorldBeforeExtensionsLoad() {
+        let manager = makeManager()
+        let scripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let gestureScript = scripts.first { $0.source == WebExtensionPermissionUserGestureScript.source }
+
+        XCTAssertEqual(gestureScript?.injectionTime, .atDocumentStart)
+        XCTAssertEqual(gestureScript?.isForMainFrameOnly, false)
+    }
+#endif
+
     // MARK: - Additional Helpers
 
     @MainActor
@@ -3396,7 +3413,6 @@ final class CatalogNamingWebStore: ChromeWebStoreManaging {
         self.catalogExtensionIDs = catalogExtensionIDs
     }
 
-    var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }

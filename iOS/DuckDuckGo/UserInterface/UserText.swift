@@ -152,6 +152,9 @@ public struct UserText {
     public static let aiChatHistoryMenuChatProtection = NSLocalizedString("aiChat.history.menu.chatProtection", value: "Chat Protection", comment: "Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list.")
     public static let aiChatHistorySearchAccessibilityLabel = NSLocalizedString("aiChat.history.search.a11y", value: "Search", comment: "Accessibility label for the search button in the Duck.ai chat history navigation bar.")
     public static let aiChatHistoryMenuAccessibilityLabel = NSLocalizedString("aiChat.history.menu.a11y", value: "More", comment: "Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar.")
+    public static let aiChatHistorySidebarShowAccessibilityLabel = NSLocalizedString("aiChat.history.sidebar.show.a11y", value: "Show Chats", comment: "Accessibility label for the iPad Duck.ai button that opens the chats sidebar.")
+    public static let aiChatHistorySidebarHideAccessibilityLabel = NSLocalizedString("aiChat.history.sidebar.hide.a11y", value: "Hide Chats", comment: "Accessibility label for the close button of the iPad Duck.ai chats sidebar.")
+    public static let aiChatHistoryFireAllAccessibilityLabel = NSLocalizedString("aiChat.history.fireAll.a11y", value: "Delete All Chats", comment: "Accessibility label for the fire button that deletes every Duck.ai chat from the chats list.")
     public static func aiChatHistoryDeleteAllConfirmationTitle(count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "aiChat.history.deleteAll.confirmation.title", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
@@ -2529,11 +2532,11 @@ public struct UserText {
             comment: "tab attachment selection count. First parameter is selected count; second is attachment limit.")
         return String(format: format, selectedCount, attachmentLimit)
     }
-    public static let aiChatChooseTabsCloseAccessibilityLabel = NotLocalizedString(
+    public static let aiChatChooseTabsCloseAccessibilityLabel = NSLocalizedString(
         "aichat.choose-tabs.close.accessibility-label",
         value: "Close",
         comment: "accessibility label for closing the tab attachment picker without applying changes")
-    public static let aiChatChooseTabsConfirmAccessibilityLabel = NotLocalizedString(
+    public static let aiChatChooseTabsConfirmAccessibilityLabel = NSLocalizedString(
         "aichat.choose-tabs.confirm.accessibility-label",
         value: "Attach selected tabs",
         comment: "accessibility label for applying the tab attachment selection")

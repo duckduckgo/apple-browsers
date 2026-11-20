@@ -29,12 +29,13 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Unlock DuckDuckGo."
 - inputText: "password"
 - pressKey: Enter
+# The New Tab page raises its keyboard once App Lock is unlocked.
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 - assertVisible:
     id: "searchEntry"
@@ -65,7 +66,6 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Privacy Test Pages"

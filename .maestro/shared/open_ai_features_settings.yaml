@@ -15,6 +15,6 @@ appId: com.duckduckgo.mobile.ios
     element:
       text: "AI Features"
     direction: DOWN
-    centerElement: true
+    centerElement: false
 - tapOn: "AI Features"
 - waitForAnimationToEnd

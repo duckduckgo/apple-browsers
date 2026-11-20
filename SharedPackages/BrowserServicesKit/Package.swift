@@ -796,11 +796,13 @@ let package = Package(
         .testTarget(
             name: "ConfigurationTests",
             dependencies: [
+                .product(name: "Common", package: "Common"),
                 "SharedObjCTestsUtils",
                 "Configuration",
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SyncDataProvidersTests",

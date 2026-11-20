@@ -27,7 +27,7 @@ import Foundation
 /// reports calls to placeholders to the API compatibility log.
 ///
 /// Some namespaces are implemented rather than placeholders:
-/// - On macOS, `chrome.downloads.download` saves base64 attachments through a browser-owned Save panel.
+/// - On macOS, `chrome.downloads.download` saves data and same-extension blob URLs through a browser-owned Save panel.
 ///   Its completion event is delivered to the page that requested the download.
 /// - `chrome.idle`, on macOS: the state (`locked`, `idle` or `active`) comes from the app through
 ///   `idleMessageHandlerName`, and `onStateChanged` polls while it has listeners.
@@ -96,10 +96,10 @@ public enum WebExtensionAPIStubScript {
     static let providedPermissionNames = Set(localPermissionNames + WebExtensionAppPermission.allCases.map(\.rawValue))
 #if os(macOS)
     private static let downloadBridgeEnabled = true
-    private static let maximumDownloadURLLength = WebExtensionDownload.maximumURLLength
+    private static let maximumDataURLLength = WebExtensionDownload.maximumDataURLLength
 #else
     private static let downloadBridgeEnabled = false
-    private static let maximumDownloadURLLength = 0
+    private static let maximumDataURLLength = 0
 #endif
 
     /// `names` as a JavaScript array literal.
@@ -995,12 +995,15 @@ public enum WebExtensionAPIStubScript {
                 hasListener: function(listener) { return listeners.has(listener); },
                 hasListeners: function() { return listeners.size > 0; }
             };
-            // Download events are scoped to the initiating page. Only a basename crosses the bridge.
+            // Download events are scoped to the initiating page. The reply contains only the basename and ID.
             downloads.download = function(options, callback) {
                 var promise = Promise.resolve().then(function() {
-                    if (!options || typeof options.url !== "string" || options.url.length > \(maximumDownloadURLLength) ||
+                    if (!options || typeof options.url !== "string" ||
                         typeof options.filename !== "string" || options.filename.length > 255 || Object.keys(options).length !== 2) {
-                        throw new Error("Unsupported download options or file size");
+                        throw new Error("Unsupported download options");
+                    }
+                    if (/^data:/i.test(options.url) && options.url.length > \(maximumDataURLLength)) {
+                        throw new Error("Attachment data URL is too long");
                     }
                     var handler = globalThis.webkit && globalThis.webkit.messageHandlers["\(Self.downloadMessageHandlerName)"];
                     if (!handler) { throw new Error("Extension downloads are unavailable"); }

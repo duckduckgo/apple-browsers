@@ -26,31 +26,31 @@ import XCTest
 
 final class WebExtensionDownloadTests: XCTestCase {
 
-    func testOnlyBase64DataAndSafeSingleComponentNamesAreAccepted() throws {
-        let url = "data:attachment/file;base64,AAEC"
-        let request = try XCTUnwrap(WebExtensionDownload(options: ["url": url, "filename": "Résumé.pdf"]))
-        XCTAssertEqual(try request.decode(), Data([0, 1, 2]))
-        for name in ["", ".hidden", "../escape", "/destination", "a\\b", "a:b", "a\nb", "a\u{202E}fdp", "file."] {
-            XCTAssertNil(WebExtensionDownload(options: ["url": url, "filename": name]))
-        }
-        for url in ["https://example.com", "file:///tmp/test", "blob:null/test", "data:text/plain,abc"] {
-            XCTAssertNil(WebExtensionDownload(options: ["url": url, "filename": "file"]))
-        }
-        XCTAssertNil(WebExtensionDownload(options: ["url": url, "filename": "file", "conflictAction": "overwrite"]))
-        let invalid = try XCTUnwrap(WebExtensionDownload(options: ["url": "data:attachment/file;base64,%20!", "filename": "file"]))
-        XCTAssertThrowsError(try invalid.decode())
-        let oversized = String(repeating: "A", count: WebExtensionDownload.maximumURLLength)
-        XCTAssertNil(WebExtensionDownload(options: ["url": "data:;base64," + oversized, "filename": "file"]))
+    private let origin = URL(string: "webkit-extension://owner/")!
+
+    private func request(_ url: String, filename: String = "file") -> WebExtensionDownload? {
+        WebExtensionDownload(options: ["url": url, "filename": filename], extensionBaseURL: origin)
     }
 
-    func testDataURLMediaTypeIsOptionalAndCannotContainParametersOrNonVisibleASCII() throws {
-        let options = ["url": "data:;base64,AAEC", "filename": "file"]
-        let download = try XCTUnwrap(WebExtensionDownload(options: options))
-        XCTAssertEqual(try download.decode(), Data([0, 1, 2]))
+    func testRequiresSafeSingleComponentFilenameAndKnownOptions() {
+        let url = "data:attachment/file;base64,AAEC"
+        XCTAssertNotNil(request(url, filename: "Résumé.pdf"))
+        for name in ["", ".hidden", "../escape", "/destination", "a\\b", "a:b", "a\nb", "a\u{202E}fdp", "file."] {
+            XCTAssertNil(request(url, filename: name))
+        }
+        let extraOptions = ["url": url, "filename": "file", "conflictAction": "overwrite"]
+        XCTAssertNil(WebExtensionDownload(options: extraOptions, extensionBaseURL: origin))
+    }
 
-        for mediaType in ["text/plain;charset=utf-8", "text/ plain", "text/\nplain", "text/café"] {
-            let url = "data:\(mediaType);base64,AAEC"
-            XCTAssertNil(WebExtensionDownload(options: ["url": url, "filename": "file"]), mediaType)
+    func testAcceptsDataURLsAndOnlyObjectURLsFromTheCallingExtension() {
+        let id = UUID().uuidString
+        XCTAssertNotNil(request("data:;base64,"))
+        XCTAssertNotNil(request("data:text/plain;charset=utf-8,hello%20world"))
+        XCTAssertNotNil(request("blob:webkit-extension://owner/\(id)"))
+        for url in ["https://example.com", "file:///tmp/test", "data:attachment/file", "blob:null/\(id)",
+                    "blob:https://owner/\(id)", "blob:webkit-extension://other/\(id)", "blob:webkit-extension://owner.evil/\(id)",
+                    "blob:webkit-extension://owner@other/\(id)", "blob:webkit-extension://owner:42/\(id)"] {
+            XCTAssertNil(request(url), url)
         }
     }
 
@@ -61,8 +61,10 @@ final class WebExtensionDownloadTests: XCTestCase {
         let destination = directory.appendingPathComponent("selected.txt")
         let target = directory.appendingPathComponent("existing.txt")
         try Data([5]).write(to: target)
-        let stage = try WebExtensionDownload.StagedFile(data: Data([7]), destination: destination)
+        let stage = try WebExtensionDownload.StagedFile(destination: destination)
         defer { stage.cleanUp() }
+        try Data([7]).write(to: stage.file)
+        try stage.prepareForPublication()
         try FileManager.default.createSymbolicLink(at: destination, withDestinationURL: target)
         XCTAssertThrowsError(try stage.publish(to: destination))
         XCTAssertThrowsError(try stage.publish(to: target))
@@ -79,7 +81,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
     private var permissionController: WebExtensionPermissionController!
     private var context: WKWebExtensionContext!
     private var directory: URL!
-    private var view: WKWebView!
+    private var view: DownloadTestWebView!
     private var loaded: XCTestExpectation!
     private let window = NSWindow()
     private let options = ["url": "data:attachment/file;base64,AAEC", "filename": "sample.bin"]
@@ -107,7 +109,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         handler.presentationWindow = { [unowned self] _, _ in self.window }
         handler.permissionController = { [unowned self] in self.permissionController }
         let config = try XCTUnwrap(context.webViewConfiguration)
-        view = WKWebView(frame: .zero, configuration: config)
+        view = DownloadTestWebView(frame: .zero, configuration: config)
         view.navigationDelegate = self
         loaded = expectation(description: "Extension page loaded")
         view.load(URLRequest(url: context.baseURL.appendingPathComponent("page.html")))
@@ -130,10 +132,12 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertTrue(granted)
     }
 
-    private func download() async throws -> String? {
-        try await view.callAsyncJavaScript("""
+    private func download(url: String? = nil) async throws -> String? {
+        var request = options
+        if let url { request["url"] = url }
+        return try await view.callAsyncJavaScript("""
             try { await chrome.downloads.download(options); return "saved"; } catch (e) { return "rejected"; }
-            """, arguments: ["options": options], contentWorld: .page) as? String
+            """, arguments: ["options": request], contentWorld: .page) as? String
     }
 
     func testAttachmentIsQuarantinedAndBothPromiseAndEventIdentifyTheDownload() async throws {
@@ -160,6 +164,103 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertEqual(try Data(contentsOf: target), Data([0, 1, 2]))
         let properties = try XCTUnwrap(target.resourceValues(forKeys: [.quarantinePropertiesKey]).quarantineProperties)
         XCTAssertNil(properties[kLSQuarantineDataURLKey as String])
+        XCTAssertNil(properties[kLSQuarantineOriginURLKey as String])
+        XCTAssertEqual(getxattr(target.path, "com.apple.metadata:kMDItemWhereFroms", nil, 0, 0, XATTR_NOFOLLOW), -1)
+        XCTAssertEqual(errno, ENOATTR)
+    }
+
+    func testLargeBlobAndDataURLsSaveAllBytesFromTheExtensionBackground() async throws {
+        await grant()
+        try await context.loadBackgroundContent()
+        let background = try XCTUnwrap(context.value(forKey: "_backgroundWebView") as? WKWebView)
+        let target = directory.appendingPathComponent("large.bin")
+        handler.chooseDestination = { _, _, _ in target }
+        let block = Data(repeating: 120, count: 1024 * 1024)
+        let blockCount = 20
+        for useBlobURL in [true, false] {
+            let id = try await background.callAsyncJavaScript("""
+                const part = new Blob([new Uint8Array(1024 * 1024).fill(120)]);
+                const file = new Blob(Array(blockCount).fill(part), {type: "attachment/file"});
+                const url = useBlobURL ? URL.createObjectURL(file) : await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(reader.error);
+                    reader.readAsDataURL(file);
+                });
+                try { return await browser.downloads.download({url, filename: "large.bin"}); }
+                finally { if (useBlobURL) URL.revokeObjectURL(url); }
+                """, arguments: ["useBlobURL": useBlobURL, "blockCount": blockCount], contentWorld: .page)
+            XCTAssertNotNil(id as? NSNumber)
+            let handle = try FileHandle(forReadingFrom: target)
+            defer { try? handle.close() }
+            for _ in 0..<blockCount {
+                guard try handle.read(upToCount: block.count) == block else { return XCTFail("Incorrect attachment bytes") }
+            }
+            XCTAssertTrue(try handle.read(upToCount: 1)?.isEmpty ?? true)
+            try FileManager.default.removeItem(at: target)
+        }
+    }
+
+    func testUnavailableObjectURLFailsAndNextDownloadSucceeds() async throws {
+        await grant()
+        let target = directory.appendingPathComponent("retry.bin")
+        handler.chooseDestination = { _, _, _ in target }
+        let failed = try await view.callAsyncJavaScript("""
+            const url = URL.createObjectURL(new Blob(["test"]));
+            URL.revokeObjectURL(url);
+            try { await chrome.downloads.download({url, filename: "file"}); return false; }
+            catch { return true; }
+            """, contentWorld: .page)
+        XCTAssertEqual(failed as? Bool, true)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: target.path))
+        let result = try await download()
+        XCTAssertEqual(result, "saved")
+    }
+
+    func testInvalidBase64CannotPublishAFile() async throws {
+        await grant()
+        let target = directory.appendingPathComponent("invalid.bin")
+        handler.chooseDestination = { _, _, _ in target }
+        for payload in ["%20!", "QQ=0", "YQ=", "A", "%252F"] {
+            let result = try await download(url: "data:attachment/file;base64," + payload)
+            XCTAssertEqual(result, "rejected", payload)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: target.path), payload)
+        }
+    }
+
+    func testDataURLFragmentsAndForgivingBase64MatchChromeBytes() async throws {
+        await grant()
+        let target = directory.appendingPathComponent("data.bin")
+        handler.chooseDestination = { _, _, _ in target }
+        let cases = [("data:,hello%23world#ignored", Data("hello#world".utf8)),
+                     ("data:; base64,QQ==", Data("A".utf8)),
+                     ("data:text/plain;base64;x=y,QQ==", Data("QQ==".utf8)),
+                     ("data:;base64,AAE#ignored", Data([0, 1])),
+                     ("data:text/plain;base64,YQ", Data("a".utf8)),
+                     ("data:;base64,%41%20AE", Data([0, 1]))]
+        for (url, expected) in cases {
+            let result = try await download(url: url)
+            XCTAssertEqual(result, "saved", url)
+            XCTAssertEqual(try Data(contentsOf: target), expected, url)
+            try FileManager.default.removeItem(at: target)
+        }
+    }
+
+    func testBlobCreatedByAnotherLoadedExtensionIsRejectedBeforeConsent() async throws {
+        await grant()
+        let otherContext = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        try webKit.loadCopyingErrors(otherContext)
+        defer { try? webKit.unloadCopyingErrors(otherContext) }
+        try await otherContext.loadBackgroundContent()
+        let otherView = try XCTUnwrap(otherContext.value(forKey: "_backgroundWebView") as? WKWebView)
+        let blob = try await otherView.callAsyncJavaScript("return URL.createObjectURL(new Blob(['private']));", contentWorld: .page)
+        let foreignURL = try XCTUnwrap(blob as? String)
+        handler.chooseDestination = { _, _, _ in XCTFail("Unexpected Save panel"); return nil }
+        let result = try await view.callAsyncJavaScript("""
+            try { await chrome.downloads.download({url, filename: "other.bin"}); return "saved"; }
+            catch { return "rejected"; }
+            """, arguments: ["url": foreignURL], contentWorld: .page)
+        XCTAssertEqual(result as? String, "rejected")
     }
 
     func testCallbackReceivesTheDownloadIDAndReportsCancellation() async throws {
@@ -213,6 +314,32 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertFalse(FileManager.default.fileExists(atPath: target.path))
     }
 
+    func testRevocationWhenWebKitStartsPreventsPublication() async throws {
+        await grant()
+        let target = directory.appendingPathComponent("revoked.bin")
+        handler.chooseDestination = { _, _, _ in target }
+        view.didStartDownload = { [unowned self] in
+            XCTAssertTrue(self.permissionController.revoke(.downloads, from: self.context))
+        }
+        let result = try await download()
+        XCTAssertEqual(result, "rejected")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: target.path))
+    }
+
+    func testDiscardedWebKitStartCallbackReleasesDownloadForRetry() async throws {
+        await grant()
+        let target = directory.appendingPathComponent("retry.bin")
+        handler.chooseDestination = { _, _, _ in target }
+        view.discardNextStart = true
+        handler.downloadStartTimeout = .milliseconds(50)
+        let interrupted = try await download()
+        XCTAssertEqual(interrupted, "rejected")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: target.path))
+        handler.downloadStartTimeout = .seconds(60)
+        let retry = try await download()
+        XCTAssertEqual(retry, "saved")
+    }
+
     func testWebsiteCannotInvokeTheNativeHandlerDirectly() async throws {
         await grant()
         handler.chooseDestination = { _, _, _ in XCTFail("Unexpected dialog"); return nil }
@@ -221,7 +348,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         let configuration = WKWebViewConfiguration()
         configuration.webExtensionController = webKit
         configuration.userContentController.addScriptMessageHandler(handler, contentWorld: .page, name: WebExtensionAPIStubScript.downloadMessageHandlerName)
-        view = WKWebView(frame: .zero, configuration: configuration)
+        view = DownloadTestWebView(frame: .zero, configuration: configuration)
         view.navigationDelegate = self
         loaded = expectation(description: "Website loaded")
         view.loadHTMLString("<p>Website</p>", baseURL: URL(string: "https://example.org/"))
@@ -252,6 +379,23 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertEqual(canceled, "rejected")
         XCTAssertEqual(retry, "rejected")
         XCTAssertEqual(panels, 2)
+    }
+}
+
+@available(macOS 15.4, *)
+private final class DownloadTestWebView: WKWebView {
+    var didStartDownload: (() -> Void)?
+    var discardNextStart = false
+
+    override func startDownload(using request: URLRequest, completionHandler: @escaping @MainActor @Sendable (WKDownload) -> Void) {
+        if discardNextStart {
+            discardNextStart = false
+            return
+        }
+        super.startDownload(using: request) { download in
+            completionHandler(download)
+            self.didStartDownload?()
+        }
     }
 }
 

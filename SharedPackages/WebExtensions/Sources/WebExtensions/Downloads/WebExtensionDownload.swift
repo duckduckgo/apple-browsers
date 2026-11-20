@@ -21,40 +21,78 @@
 import CoreServices
 import Foundation
 
-/// The download subset used by extension attachments. No URLs are fetched by the browser.
-struct WebExtensionDownload {
-    static let maximumByteCount = 16 * 1024 * 1024
-    private static let maximumHeaderLength = 128
-    // Base64 uses four characters for each group of up to three bytes.
-    static let maximumURLLength = maximumHeaderLength + 4 * ((maximumByteCount + 2) / 3)
+/// Local attachment URLs supported by the macOS downloads bridge.
+struct WebExtensionDownload: Sendable {
+    // v8::String::kMaxLength on 64-bit Chrome, in UTF-16 code units. Blob contents never enter this string.
+    static let maximumDataURLLength = (1 << 29) - 24
     let filename: String
-    private let encodedData: Substring
+    private let urlString: String
 
-    init?(options: Any) {
+    init?(options: Any, extensionBaseURL: URL) {
         guard let options = options as? [String: Any],
               options.count == 2,
               let url = options["url"] as? String,
               let filename = options["filename"] as? String else { return nil }
 
-        guard Self.isSafeFilename(filename), let encodedData = Self.base64Payload(in: url) else { return nil }
+        guard Self.isSafeFilename(filename), Self.isAttachmentURL(url, for: extensionBaseURL) else { return nil }
         self.filename = filename
-        self.encodedData = encodedData
+        self.urlString = url
     }
 
-    private static func base64Payload(in url: String) -> Substring? {
-        guard url.utf8.count <= maximumURLLength,
-              let comma = url.prefix(maximumHeaderLength).firstIndex(of: ",") else { return nil }
+    private static func isAttachmentURL(_ string: String, for baseURL: URL) -> Bool {
+        if string.prefix(5).lowercased() == "data:" {
+            return string.utf16.count <= maximumDataURLLength &&
+                string.utf8.first { $0 == UInt8(ascii: ",") || $0 == UInt8(ascii: "#") } == UInt8(ascii: ",")
+        }
+        // WebKit creates object URLs as blob:<serialized origin>/<UUID>. Require the entire origin,
+        // including the trailing slash, before letting the originating web view resolve the reference.
+        let prefix = "blob:" + baseURL.absoluteString
+        guard let origin = string.range(of: prefix, options: [.anchored, .caseInsensitive]) else { return false }
+        let objectID = string[origin.upperBound...].prefix { $0 != "#" }
+        return objectID.utf8.count == 36 && UUID(uuidString: String(objectID)) != nil
+    }
 
-        let header = url[..<comma]
-        let scheme = "data:"
-        let encoding = ";base64"
-        guard header.hasPrefix(scheme), header.hasSuffix(encoding) else { return nil }
+    /// WebKit's native downloader includes literal fragments and requires padded base64.
+    /// Chromium omits the fragment and accepts forgiving base64. Keep escaped %23 as file data.
+    func makeDownloadURL() -> URL? {
+        let resource = urlString.utf8.firstIndex(of: UInt8(ascii: "#")).map { String(urlString[..<$0]) } ?? urlString
+        guard resource.prefix(5).lowercased() == "data:",
+              let comma = resource.utf8.firstIndex(of: UInt8(ascii: ",")) else { return URL(string: resource) }
+        let header = resource[..<comma]
+        let payload = resource[resource.utf8.index(after: comma)...]
+        guard let separator = header.lastIndex(of: ";"),
+              header[header.index(after: separator)...].trimmingCharacters(in: Self.headerWhitespace).lowercased() == "base64"
+        else {
+            // Only a final base64 marker changes the file bytes in Chrome. WebKit also honors earlier markers.
+            return URL(string: "data:," + payload)
+        }
 
-        // The optional media type allows visible ASCII and no additional parameters.
-        let mediaType = header.dropFirst(scheme.count).dropLast(encoding.count)
-        guard mediaType.unicodeScalars.allSatisfy({ ("!"..."~").contains($0) && $0 != ";" }) else { return nil }
+        guard let normalized = Self.normalizedBase64(payload) else { return nil }
+        return URL(string: "data:;base64," + normalized)
+    }
 
-        return url[url.index(after: comma)...]
+    private static let headerWhitespace = CharacterSet(charactersIn: " \t\n\u{000B}\u{000C}\r")
+    private static let base64Whitespace: Set<UInt8> = [9, 10, 12, 13, 32]
+    private static let invalidBase64 = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/").inverted
+
+    private static func normalizedBase64(_ payload: Substring) -> Substring? {
+        var compact = payload
+        if payload.utf8.contains(where: { $0 == UInt8(ascii: "%") || $0 <= UInt8(ascii: " ") }) {
+            guard let unescaped = payload.removingPercentEncoding,
+                  let stripped = String(bytes: unescaped.utf8.filter { !base64Whitespace.contains($0) }, encoding: .utf8) else { return nil }
+            compact = stripped[...]
+        }
+        let firstPadding = compact.utf8.firstIndex(of: UInt8(ascii: "=")) ?? compact.endIndex
+        let body = compact[..<firstPadding]
+        guard body.rangeOfCharacter(from: invalidBase64) == nil else { return nil }
+        let required = (4 - body.utf8.count % 4) % 4
+        guard required <= 2 else { return nil }
+        let suffix = compact[firstPadding...]
+        if suffix.isEmpty {
+            return required == 0 ? compact : (compact + String(repeating: "=", count: required))[...]
+        }
+        guard suffix.utf8.count == required, suffix.utf8.allSatisfy({ $0 == UInt8(ascii: "=") }) else { return nil }
+        return compact
     }
 
     private static func isSafeFilename(_ name: String) -> Bool {
@@ -65,39 +103,38 @@ struct WebExtensionDownload {
         return name.rangeOfCharacter(from: disallowed) == nil
     }
 
-    func decode() throws -> Data {
-        guard let data = Data(base64Encoded: String(encodedData)), data.count <= Self.maximumByteCount else {
-            throw DownloadError.invalid
-        }
-        return data
-    }
-
     enum DownloadError: Error {
-        case invalid, saveFailed, fileExists
+        case invalid, canceled, saveFailed, fileExists
     }
 
     /// Prepare the complete, quarantined file on the destination volume. Its final name is
     /// published only after the caller rechecks consent, without following or replacing a collision.
-    struct StagedFile {
-        let directory: URL
-        private var file: URL { directory.appendingPathComponent("attachment") }
+    struct StagedFile: Sendable {
+        private let directory: URL
+        var file: URL { directory.appendingPathComponent("attachment") }
 
-        init(data: Data, destination: URL) throws {
+        init(destination: URL) throws {
             directory = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask,
                                                      appropriateFor: destination, create: true)
             do {
                 try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
-                try data.write(to: file, options: .withoutOverwriting)
-                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
-                try (file as NSURL).setResourceValue([kLSQuarantineTypeKey as String: kLSQuarantineTypeOtherDownload],
-                                                      forKey: .quarantinePropertiesKey)
-                guard try file.resourceValues(forKeys: [.quarantinePropertiesKey]).quarantineProperties != nil else {
-                    throw DownloadError.saveFailed
-                }
             } catch {
                 cleanUp()
                 throw error
             }
+        }
+
+        func prepareForPublication() throws {
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+            // A data URL contains the attachment itself. Never publish source URLs as file metadata.
+            guard removexattr(file.path, "com.apple.metadata:kMDItemWhereFroms", XATTR_NOFOLLOW) == 0 || errno == ENOATTR else {
+                throw DownloadError.saveFailed
+            }
+            try (file as NSURL).setResourceValue([kLSQuarantineTypeKey as String: kLSQuarantineTypeOtherDownload],
+                                                 forKey: .quarantinePropertiesKey)
+            guard let quarantine = try file.resourceValues(forKeys: [.quarantinePropertiesKey]).quarantineProperties,
+                  quarantine[kLSQuarantineDataURLKey as String] == nil,
+                  quarantine[kLSQuarantineOriginURLKey as String] == nil else { throw DownloadError.saveFailed }
         }
 
         func publish(to destination: URL) throws {

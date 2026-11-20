@@ -30,6 +30,7 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
 
     var presentationWindow: (WKWebView, WKWebExtensionContext) -> NSWindow? = { _, _ in nil }
     var chooseDestination: @MainActor (String, String?, NSWindow) async -> URL? = WebExtensionDownloadMessageHandler.showSavePanel
+    var downloadStartTimeout: Duration = .seconds(60)
     private var saving = false
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage,
@@ -53,8 +54,8 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
             replyHandler(nil, "Another extension download is in progress")
             return
         }
-        guard let download = WebExtensionDownload(options: message.body) else {
-            replyHandler(nil, "Unsupported download options or file size")
+        guard let download = WebExtensionDownload(options: message.body, extensionBaseURL: context.baseURL) else {
+            replyHandler(nil, "Unsupported attachment URL or filename")
             return
         }
         saving = true
@@ -70,31 +71,36 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                 isCurrent(context, in: webView) && permissionController() === controller &&
                     presentationWindow(webView, context) === window && controller.isGranted(.downloads, to: identifier)
             }
+            @MainActor func checkAuthorization() throws {
+                guard authorized() else { throw WebExtensionDownload.DownloadError.canceled }
+            }
             guard authorized() else {
                 replyHandler(nil, "The downloads permission is required")
                 return
             }
             do {
-                let data = try await Task.detached { try download.decode() }.value
-                guard authorized(), let destination = await chooseDestination(download.filename, context.webExtension.displayName, window) else {
-                    replyHandler(nil, "Download canceled")
-                    return
+                guard let source = await Task.detached(operation: { download.makeDownloadURL() }).value else {
+                    throw WebExtensionDownload.DownloadError.invalid
+                }
+                try checkAuthorization()
+                guard let destination = await chooseDestination(download.filename, context.webExtension.displayName, window) else {
+                    throw WebExtensionDownload.DownloadError.canceled
                 }
                 // The Save panel starts security-scoped access to the selected URL.
                 defer { destination.stopAccessingSecurityScopedResource() }
-                guard authorized() else {
-                    replyHandler(nil, "Download canceled")
-                    return
-                }
-                let staged = try await Task.detached { try WebExtensionDownload.StagedFile(data: data, destination: destination) }.value
+                try checkAuthorization()
+                let staged = try await Task.detached { try WebExtensionDownload.StagedFile(destination: destination) }.value
                 defer { staged.cleanUp() }
-                guard authorized() else {
-                    replyHandler(nil, "Download canceled")
-                    return
-                }
+                try checkAuthorization()
+                let writer = AttachmentDownloadDelegate(destination: staged.file, authorized: authorized)
+                try await writer.write(source, from: webView, startTimeout: downloadStartTimeout)
+                try await Task.detached { try staged.prepareForPublication() }.value
+                try checkAuthorization()
                 try staged.publish(to: destination)
                 // Only return the basename. The directory selected by the user stays private.
                 replyHandler(["id": Int32.random(in: 1...Int32.max), "filename": destination.lastPathComponent], nil)
+            } catch WebExtensionDownload.DownloadError.canceled {
+                replyHandler(nil, "Download canceled")
             } catch WebExtensionDownload.DownloadError.fileExists {
                 replyHandler(nil, "A file with this name already exists. Choose another name.")
             } catch {
@@ -123,6 +129,68 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
         }
         guard await panel.beginSheetModal(for: window) == .OK else { return nil }
         return panel.url
+    }
+}
+
+/// Only the staging path reaches WebKit. The caller owns consent, quarantine and final publication.
+@available(macOS 15.4, *)
+@MainActor
+private final class AttachmentDownloadDelegate: NSObject, WKDownloadDelegate {
+    private let destination: URL
+    private let authorized: @MainActor () -> Bool
+    private var completion: CheckedContinuation<Void, Error>?
+
+    init(destination: URL, authorized: @escaping @MainActor () -> Bool) {
+        self.destination = destination
+        self.authorized = authorized
+    }
+
+    func write(_ source: URL, from webView: WKWebView, startTimeout: Duration) async throws {
+        // WKDownload holds a weak delegate. Keep it alive until WebKit finishes or fails.
+        defer { withExtendedLifetime(self) {} }
+        try await withCheckedThrowingContinuation { continuation in
+            completion = continuation
+            // A lost network process may never acknowledge the start. A transfer already in progress has no timeout.
+            let timeout = Task { [weak self] in
+                try await Task.sleep(for: startTimeout)
+                try Task.checkCancellation()
+                self?.finish(.failure(WebExtensionDownload.DownloadError.saveFailed))
+            }
+            webView.startDownload(using: URLRequest(url: source)) { [weak self] download in
+                timeout.cancel()
+                guard let self, self.completion != nil else {
+                    download.cancel { _ in }
+                    return
+                }
+                download.delegate = self
+            }
+        }
+    }
+
+    func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
+        guard authorized() else {
+            finish(.failure(WebExtensionDownload.DownloadError.canceled))
+            return nil
+        }
+        return destination
+    }
+
+    func download(_ download: WKDownload, decidedPolicyForHTTPRedirection response: HTTPURLResponse, newRequest: URLRequest) async -> WKDownload.RedirectPolicy {
+        finish(.failure(WebExtensionDownload.DownloadError.invalid))
+        return .cancel
+    }
+
+    func downloadDidFinish(_ download: WKDownload) {
+        finish(.success(()))
+    }
+
+    func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+        finish(.failure(WebExtensionDownload.DownloadError.saveFailed))
+    }
+
+    private func finish(_ result: Result<Void, Error>) {
+        completion?.resume(with: result)
+        completion = nil
     }
 }
 

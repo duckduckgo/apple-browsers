@@ -480,6 +480,8 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        verticalTabsSidebarPresenter?.uninstall()
+        verticalTabsSidebarPresenter = nil
         navigationBarViewController.windowWillClose()
         closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()

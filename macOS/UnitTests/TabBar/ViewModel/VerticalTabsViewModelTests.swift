@@ -76,6 +76,32 @@ final class VerticalTabsViewModelTests: XCTestCase {
         XCTAssertEqual(model.tabs.map(\.id), [originalIDs[1], originalIDs[2], originalIDs[0]])
     }
 
+    func testBurstOfChangesReleasesIntermediateTabsAndPublishesFinalOrderAndSelection() {
+        let collection = tabCollectionViewModel(tabCount: 2, selectedIndex: 0)
+        let model = verticalTabsViewModel(for: collection)
+        let originalIDs = model.tabs.map(\.id)
+        let settled = expectation(description: "Selected tab is in its final sidebar position")
+        model.$selectedTabID
+            .first(where: { $0 == originalIDs[1] })
+            .sink { _ in
+                XCTAssertEqual(model.tabs.map(\.id), [originalIDs[1], originalIDs[0]])
+                settled.fulfill()
+            }
+            .store(in: &cancellables)
+
+        weak var removed: UnloadedTab?
+        autoreleasepool {
+            let temporary = UnloadedTab(content: .bookmarks)
+            removed = temporary
+            collection.tabCollection.append(tab: .unloaded(temporary))
+            XCTAssertTrue(collection.tabCollection.removeTab(at: 2, published: false))
+        }
+        XCTAssertNil(removed)
+
+        model.moveTab(originalIDs[1], to: 0)
+        wait(for: [settled], timeout: 1)
+    }
+
     func testTearOffUsesTheDraggedTabsCurrentIndexAndTheScreenDropPoint() {
         let collection = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
         let draggedID = tabIDs(of: collection)[1]
@@ -131,6 +157,26 @@ final class VerticalTabsViewModelTests: XCTestCase {
         model.tearOffTab(originalIDs[1], at: .zero)
 
         XCTAssertEqual(tabIDs(of: collection), originalIDs)
+    }
+
+    func testMovingTheLastTabIntoAnExistingWindowRespectsTheDestinationAndSelectsTheMovedTab() throws {
+        let source = tabCollectionViewModel(tabCount: 1, selectedIndex: 0)
+        let destination = tabCollectionViewModel(tabCount: 2, selectedIndex: 0)
+        let fireWindow = tabCollectionViewModel(tabCount: 1, selectedIndex: 0, burnerMode: BurnerMode(isBurner: true))
+        let model = verticalTabsViewModel(for: source)
+        let tab = try XCTUnwrap(source.selectedTab)
+        let original = tabIDs(of: destination)
+
+        XCTAssertFalse(model.moveTab(tab.uuid, to: fireWindow, at: 0))
+        destination.changesEnabled = false
+        XCTAssertFalse(model.moveTab(tab.uuid, to: destination, at: 1))
+        XCTAssertIdentical(source.selectedTab, tab)
+
+        destination.changesEnabled = true
+        XCTAssertTrue(model.moveTab(tab.uuid, to: destination, at: 1))
+        XCTAssertTrue(source.tabCollection.tabs.isEmpty)
+        XCTAssertIdentical(destination.selectedTab, tab)
+        XCTAssertEqual(tabIDs(of: destination), [original[0], tab.uuid, original[1]])
     }
 
     func testDraggingOutsideShowsAPreviewAndReturningInsideDismissesItWithoutMovingTheTab() throws {

@@ -31,6 +31,12 @@ struct VerticalTabsView: View {
     let newTabButtonAnchor: NSView
     let dragSession: VerticalTabDragSession
 
+    static func insertionIndex(at y: CGFloat, rowCount: Int) -> Int {
+        let rowStride = Layout.rowHeight + Layout.rowSpacing
+        let index = Int(floor((y + Layout.rowHeight / 2 + Layout.rowSpacing) / rowStride))
+        return min(max(index, 0), rowCount)
+    }
+
     var body: some View {
         VerticalTabsList(model: model, newTabButtonAnchor: newTabButtonAnchor, dragSession: dragSession)
             .frame(minWidth: 0, maxWidth: .infinity)
@@ -58,42 +64,27 @@ private enum Layout {
 }
 
 private struct VerticalTabsList: View {
-    /// A tab being dragged to a new place: its row follows the pointer while the other rows make room.
-    private struct TabDrag {
-        let tabID: TabIdentifier
-        /// How far below the row's top the pointer grabbed it.
-        let grabOffset: CGFloat
-        var pointerY: CGFloat?
-    }
-
     @ObservedObject var model: VerticalTabsViewModel
     let newTabButtonAnchor: NSView
-    @ObservedObject var dragSession: VerticalTabDragSession
+    let dragSession: VerticalTabDragSession
     @Environment(\.designSystemPalette) private var palette
-    @State private var drag: TabDrag?
-    @GestureState private var isReordering = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        let tabs = model.tabs
+        let indexedTabs = tabs.indices.lazy.map { (index: $0, tab: tabs[$0]) }
+        return VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     LazyVStack(spacing: Layout.rowSpacing) {
-                        ForEach(Array(model.tabs.enumerated()), id: \.element.id) { index, tab in
-                            VerticalTabRow(tab: tab, isSelected: tab.id == model.selectedTabID, isOnlyTab: model.tabs.count == 1, model: model)
+                        ForEach(indexedTabs, id: \.tab.id) { index, tab in
+                            VerticalTabRow(tab: tab, isSelected: tab.id == model.selectedTabID, isOnlyTab: tabs.count == 1, model: model)
                                 .id(tab.id)
-                                .offset(y: dragOffset(of: tab.id, at: index))
-                                .zIndex(drag?.tabID == tab.id ? 1 : 0)
-                                .transaction { transaction in
-                                    // The dragged row stays under the pointer; only the rows making room for it slide.
-                                    if drag?.tabID == tab.id {
-                                        transaction.animation = nil
-                                    }
-                                }
-                                .simultaneousGesture(reorderGesture(for: tab.id))
+                                .modifier(VerticalTabReorder(tabID: tab.id, index: index, model: model, dragSession: dragSession))
                         }
                     }
                     .coordinateSpace(name: Layout.listCoordinateSpace)
-                    .animation(Layout.reorderAnimation, value: model.tabs.map(\.id))
+                    .background(VerticalTabsAnchor(view: dragSession.rowsAnchor).allowsHitTesting(false))
+                    .animation(Layout.reorderAnimation, value: model.tabOrderRevision)
                     .padding(Layout.listPadding)
                 }
                 .onAppear {
@@ -107,27 +98,54 @@ private struct VerticalTabsList: View {
             }
 
             VerticalTabsNewTabButton(action: model.openNewTab)
-                .background(NewTabButtonAnchor(view: newTabButtonAnchor).allowsHitTesting(false))
+                .background(VerticalTabsAnchor(view: newTabButtonAnchor).allowsHitTesting(false))
                 .padding(Layout.listPadding)
         }
         .background(Color(designSystemColor: .surfaceBackdrop, palette: palette).opacity(VerticalTabsStyle.backgroundOpacity))
-        .onChange(of: isReordering) { isReordering in
-            if !isReordering {
-                withAnimation(Layout.reorderAnimation) { drag = nil }
-            }
-        }
+    }
+}
+
+/// Only the row under the pointer needs to redraw between changes to the tab order.
+private struct VerticalTabReorder: ViewModifier {
+    private struct Drag {
+        let grabOffset: CGFloat
+        var pointerY: CGFloat?
     }
 
-    private func reorderGesture(for tabID: TabIdentifier) -> some Gesture {
+    let tabID: TabIdentifier
+    let index: Int
+    let model: VerticalTabsViewModel
+    @ObservedObject var dragSession: VerticalTabDragSession
+    @State private var drag: Drag?
+    @GestureState private var isReordering = false
+
+    func body(content: Content) -> some View {
+        content
+            .offset(y: dragOffset)
+            .zIndex(drag == nil ? 0 : 1)
+            .transaction { transaction in
+                if drag != nil {
+                    transaction.animation = nil
+                }
+            }
+            .simultaneousGesture(reorderGesture)
+            .onChange(of: isReordering) { isReordering in
+                if !isReordering {
+                    withAnimation(Layout.reorderAnimation) { drag = nil }
+                }
+            }
+    }
+
+    private var reorderGesture: some Gesture {
         DragGesture(minimumDistance: Layout.reorderDragThreshold, coordinateSpace: .named(Layout.listCoordinateSpace))
             .updating($isReordering) { _, isReordering, _ in isReordering = true }
             .onChanged { value in
-                if drag == nil, let startIndex = index(of: tabID) {
-                    drag = TabDrag(tabID: tabID, grabOffset: value.startLocation.y - rowTop(at: startIndex), pointerY: value.location.y)
+                if drag == nil {
+                    drag = Drag(grabOffset: value.startLocation.y - rowTop)
                     model.select(tabID)
                     dragSession.beginDragging(tabID)
                 }
-                guard var currentDrag = drag, currentDrag.tabID == tabID else { return }
+                guard var currentDrag = drag else { return }
                 let canReorder = dragSession.isDragging && dragSession.isPointerOverSidebar
                 currentDrag.pointerY = canReorder ? value.location.y : nil
                 drag = currentDrag
@@ -137,11 +155,7 @@ private struct VerticalTabsList: View {
             }
     }
 
-    private func index(of tabID: TabIdentifier) -> Int? {
-        model.tabs.firstIndex { $0.id == tabID }
-    }
-
-    private func rowTop(at index: Int) -> CGFloat {
+    private var rowTop: CGFloat {
         CGFloat(index) * (Layout.rowHeight + Layout.rowSpacing)
     }
 
@@ -152,13 +166,13 @@ private struct VerticalTabsList: View {
         return min(max(index, 0), model.tabs.count - 1)
     }
 
-    private func dragOffset(of tabID: TabIdentifier, at index: Int) -> CGFloat {
-        guard dragSession.isDragging, let drag, drag.tabID == tabID, let pointerY = drag.pointerY else { return 0 }
-        return pointerY - drag.grabOffset - rowTop(at: index)
+    private var dragOffset: CGFloat {
+        guard dragSession.isDragging, let drag, let pointerY = drag.pointerY else { return 0 }
+        return pointerY - drag.grabOffset - rowTop
     }
 }
 
-private struct NewTabButtonAnchor: NSViewRepresentable {
+private struct VerticalTabsAnchor: NSViewRepresentable {
     let view: NSView
 
     func makeNSView(context: Context) -> NSView { view }

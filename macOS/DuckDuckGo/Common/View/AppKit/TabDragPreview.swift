@@ -24,6 +24,27 @@ enum TabDragPreview {
     private static let width: CGFloat = 228
     private static let maximumPageHeight: CGFloat = 168
 
+    static func nativePageSnapshot(of layer: CALayer, backingScale: CGFloat) -> NSImage? {
+        let bounds = layer.bounds
+        guard !bounds.isEmpty else { return nil }
+        let pageHeight = min(maximumPageHeight, width * bounds.height / bounds.width)
+        let scale = min(max(backingScale, 1), 2)
+        let pixelsWide = Int(ceil(width * scale))
+        let pixelsHigh = Int(ceil(pageHeight * scale))
+        guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil, width: pixelsWide, height: pixelsHigh, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+
+        // Render the top of the page directly into the thumbnail, including on Retina displays.
+        let pageScale = CGFloat(pixelsWide) / bounds.width
+        context.translateBy(x: 0, y: CGFloat(pixelsHigh))
+        context.scaleBy(x: pageScale, y: -pageScale)
+        context.translateBy(x: -bounds.minX, y: -bounds.minY)
+        layer.render(in: context)
+        guard let image = context.makeImage() else { return nil }
+        return NSImage(cgImage: image, size: NSSize(width: width, height: pageHeight))
+    }
+
     static func makeImage(for tab: any TabBarViewModel, snapshot: NSImage? = nil) -> NSImage {
         let header = URLDragPreviewProvider(text: tab.title,
                                             favicon: tab.favicon,

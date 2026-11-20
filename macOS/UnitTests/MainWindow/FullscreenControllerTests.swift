@@ -214,6 +214,19 @@ final class MainViewControllerVerticalTabsTests: XCTestCase, MainViewControllerF
         XCTAssertEqual(collection.tabs.map(\.uuid), originalIDs)
     }
 
+    func testClosingWindowDetachesVerticalSidebarAndReleasesPresenter() throws {
+        let controller = makeVerticalTabsController()
+        weak var presenter = controller.verticalTabsSidebarPresenter
+        let sidebar = try XCTUnwrap(controller.children.compactMap { $0 as? VerticalTabsViewController }.first)
+        XCTAssertNotNil(presenter)
+
+        controller.windowWillClose()
+
+        XCTAssertNil(presenter)
+        XCTAssertNil(sidebar.parent)
+        XCTAssertNil(sidebar.view.superview)
+    }
+
     func testEnablingVerticalTabsWhileHiddenInFullscreenDefersTheSidebar() throws {
         let preferences = makeVerticalTabsPreferences(enabled: false)
         let controller = makeVerticalTabsController(preferences: preferences)

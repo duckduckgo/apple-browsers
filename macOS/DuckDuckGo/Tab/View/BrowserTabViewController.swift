@@ -1512,7 +1512,7 @@ final class BrowserTabViewController: NSViewController {
     }
 
     func refreshDragPreview(for id: TabIdentifier) async -> NSImage? {
-        guard !tabCollectionViewModel.isBurner, let tabViewModel, tabViewModel.uuid == id,
+        guard !Task.isCancelled, !tabCollectionViewModel.isBurner, let tabViewModel, tabViewModel.uuid == id,
               tabViewModel.shouldShowPreview, let window = view.window else { return nil }
 
         let content = tabViewModel.tabContent
@@ -1528,8 +1528,8 @@ final class BrowserTabViewController: NSViewController {
             case .dataBrokerProtection: nativeView = dataBrokerProtectionHomeViewController?.view
             default: return nil
             }
-            guard let nativeView, nativeView.window === window, !nativeView.bounds.isEmpty else { return nil }
-            snapshot = await ViewSnapshotRenderer().renderSnapshot { [weak nativeView] in nativeView }
+            guard let nativeView, nativeView.window === window, let layer = nativeView.layer else { return nil }
+            snapshot = TabDragPreview.nativePageSnapshot(of: layer, backingScale: window.backingScaleFactor)
         }
 
         guard !Task.isCancelled, let snapshot, self.tabViewModel === tabViewModel, tabViewModel.tabContent == content,

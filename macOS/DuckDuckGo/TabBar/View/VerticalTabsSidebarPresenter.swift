@@ -131,6 +131,11 @@ final class VerticalTabsSidebarPresenter {
         setLayout(hiddenInFullScreen ? .hidden : preferredLayout, animated: false)
     }
 
+    func dropIndex(at screenPoint: NSPoint) -> Int? {
+        guard layout == .docked || layout == .peeking else { return nil }
+        return sidebarViewController.dragSession.dropIndex(at: screenPoint)
+    }
+
     func uninstall() {
         sidebarViewController.dragSession.onDragEnded = nil
         sidebarViewController.dragSession.cancel()
@@ -194,8 +199,10 @@ final class VerticalTabsSidebarPresenter {
         NSLayoutConstraint.deactivate(isContentBesideSidebar ? mainView.contentLeadingConstraints : contentLeadingConstraintsToSidebar)
         NSLayoutConstraint.activate(isContentBesideSidebar ? contentLeadingConstraintsToSidebar : mainView.contentLeadingConstraints)
 
-        guard animated else {
-            sidebarView.shadow = nil
+        guard animated, mainView.window?.isVisible == true else {
+            if layout != .peeking {
+                sidebarView.shadow = nil
+            }
             return
         }
         NSAnimationContext.runAnimationGroup({ context in

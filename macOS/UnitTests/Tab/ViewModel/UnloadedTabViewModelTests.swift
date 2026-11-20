@@ -126,6 +126,26 @@ class UnloadedTabViewModelTests: XCTestCase {
                              "The center of the preview should contain the red saved page")
     }
 
+    @MainActor
+    func testNativeDragPreviewRendersOnlyTheTopOfATallPageAtRetinaResolution() throws {
+        let page = CALayer()
+        page.bounds = CGRect(x: 0, y: 0, width: 2_000, height: 4_000)
+        page.backgroundColor = NSColor.blue.cgColor
+        let top = CALayer()
+        top.frame = CGRect(x: 0, y: 0, width: 2_000, height: 1_500)
+        top.backgroundColor = NSColor.red.cgColor
+        page.addSublayer(top)
+
+        let image = try XCTUnwrap(TabDragPreview.nativePageSnapshot(of: page, backingScale: 2))
+        XCTAssertEqual(image.size, NSSize(width: 228, height: 168))
+        let representation = try XCTUnwrap(image.representations.first)
+        XCTAssertEqual(representation.pixelsWide, 456)
+        XCTAssertEqual(representation.pixelsHigh, 336)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(image.tiffRepresentation)))
+        let color = try XCTUnwrap(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+        XCTAssertGreaterThan(color.redComponent - color.blueComponent, 0.8)
+    }
+
     // MARK: - Previewable: other properties
 
     func testShouldShowPreviewIsTrue() {

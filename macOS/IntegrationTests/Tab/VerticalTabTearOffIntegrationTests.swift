@@ -17,6 +17,8 @@
 //
 
 import AppKit
+import FeatureFlags_macOS
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 
@@ -24,6 +26,73 @@ import XCTest
 
 @MainActor
 final class VerticalTabTearOffIntegrationTests: XCTestCase {
+
+    func testDroppingOnAnotherSidebarInsertsBetweenItsRowsWithoutOpeningAWindow() async throws {
+        let app = NSApp.delegateTyped
+        let flags = try XCTUnwrap(app.featureFlagger as? MockFeatureFlagger)
+        let key = FeatureFlag.verticalTabs.rawValue
+        let previousFlag = flags.featuresStub[key]
+        let previousPreference = app.appearancePreferences.useVerticalTabs
+        flags.featuresStub[key] = true
+        flags.triggerUpdate()
+        app.appearancePreferences.useVerticalTabs = true
+        defer {
+            app.appearancePreferences.useVerticalTabs = previousPreference
+            flags.featuresStub[key] = previousFlag
+            flags.triggerUpdate()
+        }
+
+        let dragged = Tab(content: .bookmarks)
+        let remaining = Tab(content: .settings(pane: nil))
+        let sourceTabs = TabCollectionViewModel(tabCollection: TabCollection(tabs: [dragged, remaining]),
+                                                selectionIndex: .unpinned(0), pinnedTabsManagerProvider: nil)
+        let first = Tab(content: .bookmarks)
+        let second = Tab(content: .settings(pane: nil))
+        let targetTabs = TabCollectionViewModel(tabCollection: TabCollection(tabs: [first, second]),
+                                                selectionIndex: .unpinned(0), pinnedTabsManagerProvider: nil)
+        let size = NSSize(width: 900, height: 600)
+        let source = try XCTUnwrap(WindowsManager.openNewWindow(with: sourceTabs, burnerMode: .regular, contentSize: size))
+        defer { autoreleasepool { source.close() } }
+        let target = try XCTUnwrap(WindowsManager.openNewWindow(with: targetTabs, burnerMode: .regular, contentSize: size))
+        defer { autoreleasepool { target.close() } }
+        func sidebar(in window: NSWindow) throws -> VerticalTabsViewController {
+            let main = try XCTUnwrap((window.windowController as? MainWindowController)?.mainViewController)
+            return try XCTUnwrap(main.children.compactMap { $0 as? VerticalTabsViewController }.first)
+        }
+        let sourceSidebar = try sidebar(in: source)
+        let targetSidebar = try sidebar(in: target)
+        let rows = targetSidebar.dragSession.rowsAnchor
+        let laidOut = expectation(for: NSPredicate { [weak rows, weak target] _, _ in
+            guard let rows, let target else { return false }
+            return rows.window === target && !rows.bounds.isEmpty
+        }, evaluatedWith: nil)
+        await fulfillment(of: [laidOut], timeout: 2)
+        let middle = NSPoint(x: rows.bounds.midX, y: rows.bounds.midY)
+        let drop = target.convertPoint(toScreen: rows.convert(middle, to: nil))
+        // Both frames contain the pointer. The drop belongs to the topmost window.
+        source.setFrame(target.frame, display: false)
+        XCTAssertTrue(source.frame.contains(drop))
+        let windowCount = app.windowControllersManager.mainWindowControllers.count
+        func releaseOverTarget() {
+            sourceSidebar.dragSession.beginDragging(dragged.uuid)
+            sourceSidebar.dragSession.end(at: drop) { point in
+                XCTAssertEqual(point, drop)
+                return target
+            }
+        }
+
+        targetTabs.changesEnabled = false
+        releaseOverTarget()
+        XCTAssertEqual(sourceTabs.tabs.map(\.uuid), [dragged.uuid, remaining.uuid])
+        XCTAssertEqual(targetTabs.tabs.map(\.uuid), [first.uuid, second.uuid])
+        targetTabs.changesEnabled = true
+        releaseOverTarget()
+
+        XCTAssertEqual(app.windowControllersManager.mainWindowControllers.count, windowCount)
+        XCTAssertIdentical(targetTabs.selectedTab, dragged)
+        XCTAssertEqual(targetTabs.tabs.map(\.uuid), [first.uuid, dragged.uuid, second.uuid])
+        XCTAssertEqual(sourceTabs.tabs.map(\.uuid), [remaining.uuid])
+    }
 
     func testAppKitDragEventsShowTheSidebarPreviewAndMoveTheTabIntoANewWindowOnMouseUp() async throws {
         TestRunHelper.allowAppSendUserEvents = true

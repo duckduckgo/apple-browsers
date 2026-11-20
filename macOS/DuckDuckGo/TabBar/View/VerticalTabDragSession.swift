@@ -30,6 +30,7 @@ final class VerticalTabDragSession: ObservableObject {
     private var refreshTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
+    let rowsAnchor = NSView()
     var onDragEnded: (() -> Void)?
     var isDragging: Bool { draggedTabID != nil }
     private(set) var isPointerOverSidebar = false
@@ -76,6 +77,14 @@ final class VerticalTabDragSession: ObservableObject {
         return sidebarView.visibleRect.contains(sidebarView.convert(window.convertPoint(fromScreen: screenPoint), from: nil))
     }
 
+    func dropIndex(at screenPoint: NSPoint) -> Int? {
+        guard sidebarContains(screenPoint) else { return nil }
+        guard let window = rowsAnchor.window else { return model.tabs.count }
+        let point = rowsAnchor.convert(window.convertPoint(fromScreen: screenPoint), from: nil)
+        let y = rowsAnchor.isFlipped ? point.y - rowsAnchor.bounds.minY : rowsAnchor.bounds.maxY - point.y
+        return VerticalTabsView.insertionIndex(at: y, rowCount: model.tabs.count)
+    }
+
     func update(at screenPoint: NSPoint) {
         guard let id = draggedTabID, let window = sidebarView?.window else { return }
         isPointerOverSidebar = sidebarContains(screenPoint)
@@ -96,7 +105,7 @@ final class VerticalTabDragSession: ObservableObject {
             panel.setAccessibilityElement(false)
             preview = panel
             refreshTask = Task { [weak self, weak panel, model] in
-                guard let image = await model.refreshDragPreview(for: id), !Task.isCancelled,
+                guard !Task.isCancelled, let image = await model.refreshDragPreview(for: id), !Task.isCancelled,
                       let self, let panel, preview === panel, let imageView = panel.contentView as? NSImageView else { return }
                 imageView.image = image
                 panel.setContentSize(image.size)
@@ -121,12 +130,28 @@ final class VerticalTabDragSession: ObservableObject {
         panel.setFrameTopLeftPoint(topLeft)
     }
 
-    func end(at screenPoint: NSPoint) {
+    func end(at screenPoint: NSPoint, windowAtPoint: @MainActor (NSPoint) -> NSWindow? = { point in
+        let number = NSWindow.windowNumber(at: point, belowWindowWithWindowNumber: 0)
+        return NSApp.window(withWindowNumber: number)
+    }) {
         let id = draggedTabID
-        let sourceFrame = sidebarView?.window?.frame
+        let sourceWindow = sidebarView?.window
         isPointerOverSidebar = sidebarContains(screenPoint)
         cancel()
-        if let id, let sourceFrame, !sourceFrame.contains(screenPoint) {
+        guard let id, let sourceWindow else { return }
+
+        // Hit-test after removing the preview panel so it cannot obscure the destination.
+        if let target = windowAtPoint(screenPoint), target !== sourceWindow,
+           let controller = (target.windowController as? MainWindowController)?.mainViewController,
+           let index = controller.verticalTabsSidebarPresenter?.dropIndex(at: screenPoint) {
+            if target.attachedSheet == nil, controller.allowsUserInteraction,
+               model.moveTab(id, to: controller.tabCollectionViewModel, at: index) {
+                target.makeKeyAndOrderFront(nil)
+            }
+            return
+        }
+
+        if !sourceWindow.frame.contains(screenPoint) {
             model.tearOffTab(id, at: screenPoint)
         }
     }

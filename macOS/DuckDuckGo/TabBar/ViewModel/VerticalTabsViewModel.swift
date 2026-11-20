@@ -45,6 +45,7 @@ struct VerticalTab: Identifiable, Equatable {
 final class VerticalTabsViewModel: ObservableObject {
     @Published private(set) var tabs: [VerticalTab] = []
     @Published private(set) var selectedTabID: TabIdentifier?
+    private(set) var tabOrderRevision = 0
 
     var canPinTabs: Bool {
         tabCollectionViewModel.pinnedTabsCollection != nil
@@ -55,6 +56,7 @@ final class VerticalTabsViewModel: ObservableObject {
     private let onTearOffTab: (Int, NSPoint) -> Void
     private let refreshPreview: (TabIdentifier) async -> NSImage?
     let openNewTab: () -> Void
+    private let pendingUpdates = DispatchSource.makeUserDataOrSource(queue: .main)
     private var cancellables = Set<AnyCancellable>()
     private var tabSubscriptions: [TabIdentifier: (source: any TabBarViewModel, cancellable: AnyCancellable)] = [:]
 
@@ -126,6 +128,14 @@ final class VerticalTabsViewModel: ObservableObject {
         onTearOffTab(index, screenPoint)
     }
 
+    func moveTab(_ id: TabIdentifier, to destination: TabCollectionViewModel, at index: Int) -> Bool {
+        guard destination !== tabCollectionViewModel, !tabCollectionViewModel.isBurner, !destination.isBurner,
+              tabCollectionViewModel.changesEnabled, destination.changesEnabled, index >= 0,
+              let sourceIndex = unpinnedIndex(of: id) else { return false }
+        tabCollectionViewModel.moveTab(at: sourceIndex, to: destination, at: min(index, destination.tabCollection.tabs.count))
+        return true
+    }
+
     private func tearOffIndex(of id: TabIdentifier) -> Int? {
         guard !tabCollectionViewModel.isBurner, let index = unpinnedIndex(of: id),
               tabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .unpinned(index)) else { return nil }
@@ -133,27 +143,35 @@ final class VerticalTabsViewModel: ObservableObject {
     }
 
     private func unpinnedIndex(of id: TabIdentifier) -> Int? {
-        tabCollectionViewModel.tabCollection.tabs.firstIndex { $0.uuid == id }
+        let tabs = tabCollectionViewModel.tabCollection.tabs
+        // Dragging selects the row, so pointer updates can normally use its current index directly.
+        if case .unpinned(let index) = tabCollectionViewModel.selectionIndex, tabs[safe: index]?.uuid == id {
+            return index
+        }
+        return tabs.firstIndex { $0.uuid == id }
     }
 
     private func subscribeToTabCollection() {
-        // TabCollectionViewModel updates its tab view models from the same publisher,
-        // so read the collection once the change has settled.
+        // A suspension pass can replace many tabs in one turn. Merge its notifications so
+        // we read the final collection and its updated view models once on the main queue.
+        let tabsChanged: UInt = 1
+        let selectionChanged: UInt = 2
+        pendingUpdates.setEventHandler { [weak self] in
+            guard let self else { return }
+            if pendingUpdates.data & tabsChanged != 0 {
+                reloadTabs()
+            }
+            updateSelectedTabID()
+        }
+        pendingUpdates.activate()
         tabCollectionViewModel.tabCollection.$tabs
             .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.reloadTabs()
-                self?.updateSelectedTabID()
-            }
+            .sink { @Sendable [pendingUpdates] _ in pendingUpdates.or(data: tabsChanged) }
             .store(in: &cancellables)
 
         tabCollectionViewModel.$selectionIndex
             .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateSelectedTabID()
-            }
+            .sink { @Sendable [pendingUpdates] _ in pendingUpdates.or(data: selectionChanged) }
             .store(in: &cancellables)
     }
 
@@ -167,6 +185,9 @@ final class VerticalTabsViewModel: ObservableObject {
         }
         let tabs = orderedViewModels.map(VerticalTab.init)
         if self.tabs != tabs {
+            if !self.tabs.elementsEqual(tabs, by: { $0.id == $1.id }) {
+                tabOrderRevision += 1
+            }
             self.tabs = tabs
         }
     }

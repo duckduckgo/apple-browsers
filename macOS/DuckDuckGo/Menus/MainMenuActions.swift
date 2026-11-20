@@ -2186,7 +2186,6 @@ extension AppDelegate: NSMenuItemValidation {
     }
 
     @MainActor
-    @MainActor
     private var isUserInteractionAllowed: Bool {
         !windowControllersManager.userInteractionLock.isLocked
     }

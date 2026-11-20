@@ -92,6 +92,46 @@ struct ContextualDialogsManagerPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A relaunch during the Duck.ai path locks the UI again", .timeLimit(.minutes(1)))
+    func relaunchRelocks() {
+        manager.startPath(.duckAI)
+        manager.state = .ongoing
+
+        let relaunchLocker = CapturingUILocker()
+        _ = relaunchedManager(uiLocker: relaunchLocker)
+
+        #expect(relaunchLocker.calls == [.locked(except: [.fire])])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A relaunch after Fire, or on the search path, sends no lock", .timeLimit(.minutes(1)),
+          arguments: [true, false])
+    func relaunchWithoutLock(duckAIPathAfterFire: Bool) {
+        if duckAIPathAfterFire {
+            manager.startPath(.duckAI)
+            manager.state = .ongoing
+            manager.fireButtonUsed()
+        } else {
+            manager.startPath(.search)
+            manager.state = .ongoing
+        }
+
+        let relaunchLocker = CapturingUILocker()
+        _ = relaunchedManager(uiLocker: relaunchLocker)
+
+        #expect(relaunchLocker.calls.isEmpty)
+    }
+
+    private func relaunchedManager(uiLocker: CapturingUILocker) -> ContextualDialogsManager {
+        .withSearchPath(trackerMessageProvider: MockTrackerMessageProvider(),
+                        subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling(),
+                        stateStorage: stateStorage,
+                        searchPathStorage: searchPathStorage,
+                        settings: store.throwingKeyedStoring(),
+                        uiLocker: uiLocker)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Starting the Duck.ai path saves it and asks for no search dialogs", .timeLimit(.minutes(1)))
     func startDuckAIPath() async throws {
         manager.startPath(.duckAI)

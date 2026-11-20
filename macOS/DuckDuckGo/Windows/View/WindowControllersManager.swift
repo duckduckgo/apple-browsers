@@ -132,10 +132,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
-    /// The one lock on browser interaction during onboarding. Windows and menus read it.
+    /// The one lock on browser interaction during onboarding. Every window and menu reads it.
     private(set) var userInteractionLock = UserInteractionLock.none
-    /// The window that holds the lock, so the unlock reaches it even if another window is in front.
-    private weak var lockedWindowController: MainWindowController?
 
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
@@ -172,6 +170,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
 
         mainWindowControllers.append(windowController)
+        // A window opened while locked, or the first one after a relaunch, starts locked.
+        if userInteractionLock.isLocked {
+            windowController.userInteraction(lock: userInteractionLock)
+        }
         didRegisterWindowController.send(windowController)
     }
 
@@ -664,12 +666,10 @@ extension WindowControllersManagerProtocol {
 extension WindowControllersManager: WebNotificationTabFinding {}
 
 extension WindowControllersManager {
-    /// Locks `windowController` (by default the window already locked, else the one in front), or unlocks the locked window.
-    func setUserInteractionLock(_ lock: UserInteractionLock, in windowController: MainWindowController? = nil) {
-        let target = lock.isLocked ? (windowController ?? lockedWindowController ?? mainWindowController) : lockedWindowController
+    /// Applies `lock` to every window; windows registered later get it too.
+    func setUserInteractionLock(_ lock: UserInteractionLock) {
         userInteractionLock = lock
-        lockedWindowController = lock.isLocked ? target : nil
-        target?.userInteraction(lock: lock)
+        mainWindowControllers.forEach { $0.userInteraction(lock: lock) }
     }
 }
 

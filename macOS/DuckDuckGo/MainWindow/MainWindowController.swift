@@ -172,7 +172,7 @@ final class MainWindowController: NSWindowController {
 
         selectedTab.startOnboarding()
         // Lock immediately to avoid flicker while the onboarding script loads.
-        windowControllersManager?.setUserInteractionLock(.locked(), in: self)
+        windowControllersManager?.setUserInteractionLock(.locked())
     }
 
     private func subscribeToResolutionChange() {

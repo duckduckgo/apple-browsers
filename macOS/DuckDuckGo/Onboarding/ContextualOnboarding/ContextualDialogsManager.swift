@@ -162,6 +162,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         }
         // Compares the raw value, as before: an unreadable saved value counts as not completed here.
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
+        // After a relaunch, restores the lock of a path that was still running.
+        updateUILock()
     }
 
     // Returns the last dialog shown if it was shown for the given tab.

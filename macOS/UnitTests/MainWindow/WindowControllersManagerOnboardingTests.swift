@@ -110,34 +110,48 @@ final class WindowControllersManagerOnboardingTests: XCTestCase {
         XCTAssertTrue(mainViewController.validateMenuItem(sidebar))
     }
 
-    func testUnlock_ReachesTheLockedWindowWhenAnotherIsInFront() {
-        let lockedWindowController = registerLoadedWindow()
+    func testLockAndUnlock_ReachEveryWindow() {
+        let first = registerLoadedWindow()
+        let second = registerLoadedWindow()
+
         sut.setUILock(.locked(except: [.fire]))
-        (lockedWindowController.window as? MockWindow)?.isMainWindow = false
-        let frontWindowController = registerLoadedWindow()
+
+        XCTAssertFalse(first.mainViewController.tabCollectionViewModel.changesEnabled)
+        XCTAssertFalse(second.mainViewController.tabCollectionViewModel.changesEnabled)
 
         sut.setUILock(UserInteractionLock.none)
 
-        XCTAssertEqual(sut.userInteractionLock, UserInteractionLock.none)
-        XCTAssertTrue(lockedWindowController.mainViewController.tabCollectionViewModel.changesEnabled)
-        XCTAssertTrue(lockedWindowController.mainViewController.tabBarViewController.fireButton.isEnabled)
-        XCTAssertTrue(frontWindowController.mainViewController.tabCollectionViewModel.changesEnabled)
+        XCTAssertTrue(first.mainViewController.tabCollectionViewModel.changesEnabled)
+        XCTAssertTrue(second.mainViewController.tabCollectionViewModel.changesEnabled)
+    }
+
+    func testWindowOpenedWhileLocked_StartsLocked() {
+        sut.setUILock(.locked(except: [.fire]))
+
+        let windowController = registerLoadedWindow()
+
+        XCTAssertFalse(windowController.mainViewController.tabCollectionViewModel.changesEnabled)
+        XCTAssertTrue(windowController.mainViewController.tabBarViewController.fireButton.isEnabled)
     }
 }
 
 private extension WindowControllersManagerOnboardingTests {
 
+    /// Loads the views before registering, as the app does when a window is first shown.
     func registerLoadedWindow() -> MainWindowController {
-        let windowController = registerWindowController(tabs: [Tab(content: .newtab)], selectedIndex: 0)
+        let windowController = makeWindowController(tabs: [Tab(content: .newtab)], selectedIndex: 0)
         _ = windowController.mainViewController.view
+        sut.register(windowController)
         return windowController
     }
 
     func registerWindow(tabs: [Tab], selectedIndex: Int) -> TabCollectionViewModel {
-        registerWindowController(tabs: tabs, selectedIndex: selectedIndex).mainViewController.tabCollectionViewModel
+        let windowController = makeWindowController(tabs: tabs, selectedIndex: selectedIndex)
+        sut.register(windowController)
+        return windowController.mainViewController.tabCollectionViewModel
     }
 
-    func registerWindowController(tabs: [Tab], selectedIndex: Int) -> MainWindowController {
+    func makeWindowController(tabs: [Tab], selectedIndex: Int) -> MainWindowController {
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), windowControllersManager: WindowControllersManagerMock())
         tabCollectionViewModel.select(at: .unpinned(selectedIndex))
         let mainViewController = MainViewController(
@@ -153,7 +167,6 @@ private extension WindowControllersManagerOnboardingTests {
             themeManager: MockThemeManager()
         )
         windowController.window = window
-        sut.register(windowController)
         return windowController
     }
 }

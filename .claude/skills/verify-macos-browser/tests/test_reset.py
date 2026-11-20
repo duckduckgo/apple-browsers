@@ -298,6 +298,8 @@ class ProblemTests(unittest.TestCase):
 
         def sh(mac, command, *args):
             ran.append((command, *args))
+            if (command, *args) == ("ax", "grants"):
+                return 0, "accessibility=true screen-recording=true"
             if (command, *args) == ("reset", "begin"):
                 return 0, "check\tapp stopped\tok\ncheck\tno other Debug app open (another worktree's verify app counts)\tfail"
             return 0, ""

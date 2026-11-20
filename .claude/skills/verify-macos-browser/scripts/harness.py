@@ -735,6 +735,13 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
     try:
         if vm:
             mac._do("vm", vm, *([prefer_vm] if vm == "auto" and prefer_vm else []))
+        else:   # without both grants a run on this Mac can only end in NOT READY, after the whole build
+            grants = mac._do("ax", "grants")
+            missing = [g for g in ("Accessibility", "Screen Recording") if f"{g.lower().replace(' ', '-')}=true" not in grants]
+            if missing:
+                raise ProofError(f"NO GRANT: the process running prove has no {' or '.join(missing)} grant ({_line(grants)}); "
+                                 "turn it on in System Settings > Privacy & Security for the app it runs under, or "
+                                 "prove in a VM")
         if mac.reset:   # a failed reset stops the run: it would run on the engineer's own Debug data
             code, out = mac._sh("reset", "begin")
             failed = re.findall(r"^check\t(.*)\tfail$", out, re.M)

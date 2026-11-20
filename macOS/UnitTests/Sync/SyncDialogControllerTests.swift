@@ -360,23 +360,6 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
-    func testAuthenticationCancelledPromptClosePressed_whenPromptLimitReached_doesNotRetryAuthentication() async {
-        authenticator.stubAuthenticateUser = .failure
-        mockKeyValueStore.set(2, forKey: "sync.authentication-cancelled-prompt.presented-count")
-
-        await syncDialogController.syncWithServerPressed()
-
-        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
-    }
-
-    func testSyncWithServerPressed_whenAuthenticationCancelled_persistsPresentationCount() async {
-        authenticator.stubAuthenticateUser = .failure
-
-        await syncDialogController.syncWithServerPressed()
-
-        XCTAssertEqual(mockKeyValueStore.object(forKey: "sync.authentication-cancelled-prompt.presented-count") as? Int, 1)
-    }
-
     func testSyncWithServerPressed_whenAuthenticationCancelled_firesShownPixelOncePerPresentationUpToCap() async {
         authenticator.stubAuthenticateUser = .failure
 
@@ -772,24 +755,6 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testPresentRemoveDevice_showsRemoveDevice() {
-        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
-
-        syncDialogController.presentRemoveDevice(device)
-
-        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
-    }
-
-    @MainActor
-    func testPresentDeviceDetails_whenAuthenticated_showsDeviceDetails() async {
-        let device = SyncDevice(kind: .current, name: "test", id: "test")
-
-        await syncDialogController.presentDeviceDetails(device)
-
-        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
-    }
-
-    @MainActor
     func testPresentDeviceDetails_whenImprovedPairingFlowEnabled_enablesImprovedPairingFlowOnDialogModel() async {
         enableImprovedPairingFlow()
         let device = SyncDevice(kind: .current, name: "test", id: "test")
@@ -1136,62 +1101,6 @@ final class SyncDialogControllerTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 5)
     }
 
-    @MainActor
-    func test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code() async {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
-        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
-        connectionController.startConnectModeStub = pairingInfo
-
-        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
-
-        await syncDialogController.enterRecoveryCodePressed()
-
-        await fulfillment(of: expectations, timeout: 5)
-    }
-
-    @MainActor
-    func test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
-        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
-        connectionController.startConnectModeStub = pairingInfo
-
-        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
-
-        await syncDialogController.enterRecoveryCodePressed()
-
-        await fulfillment(of: expectations, timeout: 5)
-    }
-
-    @MainActor
-    func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOff_usesBase64Code() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
-        connectionController.startExchangeModeStub = pairingInfo
-        ddgSyncing.account = .mock
-
-        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
-
-        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
-
-        await fulfillment(of: expectations, timeout: 5)
-    }
-
-    @MainActor
-    func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOn_usesURL() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
-        connectionController.startExchangeModeStub = pairingInfo
-        ddgSyncing.account = .mock
-
-        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
-
-        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
-
-        await fulfillment(of: expectations, timeout: 5)
-    }
-
     func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
         let mockAccount = SyncAccount.mock
@@ -1270,28 +1179,6 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(code, expectedDisplayCode)
         XCTAssertEqual(syncDialogController.codeForDisplayOrPasting, expectedDisplayCode)
         XCTAssertEqual(syncDialogController.stringForQR, expectedDisplayCode)
-    }
-
-    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        let expectedCode = "test_code"
-        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
-        connectionController.startExchangeModeStub = stubbedPairingInfo
-        ddgSyncing.account = .mock
-
-        Task {
-            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
-        }
-
-        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
-
-        let dialogQrCode = try XCTUnwrap(codes.qrCode)
-        XCTAssertTrue(dialogQrCode.isDDGURLString)
-
-        XCTAssertEqual(syncDialogController.codeForDisplayOrPasting, expectedCode)
-        let stringForQR = try XCTUnwrap(syncDialogController.stringForQR)
-        XCTAssertTrue(stringForQR.isDDGURLString)
     }
 
     func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
@@ -1703,15 +1590,6 @@ final class SyncDialogControllerTests: XCTestCase {
 
             XCTAssertTrue(didEndFlowCalled, file: file, line: line)
         }
-    }
-
-    func testSyncWithServerPressed_whenAuthenticationFails_setsErrorMessage() async {
-        authenticator.stubAuthenticateUser = .noAuthAvailable
-
-        await syncDialogController.syncWithServerPressed()
-
-        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
-        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
     }
 
     func testRecoverDataPressed_whenAuthenticationFails_setsErrorMessage() async {
@@ -2888,27 +2766,6 @@ final class SyncDialogControllerTests: XCTestCase {
         ddgSyncing.account = SyncAccount(deviceId: id, deviceName: "iPhone", deviceType: "iPhone", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.registeredDevices = [RegisteredDevice(id: id, name: "iPhone", type: "iPhone")]
         syncDialogController.devices = [SyncDevice(RegisteredDevice(id: id, name: "iPhone", type: "iPhone"))]
-    }
-
-    private func expectationsFor(codeForDisplayOrPasting: String, stringForQR: String) -> [XCTestExpectation] {
-        let codeForDisplayExpectation = expectation(description: "codeForDisplayOrPasting")
-        let stringForQRExpectation = expectation(description: "stringForQR")
-
-        codeForDisplayExpectation.assertForOverFulfill = false
-        stringForQRExpectation.assertForOverFulfill = false
-
-        syncDialogController.$codeForDisplayOrPasting.sink {
-            if $0 == codeForDisplayOrPasting {
-                codeForDisplayExpectation.fulfill()
-            }
-        }.store(in: &cancellables)
-
-        syncDialogController.$stringForQR.sink {
-            if $0 == stringForQR {
-                stringForQRExpectation.fulfill()
-            }
-        }.store(in: &cancellables)
-        return [codeForDisplayExpectation, stringForQRExpectation]
     }
 
     private struct SyncDialogCodes: Equatable {

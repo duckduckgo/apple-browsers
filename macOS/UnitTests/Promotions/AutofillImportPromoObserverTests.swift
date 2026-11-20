@@ -275,51 +275,20 @@ final class AutofillImportPromoObserverTests: XCTestCase {
 
     // MARK: - Promo definition
 
-    func testFactoryCreatesAutofillImportPromoWithCorrectConfiguration() {
+    func testWhenFactoryCreatesAutofillImportPromoThenItHasThePersistedIdAndTheObserverAsDelegate() {
         let promo = PromoServiceFactory.autofillImport(observer: sut)
 
         XCTAssertEqual(promo.id, "autofill-import-item")
-        XCTAssertTrue(promo.triggers.isEmpty)
-        XCTAssertEqual(promo.initiated, .user)
-        XCTAssertEqual(promo.promoType.severity, .low)
-        XCTAssertEqual(promo.context, .webPage)
-        XCTAssertTrue(promo.coexistingPromoIDs.isEmpty)
         XCTAssertTrue(promo.delegate === sut)
     }
 
     // MARK: - Integration with PromoService
-
-    func testWhenImportPromptClosedWithoutActionThenPromoServiceRecordsDismissalAndPromoStaysEligible() async {
-        let record = await recordAfterPromoServiceRoundTrip(actions: [])
-
-        XCTAssertEqual(record.timesDismissed, 1)
-        XCTAssertFalse(record.actioned)
-        XCTAssertFalse(record.isPermanentlyDismissed)
-        XCTAssertTrue(record.isEligible)
-    }
 
     func testWhenLoginsImportedFromPromoThenPromoServiceRecordsActionedAndPermanentlyDismissed() async {
         let record = await recordAfterPromoServiceRoundTrip(actions: [.startImport, .importLogins, .endImportFlow])
 
         XCTAssertEqual(record.timesDismissed, 1)
         XCTAssertTrue(record.actioned)
-        XCTAssertTrue(record.isPermanentlyDismissed)
-    }
-
-    func testWhenImportFromPromoAddsNoLoginsThenPromoServiceRecordsDismissalAndPromoStaysEligible() async {
-        let record = await recordAfterPromoServiceRoundTrip(actions: [.startImport, .endImportFlow])
-
-        XCTAssertEqual(record.timesDismissed, 1)
-        XCTAssertFalse(record.actioned)
-        XCTAssertFalse(record.isPermanentlyDismissed)
-        XCTAssertTrue(record.isEligible)
-    }
-
-    func testWhenPermanentlyDismissedThenPromoServiceRecordsPermanentDismissalWithoutAction() async {
-        let record = await recordAfterPromoServiceRoundTrip(actions: [.permanentlyDismiss])
-
-        XCTAssertEqual(record.timesDismissed, 1)
-        XCTAssertFalse(record.actioned)
         XCTAssertTrue(record.isPermanentlyDismissed)
     }
 

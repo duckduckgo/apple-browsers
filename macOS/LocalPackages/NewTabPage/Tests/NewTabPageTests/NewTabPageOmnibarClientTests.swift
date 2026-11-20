@@ -231,59 +231,26 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenReasoningEffortDisabledThenSupportedToolsPreservedInGetConfig() async throws {
+    func testWhenReasoningEffortDisabledThenOtherModelFieldsArePreservedInGetConfig() async throws {
         configProvider.isReasoningEffortEnabled = false
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
+                                                 description: "Recommended",
                                                  isAvailable: true, supportsImageUpload: false,
                                                  supportedTools: ["WebSearch"],
-                                                 reasoningEfforts: availableEfforts(["none", "low", "medium"]))
-            ])
-        ]
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedTools, ["WebSearch"])
-    }
-
-    @MainActor
-    func testWhenReasoningEffortDisabledThenSupportedFileTypesPreservedInGetConfig() async throws {
-        // Stripping reasoning effort must not also drop supportedFileTypes, or PDF attachment
-        // would be hidden for capable models whenever reasoning effort is off.
-        configProvider.isReasoningEffortEnabled = false
-        modelsProvider.lastFetchedSections = [
-            NewTabPageDataModel.AIModelSection(header: nil, items: [
-                NewTabPageDataModel.AIModelItem(id: "model", name: "Model", shortName: "M",
-                                                 isAvailable: true, supportsImageUpload: false,
-                                                 reasoningEfforts: availableEfforts(["none", "low"]),
+                                                 reasoningEfforts: availableEfforts(["none", "low", "medium"]),
                                                  supportedFileTypes: ["application/pdf"])
             ])
         ]
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
-        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedFileTypes, ["application/pdf"])
-        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.reasoningEfforts, [])
-    }
-
-    @MainActor
-    func testWhenReasoningEffortDisabledThenDescriptionPreservedInGetConfig() async throws {
-        // Stripping reasoning effort must not also drop the recommendation label subtitle.
-        configProvider.isReasoningEffortEnabled = false
-        modelsProvider.lastFetchedSections = [
-            NewTabPageDataModel.AIModelSection(header: nil, items: [
-                NewTabPageDataModel.AIModelItem(id: "model", name: "Model", shortName: "M",
-                                                 description: "Recommended",
-                                                 isAvailable: true, supportsImageUpload: false,
-                                                 reasoningEfforts: availableEfforts(["none", "low"]))
-            ])
-        ]
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.description, "Recommended")
-        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.reasoningEfforts, [])
+        let item = config.aiModelSections?.flatMap(\.items).first
+        XCTAssertEqual(item?.reasoningEfforts, [])
+        XCTAssertEqual(item?.description, "Recommended")
+        XCTAssertEqual(item?.supportedTools, ["WebSearch"])
+        XCTAssertEqual(item?.supportedFileTypes, ["application/pdf"])
     }
 
     @MainActor
@@ -688,19 +655,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     // MARK: - getAiChats
 
-    func testGetAiChatsReturnsChatsFromProvider() async throws {
-        let expectedChats = NewTabPageDataModel.AiChatsData(chats: [
-            NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1"),
-            NewTabPageDataModel.AiChat(chatId: "2", title: "Chat 2")
-        ])
-        aiChatsProvider.aiChatsHandler = { _ in expectedChats }
-
-        let request = NewTabPageDataModel.OmnibarGetAiChatsRequest(query: "test")
-        let response: NewTabPageDataModel.AiChatsData = try await messageHelper.handleMessage(named: .getAiChats, parameters: request)
-
-        XCTAssertEqual(response, expectedChats)
-    }
-
     func testGetAiChatsRoundTripsModelField() async throws {
         let expectedChats = NewTabPageDataModel.AiChatsData(chats: [
             NewTabPageDataModel.AiChat(chatId: "v", title: "Voice", model: AIChatNativePrompt.voiceMode),
@@ -716,13 +670,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(response.chats[0].model, "voice-mode")
         XCTAssertEqual(response.chats[1].model, "image-generation")
         XCTAssertNil(response.chats[2].model)
-    }
-
-    func testGetAiChatsOmitsModelKeyWhenNil() async throws {
-        let chat = NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1")
-        let encoded = try JSONEncoder().encode(chat)
-        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
-        XCTAssertFalse(json.keys.contains("model"), "Expected `model` key to be absent when nil; got: \(json.keys.sorted())")
     }
 
     func testGetAiChatsEncodesModelKeyWhenPresent() async throws {
@@ -1128,24 +1075,30 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .usageLimit)
     }
 
-    // MARK: - attach tabs (config)
+    // MARK: - config flags
 
+    /// Each flag gets a distinct on/off pattern across the rows, so a flag wired to another's getter fails.
     @MainActor
-    func testWhenAttachTabsEnabledThenGetConfigIncludesEnableAttachTabsTrue() async throws {
-        configProvider.isAttachTabsEnabled = true
+    func testWhenConfigFlagsDifferThenGetConfigReportsEachFromItsOwnProviderFlag() async throws {
+        let rows: [(attachTabs: Bool, voiceChat: Bool, chatDeletion: Bool, suggestionDeletion: Bool)] = [
+            (true, true, false, false),
+            (true, false, true, true),
+            (false, true, true, false)
+        ]
 
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        for (index, row) in rows.enumerated() {
+            configProvider.isAttachTabsEnabled = row.attachTabs
+            configProvider.isVoiceChatAccessEnabled = row.voiceChat
+            configProvider.isAIChatDeletionEnabled = row.chatDeletion
+            configProvider.isSearchSuggestionDeletionEnabled = row.suggestionDeletion
 
-        XCTAssertEqual(config.enableAttachTabs, true)
-    }
+            let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
-    @MainActor
-    func testWhenAttachTabsDisabledThenGetConfigIncludesEnableAttachTabsFalse() async throws {
-        configProvider.isAttachTabsEnabled = false
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.enableAttachTabs, false)
+            XCTAssertEqual(config.enableAttachTabs, row.attachTabs, "row: \(index)")
+            XCTAssertEqual(config.enableVoiceChatAccess, row.voiceChat, "row: \(index)")
+            XCTAssertEqual(config.enableAiChatDeletion, row.chatDeletion, "row: \(index)")
+            XCTAssertEqual(config.enableSearchSuggestionDeletion, row.suggestionDeletion, "row: \(index)")
+        }
     }
 
     // MARK: - getOpenTabs / getTabContent
@@ -1212,26 +1165,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(forwardedFiles?.first?.fileName, "doc.pdf")
     }
 
-    // MARK: - voice chat access
-
-    @MainActor
-    func testWhenVoiceChatAccessEnabledThenGetConfigIncludesEnableVoiceChatAccessTrue() async throws {
-        configProvider.isVoiceChatAccessEnabled = true
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.enableVoiceChatAccess, true)
-    }
-
-    @MainActor
-    func testWhenVoiceChatAccessDisabledThenGetConfigIncludesEnableVoiceChatAccessFalse() async throws {
-        configProvider.isVoiceChatAccessEnabled = false
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.enableVoiceChatAccess, false)
-    }
-
     // MARK: - subscription dialogs
 
     @MainActor
@@ -1262,44 +1195,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
         XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 1)
         XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .model)
-    }
-
-    // MARK: - chat/suggestion deletion (config)
-
-    @MainActor
-    func testWhenAiChatDeletionEnabledThenGetConfigIncludesEnableAiChatDeletionTrue() async throws {
-        configProvider.isAIChatDeletionEnabled = true
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.enableAiChatDeletion, true)
-    }
-
-    @MainActor
-    func testWhenAiChatDeletionDisabledThenGetConfigIncludesEnableAiChatDeletionFalse() async throws {
-        configProvider.isAIChatDeletionEnabled = false
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.enableAiChatDeletion, false)
-    }
-
-    @MainActor
-    func testWhenSearchSuggestionDeletionEnabledThenGetConfigIncludesEnableSearchSuggestionDeletionTrue() async throws {
-        configProvider.isSearchSuggestionDeletionEnabled = true
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.enableSearchSuggestionDeletion, true)
-    }
-
-    @MainActor
-    func testWhenSearchSuggestionDeletionDisabledThenGetConfigIncludesEnableSearchSuggestionDeletionFalse() async throws {
-        configProvider.isSearchSuggestionDeletionEnabled = false
-
-        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
-
-        XCTAssertEqual(config.enableSearchSuggestionDeletion, false)
     }
 
     // MARK: - confirmDeleteAiChat

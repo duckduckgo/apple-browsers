@@ -2541,6 +2541,37 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(attachTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
     }
 
+    func test_simplifiedPromptBox_followsTheFlagWhenItChangesWhileTheAppRuns() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: featureFlagger
+        )
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden, "Flag off: today's tools button")
+        XCTAssertTrue(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+
+        featureFlagger.enabledFeatureFlags = [.unifiedToggleInputSimplifiedPromptBox]
+        sut.showExpanded()
+        XCTAssertTrue(sut.viewController.isToolsButtonHidden, "Flag turned on: the tools move into the attach menu")
+        let attachTitles = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertTrue(attachTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
+        XCTAssertFalse(attachTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+
+        featureFlagger.enabledFeatureFlags = []
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden, "Flag turned off again: the tools button is back")
+        XCTAssertTrue(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        let attachTitlesAfter = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertFalse(attachTitlesAfter.contains(UserText.aiChatToolbarWebSearchToolTitle))
+    }
+
     func test_handleToolsMenuSelection_customizeResponses_forwardsToHandler() {
         let exp = expectation(description: "didPressCustomizeResponsesButton fires")
         sut.didPressCustomizeResponsesButton

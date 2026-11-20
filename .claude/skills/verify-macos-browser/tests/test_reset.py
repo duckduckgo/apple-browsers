@@ -189,6 +189,24 @@ class MacResetTests(unittest.TestCase):
                                                os.path.join(sh.temp, B),
                                                os.path.join(sh.cache, "com.apple.WebKit.GPU+" + B)]))
 
+    def test_a_folder_macos_will_not_move_is_named_with_the_fix(self):
+        sh = FakeMac(self.root)
+        real_rename = vhelp.os.rename
+
+        def refuse_groups(src, dst):
+            if "Group Containers" in src:
+                raise PermissionError(1, "Operation not permitted")
+            return real_rename(src, dst)
+        vhelp.os.rename = refuse_groups
+        try:
+            self.reset(sh).begin()
+        finally:
+            vhelp.os.rename = real_rename
+        failed = [k for k, ok in self.checks().items() if not ok]
+        self.assertIn("app data and temp files removed", failed)
+        self.assertIn("macOS refused to move HKE973VLUW.com.duckduckgo.macos.browser.app-configuration.debug: give the "
+                      "app that runs prove Full Disk Access, or prove in a VM", failed)
+
     def test_a_folder_macos_will_not_move_stays_and_fails_the_check(self):
         sh = FakeMac(self.root)
         real_rename = vhelp.os.rename

@@ -82,6 +82,11 @@ final class BrowserTabViewController: NSViewController {
         _newTabPageWebViewModel = newTabPageWebViewModel
         return newTabPageWebViewModel
     }
+
+    /// This window's New Tab Page web view if it has been created; unlike `newTabPageWebViewModel`, never creates one.
+    var existingNewTabPageWebView: WebView? {
+        _newTabPageWebViewModel?.webView
+    }
     let newTabPageLoadMetrics = NewTabPageLoadMetrics()
 
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider

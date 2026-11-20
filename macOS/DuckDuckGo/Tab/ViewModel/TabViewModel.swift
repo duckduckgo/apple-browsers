@@ -204,7 +204,9 @@ final class TabViewModel: NSObject {
                     return Empty().eraseToAnyPublisher()
 
                 case .url(let url, _, source: .webViewUpdated),
-                     .url(let url, _, source: .link):
+                     .url(let url, _, source: .link),
+                     .aiChat(let url, source: .webViewUpdated),
+                     .aiChat(let url, source: .link):
 
                     guard !url.isEmpty, url != .blankPage, !url.isDuckPlayer else { fallthrough }
 
@@ -233,13 +235,25 @@ final class TabViewModel: NSObject {
                      .onboarding,
                      .none,
                      .dataBrokerProtection,
-                     .subscription,
-                     .identityTheftRestoration,
                      .releaseNotes,
                      .webExtensionUrl,
                      .aiChat:
                     // Update the address bar instantly for built-in content types or user-initiated navigations
                     return Just( () ).eraseToAnyPublisher()
+
+                case .subscription(let url),
+                     .identityTheftRestoration(let url):
+                    // These don‘t carry the navigation source: display them instantly in a new Tab opened from the UI,
+                    // otherwise wait for the Security Origin to match as a web page may have started the navigation.
+                    // A child Tab opened by an opaque-origin frame also starts with an empty Security Origin, so it waits too.
+                    let isNewTabOpenedFromUI = tab.securityOrigin.isEmpty && tab.parentTabID == nil
+                    guard !isNewTabOpenedFromUI else { return Just( () ).eraseToAnyPublisher() }
+
+                    return tab.$securityOrigin
+                        .filter { tabSecurityOrigin in
+                            url.securityOrigin == tabSecurityOrigin
+                        }
+                        .asVoid().eraseToAnyPublisher()
                 }
             }
             .switchToLatest()

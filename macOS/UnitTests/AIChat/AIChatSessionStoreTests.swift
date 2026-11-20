@@ -357,6 +357,23 @@ final class AIChatSessionStoreTests: XCTestCase {
         XCTAssertFalse(session.isRestoredFromPreviousSession)
     }
 
+    // MARK: - Serialization Tests
+
+    func testStatesForSerialization_excludesBurnerSessionsAndKeepsRegularSessions() {
+        // Given
+        _ = provider.getOrCreateSession(for: "regular-tab", burnerMode: .regular)
+        _ = provider.getOrCreateSession(for: "burner-tab", burnerMode: .burner(websiteDataStore: .nonPersistent()))
+
+        // When
+        let states = provider.statesForSerialization()
+
+        // Then
+        XCTAssertEqual(states.count, 1)
+        XCTAssertNotNil(states["regular-tab"])
+        XCTAssertNil(states["burner-tab"])
+        XCTAssertEqual(provider.sessions.count, 2)
+    }
+
     // MARK: - Integration Tests
 
     func testMultipleSessionOperations() {

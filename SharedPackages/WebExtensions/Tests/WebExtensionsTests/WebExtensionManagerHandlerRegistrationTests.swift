@@ -209,6 +209,7 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
         }
     }
 
+#if os(macOS)
     @MainActor
     func testWhenEmbeddedExtensionsAreSynced_ThenHandlersAreRegisteredOnFirstLoadAndReload() async throws {
         let bundledURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
@@ -227,6 +228,7 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
 
         XCTAssertEqual(messageRouter.registeredHandlers.count, 2)
     }
+#endif
 
     @MainActor
     func testWhenBundledExtensionInstallFails_ThenPendingTrustIsRemoved() async throws {
@@ -243,6 +245,7 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
         }
     }
 
+#if os(macOS)
     @MainActor
     func testWhenEmbeddedSyncFails_ThenPendingTrustIsRemoved() async throws {
         let bundledURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
@@ -254,6 +257,7 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
         XCTAssertTrue(manager.installingEmbeddedIdentifiers.isEmpty)
         XCTAssertTrue(installedExtensionStoringMock.installedExtensions.isEmpty)
     }
+#endif
 
     // MARK: - Test Helpers
 

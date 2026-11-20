@@ -261,7 +261,7 @@ final class SystemExtensionManagerTests: XCTestCase {
         XCTAssertEqual(request.replacementAction(replacing: unreadable, existingIsActive: true, with: unreadable), .replace)
     }
 
-    func testWhenTheIdenticalActiveExtensionIsKeptThenActivationSucceeds() async throws {
+    func testWhenTheIdenticalActiveExtensionIsKeptThenActivationThrowsRequestCanceled() async throws {
         let manager = CapturingSystemExtensionRequestManager()
         let request = makeActivationRequest(manager: manager)
         let submitted = expectation(description: "Request submitted")
@@ -272,7 +272,12 @@ final class SystemExtensionManagerTests: XCTestCase {
         _ = request.replacementAction(replacing: build, existingIsActive: true, with: build)
         request.request(try XCTUnwrap(manager.submittedRequests.first), didFailWithError: OSSystemExtensionError(.requestCanceled))
 
-        try await activation.value
+        do {
+            try await activation.value
+            XCTFail("Expected the activation request to be cancelled")
+        } catch {
+            XCTAssertEqual((error as? OSSystemExtensionError)?.code, .requestCanceled)
+        }
         XCTAssertNil(request.version)
     }
 

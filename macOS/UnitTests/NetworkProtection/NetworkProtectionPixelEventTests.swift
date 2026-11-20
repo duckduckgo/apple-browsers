@@ -52,6 +52,14 @@ final class NetworkProtectionPixelEventTests: XCTestCase {
         }
     }
 
+    func testSystemExtensionActivationSuccessReportsWhetherItWasAlreadyActive() {
+        let activated = NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess(alreadyActive: false)
+        let alreadyActive = NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess(alreadyActive: true)
+
+        XCTAssertEqual(activated.parameters, ["alreadyActive": "false"])
+        XCTAssertEqual(alreadyActive.parameters, ["alreadyActive": "true"])
+    }
+
     // MARK: - Test Firing Pixels
 
     /// This test verifies validates expectations when firing `NetworkProtectionPixelEvent`.

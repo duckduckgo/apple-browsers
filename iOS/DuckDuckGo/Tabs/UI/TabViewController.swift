@@ -960,6 +960,17 @@ class TabViewController: UIViewController {
         initializedAIChatContextualSheetCoordinator = coordinator
         return coordinator
     }()
+
+    /// Clears the contextual chat, closing its sheet, when Delete All Chats removes it.
+    func clearContextualChatAfterDeleteAll() {
+        guard let coordinator = initializedAIChatContextualSheetCoordinator else {
+            tabModel.contextualChatURL = nil
+            return
+        }
+        guard coordinator.sessionState.hasActiveChat || tabModel.contextualChatURL != nil else { return }
+        coordinator.clearActiveChat(dismissPresentedSheet: true)
+    }
+
     let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     init(tabModel: Tab,

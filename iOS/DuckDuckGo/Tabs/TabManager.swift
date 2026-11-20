@@ -58,6 +58,17 @@ protocol TabManaging {
     @MainActor func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource)
 }
 
+extension TabManaging {
+    /// Reloads Duck.ai tabs that kept an empty chat through Delete All Chats, so they stop listing deleted chats.
+    @MainActor
+    func reloadIdleChatTabsAfterDeletingAllChats(in mode: BrowsingMode) {
+        for tab in tabsModel(for: mode).tabs {
+            guard let controller = controller(for: tab), controller.isShowingIdleAIChat else { continue }
+            controller.reloadFullModeAIChatIfNeeded()
+        }
+    }
+}
+
 enum FireModeSwitchSource: String {
     case tabSelection = "tab_selection"
     case longPressTabsIcon = "long_press_tabs_icon"
@@ -774,6 +785,37 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         save()
         return controller
+    }
+
+    /// Closes the tabs showing saved Duck.ai chats and clears contextual chats in `mode`, before Delete All Chats deletes them.
+    /// Adds a new tab first when closing would leave no tab selected, so closing the last Fire Tab doesn't end the Fire session.
+    @MainActor
+    func closeChatTabsForDeletingAllChats(in mode: BrowsingMode,
+                                          beforeClosing: ([Tab]) -> Void) -> (closedTabs: Bool, selectedNewTab: Bool) {
+        let model = tabsModel(for: mode)
+        let tabsToClose = model.tabs.filter { tab in
+            controller(for: tab).map(\.isShowingSavedAIChat) ?? tab.isShowingSavedAIChat
+        }
+        let closedTabs = !tabsToClose.isEmpty
+        let needsReplacement = closedTabs && (tabsToClose.count == model.count || tabsToClose.contains { $0 === model.currentTab })
+        if closedTabs {
+            beforeClosing(tabsToClose)
+            if needsReplacement {
+                // Removing the last Fire Tab triggers a burn that also clears site data.
+                addHomeTab(in: model)
+            }
+            bulkRemoveTabs(tabsToClose, in: model)
+        }
+
+        for tab in model.tabs {
+            if let controller = controller(for: tab) {
+                controller.clearContextualChatAfterDeleteAll()
+            } else {
+                tab.contextualChatURL = nil
+            }
+        }
+        save()
+        return (closedTabs, needsReplacement)
     }
 
     /// Warning! This will leave the underlying tabs empty.  This is intentional so that the the

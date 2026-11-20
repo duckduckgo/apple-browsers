@@ -8770,6 +8770,21 @@ extension MainViewController: TabDelegate {
         let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
         let navigationController = UINavigationController(rootViewController: content)
         navigationController.modalPresentationStyle = .automatic
+        let historyTab = tabManager.currentTabsModel.currentTab
+        viewModel.onDeleteAllChatsFailed = { [weak self, weak navigationController] in
+            guard let self, let navigationController, presentedViewController === navigationController else { return }
+            presentDeleteAllChatsFailure()
+        }
+        viewModel.onCloseChatTabs = { [weak self, weak navigationController, weak historyTab] isFireMode in
+            self?.closeChatTabsForDeletingAllChats(in: isFireMode ? .fire : .normal) { [weak self] closingTabs in
+                // The sheet can't stay over a tab that is closing.
+                guard let self, let navigationController, let historyTab,
+                      presentedViewController === navigationController,
+                      closingTabs.contains(where: { $0 === historyTab }) else { return }
+                duckAIInputFocus.forget()
+                navigationController.dismiss(animated: false)
+            }
+        }
         duckAIInputFocus.setAside()
         present(navigationController, animated: true)
     }
@@ -9182,6 +9197,27 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
         notifyTabsWillClose(tabs)
+    }
+
+    /// Closes saved chat tabs and clears contextual chats before Delete All Chats deletes them.
+    func closeChatTabsForDeletingAllChats(in mode: BrowsingMode, beforeClosingTabs: (([Tab]) -> Void)? = nil) {
+        let update = tabManager.closeChatTabsForDeletingAllChats(in: mode) { tabs in
+            beforeClosingTabs?(tabs)
+            notifyTabsWillClose(tabs)
+        }
+
+        guard update.closedTabs, tabManager.currentBrowsingMode == mode else { return }
+        let tabsModel = tabManager.currentTabsModel
+        if update.selectedNewTab {
+            tabsBarController?.refresh(tabsModel: tabsModel, scrollToSelected: true)
+            dismissOmniBar(animated: false)
+            updateCurrentTab()
+            showBars()
+        } else {
+            tabsBarController?.refreshStyleInPlace(tabsModel: tabsModel, scrollToSelected: true)
+            refreshTabIcon()
+            swipeTabsCoordinator?.refresh(tabsModel: tabsModel, scrollToSelected: true)
+        }
     }
 
     /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.

@@ -213,6 +213,38 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         wait(for: [done], timeout: 1)
     }
 
+    func testBurnAllChats_closesChatTabsAndReportsFailureOnlyWhileTheFlagIsOn() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        fireExecutor.burnAllChatsResult = .failure(ChatHistoryError.storageUnavailable)
+        let flagger = MockFeatureFlagger()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor, isFireMode: true, featureFlagger: flagger)
+        var closedModes: [Bool] = []
+        var failureCount = 0
+        sut.onCloseChatTabs = { closedModes.append($0) }
+        sut.onDeleteAllChatsFailed = { failureCount += 1 }
+
+        func burnAllChats() {
+            let done = expectation(description: "burnAllChats")
+            Task { await sut.burnAllChats(); done.fulfill() }
+            wait(for: [done], timeout: 1)
+        }
+
+        burnAllChats()
+        XCTAssertEqual(closedModes, [])
+        XCTAssertEqual(failureCount, 0)
+
+        flagger.enabledFeatureFlags = [.fireButtonDeleteAllChats]
+        burnAllChats()
+        XCTAssertEqual(closedModes, [true])
+        XCTAssertEqual(failureCount, 1)
+
+        flagger.enabledFeatureFlags = []
+        burnAllChats()
+        XCTAssertEqual(closedModes, [true])
+        XCTAssertEqual(failureCount, 1)
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0)
+    }
+
     func testBurnSelectedChats_burnsEachChatAndFlushesSyncOnce() {
         let fireExecutor = MockChatHistoryFireExecutor()
         let sut = makeSUT(chats: [chat(id: "p1", pinned: true), chat(id: "r1", pinned: false), chat(id: "r2", pinned: false)],
@@ -732,11 +764,13 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         pinner: ChatPinning? = nil,
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
+        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
         mutationQueue: DispatchQueue = .main,
         instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation()
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
+            featureFlagger: featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
             modelDisplays: modelDisplays,
@@ -797,6 +831,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var burnedIsFireMode: [Bool] = []
         private(set) var burnedAllChatsIsFireMode: [Bool] = []
         private(set) var scheduleSyncCallCount = 0
+        var burnAllChatsResult: Result<Void, Error> = .success(())
 
         func prepare(for request: FireRequest) { }
         func burn(request: FireRequest, applicationState: DataStoreWarmup.ApplicationState) async { }
@@ -814,9 +849,12 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             return .success(())
         }
         @discardableResult
-        func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
+        func burnAllChats(isFireMode: Bool,
+                          source: AIChatDeletePixelSource,
+                          closingChatTabs: (@MainActor () -> Void)?) async -> Result<Void, Error> {
             burnedAllChatsIsFireMode.append(isFireMode)
-            return .success(())
+            closingChatTabs?()
+            return burnAllChatsResult
         }
         func scheduleSync() {
             scheduleSyncCallCount += 1

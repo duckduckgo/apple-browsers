@@ -142,6 +142,11 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
         delegate?.tabLoadingStateDidChange(tab: self)
     }
 
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didFindDeletedChatWithID chatID: String) {
+        guard tabModel.contextualChatURL.flatMap({ URL(string: $0)?.duckAIChatID }) == chatID else { return }
+        aiChatContextualSheetCoordinator(coordinator, didUpdateContextualChatURL: nil)
+    }
+
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
         delegate?.tabDidRequestDownloads(tab: self)
     }

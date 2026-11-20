@@ -226,7 +226,7 @@ struct MainMenuTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func deleteAllChatsStaysVisibleWithoutChats() throws {
-        let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [], totalChatCount: 0))
+        let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [], deletableChatCount: 0))
         let commands = elements.compactMap { $0 as? UIMenu }.flatMap(\.children).compactMap { $0 as? UICommand }
         #expect(commands.map(\.action) == [MainMenuCommand.deleteAllChats.action])
         let deleteAll = try #require(commands.first)
@@ -376,7 +376,7 @@ struct MainMenuTests {
     @Test(.timeLimit(.minutes(1)))
     func recentChatsShowChatIconsAndDeleteAllShowsFire() throws {
         let url = try #require(URL(string: "https://duck.ai/chat/1"))
-        let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [.init(title: "Chat", url: url)], totalChatCount: 1))
+        let elements = DuckAIRecentChatsMenuContent.elements(for: .init(recentChats: [.init(title: "Chat", url: url)], deletableChatCount: 1))
         let commands = elements.compactMap { $0 as? UIMenu }.flatMap(\.children).compactMap { $0 as? UICommand }
         #expect(commands.map(\.image) == [DesignSystemImages.Glyphs.Size16.chat, DesignSystemImages.Glyphs.Size16.fire])
     }

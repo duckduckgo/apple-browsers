@@ -177,6 +177,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         var contextualChatURLUpdates: [URL?] = []
 
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didFindDeletedChatWithID chatID: String) {
+            contextualChatURLUpdates.append(nil)
+        }
+
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
             contextualChatURLUpdates.append(url)
         }
@@ -184,15 +188,18 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
         }
 
+        var onPrepareFireConfirmation: (() -> Void)?
+
         @MainActor
         func aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(
             _ coordinator: AIChatContextualSheetCoordinator,
             onDeleteAllChatsSucceeded: @escaping () -> Void
         ) async -> FireChatConfirmationPreparation? {
-            FireChatConfirmationPreparation(browsingMode: .normal,
-                                            deleteAllChats: .init(chatCount: 1, isChatSyncEnabled: false, onDelete: onDeleteAllChatsSucceeded),
-                                            context: .contextual,
-                                            instrumentation: DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: nil))
+            onPrepareFireConfirmation?()
+            return FireChatConfirmationPreparation(browsingMode: .normal,
+                                                   deleteAllChats: .init(chatCount: 1, isChatSyncEnabled: false, onDelete: onDeleteAllChatsSucceeded),
+                                                   context: .contextual,
+                                                   instrumentation: DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: nil))
         }
 
         var deletedChatIDs: [String] = []
@@ -1607,6 +1614,42 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testDeleteAllChatsKeepsANewConversationInTheSameSidebarOpen() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sut.sessionState.restoreChat(with: savedChatURL)
+        let preparation = await sut.aiChatContextualSheetViewControllerPrepareFireChatConfirmation(sheet)
+        let deleteAllChats = try XCTUnwrap(preparation?.deleteAllChats?.onDelete)
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sheet)
+        sut.sessionState.beginChatForUTISubmission()
+        deleteAllChats()
+
+        XCTAssertTrue(host.sidebarDismissals.isEmpty)
+        XCTAssertTrue(host.isContextualSidebarShowing(sheet))
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
+    }
+
+    @MainActor
+    func testFireConfirmationIsDiscardedWhenTheConversationChangesDuringPreparation() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let sessionState = sut.sessionState
+        sessionState.restoreChat(with: savedChatURL)
+        mockDelegate.onPrepareFireConfirmation = {
+            sessionState.resetToNoChat()
+            sessionState.beginChatForUTISubmission()
+        }
+
+        let preparation = await sut.aiChatContextualSheetViewControllerPrepareFireChatConfirmation(sheet)
+
+        XCTAssertNil(preparation)
+        XCTAssertTrue(host.isContextualSidebarShowing(sheet))
+    }
+
+    @MainActor
     func testWhenChatIsClearedWhileInTheSidebarThenTheSidebarClosesAndTheSheetIsDiscarded() async {
         let host = makeSidebarHost()
         await sut.presentSheet(from: host)
@@ -1629,6 +1672,46 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // A dismissal would report the surface closing and start the inactivity timer; a cleared chat does neither.
         XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 0)
         XCTAssertEqual(mockSelectionJourneyInstrumentation.clearReasons, [.chatCleared])
+    }
+
+    @MainActor
+    func testWhenDeleteAllClearsAModalChatThenTheSheetClosesAndReopensFresh() async throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        let host = RecordingSidebarHost()
+        host.presentsModally = true
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presented = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            host.presentedViewController === sheet && !sheet.isBeingPresented
+        }, object: nil)
+        await fulfillment(of: [presented], timeout: 5)
+        sut.sessionState.restoreChat(with: savedChatURL)
+        mockDelegate.contextualChatURLUpdates = []
+
+        sut.clearActiveChat(dismissPresentedSheet: true)
+
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            host.presentedViewController == nil
+        }, object: nil)
+        await fulfillment(of: [dismissed], timeout: 5)
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates, [nil])
+
+        await sut.presentSheet(from: host)
+        let replacement = try XCTUnwrap(sut.sheetViewController)
+        sheet.delegate?.aiChatContextualSheetViewController(sheet, didUpdateContextualChatURL: savedChatURL)
+        sheet.delegate?.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        XCTAssertTrue(host.presentedViewController === replacement)
+        XCTAssertFalse(replacement === sheet)
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+        XCTAssertNil(sut.sessionState.contextualChatURL)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(mockDelegate.closedWithDeletedChat, [true])
     }
 
     @MainActor
@@ -2769,6 +2852,27 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testDeletedChatLookupDoesNotClearAReplacementConversation() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        let reading = expectation(description: "Saved chat lookup started")
+        let finishRead = DispatchSemaphore(value: 0)
+        mockNativeStorage.onGetChat = {
+            reading.fulfill()
+            _ = finishRead.wait(timeout: .now() + 2)
+        }
+        let restore = Task { await restoredURL() }
+        await fulfillment(of: [reading], timeout: 2)
+
+        let replacement = URL(string: "https://duckduckgo.com/?ia=chat&chatID=replacement")!
+        sut.sessionState.restoreChat(with: replacement)
+        finishRead.signal()
+
+        let restored = await restore.value
+        XCTAssertEqual(restored, replacement)
+        XCTAssertTrue(mockDelegate.contextualChatURLUpdates.isEmpty)
+    }
+
+    @MainActor
     func testWhenTheSavedChatIsStillInTheStoreThenTheTabsURLIsLeftAlone() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
@@ -2862,10 +2966,12 @@ final class MockDuckAiChatStorage: DuckAiNativeStorageHandling {
     var failsReads = false
     var migrationDone = true
     var setupSucceeded: Bool? = true
+    var onGetChat: (() -> Void)?
 
     private let backing = DuckAiNativeMemoryStorageHandler()
 
     func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        onGetChat?()
         if failsReads { throw ReadFailure() }
         return try backing.getChat(chatId: chatId)
     }

@@ -578,8 +578,6 @@ final class AIChatHistoryViewController: UIViewController {
         )
     }
 
-    /// Plays the fire animation while the view model burns all chats; the list then
-    /// reactively falls through to its empty state without dismissing the sheet.
     private func burnAllChats() {
         let viewModel = self.viewModel
         fireButtonAnimator.animate {

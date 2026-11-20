@@ -139,28 +139,46 @@ final class HistoryCleanerTests: XCTestCase {
 
     // MARK: - cleanAIChatHistory (all chats)
 
-    func testWhenNativeStorageIsRequiredAndAvailableThenAllChatsAndFilesAreDeleted() async {
+    func testWhenStorageFlagEnabledAndMigrationDoneThenCleanAIChatHistoryDeletesAllChatsAndFilesFromLocalStorage() async {
         mockFlagProvider.isNativeDataStorageEnabledResult = true
         mockHandler.stubbedIsMigrationDone = true
         let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
 
-        let result = await sut.cleanAIChatHistoryRequiringNativeStorage()
+        let result = await sut.cleanAIChatHistory()
 
         XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 1)
         XCTAssertEqual(mockHandler.deleteAllFilesCallCount, 1)
         XCTAssertEqual(mockHandler.deleteChatCallCount, 0, "Single-chat delete should not be called for bulk clear")
         XCTAssertEqual(mockHandler.deleteFileCallCount, 0, "Per-file delete should not be called for bulk clear")
+        XCTAssertNotNil(try? result.get(), "Expected success result, got \(result)")
+    }
+
+    func testWhenNativeStorageIsRequiredAndAvailableThenBeforeClearingRunsBeforeAnythingIsDeleted() async {
+        mockFlagProvider.isNativeDataStorageEnabledResult = true
+        mockHandler.stubbedIsMigrationDone = true
+        let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
+        var deletionsBeforeClearing: (chats: Int, js: Int)?
+
+        let result = await sut.cleanAIChatHistoryRequiringNativeStorage {
+            deletionsBeforeClearing = (mockHandler.deleteAllChatsCallCount, mockJSCleaner.clearJSDataCalls.count)
+        }
+
+        XCTAssertEqual(deletionsBeforeClearing?.chats, 0)
+        XCTAssertEqual(deletionsBeforeClearing?.js, 0)
+        XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 1)
+        XCTAssertEqual(mockHandler.deleteAllFilesCallCount, 1)
         XCTAssertEqual(mockJSCleaner.clearJSDataCalls, [nil])
         XCTAssertNotNil(try? result.get(), "Expected success result, got \(result)")
     }
 
-    func testWhenTheStorageFlagTurnsOffThenRequiredNativeClearFailsBeforeClearingJSData() async {
+    func testWhenRequiredNativeStorageIsUnavailableThenNothingIsClearedAndBeforeClearingIsNotCalled() async {
         mockFlagProvider.isNativeDataStorageEnabledResult = true
-        mockHandler.stubbedIsMigrationDone = true
+        mockHandler.stubbedIsMigrationDone = false
         let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
-        mockFlagProvider.isNativeDataStorageEnabledResult = false
 
-        let result = await sut.cleanAIChatHistoryRequiringNativeStorage()
+        let result = await sut.cleanAIChatHistoryRequiringNativeStorage {
+            XCTFail("Nothing may be closed when native storage is unavailable")
+        }
 
         XCTAssertThrowsError(try result.get()) { error in
             XCTAssertEqual(error as? ChatHistoryError, .storageUnavailable)

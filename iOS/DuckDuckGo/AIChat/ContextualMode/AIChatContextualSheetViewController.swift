@@ -397,6 +397,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(fireButtonTapped), for: .touchUpInside)
         button.accessibilityTraits = .button
+        button.accessibilityIdentifier = "AIChat.ContextualSheet.FireButton"
         return button
     }()
 

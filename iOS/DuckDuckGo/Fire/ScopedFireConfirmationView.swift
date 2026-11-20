@@ -67,12 +67,23 @@ struct ScopedFireConfirmationView: View {
         }
     }
     
+    @ViewBuilder
     private var closeButton: some View {
-        Button(action: viewModel.cancel) {
+        let button = Button(action: viewModel.cancel) {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
         .buttonStyle(CloseButtonStyle())
         .accessibilityIdentifier("Fire.Confirmation.Button.Close")
+
+#if DEBUG
+        if let count = DuckAiChatsUITestSeed.lastReadChatCount {
+            button.accessibilityValue(Text(verbatim: String(count)))
+        } else {
+            button
+        }
+#else
+        button
+#endif
     }
     
     private var headerSection: some View {

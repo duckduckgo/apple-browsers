@@ -90,6 +90,88 @@ final class FaviconTests: XCTestCase {
         XCTAssertTrue(image.hasVisiblePixels())
     }
 
+    func testSVGDataIsRasterizedToBitmapRepresentation() throws {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+          <rect x="10" y="10" width="160" height="160" fill="#000"/>
+        </svg>
+        """
+        let image = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: nil))
+        XCTAssertFalse(image.representations.isEmpty)
+        XCTAssertTrue(image.representations.allSatisfy { $0 is NSBitmapImageRep })
+        XCTAssertEqual(image.size, NSSize(width: 180, height: 180))
+        XCTAssertTrue(image.hasVisiblePixels())
+    }
+
+    func testSVGDataIsDownscaledToMaxPixelSize() throws {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="180" height="90" viewBox="0 0 180 90">
+          <rect width="180" height="90" fill="#000"/>
+        </svg>
+        """
+        let image = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: 64))
+        XCTAssertEqual(image.size, NSSize(width: 64, height: 32))
+        XCTAssertTrue(image.representations.allSatisfy { $0 is NSBitmapImageRep })
+    }
+
+    /// CoreSVG recurses infinitely (stack overflow, `EXC_BAD_ACCESS` in `SVGFilter::draw`) when the root `<svg>`
+    /// and one of its children reference the same filter. Such SVGs must be rejected, not rendered.
+    func testSVGWithRecursiveFilterIsRejectedInsteadOfCrashing() {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" filter="url(#f)">
+          <filter id="f"><feOffset/></filter>
+          <rect width="20" height="20" filter="url(#f)"/>
+        </svg>
+        """
+        XCTAssertNil(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: nil))
+        XCTAssertNil(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: 64))
+    }
+
+    func testSVGWithFilterIsDetected() {
+        XCTAssertTrue(Data("<svg><filter id=\"f\"/></svg>".utf8).isUnsafeSVG)
+        XCTAssertTrue(Data("<svg><rect style=\"FILTER: blur(2px)\"/></svg>".utf8).isUnsafeSVG)
+        XCTAssertTrue(Data("<svg><rect FILTER=\"url(#f)\"/></svg>".utf8).isUnsafeSVG)
+        XCTAssertTrue(Data("<svg><FiLtEr id=\"f\"/></svg>".utf8).isUnsafeSVG)
+        XCTAssertFalse(Data("<svg><rect width=\"1\" height=\"1\"/></svg>".utf8).isUnsafeSVG)
+        XCTAssertFalse(Data().isUnsafeSVG)
+    }
+
+    func testNonSVGDataContainingFilterWordIsNotUnsafe() throws {
+        let png = try makePNGData(pixelsWide: 16, pixelsHigh: 16) + Data("filter".utf8)
+        XCTAssertFalse(png.isUnsafeSVG)
+        XCTAssertNotNil(NSImage(dataUsingCIImage: png, maxPixelSize: nil))
+        XCTAssertFalse(Data("plain text with a filter in it".utf8).isUnsafeSVG)
+    }
+
+    func testOversizedSVGIsRejectedAndOversizedNonSVGIsNot() {
+        let padding = Data(repeating: UInt8(ascii: " "), count: Data.maxSVGFaviconSize)
+        let oversizedSVG = Data("<svg xmlns=\"http://www.w3.org/2000/svg\"/>".utf8) + padding
+        XCTAssertTrue(oversizedSVG.isUnsafeSVG)
+        XCTAssertNil(NSImage(dataUsingCIImage: oversizedSVG, maxPixelSize: nil))
+
+        let oversizedNonSVG = Data(repeating: 0x42, count: Data.maxSVGFaviconSize + 1)
+        XCTAssertFalse(oversizedNonSVG.isUnsafeSVG)
+    }
+
+    func testOversizedSVGWithLongPrologIsRejected() {
+        let prolog = Data("<!--".utf8) + Data(repeating: UInt8(ascii: "x"), count: 2048) + Data("-->".utf8)
+        let padding = Data(repeating: UInt8(ascii: " "), count: Data.maxSVGFaviconSize)
+        let svg = prolog + Data("<svg xmlns=\"http://www.w3.org/2000/svg\"/>".utf8) + padding
+        XCTAssertTrue(svg.isUnsafeSVG)
+    }
+
+    func testSmallSVGIsRasterizedAtMinimumSizeToStaySharp() throws {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+          <rect width="16" height="16" fill="#000"/>
+        </svg>
+        """
+        let capped = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: 64))
+        XCTAssertEqual(capped.size, NSSize(width: 64, height: 64))
+        let uncapped = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: nil))
+        XCTAssertEqual(uncapped.size, NSSize(width: 64, height: 64))
+    }
+
     func testFullyTransparentBitmapHasNoVisiblePixels() throws {
         let data = try makePNGData(pixelsWide: 16, pixelsHigh: 16)
         let image = try XCTUnwrap(NSImage(dataUsingCIImage: data, maxPixelSize: nil))

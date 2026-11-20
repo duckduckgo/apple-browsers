@@ -137,8 +137,11 @@ ssh verify-vm 'sysadminctl -screenLock status'             # off
 ssh verify-vm 'defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser'   # your VM user
 ```
 
-Accessibility and Screen Recording: the agent runs `ax dump` against Finder (non-empty tree) and a `screencapture`
-over ssh.
+Accessibility and Screen Recording: `ssh verify-vm '~/verify/ax grants'` must print
+`accessibility=true screen-recording=true`.
+
+Or run all of it, and a launch and two proofs: `bin/verify-macos-browser selftest --target vm-1` names the first step
+that fails and points back into this file.
 
 ## Gotchas
 

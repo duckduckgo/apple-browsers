@@ -1974,6 +1974,11 @@ extension MainViewController {
 
 extension MainViewController: NSMenuItemValidation {
 
+    private static let menuActionsAllowedWhileLocked: Set<Selector?> = [
+        #selector(findInPage), #selector(findInPageNext), #selector(findInPagePrevious), #selector(findInPageDone),
+        #selector(zoomIn(_:)), #selector(zoomOut(_:)), #selector(actualSize(_:))
+    ]
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         guard !isWindowClosingAndBurning else {
             return false
@@ -1982,8 +1987,8 @@ extension MainViewController: NSMenuItemValidation {
         guard fireViewController.fireViewModel.fire.burningData == nil else {
             return true
         }
-        // While onboarding locks the window, none of its menu actions are allowed. Fire's are handled by AppDelegate.
-        guard allowsUserInteraction else {
+        // While onboarding locks the window, only Find and Zoom stay available. Fire's actions are handled by AppDelegate.
+        guard allowsUserInteraction || Self.menuActionsAllowedWhileLocked.contains(menuItem.action) else {
             return false
         }
         switch menuItem.action {

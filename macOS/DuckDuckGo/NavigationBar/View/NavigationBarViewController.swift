@@ -1163,6 +1163,8 @@ final class NavigationBarViewController: NSViewController {
         controlsForUserPrevention.forEach { control in
             control?.isEnabled = !prevented
         }
+        // A locked address bar shows only its text, like the welcome page.
+        addressBarViewController?.buttonsContainerView.isHidden = prevented
     }
 
     // MARK: - Setup

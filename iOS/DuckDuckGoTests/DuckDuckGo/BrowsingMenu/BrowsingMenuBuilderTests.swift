@@ -25,12 +25,126 @@ import CoreLocation
 @_spi(Testing) import Persistence
 import PrivacyDashboard
 @testable import SitePermissions
+import SubscriptionTestingUtilities
 import UIKit
 import WebKit
 import XCTest
 @testable import DuckDuckGo
 
 final class BrowsingMenuBuilderTests: XCTestCase {
+
+    @MainActor
+    func testVPNVisibilityMatchesBrowserInBothAIChatLayoutsAndPresentations() throws {
+        let dependencies = try XCTUnwrap(AppDependencyProvider.shared as? AppDependencyProvider)
+        let originalSubscriptionManager = dependencies.subscriptionManager
+        let subscriptionManager = SubscriptionManagerMock()
+        dependencies.subscriptionManager = subscriptionManager
+        let originalIdiom = MockUIDevice.mockUserInterfaceIdiom
+        UIDevice.swizzleCurrent()
+        defer {
+            dependencies.subscriptionManager = originalSubscriptionManager
+            MockUIDevice.mockUserInterfaceIdiom = originalIdiom
+            UIDevice.unswizzleCurrent()
+        }
+
+        let states: [(featureEnabled: Bool, productsAvailable: Bool)] = [
+            (true, true), (false, true), (true, true), (true, false), (false, false), (true, true)
+        ]
+
+        for idiom in [UIUserInterfaceIdiom.phone, .pad] {
+            MockUIDevice.mockUserInterfaceIdiom = idiom
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+            let sut = TabViewController.fake(featureFlagger: featureFlagger)
+
+            for state in states {
+                featureFlagger.enabledFeatureFlags = state.featureEnabled ? [.vpnMenuItem] : []
+                subscriptionManager.hasAppStoreProductsAvailable = state.productsAvailable
+                let expectedCount = state.featureEnabled && state.productsAvailable ? 1 : 0
+
+                let legacyMenus = [sut.buildShortcutsMenu(), sut.buildAITabMenu()]
+                for menu in legacyMenus {
+                    XCTAssertEqual(menu.compactMap(\.name).filter { $0 == UserText.actionVPN }.count, expectedCount)
+                }
+
+                for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
+                    let model = try XCTUnwrap(sut.buildSheetBrowsingMenu(
+                        context: context,
+                        with: MockMenuBookmarksInteractor(),
+                        mobileCustomization: makeMobileCustomization(),
+                        browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
+                        clearTabsAndData: {}
+                    ))
+                    let vpnEntries = model.sections.flatMap(\.items).filter { $0.name == UserText.actionVPN }
+                    XCTAssertEqual(vpnEntries.count, expectedCount)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    func testVPNPaywallOriginMatchesMenuInBothAIChatLayoutsAndPresentations() throws {
+        let dependencies = try XCTUnwrap(AppDependencyProvider.shared as? AppDependencyProvider)
+        let originalSubscriptionManager = dependencies.subscriptionManager
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultSubscription = .none
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        dependencies.subscriptionManager = subscriptionManager
+        let originalIdiom = MockUIDevice.mockUserInterfaceIdiom
+        UIDevice.swizzleCurrent()
+        defer {
+            dependencies.subscriptionManager = originalSubscriptionManager
+            MockUIDevice.mockUserInterfaceIdiom = originalIdiom
+            UIDevice.unswizzleCurrent()
+        }
+
+        for idiom in [UIUserInterfaceIdiom.phone, .pad] {
+            MockUIDevice.mockUserInterfaceIdiom = idiom
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.vpnMenuItem])
+            let sut = TabViewController.fake(featureFlagger: featureFlagger)
+            XCTAssertEqual(sut.unifiedToggleInputFeature.isAvailable, idiom == .phone)
+
+            for eligibleForFreeTrial in [false, true] {
+                subscriptionManager.isEligibleForFreeTrialResult = eligibleForFreeTrial
+                var actions: [(origin: String, action: () -> Void)] = []
+                let legacyMenus = [
+                    (sut.buildShortcutsMenu(), "funnel_appmenu_ios"),
+                    (sut.buildAITabMenu(), "funnel_appmenu_ios__chat")
+                ]
+                for (menu, origin) in legacyMenus {
+                    let entry = try XCTUnwrap(menu.first { $0.name == UserText.actionVPN })
+                    guard case .regular(_, _, _, _, _, _, _, _, _, let action) = entry else {
+                        return XCTFail("Expected a VPN menu action")
+                    }
+                    actions.append((origin, action))
+                }
+
+                for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
+                    let model = try XCTUnwrap(sut.buildSheetBrowsingMenu(
+                        context: context,
+                        with: MockMenuBookmarksInteractor(),
+                        mobileCustomization: makeMobileCustomization(),
+                        browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
+                        clearTabsAndData: {}
+                    ))
+                    let entry = try XCTUnwrap(model.sections.flatMap(\.items).first { $0.name == UserText.actionVPN })
+                    let origin = context == .aiChatTab ? "funnel_appmenu_ios__chat" : "funnel_appmenu_ios"
+                    actions.append((origin, entry.action))
+                }
+
+                for (origin, action) in actions {
+                    let notificationExpectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil) { notification in
+                        guard let deepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection,
+                              case .subscriptionFlow(let components) = deepLink else {
+                            return false
+                        }
+                        return components?.queryItems?.filter { $0.name == "origin" }.map(\.value) == [origin]
+                    }
+                    action()
+                    wait(for: [notificationExpectation], timeout: 1.0)
+                }
+            }
+        }
+    }
 
     func testNewTabPageMenuOmitsChatsWhenFallbackChatsEntryIsUnavailable() {
         let entryBuilder = MockBrowsingMenuEntryBuilder(chatsEntry: nil)
@@ -85,7 +199,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             internalFeedbackEntry: .named(MockBrowsingMenuEntryBuilder.internalFeedbackName)
         )
 
-        for context in [BrowsingMenuContext.newTabPage, .website] {
+        for context in [BrowsingMenuContext.newTabPage, .website, .aiChatTab] {
             let model = makeBuilder(entryBuilder: entryBuilder).buildMenu(
                 context: context,
                 bookmarksInterface: MockMenuBookmarksInteractor(),
@@ -197,7 +311,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
-    func testSitePermissionsEntryIsHiddenWithFlagOffInLegacyAndSheetMenus() {
+    func testWhenSitePermissionsIsUnsupportedThenEntryIsHiddenInLegacyAndSheetMenus() {
         assertSitePermissionsEntry(isPresent: false, featureEnabled: false, storedDecision: .allow)
     }
 
@@ -302,10 +416,10 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
-    func testManagementPresenterRefusesFlagOffAndStaleCommittedSite() {
-        let flagOff = makeTabViewController(featureEnabled: false, storedDecision: .allow)
-        flagOff.presentSitePermissionsManagement()
-        XCTAssertNil(flagOff.presentedViewController)
+    func testManagementPresenterRefusesUnsupportedOSAndStaleCommittedSite() {
+        let unsupportedOS = makeTabViewController(featureEnabled: false, storedDecision: .allow)
+        unsupportedOS.presentSitePermissionsManagement()
+        XCTAssertNil(unsupportedOS.presentedViewController)
 
         let staleCommittedSite = makeTabViewController(featureEnabled: true, storedDecision: .allow)
         staleCommittedSite.webView(staleCommittedSite.webView, didStartProvisionalNavigation: nil)
@@ -534,7 +648,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
 
         let sut = TabViewController.fake(
             customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : []),
+            featureFlagger: MockFeatureFlagger(),
             sitePermissionsEnabled: featureEnabled,
             link: Link(title: nil, url: url),
             fireTab: fireTab
@@ -576,6 +690,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             MediaCaptureUserScript(),
             requestPermissionFor: [.camera],
             requestID: UUID().uuidString.replacingOccurrences(of: "-", with: "") + ":1",
+            topLevelOrigin: SitePermissionSecurityOrigin(URL(string: "https://example.com")!)!,
             in: frame,
             webView: sut.webView
         )
@@ -678,7 +793,7 @@ private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
 private extension BrowsingMenuEntry {
 
     var name: String? {
-        guard case let .regular(name, _, _, _, _, _, _, _, _) = self else { return nil }
+        guard case let .regular(name, _, _, _, _, _, _, _, _, _) = self else { return nil }
         return name
     }
 

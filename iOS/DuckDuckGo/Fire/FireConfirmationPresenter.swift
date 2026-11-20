@@ -30,6 +30,7 @@ struct FireConfirmationPresenter {
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
+                                 prefersSheet: Bool = false,
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
                                  fireContext: ScopedFireConfirmationViewModel.FireContext,
@@ -38,7 +39,17 @@ struct FireConfirmationPresenter {
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
-        presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, isSingleTab: isSingleTab, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
+        presentScopeConfirmationSheet(on: viewController,
+                                      from: source,
+                                      sourceRect: sourceRect,
+                                      prefersSheet: prefersSheet,
+                                      tabViewModel: tabViewModel,
+                                      pixelSource: pixelSource,
+                                      fireContext: fireContext,
+                                      isSingleTab: isSingleTab,
+                                      browsingMode: browsingMode,
+                                      onConfirm: onConfirm,
+                                      onCancel: onCancel)
     }
 
     @MainActor
@@ -64,6 +75,7 @@ struct FireConfirmationPresenter {
     private func presentScopeConfirmationSheet(on viewController: UIViewController,
                                                from source: AnyObject,
                                                sourceRect: CGRect,
+                                               prefersSheet: Bool = false,
                                                tabViewModel: TabViewModel?,
                                                pixelSource: FireRequest.Source,
                                                fireContext: ScopedFireConfirmationViewModel.FireContext,
@@ -91,7 +103,7 @@ struct FireConfirmationPresenter {
         let presentationSizeClass = UserInterfaceSizeClass(viewController.traitCollection.horizontalSizeClass)
         let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
             .environment(\.presentationHorizontalSizeClass, presentationSizeClass)
-        let hostingController = makeHostingController(with: confirmationView)
+        let hostingController = makeHostingController(with: confirmationView, prefersSheet: prefersSheet)
         // Prevent swipe-to-dismiss for the experiment flow: the user must make an
         // explicit choice (fire or cancel) to keep the locked-controls state consistent.
         if case .duckAIOnboarding = fireContext {
@@ -122,11 +134,11 @@ struct FireConfirmationPresenter {
     
     // MARK: - Shared Presentation Helpers
         
-    private func makeHostingController<Content: View>(with view: Content) -> FireConfirmationHostingController<Content> {
+    private func makeHostingController<Content: View>(with view: Content, prefersSheet: Bool) -> FireConfirmationHostingController<Content> {
         let hostingController = FireConfirmationHostingController(rootView: view)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
-        hostingController.modalPresentationStyle = DevicePlatform.isIpad ? .popover : .pageSheet
+        hostingController.modalPresentationStyle = DevicePlatform.isIpad ? (prefersSheet ? .formSheet : .popover) : .pageSheet
         return hostingController
     }
     
@@ -156,6 +168,13 @@ struct FireConfirmationPresenter {
                                  limitsLandscapeWidth: limitsLandscapeWidth)
         }
         if let sheet = hostingController.sheetPresentationController {
+            let isIpadFormSheet = DevicePlatform.isIpad && hostingController.popoverPresentationController == nil
+            // The measured height excludes the bottom safe area, which the presented iPad sheet still applies.
+            let bottomSafeAreaInset = UIApplication.shared.firstKeyWindow?.safeAreaInsets.bottom ?? 0
+            if isIpadFormSheet {
+                let sheetHeight = calculateSheetHeight(for: hostingController, width: Constants.iPadSheetWidth) + bottomSafeAreaInset
+                hostingController.preferredContentSize = CGSize(width: Constants.iPadSheetWidth, height: sheetHeight)
+            }
             if limitsLandscapeWidth && hostingController.popoverPresentationController == nil {
                 if #available(iOS 17.0, *) {
                     sheet.prefersPageSizing = landscapeWidth == nil
@@ -166,7 +185,8 @@ struct FireConfirmationPresenter {
             }
             configureSheetDetents(sheet,
                                  hostingController: hostingController,
-                                 presentingWidth: contentWidth,
+                                 presentingWidth: isIpadFormSheet ? Constants.iPadSheetWidth : contentWidth,
+                                 additionalHeight: isIpadFormSheet ? bottomSafeAreaInset : 0,
                                  limitsLandscapeWidth: limitsLandscapeWidth)
         }
     }
@@ -183,9 +203,10 @@ struct FireConfirmationPresenter {
     private func configureSheetDetents<Content: View>(_ sheet: UISheetPresentationController,
                                                       hostingController: UIHostingController<Content>,
                                                       presentingWidth: CGFloat,
+                                                      additionalHeight: CGFloat = 0,
                                                       limitsLandscapeWidth: Bool) {
         if #available(iOS 16.0, *) {
-            let contentHeight = calculateContentHeight(for: hostingController, width: presentingWidth)
+            let contentHeight = calculateContentHeight(for: hostingController, width: presentingWidth) + additionalHeight
             sheet.detents = [.custom { context in
                 let maxHeight = context.maximumDetentValue * Constants.maxHeightRatio
                 return min(contentHeight, maxHeight)

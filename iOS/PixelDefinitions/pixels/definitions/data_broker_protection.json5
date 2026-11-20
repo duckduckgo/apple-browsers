@@ -1288,5 +1288,105 @@
                 "type": "number"
             }
         ]
+    },
+    "m_ios_dbp_update_databrokers_success": {
+        "description": "Fired when a data broker JSON is updated successfully.",
+        "owners": ["quanganhdo"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpIsFreeScan",
+            {
+                "key": "data_broker_json_file",
+                "description": "The JSON file name for the data broker being updated",
+                "type": "string"
+            },
+            {
+                "key": "removed_at",
+                "description": "Timestamp, in milliseconds, when the broker was removed, when supplied by the broker JSON",
+                "type": "integer"
+            }
+        ]
+    },
+    "m_ios_dbp_update_databrokers_failure": {
+        "description": "Fired when a data broker JSON update fails.",
+        "owners": ["quanganhdo"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpIsFreeScan",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "data_broker_json_file",
+                "description": "The JSON file name for the data broker being updated",
+                "type": "string"
+            },
+            {
+                "key": "removed_at",
+                "description": "Timestamp, in milliseconds, when the broker was removed, when supplied by the broker JSON",
+                "type": "integer"
+            },
+            {
+                "key": "keystoreField",
+                "description": "The keychain account that failed to read, when the failure is a secure storage keystore read error",
+                "type": "string"
+            }
+        ]
+    },
+    "m_ios_dbp_data_broker_misc_client_error": {
+        "description": "Fired when a PIR operation encounters an otherwise unclassified client error, including broker bundle download and decoding failures.",
+        "owners": ["quanganhdo"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "functionOccurredIn",
+                "description": "The function where the error occurred",
+                "type": "string"
+            },
+            {
+                "key": "keystoreField",
+                "description": "The keychain account that failed to read, when the failure is a secure storage keystore read error",
+                "type": "string"
+            }
+        ]
+    },
+    "m_ios_dbp_bundle_verification_failure": {
+        "description": "Fired when a downloaded PIR broker bundle fails signature, rollback or digest verification, when another error stops verification, or when a built-in bundle signing key has been revoked. The update is skipped and retried on the next check.",
+        "owners": ["noisysocks", "quanganhdo"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            {
+                "key": "reason",
+                "description": "Why verification failed",
+                "type": "string",
+                "enum": ["key_revoked", "signature_missing", "signature_invalid", "rollback", "digest_mismatch", "other"]
+            }
+        ]
+    },
+    "m_ios_dbp_bundle_verification_success": {
+        "description": "Fired when a PIR broker update check passes bundle verification, including when the main config hasn't changed. Compare with m_ios_dbp_bundle_verification_failure to see whether verification is working.",
+        "owners": ["noisysocks", "quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

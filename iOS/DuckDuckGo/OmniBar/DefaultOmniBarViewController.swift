@@ -350,8 +350,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     func beginEditingOnNewTabPageAppOpen(isRequestValid: @escaping () -> Bool,
                                          completion: @escaping (Bool) -> Void) {
-        if dependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-           unifiedToggleInputOmnibarActivating?.activateFromOmnibarOnAppOpenIfNeeded(
+        if unifiedToggleInputOmnibarActivating?.activateFromOmnibarOnAppOpenIfNeeded(
             currentText: extractCurrentTextForEditing(omniBarView.textField),
             isRequestValid: isRequestValid,
             completion: completion) == .intercept {
@@ -1009,7 +1008,9 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshAttachButton() {
-        omniBarView.aiChatAttachmentMenu = attachmentController?.makeMenu()
+        omniBarView.aiChatAttachmentMenu = menuFiringShownPixel(attachmentController?.makeMenu()) { [weak self] in
+            self?.attachmentController?.reportMenuShown()
+        }
         omniBarView.isAIChatAttachmentButtonVisible = attachmentController?.isAttachButtonVisible ?? false
     }
 

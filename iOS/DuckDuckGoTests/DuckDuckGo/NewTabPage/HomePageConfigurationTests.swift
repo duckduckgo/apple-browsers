@@ -367,7 +367,7 @@ struct HomePageConfigurationTests {
         #expect(gate.arbiter.snapshot.hasModalLease)
         _ = modalLease
         #expect(reporter.remoteMessageIDs.isEmpty)
-        #expect(reporter.finishedPrompts.isEmpty)
+        #expect(reporter.shownCoordinatedPrompts.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -470,7 +470,7 @@ struct HomePageConfigurationTests {
         #expect(gate.arbiter.snapshot.owner == nil)
         #expect(store.updatedShownMessageIDs.isEmpty)
         #expect(reporter.remoteMessageIDs.isEmpty)
-        #expect(reporter.finishedPrompts.isEmpty)
+        #expect(reporter.shownCoordinatedPrompts.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -1040,16 +1040,17 @@ struct HomePageConfigurationTests {
         #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
         #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
         #expect(reporter.remoteMessageIDs == [message.id, message.id])
-        #expect(reporter.finishedPrompts.isEmpty)
+        // The gap is stamped once per lease, on the first confirmed appearance, like the RMF cooldown.
+        #expect(reporter.shownCoordinatedPrompts == (mode == .coordinated ? [.ntpCard] : []))
 
         let homeMessage = HomeMessage.remoteMessage(remoteMessage: message)
         await sut.dismissHomeMessage(homeMessage, presentationContext: sut.presentationContext(for: homeMessage))
-        #expect(reporter.finishedPrompts == (mode == .coordinated ? [.ntpCard] : []))
+        #expect(reporter.shownCoordinatedPrompts == (mode == .coordinated ? [.ntpCard] : []))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("An invalidated lease records a gap only after a confirmed appearance", .timeLimit(.minutes(1)), arguments: [false, true])
-    func invalidatedLeaseRecordsGapOnlyAfterAppearance(didAppear: Bool) {
+    @Test("A card records a gap on its first confirmed appearance, not when its lease ends", .timeLimit(.minutes(1)), arguments: [false, true])
+    func cardRecordsGapOnAppearanceNotOnLeaseEnd(didAppear: Bool) {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
         let reporter = MockPromptExposureReporter()
@@ -1058,12 +1059,13 @@ struct HomePageConfigurationTests {
         if didAppear {
             #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
         }
+        #expect(reporter.shownCoordinatedPrompts == (didAppear ? [.ntpCard] : []))
 
         store.isScheduledMessageExpired = true
         sut.handleAppForegrounded()
         sut.handleAppForegrounded()
 
-        #expect(reporter.finishedPrompts == (didAppear ? [.ntpCard] : []))
+        #expect(reporter.shownCoordinatedPrompts == (didAppear ? [.ntpCard] : []))
         #expect(sut.currentRemoteMessageID == nil)
     }
 
@@ -1086,7 +1088,7 @@ struct HomePageConfigurationTests {
         sut.didAppear(homeMessage, presentationContext: nil)
 
         #expect(reporter.remoteMessageIDs.isEmpty)
-        #expect(reporter.finishedPrompts.isEmpty)
+        #expect(reporter.shownCoordinatedPrompts.isEmpty)
         sut.didAppear(homeMessage, presentationContext: sut.presentationContext(for: homeMessage))
         #expect(reporter.remoteMessageIDs == [message.id])
     }

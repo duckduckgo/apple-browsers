@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 
 /// One top level menu of the main menu.
@@ -24,7 +25,7 @@ protocol MainMenuSection {
     /// The menu to show in the given context, or `nil` to hide the whole menu.
     func menu(in context: MainMenuSpec.Context) -> MainMenuSpec.Menu?
 
-    /// The children to install into the system menu, given the elements built from `menu(in:)`.
+    /// The children to install, given the elements built from `menu(in:)` and the system menu's own, which an inserted menu has none of.
     func children(of elements: [UIMenuElement], systemElements: [UIMenuElement]) -> [UIMenuElement]
 }
 
@@ -41,12 +42,13 @@ protocol MainMenuDeferredContent {
 
 private typealias Item = MainMenuSpec.Item
 private typealias Menu = MainMenuSpec.Menu
+private typealias Glyphs = DesignSystemImages.Glyphs.Size16
 
 private extension MainMenuSection {
     func item(_ command: MainMenuCommand, _ title: String,
               _ input: String? = nil, _ modifiers: UIKeyModifierFlags = [],
-              requires requirement: KeyPath<MainMenuSpec.Context, Bool>? = nil) -> Item {
-        MainMenuSpec.item(command, title, input, modifiers, requires: requirement)
+              requires requirement: KeyPath<MainMenuSpec.Context, Bool>? = nil, image: UIImage? = nil) -> Item {
+        MainMenuSpec.item(command, title, input, modifiers, requires: requirement, image: image)
     }
 
     func group(_ identifier: String, _ items: [Item]) -> Menu {
@@ -56,9 +58,15 @@ private extension MainMenuSection {
 
 struct SettingsMenuSection: MainMenuSection {
     let title: String
+    var image: UIImage?
+    var includesAppItems = false
 
     func menu(in context: MainMenuSpec.Context) -> MainMenuSpec.Menu? {
-        Menu(identifier: .preferences, items: [item(.settings, title, ",", .command)])
+        let appItems = [item(.setDefaultBrowser, UserText.menuSetDefaultBrowser),
+                        item(.addToDock, UserText.menuAddToDock),
+                        item(.addWidget, UserText.menuAddWidget)]
+        return Menu(identifier: .preferences, items: [item(.settings, title, ",", .command, image: image)],
+                    submenus: includesAppItems ? [group("app.setup", appItems)] : [])
     }
 }
 
@@ -66,14 +74,17 @@ struct FileMenuSection: MainMenuSection {
     func menu(in context: MainMenuSpec.Context) -> MainMenuSpec.Menu? {
         Menu(identifier: .file, items: [], submenus: [
             group("file.new", [
-                item(.newTab, UserText.keyCommandNewTab, "t", .command),
-                item(.newFireTab, UserText.keyCommandNewFireTab, "n", [.shift, .command], requires: \.fireModeEnabled),
-                item(.voiceSearch, UserText.menuVoiceSearch, ".", [.shift, .command], requires: \.voiceSearchEnabled)
+                item(.newTab, UserText.keyCommandNewTab, "t", .command, image: Glyphs.add),
+                item(.newFireTab, UserText.keyCommandNewFireTab, "n", [.shift, .command], requires: \.fireModeEnabled,
+                     image: Glyphs.fireWindow),
+                item(.voiceSearch, UserText.menuVoiceSearch, ".", [.shift, .command], requires: \.voiceSearchEnabled,
+                     image: Glyphs.permissionMicrophone)
             ]),
+            group("file.import", [item(.importData, UserText.menuImportBookmarksAndPasswords)]),
             group("file.location", [item(.location, UserText.menuOpenLocation, "l", .command)]),
             group("file.close", [item(.closeTab, UserText.keyCommandCloseTab, "w", .command)]),
-            group("file.share", [item(.share, UserText.actionShare)]),
-            group("file.print", [item(.printPage, UserText.menuPrint, "p", .command)])
+            group("file.share", [item(.share, UserText.actionShare, image: Glyphs.shareApple)]),
+            group("file.print", [item(.printPage, UserText.menuPrint, "p", .command, image: Glyphs.print)])
         ])
     }
 }
@@ -81,7 +92,7 @@ struct FileMenuSection: MainMenuSection {
 struct EditMenuSection: MainMenuSection {
     func menu(in context: MainMenuSpec.Context) -> MainMenuSpec.Menu? {
         Menu(identifier: .edit, items: [], submenus: [
-            group("edit.find", [item(.find, UserText.keyCommandFind, "f", .command)])
+            group("edit.find", [item(.find, UserText.keyCommandFind, "f", .command, image: Glyphs.findInPage)])
         ])
     }
 
@@ -114,6 +125,7 @@ struct ViewMenuSection: MainMenuSection {
             group("view.panels", [item(.showTabs, UserText.menuShowTabs, "\\", [.shift, .command]),
                                   item(.showPasswords, UserText.menuShowPasswords, "a", [.shift, .command]),
                                   item(.showDownloads, UserText.menuShowDownloads, "j", [.shift, .command])]),
+            group("view.duckai", [item(.toggleDuckAIButton, UserText.menuHideDuckAIButton, "y", [.shift, .command])]),
             group("view.zoom", [item(.zoomIn, UserText.keyCommandZoomIn, "+", .command),
                                 item(.zoomOut, UserText.keyCommandZoomOut, "-", .command),
                                 item(.actualSize, UserText.menuActualSize, "0", .command)])
@@ -154,8 +166,8 @@ struct WindowMenuSection: MainMenuSection {
 struct HelpMenuSection: MainMenuSection {
     func menu(in context: MainMenuSpec.Context) -> MainMenuSpec.Menu? {
         Menu(identifier: .help, items: [], submenus: [
-            group("help.about", [item(.about, UserText.settingsAboutDDG),
-                                 item(.feedback, UserText.menuFeedback)])
+            group("help.about", [item(.about, UserText.settingsAboutDDG, image: Glyphs.info),
+                                 item(.feedback, UserText.menuFeedback, image: Glyphs.feedback)])
         ])
     }
 

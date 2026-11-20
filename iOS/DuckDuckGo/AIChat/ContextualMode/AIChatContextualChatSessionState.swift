@@ -85,7 +85,7 @@ struct SheetViewState {
 }
 
 enum SheetEffect {
-    case submitPrompt(prompt: String, context: AIChatPageContextData?, termsAccepted: Bool)
+    case submitPrompt(prompt: String, context: AIChatPageContextData?, termsAccepted: Bool, localTask: AIChatLocalModelTask?)
     case reloadWebView
     case deliverPageContext(AIChatPageContextData?, targets: PageContextDeliveryTargets)
     case clearPrompt
@@ -275,7 +275,7 @@ final class AIChatContextualChatSessionState {
     // MARK: - Frontend Chat State Transitions
 
     /// Call when user submits a prompt from native input
-    func handlePromptSubmission(_ prompt: String, url: URL? = nil, termsAccepted: Bool = false) {
+    func handlePromptSubmission(_ prompt: String, url: URL? = nil, termsAccepted: Bool = false, localTask: AIChatLocalModelTask? = nil) {
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] Chat start request ignored - preserving .restoredChat state")
             return
@@ -303,7 +303,7 @@ final class AIChatContextualChatSessionState {
         }
 
         rebuildViewState()
-        emit(.submitPrompt(prompt: prompt, context: contextData, termsAccepted: termsAccepted))
+        emit(.submitPrompt(prompt: prompt, context: contextData, termsAccepted: termsAccepted, localTask: localTask))
     }
 
     /// Call when the first prompt is submitted through contextual UTI. The UTI coordinator
@@ -482,7 +482,7 @@ final class AIChatContextualChatSessionState {
     /// Keeps the page on the chip as an offer, so one tap puts it back. Deliberately not gated on
     /// `shouldOfferPageContext`: the user acted on this page just now.
     private func suggestDetachedContext(_ context: AIChatPageContext) {
-        guard featureFlagger.isFeatureOn(.contextualPagePlaceholder), isUnifiedToggleInputActive else { return }
+        guard isUnifiedToggleInputActive else { return }
         suggestedContext = context
         suggestedContextReason = .detached
         pixelHandler.firePageContextOfferShown(reason: .detached)
@@ -575,8 +575,7 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
-        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
-            && !shouldAutoCollectContext
+        !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
             && shouldCollectPage(for: pageURL)

@@ -199,6 +199,10 @@ final class IPadOmnibarAttachmentController {
         attachmentsStripView?.replaceAttachment(id: id, with: attachment)
     }
 
+    func reportMenuShown() {
+        pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: .addressBar), frequency: .dailyAndCount)
+    }
+
     private func firePastedTextPixel(_ action: UnifiedToggleInputPastedTextPixel.Action) {
         pixelFiring?.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: .addressBar), frequency: .dailyAndCount)
     }
@@ -223,6 +227,9 @@ final class IPadOmnibarAttachmentController {
         guard isAttachButtonAvailable, canAttachMore else { return nil }
         return presenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in self?.presenterProvider?() },
+            onItemSelected: { [weak self] in
+                self?.pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.itemSelected($0, surface: .addressBar), frequency: .dailyAndCount)
+            },
             photoSelectionLimit: attachmentPolicy.canAttachImages ? attachmentPolicy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes

@@ -307,7 +307,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
             column: column
         )
 
-    case .screen, .fixed:
+    case .screen, .tallScreen, .fixed:
         let snapshotSize = size.resolvedSize(
             for: configuration,
             defaultSize: SnapshotDevice.iPhoneDefault.size

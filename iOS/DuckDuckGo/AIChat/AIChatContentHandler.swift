@@ -36,6 +36,10 @@ protocol AIChatUserScriptProviding: AnyObject {
     var webView: WKWebView? { get set }
     var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    /// The payload this page will ask for once it loads.
+    @MainActor func willHandOff(_ payload: AIChatPayload)
+    /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
+    @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
@@ -60,6 +64,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     @MainActor
     func cancelPendingTabContextSubmission()
     @MainActor func cleanUpForReplacement()
+    @MainActor func handOverLocalRuns(to replacement: AIChatUserScriptProviding)
     @MainActor
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -67,6 +72,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitToggleSidebarAction()
     @MainActor
     func submitOpenChatProtectionAction()
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 }
 
 extension AIChatUserScriptProviding {
@@ -134,6 +141,7 @@ protocol AIChatContentHandling: AnyObject {
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.
+    @MainActor
     func setPayload(payload: Any?)
 
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
@@ -176,6 +184,11 @@ protocol AIChatContentHandling: AnyObject {
     /// Submits a chat-protection action, opening the "All chats are private" page.
     @MainActor
     func submitOpenChatProtectionAction()
+
+    /// Asks the page to open a chat in place, without a reload.
+    /// - Returns: the page's answer, or `nil` when it can't take the request or doesn't answer in time.
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -237,6 +250,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring
     private let subscriptionManager: any SubscriptionManager
     private let statisticsLoader: StatisticsLoader
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
@@ -254,6 +268,9 @@ final class AIChatContentHandler: AIChatContentHandling {
     private var getAttachedSelections: (() -> [AIChatSelectionContextData])?
     private var onAttachedSelectionsConsumed: (([String]) -> Void)?
 
+    /// A new tab is given its payload before its user scripts are installed.
+    private var unannouncedHandoff: AIChatPayload?
+
     weak var delegate: AIChatContentHandlingDelegate?
 
     init(aiChatSettings: AIChatSettingsProvider,
@@ -263,6 +280,7 @@ final class AIChatContentHandler: AIChatContentHandling {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          statisticsLoader: StatisticsLoader = .shared,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
@@ -277,6 +295,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingExperimentMetricStore = onboardingExperimentMetricStore
         self.subscriptionManager = subscriptionManager
         self.statisticsLoader = statisticsLoader
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
@@ -288,6 +307,8 @@ final class AIChatContentHandler: AIChatContentHandling {
 
     @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
+        let replacedTermsOfServiceState = self.userScript?.isTermsOfServiceShownOnPage
+        self.userScript?.handOverLocalRuns(to: userScript)
         self.userScript?.cleanUpForReplacement()
         self.userScript = userScript
         self.userScript?.delegate = self
@@ -305,12 +326,31 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setPageContextProvider(getPageContext)
         self.userScript?.setAttachedSelectionsProvider(getAttachedSelections)
         self.userScript?.setAttachedSelectionsConsumedHandler(onAttachedSelectionsConsumed)
+        // Rebuilt user scripts replace this one under a page that already took its handoff and won't ask again.
+        if let replacedTermsOfServiceState {
+            userScript.isTermsOfServiceShownOnPage = replacedTermsOfServiceState
+        }
+        if let unannouncedHandoff {
+            announceHandoff(unannouncedHandoff)
+        }
     }
-    
+
     /// Sets the initial payload data for the AIChat session.
+    @MainActor
     func setPayload(payload: Any?) {
         guard let payload = payload as? AIChatPayload else { return }
         payloadHandler.setData(payload)
+        announceHandoff(payload)
+    }
+
+    @MainActor
+    private func announceHandoff(_ payload: AIChatPayload) {
+        guard let userScript else {
+            unannouncedHandoff = payload
+            return
+        }
+        unannouncedHandoff = nil
+        userScript.willHandOff(payload)
     }
     
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
@@ -432,6 +472,11 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitOpenChatProtectionAction()
     }
 
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        await userScript?.openChat(chatId: chatId)
+    }
+
     func submitPageContext(_ context: AIChatPageContextData?) {
         userScript?.submitPageContext(context)
     }
@@ -497,11 +542,11 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
                 // Also completes the subscription onboarding checklist's Duck.ai step
-                let wasAlreadyActivated = onboardingActivationRecorder.recordDuckAIActivatedIfNeeded()
+                onboardingActivationRecorder.recordDuckAIActivated()
                 Task {
                     SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(
                         isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
-                        isAlreadyActivated: wasAlreadyActivated)
+                        metricStore: onboardingExperimentMetricStore)
                 }
             }
 

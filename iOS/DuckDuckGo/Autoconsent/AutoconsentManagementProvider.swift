@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import EventHub
 import Foundation
 
 enum AutoconsentContext: Hashable {
@@ -32,13 +33,18 @@ protocol AutoconsentManagementProviding {
 final class AutoconsentManagementProvider: AutoconsentManagementProviding {
 
     private var managements: [AutoconsentContext: AutoconsentManaging] = [:]
+    private let eventHub: EventHubManaging
+
+    init(eventHub: EventHubManaging) {
+        self.eventHub = eventHub
+    }
 
     func management(for context: AutoconsentContext) -> AutoconsentManaging {
         if let existing = managements[context] {
             return existing
         }
 
-        let management = AutoconsentManagement()
+        let management = AutoconsentManagement(eventHub: eventHub)
         managements[context] = management
         return management
     }

@@ -19,6 +19,8 @@
 
 import Foundation
 import CoreGraphics
+import struct SwiftUI.AnyView
+import struct SwiftUI.Text
 import Testing
 import Core
 import PrivacyConfig
@@ -115,6 +117,28 @@ struct EscapeHatchModelTests {
         page.setEscapeHatch(nil)
         #expect(pageModel.escapeHatch == nil)
         #expect(!pageModel.openedAfterIdle)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Showing and dismissing the focused sync promo retains recent chats and the hatch", .timeLimit(.minutes(1)))
+    func focusedSyncPromoChangesRetainRecentChats() {
+        let hatch = makeSUT(targetTab: Tab(uid: "target-tab"), router: SpyRouter())
+        let recents = SuggestionsListViewModel(source: EmptySuggestionsSource())
+        let pageModel = NewTabPageViewModel(fireTab: false, pixelFiring: nil)
+        let content = LegacyFocusedNewTabPageContent(recentChats: recents, isAddressBarAtBottom: true)
+        pageModel.setFocusedContent(content, escapeHatch: hatch)
+
+        var withPromo = content
+        withPromo.syncPromo = AnyView(Text("Sync"))
+        pageModel.setFocusedContent(withPromo, escapeHatch: hatch)
+        #expect(pageModel.focusedContent?.syncPromo != nil)
+        #expect(pageModel.focusedContent?.recentChats === recents)
+        #expect(pageModel.escapeHatch === hatch)
+
+        pageModel.setFocusedContent(content, escapeHatch: hatch)
+        #expect(pageModel.focusedContent?.syncPromo == nil)
+        #expect(pageModel.focusedContent?.recentChats === recents)
+        #expect(pageModel.escapeHatch === hatch)
     }
 
     @available(iOS 16, *)

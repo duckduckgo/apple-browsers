@@ -193,6 +193,27 @@
         "identifier" : "SpecialErrorPagesTests",
         "name" : "SpecialErrorPagesTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AutoconsentStatsTests",
+        "name" : "AutoconsentStatsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DuckAiDataStoreTests",
+        "name" : "DuckAiDataStoreTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PrivacyConfigTests",
+        "name" : "PrivacyConfigTests"
+      }
     }
   ],
   "version" : 1

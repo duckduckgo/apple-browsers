@@ -30,8 +30,8 @@ class FireproofingSettingsViewController: UITableViewController {
         case removeAll
     }
 
-    @IBOutlet var doneButton: UIBarButtonItem!
-    @IBOutlet var editButton: UIBarButtonItem!
+    private lazy var doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(endEditing))
+    private lazy var editButton = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(startEditing))
 
     var model = [String]()
     private var shouldShowRemoveAll = false
@@ -40,14 +40,13 @@ class FireproofingSettingsViewController: UITableViewController {
     private let favicons: FaviconManaging
     private let websiteDataManager: WebsiteDataManaging
 
-    init?(coder: NSCoder,
-          fireproofing: Fireproofing,
-          favicons: FaviconManaging,
-          websiteDataManager: WebsiteDataManaging) {
+    init(fireproofing: Fireproofing,
+         favicons: FaviconManaging,
+         websiteDataManager: WebsiteDataManaging) {
         self.fireproofing = fireproofing
         self.favicons = favicons
         self.websiteDataManager = websiteDataManager
-        super.init(coder: coder)
+        super.init(style: .insetGrouped)
     }
     
     required init?(coder: NSCoder) {
@@ -56,13 +55,24 @@ class FireproofingSettingsViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = UserText.fireproofingListTitle
+        tableView.register(FireproofingSwitchCell.self, forCellReuseIdentifier: "SettingCell")
+        tableView.register(FireproofingDomainCell.self, forCellReuseIdentifier: "DomainCell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "NoDomainsCell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ClearAllCell")
+        tableView.allowsSelectionDuringEditing = true
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = UITableView.automaticDimension
+        tableView.sectionHeaderHeight = 18
+        tableView.sectionFooterHeight = UITableView.automaticDimension
+        tableView.estimatedSectionFooterHeight = 18
         refreshModel()
         navigationItem.rightBarButtonItems = model.isEmpty ? [] : [ editButton ]
         decorate()
         tableView.contentInset = UIEdgeInsets(top: -20, left: 0, bottom: 0, right: 0)
     }
     
-    @IBAction func startEditing() {
+    @objc func startEditing() {
         navigationItem.setHidesBackButton(true, animated: true)
         navigationItem.setRightBarButton(doneButton, animated: true)
 
@@ -74,7 +84,7 @@ class FireproofingSettingsViewController: UITableViewController {
         tableView.insertSections([Section.removeAll.rawValue], with: .fade)
     }
     
-    @IBAction func endEditing() {
+    @objc func endEditing() {
         navigationItem.setHidesBackButton(false, animated: true)
         navigationItem.setRightBarButton(model.isEmpty ? nil : editButton, animated: true)
         
@@ -196,7 +206,6 @@ class FireproofingSettingsViewController: UITableViewController {
         cell.toggle.onTintColor = theme.buttonTintColor
         cell.toggle.isOn = fireproofing.loginDetectionEnabled
         cell.fireproofing = fireproofing
-        cell.controller = self
         cell.decorate(with: theme)
         return cell
     }
@@ -207,19 +216,27 @@ class FireproofingSettingsViewController: UITableViewController {
         }
         cell.label.textColor = theme.tableCellTextColor
         cell.faviconImage.loadFavicon(forDomain: model[index], usingCache: .fireproof)
-        cell.label?.text = model[index].droppingWwwPrefix()
+        cell.label.text = model[index].droppingWwwPrefix()
         cell.decorate(with: theme)
         return cell
     }
     
     func createNoDomainCell(forTableView tableView: UITableView, withTheme theme: Theme) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "NoDomainsCell")!
+        cell.textLabel?.text = UserText.fireproofingEmptyState
+        cell.textLabel?.font = .systemFont(ofSize: 16)
+        cell.textLabel?.textAlignment = .center
+        cell.selectionStyle = .none
         cell.decorate(with: theme)
         return cell
     }
 
     func createClearAllCell(forTableView tableView: UITableView, withTheme theme: Theme) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ClearAllCell")!
+        cell.textLabel?.text = UserText.fireproofingRemoveAllSites
+        cell.textLabel?.font = .systemFont(ofSize: 16)
+        cell.textLabel?.textAlignment = .center
+        cell.accessibilityTraits.insert(.button)
         cell.decorate(with: theme)
         cell.textLabel?.textColor = theme.destructiveColor
         return cell
@@ -264,13 +281,38 @@ extension FireproofingSettingsViewController {
 
 class FireproofingSwitchCell: UITableViewCell {
 
-    @IBOutlet weak var toggle: UISwitch!
-    @IBOutlet weak var label: UILabel!
+    let toggle = UISwitch()
+    let label = UILabel()
 
-    weak var controller: FireproofingSettingsViewController!
     var fireproofing: Fireproofing?
 
-    @IBAction func onToggle() {
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        label.text = UserText.fireproofingAskOnSignIn
+        label.font = .systemFont(ofSize: 16)
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        toggle.addTarget(self, action: #selector(onToggle), for: .valueChanged)
+        contentView.addSubview(label)
+        contentView.addSubview(toggle)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            label.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
+            label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
+            label.heightAnchor.constraint(greaterThanOrEqualToConstant: 24),
+            toggle.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: 20),
+            toggle.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            toggle.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc func onToggle() {
         fireproofing?.loginDetectionEnabled = toggle.isOn
     }
 
@@ -278,8 +320,33 @@ class FireproofingSwitchCell: UITableViewCell {
 
 class FireproofingDomainCell: UITableViewCell {
 
-    @IBOutlet weak var faviconImage: UIImageView!
-    @IBOutlet weak var label: UILabel!
+    let faviconImage = UIImageView(image: UIImage(named: "GlobeSmall"))
+    let label = UILabel()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        label.font = .systemFont(ofSize: 16)
+        let stack = UIStackView(arrangedSubviews: [faviconImage, label])
+        stack.spacing = 12
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(stack)
+        NSLayoutConstraint.activate([
+            faviconImage.widthAnchor.constraint(equalToConstant: 16),
+            faviconImage.heightAnchor.constraint(equalToConstant: 16),
+            stack.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            stack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            stack.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 12),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12),
+            contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
 }
 

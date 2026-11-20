@@ -214,7 +214,8 @@ extension TabExtensionsBuilder {
         add {
             NavigationProtectionTabExtension(
                 contentBlocking: dependencies.privacyFeatures.contentBlocking,
-                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
+                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences,
+                featureFlagger: dependencies.featureFlagger
             )
 
         }
@@ -324,7 +325,8 @@ extension TabExtensionsBuilder {
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                isTabBurner: args.isTabBurner,
-                               burnerMode: args.burnerMode)
+                               burnerMode: args.burnerMode,
+                               tabsPreferences: dependencies.tabsPreferences)
         }
 
         add {
@@ -361,6 +363,16 @@ extension TabExtensionsBuilder {
 
         add {
             SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
+        }
+
+        if #available(macOS 15.4, *) {
+            add {
+                ChromeWebStoreTabExtension(
+                    isFeatureEnabled: { [featureFlagger = dependencies.featureFlagger] in featureFlagger.isFeatureOn(.webExtensions) },
+                    scriptsPublisher: userScripts.compactMap { $0 },
+                    webViewPublisher: args.webViewFuture
+                )
+            }
         }
 
         if let tunnelController = dependencies.tunnelController {

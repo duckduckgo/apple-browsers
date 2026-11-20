@@ -19,8 +19,6 @@
 
 @_spi(Testing) import Persistence
 import Foundation
-import PrivacyConfig
-import FeatureFlags_iOS
 import SitePermissions
 import XCTest
 @testable import DuckDuckGo
@@ -140,82 +138,6 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
                     XCTAssertEqual(store.decision(for: permissionType, at: site), .allow)
                 }
             }
-        }
-    }
-
-    func testWhenFeatureIsDisabledWhileSettingsIsOpenThenActionsDoNotMutateOrReportEvents() throws {
-        let store = makeStore()
-        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
-        store.setPersistentDecision(.allow, for: .camera, at: site)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        var events = [SitePermissionsEvent]()
-        var revocationCount = 0
-        var systemSettingsOpenCount = 0
-        var toastCount = 0
-        let callbacks = SettingsViewModel.makeSitePermissionsCallbacks(
-            eventHandler: { events.append($0) },
-            revocationHandler: { _, _ in revocationCount += 1 })
-        let sut = makeSUT(
-            store: store,
-            isEnabled: { featureFlagger.isFeatureOn(.sitePermissions) },
-            openSystemSettings: { systemSettingsOpenCount += 1 },
-            presentUndoToast: { _, _ in toastCount += 1 },
-            callbacks: callbacks)
-        sut.didOpen()
-        XCTAssertEqual(events, [.settingsSitePermissionsOpen])
-        events.removeAll()
-
-        featureFlagger.enabledFeatureFlags = []
-        featureFlagger.triggerUpdate()
-        sut.didOpen()
-        sut.globalDefaultBinding(for: .camera).wrappedValue = .deny
-        sut.siteDecisionBinding(for: .camera, at: site).wrappedValue = .deny
-        sut.siteDecisionBinding(for: .camera, at: site).wrappedValue = .ask
-        sut.openSystemSettings()
-        sut.removePermissions(for: site)
-        sut.removeAllSitePermissions()
-
-        XCTAssertEqual(store.globalDefault(for: .camera), .ask)
-        XCTAssertEqual(store.permissions(for: site), [.camera: .allow])
-        XCTAssertTrue(events.isEmpty)
-        XCTAssertEqual(revocationCount, 0)
-        XCTAssertEqual(systemSettingsOpenCount, 0)
-        XCTAssertEqual(toastCount, 0)
-
-        featureFlagger.enabledFeatureFlags = [.sitePermissions]
-        featureFlagger.triggerUpdate()
-        sut.globalDefaultBinding(for: .camera).wrappedValue = .deny
-        XCTAssertEqual(store.globalDefault(for: .camera), .deny)
-        XCTAssertEqual(events, [.settingsSitePermissionsGlobalChanged(type: .camera, to: .deny)])
-    }
-
-    func testWhenFeatureIsDisabledAfterRemovalThenUndoRestoresWithoutReportingEvent() throws {
-        for removeAll in [false, true] {
-            let store = makeStore()
-            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
-            store.setPersistentDecision(.allow, for: .camera, at: site)
-            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-            var undo: (() -> Void)?
-            var undoCount = 0
-            var callbacks = SettingsSitePermissionsViewModel.Callbacks()
-            callbacks.didUndoRemoval = { undoCount += 1 }
-            let sut = makeSUT(
-                store: store,
-                isEnabled: { featureFlagger.isFeatureOn(.sitePermissions) },
-                presentUndoToast: { _, action in undo = action },
-                callbacks: callbacks)
-
-            if removeAll {
-                sut.removeAllSitePermissions()
-            } else {
-                sut.removePermissions(for: site)
-            }
-            featureFlagger.enabledFeatureFlags = []
-            featureFlagger.triggerUpdate()
-            try XCTUnwrap(undo)()
-
-            XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
-            XCTAssertEqual(undoCount, 0)
         }
     }
 
@@ -420,7 +342,7 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
                 store: store,
                 presentUndoToast: { _, action in undo = action },
                 callbacks: callbacks)
-            weak var weakSUT = sut
+            weak let weakSUT = sut
 
             if removeAll {
                 sut?.removeAllSitePermissions()
@@ -505,9 +427,7 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         store.resetDecision(for: .location, at: site)
         store.setPersistentDecision(.deny, for: .microphone, at: otherSite)
         store.setGlobalDefault(.deny, for: .camera)
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let isEnabled = featureFlagger.isFeatureOn(.sitePermissions)
-        let settings = makeSUT(store: store, isEnabled: { isEnabled })
+        let settings = makeSUT(store: store)
         var removal: SitePermissionsRemoval?
         let sheet = SitePermissionsSheetViewModel(
             snapshot: SitePermissionsManagementSnapshot(
@@ -568,12 +488,10 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
     }
 
     private func makeSUT(store: SitePermissionsStore? = nil,
-                         isEnabled: @escaping () -> Bool = { true },
                          openSystemSettings: @escaping () -> Void = {},
                          presentUndoToast: @escaping SettingsSitePermissionsViewModel.UndoToastPresenter = { _, _ in },
                          callbacks: SettingsSitePermissionsViewModel.Callbacks = .init()) -> SettingsSitePermissionsViewModel {
         SettingsSitePermissionsViewModel(store: store ?? makeStore(),
-                                         isEnabled: isEnabled,
                                          openSystemSettings: openSystemSettings,
                                          presentUndoToast: presentUndoToast,
                                          callbacks: callbacks)

@@ -166,7 +166,13 @@ final class MockDDGSyncing: DDGSyncing {
         }
     }
 
+    var fetchDevicesCallCount = 0
+    var fetchDevicesError: Error?
     func fetchDevices() async throws -> [RegisteredDevice] {
+        fetchDevicesCallCount += 1
+        if let fetchDevicesError {
+            throw fetchDevicesError
+        }
         return registeredDevices
     }
 

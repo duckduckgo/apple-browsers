@@ -38,6 +38,7 @@ final class MockWideEventSending: WideEventSending {
         _ data: T,
         status: WideEventStatus,
         featureFlagProvider: WideEventFeatureFlagProviding,
+        options: PixelKit.Options,
         onComplete: @escaping PixelKit.CompletionBlock
     ) {
         let mockData = data as? MockWideEventData

@@ -1211,6 +1211,34 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
+    func test_WhenSwitchingFromProtectedSiteToLocalFile_ThenShieldAnimationIsHidden() async throws {
+        // GIVEN
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).html")
+        try Self.testHtml.write(to: fileURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let siteTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: MockCertificateEvaluator(), maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        let fileTab = Tab(content: .url(fileURL, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [siteTab, fileTab]))
+        let siteLoadedPromise = siteTab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
+
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        _ = try await siteLoadedPromise.value
+
+        let addressBarButtonsVC = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
+        XCTAssertFalse(addressBarButtonsVC.shieldAnimationView.isHidden)
+
+        // WHEN
+        let fileLoadedPromise = fileTab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
+        viewModel.select(at: .unpinned(1))
+        _ = try await fileLoadedPromise.value
+
+        // THEN
+        XCTAssertTrue(addressBarButtonsVC.shieldAnimationView.isHidden)
+        XCTAssertTrue(addressBarButtonsVC.shieldDotAnimationView.isHidden)
+    }
+
+    @MainActor
     func test_ZoomLevelNonDefault_ThenZoomButtonIsVisible() async throws {
         // GIVEN
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), maliciousSiteDetector: MockMaliciousSiteProtectionManager())

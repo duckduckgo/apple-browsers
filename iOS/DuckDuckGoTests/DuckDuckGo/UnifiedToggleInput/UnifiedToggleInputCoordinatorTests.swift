@@ -655,12 +655,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     @MainActor
     func test_editPrompt_bindingAnotherChat_cancelsEdit() async {
-        sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
+        // Held here: the coordinator keeps scripts weakly and compares them by identity, so a freed first
+        // script could share its address with the second, read as the same chat and leave the edit waiting forever.
+        let firstChatScript = makeBridgeReadyUserScript()
+        sut.bindToTab(firstChatScript, hasExistingChat: true)
         let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
         await Task.yield()
         guard sut.isEditing else { return XCTFail("The edit started before rebinding") }
 
-        sut.bindToTab(makeTestUserScript(), hasExistingChat: true)
+        let otherChatScript = makeTestUserScript()
+        withExtendedLifetime(firstChatScript) {
+            sut.bindToTab(otherChatScript, hasExistingChat: true)
+        }
 
         guard case .cancelled = await editTask.value else {
             return XCTFail("Binding another chat's script resolves the held edit as cancelled")
@@ -1141,6 +1147,35 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func testWhenInactiveSearchSwitchesToDuckAIThenOnlyTheDestinationInputGainsFocus() throws {
+        func findToggle(in view: UIView) -> UnifiedToggleInputToggleView? {
+            if let toggle = view as? UnifiedToggleInputToggleView { return toggle }
+            return view.subviews.lazy.compactMap { findToggle(in: $0) }.first
+        }
+
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
+        try XCTUnwrap(scheduledFocus.first)()
+        sut.viewController.deactivateInput()
+        sut.updateOmnibarInputVisibility(false)
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        let handler = sut.viewController.handler
+        var focusedModes: [TextEntryMode] = []
+        handler.textInputFocusChangedPublisher.sink { isFocused in
+            if isFocused { focusedModes.append(handler.currentToggleState) }
+        }.store(in: &cancellables)
+        let toggle = try XCTUnwrap(findToggle(in: sut.viewController.view))
+
+        toggle.onModeChanged?(.aiChat)
+
+        XCTAssertEqual(focusedModes, [.aiChat])
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
     // MARK: - VC Delegate: Submit — Search Mode
 
     func test_submitSearch_callsDelegateQueryMethod() {
@@ -1562,7 +1597,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             toggleModeStorage: mockToggleModeStorage,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFloatingUIEnabled ? [.floatingUIiOS26, .floatingUIiOS27] : []),
-            scheduleOmnibarFocus: schedule)
+            scheduleInputFocus: schedule)
         coordinator.modelStore.models = [model]
         coordinator.intentPublisher.sink { [weak coordinator] intent in
             if case .showOmnibarEditing = intent {
@@ -1686,7 +1721,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             switchBarSubmissionMetrics: mockSubmissionMetrics,
             featureDiscovery: mockFeatureDiscovery,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
-            scheduleOmnibarFocus: { $0() }
+            scheduleInputFocus: { $0() }
         )
         coordinator.delegate = mockDelegate
         return coordinator

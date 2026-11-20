@@ -81,7 +81,11 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user submits a prompt from native input. `termsAccepted` is `true` only for a prompt sent with Ask.
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String, termsAccepted: Bool)
+    /// `localTask` is set for a page summary, which Duck.ai can run on the local model.
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didSubmitPrompt prompt: String,
+                                             termsAccepted: Bool,
+                                             localTask: AIChatLocalModelTask?)
 
     /// Called when the user taps a suggested prompt.
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async
@@ -120,7 +124,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerHeight: CGFloat = 44
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 16
-        static let titleSpacing: CGFloat = 4
         static let titleTapHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
         static let dimmingAlpha = ContextualSurfaceScrim.alpha
@@ -185,6 +188,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Glass capsules, the Duck.ai bubble icon, and close/hand-off swapped to opposite pills.
     private let usesRedesignedHeader: Bool
+    private let usesLiquidGlassHeader: Bool
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
@@ -197,10 +201,14 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private var hostInputTextCancellable: AnyCancellable?
     private var contentContainerBottomConstraint: NSLayoutConstraint?
+    private weak var floatingInputView: UIView?
     private var headerTopConstraint: NSLayoutConstraint?
 
     /// The single web view controller for this sheet, created once and reused
     private var webViewController: AIChatContextualWebViewController?
+
+    /// Set only while `submittingSummary` runs, so the prompt it submits is marked as a summary.
+    private var localTaskForSubmission: AIChatLocalModelTask?
 
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
@@ -254,7 +262,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }()
 
     private lazy var aiChatEditHeaderView: AIChatEditHeaderView = {
-        let header = AIChatEditHeaderView(preferredHeight: nil)
+        let header = AIChatEditHeaderView(preferredHeight: nil, usesFloatingAIChrome: usesLiquidGlassHeader)
         header.delegate = self
         header.translatesAutoresizingMaskIntoConstraints = false
         header.isHidden = true
@@ -330,28 +338,11 @@ final class AIChatContextualSheetViewController: UIViewController {
         return menuOpensUpward ? sections.reversed().map(Self.reversingChildren) : sections
     }
 
-    private lazy var titleContainer: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = Constants.titleSpacing
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-
-    /// Wraps `titleContainer` so the header title acts as a tappable element.
+    /// Wraps `titleLabel` so the header title acts as a tappable element.
     private var titleTapControl: HighlightableControl?
 
-    /// The header subview holding the title, i.e. the tap control when present and the bare stack otherwise.
-    private var titleHostView: UIView { titleTapControl ?? titleContainer }
-
-    private lazy var titleIconView: UIImageView = {
-        let icon = usesRedesignedHeader ? DesignSystemImages.Color.Size24.aiChat : DesignSystemImages.Color.Size24.duckAI
-        let imageView = UIImageView(image: icon)
-        imageView.contentMode = .scaleAspectFit
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
+    /// The header subview holding the title, i.e. the tap control when present and the bare label otherwise.
+    private var titleHostView: UIView { titleTapControl ?? titleLabel }
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -359,6 +350,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         label.font = UIFont.daxHeadline()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
 
@@ -373,7 +365,9 @@ final class AIChatContextualSheetViewController: UIViewController {
             pill.translatesAutoresizingMaskIntoConstraints = false
             return pill
         }
-        return AIChatHeaderGlassPill(cornerRadius: Constants.headerButtonSize / 2, shadowStyle: .restingOnChrome)
+        return AIChatHeaderGlassPill(cornerRadius: Constants.headerButtonSize / 2,
+                                     shadowStyle: .restingOnChrome,
+                                     usesFloatingAIChrome: usesLiquidGlassHeader)
     }
 
     private lazy var rightButtonStack: UIStackView = {
@@ -452,8 +446,10 @@ final class AIChatContextualSheetViewController: UIViewController {
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+         usesLiquidGlassHeader: Bool = false,
          opensOntoSubmittedChat: Bool = false) {
         self.usesRedesignedHeader = floatingInputFeature.isAvailable
+        self.usesLiquidGlassHeader = usesLiquidGlassHeader
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -567,6 +563,9 @@ final class AIChatContextualSheetViewController: UIViewController {
             break
         }
         pixelHandler.fireSheetOpened()
+        if surfaceStyle == .sidebar {
+            pixelHandler.fireSidebarOpened()
+        }
         addKeyboardObserver()
     }
 
@@ -611,6 +610,9 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.endEditing(true)
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
+        if surfaceStyle == .sidebar {
+            pixelHandler.fireSidebarClosed()
+        }
     }
 
     /// Runs once a closing surface is off screen, including a parked one that never came back.
@@ -645,6 +647,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateShadowPath()
+        if #available(iOS 26, *), usesLiquidGlassHeader, isWebViewVisible,
+           let floatingInputView, floatingInputView.superview === view {
+            webViewController?.setFloatingInputView(floatingInputView)
+        }
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -776,6 +782,7 @@ private extension AIChatContextualSheetViewController {
         removeCurrentChildViewController()
         showContextualInput()
         updateChipUI(chipState: sessionState.chipState)
+        updateContentContainerBottomConstraint()
     }
 
     func embedChildViewController(_ childVC: UIViewController) {
@@ -808,9 +815,10 @@ private extension AIChatContextualSheetViewController {
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         isWebViewVisible = true
+        updateContentContainerBottomConstraint()
     }
 
-    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
+    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool, localTask: AIChatLocalModelTask? = nil) {
         Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt called")
 
         guard let webVC = webViewController else {
@@ -821,7 +829,7 @@ private extension AIChatContextualSheetViewController {
 
         // Don't transition immediately - wait for delegate callback after prompt is submitted
         // This prevents showing the initial duck.ai page before the prompt navigates it
-        webVC.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+        webVC.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted, localTask: localTask)
         if !isWaitingForInitialPromptResponseState {
             expandToLargeDetent()
         }
@@ -1061,10 +1069,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             }
         case .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
-            if let persistentUTIHost {
-                persistentUTIHost.submitQuickActionPrompt(action.prompt)
-            } else {
-                submitPromptFromNativeInput(action.prompt, sentWithAsk: false)
+            submittingSummary {
+                if let persistentUTIHost {
+                    persistentUTIHost.submitQuickActionPrompt(action.prompt)
+                } else {
+                    submitPromptFromNativeInput(action.prompt, sentWithAsk: false)
+                }
             }
         }
     }
@@ -1182,8 +1192,25 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         guard isFrontendReady else { return false }
         guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
 
-        submitSuggestionPrompt(suggestion.prompt)
+        if suggestion.id == Self.summarizePageSuggestionID {
+            submittingSummary { submitSuggestionPrompt(suggestion.prompt) }
+        } else {
+            submitSuggestionPrompt(suggestion.prompt)
+        }
         return true
+    }
+
+    private static let summarizePageSuggestionID = "summarize-page"
+
+    /// Tells Duck.ai the prompt is a page summary, which it can run on the local model.
+    func submittingSummary(_ submit: () -> Void) {
+        localTaskForSubmission = .summarize
+        defer { localTaskForSubmission = nil }
+        guard let webViewController else {
+            submit()
+            return
+        }
+        webViewController.submitting(localTask: .summarize, submit)
     }
 
     /// A sheet promoted for a submission that never arrived would sit on the web view with no input at
@@ -1384,8 +1411,8 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ effect: SheetEffect) {
         switch effect {
-        case .submitPrompt(let prompt, let context, let termsAccepted):
-            showWebViewWithPrompt(prompt, pageContext: context, termsAccepted: termsAccepted)
+        case .submitPrompt(let prompt, let context, let termsAccepted, let localTask):
+            showWebViewWithPrompt(prompt, pageContext: context, termsAccepted: termsAccepted, localTask: localTask)
         case .reloadWebView:
             webViewController?.reload()
         case .deliverPageContext:
@@ -1464,7 +1491,9 @@ private extension AIChatContextualSheetViewController {
         }
         contextualInputViewController.hideStartActionsForSubmittedPrompt()
         beginWaitingForInitialPromptResponseState()
-        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted)
+        // The prompt reaches the web view a main-queue hop later, so the mark travels with it.
+        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted,
+                                                      localTask: localTaskForSubmission)
     }
 
     /// `isSuggestedPrompt` is false for a search query handed over from the results page.
@@ -1558,20 +1587,14 @@ private extension AIChatContextualSheetViewController {
         let tapControl = makeTitleTapControl()
         titleTapControl = tapControl
         headerView.addSubview(tapControl)
-        titleContainer.isUserInteractionEnabled = false
-        tapControl.addSubview(titleContainer)
+        titleLabel.isUserInteractionEnabled = false
+        tapControl.addSubview(titleLabel)
         NSLayoutConstraint.activate([
-            titleContainer.leadingAnchor.constraint(equalTo: tapControl.leadingAnchor, constant: Constants.titleTapHorizontalPadding),
-            titleContainer.trailingAnchor.constraint(equalTo: tapControl.trailingAnchor, constant: -Constants.titleTapHorizontalPadding),
-            titleContainer.centerYAnchor.constraint(equalTo: tapControl.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: tapControl.leadingAnchor, constant: Constants.titleTapHorizontalPadding),
+            titleLabel.trailingAnchor.constraint(equalTo: tapControl.trailingAnchor, constant: -Constants.titleTapHorizontalPadding),
+            titleLabel.centerYAnchor.constraint(equalTo: tapControl.centerYAnchor),
             tapControl.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
         ])
-        titleContainer.addArrangedSubview(titleIconView)
-        NSLayoutConstraint.activate([
-            titleIconView.widthAnchor.constraint(equalToConstant: 24),
-            titleIconView.heightAnchor.constraint(equalToConstant: 24),
-        ])
-        titleContainer.addArrangedSubview(titleLabel)
 
         headerView.addSubview(rightButtonContainer)
         rightButtonContainer.contentView.addSubview(rightButtonStack)
@@ -1584,6 +1607,10 @@ private extension AIChatContextualSheetViewController {
         })
 
         view.addSubview(contentContainerView)
+        if #available(iOS 26, *), usesLiquidGlassHeader {
+            view.bringSubviewToFront(headerView)
+            view.bringSubviewToFront(aiChatEditHeaderView)
+        }
 
         setupConstraints()
         applySurfaceStyle()
@@ -1693,14 +1720,25 @@ private extension AIChatContextualSheetViewController {
             }
             self.contextualInputViewController.view.isHidden = isVisible
         }
-        // The previous constraint died with the old mount — its two views no longer share an ancestor.
-        contentContainerBottomConstraint?.isActive = false
-        let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
-        contentContainerBottomConstraint = bottomConstraint
-        bottomConstraint.isActive = true
+        floatingInputView = utiView
+        updateContentContainerBottomConstraint()
         if contentDragKeyboardDismissRecognizer.view == nil {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }
+    }
+
+    func updateContentContainerBottomConstraint() {
+        guard let floatingInputView, floatingInputView.superview === view else { return }
+        contentContainerBottomConstraint?.isActive = false
+        let bottomAnchor: NSLayoutYAxisAnchor
+        if #available(iOS 26, *), usesLiquidGlassHeader, isWebViewVisible {
+            bottomAnchor = view.bottomAnchor
+        } else {
+            bottomAnchor = floatingInputView.topAnchor
+        }
+        let constraint = contentContainerView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        contentContainerBottomConstraint = constraint
+        constraint.isActive = true
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {

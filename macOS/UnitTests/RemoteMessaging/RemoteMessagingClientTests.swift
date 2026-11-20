@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Bookmarks
 import BrowserServicesKitTestsUtils
 import Foundation
@@ -144,7 +145,8 @@ final class RemoteMessagingClientTests: XCTestCase {
                 subscriptionManager: subscriptionManager,
                 featureFlagger: MockFeatureFlagger(),
                 themeManager: MockThemeManager(),
-                isReturningUser: { nil }
+                isReturningUser: { nil },
+                aiChatBonusStateProvider: AIChatBonusService()
             ),
             remoteMessagingAvailabilityProvider: availabilityProvider,
             remoteMessagingSurfacesProvider: surfacesProvider
@@ -191,7 +193,8 @@ final class RemoteMessagingClientTests: XCTestCase {
             activeOffers: [],
             tier: nil,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         subscriptionManager.resultSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true

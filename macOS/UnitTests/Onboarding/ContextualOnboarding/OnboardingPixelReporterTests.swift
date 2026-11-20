@@ -314,42 +314,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
 }
 
-class MockContextualOnboardingState: ContextualOnboardingStateUpdater, ContextualOnboardingDialogTypeProviding {
-    func lastDialogForTab(_ tab: Tab) -> DuckDuckGo_Privacy_Browser.ContextualDialogType? {
-        return lastDialog
-    }
-
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
-        return lastDialog
-    }
-
-    var lastDialog: ContextualDialogType?
-
-    var state: ContextualOnboardingState = .onboardingCompleted
-
-    @Published var isContextualOnboardingCompleted: Bool = true
-    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
-
-    func updateStateFor(tab: Tab) {
-    }
-
-    func gotItPressed() {
-    }
-
-    func fireButtonUsed() {
-    }
-
-    func turnOffFeature() {}
-
-}
-
 final class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     var eventsReceived: [OnboardingSharedPixelEvent] = []
 
     func fire(_ event: OnboardingSharedPixelEvent,
               source: OnboardingPixelParameter.Source?,
               flow: OnboardingPixelParameter.Flow?,
-              variant: OnboardingPixelParameter.Variant?) {
+              variants: OnboardingPixelParameter.Variants) {
         eventsReceived.append(event)
     }
 

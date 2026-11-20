@@ -33,7 +33,6 @@ extension PromoServiceFactory {
             context: .global,
             coexistingPromoIDs: [PromoServiceFactory.nextSteps.id],
             delegate: SyncFaviconsPromoDelegate(
-                featureFlagger: dependencies.featureFlagger,
                 syncService: dependencies.syncService,
                 syncBookmarksAdapter: dependencies.syncBookmarksAdapter,
                 windowControllersManager: dependencies.windowControllersManager

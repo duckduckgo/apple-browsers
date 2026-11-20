@@ -67,6 +67,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
+    let sponsorBlockSubfeature: SponsorBlockSubfeature
     /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
     /// `nil` when web extensions are unavailable or the user is not an internal user.
     let webExtensionPageStubUserScript: UserScript?
@@ -77,9 +78,15 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         sponsorBlockPreferences: SponsorBlockPreferences = NSApp.delegateTyped.sponsorBlockPreferences,
+         sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = NSApp.delegateTyped.sponsorBlockSegmentsProvider,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
+        let featureFlagger = sourceProvider.featureFlagger
+        sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
+                                                        preferences: sponsorBlockPreferences,
+                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
         if #available(macOS 15.4, *) {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
                 NSApp.delegateTyped.webExtensionManager?.chromeWebStore
@@ -110,10 +117,17 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             syncServiceProvider: sourceProvider.syncServiceProvider,
             syncErrorHandler: sourceProvider.syncErrorHandler,
             featureFlagger: sourceProvider.featureFlagger,
-            homepageAiChatsProvider: homepageAiChatsProvider
+            homepageAiChatsProvider: homepageAiChatsProvider,
+            localModelService: NSApp.delegateTyped.localModelService,
+            bonusHandler: sourceProvider.aiChatBonusOffer.handler,
+            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
-        aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        aiChatUserScript = AIChatUserScript(
+            handler: aiChatHandler,
+            urlSettings: aiChatDebugURLSettings,
+            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog
+        )
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
@@ -138,7 +152,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
-                .exactOrSubdomain(hostname: "duck.ai"),
+                .exact(hostname: "duck.ai"),
             ]
             if let customHostname = aiChatDebugURLSettings.customURLHostname {
                 originRules.append(.exact(hostname: customHostname))
@@ -146,6 +160,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
                 originRules: originRules,
+                framePolicy: aiChatDebugURLSettings.customURLHostname == nil ? .secureMainFrame : .mainFrame,
                 pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
@@ -242,7 +257,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         // controller's, so its extension pages get the API stubs from here.
         if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
             webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
-                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser)
+                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
+                managerProvider: { NSApp.delegateTyped.webExtensionManager as? WebExtensionManager })
         } else {
             webExtensionPageStubUserScript = nil
         }
@@ -252,6 +268,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         if let webExtensionPageStubUserScript {
+            if #available(macOS 15.4, *) {
+                userScripts.append(WebExtensionPermissionUserGestureUserScript(
+                    managerProvider: { NSApp.delegateTyped.webExtensionManager as? WebExtensionManager }))
+            }
             userScripts.append(webExtensionPageStubUserScript)
         }
 
@@ -261,6 +281,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: sponsorBlockSubfeature)
         if let chromeWebStoreUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
         }

@@ -162,29 +162,29 @@ struct AIChatBonusServiceTests {
     @Test("Check a dismiss is stored")
     func dismissIsStored() throws {
         // WHEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
-        #expect(store.storedRecord == AIChatBonusRecord(dismissed: true))
+        #expect(store.storedRecord == AIChatBonusRecordMock.dismissedOnly)
     }
 
     @Test("Check a repeated dismiss writes nothing")
     func repeatedDismissWritesNothing() throws {
         // GIVEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // WHEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
-        #expect(store.storedRecord == AIChatBonusRecord(dismissed: true))
+        #expect(store.storedRecord == AIChatBonusRecordMock.dismissedOnly)
         #expect(store.writeCallCount == 1)
     }
 
     @Test("Check an end keeps only the campaign")
     func endKeepsOnlyTheCampaign() throws {
         // GIVEN
-        let record = AIChatBonusRecordMock.active.with { $0.dismissed = true }
+        let record = AIChatBonusRecordMock.active.with { $0.dismissedCampaignName = AIChatBonusRecordMock.campaignName }
         store.storedRecord = record
 
         // WHEN
@@ -281,12 +281,12 @@ struct AIChatBonusServiceTests {
         let published = PublishedValues(sut.recordPublisher)
 
         // WHEN
-        try sut.dismiss()
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         await drainMainQueue()
-        #expect(published.values == [AIChatBonusRecord(dismissed: true)])
+        #expect(published.values == [AIChatBonusRecordMock.dismissedOnly])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -327,7 +327,7 @@ struct AIChatBonusServiceTests {
         let published = PublishedValues(sut.recordPublisher)
 
         // WHEN
-        try? sut.dismiss()
+        try? sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         await drainMainQueue()
@@ -346,11 +346,11 @@ struct AIChatBonusServiceTests {
         let published = PublishedValues(sut.recordPublisher)
 
         // WHEN
-        try sut.dismiss()
+        try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
 
         // THEN
         await drainMainQueue()
-        #expect(published.values == [AIChatBonusRecord(dismissed: true)])
+        #expect(published.values == [AIChatBonusRecordMock.dismissedOnly])
     }
 
     // Must run off main: main has to stay free to deliver the record while this thread waits.
@@ -369,12 +369,12 @@ struct AIChatBonusServiceTests {
         // WHEN
         // Write on another thread so a regressed subscriber can't run, and deadlock, on the test thread: the wait below fails instead of hanging.
         DispatchQueue.global().async { [sut] in
-            try? sut.dismiss()
+            try? sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
         }
 
         // THEN
         #expect(readFinished.wait(timeout: .now() + 5) == .success)
-        #expect(recordReadBySubscriber == AIChatBonusRecord(dismissed: true))
+        #expect(recordReadBySubscriber == AIChatBonusRecordMock.dismissedOnly)
         cancellable.cancel()
     }
 
@@ -519,7 +519,7 @@ struct AIChatBonusServiceTests {
 
         // WHEN / THEN
         #expect(throws: AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) {
-            try sut.dismiss()
+            try sut.dismiss(campaignName: AIChatBonusRecordMock.campaignName)
         }
         #expect(store.writeCallCount == 0)
         #expect(pixelFiring.storeFailures == [.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)])

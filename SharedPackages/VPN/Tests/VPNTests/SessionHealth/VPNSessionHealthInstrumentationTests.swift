@@ -45,7 +45,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Starting and enablement
+    // MARK: - Starting
 
     func testPhysicalStartsPersistStartReasonExtensionTypeAndTimestamp() throws {
         let cases: [(startReason: PacketTunnelProvider.AdapterStartReason,
@@ -65,62 +65,6 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 
             instrumentation.tunnelStopped(reason: .userInitiated)
         }
-    }
-
-    func testDisabledPhysicalStartAndSubsequentCallbacksDoNotCreateEvents() {
-        inputs.enabled = false
-        startMonitoredSession()
-        instrumentation.connectionTestCompleted(.disconnected(failureCount: 1))
-        instrumentation.tunnelStopped(reason: .userInitiated)
-
-        XCTAssertTrue(wideEvent.started.isEmpty)
-        XCTAssertTrue(wideEvent.updates.isEmpty)
-        XCTAssertTrue(wideEvent.completions.isEmpty)
-    }
-
-    func testEnablingMidSessionWaitsForNextPhysicalStart() {
-        inputs.enabled = false
-        startTunnel(.manual)
-        inputs.enabled = true
-        startTunnel(.reconnected)
-        instrumentation.monitoringStarted()
-
-        XCTAssertTrue(wideEvent.started.isEmpty)
-
-        startTunnel(.manual)
-
-        XCTAssertEqual(wideEvent.started.count, 1)
-    }
-
-    func testWhenTelemetryIsDisabledThenActiveSessionIsDiscardedOnStop() throws {
-        startMonitoredSession()
-        let original = try latestEvent()
-        inputs.enabled = false
-        inputs.date = hourStart.addingTimeInterval(3_610)
-        instrumentation.connectionTestCompleted(.connected)
-
-        XCTAssertEqual(wideEvent.started.count, 1)
-        XCTAssertTrue(wideEvent.completions.isEmpty)
-        XCTAssertTrue(wideEvent.discarded.isEmpty)
-        XCTAssertEqual(try latestEvent().globalData.id, original.globalData.id)
-
-        instrumentation.tunnelStopped(reason: .userInitiated)
-
-        XCTAssertTrue(wideEvent.completions.isEmpty)
-        XCTAssertEqual(wideEvent.discarded.count, 1)
-        XCTAssertTrue(wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self).isEmpty)
-        let discarded = try XCTUnwrap(wideEvent.discarded.first as? VPNSessionHealthWideEventData)
-        XCTAssertEqual(discarded.globalData.id, original.globalData.id)
-        XCTAssertEqual(discarded.startedAt, original.startedAt)
-        XCTAssertEqual(discarded.endedAt, inputs.date)
-        XCTAssertEqual(discarded.completedOutcome(), .success)
-
-        instrumentation.tunnelStopped(reason: .userInitiated)
-        startTunnel(.manual)
-
-        XCTAssertEqual(wideEvent.started.count, 1)
-        XCTAssertEqual(wideEvent.discarded.count, 1)
-        XCTAssertTrue(wideEvent.completions.isEmpty)
     }
 
     // MARK: - Monitoring and callbacks
@@ -348,28 +292,6 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(recovered.endReason, .processDied)
         XCTAssertEqual(recovered.completedOutcome(), .unknown(.extensionProcessDied))
         XCTAssertEqual(wideEvent.completions.first?.1, .unknown(reason: "extension_process_died"))
-    }
-
-    func testWhenTelemetryIsDisabledThenOrphansAreDiscardedOnce() throws {
-        var orphan = VPNSessionHealthWideEventData(startReason: .physicalTunnelStartManual, startedAt: hourStart, extensionType: .system)
-        orphan.lastObservedAt = hourStart.addingTimeInterval(30)
-        wideEvent.startFlow(orphan)
-        inputs.enabled = false
-        startTunnel(.manual)
-
-        XCTAssertEqual(wideEvent.started.count, 1)
-        XCTAssertTrue(wideEvent.completions.isEmpty)
-        XCTAssertEqual(wideEvent.discarded.count, 1)
-        XCTAssertTrue(wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self).isEmpty)
-        let discarded = try XCTUnwrap(wideEvent.discarded.first as? VPNSessionHealthWideEventData)
-        XCTAssertEqual(discarded.globalData.id, orphan.globalData.id)
-        XCTAssertEqual(discarded.endReason, .processDied)
-        XCTAssertEqual(discarded.endedAt, orphan.lastObservedAt)
-
-        startTunnel(.manual)
-
-        XCTAssertTrue(wideEvent.completions.isEmpty)
-        XCTAssertEqual(wideEvent.discarded.count, 1)
     }
 
     func testStopReasonsAreMappedToExpectedEndReasons() throws {
@@ -636,7 +558,6 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
             wideEvent: wideEvent,
             extensionType: .system,
             processStartedAt: hourStart,
-            isTelemetryEnabled: { inputs.enabled },
             now: { inputs.date },
             processIdentifier: { inputs.pid },
             appVersion: { inputs.appVersion },
@@ -676,7 +597,6 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 // Mutated only between instrumentation calls; concurrent callback tests read fixed values.
 private final class InstrumentationSettings: @unchecked Sendable {
     var date: Date
-    var enabled = true
     var pid: Int32 = 1
     var appVersion = "1.0.0"
     var osVersion = "18.0.0"

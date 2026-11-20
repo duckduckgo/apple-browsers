@@ -85,6 +85,10 @@ public final class FileStoreMock: NSObject {
         storage[url.lastPathComponent] != nil
     }
 
+    public func isEmptyFile(at url: URL) -> Bool {
+        storage[url.lastPathComponent]?.isEmpty ?? false
+    }
+
     public func directoryContents(at path: String) throws -> [String] {
         if let failWithError {
             throw failWithError

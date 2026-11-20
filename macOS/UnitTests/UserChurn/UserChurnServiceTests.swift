@@ -247,18 +247,6 @@ final class UserChurnServiceTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Other")
     }
 
-    func testWhenNewDefaultURLIsNil_ThenPixelContainsOtherParameter() throws {
-        // Given
-        mockDefaultBrowserProvider.defaultBrowserURL = nil
-        try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
-
-        // When
-        sut.checkForDefaultBrowserChange()
-
-        // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Other")
-    }
-
     // MARK: - Tests: checkForDefaultBrowserChange with no stored state
 
     func testWhenNoStoredStateAndDuckDuckGoIsDefault_ThenStateInitializedToTrue() throws {
@@ -364,17 +352,104 @@ final class UserChurnServiceTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Churn pixel should be fired when switching away from DuckDuckGo")
     }
 
-    func testWhenDefaultBrowserURLHasNoBundleIdentifier_ThenTreatedAsNonDuckDuckGo() throws {
-        // Given - DuckDuckGo was previously the default
-        try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
+    // MARK: - Tests: Churned-from-default flag
 
-        // When - Default browser URL has no bundle identifier (unknown app)
-        let unknownURL = URL(fileURLWithPath: "/Applications/Unknown.app")
-        mockDefaultBrowserProvider.defaultBrowserURL = unknownURL
-        // mockBundleIdentifiers does not contain this URL, so bundleIdentifierProvider returns nil
+    private let wasDefaultKey = "user-churn.was-default-browser"
+    private let churnedKey = "user-churn.churned-from-default"
+
+    private var unsetPixelCalls: [ExpectedFireCall] {
+        mockPixelFiring.actualFireCalls.filter { $0.pixel.name == "m_mac_unset-as-default" }
+    }
+
+    func testWhenCheckDetectsChurn_ThenChurnedFlagIsSet() throws {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+
         sut.checkForDefaultBrowserChange()
 
-        // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Pixel should be fired when new default has no bundle ID")
+        XCTAssertTrue(sut.hasChurnedFromDefault)
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: churnedKey) as? Bool, true)
+        XCTAssertEqual(unsetPixelCalls.count, 1)
+    }
+
+    func testWhenCheckSeesDuckDuckGoDefault_ThenChurnedFlagIsCleared() throws {
+        setDefaultBrowserAsDuckDuckGo()
+        try mockKeyValueStore.set(false, forKey: wasDefaultKey)
+        try mockKeyValueStore.set(true, forKey: churnedKey)
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertFalse(sut.hasChurnedFromDefault)
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: churnedKey) as? Bool, false)
+    }
+
+    func testWhenNotDefaultAndWasNotDefault_ThenChurnedFlagStaysTrue() throws {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try mockKeyValueStore.set(false, forKey: wasDefaultKey)
+        try mockKeyValueStore.set(true, forKey: churnedKey)
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertTrue(sut.hasChurnedFromDefault)
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenFirstRun_ThenChurnedFlagIsNotSet() {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertFalse(sut.hasChurnedFromDefault)
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenDefaultBrowserCannotBeResolved_ThenNothingIsRecorded() throws {
+        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Unknown.app")
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+
+        sut.checkForDefaultBrowserChange()
+
+        XCTAssertFalse(sut.hasChurnedFromDefault)
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: wasDefaultKey) as? Bool, true)
+    }
+
+    func testWhenChecksRunConcurrently_ThenOnePixelFires() throws {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+
+        DispatchQueue.concurrentPerform(iterations: 50) { _ in
+            sut.checkForDefaultBrowserChange()
+        }
+
+        XCTAssertEqual(unsetPixelCalls.count, 1)
+    }
+
+    func testWhenReadFails_ThenReadFailedPixelFires() {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        mockKeyValueStore.shouldThrowOnGet = true
+
+        sut.checkForDefaultBrowserChange()
+
+        assertSingleFailurePixel(named: "user-churn_was-default-browser_read-failed_macos")
+    }
+
+    func testWhenWritesFail_ThenWriteFailedPixelsFire() throws {
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        try mockKeyValueStore.set(true, forKey: wasDefaultKey)
+        mockKeyValueStore.shouldThrowOnSet = true
+
+        sut.checkForDefaultBrowserChange()
+
+        assertSingleFailurePixel(named: "user-churn_churned-from-default_write-failed_macos")
+        assertSingleFailurePixel(named: "user-churn_was-default-browser_write-failed_macos")
+    }
+
+    private func assertSingleFailurePixel(named name: String, file: StaticString = #filePath, line: UInt = #line) {
+        let calls = mockPixelFiring.actualFireCalls.filter { $0.pixel.name == name }
+        XCTAssertEqual(calls.count, 1, file: file, line: line)
+        XCTAssertEqual(calls.first?.pixel.namePrefix, PixelKitNamePrefix.none, file: file, line: line)
+        XCTAssertNotNil(calls.first?.pixel.error, file: file, line: line)
+        XCTAssertEqual(calls.first?.frequency, .dailyAndCount, file: file, line: line)
     }
 }

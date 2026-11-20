@@ -63,10 +63,12 @@ final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
         sut.stepShown(.vpnActivation)
         sut.stepCompleted(.duckAI)
         sut.stepSkipped(.vpnActivation)
+        sut.stepClosed(.orderConfirmation)
 
         XCTAssertEqual(fired.map(\.name), ["subscription_onboarding_step_shown_vpn",
                                            "subscription_onboarding_step_completed_duck_ai",
-                                           "subscription_onboarding_step_skipped_vpn"])
+                                           "subscription_onboarding_step_skipped_vpn",
+                                           "subscription_onboarding_step_closed_intro"])
     }
 
     /// Without this the two entry points share every step pixel, and neither population can be read.

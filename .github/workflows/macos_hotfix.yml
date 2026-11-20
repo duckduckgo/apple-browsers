@@ -17,7 +17,7 @@ jobs:
 
     name: Create Release Branch
 
-    runs-on: [image:osx-27-edge, m4pro]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -28,9 +28,6 @@ jobs:
           token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           submodules: recursive
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
-
-      - name: Print macOS version
-        run: sw_vers
 
       - name: Assert main branch
         run: |

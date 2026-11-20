@@ -43,6 +43,8 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case webContentProcessTerminated
     case secureVaultNotInitialized
     case secureVaultNotNeeded
+    /// A main-frame challenge did not reach the broker page before the solver deadline.
+    case challengeNotSolved
 
     static func parse(params: Any) -> DataBrokerProtectionError {
         let errorDataResult = try? JSONSerialization.data(withJSONObject: params)
@@ -99,6 +101,8 @@ extension DataBrokerProtectionError {
             return "secureVaultNotInitialized"
         case .secureVaultNotNeeded:
             return "secureVaultNotNeeded"
+        case .challengeNotSolved:
+            return "challengeNotSolved"
         }
     }
 }
@@ -144,6 +148,8 @@ extension DataBrokerProtectionError: LocalizedError {
             return "Secure Vault has not finished initializing"
         case .secureVaultNotNeeded:
             return "Secure Vault initialization not needed (no profile)"
+        case .challengeNotSolved:
+            return "Challenge not solved"
         }
     }
 }
@@ -180,6 +186,7 @@ extension DataBrokerProtectionError: CustomNSError {
         case .jobTimeout: return 115
         case .webContentProcessTerminated: return 116
         case .secureVaultNotNeeded: return 117
+        case .challengeNotSolved: return 118
         }
     }
 }

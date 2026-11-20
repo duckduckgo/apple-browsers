@@ -973,7 +973,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 setFieldBackgroundColor(.clear)
             }
 
-            searchAreaContainerView.setNeedsLayout()
+            searchAreaContainerView.layoutIfNeeded()
         }
     }
 

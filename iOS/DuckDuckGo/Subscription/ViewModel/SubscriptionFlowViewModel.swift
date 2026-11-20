@@ -144,23 +144,45 @@ final class SubscriptionFlowViewModel: ObservableObject {
         return SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
     }
 
+    var onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring? {
+        guard let onboardingKeyValueStore else { return nil }
+        return SubscriptionOnboardingExperimentMetricStore(keyValueStore: onboardingKeyValueStore)
+    }
+
+    /// Shared by enrollment and presentation: only first purchases from a flow with an onboarding store qualify.
+    private static func isOnboardingEligible(flowType: SubscriptionFlowType, hasOnboardingStore: Bool) -> Bool {
+        flowType == .firstPurchase && hasOnboardingStore
+    }
+
+    /// Before purchase confirmation: enrolls in the free-trials or paid-subs experiment, so the confirm request carries the cohort.
+    /// On fresh enrollment, also clears the duckAiPaidUsed sent flag.
+    static func enrollInOnboardingExperimentIfNeeded(flowType: SubscriptionFlowType,
+                                                     hasOnboardingStore: Bool,
+                                                     experimentMetricStore: SubscriptionOnboardingExperimentMetricStoring?,
+                                                     isFreeTrial: Bool,
+                                                     featureFlagger: FeatureFlagger,
+                                                     locale: Locale = .current) {
+        guard isOnboardingEligible(flowType: flowType, hasOnboardingStore: hasOnboardingStore) else { return }
+        let (_, isFreshlyEnrolled) = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: isFreeTrial, locale: locale)
+        if isFreshlyEnrolled {
+            experimentMetricStore?.resetDuckAIPaidUsedSent()
+        }
+        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: isFreshlyEnrolled)
+    }
+
+    /// After purchase confirmation: decides whether to present onboarding, from the cohort assigned before confirmation.
     static func shouldRequestOnboarding(flowType: SubscriptionFlowType,
                                         hasOnboardingStore: Bool,
                                         didAlreadyRequest: Bool,
                                         isFeatureEnabled: () async -> Bool) async -> Bool {
-        guard !didAlreadyRequest, flowType == .firstPurchase, hasOnboardingStore else { return false }
+        guard !didAlreadyRequest, isOnboardingEligible(flowType: flowType, hasOnboardingStore: hasOnboardingStore) else { return false }
         return await isFeatureEnabled()
     }
 
-    /// Reads the customer's current subscription and reports whether onboarding should be presented for it.
-    /// Skips enrollment entirely on a fetch failure rather than defaulting to "not on trial". Also reports
-    /// the `ai_features_disabled` metric, but only when this call is the one that freshly enrolls the device.
-    static func isOnboardingFeatureEnabled(subscriptionManager: any SubscriptionManager, featureFlagger: FeatureFlagger, locale: Locale = .current) async -> Bool {
-        guard let subscription = try? await subscriptionManager.getSubscription() else { return false }
-        let isOnFreeTrial = subscription.hasActiveTrialOffer
-        let (cohort, isFreshlyEnrolled) = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: isOnFreeTrial, locale: locale)
-        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: isFreshlyEnrolled)
-        return cohort == .treatment
+    /// Reports whether onboarding should be presented, from the cohort assigned before purchase confirmation.
+    /// Never enrolls the device itself.
+    static func isOnboardingFeatureEnabled(featureFlagger: FeatureFlagger) -> Bool {
+        SubscriptionOnboardingExperiment.isEnrolledInTreatment(using: featureFlagger)
     }
 
     /// Called when the App Store purchase itself completes
@@ -170,7 +192,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             flowType: flowType,
             hasOnboardingStore: onboardingKeyValueStore != nil,
             didAlreadyRequest: didRequestOnboarding) {
-                await Self.isOnboardingFeatureEnabled(subscriptionManager: self.subscriptionManager, featureFlagger: self.featureFlagger)
+                Self.isOnboardingFeatureEnabled(featureFlagger: self.featureFlagger)
             }
         guard shouldRequest else { return }
         state.shouldPresentOnboarding = true
@@ -252,7 +274,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     // Observe transaction status
-    private func setupTransactionObserver() async {
+    func setupTransactionObserver() async {
         
         subFeature.transactionStatusPublisher
             .receive(on: DispatchQueue.main)
@@ -276,6 +298,15 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 self?.state.shouldActivateSubscription = true
                 self?.setTransactionStatus(.idle)
             }
+        }
+
+        subFeature.onAppStoreTransactionCompleted = { [weak self] isFreeTrial in
+            guard let self else { return }
+            Self.enrollInOnboardingExperimentIfNeeded(flowType: self.flowType,
+                                                      hasOnboardingStore: self.onboardingKeyValueStore != nil,
+                                                      experimentMetricStore: self.onboardingExperimentMetricStore,
+                                                      isFreeTrial: isFreeTrial,
+                                                      featureFlagger: self.featureFlagger)
         }
 
         subFeature.onPurchaseCompleted = { [weak self] in

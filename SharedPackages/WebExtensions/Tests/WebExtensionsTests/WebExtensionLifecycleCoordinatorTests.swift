@@ -171,6 +171,20 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testInitialLoadAndSyncIsRequestedOnlyOnceLoadAndSyncIsCalled() async {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [] })
+
+        XCTAssertFalse(sut.hasRequestedInitialLoadAndSync)
+
+        let task = sut.loadAndSync()
+        XCTAssertTrue(sut.hasRequestedInitialLoadAndSync)
+
+        await task.value
+        XCTAssertTrue(sut.hasRequestedInitialLoadAndSync)
+    }
+
+    @MainActor
     func testWhenInitialLoadIsDeferredThenNavigationWaitsUntilItCompletes() async throws {
         let manager = RecordingWebExtensionManager()
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
@@ -725,6 +739,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
     var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
     var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { NoOpCPMMessagingHealthMonitor() }
+    let badgeColors = WebExtensionBadgeColorStore()
     func installExtension(from sourceURL: URL) async throws {}
     func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
@@ -740,6 +755,13 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionPermissions(for identifier: String) -> [String] { [] }
+    func extensionMatchPatterns(for identifier: String) -> [String] { [] }
+    @MainActor func hasAccessToPrivateData(for identifier: String) -> Bool? { nil }
+    @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { false }
+    @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
+    @MainActor func suppressNativeMessagingAlert(identifier: String) {}
+    @MainActor func pixelExtension(identifier: String) -> WebExtensionPixelExtension { .other }
+    @MainActor func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}

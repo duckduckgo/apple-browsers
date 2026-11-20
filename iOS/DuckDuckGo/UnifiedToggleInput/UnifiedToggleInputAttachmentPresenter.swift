@@ -92,6 +92,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
     func makeAttachmentMenu(
         presenterProvider: @escaping () -> UIViewController?,
+        onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
         photoSelectionLimit: Int,
         canAttachFile: Bool,
         allowedFileTypes: [UTType],
@@ -117,6 +118,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 attributes: canTakePhoto ? [] : .disabled
             ) { [weak self] _ in
                 guard canTakePhoto else { return }
+                onItemSelected(.camera)
                 guard let presenter = presenterProvider() else { return }
                 self?.presentCamera(from: presenter)
             },
@@ -126,6 +128,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 attributes: canAttachPhoto ? [] : .disabled
             ) { [weak self] _ in
                 guard canAttachPhoto else { return }
+                onItemSelected(.photoLibrary)
                 guard let presenter = presenterProvider() else { return }
                 self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
             },
@@ -135,6 +138,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 attributes: canAttachAllowedFile ? [] : .disabled
             ) { [weak self] _ in
                 guard canAttachAllowedFile else { return }
+                onItemSelected(.filePicker)
                 guard let presenter = presenterProvider() else { return }
                 self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
             }
@@ -148,6 +152,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                     attributes: canAttachPageContext ? [] : .disabled
                 ) { _ in
                     guard canAttachPageContext else { return }
+                    onItemSelected(.page)
                     pageContextActionHandler?()
                 }
             )
@@ -157,12 +162,14 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             actions.insert(Self.makeRecentTabsSection(attachableTabs: attachableTabs,
                                                       attachedTabIds: attachedTabIds,
                                                       attachmentLimit: tabAttachmentLimit,
+                                                      onItemSelected: onItemSelected,
                                                       tabActionHandler: tabActionHandler), at: 0)
             actions.append(makeTabPickerAction(presenterProvider: presenterProvider,
                                               attachableTabs: attachableTabs,
                                               attachedTabIds: attachedTabIds,
                                               attachmentLimit: tabAttachmentLimit,
                                               isAvailable: isTabSelectionAvailable,
+                                              onItemSelected: onItemSelected,
                                               tabActionHandler: tabActionHandler))
         }
 
@@ -172,6 +179,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     private static func makeRecentTabsSection(attachableTabs: [MultiTabAttachmentCandidate],
                                               attachedTabIds: Set<TabUID>,
                                               attachmentLimit: Int,
+                                              onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
                                               tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIMenu {
         let reachedAttachmentLimit = attachedTabIds.count >= attachmentLimit
         let tabActions: [UIAction] = attachableTabs.prefix(recentTabsMenuItemLimit).map { candidate in
@@ -180,10 +188,13 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 .replacingOccurrences(of: "\n", with: " ")
                 .truncated(to: recentTabTitleCharacterLimit, position: .tail)
             let favicon = makeRecentTabMenuFavicon(for: candidate)
+            let isEnabled = isAttached || !reachedAttachmentLimit
             return UIAction(title: title,
                             image: favicon,
-                            attributes: reachedAttachmentLimit && !isAttached ? .disabled : [],
+                            attributes: isEnabled ? [] : .disabled,
                             state: isAttached ? .on : .off) { action in
+                guard isEnabled else { return }
+                onItemSelected(.recentTab)
                 guard tabActionHandler(candidate, !isAttached, .recentTabs).isSuccessful else { return }
                 action.state = action.state == .on ? .off : .on
             }
@@ -225,10 +236,13 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                                      attachedTabIds: Set<TabUID>,
                                      attachmentLimit: Int,
                                      isAvailable: @escaping () -> Bool,
+                                     onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
                                      tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIAction {
         UIAction(title: UserText.aiChatAttachmentOptionAddTabs,
                  image: DesignSystemImages.Glyphs.Size16.tabContent) { [weak self] _ in
-            guard isAvailable(), let presenter = presenterProvider() else { return }
+            guard isAvailable() else { return }
+            onItemSelected(.tabPicker)
+            guard let presenter = presenterProvider() else { return }
             self?.presentTabPicker(from: presenter,
                                    attachableTabs: attachableTabs,
                                    attachedTabIds: attachedTabIds,

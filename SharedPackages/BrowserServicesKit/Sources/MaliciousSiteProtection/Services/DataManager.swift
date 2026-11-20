@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import os
 
@@ -33,13 +34,15 @@ public actor DataManager: DataManaging {
 
     public typealias FileNameProvider = (DataManager.StoredDataType) -> String
     private nonisolated let fileNameProvider: FileNameProvider
+    private let eventMapping: EventMapping<Event>?
 
     private var store: [StoredDataType: Any] = [:]
 
-    public init(fileStore: FileStoring, embeddedDataProvider: EmbeddedDataProviding?, fileNameProvider: @escaping FileNameProvider) {
+    public init(fileStore: FileStoring, embeddedDataProvider: EmbeddedDataProviding?, fileNameProvider: @escaping FileNameProvider, eventMapping: EventMapping<Event>? = nil) {
         self.embeddedDataProvider = embeddedDataProvider
         self.fileStore = fileStore
         self.fileNameProvider = fileNameProvider
+        self.eventMapping = eventMapping
     }
 
     public func preloadData(for threatKinds: [ThreatKind]) {
@@ -47,6 +50,11 @@ public actor DataManager: DataManaging {
             _=dataSet(for: .filterSet(threatKind: threatKind))
             _=dataSet(for: .hashPrefixes(threatKind: threatKind))
         }
+    }
+
+    /// Whether the datasets of `kind` for every one of `threatKinds` are in memory. Doesn't load anything.
+    public func isLoaded(_ kind: StoredDataType.Kind, for threatKinds: [ThreatKind]) -> Bool {
+        StoredDataType.dataTypes(for: kind, supportedThreats: threatKinds).allSatisfy { store[$0] != nil }
     }
 
     func dataSet<DataKey: MaliciousSiteDataKey>(for key: DataKey) -> DataKey.DataSet {
@@ -59,8 +67,10 @@ public actor DataManager: DataManaging {
         // read stored dataSet if it‘s newer than the embedded one
         let dataSet: DataKey.DataSet
 
+        let loadStartTime = CFAbsoluteTimeGetCurrent()
         if let storedDataSet = readStoredDataSet(for: key) {
             dataSet = storedDataSet
+            fireLoadTimeEvent(for: key, duration: CFAbsoluteTimeGetCurrent() - loadStartTime)
         } else if let embeddedDataProvider {
             // no stored dataSet or the embedded one is newer
             let embeddedRevision = embeddedDataProvider.revision(for: dataType)
@@ -99,13 +109,38 @@ public actor DataManager: DataManaging {
         return storedDataSet
     }
 
+    /// Fires how long reading and decoding a stored dataset file took. Only on iOS, where the event exists.
+    private func fireLoadTimeEvent<DataKey: MaliciousSiteDataKey>(for key: DataKey, duration: TimeInterval) {
+        #if os(iOS)
+        eventMapping?.fire(.dataSetLoadTime(
+            category: key.threatKind,
+            type: key.dataType.kind,
+            bucket: Event.DurationBucketAggregation(seconds: duration)
+        ))
+        #endif
+    }
+
     @discardableResult
     func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) throws -> Int {
-        var dataSet = self.dataSet(for: key)
-        dataSet.apply(changeSet)
-
         let dataType = key.dataType
         let fileName = fileNameProvider(dataType)
+
+        // Remove the dataset from `store` before changing it.
+        // Datasets are copy-on-write: while `store` also references one, the first change copies all of it,
+        // which can crash on low-memory devices (EXC_BREAKPOINT in `_NativeSet.copy`).
+        // Safe because no other call on the actor can run in between deleting the dataset and putting it back so no callers can find it missing.
+        var dataSet: DataKey.DataSet
+        if changeSet.replace {
+            // Full replacement: release the old dataset first, so old and new aren't in memory together.
+            store[dataType] = nil
+            dataSet = DataKey.DataSet(revision: 0, items: [])
+        } else {
+            // Incremental update: load if needed, then drop `store`'s reference so `apply` changes it in place.
+            dataSet = self.dataSet(for: key)
+            store[dataType] = nil
+        }
+        dataSet.apply(changeSet)
+
         self.store[dataType] = dataSet
 
         let data: Data

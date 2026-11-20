@@ -26,11 +26,13 @@ import PrivacyConfig
 import UIKit
 import PixelKit
 import BrowserServicesKit
+import Combine
 import Subscription
 import RemoteMessaging
 import ScreenTimeDataCleaner
 import WebExtensions
 import FeatureFlags_iOS
+import WebPageTranslation
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -49,6 +51,8 @@ struct Launching: LaunchingHandling {
     private let fireproofing: Fireproofing = UserDefaultsFireproofing()
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    private let idleReturnEvaluator: IdleReturnEvaluating
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings: AIChatSettings
 
@@ -66,6 +70,9 @@ struct Launching: LaunchingHandling {
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
     init() throws {
+        let launchBackgroundTask = LaunchBackgroundTask(featureFlagger: featureFlagger)
+        defer { launchBackgroundTask.end() }
+
         Logger.lifecycle.info("Launching: \(#function)")
 
         // First thing after PixelKit is set up (by the `AppDependencyProvider.shared` properties above), so a launch
@@ -81,6 +88,14 @@ struct Launching: LaunchingHandling {
 
         // The app's single owner of the Duck.ai bonus record, shared by every consumer.
         let aiChatBonusService = AIChatBonusService()
+        // One bridge handler for every Duck.ai tab: it holds no per-tab state and builds one payload per record change.
+        let aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(
+                service: aiChatBonusService,
+                factsProvider: AIChatBonusFactsProvider(statisticsStore: StatisticsUserDefaults(), aiChatSettings: AIChatSettings())
+            ),
+            messageLog: AIChatBonusMessageLog()
+        )
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
@@ -159,6 +174,11 @@ struct Launching: LaunchingHandling {
             }
         )
 
+        let localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                        storage: AIChatSettings(featureFlagger: featureFlagger))
+        let aiChatLocalModel = AIChatLocalModelDependencies(service: localModelService,
+                                                            accessPrompt: LocalModelAccessPrompt())
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
@@ -170,7 +190,9 @@ struct Launching: LaunchingHandling {
                                                             webExtensionAvailability: webExtensionAvailability,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
-                                                            adBlockingAvailability: adBlockingAvailability)
+                                                            adBlockingAvailability: adBlockingAvailability,
+                                                            aiChatBonusOffer: aiChatBonusOffer,
+                                                            aiChatLocalModel: aiChatLocalModel)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
@@ -183,6 +205,12 @@ struct Launching: LaunchingHandling {
             keyValueStore: eventHubStore,
             consentStore: appKeyValueFileStoreService.keyValueFilesStore
         )
+
+        let translationModels = Self.makeTranslationModels(featureFlagger: featureFlagger)
+        WebPageTranslationCapability.resolve(translationModels: translationModels)
+        if let translationModels {
+            Task { _ = await translationModels.refreshManifest() }
+        }
 
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
@@ -207,7 +235,12 @@ struct Launching: LaunchingHandling {
         reportingService.syncService = syncService
         autofillService.syncService = syncService
 
-        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+        let daxDialogs = DaxDialogs(
+            entityProviding: contentBlocking.contentBlockingManager,
+            timeLimit: ContextualOnboardingTimeLimit(featureFlagger: featureFlagger,
+                                                     privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager),
+            timeLimitReporter: reportingService.onboardingPixelReporter
+        )
 
         let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                                   featureFlagger: featureFlagger,
@@ -229,6 +262,10 @@ struct Launching: LaunchingHandling {
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogs.isStillOnboarding() }
         )
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager,
+                                                       lastBackgroundDateStorage: lastBackgroundDateStorage)
+
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -341,7 +378,8 @@ struct Launching: LaunchingHandling {
                                               contentBlockingService: contentBlockingService,
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
-                                              daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                              daxDialogs: daxDialogs,
+                                              idleReturnEligibilityManager: idleReturnEligibilityManager,
                                               reportingService: reportingService,
                                               variantManager: configuration.atbAndVariantConfiguration.variantManager,
                                               subscriptionService: subscriptionService,
@@ -374,7 +412,8 @@ struct Launching: LaunchingHandling {
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub,
                                               usageContextProvider: usageContextProvider,
-                                              promptExposureReporter: promptExposureReporter
+                                              promptExposureReporter: promptExposureReporter,
+                                              translationModels: translationModels
         )
         launchBreadcrumb.mark(.mainCoordinator)
 
@@ -424,9 +463,19 @@ struct Launching: LaunchingHandling {
 
         let voiceSearchHelper = self.voiceSearchHelper
         let fireModeCapability = mainCoordinator.controller.fireModeCapability
-        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: {
-            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
-        })
+        let mainViewController = mainCoordinator.controller
+        let mainMenuBookmarks = mainViewController.mainMenuBookmarks
+        let bookmarksMenuTree = BookmarksMenuTree(children: { mainMenuBookmarks.children(ofFolderWithID: $0) })
+        let mainMenuService = MainMenuService(featureFlagger: featureFlagger, contextProvider: { [weak mainViewController] in
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  aiChatEnabled: aiChatSettings.isAIChatEnabled, favorites: mainMenuBookmarks.favorites,
+                  isOnboarding: mainViewController?.needsToShowOnboardingIntro() ?? false)
+        }, deferredContent: [
+            DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+            },
+            .bookmarksTree: bookmarksMenuTree
+        ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -465,9 +514,13 @@ struct Launching: LaunchingHandling {
         launchTaskManager.register(task: BlockLaunchTask(name: "Initialize PIR Secure Vault") { taskContext in
             Task {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
+#if DEBUG
+                await dbpService.startDebugServerIfRequestedAtLaunch()
+#endif
                 taskContext.finish()
             }
         })
+        launchTaskManager.register(task: SyncDevicesCountLaunchTask(syncPromoManager: SyncPromoManager(syncService: syncService.sync)))
         if #available(iOS 26, *) {
             launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
                 Task { @MainActor in
@@ -485,12 +538,14 @@ struct Launching: LaunchingHandling {
 #if DEBUG || ALPHA
         mainCoordinator.controller.automationServer = configuration.finalize(
             reportingService: reportingService,
+            daxDialogs: daxDialogs,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
 #else
         _ = configuration.finalize(
             reportingService: reportingService,
+            daxDialogs: daxDialogs,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
@@ -558,6 +613,26 @@ struct Launching: LaunchingHandling {
         }
     }
 
+    /// Nil when web page translation is off, or when its store or models folder can't be opened:
+    /// translation is then unavailable rather than failing launch.
+    private static func makeTranslationModels(featureFlagger: FeatureFlagger) -> TranslationModels? {
+        guard featureFlagger.isFeatureOn(.webPageTranslation) else {
+            return nil
+        }
+
+        guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        // Translation gets its own store, so its cached manifest never shares a file with app settings.
+        guard let keyValueStore = try? KeyValueFileStore(location: applicationSupport, name: "WebPageTranslationStore") else {
+            return nil
+        }
+
+        let modelsDirectory = applicationSupport.appendingPathComponent("WebPageTranslation")
+        return try? TranslationModels(directory: modelsDirectory, keyValueStore: keyValueStore)
+    }
+
     private func logAppLaunchTime() {
         let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
         PixelKit.fire(Pixel.Event.appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
@@ -576,7 +651,9 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             voiceSearchHelper: voiceSearchHelper,
             appSettings: appSettings,
-            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
+            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger),
+            idleReturnEligibilityManager: idleReturnEligibilityManager,
+            idleReturnEvaluator: idleReturnEvaluator
         )
     }
 
@@ -680,4 +757,29 @@ struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
     let parameters: [String: String]?
     var name: String { DuckAiNativeStorageInvalidValue.pixelName }
     var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+/// Launch opens shared App Group databases. iOS kills apps suspended while holding their locks with 0xdead10cc.
+/// https://developer.apple.com/documentation/xcode/sigkill
+@MainActor
+struct LaunchBackgroundTask {
+
+    private let runner: BackgroundTaskRunning
+    private let identifier: UIBackgroundTaskIdentifier
+
+    init(featureFlagger: FeatureFlagger,
+         runner: BackgroundTaskRunning = ApplicationBackgroundTaskRunner()) {
+        self.runner = runner
+        if featureFlagger.isFeatureOn(.launchBackgroundTask) {
+            // Ending on expiration would let iOS suspend the app mid-launch while it holds a database lock.
+            identifier = runner.beginBackgroundTask(withName: "Launch") {}
+        } else {
+            identifier = .invalid
+        }
+    }
+
+    func end() {
+        guard identifier != .invalid else { return }
+        runner.endBackgroundTask(identifier)
+    }
 }

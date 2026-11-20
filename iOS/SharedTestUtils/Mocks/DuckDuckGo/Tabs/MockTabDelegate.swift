@@ -38,6 +38,7 @@ import Combine
 @testable import Core
 
 final class MockTabDelegate: TabDelegate {
+    private(set) var contentProcessTerminationCount = 0
     var shouldRequestAppRatingPrompt = false
     private(set) var grantedSitePermissions = [Set<SitePermissionType>]()
     private(set) var sitePermissionAnimationCancellationCount = 0
@@ -94,6 +95,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL) -> Bool { false }
+
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource?, newChatInputRequest: DuckDuckGo.DuckAINewChatInputRequest?) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didReportDuckAIEntry source: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {}
@@ -132,6 +135,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestNewAIChatTab(tab: TabViewController) {}
 
+    func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState? { nil }
+
+    func tabDidRequestNewChatBySwipe(_ tab: TabViewController) {}
+
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {}
 
     func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String) {}
@@ -160,7 +167,9 @@ final class MockTabDelegate: TabDelegate {
 
     func closeFindInPage(tab: DuckDuckGo.TabViewController) {}
 
-    func tabContentProcessDidTerminate(tab: DuckDuckGo.TabViewController) {}
+    func tabContentProcessDidTerminate(tab: DuckDuckGo.TabViewController) {
+        contentProcessTerminationCount += 1
+    }
 
     func tabDidEngageWithPage(_ tab: DuckDuckGo.TabViewController) {}
 
@@ -367,9 +376,13 @@ final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
 final class StubEventHub: EventHubManaging {
     private(set) var navigationStarts: [(tabID: EventHubTabID, url: String)] = []
     private(set) var closedTabIDs: [EventHubTabID] = []
+    private(set) var nativeEventCounts: [String: Int] = [:]
+    private(set) var nativeEventsWhenAppBackgrounded: Int?
 
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
-    func handleNativeEvent(_ type: String, data: Encodable?) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {
+        nativeEventCounts[type, default: 0] += 1
+    }
 
     func onNavigationStarted(tabID: EventHubTabID, url: String) {
         navigationStarts.append((tabID, url))
@@ -381,5 +394,7 @@ final class StubEventHub: EventHubManaging {
 
     func onConfigChanged() {}
     func onAppForegrounded() {}
-    func onAppBackgrounded() {}
+    func onAppBackgrounded() {
+        nativeEventsWhenAppBackgrounded = nativeEventCounts.values.reduce(0, +)
+    }
 }

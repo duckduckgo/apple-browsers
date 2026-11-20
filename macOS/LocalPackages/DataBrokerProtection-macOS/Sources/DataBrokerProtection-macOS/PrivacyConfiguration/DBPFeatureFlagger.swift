@@ -43,12 +43,12 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
-    public var isPerformanceMetricsOn: Bool {
-        featureFlagger.isFeatureOn(.dbpPerformanceMetrics)
-    }
-
     public var isExtractedProfileRefreshOn: Bool {
         featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
+    }
+
+    public var isChallengeSolverOn: Bool {
+        featureFlagger.isFeatureOn(.dbpChallengeSolver)
     }
 
     public var isSchedulerDeferralHandlingEnabled: Bool {

@@ -34,12 +34,12 @@ public struct PlatformLinksView: View {
         static let downloadUrl: String = "https://duckduckgo.com/app?origin=funnel_browser_ios_sync"
     }
 
-    private var model: SyncSettingsViewModel
+    private var model: any PlatformLinksHandling
     private var source: SyncSettingsViewModel.PlatformLinksPixelSource
 
-    @State private var shareButtonFrame: CGRect = .zero
+    @State private var shareButtonAnchor = ShareButtonAnchor()
 
-    public init(model: SyncSettingsViewModel, source: SyncSettingsViewModel.PlatformLinksPixelSource) {
+    public init(model: any PlatformLinksHandling, source: SyncSettingsViewModel.PlatformLinksPixelSource) {
         self.model = model
         self.source = source
     }
@@ -89,8 +89,8 @@ public struct PlatformLinksView: View {
             .padding(.vertical, 8)
 
             Button {
-                if let url = URL(string: Constants.downloadUrl) {
-                    model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: shareButtonFrame)
+                if let url = URL(string: Constants.downloadUrl), let sourceView = shareButtonAnchor.view {
+                    model.shareLinkPressed(for: url, with: UserText.syncGetOtherDeviceShareLinkMessage, from: sourceView)
                     model.fireOtherPlatformLinksPixel(for: .share, source: source)
                 }
             } label: {
@@ -100,15 +100,7 @@ public struct PlatformLinksView: View {
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
-            .background(
-                GeometryReader { geometryProxy in
-                    Color.clear
-                        .preference(key: ShareButtonFramePreferenceKey.self, value: geometryProxy.frame(in: .global))
-                }
-            )
-            .onPreferenceChange(ShareButtonFramePreferenceKey.self) { newFrameRect in
-                shareButtonFrame = newFrameRect
-            }
+            .background(ShareButtonAnchorView(anchor: shareButtonAnchor))
             .padding(8)
         }
         .padding(16)
@@ -122,11 +114,22 @@ public struct PlatformLinksView: View {
     }
 }
 
-private struct ShareButtonFramePreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
+private final class ShareButtonAnchor {
+    weak var view: UIView?
+}
 
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
+private struct ShareButtonAnchorView: UIViewRepresentable {
+    let anchor: ShareButtonAnchor
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        anchor.view = view
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        anchor.view = uiView
     }
 }
 

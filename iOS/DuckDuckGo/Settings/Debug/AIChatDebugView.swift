@@ -24,13 +24,26 @@ import AIChat
 import AIChatDebugServer
 import os.log
 import DebugServer
+import PrivacyConfig
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let aiChatBonusMessageLog: AIChatBonusMessageLog?
+    private let featureFlagger: FeatureFlagger?
+    private let tabManager: TabManager?
+    private let aiChatLocalModel: AIChatLocalModelDependencies?
 
-    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
+         featureFlagger: FeatureFlagger? = nil,
+         tabManager: TabManager? = nil,
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.aiChatBonusMessageLog = aiChatBonusMessageLog
+        self.featureFlagger = featureFlagger
+        self.tabManager = tabManager
+        self.aiChatLocalModel = aiChatLocalModel
     }
 
     var body: some View {
@@ -46,7 +59,36 @@ struct AIChatDebugView: View {
                     Text(verbatim: "Duck.ai Usage Warnings")
                 }
             }
+
+            Section(header: Text(verbatim: "Boost Offer")) {
+                NavigationLink(destination: AIChatBoostOfferDebugView(featureFlagger: featureFlagger, messageLog: aiChatBonusMessageLog)) {
+                    Text(verbatim: "Duck.ai Boost Offer")
+                }
+            }
+            if let tabManager {
+                Section(header: Text(verbatim: "Browser Tools")) {
+                    NavigationLink(destination: BrowserToolsDebugView(tabManager: tabManager)) {
+                        Text(verbatim: "Browser Tools")
+                    }
+                }
+            }
 #endif
+
+            if let aiChatLocalModel {
+                // Shows the prompt without needing a Duck.ai page that asks for access.
+                Section(header: Text(verbatim: "Local Model")) {
+                    Button {
+                        aiChatLocalModel.service.optOut()
+                    } label: {
+                        Text(verbatim: "Reset Local Summaries Opt-In")
+                    }
+                    Button {
+                        showLocalModelAccessPrompt(aiChatLocalModel)
+                    } label: {
+                        Text(verbatim: "Show Local Model Access Pop-Up")
+                    }
+                }
+            }
 
             Section(header: Text(verbatim: "Message Policy Hostname"),
                     footer: Text(verbatim: "Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -102,6 +144,16 @@ struct AIChatDebugView: View {
             }
         }
         .navigationTitle("AI Chat")
+    }
+
+    private func showLocalModelAccessPrompt(_ localModel: AIChatLocalModelDependencies) {
+        Task { @MainActor in
+            let window = UIApplication.shared.firstKeyWindow
+            let modelName = localModel.service.model.name
+            _ = try? await localModel.service.requestAccess {
+                await localModel.accessPrompt.ask(in: window, modelName: modelName)
+            }
+        }
     }
 }
 
@@ -351,6 +403,7 @@ private struct AIChatTermsOfServiceSection: View {
     private var defaultFooter: String {
         "Resetting native acceptance brings the native input's disclaimer back. The web app keeps its own "
         + "acceptance in \(DuckAiNativeStorageConsent.termsOfServiceEntryKey): clear it to see the web card again. "
+        + "With duckAITermsOfServiceRecordRestore on, the app writes it back at load: reset native acceptance first. "
         + "While any chat exists, both come back on the next launch: delete all chats first. "
         + "Needs the duckAINativeTermsOfService flag on."
     }

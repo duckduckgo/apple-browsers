@@ -27,11 +27,9 @@ enum DuckAIAddressBarMenuType: Equatable {
     case document
 
     /// Resolves the menu variant for a tab with webPage as default
-    static func resolve(isFeatureEnabled: Bool,
-                        isShowingDocument: Bool,
+    static func resolve(isShowingDocument: Bool,
                         tabType: TabType,
                         searchQuery: String?) -> DuckAIAddressBarMenuType {
-        guard isFeatureEnabled else { return .webPage }
         if isShowingDocument { return .document }
         switch tabType {
         case .web, .aiChat:

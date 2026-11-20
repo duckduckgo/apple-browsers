@@ -401,6 +401,8 @@ private final class MockSyncPromoManager: SyncPromoManaging {
 
     func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
 
+    func recordPromoConfirmedFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
         dismissedTouchpoint = touchpoint
         dismissalReason = reason

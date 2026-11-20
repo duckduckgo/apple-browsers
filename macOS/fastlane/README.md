@@ -173,7 +173,7 @@ Promotes the latest TestFlight build to App Store without submitting for review
 [bundle exec] fastlane mac upload_appstore_version_metadata
 ```
 
-Fetches latest App Store version and uploads metadata to CDN
+Publishes the App Store release metadata from the live version's phased release state
 
 ### mac create_keychain_ui_tests
 

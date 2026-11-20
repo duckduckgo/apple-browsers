@@ -67,13 +67,19 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
     func testCatalogReadsAnEntrysListing() throws {
         let iconURL = "https://staticcdn.duckduckgo.com/extensions/bitwarden-80.png"
         let storeURL = "https://chromewebstore.google.com/detail/\(identifier)"
+        let publisherURL = "https://bitwarden.com"
         let catalog = try makeCatalog(extensions: [
-            "bitwarden": entry(identifier, iconUri: iconURL, cwsUri: storeURL),
+            "bitwarden": entry(identifier, iconUri: iconURL, cwsUri: storeURL, publisherUri: publisherURL),
             "onePassword": entry(otherIdentifier)
         ])
 
         XCTAssertEqual(catalog.listing(of: .bitwarden),
-                       ChromeWebStoreListing(entry: .bitwarden, name: "Extension", publisher: "", iconURL: URL(string: iconURL), storeURL: try XCTUnwrap(URL(string: storeURL))))
+                       ChromeWebStoreListing(entry: .bitwarden,
+                                             name: "Extension",
+                                             publisher: "",
+                                             publisherURL: URL(string: publisherURL),
+                                             iconURL: URL(string: iconURL),
+                                             storeURL: try XCTUnwrap(URL(string: storeURL))))
         XCTAssertNil(catalog.listing(of: .onePassword))
         XCTAssertNil(catalog.listing(of: .darkReader))
     }
@@ -94,6 +100,19 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
                                           managementSettings: [key: [identifier]])
             XCTAssertEqual(catalog.extensionIDs, [otherIdentifier], key)
         }
+    }
+
+    func testAppStoreHiddenExtensionsAreExcludedOnlyFromTheAppStoreBuild() throws {
+        let extensions = ["bitwarden": entry(identifier), "iCloudPasswords": entry(otherIdentifier)]
+        let settings = ["appStoreHiddenExtensionIds": [otherIdentifier]]
+        let appStoreCatalog = try makeCatalog(extensions: extensions, managementSettings: settings, isAppStoreBuild: true)
+        let directCatalog = try makeCatalog(extensions: extensions, managementSettings: settings, isAppStoreBuild: false)
+
+        let appStoreIDs = appStoreCatalog.extensionIDs
+        let directIDs = directCatalog.extensionIDs
+
+        XCTAssertEqual(appStoreIDs, [identifier])
+        XCTAssertEqual(directIDs, [identifier, otherIdentifier])
     }
 
     // MARK: - Remote gates
@@ -157,11 +176,13 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func entry(_ id: String, state: String = "enabled", order: Int? = nil, iconUri: String? = nil, cwsUri: String? = nil) -> [String: Any] {
+    private func entry(_ id: String, state: String = "enabled", order: Int? = nil, iconUri: String? = nil, cwsUri: String? = nil,
+                       publisherUri: String? = nil) -> [String: Any] {
         var settings: [String: Any] = ["id": id, "name": "Extension"]
         settings["order"] = order
         settings["iconUri"] = iconUri
         settings["cwsUri"] = cwsUri
+        settings["publisherUri"] = publisherUri
         return ["state": state, "settings": settings]
     }
 
@@ -169,11 +190,13 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
                              catalogState: String = "enabled",
                              webstoreState: String = "enabled",
                              launchedState: String = "enabled",
-                             managementSettings: [String: Any] = [:]) throws -> ChromeWebStoreCatalog {
+                             managementSettings: [String: Any] = [:],
+                             isAppStoreBuild: Bool = false) throws -> ChromeWebStoreCatalog {
         let config = try makeConfiguration(extensions: extensions, catalogState: catalogState, webstoreState: webstoreState,
                                            launchedState: launchedState, managementSettings: managementSettings)
         return ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config,
-                                                                                           internalUserDecider: internalUser))
+                                                                                           internalUserDecider: internalUser),
+                                     isAppStoreBuild: isAppStoreBuild)
     }
 
     // swiftlint:disable:next function_parameter_count
@@ -212,10 +235,33 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
 
     // MARK: - Store URLs
 
+    func testUpdateCheckURLReportsVersionWithoutDownloadInstallSource() throws {
+        let url = try ChromeWebStoreURL.updateCheckURL(for: identifier, installedVersion: "1.2.3.4")
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "clients2.google.com")
+        XCTAssertEqual(components.path, "/service/update2/crx")
+        XCTAssertEqual(Set(components.queryItems ?? []), Set([
+            URLQueryItem(name: "response", value: "updatecheck"),
+            URLQueryItem(name: "prodversion", value: "154.0.0.0"),
+            URLQueryItem(name: "acceptformat", value: "crx3"),
+            URLQueryItem(name: "x", value: "id=\(identifier)&v=1.2.3.4&uc")
+        ]))
+    }
+
     func testDownloadURLMatchesScriptContractRegardlessOfQueryOrder() throws {
         let url = try ChromeWebStoreURL.downloadURL(for: identifier)
         XCTAssertTrue(ChromeWebStoreURL.isValidDownloadURL(url, for: identifier))
         var components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "clients2.google.com")
+        XCTAssertEqual(components.path, "/service/update2/crx")
+        XCTAssertEqual(Set(components.queryItems ?? []), Set([
+            URLQueryItem(name: "response", value: "redirect"),
+            ChromeWebStoreURL.prodversionQueryItem,
+            URLQueryItem(name: "acceptformat", value: "crx3"),
+            URLQueryItem(name: "x", value: "id=\(identifier)&installsource=ondemand&uc")
+        ]))
         components.queryItems = components.queryItems?.reversed()
         XCTAssertTrue(ChromeWebStoreURL.isValidDownloadURL(try XCTUnwrap(components.url), for: identifier))
         XCTAssertFalse(ChromeWebStoreURL.isValidDownloadURL(url, for: otherIdentifier))

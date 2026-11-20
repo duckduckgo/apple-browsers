@@ -156,4 +156,8 @@ extension Tab.TabContent {
         }
     }
 
+    var isRestorable: Bool {
+        if case .webExtensionUrl = self { return false }
+        return true
+    }
 }

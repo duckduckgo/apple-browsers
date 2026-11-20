@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Common
 import FoundationExtensions
@@ -83,6 +84,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        tld: TLD(),
                                        featureFlagger: featureFlagger,
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+                                       onboardingPathStarter: { CapturingPathStarter() },
                                        appearancePreferences: appearancePreferences,
                                        themeManager: MockThemeManager(),
                                        startupPreferences: startupPreferences,
@@ -95,6 +97,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        autoconsentManagement: AutoconsentManagement(),
                                        contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
                                        syncErrorHandler: SyncErrorHandler(),
+                                       aiChatBonusOffer: AIChatBonusOfferDependencies(handler: AIChatBonusHandler(service: AIChatBonusService(), factsProvider: AIChatBonusFactsProvider()), messageLog: AIChatBonusMessageLog()),
                                        webExtensionAvailability: nil,
                                        dockCustomization: DockCustomizerMock(),
                                        reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),

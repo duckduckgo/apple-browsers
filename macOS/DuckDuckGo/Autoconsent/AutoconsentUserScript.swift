@@ -304,6 +304,15 @@ extension AutoconsentUserScript {
         }
     }
 
+    static let defaultHeuristicPopupSearchTimeout = 100
+
+    static func heuristicPopupSearchTimeout(from settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings) -> Int {
+        guard let timeout = settings["heuristicPopupSearchTimeout"] as? Int, timeout > 0 else {
+            return defaultHeuristicPopupSearchTimeout
+        }
+        return timeout
+    }
+
     @MainActor
     private func heuristicModeValue() -> String {
         if !(consentHeuristicEnabled ?? false) {
@@ -413,7 +422,10 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableHeuristicDetection": true,
-                "heuristicMode": consentHeuristicMode ?? "off"
+                "heuristicMode": consentHeuristicMode ?? "off",
+                "enableHeuristicHitTest": featureFlagger.isFeatureOn(.heuristicHitTest),
+                "enablePopupMutationObserver": featureFlagger.isFeatureOn(.popupMutationObserver),
+                "heuristicPopupSearchTimeout": Self.heuristicPopupSearchTimeout(from: remoteConfig)
             ] as [String: Any?]
         ] as [String: Any?]
 
@@ -676,15 +688,7 @@ extension AutoconsentUserScript {
             // Fire summary pixels, one per site rank bucket, containing counters of all other pixels,
             // 2 minutes after the first event is received.
             DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) { [additionalParams] in
-                for (siteRank, events) in self.management.pixelCounter {
-                    var parameters = additionalParams
-                    parameters["siteRank"] = siteRank?.rawValue
-                    PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters)
-                }
-                self.management.pixelCounter = [:]
-                self.management.detectedByPatternsCache.removeAll()
-                self.management.detectedByBothCache.removeAll()
-                self.management.detectedOnlyRulesCache.removeAll()
+                self.management.fireSummaryPixels(additionalParameters: additionalParams)
             }
         }
         // increment counter

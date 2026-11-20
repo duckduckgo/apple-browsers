@@ -41,18 +41,14 @@ class BrowserChromeButton: UIButton {
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                          configuration: UIContextMenuConfiguration,
                                          highlightPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
-        targetedMenuPreview() ?? super.contextMenuInteraction(interaction,
-                                                              configuration: configuration,
-                                                              highlightPreviewForItemWithIdentifier: identifier)
+        targetedMenuPreview()
     }
 
     @available(iOS 16.0, *)
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                          configuration: UIContextMenuConfiguration,
                                          dismissalPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
-        targetedMenuPreview() ?? super.contextMenuInteraction(interaction,
-                                                              configuration: configuration,
-                                                              dismissalPreviewForItemWithIdentifier: identifier)
+        targetedMenuPreview()
     }
 
     private func targetedMenuPreview() -> UITargetedPreview? {

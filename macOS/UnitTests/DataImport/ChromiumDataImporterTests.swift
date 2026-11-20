@@ -134,7 +134,7 @@ class ChromiumDataImporterTests {
         let profileURL = missingProfileURL
         try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
         for file in files {
-            FileManager.default.createFile(atPath: profileURL.appendingPathComponent(file).path, contents: Data())
+            FileManager.default.createFile(atPath: profileURL.appendingPathComponent(file).path, contents: Data("data".utf8))
         }
         createdProfileURLs.append(profileURL)
         return profileURL

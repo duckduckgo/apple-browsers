@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
 import Foundation
 import SwiftUI
@@ -159,6 +160,7 @@ final class DuckPlayerNativeUIPresenter {
 
     // Content Scripts dependencies
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    private let sponsorBlockPreferences: SponsorBlockPreferences
 
     // Pixel Handler
     let pixelHandler: DuckPlayerPixelFiring.Type
@@ -174,6 +176,7 @@ final class DuckPlayerNativeUIPresenter {
          state: DuckPlayerState = DuckPlayerState(),
          notificationCenter: NotificationCenter = .default,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         sponsorBlockPreferences: SponsorBlockPreferences,
          pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          floatingUIManager: FloatingUIManaging = FloatingUIManager(
             isFloatingUIFeatureEnabled: false
@@ -184,6 +187,7 @@ final class DuckPlayerNativeUIPresenter {
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
         self.userScriptsDependencies = userScriptsDependencies
+        self.sponsorBlockPreferences = sponsorBlockPreferences
         self.floatingUIManager = floatingUIManager
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
@@ -848,7 +852,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         self.playerViewModel = viewModel  // Keep strong reference
 
         let webView = DuckPlayerWebView(viewModel: viewModel,
-                                        scriptSourceProviderDependencies: userScriptsDependencies)
+                                        scriptSourceProviderDependencies: userScriptsDependencies,
+                                        sponsorBlockPreferences: sponsorBlockPreferences)
         let duckPlayerView = DuckPlayerView(viewModel: viewModel, webView: webView)
 
         let hostingController = UIHostingController(rootView: duckPlayerView)

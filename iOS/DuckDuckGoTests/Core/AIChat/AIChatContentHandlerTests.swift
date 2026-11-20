@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKitTestsUtils
 import PixelKit
 import PixelExperimentKit
@@ -71,6 +72,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             subscriptionManager: mockSubscriptionManager,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
@@ -185,6 +187,41 @@ final class AIChatContentHandlerTests: XCTestCase {
         // Then
         let consumed = mockPayloadHandler.consumeData()
         XCTAssertEqual(consumed?["query"] as? String, "hello world")
+    }
+
+    /// The page asks for the payload only once it loads, and the input can't wait that long to know.
+    func testWhenAPayloadIsSetThenThePageLearnsOfTheHandoffBeforeItLoads() {
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .fullTab)
+
+        handler.setPayload(payload: ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true] as AIChatPayload)
+
+        XCTAssertEqual(mockUserScript.announcedHandoffs.count, 1)
+        XCTAssertEqual(mockUserScript.announcedHandoffs.first?["aiChatPrompt"] as? String, "More bread recipes")
+    }
+
+    /// Rebuilt user scripts replace the script under a page that already took its handoff and won't ask again.
+    func testWhenTheUserScriptIsReplacedThenTheReplacementKeepsThePagesTermsCard() {
+        let original = MockAIChatUserScript()
+        handler.setup(with: original, webView: WKWebView(), displayMode: .fullTab)
+        original.isTermsOfServiceShownOnPage = true
+        let replacement = MockAIChatUserScript()
+
+        handler.setup(with: replacement, webView: WKWebView(), displayMode: .fullTab)
+
+        XCTAssertTrue(replacement.isTermsOfServiceShownOnPage)
+    }
+
+    /// A new tab is given the payload before its user scripts are installed.
+    func testWhenAPayloadIsSetBeforeTheUserScriptThenTheHandoffIsAnnouncedOnceTheScriptArrives() {
+        handler.setPayload(payload: ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true] as AIChatPayload)
+        let mockUserScript = MockAIChatUserScript()
+
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .fullTab)
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .fullTab)
+
+        XCTAssertEqual(mockUserScript.announcedHandoffs.count, 1)
+        XCTAssertEqual(mockUserScript.announcedHandoffs.first?["aiChatPrompt"] as? String, "More bread recipes")
     }
 
     func testSetPayloadWithInvalidPayload() throws {
@@ -606,6 +643,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in
                 didRequestContext = true
@@ -625,7 +663,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs])
         let nativeHandler = AIChatUserScriptHandler(
             experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
-            syncHandler: MockAIChatSyncHandling(), featureFlagger: featureFlagger)
+            syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(), featureFlagger: featureFlagger)
         let script = AIChatUserScript(handler: nativeHandler, debugSettings: MockAIChatDebugSettingsForTests())
         script.connectInitialPromptSession(session)
         return script
@@ -640,6 +678,17 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         XCTAssertEqual(previous.cleanUpForReplacementCallCount, 1)
         XCTAssertEqual(previous.cancelPendingTabContextSubmissionCallCount, 0)
+    }
+
+    func testReplacingUserScriptHandsLocalRunsToTheNewScript() {
+        let previous = MockAIChatUserScript()
+        let replacement = MockAIChatUserScript()
+        let webView = WKWebView()
+        handler.setup(with: previous, webView: webView, displayMode: .contextual)
+
+        handler.setup(with: replacement, webView: webView, displayMode: .contextual)
+
+        XCTAssertTrue(previous.localRunsReplacement as? MockAIChatUserScript === replacement)
     }
 
     func testCancellationIsForwardedToUserScript() {
@@ -662,6 +711,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in
                 XCTAssertEqual(script.cancelPendingTabContextSubmissionCallCount, 1)
@@ -708,6 +758,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in pageContext }
         )
@@ -737,6 +788,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in nil }
         )
@@ -1077,6 +1129,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitStartChatActionCallCount = 0
     var cancelPendingTabContextSubmissionCallCount = 0
     var cleanUpForReplacementCallCount = 0
+    var localRunsReplacement: AIChatUserScriptProviding?
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
     var submitOpenChatProtectionActionCallCount = 0
@@ -1089,6 +1142,13 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
     }
+
+    private(set) var announcedHandoffs: [AIChatPayload] = []
+    func willHandOff(_ payload: AIChatPayload) {
+        announcedHandoffs.append(payload)
+    }
+
+    var isTermsOfServiceShownOnPage = false
 
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         openLinkHandlerSet = true
@@ -1152,6 +1212,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         cleanUpForReplacementCallCount += 1
     }
 
+    func handOverLocalRuns(to replacement: AIChatUserScriptProviding) {
+        localRunsReplacement = replacement
+    }
+
     func submitOpenSettingsAction() {
         submitOpenSettingsActionCallCount += 1
     }
@@ -1164,6 +1228,14 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitOpenChatProtectionActionCallCount += 1
     }
 
+    var openChatOutcome: AIChatOpenChatOutcome?
+    private(set) var openedChatIds: [String] = []
+
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        openedChatIds.append(chatId)
+        return openChatOutcome
+    }
+
     func submitPageContext(_ context: AIChatPageContextData?) {
         submitPageContextCallCount += 1
         lastSubmittedPageContextViaSubmit = context
@@ -1172,6 +1244,12 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
 // swiftlint:disable inclusive_language
 final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else { return .invalidRequest(rawParams: params) }
+        return await source?.invokeBrowserTool(request) ?? .failure(callId: request.callId, error: .unavailable)
+    }
+
     var displayMode: AIChatDisplayMode?
     var isFireModeProvider: (() -> Bool)?
     var focusChatInputHandler: (@MainActor () -> Void)?
@@ -1179,7 +1257,8 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?) {}
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {}
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {}
-    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    var nativeConfigResponse: Encodable?
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? { nativeConfigResponse }
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
@@ -1187,10 +1266,18 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {}
+    func willHandOff(_ payload: AIChatPayload) {}
+    var isTermsOfServiceShownOnPage = false
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {}
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?) {}
+    func setBonusRecordChangedHandler(_ handler: (@MainActor (AIChatBonusRecordPayload) -> Void)?) {}
+    func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

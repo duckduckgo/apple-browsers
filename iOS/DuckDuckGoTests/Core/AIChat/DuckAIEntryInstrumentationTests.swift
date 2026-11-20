@@ -282,6 +282,23 @@ final class DuckAIEntryInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("A sidebar entry records its prompt and ends when the sidebar closes", .timeLimit(.minutes(1)))
+    func sidebarEntryEndsOnDismiss() {
+        let sut = makeSUT()
+        sut.entryStarted(source: .contextualChat, hasPrompt: false, voice: false, surface: .contextualSidebar, chatState: .new)
+        sut.recordPendingExit(.tabSwitched, tabUID: Self.otherTab)
+        sut.sheetPromptSubmitted()
+
+        sut.sheetDismissed(exitTrigger: nil)
+
+        #expect(completions.count == 1)
+        let params = completions.first?.0.jsonParameters()
+        #expect(params?["feature.data.ext.surface"] as? String == "contextual_sidebar")
+        #expect(params?["feature.data.ext.prompt_submitted"] as? Bool == true)
+        #expect(completions.first?.0.exitTrigger == .tabSwitched)
+    }
+
+    @available(iOS 16, *)
     @Test("A sheet closed by another action reports that action", .timeLimit(.minutes(1)))
     func sheetClosedByActionReportsIt() {
         let sut = makeSUT()

@@ -23,10 +23,18 @@ import PixelKit
 import Common
 import FoundationExtensions
 
-final class UserChurnService {
+protocol UserChurnStateProviding: AnyObject {
+    var hasChurnedFromDefault: Bool { get }
+    func checkForDefaultBrowserChange()
+}
 
-    private enum Key: String {
-        case wasDefaultBrowser = "user-churn.was-default-browser"
+final class UserChurnService: UserChurnStateProviding {
+
+    enum Key: String {
+        case wasDefaultBrowser = "was-default-browser"
+        case churnedFromDefault = "churned-from-default"
+
+        var storageKey: String { "user-churn.\(rawValue)" }
     }
 
     private let defaultBrowserProvider: DefaultBrowserProvider
@@ -34,23 +42,10 @@ final class UserChurnService {
     private let pixelFiring: PixelFiring?
     private let atbProvider: () -> String?
     private let bundleIdentifierProvider: (URL) -> String?
+    private let lock = NSLock()
 
-    private var wasDefaultBrowser: Bool? {
-        get {
-            do {
-                return try keyValueStore.object(forKey: Key.wasDefaultBrowser.rawValue) as? Bool
-            } catch {
-                Logger.general.error("Failed to read wasDefaultBrowser from keyValueStore: \(error)")
-                return nil
-            }
-        }
-        set {
-            do {
-                try keyValueStore.set(newValue, forKey: Key.wasDefaultBrowser.rawValue)
-            } catch {
-                Logger.general.error("Failed to write wasDefaultBrowser to keyValueStore: \(error)")
-            }
-        }
+    var hasChurnedFromDefault: Bool {
+        readValue(for: .churnedFromDefault) ?? false
     }
 
     init(
@@ -67,48 +62,61 @@ final class UserChurnService {
         self.bundleIdentifierProvider = bundleIdentifierProvider
     }
 
-    /// Checks if the user has changed the default browser away from DuckDuckGo and fires a pixel if so.
-    ///
-    /// Logic:
-    /// 1. Check if any DuckDuckGo build is currently the default browser
-    /// 2. If the stored state is not initialized, initialize it and exit early
-    /// 3. If any DuckDuckGo build is currently the default, update stored state if needed and return (no churn)
-    /// 4. If no DuckDuckGo build is the default and one was previously, fire the churn pixel
-    /// 5. Update the stored state if needed
+    /// Records whether the user switched their default browser away from DuckDuckGo, and fires the churn pixel when they do.
     func checkForDefaultBrowserChange() {
-        let defaultBrowserURL = defaultBrowserProvider.defaultBrowserURL
-        let isAnyDuckDuckGoBuildDefault = isDuckDuckGoBuild(url: defaultBrowserURL)
+        lock.lock()
+        defer { lock.unlock() }
 
-        guard let wasDefault = wasDefaultBrowser else {
-            wasDefaultBrowser = isAnyDuckDuckGoBuildDefault
+        guard let defaultBrowserURL = defaultBrowserProvider.defaultBrowserURL,
+              let defaultBrowserBundleId = bundleIdentifierProvider(defaultBrowserURL) else {
+            return
+        }
+        let isDuckDuckGoDefault = defaultBrowserBundleId.hasPrefix("com.duckduckgo")
+
+        guard let wasDuckDuckGoDefault = readValue(for: .wasDefaultBrowser) else {
+            write(isDuckDuckGoDefault, for: .wasDefaultBrowser)
             return
         }
 
-        // Only update stored state if it changed
-        if isAnyDuckDuckGoBuildDefault != wasDefault {
-            wasDefaultBrowser = isAnyDuckDuckGoBuildDefault
+        if isDuckDuckGoDefault {
+            recordDuckDuckGoIsDefault(wasDefault: wasDuckDuckGoDefault)
+        } else if wasDuckDuckGoDefault {
+            recordChurn(newDefaultBrowserBundleId: defaultBrowserBundleId)
         }
-
-        // Fire churn pixel only if no DDG build is default AND one was previously
-        guard !isAnyDuckDuckGoBuildDefault, wasDefault else {
-            return
-        }
-
-        let bundleId = defaultBrowserURL.flatMap { bundleIdentifierProvider($0) }
-        pixelFiring?.fire(UserChurnPixel.unsetAsDefault(
-            newDefaultBrowserBundleId: bundleId,
-            atb: atbProvider()
-        ))
     }
 
-    /// Returns true if the app at the given URL is a DuckDuckGo build.
-    ///
-    /// All DuckDuckGo builds share the `com.duckduckgo` bundle identifier prefix.
-    private func isDuckDuckGoBuild(url: URL?) -> Bool {
-        guard let url,
-              let bundleIdentifier = bundleIdentifierProvider(url) else {
-            return false
+    private func recordDuckDuckGoIsDefault(wasDefault: Bool) {
+        if !wasDefault {
+            write(true, for: .wasDefaultBrowser)
         }
-        return bundleIdentifier.hasPrefix("com.duckduckgo")
+        if hasChurnedFromDefault {
+            write(false, for: .churnedFromDefault)
+        }
+    }
+
+    private func recordChurn(newDefaultBrowserBundleId: String) {
+        write(true, for: .churnedFromDefault)
+        write(false, for: .wasDefaultBrowser)
+
+        pixelFiring?.fire(UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: newDefaultBrowserBundleId, atb: atbProvider()))
+    }
+
+    private func readValue(for key: Key) -> Bool? {
+        do {
+            return try keyValueStore.object(forKey: key.storageKey) as? Bool
+        } catch {
+            Logger.general.error("Failed to read \(key.storageKey) from keyValueStore: \(error)")
+            pixelFiring?.fire(UserChurnDebugPixel.readFailed(key: key, error: error), frequency: .dailyAndCount)
+            return nil
+        }
+    }
+
+    private func write(_ value: Bool, for key: Key) {
+        do {
+            try keyValueStore.set(value, forKey: key.storageKey)
+        } catch {
+            Logger.general.error("Failed to write \(key.storageKey) to keyValueStore: \(error)")
+            pixelFiring?.fire(UserChurnDebugPixel.writeFailed(key: key, error: error), frequency: .dailyAndCount)
+        }
     }
 }

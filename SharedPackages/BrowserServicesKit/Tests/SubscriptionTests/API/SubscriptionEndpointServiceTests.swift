@@ -58,7 +58,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
             activeOffers: [],
             tier: nil,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         return try encoder.encode(subscription)
     }
@@ -94,6 +95,112 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         XCTAssertEqual(subscription.status, .autoRenewable)
     }
 
+    // MARK: - Withdrawal Tests
+
+    func testGetWithdrawalEligibilityDecodesResponse() async throws {
+        let data = """
+        {"eligible": true, "eligibleUntil": 1760950800000, "refundAmount": "9.99", "refundCurrency": "GBP", "reason": null}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.getWithdrawalEligibility(accessToken: "token")
+
+        XCTAssertTrue(result.eligible)
+        XCTAssertEqual(result.eligibleUntil, Date(timeIntervalSince1970: 1760950800))
+        XCTAssertEqual(result.refundAmount, "9.99")
+        XCTAssertEqual(result.refundCurrency, "GBP")
+        XCTAssertNil(result.reason)
+    }
+
+    func testGetWithdrawalEligibilityDecodesIneligibleResponse() async throws {
+        let data = """
+        {"eligible": false, "eligibleUntil": null, "refundAmount": null, "refundCurrency": null, "reason": "trial"}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.getWithdrawalEligibility(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.getWithdrawalEligibility(accessToken: "token")
+
+        XCTAssertFalse(result.eligible)
+        XCTAssertNil(result.eligibleUntil)
+        XCTAssertNil(result.refundAmount)
+        XCTAssertNil(result.refundCurrency)
+        XCTAssertEqual(result.reason, "trial")
+    }
+
+    func testWithdrawSubscriptionDecodesResponse() async throws {
+        let data = """
+        {"refundedAmount": "9.99", "currency": "GBP", "requestedAt": 1760950800000}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertEqual(result, WithdrawSubscriptionResponse(refundedAmount: "9.99",
+                                                            currency: "GBP",
+                                                            requestedAt: Date(timeIntervalSince1970: 1760950800)))
+    }
+
+    func testWithdrawSubscriptionWithoutRequestedAtDecodesResponse() async throws {
+        let data = """
+        {"refundedAmount": "9.99", "currency": "GBP"}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertNil(result.requestedAt)
+    }
+
+    func testWithdrawSubscriptionThrowsInvalidResponseCodeOnConflict() async {
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 409, data: nil), forRequest: request)
+
+        do {
+            _ = try await endpointService.withdrawSubscription(accessToken: "token")
+            XCTFail("Expected invalidResponseCode error")
+        } catch SubscriptionEndpointServiceError.invalidResponseCode(let statusCode) {
+            XCTAssertEqual(statusCode, .conflict)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testWithdrawSubscriptionKeepsValidFieldsWhenOthersCannotBeDecoded() async throws {
+        let data = """
+        {"refundedAmount": 999, "requestedAt": 1760950800000}
+        """.data(using: .utf8)!
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: data), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertNil(result.refundedAmount)
+        XCTAssertNil(result.currency)
+        XCTAssertEqual(result.requestedAt, Date(timeIntervalSince1970: 1760950800))
+    }
+
+    func testWithdrawSubscriptionReturnsEmptyResponseWhenSuccessResponseIsNotJSON() async throws {
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 200, data: "OK".data(using: .utf8)), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertEqual(result, WithdrawSubscriptionResponse())
+    }
+
+    func testWithdrawSubscriptionReturnsEmptyResponseForEmptySuccessResponse() async throws {
+        let request = SubscriptionRequest.withdrawSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+        apiService.set(response: createAPIResponse(statusCode: 204, data: nil), forRequest: request)
+
+        let result = try await endpointService.withdrawSubscription(accessToken: "token")
+
+        XCTAssertEqual(result, WithdrawSubscriptionResponse())
+    }
+
     // MARK: - getCustomerPortalURL Tests
 
     func testGetCustomerPortalURLReturnsCorrectURL() async throws {
@@ -125,7 +232,8 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
                 activeOffers: [],
                 tier: .plus,
                 availableChanges: nil,
-                pendingPlans: nil
+                pendingPlans: nil,
+                planCountry: nil
             )
         )
         let confirmData = try encoder.encode(confirmResponse)
@@ -212,11 +320,11 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         let response = GetTierProductsResponse(products: tierProducts)
         let responseData = try encoder.encode(response)
         let apiResponse = createAPIResponse(statusCode: 200, data: responseData)
-        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, region: "us", platform: "stripe")!.apiRequest
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .country("fr"), platform: "stripe")!.apiRequest
 
         apiService.set(response: apiResponse, forRequest: request)
 
-        let result = try await endpointService.getTierProducts(region: "us", platform: "stripe")
+        let result = try await endpointService.getTierProducts(location: .country("fr"), platform: "stripe")
         XCTAssertEqual(result.products.count, 1)
         XCTAssertEqual(result.products[0].tier, .plus)
         XCTAssertEqual(result.products[0].productName, "Plus Plan")
@@ -224,18 +332,28 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
     }
 
     func testGetTierProductsThrowsInvalidResponseCode() async {
-        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, region: "us", platform: "stripe")!.apiRequest
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .country("fr"), platform: "stripe")!.apiRequest
         let apiResponse = createAPIResponse(statusCode: 500, data: nil)
         apiService.set(response: apiResponse, forRequest: request)
 
         do {
-            _ = try await endpointService.getTierProducts(region: "us", platform: "stripe")
+            _ = try await endpointService.getTierProducts(location: .country("fr"), platform: "stripe")
             XCTFail("Expected invalidResponseCode error")
         } catch SubscriptionEndpointServiceError.invalidResponseCode(let statusCode) {
             XCTAssertEqual(statusCode.rawValue, 500)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    func testGetTierProductsRequestWithCountry() {
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .country("fr"), platform: "stripe")!.apiRequest
+        XCTAssertEqual(request.url?.query, "country=fr&platform=stripe")
+    }
+
+    func testGetTierProductsRequestWithRegion() {
+        let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, location: .legacyUSRegion, platform: "stripe")!.apiRequest
+        XCTAssertEqual(request.url?.query, "region=us&platform=stripe")
     }
 
     // MARK: - getSubscriptionTierFeatures Tests

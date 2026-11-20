@@ -28,7 +28,6 @@ final class MockWhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     private(set) var capturedOnItemAppear: ((_ itemId: String) -> Void)?
     private(set) var capturedOnItemAction: ((_ action: RemoteAction, _ itemId: String) async -> Void)?
     private(set) var capturedOnPrimaryAction: ((RemoteAction) async -> Void)?
-    private(set) var capturedOnDismiss: (() -> Void)?
 
     // MARK: - Return Value
     var displayModelToReturn: RemoteMessagingUI.CardsListDisplayModel?
@@ -38,8 +37,7 @@ final class MockWhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
         onMessageAppear: @escaping () -> Void,
         onItemAppear: @escaping (_ itemId: String) -> Void,
         onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
-        onPrimaryAction: @escaping (RemoteAction) async -> Void,
-        onDismiss: @escaping () -> Void
+        onPrimaryAction: @escaping (RemoteAction) async -> Void
     ) -> RemoteMessagingUI.CardsListDisplayModel? {
         didCallMakeDisplayModel = true
         capturedMessage = message
@@ -47,7 +45,6 @@ final class MockWhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
         capturedOnItemAppear = onItemAppear
         capturedOnItemAction = onItemAction
         capturedOnPrimaryAction = onPrimaryAction
-        capturedOnDismiss = onDismiss
 
         return displayModelToReturn
     }

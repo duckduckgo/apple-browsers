@@ -39,6 +39,11 @@ final class HoverUserScript: NSObject, Subfeature {
 
     private(set) var lastURL: URL?
 
+    /// A new document starts with no hovered link, so its first report must not be dropped as unchanged.
+    func resetForNewDocument() {
+        lastURL = nil
+    }
+
     enum MessageNames: String, CaseIterable {
         case hoverChanged
     }

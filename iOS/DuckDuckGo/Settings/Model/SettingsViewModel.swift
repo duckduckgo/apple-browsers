@@ -200,10 +200,15 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
-        isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
         favicons: sitePermissionsFavicons,
         callbacks: makeSitePermissionsCallbacks()
     )
+
+    @MainActor
+    private(set) lazy var localModelAccessSettingsViewModel: LocalModelAccessSettingsViewModel? = {
+        guard let service = userScriptsDependencies.aiChatLocalModel?.service else { return nil }
+        return LocalModelAccessSettingsViewModel(service: service)
+    }()
 
     // View State
     @Published private(set) var state: SettingsState
@@ -849,6 +854,35 @@ final class SettingsViewModel: ObservableObject {
         state.youTubeAdBlockingEnabled && adBlockingAvailability.isDisabledUntilRelaunch
     }
 
+    // MARK: - YouTube Sponsor Skipping (internal MVP)
+
+    /// Same file-backed store as the tabs' instance, so writes here reach open YouTube tabs through its change notification.
+    lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+
+    var isSponsorBlockAvailable: Bool {
+        featureFlagger.isFeatureOn(.sponsorBlock)
+    }
+
+    var sponsorBlockEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.sponsorBlockPreferences.isEnabled },
+            set: {
+                self.objectWillChange.send()
+                self.sponsorBlockPreferences.isEnabled = $0
+            }
+        )
+    }
+
+    var sponsorBlockSkipMode: Binding<SponsorBlockSkipMode> {
+        Binding<SponsorBlockSkipMode>(
+            get: { self.sponsorBlockPreferences.skipMode },
+            set: {
+                self.objectWillChange.send()
+                self.sponsorBlockPreferences.skipMode = $0
+            }
+        )
+    }
+
     func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
         try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
         NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
@@ -1479,20 +1513,12 @@ extension SettingsViewModel {
             return
         }
 
-        if let checkIfDefaultBrowser = try? keyValueStore.object(forKey: Constants.shouldCheckIfDefaultBrowserKey) as? Bool {
-            do {
-                if checkIfDefaultBrowser, try UIApplication.shared.isDefault(.webBrowser) {
-                    try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
-                    shouldShowSetAsDefaultBrowser = false
-                }
-            } catch {
-                try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
-                shouldShowSetAsDefaultBrowser = false
-            }
+        nextStepsItemsVisibility.dismissSetAsDefaultIfAlreadyDefault()
+        shouldShowSetAsDefaultBrowser = nextStepsItemsVisibility.isSetAsDefaultVisible
+    }
 
-            // only want to check default browser state once after the first time a user interacts with this row due to API restrictions. After that users can swipe to dismiss
-            try? keyValueStore.set(false, forKey: Constants.shouldCheckIfDefaultBrowserKey)
-        }
+    private var nextStepsItemsVisibility: NextStepsItemsVisibility {
+        NextStepsItemsVisibility(keyValueStore: keyValueStore)
     }
 
     private func permanentlyDismissCompleteSetupSection() {
@@ -1581,9 +1607,7 @@ extension SettingsViewModel {
         }
         PixelKit.fire(Pixel.Event.settingsSetAsDefault, options: .parameters(parameters))
         systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
-        if shouldShowSetAsDefaultBrowser {
-            try? keyValueStore.set(true, forKey: Constants.shouldCheckIfDefaultBrowserKey)
-        }
+        nextStepsItemsVisibility.recordSetAsDefaultTapped()
     }
 
     @available(iOS 18.2, *)
@@ -1615,12 +1639,8 @@ extension SettingsViewModel {
             self.shouldShowSetAddressBarPositionNextStep = !self.isPad && self.appSettings.currentAddressBarPosition == .top
             self.shouldShowEnableVoiceSearchNextStep = self.voiceSearchHelper.isSpeechRecognizerAvailable
                 && !self.voiceSearchHelper.isVoiceSearchEnabled
-            self.shouldShowAddToDockNextStep = !Self.hasTapDismissalElapsed(
-                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddToDockNextStepKey) as? Double,
-                interval: Constants.nextStepTapDismissalInterval)
-            self.shouldShowAddWidgetNextStep = !Self.hasTapDismissalElapsed(
-                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddWidgetNextStepKey) as? Double,
-                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowAddToDockNextStep = self.nextStepsItemsVisibility.isAddToDockVisible
+            self.shouldShowAddWidgetNextStep = self.nextStepsItemsVisibility.isAddWidgetVisible
             self.shouldShowNextStepsHideButton = Self.hasInstallGracePeriodElapsed(
                 installDate: StatisticsUserDefaults().installDate,
                 requiredInterval: Constants.nextStepsHideMinimumInstallAge)
@@ -1638,15 +1658,11 @@ extension SettingsViewModel {
     }
 
     func recordAddToDockNextStepTapped() {
-        recordNextStepTapIfNeeded(forKey: Constants.didTapAddToDockNextStepKey)
+        nextStepsItemsVisibility.recordAddToDockTapped()
     }
 
     func recordAddWidgetNextStepTapped() {
-        recordNextStepTapIfNeeded(forKey: Constants.didTapAddWidgetNextStepKey)
-    }
-
-    private func recordNextStepTapIfNeeded(forKey key: String) {
-        Self.recordFirstTap(forKey: key, in: keyValueStore)
+        nextStepsItemsVisibility.recordAddWidgetTapped()
     }
 
     static func recordFirstTap(forKey key: String,

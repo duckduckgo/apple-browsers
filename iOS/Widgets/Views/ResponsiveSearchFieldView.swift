@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import WidgetKit
 
 struct ResponsiveSearchFieldView: View {
 
@@ -62,6 +63,8 @@ struct ResponsiveSearchFieldView: View {
 
                         Text(prompt)
                             .daxBodyRegular()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                             .foregroundStyle(Color(designSystemColor: .textSecondary))
                             .padding(.leading, showLogo ? 8 : 12)
                             .makeAccentable()

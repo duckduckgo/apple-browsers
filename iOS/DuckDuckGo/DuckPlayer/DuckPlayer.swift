@@ -49,7 +49,7 @@ struct InitialPlayerSettings: Codable {
 
     struct CustomError: Codable {
         let state: Status
-        let signInRequiredSelector: String
+        let settings: CustomErrorSettings?
     }
 
     enum Status: String, Codable {
@@ -407,6 +407,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
                      featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                      userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                     sponsorBlockPreferences: SponsorBlockPreferences,
                      floatingUIManager: FloatingUIManaging? = nil) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
             isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
@@ -414,6 +415,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.init(settings: settings,
                   featureFlagger: featureFlagger,
                   nativeUIPresenter: DuckPlayerNativeUIPresenter(userScriptsDependencies: userScriptsDependencies,
+                                                                 sponsorBlockPreferences: sponsorBlockPreferences,
                                                                  floatingUIManager: floatingUIManager))
     }
 
@@ -755,7 +757,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func encodedPlayerSettings(with webView: WKWebView?) async -> InitialPlayerSettings {
         let isPiPEnabled = webView?.configuration.allowsPictureInPictureMediaPlayback == true
         let pip = InitialPlayerSettings.PIP(status: isPiPEnabled ? .enabled : .disabled)
-        let customError = InitialPlayerSettings.CustomError(state: settings.customError ? .enabled : .disabled, signInRequiredSelector: settings.customErrorSettings?.signInRequiredSelector ?? "")
+        let customError = InitialPlayerSettings.CustomError(state: settings.customError ? .enabled : .disabled, settings: settings.customErrorSettings)
         let platform = InitialPlayerSettings.Platform(name: "ios")
         let locale = Locale.current.languageCode ?? "en"
         let playerSettings = InitialPlayerSettings.PlayerSettings(pip: pip, customError: customError)
@@ -877,10 +879,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             .sink { [weak self] videoDetails in
                 let (videoID, pillTimestamp, pillType) = videoDetails
                 
-                // When on youtube, we use the timestamp from the pill if it's an entry pill
-                // Otherwise, we use the timestamp from the UserScript (DuckPlayer)
                 Task {
-                    let timestamp = pillType == .entry ? self?.youtubeTimestamp : pillTimestamp
+                    let timestamp = self?.playbackTimestamp(for: pillType, pillTimestamp: pillTimestamp)
                     await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
                 }
             }
@@ -930,6 +930,17 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
     }
     
+    /// Where Duck Player should start when a pill is tapped. The YouTube page reports its position continuously,
+    /// so it wins unless the user got further in Duck Player before dismissing it.
+    private func playbackTimestamp(for pillType: DuckPlayerNativeUIPresenter.PillType, pillTimestamp: TimeInterval?) -> TimeInterval? {
+        switch pillType {
+        case .welcome, .entry:
+            return youtubeTimestamp
+        case .reEntry:
+            return [youtubeTimestamp, pillTimestamp].compactMap { $0 }.max()
+        }
+    }
+
     /// Stores timestamp from DuckPlayer view dismissal
     /// This should be called when DuckPlayer view is dismissed with a timestamp
     func storeDuckPlayerTimestamp(_ timestamp: TimeInterval?) {

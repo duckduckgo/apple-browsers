@@ -97,6 +97,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
     private let remoteSettings: AIChatRemoteSettings
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let firePixel: (PixelKit.Event) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
@@ -109,6 +110,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
+    private let allowsSubscriptionUpsellProvider: () -> Bool
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
@@ -125,6 +127,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
          remoteSettings: AIChatRemoteSettings = AIChatRemoteSettings(),
+         privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
@@ -136,11 +139,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
+         allowsSubscriptionUpsellProvider: @escaping () -> Bool = { true },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
         self.remoteSettings = remoteSettings
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
@@ -152,6 +157,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
+        self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
@@ -423,6 +429,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
             ),
             isTrialEligible: isTrialEligibleProvider,
+            allowsSubscriptionUpsell: allowsSubscriptionUpsellProvider,
             isFireMode: { burnerMode.isBurner }
         )
         highUsageNoticeSource = store.makeHighUsageNoticeSource(modelProvider: { [aiChatPreferencesPersistor] in
@@ -603,6 +610,28 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .compactMap { [weak self] in self?.isAttachTabsEnabled }
             .prepend(isAttachTabsEnabled)
             .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var isPastedTextEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpPastedText)
+    }
+
+    var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits? {
+        guard isPastedTextEnabled else { return nil }
+        let limits = AIChatPromptLimits(privacyConfig: privacyConfigurationManager.privacyConfig, subfeature: AIChatSubfeature.ntpPastedText)
+        return .init(pasteConversionThreshold: limits.pasteConversionThreshold, maxCharacters: limits.maxCharacters)
+    }
+
+    /// The feature flagger also reports privacy config updates, so new limits reach an open NTP
+    /// even when the flag doesn't change.
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self.map { ($0.isPastedTextEnabled, $0.pastedTextLimits) } }
+            .prepend((isPastedTextEnabled, pastedTextLimits))
+            .removeDuplicates { $0 == $1 }
+            .dropFirst()
+            .map { _ in () }
             .eraseToAnyPublisher()
     }
 

@@ -59,13 +59,10 @@ class MainMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testOnboardingMenuAvailabilityForBlockingAndNonBlocking() throws {
+    func testOnboardingMenuAvailabilityBeforeAndAfterOnboarding() throws {
         let appDelegate = try XCTUnwrap(Application.appDelegate)
-        let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
-        let originalCohort = featureFlagger.resolveCohortStub
         let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
         defer {
-            featureFlagger.resolveCohortStub = originalCohort
             OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
         }
 
@@ -79,18 +76,15 @@ class MainMenuTests: XCTestCase {
             #selector(AppDelegate.showManageBookmarks(_:)),
             #selector(AppDelegate.openImportBrowserDataWindow(_:))
         ]
-        for isNonBlocking in [false, true] {
-            featureFlagger.resolveCohortStub = isNonBlocking ? FeatureFlag.OnboardingNonBlockingCohort.treatment : FeatureFlag.OnboardingNonBlockingCohort.control
-            for finished in [false, true] {
-                OnboardingActionsManager.isOnboardingFinished = finished
-                for action in actions {
-                    let menuItem = NSMenuItem()
-                    menuItem.action = action
-                    let canOpenFirstWindow = action == #selector(AppDelegate.newWindow(_:))
-                        && appDelegate.windowControllersManager.mainWindowControllers.isEmpty
-                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || isNonBlocking || canOpenFirstWindow,
-                                   NSStringFromSelector(action))
-                }
+        for finished in [false, true] {
+            OnboardingActionsManager.isOnboardingFinished = finished
+            for action in actions {
+                let menuItem = NSMenuItem()
+                menuItem.action = action
+                let canOpenFirstWindow = action == #selector(AppDelegate.newWindow(_:))
+                    && appDelegate.windowControllersManager.mainWindowControllers.isEmpty
+                XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || canOpenFirstWindow,
+                               NSStringFromSelector(action))
             }
         }
     }
@@ -161,6 +155,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -195,6 +190,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -231,6 +227,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -266,6 +263,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -289,6 +287,76 @@ class MainMenuTests: XCTestCase {
         XCTAssertEqual(duckDuckGoMenu.items[3].title, UserText.addDuckDuckGoToDock)
     }
 
+    @MainActor
+    func testWhenAppStoreBuildCanShowVideoAndNotInDockThenMenuItemIsVisible() throws {
+        let dockCustomizer = DockCustomizerMock()
+        dockCustomizer.supportsAddingToDock = false
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.appStoreAddToDockOnlyCTA.rawValue: true])
+
+        let sut = makeMainMenu(dockCustomizer: dockCustomizer, featureFlagger: featureFlagger)
+        sut.update()
+
+        let duckDuckGoMenu = try XCTUnwrap(sut.items.first?.submenu)
+        XCTAssertEqual(duckDuckGoMenu.items[3].title, UserText.addDuckDuckGoToDock)
+        XCTAssertFalse(duckDuckGoMenu.items[3].isHidden)
+    }
+
+    @MainActor
+    func testWhenAppStoreBuildCanShowVideoAndInDockThenMenuItemIsHidden() throws {
+        let dockCustomizer = DockCustomizerMock()
+        dockCustomizer.supportsAddingToDock = false
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.appStoreAddToDockOnlyCTA.rawValue: true])
+        dockCustomizer.dockStatus = true
+
+        let sut = makeMainMenu(dockCustomizer: dockCustomizer, featureFlagger: featureFlagger)
+        sut.update()
+
+        let duckDuckGoMenu = try XCTUnwrap(sut.items.first?.submenu)
+        XCTAssertTrue(duckDuckGoMenu.items[3].isHidden)
+    }
+
+    @MainActor
+    func testWhenAppStoreVideoFlagTurnsOffThenMenuItemIsHiddenOnNextUpdate() throws {
+        let dockCustomizer = DockCustomizerMock()
+        dockCustomizer.supportsAddingToDock = false
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.appStoreAddToDockOnlyCTA.rawValue: true])
+
+        let sut = makeMainMenu(dockCustomizer: dockCustomizer, featureFlagger: featureFlagger)
+        sut.update()
+        let duckDuckGoMenu = try XCTUnwrap(sut.items.first?.submenu)
+        XCTAssertFalse(duckDuckGoMenu.items[3].isHidden)
+
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        sut.update()
+
+        XCTAssertTrue(duckDuckGoMenu.items[3].isHidden)
+    }
+
+    @MainActor private func makeMainMenu(dockCustomizer: DockCustomization, featureFlagger: MockFeatureFlagger = MockFeatureFlagger()) -> MainMenu {
+        MainMenu(
+            featureFlagger: featureFlagger,
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
+            faviconManager: FaviconManagerMock(),
+            dockCustomizer: dockCustomizer,
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
+            defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+            aiChatMenuConfig: DummyAIChatConfig(),
+            aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
+            aiChatHistoryCleaner: DummyAIChatHistoryCleaner(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+            quitSurveyPersistor: MockQuitSurveyPersistor(),
+            pinningManager: MockPinningManager(),
+            subscriptionManager: SubscriptionManagerMock()
+        )
+    }
+
     // MARK: - Default Browser Action
 
     @MainActor
@@ -303,6 +371,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -338,6 +407,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -373,6 +443,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -421,6 +492,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: aiChatConfig,
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -564,6 +636,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -594,6 +667,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -627,6 +701,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),
@@ -657,6 +732,7 @@ class MainMenuTests: XCTestCase {
             recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
             aiChatSuggestionsReader: DummyAIChatSuggestionsReader(),

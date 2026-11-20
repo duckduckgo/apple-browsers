@@ -74,16 +74,25 @@ public final class FileResources: ResourcesRepository {
                 (!shouldUseFakeBrokers && !$0.hasFakePrefix))
             }
 
-            return try brokerJSONFiles.map(DataBroker.initFromResource(_:))
+            return try Self.brokerResources(from: brokerJSONFiles)
         } catch let error as DecodingError {
             assertionFailure("Failed to decode bundled JSON: \(error.localizedDescription)")
-            return nil
-        } catch let error as Step.DecodingError {
-            assertionFailure("Bundled JSON containing unsupported data: \(error.localizedDescription)")
             return nil
         } catch {
             Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService: error FileResources error: fetchBrokerFromResourceFiles, error: \(error.localizedDescription, privacy: .public)")
             throw error
+        }
+    }
+
+    /// Skips a file this platform or app version can't run, so one unsupported broker doesn't cost the rest.
+    static func brokerResources(from fileURLs: [URL]) throws -> [BrokerResource] {
+        try fileURLs.compactMap { fileURL in
+            do {
+                return try DataBroker.initFromResource(fileURL)
+            } catch let error as Step.DecodingError {
+                Logger.dataBrokerProtection.log("🧩 LocalBrokerJSONService: bundled JSON \(fileURL.lastPathComponent, privacy: .public) contains unsupported data: \(error), skipping")
+                return nil
+            }
         }
     }
 }

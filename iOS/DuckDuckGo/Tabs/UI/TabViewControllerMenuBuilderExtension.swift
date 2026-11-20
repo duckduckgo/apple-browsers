@@ -177,6 +177,11 @@ extension TabViewController {
 
             entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
 
+            if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon, origin: .aiChatMenu) {
+                entries.append(.separator)
+                entries.append(vpnEntry)
+            }
+
             return entries
         }
 
@@ -199,6 +204,11 @@ extension TabViewController {
         if separateUtilityItems {
             entries.append(.separator)
             entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
+        }
+
+        if let vpnEntry = makeVPNEntry(useSmallIcon: useSmallIcon, origin: .aiChatMenu) {
+            entries.append(.separator)
+            entries.append(vpnEntry)
         }
 
         entries.append(.separator)
@@ -230,6 +240,7 @@ extension TabViewController {
         return .regular(name: UserText.actionNewTab,
                         accessibilityLabel: UserText.keyCommandNewTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
+                        tag: .newTab,
                         action: { [weak self] in
             self?.onNewTabAction()
         })
@@ -239,6 +250,7 @@ extension TabViewController {
         return .regular(name: UserText.actionNewFireTab,
                         accessibilityLabel: UserText.actionNewFireTab,
                         image: DesignSystemImages.Glyphs.Size24.add,
+                        tag: .newTab,
                         action: { [weak self] in
             self?.onNewFireTabAction()
         })
@@ -286,6 +298,7 @@ extension TabViewController {
         if state == .newTab {
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
                                                      image: DesignSystemImages.Glyphs.Size16.add,
+                                                     tag: .newTab,
                                                      action: { [weak self] in
                 self?.onNewTabAction()
             }))
@@ -310,8 +323,8 @@ extension TabViewController {
 
         entries.append(buildDownloadsEntry())
 
-        if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable {
-            entries.append(buildVPNEntry(showPromoBadge: false))
+        if state == .newTab, let vpnEntry = makeVPNEntry(useSmallIcon: true) {
+            entries.append(vpnEntry)
         }
 
         entries.append(buildSettingsEntry())
@@ -552,6 +565,7 @@ extension TabViewController {
 
         return BrowsingMenuEntry.regular(name: UserText.actionSaveBookmark,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.bookmark : DesignSystemImages.Glyphs.Size24.bookmark,
+                                         accessibilityIdentifier: "Browser.Menu.AddBookmark",
                                          action: { [weak self] in
                                            self?.performSaveBookmarkAction(for: link,
                                                                            with: bookmarksInterface)
@@ -561,6 +575,7 @@ extension TabViewController {
     private func buildOpenBookmarksEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         BrowsingMenuEntry.regular(name: UserText.actionOpenBookmarks,
                                   image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.bookmarks : DesignSystemImages.Glyphs.Size24.bookmarks,
+                                  accessibilityIdentifier: "Browser.Menu.Bookmarks",
                                   action: { [weak self] in
             self?.onOpenBookmarksAction()
         })
@@ -712,6 +727,7 @@ extension TabViewController {
 
             let entry = BrowsingMenuEntry.regular(name: UserText.actionRemoveFavorite,
                                                   image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favoriteSolid : DesignSystemImages.Glyphs.Size24.favoriteSolid,
+                                                  accessibilityIdentifier: "Browser.Menu.RemoveFavorite",
                                                   action: action)
             return entry
 
@@ -723,6 +739,7 @@ extension TabViewController {
         let entry = BrowsingMenuEntry.regular(name: UserText.actionSaveFavorite,
                                               image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favorite : DesignSystemImages.Glyphs.Size24.favorite,
                                               tag: .favorite,
+                                              accessibilityIdentifier: "Browser.Menu.AddFavorite",
                                               action: { [weak self] in
             PixelKit.fire(addToFavoriteFlow ? Pixel.Event.browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
             PixelKit.fire(Pixel.Event.addFavoriteDaily, frequency: .legacyDailyNoSuffix)
@@ -972,8 +989,9 @@ extension TabViewController {
     /// Only the sheet menu can render badges; the legacy popover cell falls back to the notification dot.
     private func buildVPNEntry(useSmallIcon: Bool = true,
                                showStatusStringInDetail: Bool = false,
-                               showPromoBadge: Bool) -> BrowsingMenuEntry {
-        let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+                               showPromoBadge: Bool,
+                               origin: SubscriptionFunnelOrigin) -> BrowsingMenuEntry {
+        let vpnPromoHelper = VPNSubscriptionPromotionHelper(origin: origin)
         let promoStatus = vpnPromoHelper.subscriptionPromoStatus
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
@@ -1169,11 +1187,18 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeVPNEntry() -> BrowsingMenuEntry? {
+        makeVPNEntry(useSmallIcon: false)
+    }
+
+    private func makeVPNEntry(useSmallIcon: Bool, origin: SubscriptionFunnelOrigin = .newTabMenu) -> BrowsingMenuEntry? {
         guard featureFlagger.isFeatureOn(.vpnMenuItem),
               AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
             return nil
         }
-        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true, showPromoBadge: true)
+        return buildVPNEntry(useSmallIcon: useSmallIcon,
+                             showStatusStringInDetail: !useSmallIcon,
+                             showPromoBadge: !useSmallIcon,
+                             origin: origin)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {

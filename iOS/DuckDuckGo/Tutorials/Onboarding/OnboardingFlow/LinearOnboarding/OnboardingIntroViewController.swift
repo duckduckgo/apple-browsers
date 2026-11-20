@@ -52,6 +52,13 @@ final class OnboardingIntroViewController<Content: View>: UIHostingController<Co
             guard let self, let delegate else { return }
             delegate.didStartOnboardingInterlude(interlude)
         }
+        viewModel.onTryVPNFromOnboarding = { [weak self] onPaywallDismissed in
+            guard let self, let delegate else {
+                onPaywallDismissed()
+                return
+            }
+            delegate.presentSubscriptionPaywallFromOnboarding(from: self, onDismiss: onPaywallDismissed)
+        }
     }
 
     @available(*, unavailable)

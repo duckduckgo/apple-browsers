@@ -1,0 +1,54 @@
+//
+//  SearchPageHeaderMemory.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+
+/// Remembers how the results page header last rendered, per appearance, so the cover can show it as is.
+///
+/// The header holds the tabs and filters, never the query. Kept in memory only, never from a Fire tab,
+/// and dropped whenever data is burned, since the tabs it shows can hint at the last search.
+@MainActor
+final class SearchPageHeaderMemory {
+
+    private var headers: [UIUserInterfaceStyle: UIImage] = [:]
+
+    /// Moves on with every clear, so a capture started before a burn can't put the old header back.
+    private(set) var generation = 0
+
+    /// Nil unless a header was captured in this appearance at this width; other widths lay out differently.
+    func header(for style: UIUserInterfaceStyle, width: CGFloat) -> UIImage? {
+        guard let image = headers[style], Self.matches(image, width: width) else { return nil }
+        return image
+    }
+
+    /// `generation` is the value read when the capture started; anything cleared since then wins.
+    func record(_ header: UIImage, for style: UIUserInterfaceStyle, capturedIn generation: Int) {
+        guard generation == self.generation, header.size.width > 0, header.size.height > 0 else { return }
+        headers[style] = header
+    }
+
+    func clear() {
+        headers.removeAll()
+        generation += 1
+    }
+
+    nonisolated static func matches(_ header: UIImage, width: CGFloat) -> Bool {
+        abs(header.size.width - width) < 0.5
+    }
+}

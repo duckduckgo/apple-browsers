@@ -92,3 +92,11 @@ struct TabInputState: Equatable {
         return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive) modelPickerPin=\(isModelPickerForcedVisible)"
     }
 }
+
+/// What a Duck.ai chat's state contributes to the input's placeholder.
+struct AIChatPlaceholderState: Equatable {
+    let hasSubmittedPrompt: Bool
+    let isImageGenerationSelected: Bool
+
+    static let newChat = AIChatPlaceholderState(hasSubmittedPrompt: false, isImageGenerationSelected: false)
+}

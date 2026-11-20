@@ -56,6 +56,10 @@ KEYS = dict(zip("asdfhgzxcv", range(10)), b=11, q=12, w=13, e=14, r=15, y=16, t=
 MODIFIERS = ("cmd", "shift", "opt", "ctrl")
 
 
+class Refused(Exception):
+    """A caller error caught before anything is written: exit 2."""
+
+
 class ProofError(Exception):
     """The run can't tell: a setup step or an action failed, or a read was impossible."""
 
@@ -160,7 +164,18 @@ def report(doc, rec, manifest, evidence):
               f"- Manifest: {link('manifest.json') or '(not written)'}",
               "", "## Unverified", ""]
     lines += [f"- {what}: {why}" for what, why in rec.unverified] or ["- (none)"]
-    return "\n".join(lines) + "\n"
+    return _tilde("\n".join(lines) + "\n")
+
+
+def _tilde(text):
+    """The home folder as ~, so a published report or manifest doesn't carry the local user name."""
+    return text.replace(os.path.expanduser("~") + os.sep, "~" + os.sep)
+
+
+def _sh_path(path):
+    """A path for a command pasted into zsh or bash: the home folder as an unquoted ~, so it still expands."""
+    home = os.path.expanduser("~") + os.sep
+    return "~/" + shlex.quote(path[len(home):]) if path.startswith(home) else shlex.quote(path)
 
 
 # ---------------------------------------------------------------- the handle a proof receives
@@ -175,7 +190,8 @@ class Mac:
         """Run `verify.sh <command> <topic> args`; return (exit code, output). Logged to transcript.jsonl."""
         t0 = time.time()
         p = subprocess.run([VERIFY_SH, command, self.topic, *map(str, args)], cwd=ROOT, text=True,
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={**os.environ, "VERIFY_WORKTREE": ROOT})
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={**os.environ, "VERIFY_WORKTREE": ROOT,
+                                                       "VERIFY_RUN_DIR": self.evidence})
         with open(os.path.join(self.evidence, "transcript.jsonl"), "a") as f:
             f.write(json.dumps(dict(t=time.strftime("%Y-%m-%dT%H:%M:%S%z"), cmd=[command, *map(str, args)],
                                     exit=p.returncode, secs=round(time.time() - t0, 1), out=p.stdout[-2000:])) + "\n")
@@ -354,31 +370,58 @@ def load(path):
 
 
 # ---------------------------------------------------------------- evidence folders
-def _new_attempt(stem):
-    # The folder name is verify.sh's topic, 14 characters at most (see verify.sh).
-    stem = re.sub(r"[^a-z0-9-]+", "-", stem.lower()).strip("-")[:9].strip("-") or "proof"
-    d = os.path.join(HOME, f"{stem}-{uuid.uuid4().hex[:4]}")
+ATTEMPT = re.compile(r"\d{8}-\d{6}-([a-z0-9-]+)-([0-9a-f]{4})")   # <stamp>-<name>-<id>
+
+
+def topic_of(folder):
+    """verify.sh's topic for an attempt folder: `<name>-<id>`, name cut to 9 characters, 14 at most.
+    shortcut: the app is named "DuckDuckGo - verify-<topic>", and a Debug app named over 35 characters quits at
+    launch (callingSymbol() misread stack lines whose module column is cut at 35); drop the cap once #8345 is in."""
+    name, uid = ATTEMPT.fullmatch(os.path.basename(folder)).groups()
+    return f"{name[:9].strip('-')}-{uid}"
+
+
+def evidence_root(evidence_dir=None):
+    """Where attempt folders go: the caller's --evidence-dir, or HOME. A directory inside a git checkout is refused,
+    resolved through symlinks: this repo is public, and evidence there could be committed."""
+    if not evidence_dir:
+        return os.path.realpath(HOME)
+    root = probe = os.path.realpath(evidence_dir)
+    while not os.path.isdir(probe):
+        probe = os.path.dirname(probe)
+    top = subprocess.run(["git", "-C", probe, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    if top.returncode == 0:
+        raise Refused(f"--evidence-dir {evidence_dir} is inside the git checkout {top.stdout.strip()}: "
+                      "pass a directory outside it")
+    return root
+
+
+def _new_attempt(stem, root):
+    stem = re.sub(r"[^a-z0-9-]+", "-", stem.lower()).strip("-")[:24].strip("-") or "proof"
+    d = os.path.join(root, f"{time.strftime('%Y%m%d-%H%M%S')}-{stem}-{uuid.uuid4().hex[:4]}")
     os.makedirs(d)   # never exist_ok: two attempts never share a folder
     return d
 
 
-def new_proof(name):
-    path = os.path.join(_new_attempt(name), "proof.py")
+def new_proof(name, root):
+    path = os.path.join(_new_attempt(name, root), "proof.py")
     with open(path, "w") as f:
         f.write(TEMPLATE)
     return path
 
 
-def attempt_dir(path):
-    """The proof's own folder if it is an untouched attempt folder (only the proof in it); otherwise a new attempt
-    folder with a copy. A folder that holds anything else (a finished or crashed attempt) is never reused."""
+def attempt_dir(path, root):
+    """The proof's own folder if it is an untouched attempt folder in `root` (only the proof in it); otherwise a new
+    attempt folder in `root` with a copy. A folder that holds anything else (a finished or crashed attempt), or whose
+    name isn't an attempt name (like `_lead`, which has no valid topic), is never reused."""
     path = os.path.realpath(path)
     parent = os.path.dirname(path)
-    if os.path.dirname(parent) == os.path.realpath(HOME) and os.listdir(parent) == [os.path.basename(path)]:
+    if os.path.dirname(parent) == root and ATTEMPT.fullmatch(os.path.basename(parent)) \
+            and os.listdir(parent) == [os.path.basename(path)]:
         return parent, path
-    stem = re.sub(r"-[0-9a-f]{4}$", "", os.path.basename(parent)) if os.path.basename(path) == "proof.py" \
-        else os.path.splitext(os.path.basename(path))[0]
-    d = _new_attempt(stem)
+    stem = re.sub(r"^\d{8}-\d{6}-|-[0-9a-f]{4}$", "", os.path.basename(parent)) \
+        if os.path.basename(path) == "proof.py" else os.path.splitext(os.path.basename(path))[0]
+    d = _new_attempt(stem, root)
     copy = os.path.join(d, "proof.py")
     with open(path) as src, open(copy, "w") as dst:
         dst.write(src.read())
@@ -402,20 +445,27 @@ def _alive(pid_file):
         return False
 
 
-def prove(path, target):
-    """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary)."""
+def prove(path, target, evidence_dir=None):
+    """Run one proof: setup, the proof, capture, cleanup, report. Returns (exit code, summary).
+    Raises Refused, before anything is written, for an --evidence-dir inside a git checkout.
+    Without --evidence-dir, a proof in an attempt folder outside HOME (from new-proof --evidence-dir) runs there."""
+    parent = os.path.dirname(os.path.realpath(path))
+    if not evidence_dir and ATTEMPT.fullmatch(os.path.basename(parent)) \
+            and os.path.dirname(parent) != os.path.realpath(HOME):
+        evidence_dir = os.path.dirname(parent)
+    root = evidence_root(evidence_dir)
     mod, problems = load(path)
     if problems:
         return 2, dict(proof=path, ok=False, problems=problems)
     if target not in TARGETS:
         return 2, dict(proof=path, ok=False, problems=[f"--target must be one of {TARGETS}"])
-    evidence, proof = attempt_dir(path)
-    topic = os.path.basename(evidence)
+    evidence, proof = attempt_dir(path, root)
+    topic = topic_of(evidence)
     rec = Record()
     mac = Mac(topic, evidence, rec, automation=getattr(mod, "AUTOMATION", False))
     vm = None if target == "mac" else ("auto" if target == "vm" else target)
-    rerun = f"cd {shlex.quote(ROOT)} && {shlex.quote(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
-            f"{shlex.quote(proof)} --target {target}"
+    shown_dir = root if evidence_dir else None
+    rerun = rerun_command(proof, target, shown_dir)
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     running = None
     try:
@@ -445,7 +495,7 @@ def prove(path, target):
             signal.signal(s, _ignore)
     try:
         _finish(mac, rec, evidence)
-        manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target)
+        manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target, shown_dir)
         with open(os.path.join(evidence, "report.md"), "w") as f:
             f.write(report(mod.__doc__.strip(), rec, manifest, evidence))
     finally:
@@ -454,6 +504,12 @@ def prove(path, target):
     verdict, code = label(rec)
     return code, dict(ok=code == 0, verdict=verdict, reason=rec.error, problems=rec.problems, proof=proof,
                       evidence=evidence, report=os.path.join(evidence, "report.md"))
+
+
+def rerun_command(proof, target, evidence_dir=None):
+    """The report's rerun command: same checkout, proof, target and evidence directory; it works pasted into zsh."""
+    return f"cd {_sh_path(ROOT)} && {_sh_path(os.path.join(SKILL, 'bin', 'verify-macos-browser'))} prove " \
+           f"{_sh_path(proof)} --target {target}" + (f" --evidence-dir {_sh_path(evidence_dir)}" if evidence_dir else "")
 
 
 def _finish(mac, rec, evidence):
@@ -484,7 +540,7 @@ def _finish(mac, rec, evidence):
         rec.problems.append(f"VM {host} not released: its lock still names this run")
 
 
-def _manifest(evidence, rec, proof, rerun, running, live, target):
+def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=None):
     """Extend the manifest verify.sh cleanup wrote with the proof's own fields."""
     path = os.path.join(evidence, "manifest.json")
     try:
@@ -494,10 +550,10 @@ def _manifest(evidence, rec, proof, rerun, running, live, target):
         rec.problems.append(f"manifest.json not written by cleanup: {e}")
         m = {}
     verdict, code = label(rec)
-    m.update(proof=os.path.relpath(proof, evidence), target=target, rerun=rerun, running_hashes=running, live=live,
+    m.update(proof=os.path.relpath(proof, evidence), target=target, evidence_dir=evidence_dir, rerun=rerun, running_hashes=running, live=live,
              verdict=verdict, exit=code, reason=rec.error, phase_reached=rec.phase,
              checks=[dict(check=n, ok=ok, detail=d) for n, ok, d in rec.checks], problems=rec.problems,
              unverified=[dict(what=w, why=y) for w, y in rec.unverified])
     with open(path, "w") as f:
-        json.dump(m, f, indent=1)
+        f.write(_tilde(json.dumps(m, indent=1)))
     return m

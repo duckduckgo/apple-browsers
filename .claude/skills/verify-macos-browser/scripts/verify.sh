@@ -24,7 +24,7 @@
 #                                       release the VM, fail while [VERIFY] lines are left
 #
 # Exit codes: 0 ok · 1 a check failed · 2 error / can't tell (stale build, not ready, dead stream).
-# Evidence: ~/.ddg-verify-macos/<topic>/ ($VERIFY_MACOS_HOME overrides the root)
+# Evidence: ~/.ddg-verify-macos/<topic>/ ($VERIFY_MACOS_HOME overrides the root, locks included; $VERIFY_RUN_DIR the folder)
 set -euo pipefail
 
 BUNDLE_ID="com.duckduckgo.macos.browser.debug"
@@ -47,7 +47,7 @@ if (( ${#topic} > 14 )); then
 fi
 shift 2
 
-RUN_DIR="$VERIFY_HOME/$topic"
+RUN_DIR="${VERIFY_RUN_DIR:-$VERIFY_HOME/$topic}"
 APP_NAME="DuckDuckGo - verify-$topic"
 mkdir -p "$RUN_DIR"
 VM=$(cat "$RUN_DIR/vm" 2>/dev/null || true)
@@ -431,7 +431,7 @@ logs)
     ;;
 cleanup)
     write_app_log
-    helper manifest "$RUN_DIR" "$SKILL_DIR" > /dev/null || echo "MANIFEST FAILED"
+    helper manifest "$RUN_DIR" "$SKILL_DIR" "$topic" > /dev/null || echo "MANIFEST FAILED"
     stop_stream
     pid=$(app_pid); if [[ -n "$pid" ]]; then on_target 'kill "$1"' "$pid"; echo "killed $pid${VM:+ in $VM}"; fi
     if [[ -f "$RUN_DIR/defaults_written" ]]; then

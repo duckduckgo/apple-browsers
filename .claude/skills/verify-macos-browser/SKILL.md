@@ -30,9 +30,9 @@ start a task ("… and verify it with verify-macos-browser"), or invoke `/verify
 
 ```
 V=.claude/skills/verify-macos-browser/bin/verify-macos-browser   # from the worktree root
-$V new-proof cmd-t-tab              # prints ~/.ddg-verify-macos/<name>-<id>/proof.py; edit it
-$V check <proof>                    # compile, shape, FLAGS; no app, no build
-$V prove <proof> --target vm-1      # vm, vm-1, vm-2 or mac
+$V new-proof cmd-t-tab [--evidence-dir <dir>]   # prints <dir>/<stamp>-<name>-<id>/proof.py; edit it
+$V check <proof>                                 # compile, shape, FLAGS; no app, no build
+$V prove <proof> --target vm-1 [--evidence-dir <dir>]   # vm, vm-1, vm-2 or mac
 ```
 
 ```python
@@ -74,8 +74,14 @@ Proof rules:
 
 ## 2. Evidence and report
 
-Everything lands in the proof's folder, outside the checkout (`VERIFY_MACOS_HOME` overrides the root):
-`proof.py`, `report.md`, `manifest.json` (revision, dirty flag, source fingerprint, build and running-binary
+**Where evidence goes.** Each run writes one attempt folder, `<stamp>-<name>-<id>/`, in `--evidence-dir <dir>`
+(created if missing; pass the directory your tooling publishes from) or by default in `~/.ddg-verify-macos/`
+(`VERIFY_MACOS_HOME` overrides it). A directory inside a git checkout is refused (exit 2), symlinks resolved: this
+repo is public. `prove` runs in the proof's own folder only while it holds nothing but the proof and sits directly
+in that directory; otherwise it copies the proof to a new attempt folder, so a finished attempt is never
+overwritten. Pass the same `--evidence-dir` to `new-proof` and `prove`; the manifest and rerun command record it.
+
+The attempt folder holds `proof.py`, `report.md`, `manifest.json` (revision, dirty flag, source fingerprint, build and running-binary
 hashes, launch args, flags, macOS and Xcode, VM, skill hash, checks, rerun command), your screenshots,
 `final.png`, `app.log`, `log.txt`, `pixels.json`, `wide-events.json`, `transcript.jsonl` (every `verify.sh` call).
 
@@ -90,7 +96,12 @@ macOS, flags, language, rerun), **Unverified**. The verdict comes from what ran,
   a pass with problems exits 2.
 
 Report to the user from `report.md`: passed, failed and unverified behavior, the revision, the rerun command and
-the evidence folder. Look at the screenshots before claiming anything about appearance. An entry point you
+the evidence folder. Look at the screenshots before claiming anything about appearance.
+
+**Publishing for a PR.** Upload the whole attempt folder: `report.md` links its screenshots and telemetry by
+relative path. Paths in `report.md` and `manifest.json` show your home folder as `~`; `app.log`, `log.txt` and
+`transcript.jsonl` are raw and may name local paths, so check them before sharing. In the PR's verification
+section, link `report.md` as the entry point, with the verdict, and the screenshots that show the claim. An entry point you
 couldn't drive is `unverified`, never "verified through another path". Never fall back to "the code looks right".
 
 **Run it in a subagent.** Hand the verification to a subagent briefed with the claim, the target and the evidence

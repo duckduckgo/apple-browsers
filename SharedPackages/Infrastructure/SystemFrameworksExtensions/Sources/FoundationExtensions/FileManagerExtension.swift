@@ -35,10 +35,10 @@ extension FileManager {
     }
 
     public func withNonExistentUrl<T>(for desiredURL: URL,
-                               incrementingIndexIfExistsUpTo limit: UInt,
-                               pathExtension: String? = nil,
-                               continueOn shouldContinue: (Error) -> Bool = { ($0 as? CocoaError)?.code == .fileWriteFileExists },
-                               perform operation: (URL) throws -> T) throws -> T {
+                                      incrementingIndexIfExistsUpTo limit: UInt,
+                                      pathExtension: String? = nil,
+                                      continueOn shouldContinue: (Error) -> Bool = { ($0 as? CocoaError)?.code == .fileWriteFileExists },
+                                      perform operation: (URL) throws -> T) throws -> T {
 
         var suffix = pathExtension ?? desiredURL.pathExtension
         if !suffix.hasPrefix(".") {

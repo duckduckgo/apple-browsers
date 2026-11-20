@@ -91,19 +91,9 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                     throw WebExtensionDownload.DownloadError.invalid
                 }
                 try checkAuthorization()
-                guard canChooseDestination(window) else { throw WebExtensionDownload.DownloadError.canceled }
-                let directory = automaticDownloadDirectory()
-                let destination: URL
-                if let directory {
-                    destination = directory.appendingPathComponent(download.filename, isDirectory: false)
-                } else {
-                    guard let chosen = await chooseDestination(download.filename, context.webExtension.displayName, window) else {
-                        throw WebExtensionDownload.DownloadError.canceled
-                    }
-                    destination = chosen
-                }
+                let (destination, isAutomatic) = try await downloadDestination(for: download.filename, context: context, window: window)
                 // The panel grants access to its URL. Preferences own access to the configured directory.
-                defer { if directory == nil { destination.stopAccessingSecurityScopedResource() } }
+                defer { if !isAutomatic { destination.stopAccessingSecurityScopedResource() } }
                 try checkAuthorization()
                 let staged = try await Task.detached { try WebExtensionDownload.StagedFile(destination: destination) }.value
                 defer { staged.cleanUp() }
@@ -112,7 +102,7 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                 try await writer.write(source, from: webView, startTimeout: downloadStartTimeout)
                 try await Task.detached { try staged.prepareForPublication() }.value
                 try checkAuthorization()
-                let saved = try staged.publish(to: destination, uniquify: directory != nil)
+                let saved = try staged.publish(to: destination, uniquify: isAutomatic)
                 // Only return the basename. The directory selected by the user stays private.
                 replyHandler(["id": Int32.random(in: 1...Int32.max), "filename": saved.lastPathComponent], nil)
             } catch WebExtensionDownload.DownloadError.canceled {
@@ -123,6 +113,17 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                 replyHandler(nil, "Could not save the download")
             }
         }
+    }
+
+    private func downloadDestination(for filename: String, context: WKWebExtensionContext, window: NSWindow) async throws -> (url: URL, isAutomatic: Bool) {
+        guard canChooseDestination(window) else { throw WebExtensionDownload.DownloadError.canceled }
+        if let directory = automaticDownloadDirectory() {
+            return (directory.appendingPathComponent(filename, isDirectory: false), true)
+        }
+        guard let chosen = await chooseDestination(filename, context.webExtension.displayName, window) else {
+            throw WebExtensionDownload.DownloadError.canceled
+        }
+        return (chosen, false)
     }
 
     private func keepBackgroundLoaded(_ context: WKWebExtensionContext, for webView: WKWebView) -> Task<Void, Never>? {

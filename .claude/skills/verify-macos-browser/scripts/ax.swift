@@ -23,7 +23,8 @@ import ApplicationServices
 // verify.sh builds it into ../.bin/ax and calls it; in a VM it runs over ssh.
 // The process that runs it needs the Accessibility grant (and Screen Recording for screenshots).
 // Target: the app whose name contains $VERIFY_APP (e.g. "verify-tool-prompt").
-// Usage: ax dump [depth] [web] | find <text> | press <idOrText> | clickel <idOrText> | hover <idOrText> | click x y [cmd]
+// Usage: ax dump [depth] [web] | find <text> | findmain <text> | press <idOrText> [nth=<n>]
+//        | clickel <idOrText> [nth=<n>] | hover <idOrText> [nth=<n>] | click x y [cmd]
 //        | type <text> | key <code> [cmd|shift|opt|ctrl]... | activate | frame | front | winrect
 let args = CommandLine.arguments.dropFirst()
 let cmd = args.first ?? "dump"
@@ -73,15 +74,31 @@ func matches(_ e: AXUIElement, _ q: String) -> Bool {
     [str(e, "AXIdentifier"), str(e, kAXTitleAttribute), str(e, kAXDescriptionAttribute), str(e, kAXValueAttribute)]
         .contains { $0 == q || $0.localizedCaseInsensitiveContains(q) }
 }
-func findFirst(_ q: String) -> AXUIElement? {
-    var exact: AXUIElement?, loose: AXUIElement?
+// The one element a press/clickel/hover targets. Matches are tiered: exact AX id, then exact title/desc/value, then
+// contains; the first non-empty tier wins. More than one match there is refused (exit 2, listing them) unless the
+// query ends with nth=<n> (0-based, in tree order): it never guesses.
+func findOne(_ words: [String]) -> AXUIElement {
+    var words = words, nth: Int?
+    if let last = words.last, last.hasPrefix("nth="), let n = Int(last.dropFirst(4)) { nth = n; words.removeLast() }
+    let q = words.joined(separator: " ")
+    var tiers: [[AXUIElement]] = [[], [], []]
     walk(root, depth: 0, max: 60) { e, _ in
-        if exact != nil { return false }
-        if str(e, "AXIdentifier") == q { exact = e; return false }
-        if loose == nil, matches(e, q) { loose = e }
+        let texts = [str(e, kAXTitleAttribute), str(e, kAXDescriptionAttribute), str(e, kAXValueAttribute)]
+        if str(e, "AXIdentifier") == q { tiers[0].append(e) } else if texts.contains(q) { tiers[1].append(e) } else if matches(e, q) { tiers[2].append(e) }
         return true
     }
-    return exact ?? loose
+    let found = tiers.first { !$0.isEmpty } ?? []
+    if found.isEmpty { print("NOT FOUND: \(q)"); exit(2) }
+    if let nth {
+        guard nth >= 0, nth < found.count else { print("NOT FOUND: \(q) nth=\(nth) (\(found.count) matches)"); exit(2) }
+        return found[nth]
+    }
+    if found.count > 1 {
+        print("AMBIGUOUS: \(found.count) elements match \(q); add nth=<n>:")
+        for (i, e) in found.enumerated() { print("  nth=\(i) \(describe(e))") }
+        exit(2)
+    }
+    return found[0]
 }
 func mouseClick(_ p: CGPoint, flags: CGEventFlags = [], middle: Bool = false) {
     let src = CGEventSource(stateID: .hidSystemState)
@@ -121,14 +138,20 @@ case "find":
         if matches(e, q) { print(describe(e)) }
         return true
     }
-case "press":
+case "findmain":
+    // find, in the main (front) window only: other windows' tabs and toolbars don't count.
+    guard let w = attr(root, kAXMainWindowAttribute) else { print("NO MAIN WINDOW"); exit(2) }
     let q = rest.joined(separator: " ")
-    guard let e = findFirst(q) else { print("NOT FOUND: \(q)"); exit(2) }
+    walk(w as! AXUIElement, depth: 0, max: 60) { e, _ in
+        if matches(e, q) { print(describe(e)) }
+        return true
+    }
+case "press":
+    let e = findOne(rest)
     let r = AXUIElementPerformAction(e, kAXPressAction as CFString)
     print("press \(describe(e)) -> \(r.rawValue)")
 case "clickel":
-    let q = rest.joined(separator: " ")
-    guard let e = findFirst(q) else { print("NOT FOUND: \(q)"); exit(2) }
+    let e = findOne(rest)
     let f = frame(e)
     app.activate(); usleep(200_000)
     mouseClick(CGPoint(x: f.midX, y: f.midY))
@@ -141,8 +164,7 @@ case "click":
     print("clicked \(rest[0]),\(rest[1]) \(words.joined(separator: " "))")
 case "hover":
     // hover <idOrText>: moves the pointer to the element's center without clicking, for hover states.
-    let q = rest.joined(separator: " ")
-    guard let e = findFirst(q) else { print("NOT FOUND: \(q)"); exit(2) }
+    let e = findOne(rest)
     let f = frame(e)
     app.activate(); usleep(200_000)
     let src = CGEventSource(stateID: .hidSystemState)

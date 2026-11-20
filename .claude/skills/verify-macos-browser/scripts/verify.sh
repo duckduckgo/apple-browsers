@@ -40,6 +40,11 @@ usage() { sed -n '4,28p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
 command=${1:-}
 topic=${2:-}
 [[ -n "$command" && "$topic" =~ ^[a-z0-9-]+$ ]] || usage
+# shortcut: the app is named "DuckDuckGo - verify-<topic>", and a Debug app named over 35 characters quits at
+# launch (callingSymbol() misreads stack lines whose module column is cut at 35); drop the cap once #8345 is in.
+if (( ${#topic} > 14 )); then
+    echo "topic '$topic' is ${#topic} characters; use 14 at most (a longer app name quits at launch)" >&2; exit 64
+fi
 shift 2
 
 RUN_DIR="$VERIFY_HOME/$topic"
@@ -312,10 +317,15 @@ build)
     else
         ready=0
         for _ in $(seq 60); do
-            if (( $(window_count "$pid") > 0 )); then ready=1; break; fi
+            # Both reads: right after launch System Events can list a window the AX tree doesn't have yet (seen on a Mac).
+            if (( $(window_count "$pid") > 0 )) && ax winrect > /dev/null 2>&1; then ready=1; break; fi
             sleep 1
         done
-        (( ready )) || { echo "NOT READY: no window after 60 s${VM:+ (keychain dialog in $VM? see VM-SETUP.md)}"; exit 2; }
+        if (( ! ready )); then   # a prompt (keychain, notifications) in front of the app blocks its first window
+            front=$(on_target 'lsappinfo info -only name "$(lsappinfo front)" | sed -n "1s/^\"\([^\"]*\)\".*/\1/p"')
+            echo "NOT READY: no window after 60 s${front:+; $front is in front: answer its prompt (keychain, notifications), then rerun}${VM:+ (see VM-SETUP.md)}"
+            exit 2
+        fi
         echo "READY window"
     fi
     kill -0 "$(cat "$RUN_DIR/pixel_stream.pid")" 2>/dev/null || { echo "PIXEL STREAM FAILED: $(head -3 "$RUN_DIR/pixel_stream.err")"; exit 2; }
@@ -351,6 +361,7 @@ doctor)
     started=$(epoch_of_pid "$pid")
     verify_lines=$(grep -a -c "\[VERIFY\]" "$exe.debug.dylib" || true)
     echo "pid=$pid started=$started since=$since verify_strings=$verify_lines${VM:+ vm=$VM}"
+    echo "running_hashes=$have_hashes"
     [[ "$have_source" == "$want_source" ]] || { echo "STALE SOURCE: the worktree changed since the build; rebuild"; exit 2; }
     [[ "$have_hashes" == "$want_hashes" && "$have_hashes" != *null* ]] || { echo "REBUILT: the binaries changed since this build (Xcode?); rebuild"; exit 2; }
     (( started >= since - 1 )) || { echo "OLD PROCESS: started before this build's launch; rebuild"; exit 2; }

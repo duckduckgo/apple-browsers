@@ -42,6 +42,11 @@ usage() { sed -n '4,30p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
 command=${1:-}
 topic=${2:-}
 [[ -n "$command" && "$topic" =~ ^[a-z0-9-]+$ ]] || usage
+# shortcut: the app is named "DuckDuckGo - verify-<topic>", and a Debug app named over 35 characters quits at
+# launch (callingSymbol() misreads stack lines whose module column is cut at 35); drop the cap once #8345 is in.
+if (( ${#topic} > 14 )); then
+    echo "topic '$topic' is ${#topic} characters; use 14 at most (a longer app name quits at launch)" >&2; exit 64
+fi
 shift 2
 
 RUN_DIR="${VERIFY_RUN_DIR:-$VERIFY_HOME/$topic}"

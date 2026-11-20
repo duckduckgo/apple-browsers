@@ -550,8 +550,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: - Subscription
         let subscriptionUserDefaults = UserDefaults(suiteName: MacPacketTunnelProvider.subscriptionsAppGroup)!
-        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
-                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
+        let authService = EnvironmentResolvingOAuthService(apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent())) {
+            settings.selectedEnvironment == .production ? .production : .staging
+        }
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)

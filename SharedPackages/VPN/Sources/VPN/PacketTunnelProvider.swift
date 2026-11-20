@@ -881,6 +881,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case fromKeychain
     }
 
+    /// Applies the environment in the VPN settings sent with `startupOptions`, when there are any, before the token is loaded,
+    /// so the token is read and refreshed against that environment.
+    /// - Parameter startupOptions: The options the tunnel was started with.
+    @MainActor
+    private func applyEnvironment(from startupOptions: StartupOptions) {
+        guard startupOptions.applyEnvironment(to: settings) else { return }
+        Logger.networkProtection.log("Switched environment to \(self.settings.selectedEnvironment.rawValue, privacy: .public) before loading the token")
+    }
+
     @MainActor
     private func loadToken(from source: StartupTokenSource, startupOptions: StartupOptions) async throws {
         let tokenOption: StartupOptions.StoredOption<TokenContainer>
@@ -936,6 +945,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             if startupGuard.prepareForStartup(startupMethod: startupOptions.startupMethod) == .blocked {
                 throw TunnelError.reconnectBlocked
             }
+            applyEnvironment(from: startupOptions)
             try await loadToken(from: tokenSource, startupOptions: startupOptions)
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")

@@ -44,9 +44,10 @@ extension URL {
     public var isDuckAIURL: Bool {
         // Entry via duck.ai root
         if host == DuckDuckGo.aiHost { return true }
-        // Chat intent on duckduckgo.com (or subdomains) via query or bang
-        if isDuckDuckGoHost { return isDuckAIChatQuery || isDuckAIBang || isRevokeAccessPath }
-        return false
+        guard isDuckDuckGoHost else { return false }
+        if isRevokeAccessPath { return true }
+        // Chat intent on duckduckgo.com (or subdomains) via query or bang; the query is parsed once
+        return queryItems?.contains { isDuckAIChatQueryItem($0) || isDuckAIBangQueryItem($0) } == true
     }
 
     public var isStandaloneDuckAIURL: Bool {
@@ -135,8 +136,12 @@ extension URL {
 
     // MARK: - Private methods
 
-    private var isDuckAIChatQuery: Bool {
-        return queryItems?.contains { $0.name == DuckDuckGo.chatQueryName && $0.value == DuckDuckGo.chatQueryValue } == true
+    private func isDuckAIChatQueryItem(_ item: URLQueryItem) -> Bool {
+        item.name == DuckDuckGo.chatQueryName && item.value == DuckDuckGo.chatQueryValue
+    }
+
+    private func isDuckAIBangQueryItem(_ item: URLQueryItem) -> Bool {
+        item.name == DuckDuckGo.bangQueryName && isSupportedBang(value: item.value)
     }
 
     private var isRevokeAccessPath: Bool {
@@ -145,14 +150,16 @@ extension URL {
 
     var isDuckAIBang: Bool {
         guard isDuckDuckGoHost else { return false }
-        return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName && isSupportedBang(value: $0.value) } == true
+        return queryItems?.contains(where: isDuckAIBangQueryItem) == true
     }
 
     private var isDuckDuckGoHost: Bool {
         host == DuckDuckGo.host || host?.hasSuffix(".\(DuckDuckGo.host)") == true
     }
 
+    /// `nil` when the URL has no query, without building `URLComponents`.
     private var queryItems: [URLQueryItem]? {
+        guard query?.isEmpty == false else { return nil }
         return URLComponents(url: self, resolvingAgainstBaseURL: false)?.queryItems
     }
 

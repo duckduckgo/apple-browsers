@@ -404,6 +404,10 @@ final class UTIAttachmentController {
     // MARK: - Attach button + menu
 
     func makeAttachmentMenu() -> UIMenu? {
+        makeAttachmentMenu(attachableTabs: tabAttachmentCandidates)
+    }
+
+    private func makeAttachmentMenu(attachableTabs: [MultiTabAttachmentCandidate]) -> UIMenu? {
         // Disable "Ask about page" for non-attachable pages (blocklisted media / special page).
         let canAttachPageContext = environment.isContextualChatState() && (environment.isPageContextAttachable() ?? true)
         let policy = environment.policy()
@@ -434,7 +438,7 @@ final class UTIAttachmentController {
             allowedFileTypes: allowedFileUTTypes,
             showsPageContextAction: environment.isContextualChatState(),
             pageContextActionHandler: pageContextActionHandler,
-            attachableTabs: tabAttachmentCandidates,
+            attachableTabs: attachableTabs,
             attachedTabIds: policy.selectedTabIDs,
             tabAttachmentLimit: policy.maximumTabAttachmentCount ?? 0,
             isTabSelectionAvailable: { [weak self] in
@@ -533,14 +537,16 @@ final class UTIAttachmentController {
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)
-        let supportsTabAttachment = !tabAttachmentCandidates.isEmpty
+        // Read once: every read walks all open tabs.
+        let attachableTabs = tabAttachmentCandidates
+        let supportsTabAttachment = !attachableTabs.isEmpty
         let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment || supportsTabAttachment
         let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment || supportsTabAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
         let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
         view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
         view.setImageButtonEnabled(canAttachMore)
-        view.setAttachmentMenu(supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil)
+        view.setAttachmentMenu(supportsAttachments && canAttachMore ? makeAttachmentMenu(attachableTabs: attachableTabs) : nil)
     }
 
     // MARK: - Validation banner

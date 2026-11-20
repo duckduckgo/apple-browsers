@@ -634,6 +634,20 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
+    "web_extension_learn_more_clicked_macos": {
+        "description": "Fires when the user clicks Learn more in the Settings → Extensions description, which opens the extensionManagement learnMoreUrl help page.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "web_extension_learn_more_remote_disable_clicked_macos": {
+        "description": "Fires when the user clicks Learn more on a remotely disabled extension in Settings → Extensions, which opens the extensionManagement learnMoreUrlRemoteDisable help page.",
+        "owners": ["ayoy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "web_extension_retained_14d_macos": {
         "description": "Fires once per Chrome Web Store installation, on the first tab switch or page navigation at least 14 days after it was installed, when the extension is still installed and enabled. Together with web_extension_churned_14d_macos it covers every installation made while the store catalog was available, so retained / (retained + churned) is the 14-day retention rate. Updates keep the original install date.",
         "owners": ["ayoy"],

@@ -19,6 +19,7 @@
 import AIChat
 import AppKit
 import Combine
+import DesignResourcesKitIcons
 import SwiftUI
 import WebKit
 
@@ -32,6 +33,8 @@ final class BrowserToolPermissionPromptPresenter {
         let ownerTabID: TabIdentifier
         weak var collection: TabCollectionViewModel?
         weak var prompter: (any ClientToolPermissionPrompting)?
+        // Kept for the prompt's life, so tools taken out stay out when its popover is rebuilt.
+        let selection: BrowserToolAccessSelection
     }
 
     private struct Shown {
@@ -65,7 +68,8 @@ final class BrowserToolPermissionPromptPresenter {
               !collection.isBurner,
               let windowController = windowController(for: collection) else { return false }
 
-        requests.append(Request(prompt: prompt, ownerTabID: ownerTabID, collection: collection, prompter: prompter))
+        requests.append(Request(prompt: prompt, ownerTabID: ownerTabID, collection: collection, prompter: prompter,
+                                selection: BrowserToolAccessSelection()))
         observeSelection(of: collection)
         if collection.selectedTabViewModel?.tab.uuid != ownerTabID,
            let index = collection.indexInAllTabs(where: { $0.uuid == ownerTabID }) {
@@ -150,12 +154,21 @@ final class BrowserToolPermissionPromptPresenter {
         let prompt = request.prompt
         let popover = NSPopover()
         popover.behavior = .applicationDefined
-        let content = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt) { [weak self] decision in
+        let selection = request.selection
+        let content = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt, selection: selection) { [weak self] decision in
             self?.answer(prompt.requestID, with: decision)
         })
         popover.contentViewController = content
         // Resized after showing, a popover drifts off its anchor.
         popover.contentSize = content.view.fittingSize
+        if #available(macOS 13.0, *), prompt.accessToolNames != nil {
+            // Taking a tool out or undoing it changes the height.
+            content.sizingOptions = .preferredContentSize
+        }
+        let primary: () -> ClientToolPermissionDecision = {
+            if prompt.accessToolNames != nil { return .allowAccess(excluding: Set(selection.removed)) }
+            return prompt.offersAllowForChat ? .allowForChat : .allowOnce
+        }
         let open: (NSView) -> Void = { [weak self, weak popover] anchor in
             guard let popover, !popover.isShown,
                   self?.shown.values.contains(where: { $0.requestID == prompt.requestID }) == true else { return }
@@ -165,8 +178,9 @@ final class BrowserToolPermissionPromptPresenter {
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(answering: prompt.requestID, popover: popover, ownerWindow: tabBar.view.window))
-        tabBar.showBrowserToolPermissionButton(icon: BrowserToolPermissionPromptText.icon(toolName: prompt.toolName),
+                           keyMonitor: keyMonitor(answering: prompt.requestID, primary: primary, popover: popover, ownerWindow: tabBar.view.window))
+        // A waiting prompt shows the AI icon; only tools that run without asking show their own.
+        tabBar.showBrowserToolPermissionButton(icon: DesignSystemImages.Glyphs.Size16.aiGeneral,
                                                title: BrowserToolPermissionPromptText.title(toolName: prompt.toolName,
                                                                                             targetsOtherTab: prompt.targetsOtherTab),
                                                action: { [weak self] _ in self?.answer(prompt.requestID, with: .dismiss) },
@@ -175,7 +189,8 @@ final class BrowserToolPermissionPromptPresenter {
 
     // The browser window takes focus back from the popover, so its key presses answer too,
     // unless a text field such as the address bar has focus.
-    private func keyMonitor(answering requestID: String, popover: NSPopover, ownerWindow: NSWindow?) -> Any? {
+    private func keyMonitor(answering requestID: String, primary: @escaping () -> ClientToolPermissionDecision, popover: NSPopover,
+                            ownerWindow: NSWindow?) -> Any? {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover, weak ownerWindow] event in
             guard let self, let popover, popover.isShown, let window = event.window,
                   window === popover.contentViewController?.view.window || (window === ownerWindow && !(window.firstResponder is NSText))
@@ -185,7 +200,7 @@ final class BrowserToolPermissionPromptPresenter {
             case (53, []): // Esc
                 answer(requestID, with: .dismiss)
             case (36, .command), (76, .command): // ⌘Return, ⌘Enter
-                answer(requestID, with: .allowOnce)
+                answer(requestID, with: primary())
             default:
                 return event
             }

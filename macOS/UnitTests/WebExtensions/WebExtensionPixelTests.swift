@@ -62,6 +62,19 @@ final class WebExtensionPixelTests: XCTestCase {
         XCTAssertEqual(pixel.namePrefix, .none)
     }
 
+    func testLearnMorePixels() {
+        let pixels: [(WebExtensionPixel, String)] = [
+            (.learnMoreClicked, "web_extension_learn_more_clicked_macos"),
+            (.learnMoreRemoteDisableClicked, "web_extension_learn_more_remote_disable_clicked_macos")
+        ]
+
+        for (pixel, name) in pixels {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertNil(pixel.parameters)
+            XCTAssertEqual(pixel.namePrefix, .none)
+        }
+    }
+
     func testInstalledCountPixelSendsWindowsBuckets() {
         let pixel = WebExtensionPixel.installedCount(installed: 5, enabled: 3)
 

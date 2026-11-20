@@ -117,6 +117,8 @@ enum WebExtensionPixel: PixelKit.Event {
     case getClicked(extension: WebExtensionPixelExtension)
     case detailsOpened(extension: WebExtensionPixelExtension)
     case publisherLinkClicked(extension: WebExtensionPixelExtension)
+    case learnMoreClicked
+    case learnMoreRemoteDisableClicked
     /// An extension's toolbar button, when the click performs its action rather than closing its popup.
     case toolbarClicked(extension: WebExtensionPixelExtension)
 
@@ -250,6 +252,10 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_get_clicked_macos"
         case .publisherLinkClicked:
             return "web_extension_publisher_link_clicked_macos"
+        case .learnMoreClicked:
+            return "web_extension_learn_more_clicked_macos"
+        case .learnMoreRemoteDisableClicked:
+            return "web_extension_learn_more_remote_disable_clicked_macos"
         case .retained14Days:
             return "web_extension_retained_14d_macos"
         case .churned14Days:
@@ -363,7 +369,7 @@ enum WebExtensionPixel: PixelKit.Event {
              .updateApplied, .updateInstallFailed,
              .cpmMessagingBreakage, .cpmMessagingBreakagePersistent, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
              .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
-             .getClicked, .detailsOpened, .publisherLinkClicked, .toolbarClicked,
+             .getClicked, .detailsOpened, .publisherLinkClicked, .learnMoreClicked, .learnMoreRemoteDisableClicked, .toolbarClicked,
              .nativeMessagingBlocked, .nativeMessagingAlertShown, .nativeMessagingAlertLearnMoreClicked:
             return .none
         default:

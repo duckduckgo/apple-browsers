@@ -3146,6 +3146,18 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(userScripts.contains { WebExtensionLoader.thirdPartyScriptSources.contains($0.source) })
     }
 
+#if os(macOS)
+    @MainActor
+    func testGestureScriptIsInstalledInTheIsolatedWorldBeforeExtensionsLoad() {
+        let manager = makeManager()
+        let scripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let gestureScript = scripts.first { $0.source == WebExtensionPermissionUserGestureScript.source }
+
+        XCTAssertEqual(gestureScript?.injectionTime, .atDocumentStart)
+        XCTAssertEqual(gestureScript?.isForMainFrameOnly, false)
+    }
+#endif
+
     // MARK: - Additional Helpers
 
     @MainActor
@@ -3396,7 +3408,6 @@ final class CatalogNamingWebStore: ChromeWebStoreManaging {
         self.catalogExtensionIDs = catalogExtensionIDs
     }
 
-    var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }

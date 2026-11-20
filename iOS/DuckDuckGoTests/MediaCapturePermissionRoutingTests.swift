@@ -398,7 +398,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
-    func testWhenEnabledThenDuckAIHostMatrixIsPreservedWithoutConstructingCoordinator() throws {
+    func testWhenEnabledThenOnlyDuckAIMainFrameMicrophoneIsGrantedWithoutConstructingCoordinator() throws {
         let sut = makeSUT()
         var didRequestDependencies = false
         sut.sitePermissionsDependenciesProvider = {
@@ -412,29 +412,84 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         for host in hosts {
             for captureType in captureTypes {
-                for audioStatus in audioStatuses {
-                    try Phase3AVCaptureAuthorizationStatusStub.withAudioStatus(audioStatus) {
-                        var decisions = [WKPermissionDecision]()
+                for isMainFrame in [true, false] {
+                    for audioStatus in audioStatuses {
+                        try Phase3AVCaptureAuthorizationStatusStub.withAudioStatus(audioStatus) {
+                            var decisions = [WKPermissionDecision]()
 
-                        requestPermission(on: sut,
-                                          originHost: host,
-                                          captureType: captureType,
-                                          decisionHandler: { decisions.append($0) })
+                            requestPermission(on: sut,
+                                              originHost: host,
+                                              captureType: captureType,
+                                              isMainFrame: isMainFrame,
+                                              decisionHandler: { decisions.append($0) })
 
-                        let consultsAudio = captureType != .camera
-                        let expectedDecision: WKPermissionDecision = consultsAudio && audioStatus == .authorized
-                            ? .grant
-                            : (consultsAudio ? .deny : .prompt)
-                        let expectedMediaTypes: [AVMediaType] = consultsAudio ? [.audio] : []
-                        let message = "\(host) \(captureType) with audio status \(audioStatus)"
-                        XCTAssertEqual(decisions, [expectedDecision], message)
-                        XCTAssertEqual(Phase3AVCaptureAuthorizationStatusStub.requestedMediaTypes, expectedMediaTypes, message)
+                            let isEligible = host != "subdomain.duckduckgo.com" && captureType == .microphone && isMainFrame
+                            // Ineligible requests take the normal path, which denies without a bridge preapproval.
+                            let expectedDecision: WKPermissionDecision = isEligible && audioStatus == .authorized ? .grant : .deny
+                            let expectedMediaTypes: [AVMediaType] = isEligible ? [.audio] : []
+                            let message = "\(host) \(captureType) mainFrame: \(isMainFrame) with audio status \(audioStatus)"
+                            XCTAssertEqual(decisions, [expectedDecision], message)
+                            XCTAssertEqual(Phase3AVCaptureAuthorizationStatusStub.requestedMediaTypes, expectedMediaTypes, message)
+                        }
                     }
                 }
             }
         }
 
         XCTAssertFalse(didRequestDependencies)
+    }
+
+    func testDuckAIMicrophoneAutoGrantEligibilityIsLimitedToHTTPSMainFrameMicrophoneOnExactHosts() {
+        func isEligible(_ protocolName: String = "https",
+                        _ host: String = "duck.ai",
+                        isMainFrame: Bool = true,
+                        _ permissionTypes: Set<SitePermissionType>? = [.microphone]) -> Bool {
+            TabViewController.isDuckAIMicrophoneAutoGrantEligible(protocolName: protocolName,
+                                                                  host: host,
+                                                                  isMainFrame: isMainFrame,
+                                                                  permissionTypes: permissionTypes)
+        }
+
+        XCTAssertTrue(isEligible())
+        XCTAssertTrue(isEligible("HTTPS", "Duck.AI"))
+        XCTAssertTrue(isEligible("https", "duckduckgo.com"))
+
+        XCTAssertFalse(isEligible("http"))
+        XCTAssertFalse(isEligible("https", "subdomain.duckduckgo.com"))
+        XCTAssertFalse(isEligible("https", "subdomain.duck.ai"))
+        XCTAssertFalse(isEligible("https", "duck.ai.example"))
+        XCTAssertFalse(isEligible(isMainFrame: false))
+        XCTAssertFalse(isEligible("https", "duck.ai", [.camera]))
+        XCTAssertFalse(isEligible("https", "duck.ai", [.camera, .microphone]))
+        XCTAssertFalse(isEligible("https", "duck.ai", nil))
+    }
+
+    func testDuckAIBridgeBypassesOnlyMainFrameMicrophoneAndPromptsForCamera() async {
+        let committedURL = URL(string: "https://duck.ai/chat")!
+        let scenarios: [(WKMediaCaptureType, Bool, Bool)] = [
+            (.microphone, true, false),
+            (.microphone, false, true),
+            (.camera, true, true),
+            (.cameraAndMicrophone, true, true)
+        ]
+
+        for (captureType, isMainFrame, expectsPrompt) in scenarios {
+            let sut = makeSUT(committedURL: committedURL)
+            var didPrompt = false
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in
+                didPrompt = true
+                completion(.denyOnce)
+            }
+
+            let decision = await makeBridgeRequestTask(on: sut,
+                                                       originURL: URL(string: "https://duck.ai")!,
+                                                       captureType: captureType,
+                                                       isMainFrame: isMainFrame).value
+
+            let message = "\(captureType) mainFrame: \(isMainFrame)"
+            XCTAssertEqual(didPrompt, expectsPrompt, message)
+            XCTAssertEqual(decision, expectsPrompt ? .deny : .bypass, message)
+        }
     }
 
     func testWhenUnsupportedOSThenReplacedWebViewKeepsLegacyRouting() throws {
@@ -455,6 +510,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                               webView: staleWebView,
                               originHost: "duck.ai",
                               captureType: .microphone,
+                              isMainFrame: true,
                               decisionHandler: { decisions.append($0) })
         }
 
@@ -1444,6 +1500,198 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         ])
     }
 
+    func testVisibleDialogRemovedWithoutChoiceReportsReasonVisibleTimeAndFrame() async throws {
+        func navigate(to url: String) -> (TabViewController) -> Void {
+            return { sut in
+                (sut.webView as? SitePermissionURLWebView)?.fixedURL = URL(string: url)!
+                sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+            }
+        }
+        let cases: [(name: String,
+                     isMainFrame: Bool,
+                     remove: (TabViewController) -> Void,
+                     reason: SitePermissionsEvent.DialogCloseReason)] = [
+            ("reload", true, navigate(to: "https://top-level.example/path"), .navigationReload),
+            ("same site", false, navigate(to: "https://www.top-level.example/other"), .navigationSameSite),
+            ("cross site", true, navigate(to: "https://other.example/"), .navigationCrossSite),
+            ("process", false, { $0.sitePermissionsWebContentProcessDidTerminate($0.webView) }, .processTerminated),
+            ("data clearing", true, { $0.prepareSitePermissionsForDataClearing() }, .dataCleared),
+            ("tab close", false, { $0.closeSitePermissions() }, .tabClosed)
+        ]
+
+        for testCase in cases {
+            var events = [SitePermissionsEvent]()
+            var uptime: TimeInterval = 100
+            let impression = expectation(description: "Impression: \(testCase.name)")
+            let sut = makeSUT(eventHandler: { event in
+                events.append(event)
+                if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+            })
+            sut.sitePermissionsUptimeProvider = { uptime }
+
+            let request = makeBridgeRequestTask(on: sut,
+                                                originHost: "top-level.example",
+                                                captureType: .camera,
+                                                isMainFrame: testCase.isMainFrame)
+            await fulfillment(of: [impression], timeout: 1)
+            uptime += 7
+            testCase.remove(sut)
+            _ = await request.value
+            sut.closeSitePermissions()
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .camera),
+                .permissionDialogClosedWithoutChoice(type: .camera,
+                                                     reason: testCase.reason,
+                                                     visibleFor: .fiveToThirtySeconds,
+                                                     frame: testCase.isMainFrame ? .main : .iframe)
+            ], testCase.name)
+        }
+    }
+
+    func testDialogVisibleDurationExcludesHiddenIntervalsAcrossAppearanceAndSwipeUpdates() async throws {
+        for useAppearance in [false, true] {
+            for resume in [false, true] {
+                var events = [SitePermissionsEvent]()
+                var uptime: TimeInterval = 100
+                var isVisible = true
+                let impression = expectation(description: "Dialog impression")
+                let sut = makeSUT(eventHandler: { event in
+                    events.append(event)
+                    if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+                })
+                sut.sitePermissionsUptimeProvider = { uptime }
+                sut.sitePermissionsDialogVisibilityOverride = { isVisible }
+                let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+                await fulfillment(of: [impression], timeout: 1)
+                let host = try XCTUnwrap(sut.children.compactMap { $0 as? UIHostingController<SitePermissionDialogView> }.first)
+
+                uptime += 2
+                if useAppearance {
+                    host.viewWillDisappear(false)
+                    host.viewWillDisappear(false)
+                } else {
+                    isVisible = false
+                    sut.updateSitePermissionDialogVisibility()
+                    sut.updateSitePermissionDialogVisibility()
+                }
+                uptime += 40
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                sut.updateSitePermissionDialogVisibility()
+                uptime += 40
+                if resume {
+                    isVisible = true
+                    host.viewWillAppear(false)
+                    host.viewDidAppear(false)
+                    sut.updateSitePermissionDialogVisibility()
+                    uptime += 4
+                }
+
+                sut.closeSitePermissions()
+                _ = await request.value
+                uptime += 100
+                host.viewWillAppear(false)
+                host.viewDidAppear(false)
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                sut.closeSitePermissions()
+
+                XCTAssertEqual(events, [
+                    .permissionDialogImpression(type: .camera),
+                    .permissionDialogClosedWithoutChoice(type: .camera,
+                                                         reason: .tabClosed,
+                                                         visibleFor: resume ? .fiveToThirtySeconds : .oneToFiveSeconds,
+                                                         frame: .iframe)
+                ], "appearance: \(useAppearance), resume: \(resume)")
+            }
+        }
+    }
+
+    func testDialogVisibleDurationExcludesInactiveIntervals() async throws {
+        for resume in [false, true] {
+            var events = [SitePermissionsEvent]()
+            var uptime: TimeInterval = 100
+            let impression = expectation(description: "Dialog impression")
+            let sut = makeSUT(eventHandler: { event in
+                events.append(event)
+                if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+            })
+            sut.sitePermissionsUptimeProvider = { uptime }
+            let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+            await fulfillment(of: [impression], timeout: 1)
+
+            uptime += 0.2
+            NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+            uptime += 40
+            NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+            sut.updateSitePermissionDialogVisibility()
+            if resume {
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                uptime += 0.2
+            }
+            sut.closeSitePermissions()
+            _ = await request.value
+            NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .camera),
+                .permissionDialogClosedWithoutChoice(type: .camera,
+                                                     reason: .tabClosed,
+                                                     visibleFor: .lessThanOneSecond,
+                                                     frame: .iframe)
+            ], "resume: \(resume)")
+        }
+    }
+
+    func testGeolocationDialogReportsCurrentNativeFrameClassificationWhenIdentityIsReused() async throws {
+        for isMainFrame in [true, false] {
+            var events = [SitePermissionsEvent]()
+            let impression = expectation(description: "Impression; isMainFrame: \(isMainFrame)")
+            let systemPermissionClient = SystemPermissionClient(
+                locationManager: MockLocationManager(),
+                avAuthorizationStatus: { _ in .authorized },
+                avRequestAccess: { _, completion in completion(true) },
+                notificationCenter: NotificationCenter()
+            )
+            let sut = makeSUT(systemPermissionClient: systemPermissionClient,
+                              committedURL: URL(string: "https://www.example.com/page")!,
+                              eventHandler: { event in
+                                  events.append(event)
+                                  if event == .permissionDialogImpression(type: .geolocation) { impression.fulfill() }
+                              })
+            sut.sitePermissionsUptimeProvider = { 100 }
+            let userScript = GeolocationUserScript(installImmediately: true)
+            sut.configureSitePermissionsGeolocation(with: userScript)
+            let delegate = try XCTUnwrap(userScript.delegate)
+            let originURL = URL(string: "https://www.example.com/frame")!
+            let nativeFrame = MockWKFrameInfoObject(isMainFrame: false,
+                                                    securityOrigin: MockWKSecurityOrigin.new(url: originURL),
+                                                    webView: sut.webView,
+                                                    request: URLRequest(url: originURL))
+            let iframeContext = try XCTUnwrap(sut.makeGeolocationSitePermissionContext(for: GeolocationFrame(nativeFrame.frameInfo)))
+            nativeFrame.isMainFrame = isMainFrame
+            let frame = GeolocationFrame(nativeFrame.frameInfo)
+            XCTAssertEqual(frame.requestingFrameID, iframeContext.requestingFrameID)
+            let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
+            let request = Task { @MainActor in
+                await delegate.geolocationUserScript(userScript, getCurrentPositionWith: .init(), constraints: constraints, in: frame)
+            }
+            await fulfillment(of: [impression], timeout: 1)
+
+            sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+            _ = await request.value
+            sut.closeSitePermissions()
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .geolocation),
+                .permissionDialogClosedWithoutChoice(type: .geolocation,
+                                                     reason: .navigationReload,
+                                                     visibleFor: .lessThanOneSecond,
+                                                     frame: isMainFrame ? .main : .iframe)
+            ], "isMainFrame: \(isMainFrame)")
+        }
+    }
+
     func testPermissionDialogImpressionWaitsUntilTabIsVisibleAndSkipsDialogsRemovedWhileHidden() async throws {
         var events = [SitePermissionsEvent]()
         var isVisible = false
@@ -1474,7 +1722,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         // The removed dialog stays uncounted even once the tab becomes visible.
         isVisible = true
         removedHostingController.viewDidAppear(false)
-        sut.fireSitePermissionDialogImpressionIfVisible()
+        sut.updateSitePermissionDialogVisibility()
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
@@ -1530,7 +1778,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
 
         hostingController.viewDidAppear(false)
-        sut.fireSitePermissionDialogImpressionIfVisible()
+        sut.updateSitePermissionDialogVisibility()
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
@@ -2283,7 +2531,7 @@ private extension AVCaptureDevice {
 }
 
 private final class SitePermissionURLWebView: WKWebView {
-    private let fixedURL: URL
+    var fixedURL: URL
     private var cameraCaptureStateValue = WKMediaCaptureState.none
     private(set) var requestedCameraCaptureStates = [WKMediaCaptureState]()
 

@@ -29,6 +29,11 @@ class Failed(Exception):
         self.extra = extra
 
 
+class Missed(Failed):
+    """An assertion didn't hold: what the proof waited for never came, or what it ruled out happened. With an absent
+    element (runner code NOT_FOUND or TIMEOUT), the only failure that can be the base build's expected one."""
+
+
 class SetupFailed(Failed):
     """Setting up the device failed (launch, reset, a simulator setting), even when a proof asked for it: reported
     as an error (exit 2, INCONCLUSIVE), never as a product failure."""

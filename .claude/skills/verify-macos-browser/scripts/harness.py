@@ -284,6 +284,7 @@ class Mac:
         self.topic, self.evidence, self.rec, self.automation = topic, evidence, rec, automation
         self.checkout = checkout   # the checkout built and proved: this one, or another (prove --checkout)
         self.as_base = as_base     # the base run of prove --base
+        self.reset = False         # this Mac, prove --base: park the Debug app's data around the run (verify.sh reset)
         self.base_outcome = "unchanged"   # what checks made now should do on the base build (on_base)
         self._marked = False
         self._fixture = None
@@ -296,7 +297,8 @@ class Mac:
         t0 = time.time()
         p = subprocess.run([VERIFY_SH, command, self.topic, *map(str, args)], cwd=self.checkout, text=True,
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                           env={**os.environ, "VERIFY_WORKTREE": self.checkout, "VERIFY_RUN_DIR": self.evidence})
+                           env={**os.environ, "VERIFY_WORKTREE": self.checkout, "VERIFY_RUN_DIR": self.evidence,
+                                "VERIFY_OWNER_PID": str(os.getpid())})
         with open(os.path.join(self.evidence, "transcript.jsonl"), "a") as f:
             f.write(json.dumps(dict(t=time.strftime("%Y-%m-%dT%H:%M:%S%z"), cmd=[command, *map(str, args)],
                                     exit=p.returncode, secs=round(time.time() - t0, 1), out=p.stdout[-2000:])) + "\n")
@@ -703,22 +705,25 @@ def flags_to_pin(flags, checkout, as_base):
     return {k: v for k, v in flags.items() if k in names}, [k for k in flags if k not in names]
 
 
-def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_dir, as_base=False):
+def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_dir, as_base=False, reset=False,
+            prefer_vm=None):
     """One run of a loaded proof on `checkout`, with its evidence in `evidence`: setup, the proof, capture, cleanup,
-    report.md and manifest.json. Returns (record, manifest)."""
+    report.md and manifest.json. Returns (record, manifest). A VM is always reset when reserved (`prefer_vm` first for
+    --target vm); `reset` resets this Mac around the run too (prove --base)."""
     rec = Record()
     rec.video = {} if video else None
     if as_base:
         rec.notes.append("the base run of prove --base: a check the proof expects to fail here is recorded and the "
                          "proof carries on; the comparison is ../report.md")
     mac = Mac(topic, evidence, rec, getattr(mod, "AUTOMATION", False), checkout, as_base)
+    mac.reset = reset and target == "mac"
     vm = None if target == "mac" else ("auto" if target == "vm" else target)
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
     running = None
     conditions = getattr(mod, "CONDITIONS", {})
     try:
         if vm:
-            mac._do("vm", vm)
+            mac._do("vm", vm, *([prefer_vm] if vm == "auto" and prefer_vm else []))
         else:   # without both grants a run on this Mac can only end in NOT READY, after the whole build
             grants = mac._do("ax", "grants")
             missing = [g for g in ("Accessibility", "Screen Recording") if f"{g.lower().replace(' ', '-')}=true" not in grants]
@@ -726,6 +731,12 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
                 raise ProofError(f"NO GRANT: the process running prove has no {' or '.join(missing)} grant ({_line(grants)}); "
                                  "turn it on in System Settings > Privacy & Security for the app it runs under, or "
                                  "prove in a VM")
+        if mac.reset:   # a failed reset stops the run: it would run on the engineer's own Debug data
+            code, out = mac._sh("reset", "begin")
+            failed = re.findall(r"^check\t(.*)\tfail$", out, re.M)
+            if code or failed:
+                raise ProofError("reset before the run failed, so the run stopped before launching: "
+                                 + ("; ".join(failed) if failed else f"exit {code}: {_line(out[-300:])}"))
         set_conditions(mac, conditions, target, launched=False)
         flags, rec.unpinned = flags_to_pin(getattr(mod, "FLAGS", {}), checkout, as_base)
         for name in rec.unpinned:
@@ -856,9 +867,30 @@ def _finish(mac, rec, evidence):
     code, out = mac._sh("cleanup")
     if code:
         rec.problems.append(f"cleanup failed (exit {code}): {out[-600:]}")
+    if mac.reset:   # after cleanup quit the app
+        code, out = mac._sh("reset", "end")
+        if code:
+            rec.problems.append(f"reset after the run failed (exit {code}): {_line(out[-300:])}")
+    rec.problems += reset_problems(_read_json(os.path.join(evidence, "reset.json")),
+                                   expected=bool(host) or mac.reset)
     lock = os.path.join(HOME, ".vm-locks", host or "-", "topic")
     if host and os.path.exists(lock) and open(lock).read().strip() == mac.topic:
         rec.problems.append(f"VM {host} not released: its lock still names this run")
+
+
+def _read_json(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def reset_problems(reset, expected):
+    """Problems for a run's reset.json: a state not reset, or no record of a reset the run should have had."""
+    if reset is None:
+        return ["start state not reset: no reset.json"] if expected else []
+    return [f"reset: {what}: failed" for what, ok in reset.get("checks", {}).items() if not ok]
 
 
 def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=None, declared=()):
@@ -878,6 +910,7 @@ def _manifest(evidence, rec, proof, rerun, running, live, target, evidence_dir=N
              checks=[dict(check=n, ok=ok, detail=d, base=b) for n, ok, d, b in rec.checks], problems=rec.problems,
              unverified=[dict(what=w, why=y) for w, y in rec.unverified],
              video=dict(off=True) if rec.video is None else rec.video, conditions_declared=list(declared),
+             reset=_read_json(os.path.join(evidence, "reset.json")),
              conditions={**rec.conditions, **{k: v for k, v in (m.get("launch") or {}).items()
                                               if k in ("language", "locale")}})
     with open(path, "w") as f:

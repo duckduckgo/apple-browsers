@@ -2,8 +2,10 @@
 # Single entry point for verify-macos-browser, so one permission rule covers every step.
 #
 # Usage: verify.sh <command> <topic> [args...]
-#   vm      <topic> [vm-1|vm-2|auto]    run this topic in a VM (see VM-SETUP.md): reserve a free one, wipe the
-#                                       app's data there; first, before flag/set-default/build
+#   vm      <topic> [vm-1|vm-2|auto [prefer]]  run this topic in a VM (see VM-SETUP.md): reserve a free one (auto:
+#                                       `prefer` first), reset what a run leaves there (reset.json); first
+#   reset   <topic> begin|end           this Mac, prove --base: park the Debug app's data before a run, put it back
+#                                       after; move the run's new Downloads files to the Trash (reset.json)
 #   build   <topic> [worktree] [--automation] [--language <l> --locale <l>] [--keep-onboarding] [--no-launch]
 #                                       build, record source fingerprint + hashes, launch (en-US, internal user),
 #                                       wait until ready, start the PixelKit stream; in a VM, copy the app there
@@ -40,7 +42,7 @@ AX_BIN="$SCRIPTS_DIR/../.bin/ax"
 VM_LOCKS="$VERIFY_HOME/.vm-locks"
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o ServerAliveInterval=15)
 
-usage() { sed -n '4,33p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
+usage() { sed -n '4,35p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
 
 command=${1:-}
 topic=${2:-}
@@ -179,17 +181,34 @@ write_default() {  # key type value
     grep -qxF "$1" "$RUN_DIR/defaults_written" 2>/dev/null || echo "$1" >> "$RUN_DIR/defaults_written"
 }
 
-# Wipes the debug app's data in the VM; the keychain is kept. bash, so an unmatched glob is just skipped.
+# Resets everything a run can leave in the VM, so each run (both sides of prove --base) starts from the same state:
+# the app and recorders, the debug app's data and defaults (pinned flags too), its temp and cache folders, ~/Downloads
+# and the pasteboard. The keychain is kept. Then one "check<TAB>what<TAB>ok|fail" line per state read back, and last
+# the macOS version and Provisioning UDID. $2 non-empty is a test seam: a file left in Downloads, so a check fails.
+# bash, so an unmatched glob is just skipped.
 VM_RESET='shopt -s nullglob
-pkill -f "DuckDuckGo - verify-.*\.app/Contents/MacOS" && sleep 2
-pkill -INT -x screencapture
+for _ in 1 2 3 4 5 6 7 8 9 10; do pkill -f "DuckDuckGo - verify-.*\.app/Contents/MacOS" || break; sleep 1; done
+pkill -9 -f "DuckDuckGo - verify-.*\.app/Contents/MacOS"
+pkill -INT -x screencapture; sleep 1; pkill -9 -x screencapture
 cd ~/Library
-rm -rf "Application Support/$1" "Caches/$1" "Containers/$1" "WebKit/$1" "HTTPStorages/$1" \
-       "Saved Application State/$1.savedState" "Group Containers/"HKE973VLUW.* Caches/wide-event-validation-log.jsonl
+data() { local t c; t=$(getconf DARWIN_USER_TEMP_DIR) c=$(getconf DARWIN_USER_CACHE_DIR)
+    printf "%s\n" "Application Support/$1" "Caches/$1" "Containers/$1" "WebKit/$1" "HTTPStorages/$1" \
+        "Saved Application State/$1.savedState" "Group Containers/"HKE973VLUW.* Caches/wide-event-validation-log.jsonl \
+        "$t$1" "$t"*"+$1" "$c$1" "$c"*"+$1"; }
+data "$1" | while IFS= read -r p; do rm -rf "$p" 2>/dev/null; done   # macOS keeps the WebKit T/*+<bundle> folders: emptied
 defaults delete "$1" >/dev/null 2>&1; defaults delete com.duckduckgo.wide-pixel.storage >/dev/null 2>&1
 rm -f "Preferences/$1.plist" Preferences/com.duckduckgo.wide-pixel.storage.plist
 killall -u "$USER" cfprefsd 2>/dev/null; sleep 1
+find ~/Downloads -mindepth 1 -delete 2>/dev/null; [[ -n "$2" ]] && touch ~/Downloads/verify-reset-seam
+pbcopy < /dev/null
 mkdir -p ~/verify; for d in ~/verify/*/; do rm -rf "$d"; done
+check() { local what=$1; shift; if "$@" >/dev/null 2>&1; then printf "check\t%s\tok\n" "$what"; else printf "check\t%s\tfail\n" "$what"; fi; }
+none() { while IFS= read -r p; do [[ -e "$p" && ( ! -d "$p" || -n "$(ls -A "$p")" ) ]] && return 1; done; return 0; }
+check "app and recorders stopped" eval "! pgrep -f \"DuckDuckGo - verify-.*\\.app/Contents/MacOS\" && ! pgrep -x screencapture"
+check "app data and temp files removed" eval "data \"$1\" | none"
+check "app defaults and pinned flags removed" eval "! defaults read \"$1\""
+check "Downloads empty" eval "[[ -z \"\$(ls -A ~/Downloads)\" ]]"
+check "pasteboard empty" eval "[[ -z \"\$(pbpaste)\" ]]"
 printf "%s\t%s\n" "$(sw_vers -productVersion)" "$(system_profiler SPHardwareDataType | awk -F": " "/Provisioning UDID/{print \$2}")"'
 
 case "$command" in
@@ -197,6 +216,7 @@ vm)
     want=${1:-auto}
     if [[ -n "$VM" ]]; then echo "vm=$VM (already reserved for $topic)"; exit 0; fi
     if [[ "$want" == auto ]]; then read -ra candidates <<< "${VERIFY_VMS:-vm-1 vm-2}"; else candidates=("$want"); fi
+    [[ "$want" == auto && -n "${2:-}" ]] && candidates=("$2" "${candidates[@]}")   # prefer: the base run's VM
     mkdir -p "$VM_LOCKS"
     for host in "${candidates[@]}"; do
         lock="$VM_LOCKS/$host"
@@ -216,10 +236,12 @@ vm)
         exit 2
     fi
     echo "$VM" > "$RUN_DIR/vm"
-    info=$(on_target "$VM_RESET" "$BUNDLE_ID")
+    out=$(on_target "$VM_RESET" "$BUNDLE_ID" "${VERIFY_DEBUG_BREAK_RESET:-}")
+    info=$(tail -1 <<< "$out")
+    helper reset-record "$RUN_DIR" "$VM" <<< "$out"
     printf '{"host": "%s", "macos": "%s", "provisioning_udid": "%s"}\n' "$VM" "${info%%$'\t'*}" "${info##*$'\t'}" > "$RUN_DIR/vm.json"
     sync_ax
-    echo "vm=$VM macOS ${info%%$'\t'*} (app data wiped)"
+    echo "vm=$VM macOS ${info%%$'\t'*} (reset: $(grep -c $'\tok$' <<< "$out") of $(grep -c $'^check\t' <<< "$out") checks ok)"
     ;;
 build)
     worktree="."; automation=0; language="en"; locale="en_US"; skip_onboarding=1; launch=1
@@ -525,6 +547,10 @@ flag)
     { grep -v "^$name=" "$RUN_DIR/flags" 2>/dev/null || true; echo "$name=$state"; } > "$RUN_DIR/flags.tmp"
     mv "$RUN_DIR/flags.tmp" "$RUN_DIR/flags"
     echo "pinned $name $state ($key)${VM:+ in $VM}"
+    ;;
+reset)
+    [[ -z "$VM" ]] || { echo "reset: this Mac only; vm resets the VM when it reserves it"; exit 64; }
+    helper reset "${1:?reset: begin or end}" "$RUN_DIR" "$VERIFY_HOME" "$APP_NAME"
     ;;
 set-default)
     key=${1:?key}; type=${2:?type, e.g. bool}; value=${3:?value}

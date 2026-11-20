@@ -3,10 +3,12 @@
 
 Every command prints one line or JSON and exits 0 (ok), 1 (a check failed) or 2 (error / can't tell).
 """
+import glob
 import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -356,10 +358,210 @@ def cmd_manifest(run_dir, skill_dir, topic):
     print(os.path.join(run_dir, "manifest.json"))
 
 
+# ---------------------------------------------------------------- reset: each run starts from the same state
+BUNDLE = "com.duckduckgo.macos.browser.debug"
+
+
+def parse_checks(text):
+    """{what: ok} from the "check<TAB>what<TAB>ok|fail" lines a reset prints; other lines are ignored."""
+    return {p[1]: p[2] == "ok" for p in (line.split("\t") for line in text.splitlines()) if len(p) == 3 and p[0] == "check"}
+
+
+def write_reset(run_dir, where, checks, kept=()):
+    """reset.json: where the run was reset, each state read back after it (`checks`), and what was deliberately kept."""
+    path = os.path.join(run_dir, "reset.json")
+    old = read_json(path) if os.path.exists(path) else {}
+    with open(path, "w") as f:
+        json.dump(dict(where=where, checks={**old.get("checks", {}), **checks}, kept=list(kept) or old.get("kept", [])),
+                  f, indent=1)
+
+
+def cmd_reset_record(run_dir, where):
+    """reset.json for a VM, from the reset's output on stdin."""
+    write_reset(run_dir, where, parse_checks(sys.stdin.read()))
+
+
+# The Debug app's own app groups (DeveloperID.xcconfig gives Debug `.debug` ones): the downloaded privacy config and its
+# ETags, internal-user and remote-messaging state, the subscription. Not network-protection or dbp: the Debug VPN
+# extension and DBP agent can run without the app and keep using them.
+DEBUG_GROUPS = ("app-configuration", "subscription")
+
+
+def app_data(home, temp, cache, bundle=BUNDLE):
+    """The Debug app's own data on this Mac that exists now, its own .debug group containers included.
+    Not WebKit's <temp>/com.apple.WebKit.*+<bundle> folders: macOS refuses to move them (seen in a VM)."""
+    lib = os.path.join(home, "Library")
+    paths = [os.path.join(lib, d, bundle) for d in ("Application Support", "Caches", "Containers", "WebKit", "HTTPStorages")]
+    groups = glob.escape(os.path.join(lib, "Group Containers"))
+    paths += sorted(p for g in DEBUG_GROUPS for p in glob.glob(os.path.join(groups, f"*.com.duckduckgo.macos.browser.{g}.debug")))
+    paths += [os.path.join(lib, "Saved Application State", bundle + ".savedState"), os.path.join(temp, bundle),
+              os.path.join(cache, bundle)] + sorted(glob.glob(os.path.join(glob.escape(cache), "*+" + bundle)))
+    return [p for p in paths if os.path.lexists(p)]
+
+
+def listing(folder):
+    """{name: mtime} of a folder's entries."""
+    try:
+        return {e.name: e.stat(follow_symlinks=False).st_mtime for e in os.scandir(folder)}
+    except FileNotFoundError:
+        return {}
+
+
+def created_since(before, after, since):
+    """The entries a run created: names that weren't there at its start, modified since. A name that was there is the
+    user's, whatever happened to it."""
+    return sorted(n for n, mtime in after.items() if n not in before and mtime >= since)
+
+
+def _sh(*args):
+    return subprocess.run(args, capture_output=True, text=True)
+
+
+class MacReset:
+    """prove --base on this Mac: each run starts with no Debug app data and puts the engineer's back after it.
+
+    begin parks the Debug app's own data (app_data, and its defaults domain exported then deleted) under
+    <verify home>/.mac-park and snapshots ~/Downloads; end moves the run's new Downloads files to the Trash, deletes what
+    the run created and moves the parked data back. Nothing is deleted unless it was parked first, a park left by a run
+    that died is put back first, and nothing is parked while another Debug app is open, another worktree's verify app
+    included (it would write into the moved folders). Only this run's own app is ever quit."""
+
+    def __init__(self, run_dir, verify_home, app_name, home=os.path.expanduser("~"), owner=None, sh=_sh):
+        self.run_dir, self.home, self.sh = run_dir, home, sh
+        self.app = re.escape(app_name) + r"\.app/Contents/MacOS"
+        self.park = os.path.join(verify_home, ".mac-park")
+        self.owner = int(owner or os.environ.get("VERIFY_OWNER_PID") or os.getppid())
+        self.temp, self.cache = (sh("getconf", v).stdout.strip() for v in ("DARWIN_USER_TEMP_DIR", "DARWIN_USER_CACHE_DIR"))
+        self.downloads = os.path.join(home, "Downloads")
+
+    def data(self):
+        return app_data(self.home, self.temp, self.cache)
+
+    def _park_owner(self):
+        try:
+            return read_json(os.path.join(self.park, "owner.json"))["pid"]
+        except (OSError, ValueError, KeyError):
+            return None
+
+    def _defaults_empty(self):
+        read = self.sh("defaults", "read", BUNDLE)   # after `defaults delete`, macOS 27 reads back `{}` with exit 0
+        return read.returncode != 0 or "".join(read.stdout.split()) in ("", "{}")
+
+    def begin(self):
+        checks = {}
+        if os.path.isdir(self.park):
+            holder = self._park_owner()
+            if holder and holder != self.owner and alive(holder):
+                checks["Debug app data free (another run holds it)"] = False
+            else:
+                self.restore()   # left by a run that died
+        for _ in range(10):
+            if self.sh("pkill", "-f", self.app).returncode:
+                break
+            time.sleep(1)
+        checks["app stopped"] = self.sh("pgrep", "-f", self.app).returncode != 0
+        other = f'bundleID="{BUNDLE}"' in self.sh("lsappinfo", "list").stdout
+        checks["no other Debug app open (another worktree's verify app counts)"] = not other
+        if all(checks.values()) and not os.path.isdir(self.park):
+            items = os.path.join(self.park, "items")
+            os.makedirs(items)
+            moved = {str(i): path for i, path in enumerate(self.data())}
+            with open(os.path.join(self.park, "owner.json"), "w") as f:   # before any move: restore needs the plan
+                json.dump(dict(pid=self.owner, moved=moved), f, indent=1)
+            plist = os.path.join(self.park, "defaults.plist")
+            had = not self._defaults_empty()
+            if not had or self.sh("defaults", "export", BUNDLE, plist).returncode == 0:
+                with open(os.path.join(self.park, "defaults.parked"), "w") as f:   # restore may now replace the domain
+                    f.write("exported" if had else "absent")
+                self.sh("defaults", "delete", BUNDLE)
+            for i, path in moved.items():
+                try:   # rename: all or nothing; a folder macOS refuses to move stays, and the check below fails
+                    os.rename(path, os.path.join(items, i))
+                except OSError:
+                    pass
+        left = self.data()
+        checks["app data and temp files removed"] = not left
+        if left:   # seen on a real Mac: other apps' containers are protected from a shell without Full Disk Access
+            names = ", ".join(os.path.basename(p) for p in left)
+            checks[f"macOS refused to move {names}: give the app that runs prove Full Disk Access, or prove in a VM"] = False
+        checks["app defaults and pinned flags removed"] = self._defaults_empty()
+        with open(os.path.join(self.run_dir, "downloads-before.json"), "w") as f:
+            json.dump(dict(since=time.time(), entries=listing(self.downloads)), f)
+        write_reset(self.run_dir, "mac", checks, kept=[
+            "the engineer's Downloads files", "the pasteboard",
+            "the Debug network-protection and dbp group containers (the VPN extension and DBP agent run without the app)",
+            "wide-event storage (defaults domain com.duckduckgo.wide-pixel.storage, shared with the release app)"])
+
+    def end(self):
+        checks = {}
+        try:
+            before = read_json(os.path.join(self.run_dir, "downloads-before.json"))
+        except (OSError, ValueError):
+            before = None
+        if before:
+            new = created_since(before["entries"], listing(self.downloads), before["since"])
+            trash = os.path.join(self.home, ".Trash")
+            for name in new:
+                stamp = time.strftime("%H.%M.%S")
+                dest = os.path.join(trash, name if not os.path.lexists(os.path.join(trash, name)) else f"{name} {stamp}")
+                try:
+                    shutil.move(os.path.join(self.downloads, name), dest)
+                except OSError:
+                    pass
+            checks["the run's Downloads files moved to the Trash"] = not any(
+                os.path.lexists(os.path.join(self.downloads, n)) for n in new)
+        else:
+            checks["the run's Downloads files moved to the Trash (no snapshot at its start)"] = False
+        if self._park_owner() == self.owner:
+            checks["the engineer's Debug app data put back"] = self.restore()
+        write_reset(self.run_dir, "mac", checks)
+
+    def restore(self):
+        """Delete the Debug app data a run created and move the parked data back; True when the park is gone."""
+        try:
+            moved = read_json(os.path.join(self.park, "owner.json"))["moved"]
+        except (OSError, ValueError, KeyError):
+            moved = None
+        if moved is None:   # no plan written: nothing was moved yet, so nothing here is the engineer's to put back
+            shutil.rmtree(self.park)
+            return True
+        for _ in range(10):
+            if self.sh("pkill", "-f", self.app).returncode:
+                break
+            time.sleep(1)
+        items = os.path.join(self.park, "items")
+        for path in self.data():
+            parked = [i for i, p in moved.items() if p == path]
+            if parked and not os.path.lexists(os.path.join(items, parked[0])):
+                continue   # never moved (begin died first): it is the engineer's own
+            shutil.rmtree(path) if os.path.isdir(path) and not os.path.islink(path) else os.remove(path)
+        for i, path in moved.items():
+            if os.path.lexists(os.path.join(items, i)):
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                os.rename(os.path.join(items, i), path)
+        if os.path.exists(os.path.join(self.park, "defaults.parked")):
+            self.sh("defaults", "delete", BUNDLE)
+            plist = os.path.join(self.park, "defaults.plist")
+            if os.path.exists(plist):
+                self.sh("defaults", "import", BUNDLE, plist)
+        shutil.rmtree(self.park)
+        return not os.path.exists(self.park) and all(os.path.lexists(p) for p in moved.values())
+
+
+def cmd_reset(step, run_dir, verify_home, app_name):
+    if step not in ("begin", "end"):
+        die("reset: begin or end")
+    getattr(MacReset(run_dir, verify_home, app_name), step)()
+    checks = read_json(os.path.join(run_dir, "reset.json"))["checks"]
+    for what, ok in checks.items():
+        print(f"check\t{what}\t{'ok' if ok else 'fail'}")
+
+
 COMMANDS = {
     "fingerprint": cmd_fingerprint, "hash": cmd_hash, "flag": cmd_flag, "mark": cmd_mark,
     "expect-pixel": cmd_expect_pixel, "expect-no-pixel": cmd_expect_no_pixel,
     "expect-wide-event": cmd_expect_wide_event, "ready": cmd_ready, "web": cmd_web, "manifest": cmd_manifest,
+    "reset": cmd_reset, "reset-record": cmd_reset_record,
 }
 
 if __name__ == "__main__":

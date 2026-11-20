@@ -30,6 +30,7 @@ public enum WebExtensionAppPermission: String, CaseIterable, Sendable {
 #if os(macOS)
     /// Lets an extension read plain text from the system clipboard without a paste gesture.
     case clipboardRead
+    case downloads
 #endif
 }
 

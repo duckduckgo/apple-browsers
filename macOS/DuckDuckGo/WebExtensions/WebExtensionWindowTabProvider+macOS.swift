@@ -89,6 +89,11 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         return windows
     }
 
+    var lastActiveWindowForDownload: NSWindow? {
+        windowControllersManager.mainWindowControllers
+            .max { $0.lastWindowDidBecomeKeyTimestamp < $1.lastWindowDidBecomeKeyTimestamp }?.window
+    }
+
     func focusedWindow(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
         windowControllersManager.lastKeyMainWindowController
     }

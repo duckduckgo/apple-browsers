@@ -167,6 +167,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Store identities available before a successful first load creates the installation record.
     var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
 
+    /// Verified bundled installations whose first load precedes their installation record.
+    var installingEmbeddedIdentifiers: Set<String> = []
+
     /// Tasks that keep background pages with open native messaging ports loaded, by extension identifier.
     var nativePortKeepAliveTasks: [String: NativePortKeepAlive] = [:]
 
@@ -214,6 +217,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Answers `chrome.idle.queryState` for extension pages.
     private let idleHandler = WebExtensionIdleMessageHandler()
     private let clipboardReadHandler: WebExtensionClipboardReadMessageHandler
+    private let downloadHandler: WebExtensionDownloadMessageHandler
 
     /// Answers `chrome.privacy.services` calls for extension pages.
     private let privacyHandler = WebExtensionPrivacyMessageHandler()
@@ -320,6 +324,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                                                                                 name: WebExtensionAPICompatibilityScript.messageHandlerName)
 
 #if os(macOS)
+        downloadHandler = WebExtensionDownloadMessageHandler()
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            downloadHandler, contentWorld: .page, name: WebExtensionAPIStubScript.downloadMessageHandlerName)
         // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
@@ -413,6 +420,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             self?.extensionContext(for: url) != nil
         }
 
+        downloadHandler.automaticDownloadDirectory = { configuration.automaticDownloadDirectory }
+        downloadHandler.contextForOrigin = { [weak self] in self?.extensionContext(for: $0) }
+        downloadHandler.backgroundWebView = { [weak self] in self?.backgroundWebView(in: $0) }
+        downloadHandler.presentationWindow = { [weak self] in self?.downloadPresentationWindow(for: $0, context: $1, boundTo: $2) }
+        downloadHandler.permissionController = { [weak self] in self?.permissionController }
         privacyHandler.store = privacySettings
         clipboardReadHandler.extensionContext = { [weak self] in self?.extensionContext(for: $0) }
         clipboardReadHandler.hasPermission = { [weak self] in self?.permissionController?.isGranted(.clipboardRead, to: $0.uniqueIdentifier) == true }
@@ -584,18 +596,22 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let identifier = UUID().uuidString
         var embeddedType = storeIdentity == nil ? metadata.type : nil
 
-        if embeddedType != nil, let permissionController {
+        if embeddedType != nil {
             // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
             let isBundled = EmbeddedWebExtensionRegistry.all.contains {
                 bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
             }
             if isBundled {
-                permissionController.trustedInstallations.insert(identifier)
+                installingEmbeddedIdentifiers.insert(identifier)
+                permissionController?.trustedInstallations.insert(identifier)
             } else {
                 embeddedType = nil
             }
         }
-        defer { permissionController?.trustedInstallations.remove(identifier) }
+        defer {
+            installingEmbeddedIdentifiers.remove(identifier)
+            permissionController?.trustedInstallations.remove(identifier)
+        }
 
         let packageIdentifier = storeIdentity?.store == .chromeWebStore ? UUID() : nil
         let resourceIdentifier = InstalledWebExtension.resourceIdentifier(for: identifier, packageIdentifier: packageIdentifier)
@@ -1513,11 +1529,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    public func pixelExtension(identifier: String) -> WebExtensionPixelExtension {
+        pixelExtension(for: installedExtension(identifier: identifier)?.storeIdentity)
+    }
+
+    @MainActor
     func recordNativeMessagingLimitation(for extensionContext: WKWebExtensionContext) {
         guard let nativeMessagingLimitationStore,
               let key = nativeMessagingLimitationKey(for: extensionContext.uniqueIdentifier),
               !nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key) else { return }
         nativeMessagingLimitationStore.recordLimitation(extensionKey: key)
+        pixelFiring.fire(.nativeMessagingBlocked(extension: pixelExtension(identifier: extensionContext.uniqueIdentifier)))
         NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
     }
 
@@ -1571,6 +1593,30 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
 #if os(macOS)
+    @MainActor
+    func downloadPresentationWindow(for webView: WKWebView, context: WKWebExtensionContext, boundTo originalWindow: NSWindow? = nil) -> NSWindow? {
+        let source: NSWindow?
+        if backgroundWebView(in: context) === webView {
+            // A background request can arrive after the user switches apps while 1Password fetches the attachment.
+            source = originalWindow ?? NSApp.keyWindow ?? NSApp.mainWindow ?? windowTabProvider.lastActiveWindowForDownload
+        } else {
+            source = webView.window
+        }
+        guard let source else { return nil }
+        for window in sequence(first: source, next: { $0.parent ?? $0.sheetParent }) {
+            guard let controller = window.windowController as? any WKWebExtensionWindow else { continue }
+            guard originalWindow == nil || originalWindow === window,
+                  controller.isPrivate?(for: context) == false || context.hasAccessToPrivateData else { return nil }
+            return window.isVisible || window.isMiniaturized ? window : nil
+        }
+        return nil
+    }
+
+    @MainActor
+    public func handleDownloadMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        downloadHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
     /// Answers an idle state request from an extension page in a tab, where the controller's own
     /// message handlers are not installed.
     public func handleIdleMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {

@@ -162,8 +162,6 @@ class TabViewController: UIViewController {
     var containerStackView: UIStackView!
     /// Driven by `applyContextualOnboardingTopInset(_:)` to clear the floating chrome.
     var containerStackViewTopConstraint: NSLayoutConstraint?
-    /// Released while the iPad Duck.ai chats sidebar sits beside the chat.
-    var containerStackViewLeadingConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewContainerBottomConstraint: NSLayoutConstraint?

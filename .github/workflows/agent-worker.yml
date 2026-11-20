@@ -177,6 +177,7 @@ jobs:
       - name: Write prompt
         env:
           TASK_GID: ${{ inputs.task_gid }}
+          SCRATCH: ${{ runner.temp }}/scratch
         run: |
           python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" \
             "$RUNNER_TEMP/worktrees" > "$RUNNER_TEMP/prompt.md"
@@ -248,6 +249,8 @@ jobs:
       - name: Tool report
         id: tools
         if: always() && steps.anthropic.outcome == 'success'
+        env:
+          CHECKOUT_DIR: ${{ github.workspace }}/target
         run: |
           python3 -I worker/scripts/agent-worker/tool_report.py \
             "$RUNNER_TEMP/evidence/result.json" "$HOME/.claude/projects" "$RUNNER_TEMP/evidence" || echo "issues=" >> "$GITHUB_OUTPUT"

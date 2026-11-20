@@ -3,6 +3,7 @@
 failed, each with what to change to fix it.
 
 Usage: tool_report.py <result.json> <claude projects dir> <evidence dir>
+Env: CHECKOUT_DIR, the checkout the agent ran in, for rules written with ./
 
 Denials come from result.json's permission_denials. Failures are tool results marked as errors for gh, git push,
 fetch and pull, and auto's node scripts. A failed xc build or test isn't listed: fixing those is the agent's job.
@@ -15,6 +16,7 @@ import glob
 import json
 import os
 import re
+import shlex
 import sys
 
 WORKFLOW = "`scripts/agent-worker/run_agent.sh` (`allow` or `deny`) on the agent-worker branch"
@@ -99,6 +101,55 @@ def rule_for(name, data):
     return f"Bash({' '.join(words[:depth])}:*)"
 
 
+def parts(command):
+    """The commands in a chain joined by &&, ||, ; or |, or None when it isn't a chain or can't be parsed"""
+    try:
+        lex = shlex.shlex(command, posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        tokens = list(lex)
+    except ValueError:
+        return None
+    out, cur = [], []
+    for t in tokens:
+        if t in ("&&", "||", ";", "|", ";;", "&"):
+            if cur:
+                out.append(cur)
+            cur = []
+        else:
+            cur.append(t)
+    if cur:
+        out.append(cur)
+    return [" ".join(p) for p in out] if len(out) > 1 else None
+
+
+def bash_allowed(command, allow):
+    """Whether one command matches a Bash allow rule's prefix"""
+    for rule in allow:
+        if rule.startswith("Bash(") and command.startswith(rule[5:].split(":*")[0].rstrip(")").rstrip()):
+            return True
+    return False
+
+
+def bash_fix(command, allow):
+    """What to do about a denied Bash command that no deny rule names"""
+    if re.match(r"\s*git\s+-C\s", command):
+        return ("`git -C <path>` doesn't match the git rules, which start with the subcommand. The prompt asks the agent "
+                "to run git from the repository directory. Nothing to change unless it keeps happening.")
+    chain = parts(command)
+    if chain:
+        missing = [p for p in chain if not bash_allowed(p, allow)]
+        if not missing:
+            return ("A chained command whose parts are each allowed, so Claude Code likely couldn't split it, for example "
+                    "because of a multi-line quoted argument. The prompt asks for one command per call. Nothing to change "
+                    "unless it keeps happening.")
+        names = sorted({p.split()[0] for p in missing})
+        listed = ", ".join(f"`{n}`" for n in names) + (" isn't" if len(names) == 1 else " aren't")
+        return (f"A chained command, and Claude Code checks each part on its own: {listed} allowed. The prompt asks "
+                "the agent to run one command per call and to read files with the Read, Glob and Grep tools, so usually "
+                "nothing needs to change. If the agent really needs one of those commands, add a rule for it to `allow`.")
+    return None
+
+
 def matching_deny(name, data, deny):
     """The deny rule this call hit, if any"""
     for rule in deny:
@@ -116,7 +167,11 @@ def matching_deny(name, data, deny):
         # Rules spell absolute paths with a leading //, home with ~, and the checkout with ./
         pattern = os.path.expanduser(arg[1:] if arg.startswith("//") else arg)
         if pattern.startswith("./"):
-            pattern = "*/" + pattern[2:]
+            # The checkout the agent ran in; without it, a ./ rule can't be matched
+            checkout = os.environ.get("CHECKOUT_DIR", "")
+            if not checkout:
+                continue
+            pattern = os.path.join(checkout, pattern[2:])
         if path and fnmatch.fnmatch(path, pattern):
             return rule
     return None
@@ -152,6 +207,7 @@ def main():
         result = {}
     read = lambda name: open(os.path.join(evidence, name)).read() if os.path.isfile(os.path.join(evidence, name)) else ""
     deny = [r for r in re.split(r",(?=[A-Z])", read("denied-tools.txt")) if r]
+    allow = [r for r in re.split(r",(?=[A-Z])", read("allowed-tools.txt")) if r]
 
     denials = list(result.get("permission_denials") or [])
     denied_ids = {d.get("tool_use_id") for d in denials}
@@ -193,7 +249,14 @@ def main():
         name, data = d.get("tool_name", "?"), d.get("tool_input") or {}
         md += [f"- **{name}**: `{describe(name, data)[:CUT]}`"]
         rule = matching_deny(name, data, deny)
-        if rule:
+        fix = bash_fix(data.get("command") or "", allow) if name == "Bash" and not rule else None
+        covered = name in ("Edit", "Write", "Read") and not rule and matching_deny(name, data, allow)
+        if fix:
+            md += [f"  - {fix}"]
+        elif covered:
+            md += [f"  - `{covered}` allows this path, but it's outside the checkout, and Claude Code also needs its "
+                   "directory in the `--add-dir` list in `run_agent.sh`. Add the directory there."]
+        elif rule:
             md += [f"  - Denied on purpose by `{rule}`. {why(rule)} If the agent needed this, change the plan or the "
                    "prompt so it doesn't, or remove the rule from `deny` after checking with the team."]
         else:

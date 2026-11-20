@@ -10,8 +10,8 @@
 
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
-ev=$RUNNER_TEMP/evidence A=$AUTO_DIR W=$RUNNER_TEMP/worktrees
-mkdir -p "$ev" "$RUNNER_TEMP/bin"
+ev=$RUNNER_TEMP/evidence A=$AUTO_DIR W=$RUNNER_TEMP/worktrees X=$RUNNER_TEMP/scratch
+mkdir -p "$ev" "$RUNNER_TEMP/bin" "$W" "$X" "$HOME/.auto"
 ln -sf "$here/xc.sh" "$RUNNER_TEMP/bin/xc"
 
 # File tools in the checkout, xc and read-only git, so it can check its change and fix it as it goes
@@ -19,9 +19,9 @@ allow="Read,Glob,Grep,Edit(./**),Write(./**),Bash(xc:*)"
 for c in log show blame diff status grep ls-files; do allow+=",Bash(git $c:*)"; done
 deny="WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**),Read(/$GH_TOKEN_DIR/**)"
 
-# For auto: subagents, worktrees, git branches, commits and pushes, gh for its own PRs and their CI, auto's PR,
-# babysit and evidence scripts, and verify-ios
-allow+=",Agent,TodoWrite,Edit(/$W/**),Write(/$W/**),Write(~/.auto/**)"
+# For auto: subagents, worktrees, a scratch dir, git branches, commits and pushes, gh for its own PRs and their CI,
+# auto's PR, babysit and evidence scripts, and verify-ios. Directories outside the checkout also need --add-dir below
+allow+=",Agent,TodoWrite,Edit(/$W/**),Write(/$W/**),Edit(/$X/**),Write(/$X/**),Edit(~/.auto/**),Write(~/.auto/**)"
 allow+=",Bash(git worktree add $W/:*),Bash(git worktree list:*),Bash(git worktree remove:*)"
 for c in add commit cherry-pick rev-parse merge-base switch checkout branch rebase merge reset restore \
   stash rm mv fetch pull push rev-list for-each-ref show-ref ls-remote; do
@@ -62,12 +62,13 @@ printf '%s' "$deny" > "$ev/denied-tools.txt"
 name=${AGENT_GIT_NAME:-Apple Agent} email=${AGENT_GIT_EMAIL:-agent@localhost}
 rc=0
 env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u SSH_AUTH_SOCK \
-  PATH="$GH_TOKEN_DIR/bin:$RUNNER_TEMP/bin:$PATH" PACKAGES="$RUNNER_TEMP/packages" \
+  PATH="$GH_TOKEN_DIR/bin:$RUNNER_TEMP/bin:$PATH" PACKAGES="$RUNNER_TEMP/packages" VERIFY_IOS_PACKAGES="$RUNNER_TEMP/packages" \
   XC_DERIVED="$RUNNER_TEMP/derived" XC_LOGS="$RUNNER_TEMP/xc-logs" \
   BASH_DEFAULT_TIMEOUT_MS=2700000 BASH_MAX_TIMEOUT_MS=2700000 \
   GIT_AUTHOR_NAME="$name" GIT_AUTHOR_EMAIL="$email" GIT_COMMITTER_NAME="$name" GIT_COMMITTER_EMAIL="$email" \
   GIT_TERMINAL_PROMPT=0 \
   claude -p "$(cat "$RUNNER_TEMP/prompt.md")" --plugin-dir "$A" \
+    --add-dir "$W" "$X" "$HOME/.auto" \
     --permission-mode dontAsk \
     --allowedTools "$allow" \
     --disallowedTools "$deny" \

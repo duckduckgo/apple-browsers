@@ -29,7 +29,10 @@ def corpus(paths=None):
     for p in paths:
         if os.path.isfile(p):
             files.append(p)
-        for root, _, names in os.walk(p):
+        for root, dirs, names in os.walk(p):
+            # auto's npm dependencies ship READMEs and license texts the agent never reads, and license text matches
+            # the repo's own file headers
+            dirs[:] = [d for d in dirs if d != "node_modules"]
             files += [os.path.join(root, n) for n in names if n.endswith(".md")]
     found = set()
     for path in files:

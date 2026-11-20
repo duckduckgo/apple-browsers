@@ -752,10 +752,16 @@ def set_conditions(mac, conditions, target, launched):
     registered before the change, so a change that fails halfway is still undone."""
     rec = mac.rec
     if not launched:
-        rec.conditions["appearance"] = _readback(mac._do("appearance", "restore"), "appearance")
-        if "appearance" in conditions:
-            mac.undo.append(("appearance", ("appearance", "restore")))
-            rec.conditions["appearance"] = _readback(mac._do("appearance", conditions["appearance"]), "appearance")
+        if "appearance" not in conditions:   # nothing declared: a restore that fails can't spoil the proof
+            code, out = mac._sh("appearance", "restore")
+            if code:
+                rec.problems.append(f"appearance not restored (exit {code}): {_line(out[-300:])}")
+            else:
+                rec.conditions["appearance"] = _readback(out, "appearance")
+            return
+        mac._do("appearance", "restore")
+        mac.undo.append(("appearance", ("appearance", "restore")))
+        rec.conditions["appearance"] = _readback(mac._do("appearance", conditions["appearance"]), "appearance")
         return
     if "window" in conditions:
         if target == "mac":   # this Mac's Debug app keeps its window frame; a VM's app data is wiped at reservation

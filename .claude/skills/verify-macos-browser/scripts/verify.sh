@@ -333,7 +333,11 @@ build)
             if (( $(window_count "$pid") > 0 )); then ready=1; break; fi
             sleep 1
         done
-        (( ready )) || { echo "NOT READY: no window after 60 s${VM:+ (keychain dialog in $VM? see VM-SETUP.md)}"; exit 2; }
+        if (( ! ready )); then   # a prompt (keychain, notifications) in front of the app blocks its first window
+            front=$(on_target 'lsappinfo info -only name "$(lsappinfo front)" | sed -n "1s/^\"\([^\"]*\)\".*/\1/p"')
+            echo "NOT READY: no window after 60 s${front:+; $front is in front: answer its prompt (keychain, notifications), then rerun}${VM:+ (see VM-SETUP.md)}"
+            exit 2
+        fi
         echo "READY window"
     fi
     kill -0 "$(cat "$RUN_DIR/pixel_stream.pid")" 2>/dev/null || { echo "PIXEL STREAM FAILED: $(head -3 "$RUN_DIR/pixel_stream.err")"; exit 2; }

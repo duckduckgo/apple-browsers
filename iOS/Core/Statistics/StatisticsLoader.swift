@@ -60,10 +60,7 @@ public class StatisticsLoader {
             StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
             OnboardingVPNDownloadReasonExperimentMetrics.live.fireSearchMetrics()
          },
-         fireNewAIPromptExperimentPixels: @escaping () -> Void = {
-            PixelKit.fireNewAIPromptExperimentPixels()
-            OnboardingVPNDownloadReasonExperimentMetrics.live.fireAIPromptMetrics()
-         },
+         fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
          fireSearchOnlyExperimentPixels: @escaping () -> Void = {
             OnboardingVPNDownloadReasonExperimentMetrics.live.fireSearchOnlyMetrics()
          },

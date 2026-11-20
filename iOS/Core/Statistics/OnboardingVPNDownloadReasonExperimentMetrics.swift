@@ -50,25 +50,15 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
 
         static func appUse(reasonToken: String) -> String { "download_reason_app_use_\(reasonToken)" }
         static func search(reasonToken: String) -> String { "download_reason_search_retention_\(reasonToken)" }
-        static func aiPrompt(reasonToken: String) -> String { "download_reason_ai_prompt_\(reasonToken)" }
     }
 
     /// Thresholds (number of actions) mapped to the conversion windows they're reported for.
     typealias ThresholdWindows = [NumberOfCalls: [ConversionWindow]]
 
     enum Windows {
-        /// Per download reason. Unlike the standard `app_use`, D0 is included: users are enrolled during onboarding,
-        /// after the app's first foreground, so D0 counts users who come back to the app later on their first day.
-        static let appUseByReason: ThresholdWindows = [1: [0...0, 1...1, 5...7, 8...14]]
-        static let searchByReason: ThresholdWindows = [
-            1: [0...0, 1...1, 5...7, 8...14],
-            4: [5...7],
-            6: [5...7],
-            11: [5...7],
-            21: [5...7],
-            30: [5...7]
-        ]
-        static let aiPromptByReason: ThresholdWindows = [1: [0...0, 1...1, 5...7, 8...14]]
+        /// Per download reason, D5-7 only, as agreed in the experiment design. Same thresholds as the standard metrics.
+        static let appUseByReason: ThresholdWindows = [1: [5...7]]
+        static let searchByReason: ThresholdWindows = [1: [5...7], 4: [5...7], 6: [5...7], 11: [5...7], 21: [5...7], 30: [5...7]]
         /// Matches the standard `search` metric, so the two compare directly.
         static let searchOnly: ThresholdWindows = [
             1: [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7, 8...14],
@@ -143,12 +133,6 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
     /// Call for searches only, not for Duck.ai prompts.
     public func fireSearchOnlyMetrics() {
         fire(Metric.searchOnly, Windows.searchOnly)
-    }
-
-    /// Call wherever the standard Duck.ai prompt metric fires.
-    public func fireAIPromptMetrics() {
-        guard let reasonToken = downloadReasonToken() else { return }
-        fire(Metric.aiPrompt(reasonToken: reasonToken), Windows.aiPromptByReason)
     }
 
     // MARK: - Events

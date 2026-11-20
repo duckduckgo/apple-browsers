@@ -84,38 +84,28 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
     // MARK: - Per download reason
 
-    @Test("App use fires per reason on D0, D1, D5-7 and D8-14", .timeLimit(.minutes(1)))
+    @Test("App use fires per reason on D5-7 only", .timeLimit(.minutes(1)))
     func appUseByReason() {
         reasonToken = "vpn"
 
         makeSUT().fireAppUseMetrics()
 
-        #expect(windows(for: "download_reason_app_use_vpn", threshold: 1) == [0...0, 1...1, 5...7, 8...14])
+        #expect(windows(for: "download_reason_app_use_vpn", threshold: 1) == [5...7])
         #expect(thresholdCalls.allSatisfy { $0.metric == "download_reason_app_use_vpn" })
         #expect(subfeatureIDs == ["onboardingVPNDownloadReasonExperiment"])
     }
 
-    @Test("Search fires per reason on D0, D1 and D8-14, and every threshold on D5-7", .timeLimit(.minutes(1)))
+    @Test("Search fires per reason on D5-7 only, at every threshold", .timeLimit(.minutes(1)))
     func searchByReason() {
         reasonToken = "ad-blocking"
 
         makeSUT().fireSearchMetrics()
 
         let metric = "download_reason_search_retention_ad-blocking"
-        #expect(windows(for: metric, threshold: 1) == [0...0, 1...1, 5...7, 8...14])
-        for threshold in [4, 6, 11, 21, 30] {
+        for threshold in [1, 4, 6, 11, 21, 30] {
             #expect(windows(for: metric, threshold: threshold) == [5...7])
         }
-    }
-
-    @Test("Duck.ai prompts fire per reason on D0, D1, D5-7 and D8-14", .timeLimit(.minutes(1)))
-    func aiPromptByReason() {
-        reasonToken = "ai-chat"
-
-        makeSUT().fireAIPromptMetrics()
-
-        #expect(windows(for: "download_reason_ai_prompt_ai-chat", threshold: 1) == [0...0, 1...1, 5...7, 8...14])
-        #expect(thresholdCalls.count == 4)
+        #expect(thresholdCalls.count == 6)
     }
 
     @Test("Without a download reason, nothing per reason fires", .timeLimit(.minutes(1)))
@@ -125,7 +115,6 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
         sut.fireAppUseMetrics()
         sut.fireSearchMetrics()
-        sut.fireAIPromptMetrics()
 
         #expect(thresholdCalls.isEmpty)
     }

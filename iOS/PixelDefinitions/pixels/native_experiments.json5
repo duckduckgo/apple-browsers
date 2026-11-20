@@ -30,63 +30,43 @@
                     "enum": [""]
                 },
                 "download_reason_search_retention_search": {
-                    "description": "Search retention (searches and Duck.ai prompts) for the 'search' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7",
+                    "description": "D5-7 search retention (searches and Duck.ai prompts) for the 'search' download-reason segment",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_search_retention_ai-chat": {
-                    "description": "Search retention (searches and Duck.ai prompts) for the 'ai-chat' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7",
+                    "description": "D5-7 search retention (searches and Duck.ai prompts) for the 'ai-chat' download-reason segment",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_search_retention_no-ai": {
-                    "description": "Search retention (searches and Duck.ai prompts) for the 'no-ai' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7",
+                    "description": "D5-7 search retention (searches and Duck.ai prompts) for the 'no-ai' download-reason segment",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_search_retention_ad-blocking": {
-                    "description": "Search retention (searches and Duck.ai prompts) for the 'ad-blocking' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7",
+                    "description": "D5-7 search retention (searches and Duck.ai prompts) for the 'ad-blocking' download-reason segment",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_search_retention_vpn": {
-                    "description": "Search retention (searches and Duck.ai prompts) for the 'vpn' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7",
+                    "description": "D5-7 search retention (searches and Duck.ai prompts) for the 'vpn' download-reason segment",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_app_use_search": {
-                    "description": "App use retention for the 'search' download-reason segment on D0, D1, D5-7 and D8-14",
+                    "description": "D5-7 app use retention for the 'search' download-reason segment",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_ai-chat": {
-                    "description": "App use retention for the 'ai-chat' download-reason segment on D0, D1, D5-7 and D8-14",
+                    "description": "D5-7 app use retention for the 'ai-chat' download-reason segment",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_no-ai": {
-                    "description": "App use retention for the 'no-ai' download-reason segment on D0, D1, D5-7 and D8-14",
+                    "description": "D5-7 app use retention for the 'no-ai' download-reason segment",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_ad-blocking": {
-                    "description": "App use retention for the 'ad-blocking' download-reason segment on D0, D1, D5-7 and D8-14",
+                    "description": "D5-7 app use retention for the 'ad-blocking' download-reason segment",
                     "enum": ["1"]
                 },
                 "download_reason_app_use_vpn": {
-                    "description": "App use retention for the 'vpn' download-reason segment on D0, D1, D5-7 and D8-14",
-                    "enum": ["1"]
-                },
-                "download_reason_ai_prompt_search": {
-                    "description": "Sent a Duck.ai prompt, for the 'search' download-reason segment, on D0, D1, D5-7 and D8-14",
-                    "enum": ["1"]
-                },
-                "download_reason_ai_prompt_ai-chat": {
-                    "description": "Sent a Duck.ai prompt, for the 'ai-chat' download-reason segment, on D0, D1, D5-7 and D8-14",
-                    "enum": ["1"]
-                },
-                "download_reason_ai_prompt_no-ai": {
-                    "description": "Sent a Duck.ai prompt, for the 'no-ai' download-reason segment, on D0, D1, D5-7 and D8-14",
-                    "enum": ["1"]
-                },
-                "download_reason_ai_prompt_ad-blocking": {
-                    "description": "Sent a Duck.ai prompt, for the 'ad-blocking' download-reason segment, on D0, D1, D5-7 and D8-14",
-                    "enum": ["1"]
-                },
-                "download_reason_ai_prompt_vpn": {
-                    "description": "Sent a Duck.ai prompt, for the 'vpn' download-reason segment, on D0, D1, D5-7 and D8-14",
+                    "description": "D5-7 app use retention for the 'vpn' download-reason segment",
                     "enum": ["1"]
                 },
                 "search_only": {

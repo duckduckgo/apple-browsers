@@ -188,12 +188,13 @@ case "type":
     let src = CGEventSource(stateID: .hidSystemState)
     for ch in text.utf16 {
         var c = ch
+        // No modifiers, explicitly: after `key cmd+t` the source's state still holds Cmd, and text typed with it is dropped.
         let down = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true)
         down?.keyboardSetUnicodeString(stringLength: 1, unicodeString: &c)
-        down?.post(tap: .cghidEventTap)
+        down?.flags = []; down?.post(tap: .cghidEventTap)
         let up = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false)
         up?.keyboardSetUnicodeString(stringLength: 1, unicodeString: &c)
-        up?.post(tap: .cghidEventTap)
+        up?.flags = []; up?.post(tap: .cghidEventTap)
         usleep(15_000)
     }
     print("typed \(text.count) chars")

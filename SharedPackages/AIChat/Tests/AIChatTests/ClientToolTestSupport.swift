@@ -67,6 +67,7 @@ final class ClientToolTestHarness {
 @MainActor
 final class ClientToolTestConfiguration: BrowserToolsConfiguration {
     var isEnabled = true
+    var isRequestAccessEnabled = false
     var disabled: Set<String> = []
     func isToolEnabled(named name: String) -> Bool { isEnabled && !disabled.contains(name) }
 }

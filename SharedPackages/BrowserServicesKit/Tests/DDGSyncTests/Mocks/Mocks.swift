@@ -342,6 +342,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var canWriteUnifiedDeviceList: () -> Bool = { false }
     var canUsePatchEndpointForLegacyDeviceRename: () -> Bool = { true }
     var canReadUnifiedDeviceList: () -> Bool = { false }
+    var isLoginAuditLogEnabled: () -> Bool = { false }
     lazy var syncFeatureFlags: any SyncFeatureFlagProviding = SyncFeatureFlagProvider(
         isScopedAccessCredentialsEnabled: { [weak self] in self?.isScopedAccessCredentialsEnabled() == true },
         isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
@@ -350,7 +351,8 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         canSendExchangeChannelSecret: { [weak self] in self?.canSendExchangeChannelSecret() == true },
         canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true },
         canUsePatchEndpointForLegacyDeviceRename: { [weak self] in self?.canUsePatchEndpointForLegacyDeviceRename() == true },
-        canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true }
+        canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true },
+        isLoginAuditLogEnabled: { [weak self] in self?.isLoginAuditLogEnabled() == true }
     )
     var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
     var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()
@@ -902,8 +904,11 @@ final class MockAIChatsHandling: AIChatsHandling {
 final class MockDataProvidersSource: DataProvidersSource {
     var dataProviders: [DataProviding] = []
 
+    private(set) var makeDataProvidersCallCount = 0
+
     func makeDataProviders() -> [DataProviding] {
-        dataProviders
+        makeDataProvidersCallCount += 1
+        return dataProviders
     }
 }
 
@@ -960,13 +965,16 @@ class RemoteAPIRequestCreatingMock: RemoteAPIRequestCreating {
         let parameters: [String: String]
         let body: Data?
         let contentType: String?
+        let requirements: APIResponseRequirements
     }
 
-    func createRequest(url: URL, method: Networking.APIRequest.HTTPMethod, headers: [String: String], parameters: [String: String], body: Data?, contentType: String?) -> HTTPRequesting {
+    func createRequest(url: URL, method: Networking.APIRequest.HTTPMethod, headers: [String: String], parameters: [String: String],
+                       body: Data?, contentType: String?, requirements: APIResponseRequirements) -> HTTPRequesting {
         lock.lock()
         defer { lock.unlock() }
         createRequestCallCount += 1
-        createRequestCallArgs.append(CreateRequestCallArgs(url: url, method: method, headers: headers, parameters: parameters, body: body, contentType: contentType))
+        createRequestCallArgs.append(CreateRequestCallArgs(url: url, method: method, headers: headers, parameters: parameters,
+                                                           body: body, contentType: contentType, requirements: requirements))
         return fakeRequests[url] ?? request
     }
 }

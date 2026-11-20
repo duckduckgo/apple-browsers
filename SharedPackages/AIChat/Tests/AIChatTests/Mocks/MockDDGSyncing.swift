@@ -156,6 +156,9 @@ final class MockDDGSyncing: DDGSyncing {
     func disconnect(deviceId: String) async throws {}
     func fetchDevices() async throws -> [RegisteredDevice] { [] }
 
+    func pollAuditLog() async throws -> Bool { false }
+    func isAuditLogPollingAvailable(forAccountID accountID: String?) throws -> Bool { false }
+
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading { MockAuditLogReader() }
 

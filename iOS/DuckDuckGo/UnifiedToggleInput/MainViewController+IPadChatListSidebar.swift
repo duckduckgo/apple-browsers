@@ -33,24 +33,23 @@ extension MainViewController {
         isIPadFullTabChatInput && featureFlagger.isFeatureOn(.aiChatNativeStorage)
     }
 
+    /// The "Chats" entry points (address bar menu, app menu, contextual "View all") load `sidebar=open`. The page would
+    /// open its own chats drawer under this list too, so the page loads without it and the request opens this list.
+    /// Returns the URL to load and whether it asked for the list.
+    func routingChatListRequestToIPadSidebar(_ url: URL) -> (url: URL, requestsChatList: Bool) {
+        guard isIPadChatListSidebarAvailable, url.isDuckAISidebarOpen else { return (url, false) }
+        iPadChatListSidebarState.isOpen = true
+        return (url.removingParameters(named: [AIChatURLParameters.sidebarName]), true)
+    }
+
     func installIPadChatListSidebar(in tab: TabViewController) {
         guard isIPadChatListSidebarAvailable else { return }
-        openIPadChatListSidebarIfRequested(by: tab)
         let sidebar = iPadChatListSidebar(isFireMode: tab.tabModel.fireTab)
         tab.installChatListSidebar(sidebar.navigationController,
                                    isOpen: iPadChatListSidebarState.isOpen,
                                    onToggle: { [weak self] in self?.toggleIPadChatListSidebar() },
                                    onNewChat: { [weak self] in self?.startNewChatFromIPadChatListSidebar() })
         sidebar.followCurrentChat(of: tab)
-    }
-
-    /// The "Chats" entry points (address bar menu, app menu, contextual "View all") load `sidebar=open`; on iPad that's this list.
-    private func openIPadChatListSidebarIfRequested(by tab: TabViewController) {
-        let requestsChatList = (tab.url ?? tab.link?.url)?.getParameter(named: AIChatURLParameters.sidebarName)
-            == AIChatURLParameters.sidebarOpenValue
-        defer { tab.hasOpenedChatListSidebarFromURL = requestsChatList }
-        guard requestsChatList, !tab.hasOpenedChatListSidebarFromURL else { return }
-        iPadChatListSidebarState.isOpen = true
     }
 
     func detachIPadChatListSidebar() {

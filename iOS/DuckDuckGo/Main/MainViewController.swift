@@ -3465,8 +3465,12 @@ class MainViewController: UIViewController {
     }
 
     func loadUrl(_ url: URL, fromExternalLink: Bool = false) {
+        let chatListRequest = routingChatListRequestToIPadSidebar(url)
         prepareTabForRequest {
-            self.currentTab?.load(url: url)
+            if chatListRequest.requestsChatList {
+                self.currentTab?.isDuckAIDeepLinkSurfaceRequested = true
+            }
+            self.currentTab?.load(url: chatListRequest.url)
             if fromExternalLink {
                 self.currentTab?.inferredOpenerContext = .external
             }
@@ -3512,10 +3516,11 @@ class MainViewController: UIViewController {
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
-        let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
+        let chatListRequest = url.map(routingChatListRequestToIPadSidebar)
+        let tab = tabManager.add(url: chatListRequest?.url ?? url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
-        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true || chatListRequest?.requestsChatList == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {

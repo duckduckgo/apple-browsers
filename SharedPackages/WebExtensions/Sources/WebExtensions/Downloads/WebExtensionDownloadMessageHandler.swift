@@ -19,6 +19,7 @@
 #if os(macOS)
 
 import AppKit
+import Common
 import WebKit
 
 @available(macOS 15.4, *)
@@ -29,7 +30,12 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
     var backgroundWebView: (WKWebExtensionContext) -> WKWebView? = { _ in nil }
     var permissionController: () -> WebExtensionPermissionController? = { nil }
 
-    var presentationWindow: (WKWebView, WKWebExtensionContext) -> NSWindow? = { _, _ in nil }
+    enum WindowSelection {
+        case savePanel
+        case automatic(boundTo: NSWindow?)
+    }
+
+    var presentationWindow: (WKWebView, WKWebExtensionContext, WindowSelection) -> NSWindow? = { _, _, _ in nil }
     var automaticDownloadDirectory: () -> URL? = { nil }
     var canChooseDestination: (NSWindow) -> Bool = { NSApp.isActive && $0.isVisible && $0.attachedSheet == nil }
     var chooseDestination: @MainActor (String, String?, NSWindow) async -> URL? = WebExtensionDownloadMessageHandler.showSavePanel
@@ -43,14 +49,11 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
     }
 
     func reply(to message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
-        let origin = message.frameInfo.securityOrigin
-        guard message.name == WebExtensionAPIStubScript.downloadMessageHandlerName, message.world == .page,
-              message.frameInfo.isMainFrame, origin.protocol == "webkit-extension", !origin.host.isEmpty,
-              let url = message.frameInfo.request.url, url.scheme == origin.protocol,
-              url.host?.caseInsensitiveCompare(origin.host) == .orderedSame,
-              let webView = message.webView, let context = contextForOrigin(url),
-              isCurrent(context, in: webView), context.webExtension.declaresPermission("downloads"),
-              let controller = permissionController(), let window = presentationWindow(webView, context) else {
+        guard let webView = message.webView,
+              let context = requestingContext(for: message),
+              isCurrent(context, in: webView),
+              context.webExtension.declaresPermission(WebExtensionAppPermission.downloads.rawValue),
+              let controller = permissionController() else {
             replyHandler(nil, "Extension downloads are unavailable")
             return
         }
@@ -62,6 +65,13 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
             replyHandler(nil, "Unsupported attachment URL or filename")
             return
         }
+        let directory = automaticDownloadDirectory()
+        let isAutomatic = directory != nil
+        let selection: WindowSelection = isAutomatic ? .automatic(boundTo: nil) : .savePanel
+        guard let window = presentationWindow(webView, context, selection) else {
+            replyHandler(nil, "Extension downloads are unavailable")
+            return
+        }
         saving = true
         Task {
             let keepAlive = keepBackgroundLoaded(context, for: webView)
@@ -70,14 +80,11 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                 saving = false
             }
             let identifier = context.uniqueIdentifier
-            // Older installs can have required downloads in their manifest without a saved grant.
-            // Only a recent user interaction can start the normal permission prompt.
-            if !controller.isGranted(.downloads, to: identifier), context.webExtension.requiresPermission("downloads") {
-                _ = await controller.requestAppPermissions([.downloads], for: context)
-            }
+            await requestRequiredPermissionIfNeeded(for: context, using: controller)
+            let authorizationWindow: WindowSelection = isAutomatic ? .automatic(boundTo: window) : .savePanel
             @MainActor func authorized() -> Bool {
                 isCurrent(context, in: webView) && permissionController() === controller &&
-                    presentationWindow(webView, context) === window && controller.isGranted(.downloads, to: identifier)
+                    presentationWindow(webView, context, authorizationWindow) === window && controller.isGranted(.downloads, to: identifier)
             }
             @MainActor func checkAuthorization() throws {
                 guard authorized() else { throw WebExtensionDownload.DownloadError.canceled }
@@ -91,7 +98,7 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                     throw WebExtensionDownload.DownloadError.invalid
                 }
                 try checkAuthorization()
-                let (destination, isAutomatic) = try await downloadDestination(for: download.filename, context: context, window: window)
+                let destination = try await downloadDestination(for: download.filename, context: context, window: window, automaticDirectory: directory)
                 // The panel grants access to its URL. Preferences own access to the configured directory.
                 defer { if !isAutomatic { destination.stopAccessingSecurityScopedResource() } }
                 try checkAuthorization()
@@ -115,15 +122,33 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
         }
     }
 
-    private func downloadDestination(for filename: String, context: WKWebExtensionContext, window: NSWindow) async throws -> (url: URL, isAutomatic: Bool) {
-        guard canChooseDestination(window) else { throw WebExtensionDownload.DownloadError.canceled }
-        if let directory = automaticDownloadDirectory() {
-            return (directory.appendingPathComponent(filename, isDirectory: false), true)
+    private func requestingContext(for message: WKScriptMessage) -> WKWebExtensionContext? {
+        let frame = message.frameInfo
+        let origin = frame.securityOrigin
+        guard message.name == WebExtensionAPIStubScript.downloadMessageHandlerName, message.world == .page,
+              frame.isMainFrame, origin.protocol == URL.NavigationalScheme.webkitExtension.rawValue, !origin.host.isEmpty,
+              let url = frame.request.url, url.scheme == origin.protocol,
+              url.host?.caseInsensitiveCompare(origin.host) == .orderedSame else { return nil }
+        return contextForOrigin(url)
+    }
+
+    private func requestRequiredPermissionIfNeeded(for context: WKWebExtensionContext, using controller: WebExtensionPermissionController) async {
+        // Older installs can require downloads without a saved grant. The prompt needs a recent interaction.
+        guard context.webExtension.requiresPermission(WebExtensionAppPermission.downloads.rawValue),
+              !controller.isGranted(.downloads, to: context.uniqueIdentifier) else { return }
+        _ = await controller.requestAppPermissions([.downloads], for: context)
+    }
+
+    private func downloadDestination(for filename: String, context: WKWebExtensionContext, window: NSWindow,
+                                     automaticDirectory: URL?) async throws -> URL {
+        if let automaticDirectory {
+            return automaticDirectory.appendingPathComponent(filename, isDirectory: false)
         }
+        guard canChooseDestination(window) else { throw WebExtensionDownload.DownloadError.canceled }
         guard let chosen = await chooseDestination(filename, context.webExtension.displayName, window) else {
             throw WebExtensionDownload.DownloadError.canceled
         }
-        return (chosen, false)
+        return chosen
     }
 
     private func keepBackgroundLoaded(_ context: WKWebExtensionContext, for webView: WKWebView) -> Task<Void, Never>? {

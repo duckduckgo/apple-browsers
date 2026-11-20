@@ -152,7 +152,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         try webKit.loadCopyingErrors(context)
         handler.contextForOrigin = { [unowned self] url in self.webKit.extensionContext(for: url) }
         handler.backgroundWebView = { $0.value(forKey: "_backgroundWebView") as? WKWebView }
-        handler.presentationWindow = { [unowned self] _, _ in self.window }
+        handler.presentationWindow = { [unowned self] _, _, _ in self.window }
         handler.canChooseDestination = { _ in true }
         handler.chooseDestination = { _, _, _ in nil }
         handler.permissionController = { [unowned self] in self.permissionController }
@@ -232,6 +232,22 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("sample 1.bin")), Data([0, 1, 2]))
     }
 
+    func testAutomaticDownloadContinuesAfterFocusChanges() async throws {
+        await grant()
+        handler.automaticDownloadDirectory = { [unowned self] in self.directory }
+        handler.canChooseDestination = { _ in false }
+        view.didStartDownload = { [unowned self] in
+            self.handler.presentationWindow = { _, _, selection in
+                if case .automatic(let boundWindow) = selection { return boundWindow }
+                return nil
+            }
+        }
+
+        let result = try await download()
+        XCTAssertEqual(result, "saved")
+        XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("sample.bin")), Data([0, 1, 2]))
+    }
+
     func testPopOutUsesItsOwnWindowAndRespectsPrivateAccess() {
         let manager = WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
                                           windowTabProvider: WebExtensionWindowTabProvidingMock(),
@@ -247,6 +263,11 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertNil(manager.downloadPresentationWindow(for: view, context: context))
         context.hasAccessToPrivateData = true
         XCTAssertIdentical(manager.downloadPresentationWindow(for: view, context: context), popup)
+
+        popup.isFocused = false
+        XCTAssertIdentical(manager.downloadPresentationWindow(for: view, context: context, selection: .automatic(boundTo: popup)), popup)
+        context.hasAccessToPrivateData = false
+        XCTAssertNil(manager.downloadPresentationWindow(for: view, context: context, selection: .automatic(boundTo: popup)))
     }
 
     func testBackgroundRefreshesWhileChoosingADestinationAndStopsAfterCancellation() async throws {
@@ -409,7 +430,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         let otherWindow = NSWindow()
         handler.chooseDestination = { [unowned self] _, _, window in
             XCTAssertTrue(window === self.window)
-            self.handler.presentationWindow = { _, _ in otherWindow }
+            self.handler.presentationWindow = { _, _, _ in otherWindow }
             return target
         }
         let result = try await download()
@@ -486,7 +507,9 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
 }
 
 private final class DownloadTestWindow: NSWindow {
-    override var isKeyWindow: Bool { true }
+    var isFocused = true
+    override var isKeyWindow: Bool { isFocused }
+    override var isVisible: Bool { true }
 }
 
 @available(macOS 15.4, *)

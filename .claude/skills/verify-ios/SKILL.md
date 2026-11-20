@@ -270,7 +270,6 @@ and fails if the running binary is not this worktree's build.
   `DerivedData/verify-ios/`; ports, state and evidence under `~/.ddg-verify-ios/<worktree>-<hash>/`
   (`VERIFY_IOS_HOME` overrides the root), since evidence must outlive the worktree. The runner answers only to this worktree's token. Every command that changes a device holds its lock for its
   whole duration; `build` and the shared fixture server need both locks.
-- Packages: set `VERIFY_IOS_PACKAGES` to a directory of already resolved Swift packages, and the app build uses it without resolving any, for machines that can't fetch the private ones.
 - Cleanup signals only processes whose recorded identity (pid + start time + command) still matches, checked again
   right before each signal; survivors stay recorded and are reported. It deletes only this worktree's simulators,
   never evidence or builds.

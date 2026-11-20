@@ -4081,8 +4081,8 @@ https://duckduckgo.com/mac";
 /* Button to continue to the next onboarding screen from the AI model personalization screen. */
 "onboarding.personalization.aiModel.cta" = "Next";
 
-/* Message of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.message" = "Swap anytime.";
+/* Message of the onboarding AI model personalization screen. Duck.ai is a brand name and should not be translated */
+"onboarding.personalization.aiModel.message" = "With Duck.ai, you can swap anytime.";
 
 /* Title of the onboarding AI model personalization screen. */
 "onboarding.personalization.aiModel.title" = "Pick an AI to try first";

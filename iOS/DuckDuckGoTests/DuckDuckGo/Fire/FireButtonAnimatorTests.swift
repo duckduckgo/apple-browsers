@@ -74,6 +74,49 @@ final class FireButtonAnimatorTests: XCTestCase {
         XCTAssertTrue(pixels.actualFireCalls.isEmpty)
     }
 
+    func testWhenNoAnimationPlaysThenOverlayIsRemovedBeforeTheBurnFinishes() async {
+        let settings = AppSettingsMock()
+        settings.currentFireButtonAnimation = .none
+        let animator = FireButtonAnimator(appSettings: settings)
+        var events: [String] = []
+        let completed = expectation(description: "Completed")
+
+        animator.animate {
+            events.append("burn")
+        } onTransitionCompleted: {
+        } completion: {
+            completed.fulfill()
+        } onOverlayRemoved: {
+            events.append("overlayRemoved")
+        }
+
+        // Nothing covers the screen, so it is uncovered before the burn work even starts.
+        XCTAssertEqual(events, ["overlayRemoved"])
+        await fulfillment(of: [completed], timeout: 1)
+        XCTAssertEqual(events, ["overlayRemoved", "burn"])
+    }
+
+    func testWhenAnimationPlaysThenOverlayIsRemovedOnceItEnds() async throws {
+        let window = try XCTUnwrap(UIApplication.shared.firstKeyWindow)
+        let animator = FireButtonAnimator(appSettings: AppSettingsMock())
+        let existingSubviews = window.subviews
+        var overlayRemovals = 0
+        let completed = expectation(description: "Completed")
+
+        animator.animate {
+        } onTransitionCompleted: {
+        } completion: {
+            completed.fulfill()
+        } onOverlayRemoved: {
+            overlayRemovals += 1
+        }
+
+        XCTAssertEqual(overlayRemovals, 0)
+        await fulfillment(of: [completed], timeout: 5)
+        XCTAssertEqual(overlayRemovals, 1)
+        XCTAssertTrue(window.subviews.allSatisfy { subview in existingSubviews.contains(where: { $0 === subview }) })
+    }
+
     func testWhenApplicationWillResignActiveThenRetainedPreBurnSnapshotIsRemoved() throws {
         let window = try XCTUnwrap(UIApplication.shared.firstKeyWindow)
         let notificationCenter = NotificationCenter()

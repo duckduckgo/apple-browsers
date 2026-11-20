@@ -60,7 +60,7 @@ final class AIChatLocalRunQueueTests {
 
         engine.send(.text("Hello"), to: "r1")
         engine.send(.text(" world"), to: "r1")
-        engine.send(.finished(AIChatLocalModelRunSummary(promptTokens: 120, outputTokens: 4, inputTruncated: true)), to: "r1")
+        engine.send(.finished(AIChatLocalModelRunSummary(promptTokens: 120, outputTokens: 4, inputTruncated: true, loadMs: 480)), to: "r1")
         engine.finish("r1")
         await waitUntil { chunks.last?.done == true }
 
@@ -72,6 +72,7 @@ final class AIChatLocalRunQueueTests {
         #expect(last.metrics?.promptTokens == 120)
         #expect(last.metrics?.outputTokens == 4)
         #expect(last.metrics?.inputTruncated == true)
+        #expect(last.metrics?.loadMs == 480)
         #expect(last.metrics?.timeToFirstWordMs != nil)
         #expect(queue.isIdle)
     }

@@ -12,6 +12,7 @@ on:
       - 'SharedPackages/Common/**'
       - 'SharedPackages/DDGError/**'
       - 'SharedPackages/ICSParser/**'
+      - 'SharedPackages/LlamaRuntime/**'
       - 'SharedPackages/LocalModels/**'
       - 'SharedPackages/Infrastructure/SystemFrameworksExtensions/**'
       - 'SharedPackages/Infrastructure/DesignResourcesKitIcons/**'
@@ -51,6 +52,7 @@ jobs:
         SharedPackages/Common/**
         SharedPackages/DDGError/**
         SharedPackages/ICSParser/**
+        SharedPackages/LlamaRuntime/**
         SharedPackages/LocalModels/**
         SharedPackages/Infrastructure/SystemFrameworksExtensions/**
         SharedPackages/Infrastructure/DesignResourcesKitIcons/**
@@ -373,6 +375,7 @@ jobs:
             SharedPackages/BrowserServicesKit/bsk-ios-unittests-crash-details.json
             SharedPackages/DDGError/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
+            SharedPackages/LlamaRuntime/ios-unittests.xml
             SharedPackages/LocalModels/ios-unittests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
@@ -387,6 +390,7 @@ jobs:
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
+            SharedPackages/LlamaRuntime/ios-unittests.xml
             SharedPackages/LocalModels/ios-unittests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
@@ -415,6 +419,7 @@ jobs:
             SharedPackages/BrowserServicesKit/ios-build-log.txt
             SharedPackages/DDGError/ios-build-log.txt
             SharedPackages/ICSParser/ios-build-log.txt
+            SharedPackages/LlamaRuntime/ios-build-log.txt
             SharedPackages/LocalModels/ios-build-log.txt
             SharedPackages/Infrastructure/DesignResourcesKit/ios-build-log.txt
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-build-log.txt
@@ -429,6 +434,7 @@ jobs:
             SharedPackages/BrowserServicesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/LlamaRuntime/DerivedData/Logs/Test/*.xcresult
             SharedPackages/LocalModels/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/SystemFrameworksExtensions/DerivedData/Logs/Test/*.xcresult
@@ -523,6 +529,16 @@ jobs:
           title: ICSParser (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
+      - name: Process test results (LlamaRuntime)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/LlamaRuntime
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: LlamaRuntime (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
       - name: Process test results (LocalModels)
         if: always()
         uses: ./.github/actions/process-test-results
@@ -602,6 +618,7 @@ jobs:
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
+            SharedPackages/LlamaRuntime/package-tests.xml
             SharedPackages/LocalModels/package-tests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/package-tests.xml
@@ -612,6 +629,7 @@ jobs:
             SharedPackages/Common/package-tests-crash-details.json
             SharedPackages/DDGError/package-tests-crash-details.json
             SharedPackages/ICSParser/package-tests-crash-details.json
+            SharedPackages/LlamaRuntime/package-tests-crash-details.json
             SharedPackages/LocalModels/package-tests-crash-details.json
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests-crash-details.json
             SharedPackages/Infrastructure/SystemFrameworksExtensions/package-tests-crash-details.json
@@ -630,6 +648,7 @@ jobs:
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
+            SharedPackages/LlamaRuntime/package-tests.xml
             SharedPackages/LocalModels/package-tests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/package-tests.xml
@@ -667,6 +686,7 @@ jobs:
             SharedPackages/Common/build-log.txt
             SharedPackages/DDGError/build-log.txt
             SharedPackages/ICSParser/build-log.txt
+            SharedPackages/LlamaRuntime/build-log.txt
             SharedPackages/LocalModels/build-log.txt
             SharedPackages/Infrastructure/DesignResourcesKit/build-log.txt
             SharedPackages/Infrastructure/SystemFrameworksExtensions/build-log.txt
@@ -687,6 +707,7 @@ jobs:
             SharedPackages/Common/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/LlamaRuntime/DerivedData/Logs/Test/*.xcresult
             SharedPackages/LocalModels/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/SystemFrameworksExtensions/DerivedData/Logs/Test/*.xcresult

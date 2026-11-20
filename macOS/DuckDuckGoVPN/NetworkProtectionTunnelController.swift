@@ -560,10 +560,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         do {
             let outcome = try await networkExtensionController.activateSystemExtension(waitingForUserApproval: waitingForUserApproval)
-            guard outcome == .activated else { return }
 
             PixelKit.fire(
-                NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
+                NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess(alreadyActive: outcome == .alreadyActive),
                 frequency: .dailyAndCount,
                 includeAppVersionParameter: true)
         } catch is CancellationError {

@@ -24,23 +24,37 @@ import Foundation
 /// The download subset used by extension attachments. No URLs are fetched by the browser.
 struct WebExtensionDownload {
     static let maximumByteCount = 16 * 1024 * 1024
-    static let maximumURLLength = 128 + 4 * ((maximumByteCount + 2) / 3)
+    private static let maximumHeaderLength = 128
+    // Base64 uses four characters for each group of up to three bytes.
+    static let maximumURLLength = maximumHeaderLength + 4 * ((maximumByteCount + 2) / 3)
     let filename: String
     private let encodedData: Substring
 
     init?(options: Any) {
         guard let options = options as? [String: Any],
               options.count == 2,
-              let filename = options["filename"] as? String, Self.isSafeFilename(filename),
               let url = options["url"] as? String,
-              url.utf8.count <= Self.maximumURLLength,
-              url.hasPrefix("data:"),
-              let comma = url.prefix(128).firstIndex(of: ","),
-              url[..<comma].hasSuffix(";base64") else { return nil }
-        let mediaType = url[..<comma].dropFirst(5).dropLast(7)
-        guard mediaType.utf8.allSatisfy({ (33...126).contains($0) && $0 != 59 }) else { return nil }
+              let filename = options["filename"] as? String else { return nil }
+
+        guard Self.isSafeFilename(filename), let encodedData = Self.base64Payload(in: url) else { return nil }
         self.filename = filename
-        self.encodedData = url[url.index(after: comma)...]
+        self.encodedData = encodedData
+    }
+
+    private static func base64Payload(in url: String) -> Substring? {
+        guard url.utf8.count <= maximumURLLength,
+              let comma = url.prefix(maximumHeaderLength).firstIndex(of: ",") else { return nil }
+
+        let header = url[..<comma]
+        let scheme = "data:"
+        let encoding = ";base64"
+        guard header.hasPrefix(scheme), header.hasSuffix(encoding) else { return nil }
+
+        // The optional media type allows visible ASCII and no additional parameters.
+        let mediaType = header.dropFirst(scheme.count).dropLast(encoding.count)
+        guard mediaType.unicodeScalars.allSatisfy({ ("!"..."~").contains($0) && $0 != ";" }) else { return nil }
+
+        return url[url.index(after: comma)...]
     }
 
     private static func isSafeFilename(_ name: String) -> Bool {

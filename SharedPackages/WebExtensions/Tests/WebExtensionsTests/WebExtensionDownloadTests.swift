@@ -43,6 +43,17 @@ final class WebExtensionDownloadTests: XCTestCase {
         XCTAssertNil(WebExtensionDownload(options: ["url": "data:;base64," + oversized, "filename": "file"]))
     }
 
+    func testDataURLMediaTypeIsOptionalAndCannotContainParametersOrNonVisibleASCII() throws {
+        let options = ["url": "data:;base64,AAEC", "filename": "file"]
+        let download = try XCTUnwrap(WebExtensionDownload(options: options))
+        XCTAssertEqual(try download.decode(), Data([0, 1, 2]))
+
+        for mediaType in ["text/plain;charset=utf-8", "text/ plain", "text/\nplain", "text/café"] {
+            let url = "data:\(mediaType);base64,AAEC"
+            XCTAssertNil(WebExtensionDownload(options: ["url": url, "filename": "file"]), mediaType)
+        }
+    }
+
     func testPublishingPreservesAnExistingFileOrSymlink() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)

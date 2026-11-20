@@ -402,13 +402,15 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
                        DuckAIPromptPixelContext(source: nil, surface: .duckAI))
     }
 
-    func testKeyboardMonitorWaitsForTheAppToBecomeActiveBeforeQueryingGameController() {
+    func testKeyboardMonitorWaitsForTheAppToBecomeActiveBeforeTouchingGameController() {
         let notificationCenter = NotificationCenter()
         var queryCount = 0
         let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, isConnectedNow: {
             queryCount += 1
             return true
         })
+        // Observing GameController notifications starts its device session, so they're ignored until activation.
+        notificationCenter.post(name: .GCKeyboardDidConnect, object: nil)
         XCTAssertEqual(queryCount, 0)
         XCTAssertNil(monitor.isConnected)
 
@@ -427,7 +429,8 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         let notificationCenter = NotificationCenter()
         var isConnectedNow = false
         let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, isConnectedNow: { isConnectedNow })
-        XCTAssertNil(monitor.isConnected)
+        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        XCTAssertEqual(monitor.isConnected, false)
 
         isConnectedNow = true
         notificationCenter.post(name: .GCKeyboardDidConnect, object: nil)

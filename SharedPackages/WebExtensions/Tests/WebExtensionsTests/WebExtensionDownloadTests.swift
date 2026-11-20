@@ -54,6 +54,26 @@ final class WebExtensionDownloadTests: XCTestCase {
         }
     }
 
+    func testNormalizesDataURLsForDownload() throws {
+        let cases = [("data:,hello%23world#ignored", "data:,hello%23world"),
+                     ("data:; base64,QQ==", "data:;base64,QQ=="),
+                     ("data:text/plain;base64;x=y,QQ==", "data:,QQ=="),
+                     ("data:;base64,AAE#ignored", "data:;base64,AAE="),
+                     ("data:text/plain;base64,YQ", "data:;base64,YQ=="),
+                     ("data:;base64,%41%20AE", "data:;base64,AAE=")]
+        for (input, expected) in cases {
+            let download = try XCTUnwrap(request(input))
+            XCTAssertEqual(download.makeDownloadURL()?.absoluteString, expected, input)
+        }
+    }
+
+    func testRejectsMalformedBase64() throws {
+        for payload in ["%20!", "QQ=0", "YQ=", "A", "%252F"] {
+            let download = try XCTUnwrap(request("data:attachment/file;base64," + payload))
+            XCTAssertNil(download.makeDownloadURL(), payload)
+        }
+    }
+
     func testPublishingPreservesAnExistingFileOrSymlink() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
@@ -217,27 +237,19 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertEqual(result, "saved")
     }
 
-    func testInvalidBase64CannotPublishAFile() async throws {
+    func testInvalidBase64IsRejectedBeforeChoosingADestination() async throws {
         await grant()
-        let target = directory.appendingPathComponent("invalid.bin")
-        handler.chooseDestination = { _, _, _ in target }
-        for payload in ["%20!", "QQ=0", "YQ=", "A", "%252F"] {
-            let result = try await download(url: "data:attachment/file;base64," + payload)
-            XCTAssertEqual(result, "rejected", payload)
-            XCTAssertFalse(FileManager.default.fileExists(atPath: target.path), payload)
-        }
+        handler.chooseDestination = { _, _, _ in XCTFail("Unexpected Save panel"); return nil }
+        let result = try await download(url: "data:;base64,QQ=0")
+        XCTAssertEqual(result, "rejected")
     }
 
-    func testDataURLFragmentsAndForgivingBase64MatchChromeBytes() async throws {
+    func testWebKitSavesPlainAndBase64DataURLBytes() async throws {
         await grant()
         let target = directory.appendingPathComponent("data.bin")
         handler.chooseDestination = { _, _, _ in target }
-        let cases = [("data:,hello%23world#ignored", Data("hello#world".utf8)),
-                     ("data:; base64,QQ==", Data("A".utf8)),
-                     ("data:text/plain;base64;x=y,QQ==", Data("QQ==".utf8)),
-                     ("data:;base64,AAE#ignored", Data([0, 1])),
-                     ("data:text/plain;base64,YQ", Data("a".utf8)),
-                     ("data:;base64,%41%20AE", Data([0, 1]))]
+        let cases = [("data:text/plain;base64;x=y,QQ==%23#ignored", Data("QQ==#".utf8)),
+                     ("data:; base64,%41%20AE#ignored", Data([0, 1]))]
         for (url, expected) in cases {
             let result = try await download(url: url)
             XCTAssertEqual(result, "saved", url)

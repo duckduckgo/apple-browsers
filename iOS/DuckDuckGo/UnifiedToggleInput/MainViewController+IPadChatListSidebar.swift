@@ -37,19 +37,35 @@ extension MainViewController {
     /// open its own chats drawer under this list too, so the page loads without it and the request opens this list.
     /// Returns the URL to load and whether it asked for the list.
     func routingChatListRequestToIPadSidebar(_ url: URL) -> (url: URL, requestsChatList: Bool) {
-        guard isIPadChatListSidebarAvailable, url.isDuckAISidebarOpen else { return (url, false) }
+        // The host check also takes a debug Duck.ai URL, which `isDuckAIURL` doesn't know.
+        guard isIPadChatListSidebarAvailable,
+              url.isDuckAIURL || url.host == aiChatSettings.aiChatURL.host,
+              Self.requestsChatList(url) else { return (url, false) }
         iPadChatListSidebarState.isOpen = true
         return (url.removingParameters(named: [AIChatURLParameters.sidebarName]), true)
     }
 
+    private static func requestsChatList(_ url: URL?) -> Bool {
+        url?.getParameter(named: AIChatURLParameters.sidebarName) == AIChatURLParameters.sidebarOpenValue
+    }
+
     func installIPadChatListSidebar(in tab: TabViewController) {
         guard isIPadChatListSidebarAvailable else { return }
+        openIPadChatListSidebarIfRequested(by: tab)
         let sidebar = iPadChatListSidebar(isFireMode: tab.tabModel.fireTab)
         tab.installChatListSidebar(sidebar.navigationController,
                                    isOpen: iPadChatListSidebarState.isOpen,
                                    onToggle: { [weak self] in self?.toggleIPadChatListSidebar() },
                                    onNewChat: { [weak self] in self?.startNewChatFromIPadChatListSidebar() })
         sidebar.followCurrentChat(of: tab)
+    }
+
+    /// Loads that skip `routingChatListRequestToIPadSidebar` (background tabs, links, history) still carry `sidebar=open`.
+    private func openIPadChatListSidebarIfRequested(by tab: TabViewController) {
+        let requestsChatList = Self.requestsChatList(tab.url ?? tab.link?.url)
+        defer { tab.hasOpenedChatListSidebarFromURL = requestsChatList }
+        guard requestsChatList, !tab.hasOpenedChatListSidebarFromURL else { return }
+        iPadChatListSidebarState.isOpen = true
     }
 
     func detachIPadChatListSidebar() {

@@ -3467,9 +3467,7 @@ class MainViewController: UIViewController {
     func loadUrl(_ url: URL, fromExternalLink: Bool = false) {
         let chatListRequest = routingChatListRequestToIPadSidebar(url)
         prepareTabForRequest {
-            if chatListRequest.requestsChatList {
-                self.currentTab?.isDuckAIDeepLinkSurfaceRequested = true
-            }
+            self.currentTab?.isOpenedForChatList = chatListRequest.requestsChatList
             self.currentTab?.load(url: chatListRequest.url)
             if fromExternalLink {
                 self.currentTab?.inferredOpenerContext = .external
@@ -3520,7 +3518,8 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: chatListRequest?.url ?? url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
-        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true || chatListRequest?.requestsChatList == true
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true
+        tab.isOpenedForChatList = chatListRequest?.requestsChatList == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {

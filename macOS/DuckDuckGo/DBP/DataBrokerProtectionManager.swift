@@ -246,7 +246,6 @@ extension DataBrokerProtectionManager {
             code = error.receiptErrorCode
         } else if let error {
             let failure = error as NSError
-            // Domains and numeric codes identify failures without copying profile data into the receipt.
             code = "launch_\(failure.code)"
         } else {
             code = nil
@@ -309,31 +308,31 @@ extension DataBrokerProtectionManager {
 
         // 2. Stop the background agent before changing its data.
         Logger.dataBrokerProtection.log("PIR debug launch: stopping background agent.")
-        try await stopDebugAgent()
-        // A second launch may have saved a profile while the agent was stopping.
-        try await validateManagedSeedAccount(options.managedSeed)
-        try options.managedSeed?.validateExistingProfile(try dataManager.fetchProfile() != nil)
+        let managedJobs = try await withDebugAgentStopped {
+            try await validateManagedSeedAccount(options.managedSeed)
+            try options.managedSeed?.validateExistingProfile(try dataManager.fetchProfile() != nil)
 
-        // 3. Clear PIR data and freemium state if reset was requested.
-        let freemiumState = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
-        if shouldReset {
-            Logger.dataBrokerProtection.log("PIR debug launch: resetting PIR data and Freemium state.")
-            try dataManager.removeAllDataForDebugLaunch()
-            DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
-            freemiumState.resetAllState()
-            NotificationCenter.default.post(name: .freemiumDBPResetForDebugLaunch, object: nil)
-        }
-        // 4. Save the fixture and activate freemium for unauthenticated users if needed.
-        if let profileToSave {
-            Logger.dataBrokerProtection.log("PIR debug launch: saving fixture.")
-            let activateFreemium = options.managedSeed != nil ? true : !(await authenticationManager.isUserAuthenticated)
-            if activateFreemium {
-                freemiumState.didActivate = true
+            // 3. Clear PIR data and freemium state if reset was requested.
+            let freemiumState = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
+            if shouldReset {
+                Logger.dataBrokerProtection.log("PIR debug launch: resetting PIR data and Freemium state.")
+                try dataManager.removeAllDataForDebugLaunch()
+                DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
+                freemiumState.resetAllState()
+                NotificationCenter.default.post(name: .freemiumDBPResetForDebugLaunch, object: nil)
             }
-            try await dataManager.saveProfile(profileToSave)
-        }
+            // 4. Save the fixture and activate freemium for unauthenticated users if needed.
+            if let profileToSave {
+                Logger.dataBrokerProtection.log("PIR debug launch: saving fixture.")
+                let activateFreemium = options.managedSeed != nil ? true : !(await authenticationManager.isUserAuthenticated)
+                if activateFreemium {
+                    freemiumState.didActivate = true
+                }
+                try await dataManager.saveProfile(profileToSave)
+            }
 
-        let managedJobs = try managedScanJobs(options.managedSeed, dataManager: dataManager)
+            return try managedScanJobs(options.managedSeed, dataManager: dataManager)
+        }
 
         // 5. Enable the background agent and wait for it to answer XPC.
         Logger.dataBrokerProtection.log("PIR debug launch: enabling background agent.")
@@ -379,10 +378,26 @@ extension DataBrokerProtectionManager {
         return jobs
     }
 
-    private func stopDebugAgent() async throws {
+    /// Re-enables the agent if `body` fails, so a failed debug launch doesn't leave PIR stopped.
+    private func withDebugAgentStopped<T>(_ body: () async throws -> T) async throws -> T {
+        let wasRegistered = try await stopDebugAgent()
+        do {
+            return try await body()
+        } catch {
+            if wasRegistered {
+                try? await LoginItem.dbpBackgroundAgent.enable()
+                NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
+            }
+            throw error
+        }
+    }
+
+    /// Returns whether the agent was registered as a login item before it stopped.
+    private func stopDebugAgent() async throws -> Bool {
         let agent = LoginItem.dbpBackgroundAgent
         let status = await agent.status()
-        if status == .notRegistered || status == .notFound {
+        let wasRegistered = status != .notRegistered && status != .notFound
+        if !wasRegistered {
             if let application = agent.application, !application.terminate() {
                 throw DebugLaunchError.agentDidNotStop
             }
@@ -395,6 +410,7 @@ extension DataBrokerProtectionManager {
             try await Task.sleep(nanoseconds: 100_000_000)
         }
         NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
+        return wasRegistered
     }
 
     static func waitForDebugAgentReady(

@@ -83,7 +83,10 @@ def load_inputs(path, needs_auth=False):
     if config["optOut"] or needs_auth or "pirEndpoint" in config:
         if not isinstance(config.get("pirEndpoint", ""), str):
             raise ValueError("pirEndpoint must be a URL string")
-        endpoint = urllib.parse.urlsplit(config.get("pirEndpoint", ""))
+        try:
+            endpoint = urllib.parse.urlsplit(config.get("pirEndpoint", ""))
+        except ValueError:
+            raise ValueError("pirEndpoint must be a valid URL") from None
         if (endpoint.scheme not in ("http", "https") or not endpoint.hostname or endpoint.username
                 or endpoint.password or endpoint.query or endpoint.fragment):
             raise ValueError("pirEndpoint must name the expected credential-free PIR backend URL")
@@ -175,7 +178,6 @@ class Client:
         self.last_run = None
         self.last_status = None
         self.collect_snapshots = None
-        # Redirects could forward the credential header or auth body to another server.
         class NoRedirect(urllib.request.HTTPRedirectHandler):
             def redirect_request(self, req, fp, code, msg, headers, newurl):
                 return None
@@ -196,8 +198,7 @@ class Client:
         except urllib.error.HTTPError as error:
             with error:
                 status, raw = error.code, error.read().decode(errors="replace")
-        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as error:
-            # In particular, never resend a POST whose response was lost.
+        except OSError as error:
             if method != "GET":
                 raise Failed("PIR mutation response was lost; outcome is ambiguous and was not retried") from error
             raise
@@ -231,7 +232,7 @@ class Client:
             try:
                 result = self.request("GET", f"/api/debug/prerequisites?checkID={check_id}",
                                       timeout=min(5, max(.01, deadline - time.monotonic())))
-            except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+            except OSError:
                 time.sleep(min(.25, max(0, deadline - time.monotonic())))
                 continue
             if result.get("instanceID") != self.instance or result.get("checkID") != check_id:
@@ -272,7 +273,6 @@ def assert_clean(run):
 
 
 def selected(run, profile_url=None, result_id=None):
-    """The one result to opt out: by ID once chosen, else by profileUrl, else the only result."""
     results = run.get("results", [])
     if result_id is not None:
         matches = [r for r in results if r.get("id") == result_id]
@@ -494,7 +494,6 @@ def finish(context, include_manifest=True):
                  for p in sorted(artifacts + snapshot_files)}
         files["report.md"] = dict(sha256=sha256(report), bytes=len(report))
         context.write("manifest.json", dict(status=result["status"], files=files))
-    # Publish the report only after its required evidence manifest is complete.
     (context.evidence / "report.md").write_bytes(report)
 
 
@@ -630,7 +629,6 @@ def execute(args, runtime_factory=None):
     except Exception as error:
         context.result.update(status="inconclusive", reason=f"{type(error).__name__}: {error}")
     finally:
-        # Evidence errors and cancellation during capture must still reach owned cleanup.
         try:
             if args.command == "run" and client and client.last_run is not None:
                 try:
@@ -646,7 +644,6 @@ def execute(args, runtime_factory=None):
                 except (Exception, KeyboardInterrupt) as error:
                     context.result["evidenceErrors"].append(f"debug logs: {type(error).__name__}: {error}")
                 try:
-                    # Native logs may echo backend responses. Scrub before adding them to evidence.
                     with tempfile.TemporaryDirectory(prefix="pir-log-") as scratch:
                         log = Path(scratch) / "app.log"
                         runtime.logs(log)
@@ -673,7 +670,6 @@ def execute(args, runtime_factory=None):
             context.result["evidenceErrors"].append(f"report: {type(error).__name__}: {error}")
             if context.result["status"] == "pass":
                 context.result.update(status="inconclusive", reason="report or evidence manifest could not be written")
-            # Publish consistent failure artifacts without repeating the failed manifest operation.
             try:
                 (context.evidence / "manifest.json").unlink(missing_ok=True)
             except (Exception, KeyboardInterrupt):
@@ -690,9 +686,11 @@ def main(argv=None):
     args = cli.parse_args(argv)
     try:
         result = execute(args)
-    except (ValueError, OSError) as error:
-        # Do not echo input JSON, paths containing file contents, or a credential value.
-        print(f"Invalid inputs: {type(error).__name__}: {error if isinstance(error, ValueError) and not isinstance(error, json.JSONDecodeError) else 'could not read or parse input files'}", file=sys.stderr)
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"Invalid inputs: {type(error).__name__}: could not read or parse input files", file=sys.stderr)
+        return 2
+    except ValueError as error:
+        print(f"Invalid inputs: {type(error).__name__}: {error}", file=sys.stderr)
         return 2
     print(f"PIR {result['status']}" + (f"\n{result['evidence']}/report.md" if "evidence" in result else ""))
     return {"pass": 0, "valid": 0, "fail": 1, "inconclusive": 2}[result["status"]]

@@ -1,4 +1,3 @@
-"""Standalone PIR workflow tests. No app, simulator or subscription is required."""
 import contextlib
 import importlib.util
 import io
@@ -383,6 +382,15 @@ class WorkflowTests(unittest.TestCase):
             pir.execute(self.args(), self.Runtime)
         self.assertEqual(self.instances, [])
 
+    def test_malformed_endpoint_error_omits_input_url(self):
+        self.config["pirEndpoint"] = "https://sensitive-fixture＠backend.test"
+        self.args()
+        with contextlib.redirect_stderr(io.StringIO()) as output:
+            status = pir.main(["run", "--platform", "ios", "--config", str(self.config_file), "--check-config"])
+        self.assertEqual(status, 2)
+        self.assertNotIn("sensitive-fixture", output.getvalue())
+        self.assertIn("pirEndpoint", output.getvalue())
+
     def test_scan_token_requires_backend_config_and_matching_environment(self):
         token = self.directory / "token"
         token.write_text(self.token)
@@ -530,7 +538,6 @@ class WorkflowTests(unittest.TestCase):
         def acknowledge(context, instruction, timeout):
             self.authenticated = True
             context.result["humanSteps"].append(dict(status="acknowledged"))
-        # Interactive subscription takes place after the scan, before opt-out.
         original_handle = self.handle
         def handle(method, path, headers, body):
             if path == "/api/debug/scans":

@@ -1,4 +1,3 @@
-"""Owned Apple-tool builds and launches for the standalone PIR verifier."""
 from __future__ import annotations
 
 import builtins
@@ -15,14 +14,11 @@ import socket
 import stat
 import subprocess
 import time
-import urllib.error
 import urllib.request
 import uuid
 
 
 class RuntimeError(builtins.RuntimeError):
-    """Setup error with a safe message and private, bounded tool diagnostics."""
-
     def __init__(self, message, *, stdout="", stderr="", log_path=None):
         super().__init__(f"{message}; diagnostic: {log_path}" if log_path else message)
         self._diagnostics = {"stdout": stdout[-16384:], "stderr": stderr[-16384:]}
@@ -105,7 +101,6 @@ def _info(bundle, platform="macos"):
 
 
 def _child_environment():
-    # Only explicitly supplied credentials reach the native launch.
     names = ("PATH", "HOME", "TMPDIR", "USER", "LOGNAME", "LANG", "LC_ALL", "SHELL", "DEVELOPER_DIR", "TOOLCHAINS")
     return {name: os.environ[name] for name in names if name in os.environ}
 
@@ -401,7 +396,7 @@ class Runtime:
                     raise RuntimeError("The PIR prerequisite reply did not match this request")
                 if result.get("debugRunnerReady"):
                     return
-            except (OSError, ValueError, urllib.error.URLError):
+            except (OSError, ValueError):
                 pass
             time.sleep(.2)
         raise RuntimeError("The owned PIR debug runner did not become ready")
@@ -530,7 +525,6 @@ class Runtime:
                 "sourceSHA256": metadata["sourceSHA256"], "pirEnvironment": self.pir_environment}
 
     def collect_snapshots(self):
-        """Mirror published simulator snapshots while the app still owns its data container."""
         source = self._simulator_snapshots
         if source is None or not source.is_dir():
             return

@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import SwiftUIExtensions
 import Utilities
 
 #if DEBUG
@@ -53,18 +54,23 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
     let browsersComparisonChart: AnyView
 
     var body: some View {
-        HStack(spacing: .zero) {
-            PromptMessageAndImage(message: viewModel.message, image: viewModel.image)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ZStack(alignment: .bottomLeading) {
+            Image(.defaultBrowserAndDockPromptBackground)
 
-            PromptChartAndButtons(browsersComparisonChart: browsersComparisonChart,
-                                  primaryButtonLabel: viewModel.primaryButtonLabel,
-                                  dismissButtonLabel: viewModel.dismissButtonLabel,
-                                  primaryButtonAction: viewModel.primaryButtonAction,
-                                  dismissButtonAction: viewModel.dismissButtonAction)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            HStack(spacing: .zero) {
+                PromptMessageAndImage(message: viewModel.message, image: viewModel.image)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                PromptChartAndButtons(browsersComparisonChart: browsersComparisonChart,
+                                      primaryButtonLabel: viewModel.primaryButtonLabel,
+                                      dismissButtonLabel: viewModel.dismissButtonLabel,
+                                      primaryButtonAction: viewModel.primaryButtonAction,
+                                      dismissButtonAction: viewModel.dismissButtonAction)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
         .frame(width: Metrics.width, height: Metrics.height)
+        .background(Color(designSystemColor: .surfaceTertiary))
     }
 }
 
@@ -73,30 +79,33 @@ private struct PromptMessageAndImage: View {
     let image: NSImage
 
     var body: some View {
-        ZStack {
-            Image(.gradientBackground)
+        VStack(alignment: .leading, spacing: .zero) {
+            Text(message)
+                .font(.title.weight(.bold))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, PromptMessageAndImageMetrics.messageTopPadding)
+                .padding(.leading, PromptMessageAndImageMetrics.messageLeadingPadding)
+                .padding(.trailing, PromptMessageAndImageMetrics.messageTrailingPadding)
 
-            VStack(alignment: .center) {
-                promptMessage
-                Spacer()
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            }
-            .padding([.top, .horizontal], Metrics.padding)
+            Spacer(minLength: Metrics.padding)
+
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: image.size.width, maxHeight: image.size.height)
+                .padding(.leading, PromptMessageAndImageMetrics.imageLeadingPadding)
+                .padding(.bottom, PromptMessageAndImageMetrics.imageBottomPadding)
         }
-    }
-
-    var promptMessage: some View {
-        Text(message)
-            .font(.title.weight(.bold))
-            .multilineTextAlignment(.center)
-            .padding(.top, Metrics.padding)
-            .padding(.horizontal, PromptMessageAndImageMetrics.horizontalPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     enum PromptMessageAndImageMetrics {
-        static let horizontalPadding: CGFloat = 30
+        static let messageTopPadding: CGFloat = 48
+        static let messageLeadingPadding: CGFloat = 36
+        static let messageTrailingPadding: CGFloat = 72
+        static let imageLeadingPadding: CGFloat = 92
+        static let imageBottomPadding: CGFloat = 18
     }
 }
 
@@ -114,9 +123,14 @@ private struct PromptChartAndButtons: View {
             browsersComparisonChart
 
             HStack {
-                OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction, pillShape: true)
-                    .frame(minWidth: 132) // Prevent button from being condensed to an unreadable width in non-English locales
-                    .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton)
+                Button(action: dismissButtonAction) {
+                    Text(dismissButtonLabel)
+                        .padding(.vertical, 5)
+                        .padding(.horizontal, 24)
+                        .frame(minWidth: 132) // Prevent button from being condensed to an unreadable width in non-English locales
+                }
+                .buttonStyle(DismissActionButtonStyle(pillShape: true, stateColors: .themedDismissButton))
+                .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton)
                 OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction, pillShape: true)
                     .layoutPriority(1) // Resist compression to avoid multiline label if possible
                     .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.confirmButton)
@@ -124,7 +138,6 @@ private struct PromptChartAndButtons: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(Metrics.padding)
-        .background(Color(designSystemColor: .surfaceCanvas))
     }
 
     enum PromptChartAndButtonsMetrics {

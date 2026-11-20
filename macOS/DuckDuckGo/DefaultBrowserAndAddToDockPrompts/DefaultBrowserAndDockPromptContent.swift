@@ -60,7 +60,7 @@ enum DefaultBrowserAndDockPromptContent {
         case .banner:
             return NSImage(resource: .daxBannerView)
         case .inactive:
-            return NSImage(resource: .daxSearch)
+            return NSImage(resource: .defaultBrowserAndDockPromptDax)
         }
     }
 

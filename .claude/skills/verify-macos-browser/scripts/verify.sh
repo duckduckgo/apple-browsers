@@ -432,7 +432,8 @@ record)
         if [[ -z "$pid" ]] || ! on_target 'kill -0 "$1" 2>/dev/null' "$pid"; then
             stop_recorder > /dev/null 2>&1 || true
             [[ -z "$VM" ]] || scp -q "${SSH_OPTS[@]}" "$VM:verify/recording.log" "$RUN_DIR/recording.log" 2>/dev/null || true
-            echo "RECORDER EXITED: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"
+            if [[ -f "$RUN_DIR/recording.cut" ]]; then read -r _ why < "$RUN_DIR/recording.cut"; echo "CUT at the start: $why"
+            else echo "RECORDER EXITED: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"; fi
             exit 2
         fi
         echo "recording${VM:+ in $VM}"
@@ -448,7 +449,12 @@ record)
         fi
         [[ -s "$mov" ]] || { echo "NO MOVIE: the recorder wrote nothing: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"; exit 2; }
         trim=()
-        if [[ -f "$RUN_DIR/recording.cut" ]]; then read -r cut why < "$RUN_DIR/recording.cut"; trim=(--duration $(( cut > 0 ? cut : 0 ))); fi
+        if [[ -f "$RUN_DIR/recording.cut" ]]; then
+            read -r cut why < "$RUN_DIR/recording.cut"
+            # The cut keeps only whole seconds before it, minus the margin: nothing left means no movie, not a broken one.
+            (( cut > 0 )) || { rm -f "$mov"; echo "CUT: $why before a whole second could be kept; no movie"; exit 1; }
+            trim=(--duration "$cut")
+        fi
         # screencapture writes QuickTime whatever the extension; remuxing to mp4 also proves AVFoundation reads it.
         if ! avconvert -p PresetPassthrough -s "$mov" -o "$RUN_DIR/recording.mp4" --replace ${trim[@]+"${trim[@]}"} > /dev/null 2>&1; then
             rm -f "$RUN_DIR/recording.mp4"

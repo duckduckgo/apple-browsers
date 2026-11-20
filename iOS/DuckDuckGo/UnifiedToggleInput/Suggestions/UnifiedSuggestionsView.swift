@@ -35,6 +35,9 @@ struct UnifiedSuggestionsView: View {
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
 
+    /// Lets the page illustration show through autocomplete while keeping rows readable.
+    private static let redesignedListBackdropOpacity = 0.5
+
     var body: some View {
         ZStack(alignment: .bottom) {
             if usesScrollableEscapeHatch {
@@ -93,7 +96,7 @@ struct UnifiedSuggestionsView: View {
                                                    contentTopInset: viewModel.contentTopInset,
                                                    usesScrollableEscapeHatch: usesScrollableEscapeHatch,
                                                    onEscapeHatchGeometryChange: { viewModel.setEmbeddedEscapeHatchGeometry($0) })
-                    .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
+                    .background(Color.clear)
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsEmbeddedContent ? 1 : 0)
@@ -149,7 +152,8 @@ struct UnifiedSuggestionsView: View {
                                isAddressBarAtBottom: isAddressBarAtBottom,
                                isVisible: isShowingList,
                                isFadingOut: viewModel.isFadingOut,
-                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
+                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout,
+                               backdropOpacity: usesRedesignedNewTabPageLayout ? Self.redesignedListBackdropOpacity : 1)
             .if(usesScrollableEscapeHatch) {
                 $0.safeAreaInset(edge: .top, spacing: 0) {
                     Color.clear.frame(height: viewModel.contentTopInset)

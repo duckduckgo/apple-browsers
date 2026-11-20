@@ -1222,6 +1222,8 @@ extension MainViewController {
         let isWebPageSurfaceAvailable = NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable
         unifiedToggleInputCoordinator?.contentViewController.redesignedFocusedSurface =
             surface == .webPage && !isWebPageSurfaceAvailable ? nil : surface
+        let usesRedesignedLayout = unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout == true
+        viewCoordinator.focusedStateBackground.backgroundColor = usesRedesignedLayout ? .clear : UIColor(designSystemColor: .panel)
     }
 
     func installDuckAIKeyboardEdgeSweep() {

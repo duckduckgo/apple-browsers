@@ -606,16 +606,26 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// only paints once — no visible flash.
     private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
         let superview = coordinator.superview
-        guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
+        // Off-window or hidden views have no rendered layer tree to draw from.
+        guard superview.window != nil, !superview.isHidden,
+              superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
 
         let priorAlpha = swipeOverlayView?.alpha ?? 0
         swipeOverlayView?.alpha = 0
         defer { swipeOverlayView?.alpha = priorAlpha }
 
-        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
+        let renderer = UIGraphicsImageRenderer(size: superview.bounds.size, format: Self.snapshotFormat())
         return renderer.image { _ in
             superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
         }
+    }
+
+    /// Standard range keeps snapshots 8-bit, so drawing the live hierarchy doesn't convert
+    /// extended-range (wide colour) render surfaces into the image.
+    private static func snapshotFormat() -> UIGraphicsImageRendererFormat {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.preferredRange = .standard
+        return format
     }
 
     /// Snapshots each visible auxiliary chrome view into a flat `UIImageView`, parks it in the
@@ -671,7 +681,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         accumulateVisibleBounds(of: view, relativeTo: view, into: &captureRect)
         captureRect = captureRect.insetBy(dx: -12, dy: -12)
 
-        let renderer = UIGraphicsImageRenderer(size: captureRect.size)
+        let renderer = UIGraphicsImageRenderer(size: captureRect.size, format: Self.snapshotFormat())
         let image = renderer.image { _ in
             view.drawHierarchy(
                 in: view.bounds.offsetBy(dx: -captureRect.minX, dy: -captureRect.minY),

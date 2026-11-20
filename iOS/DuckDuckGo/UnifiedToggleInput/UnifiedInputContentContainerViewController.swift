@@ -632,7 +632,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Routes the swipe through the coordinator (like a toggle tap) so the toggle UI, content, and
     /// the Dax morph all update — a raw `setToggleState` doesn't propagate the switch at all.
     private lazy var modeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] targetMode in
-        guard let self, switchBarHandler.currentToggleState != targetMode else { return }
+        self?.switchMode(to: targetMode)
+    }
+
+    func switchMode(to targetMode: TextEntryMode) {
+        guard switchBarHandler.currentToggleState != targetMode else { return }
         delegate?.unifiedInputEditingStateDidChangeMode(targetMode)
     }
 

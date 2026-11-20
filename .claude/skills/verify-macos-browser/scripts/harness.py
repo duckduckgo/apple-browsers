@@ -234,8 +234,9 @@ class Mac:
         return [line for line in self._do("ax", "find", target).splitlines() if line.strip()]
 
     def tab_count(self):
+        """Tabs in the front window; other windows' tabs don't count."""
         # The id alone: each tab's close button is TabBarViewItem.closeButton.
-        return sum(" id=TabBarViewItem " in line for line in self.find("TabBarViewItem"))
+        return sum(" id=TabBarViewItem " in line for line in self._do("ax", "findmain", "TabBarViewItem").splitlines())
 
     def url(self):
         """The current tab's URL, through the AutomationServer (AUTOMATION = True)."""
@@ -432,6 +433,10 @@ def _on_signal(signum, _frame):
     raise _Stop(signal.Signals(signum).name)
 
 
+def _ignore(_signum, _frame):
+    pass
+
+
 def _alive(pid_file):
     try:
         os.kill(int(open(pid_file).read().strip()), 0)
@@ -481,7 +486,8 @@ def prove(path, target, evidence_dir=None):
                 f.write(traceback.format_exc())
     finally:
         for s in old:   # capture, cleanup and the report must not be interrupted
-            signal.signal(s, signal.SIG_IGN)
+            # A no-op handler, not SIG_IGN: children (ssh, log show) get the default back, so they stay killable.
+            signal.signal(s, _ignore)
     try:
         _finish(mac, rec, evidence)
         manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target, shown_dir)

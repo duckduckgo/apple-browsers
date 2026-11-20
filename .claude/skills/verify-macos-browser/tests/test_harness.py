@@ -3,12 +3,14 @@ Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -
 """
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
 import textwrap
 import unittest
 import uuid
+from unittest import mock
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "scripts"))
@@ -165,6 +167,11 @@ class TabCountTests(unittest.TestCase):
                                  'AXRadioButton id=TabBarViewItem title="New Tab" value="0" @648,89 240x38\n')
         self.assertEqual(mac.tab_count(), 2)
 
+    def test_counts_in_the_front_window_only(self):
+        mac = harness.Mac("t", tempfile.mkdtemp(), harness.Record())
+        mac._sh = lambda *a: (0, "") if a == ("ax", "findmain", "TabBarViewItem") else self.fail(f"read {a}")
+        self.assertEqual(mac.tab_count(), 0)
+
 
 class TelemetryNeedsMarkTests(unittest.TestCase):
     def test_expect_pixel_without_mark_is_refused_before_running_anything(self):
@@ -315,6 +322,25 @@ class PublishablePathTests(unittest.TestCase):
         self.assertNotIn(self.HOME + os.sep, written)
         self.assertEqual(json.loads(written)["evidence_dir"], "~/ev")
         self.assertNotIn(self.HOME + os.sep, harness.report("x", rec, m, evidence))
+
+
+class CleanupSignalTests(unittest.TestCase):
+    def test_a_child_started_during_cleanup_can_still_be_stopped_with_sigterm(self):
+        # SIGINT/SIGTERM are held off during cleanup; a child (ssh, log show) must not inherit that, or a hung one
+        # can only be stopped with kill -9.
+        exits = []
+
+        def finish(*_):
+            exits.append(subprocess.run(["/bin/sh", "-c", "kill -TERM $$; sleep 5"], timeout=10).returncode)
+
+        with tempfile.TemporaryDirectory() as home:
+            proof = os.path.join(home, "p.py")
+            with open(proof, "w") as f:
+                f.write('"""x"""\ndef run(mac):\n    pass\n')
+            with mock.patch.object(harness, "HOME", home), mock.patch.object(harness, "_finish", finish), \
+                    mock.patch.object(harness.Mac, "_sh", lambda self, *a: (2, "NO VM FREE")):
+                harness.prove(proof, "vm")
+        self.assertEqual(exits, [-signal.SIGTERM])
 
 
 if __name__ == "__main__":

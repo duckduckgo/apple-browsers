@@ -27,6 +27,8 @@ import ApplicationServices
 //        | hover <idOrText> [nth=<n>] | click x y [cmd]
 //        | type <text> | key <code> [cmd|shift|opt|ctrl]... | activate | frame | front | winrect | setwin x y w h
 //        | grants | appearance [light|dark]
+// Refusals exit nonzero before anything is done: APP NOT RUNNING, NOT FRONTMOST, NOT FOUND, AMBIGUOUS, DISABLED, OFF WINDOW,
+// NOT FOCUSED. Each action's last line is changed=yes|no: whether the accessibility tree changed after it.
 let args = CommandLine.arguments.dropFirst()
 let cmd = args.first ?? "dump"
 let rest = Array(args.dropFirst())
@@ -58,6 +60,12 @@ guard let app = NSWorkspace.shared.runningApplications.first(where: { ($0.bundle
     print("APP NOT RUNNING: \(target)"); exit(1)
 }
 let root = AXUIElementCreateApplication(app.processIdentifier)
+// Nothing is read or acted on while another app is in front: a popover or menu closes when the app loses the front, so
+// a "gone" read there could pass on the wrong state. Only `front` (which says so) and `activate` run then.
+if cmd != "front" && cmd != "activate" && NSWorkspace.shared.frontmostApplication?.processIdentifier != app.processIdentifier {
+    print("NOT FRONTMOST: \(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nothing") is in front; nothing read or done")
+    exit(2)
+}
 
 func attr(_ e: AXUIElement, _ name: String) -> AnyObject? {
     var v: AnyObject?
@@ -121,6 +129,73 @@ func findOne(_ words: [String]) -> AXUIElement {
     }
     return found[0]
 }
+// A target the user couldn't act on is refused before anything happens: disabled, or with its center outside its
+// window (scrolled away, collapsed, hidden). Menu items open outside every window, so only their enabled state counts.
+func actionable(_ e: AXUIElement) -> AXUIElement {
+    if (attr(e, kAXEnabledAttribute) as? Bool) == false { print("DISABLED: \(describe(e))"); exit(2) }
+    let role = str(e, kAXRoleAttribute)
+    if role == kAXMenuItemRole || role == kAXMenuBarItemRole { return e }
+    let f = frame(e), center = CGPoint(x: f.midX, y: f.midY)
+    let windows = attr(e, kAXWindowAttribute).map { [$0 as! AXUIElement] } ?? (attr(root, kAXWindowsAttribute) as? [AXUIElement]) ?? []
+    guard f.width > 0, f.height > 0, windows.contains(where: { frame($0).contains(center) }) else {
+        print("OFF WINDOW: its center is outside its window (scroll it into view first): \(describe(e))"); exit(2)
+    }
+    return e
+}
+// What the app shows through AX, as one number: each element's role, id, texts, value, enabled, focused and selected
+// state and frame (scrolling moves frames), and which element has keyboard focus. Equal before and after an action:
+// the action changed nothing the tree shows. One IPC per element; at most 20000 elements.
+let digestAttributes = [kAXRoleAttribute, "AXIdentifier", kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute,
+                        kAXEnabledAttribute, kAXFocusedAttribute, kAXSelectedAttribute, kAXPositionAttribute,
+                        kAXSizeAttribute, kAXChildrenAttribute] as CFArray
+func digest() -> Int {
+    var h = Hasher(), seen = 0
+    func visit(_ e: AXUIElement, _ depth: Int) {
+        var values: CFArray?
+        seen += 1
+        guard seen < 20000, AXUIElementCopyMultipleAttributeValues(e, digestAttributes, [], &values) == .success,
+              let list = values as? [AnyObject] else { return }
+        for v in list {
+            if let s = v as? String {
+                h.combine(s)
+            } else if let n = v as? NSNumber {
+                h.combine(n.doubleValue)
+            } else if CFGetTypeID(v) == AXValueGetTypeID() {
+                var p = CGPoint.zero, z = CGSize.zero
+                if AXValueGetValue(v as! AXValue, .cgPoint, &p) { h.combine(p.x); h.combine(p.y) }
+                if AXValueGetValue(v as! AXValue, .cgSize, &z) { h.combine(z.width); h.combine(z.height) }
+            } else if let kids = v as? [AXUIElement], depth < 60 {
+                h.combine(kids.count); kids.forEach { visit($0, depth + 1) }
+            } else {
+                h.combine(0)
+            }
+        }
+    }
+    visit(root, 0)
+    if let f = attr(root, kAXFocusedUIElementAttribute) { h.combine(describe(f as! AXUIElement)) }
+    return h.finalize()
+}
+// Run an action, then print whether the tree changed within 1.5 s (`changed=yes|no`, the last line). harness.py lists
+// actions that changed nothing under Warnings: there the proof's own reads must show the effect.
+func acting(_ action: () -> Void) {
+    let before = digest()
+    action()
+    let end = Date().addingTimeInterval(1.5)
+    var changed = false
+    repeat { usleep(100_000); changed = digest() != before } while !changed && Date() < end
+    print("changed=\(changed ? "yes" : "no")")
+}
+// Text goes only to a focused element that takes it: a frontmost window can have no keyboard focus (seen in a VM).
+func refuseUnfocusedTyping() {
+    guard let f = attr(root, kAXFocusedUIElementAttribute) else { print("NOT FOCUSED: no element has keyboard focus; click the field first"); exit(2) }
+    let e = f as! AXUIElement
+    var settable = DarwinBoolean(false)
+    AXUIElementIsAttributeSettable(e, kAXValueAttribute as CFString, &settable)
+    let textRoles: Set<String> = [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole, "AXSearchField"]
+    guard settable.boolValue || textRoles.contains(str(e, kAXRoleAttribute)) else {
+        print("NOT FOCUSED: the focused element takes no text; click the field first: \(describe(e))"); exit(2)
+    }
+}
 func mouseClick(_ p: CGPoint, flags: CGEventFlags = [], middle: Bool = false) {
     let src = CGEventSource(stateID: .hidSystemState)
     CGEvent(mouseEventSource: src, mouseType: .mouseMoved, mouseCursorPosition: p, mouseButton: .left)?.post(tap: .cghidEventTap)
@@ -160,33 +235,42 @@ case "find":
         return true
     }
 case "press":
-    let e = findOne(rest)
-    let r = AXUIElementPerformAction(e, kAXPressAction as CFString)
-    print("press \(describe(e)) -> \(r.rawValue)")
+    let e = actionable(findOne(rest))
+    acting {
+        let r = AXUIElementPerformAction(e, kAXPressAction as CFString)
+        print("press \(describe(e)) -> \(r.rawValue)")
+    }
 case "clickel":
-    let e = findOne(rest)
+    let e = actionable(findOne(rest))
     let f = frame(e)
-    app.activate(); usleep(200_000)
-    mouseClick(CGPoint(x: f.midX, y: f.midY))
-    print("clicked \(describe(e))")
+    acting {
+        app.activate(); usleep(200_000)
+        mouseClick(CGPoint(x: f.midX, y: f.midY))
+        print("clicked \(describe(e))")
+    }
 case "click":
     // click <x> <y> [cmd] [shift] [opt] [ctrl] [middle]
-    app.activate(); usleep(200_000)
     let words = Array(rest.dropFirst(2))
-    mouseClick(CGPoint(x: Double(rest[0])!, y: Double(rest[1])!), flags: modifierFlags(words), middle: words.contains("middle"))
-    print("clicked \(rest[0]),\(rest[1]) \(words.joined(separator: " "))")
+    acting {
+        app.activate(); usleep(200_000)
+        mouseClick(CGPoint(x: Double(rest[0])!, y: Double(rest[1])!), flags: modifierFlags(words), middle: words.contains("middle"))
+        print("clicked \(rest[0]),\(rest[1]) \(words.joined(separator: " "))")
+    }
 case "hover":
     // hover <idOrText>: moves the pointer to the element's center without clicking, for hover states.
-    let e = findOne(rest)
+    let e = actionable(findOne(rest))
     let f = frame(e)
-    app.activate(); usleep(200_000)
-    let src = CGEventSource(stateID: .hidSystemState)
-    CGEvent(mouseEventSource: src, mouseType: .mouseMoved, mouseCursorPosition: CGPoint(x: f.midX, y: f.midY), mouseButton: .left)?.post(tap: .cghidEventTap)
-    print("hovered \(describe(e))")
+    acting {
+        app.activate(); usleep(200_000)
+        let src = CGEventSource(stateID: .hidSystemState)
+        CGEvent(mouseEventSource: src, mouseType: .mouseMoved, mouseCursorPosition: CGPoint(x: f.midX, y: f.midY), mouseButton: .left)?.post(tap: .cghidEventTap)
+        print("hovered \(describe(e))")
+    }
 case "type":
     let text = rest.joined(separator: " ")
+    refuseUnfocusedTyping()
     let src = CGEventSource(stateID: .hidSystemState)
-    for ch in text.utf16 {
+    acting { for ch in text.utf16 {
         var c = ch
         // No modifiers, explicitly: after `key cmd+t` the source's state still holds Cmd, and text typed with it is dropped.
         let down = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true)
@@ -197,7 +281,7 @@ case "type":
         up?.flags = []; up?.post(tap: .cghidEventTap)
         usleep(15_000)
     }
-    print("typed \(text.count) chars")
+    print("typed \(text.count) chars") }
 case "key":
     let code = CGKeyCode(rest[0])!
     var flags: CGEventFlags = []
@@ -206,10 +290,12 @@ case "key":
     if rest.contains("opt") { flags.insert(.maskAlternate) }
     if rest.contains("ctrl") { flags.insert(.maskControl) }
     let src = CGEventSource(stateID: .hidSystemState)
-    let down = CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: true); down?.flags = flags; down?.post(tap: .cghidEventTap)
-    usleep(40_000)
-    let up = CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: false); up?.flags = flags; up?.post(tap: .cghidEventTap)
-    print("key \(code) \(flags.rawValue)")
+    acting {
+        let down = CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: true); down?.flags = flags; down?.post(tap: .cghidEventTap)
+        usleep(40_000)
+        let up = CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: false); up?.flags = flags; up?.post(tap: .cghidEventTap)
+        print("key \(code) \(flags.rawValue)")
+    }
 case "front":
     // Whether the target app is frontmost: screenshots are only safe then.
     print(NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier ? "yes" : "no")

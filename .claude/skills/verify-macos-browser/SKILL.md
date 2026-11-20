@@ -10,8 +10,6 @@ Prove the change on the running app, not by reading code. A proof is: the action
 state, and a second, independent read that shows it (AX state, page URL, a log line, a pixel). No
 evidence, no verdict.
 
-**How it gets used.** Agents don't pick this skill on their own: name it in the task, or invoke `/verify-macos-browser`.
-
 ## 0. Before you start
 
 - **Ask the user where to run it**, unless they already said:
@@ -54,11 +52,11 @@ never in the repo (only `examples/` are kept).
 What `mac` gives you (`scripts/harness.py`):
 - **Act:** `press(target)` (AX press), `click(target)` (real click), `type(text)`, `key("cmd+t")`. A target is an AX
   id (prefer `AccessibilityIdentifiers` in `macOS/UITests/Common/XCUIApplicationExtension.swift`) or a title;
-  several matches are refused unless you pass `nth=`. It never guesses.
+  `nth=` picks one of several. It never guesses.
 - **Read:** `find(target)`, `tab_count()`, `url()`.
 - **Assert (they wait):** `expect_tab_count(n)`, `expect_url_contains(text)`, `eventually(what, fn)`, `check(what, ok)`.
 - **Telemetry:** `mark()` right before the action, then `expect_pixel(name, params=)`, `expect_no_pixel(name)`,
-  `expect_wide_event(feature, status=)`. Without a mark they are refused: setup fires pixels too.
+  `expect_wide_event(feature, status=)`.
 - **Evidence:** `shot(name)`, `note(text)`, `unverified(what, why)`. **Setup only:** `navigate(url)`.
 
 Proof rules:
@@ -88,16 +86,13 @@ the same VM, flags and conditions (any that differ: INCONCLUSIVE), each from a r
 other error there is INCONCLUSIVE. **PASS** needs this checkout to pass and the base to do what each check declares,
 with at least one declared `fail`; a `fail` check that passes on the base is **FAIL**: the proof doesn't reproduce
 the bug. `report.md` shows each check and screenshot Before | After; each run's evidence is in `base/` and `change/`.
-By hand: `git worktree add --detach <dir> <ref>`, then `$V prove <proof> --target vm-1 --checkout <dir>`.
 
 ## 2. Evidence and report
 
 **Where evidence goes.** Each run writes one attempt folder, `<stamp>-<name>-<id>/`, in `--evidence-dir <dir>`
-(created if missing; pass the directory your tooling publishes from) or by default in `~/.ddg-verify-macos/`
+(pass the directory your tooling publishes from) or by default in `~/.ddg-verify-macos/`
 (`VERIFY_MACOS_HOME` overrides it). A directory inside a git checkout is refused (exit 2), symlinks resolved: this
-repo is public. `prove` runs in the proof's own folder only while it holds nothing but the proof and sits directly
-in that directory; otherwise it copies the proof to a new attempt folder, so a finished attempt is never
-overwritten. Pass the same `--evidence-dir` to `new-proof` and `prove`; the manifest and rerun command record it.
+repo is public. A finished attempt is never overwritten. Pass the same `--evidence-dir` to `new-proof` and `prove`; the manifest and rerun command record it.
 
 The attempt folder holds `proof.py`, `report.md`, `manifest.json` (revision, dirty flag, source fingerprint, build and running-binary
 hashes, launch args, flags, macOS and Xcode, VM, skill hash, checks, rerun command), your screenshots,
@@ -123,10 +118,9 @@ before claiming what the app did.
 relative path. Paths in `report.md` and `manifest.json` show your home folder as `~`; `app.log`, `log.txt` and
 `transcript.jsonl` are raw and may name local paths, so check them before sharing. In the PR's verification
 section, link `report.md` as the entry point, with the verdict, and the screenshots that show the claim. An entry point you
-couldn't drive is `unverified`, never "verified through another path". Never fall back to "the code looks right".
+couldn't drive is `unverified`, never "verified through another path".
 
-**Run it in a subagent** briefed with the claim, the target and the evidence folder; it returns the verdict and the
-`report.md` path. The lead reads `report.md` and the screenshots.
+**Run it in a subagent** briefed with the claim, target and evidence folder; the lead reads `report.md` and the screenshots.
 
 ## Exploring by hand: `verify.sh`
 
@@ -140,14 +134,24 @@ $S mark|expect-pixel|expect-no-pixel|expect-wide-event <topic> …; $S web <topi
 ```
 
 Call it as a single command (one permission rule covers it). Exit codes: `0` ok, `1` a check failed, `2` error.
-`doctor` fails on `STALE SOURCE`, `REBUILT` or `OLD PROCESS`: never drive a stale build. Other state:
-`set-default <topic> <key> <type> <value>` before `build` (most preferences are read at launch). Never use
+Other state: `set-default <topic> <key> <type> <value>` before `build` (most preferences are read at launch). Never use
 `UITEST_MODE=1`. On a build failure, report the first error; after switching branches, "type X has no member Y"
 for code that is there is a stale module in DerivedData: move it out and rebuild. Don't build in Xcode meanwhile.
 
-**Changed the harness, `verify.sh`, `vhelp.py` or `ax.swift`?** Run the unit tests (`tests/`), then
-`$V prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1`: PASS means every refusal still refuses. Then
-`prove` each `examples/*.py`: each must PASS.
+## Trust guarantees (keep them)
+
+- The build is this source: `doctor` refuses a changed source or binary, or an older process.
+- Missing, ambiguous (unless `nth=`), disabled and off-window targets are refused; typing with nothing focused that
+  takes text is refused; a refused action changes nothing.
+- Nothing is read or acted on while the app isn't running and in front (`APP NOT RUNNING`, `NOT FRONTMOST`), so
+  "gone" can't pass on a crashed app or a popover closed by losing the front.
+- Every action reports whether it changed the accessibility tree; no-ops are listed under Warnings.
+- Telemetry counts only after `mark()`, from a stream checked to be alive.
+- Cleanup signals only processes whose recorded identity (pid, start time, command) still matches.
+
+Changed the harness, `verify.sh`, `vhelp.py` or `ax.swift`? Run `tests/`, then
+`$V prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1` (PASS: every refusal still refuses),
+then each `examples/*.py` must PASS.
 
 ## Running in a VM
 
@@ -158,7 +162,6 @@ for code that is there is a stale module in DerivedData: move it out and rebuild
 - ssh goes to the local network, which Claude Code's sandbox blocks: run it unsandboxed.
 - `NOT LAUNCHED` in a VM is usually AMFI: its Provisioning UDID isn't in the profile (VM-SETUP.md step 4).
   `NOT READY` with no window: a keychain dialog waits in the VM (VM-SETUP.md step 5).
-- A window can be frontmost without keyboard focus after the VM boots: `click` the field before `type`.
 
 ## Stop and ask the user
 

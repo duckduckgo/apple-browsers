@@ -178,6 +178,34 @@ class ConditionsDeclarationTests(unittest.TestCase):
                 self.assertTrue(self.problems(bad))
 
 
+class ActionEffectTests(unittest.TestCase):
+    """Each action reports whether the accessibility tree changed (ax's last line); report.md lists the no-ops."""
+    def run_actions(self, changed):
+        rec = harness.Record()
+        mac = harness.Mac("t", tempfile.mkdtemp(), rec)
+        mac._sh = lambda command, *args: (0, f"{args[0]} done\nchanged={changed[args[0]]}")
+        mac.press("Bookmarks")
+        mac.click("target link")
+        mac.type("hello")
+        mac.key("cmd+t")
+        rec.checks = [("tabs", True, None, "unchanged")]
+        rec.app_running = True
+        return rec, harness.report("x", rec, ReportTests.MANIFEST, tempfile.mkdtemp())
+
+    def test_an_action_that_changed_nothing_is_a_warning_in_the_report_not_a_failure(self):
+        rec, text = self.run_actions(dict(press="no", clickel="yes", type="no", key="yes"))
+        warnings = text.split("Warnings:\n")[1].split("\n\n")[0]
+        self.assertIn("press('Bookmarks') changed nothing", warnings)
+        self.assertIn("type('hello') changed nothing", warnings)
+        self.assertNotIn("target link", warnings)
+        self.assertNotIn("cmd+t", warnings)
+        self.assertEqual(harness.label(rec), ("PASS", 0))
+
+    def test_actions_that_changed_the_tree_leave_no_warning(self):
+        _, text = self.run_actions(dict(press="yes", clickel="yes", type="yes", key="yes"))
+        self.assertNotIn("Warnings:", text)
+
+
 class ConditionsRunTests(unittest.TestCase):
     """set_conditions and _finish against a fake verify.sh: what is set, read back, recorded and undone."""
     def fake(self, target="vm-1", fail=()):

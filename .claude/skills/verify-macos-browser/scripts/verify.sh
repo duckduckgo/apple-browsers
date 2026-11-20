@@ -136,11 +136,19 @@ target_hashes() {
         | python3 -I -c 'import json,sys; print(json.dumps(dict(l.rstrip("\n").split("\t") for l in sys.stdin if l.strip())))'
 }
 
+# A pid file holds the pid, its start time and a word its command contains, one per line: the identity recorded when
+# it started. A process is signalled only while all three still match, so a reused pid is never signalled.
+IDENTITY_SH='printf "%s\n%s\n%s\n" "$1" "$(ps -o lstart= -p "$1" | xargs)" "$2"'
+OURS_SH='[[ -n "$2" && "$(ps -o lstart= -p "$1" 2>/dev/null | xargs)" == "$2" && "$(ps -o command= -p "$1" 2>/dev/null)" == *"$3"* ]]'
+record_pid() { bash -c "$IDENTITY_SH" verify "$2" "$3" > "$RUN_DIR/$1"; }   # record_pid <file> <pid> <command word>
+pid_of() { head -1 "$RUN_DIR/$1" 2>/dev/null || true; }
 kill_pidfile() {
-    if [[ -f "$RUN_DIR/$1" ]]; then
-        kill "$(cat "$RUN_DIR/$1")" 2>/dev/null || true
-        rm -f "$RUN_DIR/$1"
-    fi
+    [[ -f "$RUN_DIR/$1" ]] || return 0
+    local pid start word
+    { read -r pid; read -r start; read -r word; } < "$RUN_DIR/$1" || true
+    if bash -c "$OURS_SH" verify "$pid" "$start" "$word"; then kill "$pid" 2>/dev/null || true
+    elif kill -0 "$pid" 2>/dev/null; then echo "not signalled: pid $pid is no longer the process $1 recorded"; fi
+    rm -f "$RUN_DIR/$1"
 }
 stop_stream() { kill_pidfile pixel_stream.pid; kill_pidfile wide_stream.pid; kill_pidfile tunnel.pid; }
 
@@ -148,10 +156,15 @@ stop_stream() { kill_pidfile pixel_stream.pid; kill_pidfile wide_stream.pid; kil
 stop_recorder() {
     kill_pidfile recording_watch.pid
     [[ -f "$RUN_DIR/recording.pid" ]] || return 0
-    local pid; pid=$(cat "$RUN_DIR/recording.pid"); rm -f "$RUN_DIR/recording.pid"
+    local pid start word
+    { read -r pid; read -r start; read -r word; } < "$RUN_DIR/recording.pid" || true
+    rm -f "$RUN_DIR/recording.pid"
     [[ -n "$pid" ]] || return 0
-    on_target 'kill -INT "$1" 2>/dev/null; for _ in $(seq 60); do kill -0 "$1" 2>/dev/null || exit 0; sleep 0.5; done
-               kill -9 "$1"; exit 1' "$pid"
+    # On the target, the identity is checked again right before each signal.
+    on_target "ours() { $OURS_SH; }"'
+               ours "$@" || exit 0; kill -INT "$1" 2>/dev/null
+               for _ in $(seq 60); do ours "$@" || exit 0; sleep 0.5; done
+               ours "$@" && kill -9 "$1"; exit 1' "$pid" "$start" "$word"
 }
 
 write_app_log() {
@@ -333,18 +346,18 @@ build)
     if [[ -n "$VM" ]]; then
         nohup ssh "${SSH_OPTS[@]}" "$VM" "/usr/bin/log stream --level debug --style ndjson --predicate $(printf '%q' "$predicate")" \
             > "$RUN_DIR/pixels.ndjson" 2>"$RUN_DIR/pixel_stream.err" &
-        echo $! > "$RUN_DIR/pixel_stream.pid"
+        record_pid pixel_stream.pid $! ssh
         nohup ssh "${SSH_OPTS[@]}" "$VM" "tail -n +1 -F ~/Library/Caches/wide-event-validation-log.jsonl" \
             > "$RUN_DIR/vm-wide.jsonl" 2>/dev/null &
-        echo $! > "$RUN_DIR/wide_stream.pid"
+        record_pid wide_stream.pid $! ssh
         if (( automation )); then
             nohup ssh "${SSH_OPTS[@]}" -N -o ExitOnForwardFailure=yes -L "$port:localhost:$port" "$VM" >/dev/null 2>&1 &
-            echo $! > "$RUN_DIR/tunnel.pid"
+            record_pid tunnel.pid $! ssh
         fi
     else
         nohup /usr/bin/log stream --level debug --style ndjson \
             --predicate "$predicate" > "$RUN_DIR/pixels.ndjson" 2>"$RUN_DIR/pixel_stream.err" &
-        echo $! > "$RUN_DIR/pixel_stream.pid"
+        record_pid pixel_stream.pid $! log
     fi
 
     if (( automation )); then
@@ -358,7 +371,7 @@ build)
         (( ready )) || { echo "NOT READY: no window after 60 s${VM:+ (keychain dialog in $VM? see VM-SETUP.md)}"; exit 2; }
         echo "READY window"
     fi
-    kill -0 "$(cat "$RUN_DIR/pixel_stream.pid")" 2>/dev/null || { echo "PIXEL STREAM FAILED: $(head -3 "$RUN_DIR/pixel_stream.err")"; exit 2; }
+    kill -0 "$(pid_of pixel_stream.pid)" 2>/dev/null || { echo "PIXEL STREAM FAILED: $(head -3 "$RUN_DIR/pixel_stream.err")"; exit 2; }
     if [[ -n "$VM" ]] && (( skip_onboarding )); then
         # A press right after launch can land too early, and a background app gets no key events: bring the app
         # to the front, press, and confirm a regular tab replaced the onboarding one before going on.
@@ -421,13 +434,13 @@ record)
         [[ -f "$RUN_DIR/recording.pid" ]] && { echo "ALREADY RECORDING"; exit 2; }
         rm -f "$RUN_DIR"/recording.{mov,mp4,log,cut}
         if [[ -n "$VM" ]]; then
-            on_target 'rm -f ~/verify/recording.*; cd ~; nohup screencapture -v -x "$1" > verify/recording.log 2>&1 & echo $!' \
-                "$mov" > "$RUN_DIR/recording.pid"
+            on_target 'rm -f ~/verify/recording.*; cd ~; nohup screencapture -v -x "$1" > verify/recording.log 2>&1 &
+                       set -- $! screencapture; '"$IDENTITY_SH" "$mov" > "$RUN_DIR/recording.pid"
         else
             [[ "$(ax front)" == "yes" ]] || { echo "NOT FRONTMOST: not recording (it could capture another app)"; exit 1; }
             rect=$(ax winrect)
             nohup screencapture -v -x -R"$rect" "$mov" > "$RUN_DIR/recording.log" 2>&1 &
-            recorder=$!; echo "$recorder" > "$RUN_DIR/recording.pid"
+            recorder=$!; record_pid recording.pid "$recorder" screencapture
             # Stop when the app leaves the front; stop then trims the movie to the last moment it was seen in front.
             # shortcut: a whole-second clock (bash 3.2) and a 0.25 s poll, hence the 2 s margin; ScreenCaptureKit's
             # window-only capture would need neither, if a window moved over the app's rectangle must never show.
@@ -439,10 +452,10 @@ record)
                     sleep 0.25
                 done
             ) < /dev/null > /dev/null 2>&1 &
-            echo $! > "$RUN_DIR/recording_watch.pid"
+            record_pid recording_watch.pid $! verify.sh
         fi
         sleep 1
-        pid=$(cat "$RUN_DIR/recording.pid")
+        pid=$(pid_of recording.pid)
         if [[ -z "$pid" ]] || ! on_target 'kill -0 "$1" 2>/dev/null' "$pid"; then
             stop_recorder > /dev/null 2>&1 || true
             [[ -z "$VM" ]] || scp -q "${SSH_OPTS[@]}" "$VM:verify/recording.log" "$RUN_DIR/recording.log" 2>/dev/null || true
@@ -550,6 +563,8 @@ expect-wide-event)
     helper expect-wide-event "$RUN_DIR" "$@"
     ;;
 web)
+    # Like ax: nothing is read or set up while the app isn't running and in front.
+    front=$(ax front || true); [[ "$front" == yes ]] || { echo "${front/#no/NOT FRONTMOST: nothing read or done}"; exit 2; }
     helper web "$RUN_DIR" "$@"
     ;;
 logs)

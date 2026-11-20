@@ -156,7 +156,7 @@ def load_mark(run_dir):
 
 def stream_ok(run_dir):
     try:
-        pid = open(os.path.join(run_dir, "pixel_stream.pid")).read().strip()
+        pid = open(os.path.join(run_dir, "pixel_stream.pid")).readline().strip()   # then its identity (verify.sh)
     except FileNotFoundError:
         return False
     return alive(pid)

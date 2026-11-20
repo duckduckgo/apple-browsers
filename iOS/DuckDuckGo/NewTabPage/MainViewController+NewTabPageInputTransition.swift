@@ -53,6 +53,9 @@ extension MainViewController {
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         inputContainer.transform = .identity
         let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
+        transitionSource?.onFocusedModeSwitchSwipe = { [weak coordinator] mode in
+            coordinator?.contentViewController.switchMode(to: mode)
+        }
         let focusedPose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
         if !showsFocusedSurfaceDirectly, !UIAccessibility.isReduceMotionEnabled, let focusedPose {
             inputContainer.transform = focusedPose.focusedInputRestingTransform

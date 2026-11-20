@@ -146,4 +146,6 @@ protocol NewTabPageInputTransitionSource: AnyObject {
     /// Lets the modules scroll beneath the focused input once it has arrived. Call outside any animation.
     func settleFocusedPose()
     func focusedModulesContain(_ point: CGPoint, in view: UIView) -> Bool
+    /// Receives a horizontal flick that starts on the focused modules, which sit outside the focused layer's touch area.
+    var onFocusedModeSwitchSwipe: ((TextEntryMode) -> Void)? { get set }
 }

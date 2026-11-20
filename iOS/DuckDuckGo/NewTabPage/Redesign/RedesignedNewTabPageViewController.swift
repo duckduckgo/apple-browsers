@@ -71,6 +71,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private var focusedKeyboardObserver: NSObjectProtocol?
     private var areFocusedModulesHidden = false
     private var appliedAccessibilityReach = RedesignedNewTabPageAccessibilityReach.wholePage
+    var onFocusedModeSwitchSwipe: ((TextEntryMode) -> Void)?
+    private lazy var focusedModeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] mode in
+        self?.onFocusedModeSwitchSwipe?(mode)
+    }
 
     private struct InputEditingLayout {
         let contentOffset: CGPoint
@@ -158,6 +162,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.clipsToBounds = true
         addSubviews()
         installBlocks()
+        focusedModeSwitchSwipeController.install(on: view)
+        focusedModeSwitchSwipeController.isEnabled = false
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -487,6 +493,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         let showedModules = focusedPose?.showsModules
         focusedPose = pose
         favoritesModel?.isFocussedState = pose != nil
+        focusedModeSwitchSwipeController.isEnabled = pose?.showsModules == true
         if isFocusedPoseSettled {
             updateFocusedScrollInset(keyboardTop: view.keyboardLayoutGuide.layoutFrame.minY)
         }

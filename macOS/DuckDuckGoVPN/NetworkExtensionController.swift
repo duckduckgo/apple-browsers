@@ -58,11 +58,7 @@ extension NetworkExtensionController {
             }
             outcome = .activated
         } catch OSSystemExtensionError.requestCanceled {
-#if DEBUG || REVIEW
             outcome = .requestCanceled
-#else
-            throw CancellationError()
-#endif
         }
 
         try await Task.sleep(nanoseconds: 300 * NSEC_PER_MSEC)

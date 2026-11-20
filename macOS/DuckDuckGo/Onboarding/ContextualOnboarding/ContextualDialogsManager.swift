@@ -217,7 +217,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             // The user has just searched from the junction, so Try a search is skipped.
             progress.markSeen(.tryASearch)
         case .duckAI:
-            break
+            // Only Fire used on this path unlocks it, not Delete All History during the welcome flow.
+            progress.fireButtonUsedOnce = false
         }
         updateUILock()
     }

@@ -1271,6 +1271,7 @@ extension MainViewController {
         allowsUserInteraction = !prevented
         tabCollectionViewModel.changesEnabled = !prevented
         tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+        tabCollectionViewModel.selectedTabViewModel?.tab.webView.allowsBackForwardNavigationGestures = !prevented
 
         tabBarViewController.fireButton.isEnabled = lock.allows(.fire)
         tabBarViewController.isInteractionPrevented = prevented

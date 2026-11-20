@@ -92,6 +92,17 @@ struct ContextualDialogsManagerPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Fire used before the Duck.ai path starts doesn't unlock it", .timeLimit(.minutes(1)))
+    func fireBeforeDuckAIPathStillLocks() {
+        manager.fireButtonUsed()
+
+        manager.startPath(.duckAI)
+
+        #expect(manager.uiLock == .locked(except: [.fire]))
+        #expect(uiLocker.calls == [.locked(except: [.fire])])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A relaunch during the Duck.ai path locks the UI again", .timeLimit(.minutes(1)))
     func relaunchRelocks() {
         manager.startPath(.duckAI)

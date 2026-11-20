@@ -440,6 +440,8 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
         let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
         guard var configValues = response as? AIChatNativeConfigValues else { return response }
         configValues.clientTools = clientToolsConfiguration(for: message)
+        // Only where tools are offered, so Fire windows never send the answer metrics.
+        configValues.supportsBrowserToolsAnswerMetrics = configValues.clientTools != nil
         // The model's state and text reach the page only through `pushToDuckAI`. A page it skips,
         // such as Duck.ai on duckduckgo.com, would wait for a summary that never arrives.
         if !isDuckAIPushDestination(message.messageWebView?.url) {

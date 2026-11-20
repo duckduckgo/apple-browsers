@@ -181,5 +181,100 @@
         "owners": ["jotaemepereira"],
         "triggers": ["user_interaction"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_answer_completed_macos": {
+        "description": "Fired when a Duck.ai answer finishes in a chat where browser tools are offered: one pixel per distinct tool the answer called, plus one with tool=any, or one with tool=none for an answer that called no tool. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "A tool the answer called, or any = one extra row for every answer that called tools, or none = the one row for an answer that called none",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks",
+                    "any",
+                    "none"
+                ]
+            },
+            {
+                "key": "tool_result",
+                "description": "success if any call of the tool succeeded, else not_allowed if any was denied or cancelled, else error. For any, the best result across the answer's tools. Absent for none",
+                "enum": ["success", "not_allowed", "error"]
+            },
+            {
+                "key": "tools_in_answer",
+                "description": "How many distinct known tools the answer called",
+                "enum": ["0", "1", "2", "3", "4_plus"]
+            },
+            {
+                "key": "model_tier",
+                "description": "The lowest subscription tier the answer's model is available to",
+                "enum": ["free", "plus", "pro", "internal", "unknown"]
+            }
+        ]
+    },
+    "aichat_tools_answer_rated_macos": {
+        "description": "Fired when the user presses thumbs up or down on a Duck.ai answer that finished in a chat where browser tools are offered, in the same rows as aichat_tools_answer_completed_macos. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "A tool the answer called, or any = one extra row for every answer that called tools, or none = the one row for an answer that called none",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks",
+                    "any",
+                    "none"
+                ]
+            },
+            {
+                "key": "tool_result",
+                "description": "success if any call of the tool succeeded, else not_allowed if any was denied or cancelled, else error. For any, the best result across the answer's tools. Absent for none",
+                "enum": ["success", "not_allowed", "error"]
+            },
+            {
+                "key": "tools_in_answer",
+                "description": "How many distinct known tools the answer called",
+                "enum": ["0", "1", "2", "3", "4_plus"]
+            },
+            {
+                "key": "model_tier",
+                "description": "The lowest subscription tier the answer's model is available to",
+                "enum": ["free", "plus", "pro", "internal", "unknown"]
+            },
+            {
+                "key": "rating",
+                "description": "The thumb the user pressed",
+                "enum": ["up", "down"]
+            }
+        ]
     }
 }

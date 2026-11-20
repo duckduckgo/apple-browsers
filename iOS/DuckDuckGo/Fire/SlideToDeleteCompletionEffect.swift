@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 struct SlideToDeleteCompletionEffect: View {
+    let title: String
     let variant: SlideToDeleteVariant
     let isActive: Bool
     let showCompletionLabel: Bool
@@ -72,7 +73,7 @@ struct SlideToDeleteCompletionEffect: View {
                     .rotationEffect(.degrees(-15))
                     .offset(x: expanded ? size.width : -size.width)
             }
-            Text(UserText.scopedFireConfirmationDeleteAllButton)
+            Text(title)
                 .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.4)

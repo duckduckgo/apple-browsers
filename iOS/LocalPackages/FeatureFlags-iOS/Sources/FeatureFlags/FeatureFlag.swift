@@ -514,6 +514,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220715153853051
+    case fireButtonDeleteAllChats
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050958443794?focus=true
     case slideToDelete
 
@@ -1106,6 +1109,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .slideToDelete:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.slideToDelete))
+        case .fireButtonDeleteAllChats:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonDeleteAllChats))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
         case .aiChatOmnibarDefaultPosition:

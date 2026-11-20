@@ -92,6 +92,7 @@ struct SlideToDeleteDebugView: View {
                 }
                 .accessibilityIdentifier("SlideToDelete.Debug.DoubleLength")
                 SlideToDeleteControl(title: title,
+                                     completionTitle: UserText.scopedFireConfirmationDeleteAllButton,
                                      variant: variant,
                                      style: style,
                                      onHapticRequest: { hapticRequests += 1 },

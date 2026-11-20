@@ -120,6 +120,7 @@ enum SlideToDeleteVariant: String, CaseIterable, Identifiable {
 
 struct SlideToDeleteControl: View {
     let title: String
+    let completionTitle: String
     var variant: SlideToDeleteVariant = .defaultValue
     var style: SlideToDeleteStyle = .defaultValue
     var onHapticRequest: () -> Void = { }
@@ -256,7 +257,8 @@ struct SlideToDeleteControl: View {
                 .padding(.horizontal, max(minimumHeight + 8, size.height))
                 .frame(width: size.width, height: size.height)
                 .opacity(showsCompletion ? 0 : 1)
-            SlideToDeleteCompletionEffect(variant: variant,
+            SlideToDeleteCompletionEffect(title: completionTitle,
+                                          variant: variant,
                                           isActive: showsCompletion,
                                           showCompletionLabel: isDragging && state.shouldShowCompletionLabel)
                 .padding(handleInset)

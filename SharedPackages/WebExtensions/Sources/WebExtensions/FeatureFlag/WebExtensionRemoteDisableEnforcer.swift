@@ -30,11 +30,11 @@ import PrivacyConfig
 /// `disabledExtensionIDsDidChange`, and whenever the loaded extensions change. The last one
 /// covers new installations and the user enabling a listed extension, which is disabled again.
 ///
-/// While extension management is not launched, a pass disables every Chrome Web Store extension,
+/// While extensions are not enabled, a pass disables every Chrome Web Store extension,
 /// matching the Windows browser's sweep.
 ///
 /// Disabling is one-way, matching the Windows browser: the enforcer never enables an extension.
-/// An extension stays disabled after its ID leaves the list or extension management launches again,
+/// An extension stays disabled after its ID leaves the list or extensions are enabled again,
 /// until the user enables it.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
@@ -44,7 +44,7 @@ public final class WebExtensionRemoteDisableEnforcer {
     private let configurationManager: PrivacyConfigurationManaging
     private let disabledExtensionIDs: @MainActor () -> Set<String>
     private let disabledExtensionIDsDidChange: AnyPublisher<Void, Never>
-    private let isExtensionManagementLaunched: @MainActor () -> Bool
+    private let isExtensionsEnabled: @MainActor () -> Bool
     private let pixelFiring: WebExtensionPixelFiring
     private var cancellables = Set<AnyCancellable>()
 
@@ -53,19 +53,19 @@ public final class WebExtensionRemoteDisableEnforcer {
 
     /// - Parameters:
     ///   - disabledExtensionIDs: Chrome Web Store IDs the app disables, whether or not extension management is launched.
-    ///   - disabledExtensionIDsDidChange: Fires when `disabledExtensionIDs` or `isExtensionManagementLaunched` may have changed.
-    ///   - isExtensionManagementLaunched: When it returns false, every Chrome Web Store extension is disabled.
+    ///   - disabledExtensionIDsDidChange: Fires when `disabledExtensionIDs` or `isExtensionsEnabled` may have changed.
+    ///   - isExtensionsEnabled: When it returns false, every Chrome Web Store extension is disabled.
     public init(manager: WebExtensionManaging,
                 configurationManager: PrivacyConfigurationManaging,
                 disabledExtensionIDs: @escaping @MainActor () -> Set<String> = { [] },
                 disabledExtensionIDsDidChange: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher(),
-                isExtensionManagementLaunched: @escaping @MainActor () -> Bool = { true },
+                isExtensionsEnabled: @escaping @MainActor () -> Bool = { true },
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
         self.manager = manager
         self.configurationManager = configurationManager
         self.disabledExtensionIDs = disabledExtensionIDs
         self.disabledExtensionIDsDidChange = disabledExtensionIDsDidChange
-        self.isExtensionManagementLaunched = isExtensionManagementLaunched
+        self.isExtensionsEnabled = isExtensionsEnabled
         self.pixelFiring = pixelFiring
     }
 
@@ -126,7 +126,7 @@ public final class WebExtensionRemoteDisableEnforcer {
     private func enforce() async {
         guard let manager else { return }
 
-        let isSweeping = !isExtensionManagementLaunched()
+        let isSweeping = !isExtensionsEnabled()
         // A disabled extension can still be loaded when it was disabled while installed extensions were loading.
         let extensionsToDisable = manager.webExtensionIdentifiers
             .compactMap { manager.installedExtension(identifier: $0) }
@@ -147,7 +147,7 @@ public final class WebExtensionRemoteDisableEnforcer {
                         sweptCount += 1
                     }
                 }
-                Logger.webExtensions.info("Disabled extension '\(identifier)' because \(isListed ? "remote configuration lists it" : "extension management is not launched")")
+                Logger.webExtensions.info("Disabled extension '\(identifier)' because \(isListed ? "remote configuration lists it" : "extensions are not enabled")")
             } catch {
                 Logger.webExtensions.error("Failed to disable remotely disabled extension '\(identifier)': \(error.localizedDescription)")
             }

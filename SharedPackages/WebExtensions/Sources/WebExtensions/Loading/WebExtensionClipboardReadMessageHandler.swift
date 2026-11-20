@@ -19,6 +19,7 @@
 #if os(macOS)
 
 import AppKit
+import Common
 import WebKit
 
 @available(macOS 15.4, *)
@@ -35,18 +36,37 @@ final class WebExtensionClipboardReadMessageHandler: NSObject, WKScriptMessageHa
 
     /// A nil reply leaves the caller subject to WebKit's normal paste rules.
     func readText(for message: WKScriptMessage) -> String? {
-        let origin = message.frameInfo.securityOrigin
-        guard message.name == WebExtensionAPIStubScript.clipboardReadMessageHandlerName, message.world == .page,
-              origin.protocol == "webkit-extension", !origin.host.isEmpty,
-              let frameURL = message.frameInfo.request.url, frameURL.scheme == origin.protocol,
-              frameURL.host?.caseInsensitiveCompare(origin.host) == .orderedSame,
-              let context = extensionContext(frameURL), context.isLoaded,
-              let webView = message.webView, let pageURL = webView.url, extensionContext(pageURL) === context,
-              let controller = context.webExtensionController, webView.configuration.webExtensionController === controller,
-              webView.configuration.websiteDataStore.isPersistent || context.hasAccessToPrivateData,
-              context.webExtension.declaresPermission("clipboardRead"), hasPermission(context) else { return nil }
+        guard message.name == WebExtensionAPIStubScript.clipboardReadMessageHandlerName,
+              message.world == .page else { return nil }
+
+        guard let context = contextForFrame(message.frameInfo),
+              let webView = message.webView,
+              isExtensionPage(webView, in: context) else { return nil }
+
+        guard webView.configuration.websiteDataStore.isPersistent || context.hasAccessToPrivateData else { return nil }
+        guard context.webExtension.declaresPermission(WebExtensionManifestPermission.clipboardRead.rawValue),
+              hasPermission(context) else { return nil }
 
         return pasteboard().string(forType: .string) ?? ""
+    }
+
+    private func contextForFrame(_ frame: WKFrameInfo) -> WKWebExtensionContext? {
+        let origin = frame.securityOrigin
+        guard origin.protocol == URL.NavigationalScheme.webkitExtension.rawValue,
+              !origin.host.isEmpty else { return nil }
+
+        guard let url = frame.request.url,
+              url.scheme == origin.protocol,
+              url.host?.caseInsensitiveCompare(origin.host) == .orderedSame else { return nil }
+
+        guard let context = extensionContext(url), context.isLoaded else { return nil }
+        return context
+    }
+
+    private func isExtensionPage(_ webView: WKWebView, in context: WKWebExtensionContext) -> Bool {
+        guard let pageURL = webView.url, extensionContext(pageURL) === context else { return false }
+        guard let controller = context.webExtensionController else { return false }
+        return webView.configuration.webExtensionController === controller
     }
 }
 

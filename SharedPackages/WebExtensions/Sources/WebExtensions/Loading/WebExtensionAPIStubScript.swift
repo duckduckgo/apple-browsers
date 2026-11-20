@@ -1050,9 +1050,10 @@ public enum WebExtensionAPIStubScript {
         var permissionsMessageHandlerName = "\(Self.permissionsMessageHandlerName)";
 
         // Bitwarden reads text from its background or offscreen extension document when its clear timer fires.
-        if (appPermissionNames.includes("clipboardRead") && manifest &&
+        var clipboardReadPermission = "\(WebExtensionManifestPermission.clipboardRead.rawValue)";
+        if (isAppPermission(clipboardReadPermission) && manifest &&
             [manifest.permissions, manifest.optional_permissions].some(function(names) {
-                return Array.isArray(names) && names.includes("clipboardRead");
+                return Array.isArray(names) && names.includes(clipboardReadPermission);
             })) {
             var clipboard = globalThis.navigator && globalThis.navigator.clipboard;
             var clipboardHandlers = globalThis.webkit && globalThis.webkit.messageHandlers;

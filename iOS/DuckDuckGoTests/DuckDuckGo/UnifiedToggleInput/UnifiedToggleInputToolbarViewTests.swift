@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -454,6 +455,48 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         let fit = UnifiedToggleInputToolbarView.RowFit(showsModeChip: true, modelChipWidth: 120, showsReturnKey: true, submitButtonWidth: 120)
 
         XCTAssertEqual(fit.level(forToolbarWidth: 100), .mergedTools)
+    }
+
+    func testWhenTheToolsCannotMergeThenTheRowStopsAtTheModelIcon() {
+        let fit = UnifiedToggleInputToolbarView.RowFit(showsToolsButton: false, showsModeChip: true, allowsMergedTools: false,
+                                                       modelChipWidth: 120, showsReturnKey: true, submitButtonWidth: 120)
+
+        XCTAssertEqual(fit.level(forToolbarWidth: 100), .modelIcon)
+    }
+
+    func testWhenTheSimplifiedPromptBoxIsTooNarrowThenTheChipKeepsItsClearButton() throws {
+        let sut = makeFittingToolbar()
+        sut.usesSimplifiedPromptBox = true
+        sut.isToolsButtonHidden = true
+        sut.selectedTool = .webSearch
+        layOut(sut, width: 200)
+
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut)).isHidden)
+        XCTAssertTrue(try XCTUnwrap(findButton(accessibilityIdentifier: Self.selectedToolMenuIdentifier, in: sut)).isHidden)
+    }
+
+    func testTheSimplifiedPromptBoxShowsTheCircledPlusAddButton() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        sut.usesSimplifiedPromptBox = true
+
+        let image = sut.imageButton.configuration?.image ?? sut.imageButton.image(for: .normal)
+        XCTAssertEqual(image?.pngData(), DesignSystemImages.Glyphs.Size24.addCircle.pngData())
+        XCTAssertEqual(sut.imageButton.accessibilityLabel, UserText.aiChatToolbarAddButtonAccessibilityLabel)
+    }
+
+    func testTheSimplifiedChipIsSixtyPointsWide() throws {
+        let sut = makeFittingToolbar()
+        sut.usesSimplifiedPromptBox = true
+        sut.isToolsButtonHidden = true
+        sut.selectedTool = .webSearch
+        layOut(sut, width: 1000)
+
+        XCTAssertEqual(UnifiedToggleInputToolbarView.RowFit.simplifiedToolChipWidth, 60)
+        let clear = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut))
+        XCTAssertEqual(clear.bounds.size, CGSize(width: 16, height: 16))
+        XCTAssertEqual(try XCTUnwrap(clear.superview?.superview).bounds.width, 60, accuracy: 0.5)
     }
 
     func testWhenControlsAreHiddenThenTheyTakeNoRoom() {

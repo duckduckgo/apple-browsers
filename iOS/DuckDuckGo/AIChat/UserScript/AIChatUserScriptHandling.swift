@@ -277,6 +277,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
     }
 
+    /// The simplified prompt box takes Customize Responses out of the iPhone input; iPad keeps it.
+    private var isSimplifiedPromptBoxEnabled: Bool {
+        devicePlatform.isIphone && featureFlagger.isFeatureOn(.unifiedToggleInputSimplifiedPromptBox)
+    }
+
     private var isBonusOfferEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatLimitExtensionPromo)
     }
@@ -609,6 +614,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
         config.supportsResponseStateReporting = true
         config.supportsiPadNativeChatList = isIPadNativeChatListOn
+        if isSimplifiedPromptBoxEnabled {
+            config.supportsCustomizeResponsesInSettings = true
+        }
         return config
     }
 

@@ -9597,12 +9597,14 @@ extension MainViewController {
         ActionMessageView.present(message: message, presentationLocation: location)
     }
     
-    private func refreshUIAfterClear() {
+    private func refreshUIAfterClear(trigger: FireRequest.Trigger) {
         // Set here rather than when the burn starts, because that callback arrives only once the
         // tabs are gone and this screen has already been rebuilt. Also set before the empty-tabs
         // branch below: burning every tab shows the switcher first, but the page the user reaches
         // from there is still a post-burn arrival. Consumed by the next New Tab Page attach.
-        isAttachingNewTabPageAfterFire = true
+        if trigger.reportsNewTabPageArrivalAfterFire {
+            isAttachingNewTabPageAfterFire = true
+        }
 
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
@@ -9812,7 +9814,7 @@ extension MainViewController: FireExecutorDelegate {
                 
         switch fireRequest.scope {
         case .all, .fireMode, .normalMode:
-            refreshUIAfterClear()
+            refreshUIAfterClear(trigger: fireRequest.trigger)
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
             return
@@ -9860,13 +9862,13 @@ extension MainViewController: FireExecutorDelegate {
         case .autoClearOnLaunch:
             autoClearInProgress = false
             if fireRequest.options.contains(.tabs), hasLoadedInitialView, autoClearShouldRefreshUIAfterClear {
-                refreshUIAfterClear()
+                refreshUIAfterClear(trigger: fireRequest.trigger)
             }
             autoClearShouldRefreshUIAfterClear = true
         case .autoClearOnForeground:
             autoClearInProgress = false
             if autoClearShouldRefreshUIAfterClear {
-                refreshUIAfterClear()
+                refreshUIAfterClear(trigger: fireRequest.trigger)
             }
             autoClearShouldRefreshUIAfterClear = true
         case .fireModeAutoClear:

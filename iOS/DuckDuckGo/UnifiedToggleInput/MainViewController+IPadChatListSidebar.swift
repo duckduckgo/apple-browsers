@@ -213,7 +213,7 @@ final class IPadChatListSidebar {
         historyViewController = AIChatHistoryViewController(viewModel: viewModel,
                                                             fireButtonAnimator: fireButtonAnimator,
                                                             presentation: .sidebar)
-        navigationController = UINavigationController(rootViewController: historyViewController)
+        navigationController = IPadChatListNavigationController(rootViewController: historyViewController)
         viewModel.delegate = self
         historyViewController.sidebarDelegate = self
         // Every stored chat, not the rows a search leaves; a failed read is skipped, since it says nothing was deleted.
@@ -437,7 +437,8 @@ final class IPadChatListSidebarContainerView: UIView {
             showChatsButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             showChatsButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
             newChatButton.leadingAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.leadingAnchor, constant: Constants.buttonInset),
-            newChatButton.bottomAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.buttonInset),
+            newChatButton.centerYAnchor.constraint(equalTo: tabView.safeAreaLayoutGuide.bottomAnchor,
+                                                   constant: -IPadChatListNavigationController.inputPillCenterHeight),
             newChatButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             newChatButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
         ]
@@ -464,6 +465,43 @@ final class IPadChatListSidebarContainerView: UIView {
         button.tintColor = UIColor(designSystemColor: .icons)
         button.accessibilityLabel = accessibilityLabel
         return button
+    }
+}
+
+/// Lifts the list's toolbar so its buttons line up with the collapsed chat input's pill beside it.
+private final class IPadChatListNavigationController: UINavigationController {
+
+    /// The collapsed pill's center, measured up from the bottom safe area where the input sits.
+    static let inputPillCenterHeight = UnifiedToggleInputView.aiTabCollapsedFooterHeight / 2
+
+    private var calibratedLayout: (size: CGSize, safeAreaBottom: CGFloat)?
+    private var isCalibrationScheduled = false
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let safeAreaBottom = view.safeAreaInsets.bottom - additionalSafeAreaInsets.bottom
+        guard calibratedLayout.map({ $0.size != view.bounds.size || $0.safeAreaBottom != safeAreaBottom }) ?? true,
+              !isCalibrationScheduled else { return }
+        // The toolbar places its items a pass after the inset changes, so measuring here would chase its own tail.
+        isCalibrationScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            self?.alignToolbarWithInputPill()
+        }
+    }
+
+    private func alignToolbarWithInputPill() {
+        isCalibrationScheduled = false
+        // The glass toolbar spans the whole view and doesn't center its items, so measure the New Chat button.
+        guard view.window != nil, !isToolbarHidden,
+              let item = topViewController?.toolbarItems?.lazy.compactMap(\.customView).first else { return }
+        additionalSafeAreaInsets.bottom = 0
+        view.layoutIfNeeded()
+        toolbar.layoutIfNeeded()
+        guard item.window != nil, item.bounds.height > 0 else { return }
+        let itemCenterHeight = view.bounds.maxY - item.convert(item.bounds, to: view).midY
+        let safeAreaBottom = view.safeAreaInsets.bottom
+        additionalSafeAreaInsets.bottom = max(0, safeAreaBottom + Self.inputPillCenterHeight - itemCenterHeight)
+        calibratedLayout = (view.bounds.size, safeAreaBottom)
     }
 }
 

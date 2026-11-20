@@ -86,11 +86,14 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             windows.removeAll { $0 === focusedWindow }
             windows.insert(focusedWindow, at: 0)
         }
+        windows.forEach { WebExtensionWindowOrder.shared.register($0, in: context.uniqueIdentifier) }
         return windows
     }
 
     func focusedWindow(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
-        windowControllersManager.lastKeyMainWindowController
+        let window = windowControllersManager.lastKeyMainWindowController
+        window.map { WebExtensionWindowOrder.shared.register($0, in: context.uniqueIdentifier) }
+        return window
     }
 
     func openNewWindow(
@@ -148,7 +151,9 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
         }
 
-        return mainWindow?.windowController as? MainWindowController
+        let window = mainWindow?.windowController as? MainWindowController
+        window.map { WebExtensionWindowOrder.shared.register($0, in: context.uniqueIdentifier) }
+        return window
     }
 
     func openNewTab(

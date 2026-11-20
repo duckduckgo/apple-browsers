@@ -23,6 +23,7 @@ on:
       - 'SharedPackages/PixelKit/**'
       - 'SharedPackages/ScreenTimeDataCleaner/**'
       - 'SharedPackages/SERPInstallOrigin/**'
+      - 'SharedPackages/SnapshotTestingSupport/**'
       - 'SharedPackages/UITestingSupport/**'
       - 'SharedPackages/URLPredictor/**'
       - 'SharedPackages/WideEvent/**'
@@ -68,6 +69,7 @@ jobs:
         SharedPackages/PixelKit/**
         SharedPackages/ScreenTimeDataCleaner/**
         SharedPackages/SERPInstallOrigin/**
+        SharedPackages/SnapshotTestingSupport/**
         SharedPackages/UITestingSupport/**
         SharedPackages/URLPredictor/**
         SharedPackages/WideEvent/**
@@ -386,6 +388,7 @@ jobs:
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
             SharedPackages/SERPInstallOrigin/ios-unittests.xml
+            SharedPackages/SnapshotTestingSupport/ios-unittests.xml
             SharedPackages/URLPredictor/ios-unittests.xml
           retention-days: 7
 
@@ -404,6 +407,7 @@ jobs:
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
             SharedPackages/SERPInstallOrigin/ios-unittests.xml
+            SharedPackages/SnapshotTestingSupport/ios-unittests.xml
             SharedPackages/URLPredictor/ios-unittests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
@@ -438,6 +442,7 @@ jobs:
             SharedPackages/Infrastructure/DesignResourcesKitIcons/ios-build-log.txt
             SharedPackages/ScreenTimeDataCleaner/ios-build-log.txt
             SharedPackages/SERPInstallOrigin/ios-build-log.txt
+            SharedPackages/SnapshotTestingSupport/ios-build-log.txt
             SharedPackages/UITestingSupport/ios-build-log.txt
             SharedPackages/URLPredictor/ios-build-log.txt
 
@@ -456,6 +461,7 @@ jobs:
             SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/SystemFrameworksExtensions/DerivedData/Logs/Test/*.xcresult
             SharedPackages/SERPInstallOrigin/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/SnapshotTestingSupport/DerivedData/Logs/Test/*.xcresult
             SharedPackages/URLPredictor/DerivedData/Logs/Test/*.xcresult
           retention-days: 7
           if-no-files-found: ignore
@@ -638,6 +644,16 @@ jobs:
           title: SERPInstallOrigin (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
+      - name: Process test results (SnapshotTestingSupport)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/SnapshotTestingSupport
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: SnapshotTestingSupport (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
       - name: Process test results (URLPredictor)
         if: always()
         uses: ./.github/actions/process-test-results
@@ -676,6 +692,7 @@ jobs:
             SharedPackages/Persistence/package-tests.xml
             SharedPackages/PixelKit/package-tests.xml
             SharedPackages/SERPInstallOrigin/package-tests.xml
+            SharedPackages/SnapshotTestingSupport/package-tests.xml
             SharedPackages/URLPredictor/package-tests.xml
             SharedPackages/WideEvent/package-tests.xml
             SharedPackages/AttributedMetric/package-tests-crash-details.json
@@ -690,6 +707,7 @@ jobs:
             SharedPackages/Persistence/package-tests-crash-details.json
             SharedPackages/PixelKit/package-tests-crash-details.json
             SharedPackages/SERPInstallOrigin/package-tests-crash-details.json
+            SharedPackages/SnapshotTestingSupport/package-tests-crash-details.json
             SharedPackages/URLPredictor/package-tests-crash-details.json
             SharedPackages/WideEvent/package-tests-crash-details.json
           retention-days: 7
@@ -712,6 +730,7 @@ jobs:
             SharedPackages/Persistence/package-tests.xml
             SharedPackages/PixelKit/package-tests.xml
             SharedPackages/SERPInstallOrigin/package-tests.xml
+            SharedPackages/SnapshotTestingSupport/package-tests.xml
             SharedPackages/URLPredictor/package-tests.xml
             SharedPackages/WideEvent/package-tests.xml
           require_tests: true
@@ -755,6 +774,7 @@ jobs:
             SharedPackages/PixelKit/build-log.txt
             SharedPackages/ScreenTimeDataCleaner/build-log.txt
             SharedPackages/SERPInstallOrigin/build-log.txt
+            SharedPackages/SnapshotTestingSupport/build-log.txt
             SharedPackages/UITestingSupport/build-log.txt
             SharedPackages/URLPredictor/build-log.txt
             SharedPackages/WideEvent/build-log.txt
@@ -779,6 +799,7 @@ jobs:
             SharedPackages/Persistence/DerivedData/Logs/Test/*.xcresult
             SharedPackages/PixelKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/SERPInstallOrigin/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/SnapshotTestingSupport/DerivedData/Logs/Test/*.xcresult
             SharedPackages/URLPredictor/DerivedData/Logs/Test/*.xcresult
             SharedPackages/WideEvent/DerivedData/Logs/Test/*.xcresult
           retention-days: 7

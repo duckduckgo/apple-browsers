@@ -227,7 +227,8 @@ let package = Package(
             name: "BookmarksTestsUtils",
             dependencies: [
                 "Bookmarks",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "BloomFilterObjC",
@@ -464,7 +465,8 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Networking", package: "Networking"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SpecialErrorPages",
@@ -821,7 +823,8 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 "BrowserServicesKitTestsUtils",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SubscriptionTests",

@@ -34,7 +34,7 @@ protocol AIChatDeleting {
 
     @discardableResult
     @MainActor
-    func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error>
+    func deleteAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error>
 
     @MainActor
     func scheduleSync()
@@ -120,20 +120,24 @@ final class AIChatDeleter: AIChatDeleting {
 
     @discardableResult
     @MainActor
-    func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error> {
+    func deleteAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
+        let requiresNativeStorage = source == .fireButtonAll
         guard let cleaner = historyCleaner(isFireMode: isFireMode) else {
-            return .success(())
+            return requiresNativeStorage ? .failure(ChatHistoryError.storageUnavailable) : .success(())
         }
 
-        let result = await cleaner.cleanAIChatHistory()
+        let clearStarted = Date()
+        let result = requiresNativeStorage
+            ? await cleaner.cleanAIChatHistoryRequiringNativeStorage()
+            : await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
-            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: .deleteAll)))
+            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: source)))
             if !isFireMode {
-                await aiChatSyncCleaner.recordLocalClear(date: Date())
+                await aiChatSyncCleaner.recordLocalClear(date: clearStarted)
             }
         case .failure(let error):
-            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: .deleteAll)))
+            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: source)))
             Logger.aiChat.debug("Failed to clear AI Chat history: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -164,6 +168,7 @@ enum AIChatDeletePixelSource: String {
     case autoClear = "auto_clear"
     case multiSelect = "multi_select"
     case deleteAll = "delete_all"
+    case fireButtonAll = "fire_button_all"
 
     init(trigger: FireRequest.Trigger) {
         switch trigger {

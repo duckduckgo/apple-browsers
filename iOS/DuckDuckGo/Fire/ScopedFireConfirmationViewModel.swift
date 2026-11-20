@@ -67,6 +67,11 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         let chatCount: Int
         let isChatSyncEnabled: Bool
         let onDelete: () -> Void
+
+        /// The same option with `onDelete` run through `wrapper`, such as after dismissing the sheet.
+        func wrappingDelete(_ wrapper: @escaping (@escaping () -> Void) -> Void) -> DeleteAllChatsOption {
+            DeleteAllChatsOption(chatCount: chatCount, isChatSyncEnabled: isChatSyncEnabled, onDelete: { wrapper(onDelete) })
+        }
     }
 
     // MARK: - Constants
@@ -91,6 +96,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     let headerTitle: String
     let showAnimation: Bool
     let buttons: [FireConfirmationButton]
+    /// The Delete All Chats option the sheet offers, or `nil` when it doesn't apply.
+    let deleteAllChats: DeleteAllChatsOption?
 
     // MARK: - Private Variables
 
@@ -127,6 +134,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         let deleteAllChats = Self.applicableDeleteAllChats(deleteAllChats,
                                                            fireContext: fireContext,
                                                            isSingleChatConfirmation: isSingleChatConfirmation)
+        self.deleteAllChats = deleteAllChats
 
         self.headerTitle = Self.computeHeaderTitle(fireContext: fireContext,
                                                    isSingleChatConfirmation: isSingleChatConfirmation,

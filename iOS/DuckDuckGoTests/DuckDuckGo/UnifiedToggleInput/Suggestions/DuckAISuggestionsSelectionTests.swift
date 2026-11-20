@@ -289,6 +289,6 @@ private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource
 private struct StubAIChatDeleter: AIChatDeleting {
     func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> { .success(()) }
     func deleteChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error> { .success(()) }
-    func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error> { .success(()) }
+    func deleteAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> { .success(()) }
     func scheduleSync() {}
 }

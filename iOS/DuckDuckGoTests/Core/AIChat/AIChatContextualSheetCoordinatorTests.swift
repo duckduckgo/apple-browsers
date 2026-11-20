@@ -184,6 +184,17 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
         }
 
+        @MainActor
+        func aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(
+            _ coordinator: AIChatContextualSheetCoordinator,
+            onDeleteAllChatsSucceeded: @escaping () -> Void
+        ) async -> FireChatConfirmationPreparation? {
+            FireChatConfirmationPreparation(browsingMode: .normal,
+                                            deleteAllChats: .init(chatCount: 1, isChatSyncEnabled: false, onDelete: onDeleteAllChatsSucceeded),
+                                            context: .contextual,
+                                            instrumentation: DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: nil))
+        }
+
         var deletedChatIDs: [String] = []
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
@@ -1560,6 +1571,39 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertTrue(host.sidebarDismissals.first === sheet)
         XCTAssertEqual(host.modalPresentationCount, 0)
         XCTAssertFalse(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testDeleteAllChatsDismissesTheSidebarAfterSuccess() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let preparation = await sut.aiChatContextualSheetViewControllerPrepareFireChatConfirmation(sheet)
+        let deleteAllChats = try XCTUnwrap(preparation?.deleteAllChats?.onDelete)
+
+        XCTAssertTrue(host.sidebarDismissals.isEmpty)
+        deleteAllChats()
+
+        XCTAssertTrue(host.sidebarDismissals.first === sheet)
+        XCTAssertFalse(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testDeleteAllChatsKeepsAReplacementSidebarOpen() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let preparation = await sut.aiChatContextualSheetViewControllerPrepareFireChatConfirmation(sheet)
+        let deleteAllChats = try XCTUnwrap(preparation?.deleteAllChats?.onDelete)
+        sut.clearActiveChat()
+        await sut.presentSheet(from: host)
+        let replacement = try XCTUnwrap(sut.sheetViewController)
+        XCTAssertTrue(replacement !== sheet)
+
+        deleteAllChats()
+
+        XCTAssertEqual(host.sidebarDismissals.count, 1)
+        XCTAssertTrue(host.isContextualSidebarShowing(replacement))
     }
 
     @MainActor

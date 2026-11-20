@@ -261,7 +261,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         guard let fireExecutor else { return }
         // Reached only after the user confirms the delete-all action.
         instrumentation.fireAllConfirmed()
-        let result = await fireExecutor.burnAllChats(isFireMode: isFireMode)
+        let result = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: .deleteAll)
         guard case .success = result else { return }
         guard !isFireMode else { return }
         // Flush the clear to sync now so the FE doesn't re-pull the chats.

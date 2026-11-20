@@ -474,6 +474,8 @@ private final class TabsBarSelectionDelegate: NSObject, TabsBarDelegate {
     func tabsBar(_ controller: TabsBarViewController, didRequestCloseOtherTabsForTabAtIndex index: Int) {}
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest) {}
+    func tabsBar(_ controller: TabsBarViewController,
+                 prepareFireChatConfirmation present: @escaping @MainActor (FireChatConfirmationPreparation) -> Void) {}
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {}

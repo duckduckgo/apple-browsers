@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 sys.dont_write_bytecode = True
@@ -74,6 +75,17 @@ class VerdictTests(unittest.TestCase):
 
     def test_a_pass_with_problems_on_either_run_exits_2(self):
         self.assertEqual(pair([SETUP, BUG], [SETUP, FIXED], problems=["VM not released"])[:2], ("PASS", 2))
+
+
+    def test_runs_on_different_macos_versions_are_inconclusive_and_name_both(self):
+        b, a = run([SETUP, BUG]), run([SETUP, FIXED])
+        rows = base.judge(b.checks, a.checks)
+        on = lambda host, macos: dict(vm=dict(host=host, macos=macos))   # noqa: E731
+        verdict, code, reason = base.verdict(b, a, rows, on("vm-1", "15.5"), on("vm-2", "26.1"))
+        self.assertEqual((verdict, code), ("INCONCLUSIVE", 2))
+        self.assertIn("VM vm-1 (macOS 15.5)", reason)
+        self.assertIn("VM vm-2 (macOS 26.1)", reason)
+        self.assertEqual(base.verdict(b, a, rows, on("vm-1", "26.1"), on("vm-2", "26.1")), ("PASS", 0, None))
 
 
 class JudgeTests(unittest.TestCase):
@@ -148,6 +160,20 @@ class ReportTests(unittest.TestCase):
         self.assertIn(f"`{'a' * 12}` (`main`)", text)
         self.assertIn(f"`{'b' * 12}`", text)
 
+    def test_details_name_each_runs_machine_and_macos(self):
+        d = tempfile.mkdtemp()
+        b, a = run([SETUP, BUG]), run([SETUP, FIXED])
+        b.unpinned = ["newFlag"]
+        rows = base.judge(b.checks, a.checks)
+        m = dict(base=dict(ref="main", sha="a" * 40, worktree="/w", revision="a" * 40, pruned=["/old"]),
+                 change=dict(revision="b" * 40, dirty=False), verdict="PASS", reason=None, rows=rows, rerun="r", clean="c")
+        text = base.report("Doc.", b, a, dict(vm=dict(host="vm-1", macos="26.1")), dict(macos="26.2", flags=["newFlag=on"]),
+                           m, d)
+        self.assertIn("on VM vm-1 (macOS 26.1)", text)
+        self.assertIn("on this Mac (macOS 26.2)", text)
+        self.assertIn("not pinned before, the base revision doesn't define newFlag", text)
+        self.assertIn("(this run: /old)", text)
+
     def test_screenshots_pair_side_by_side_where_both_exist(self):
         text = self.write(["base/menu.png", "change/menu.png", "change/final.png"])
         self.assertIn("| menu | ![Before: menu.png](base/menu.png) | ![After: menu.png](change/menu.png) |", text)
@@ -189,6 +215,27 @@ class BaseWorktreeTests(unittest.TestCase):
         self.git("commit", "-q", "--allow-empty", "-m", "moved", cwd=tree)
         base.base_worktree(self.sha, self.repo, self.trees)
         self.assertEqual(self.git("rev-parse", "HEAD", cwd=tree).strip(), self.sha)
+
+    def test_prune_removes_only_other_worktrees_unused_for_days(self):
+        current = base.base_worktree(self.sha, self.repo, self.trees)
+        old = os.path.join(self.trees, "old")
+        recent = os.path.join(self.trees, "recent")
+        self.git("worktree", "add", "-q", "--detach", old, self.sha)
+        self.git("worktree", "add", "-q", "--detach", recent, self.sha)
+        days_ago = time.time() - (base.STALE_DAYS + 1) * 86400
+        for tree in (current, old):
+            os.utime(tree, (days_ago, days_ago))
+        self.assertEqual(base.prune_base(current, self.repo, self.trees), [old])
+        self.assertFalse(os.path.exists(old))
+        self.assertNotIn(old, self.git("worktree", "list"))
+        self.assertTrue(os.path.isdir(current) and os.path.isdir(recent))
+
+    def test_reusing_a_worktree_marks_it_used(self):
+        tree = base.base_worktree(self.sha, self.repo, self.trees)
+        days_ago = time.time() - (base.STALE_DAYS + 1) * 86400
+        os.utime(tree, (days_ago, days_ago))
+        base.base_worktree(self.sha, self.repo, self.trees)
+        self.assertEqual(base.prune_base(None, self.repo, self.trees), [])
 
     def test_clean_base_removes_every_kept_worktree(self):
         tree = base.base_worktree(self.sha, self.repo, self.trees)

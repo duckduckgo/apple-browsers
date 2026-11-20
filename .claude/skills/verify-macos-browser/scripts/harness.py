@@ -83,6 +83,7 @@ class Record:
         self.problems = []      # cleanup or evidence failures: never dropped
         self.warnings = []
         self.notes = []
+        self.unpinned = []      # FLAGS the base revision doesn't define, so its run of prove --base didn't pin them
         self.unverified = []    # (what, why)
         self.shots = []         # screenshot files the proof took, in order
         self.phase = "setup"    # setup | proof | cleanup: how far the run got
@@ -496,6 +497,15 @@ def prove(path, target, evidence_dir=None, video=True, checkout=ROOT):
                       evidence=evidence, report=os.path.join(evidence, "report.md"))
 
 
+def flags_to_pin(flags, checkout, as_base):
+    """(FLAGS to pin, FLAGS skipped). The base run of prove --base skips a flag its revision doesn't define, since the
+    change may add it; every other run pins them all, and check refuses one this checkout doesn't define."""
+    if not (as_base and flags):
+        return flags, []
+    names = vhelp.feature_flags(checkout)[0]
+    return {k: v for k, v in flags.items() if k in names}, [k for k in flags if k not in names]
+
+
 def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_dir, as_base=False):
     """One run of a loaded proof on `checkout`, with its evidence in `evidence`: setup, the proof, capture, cleanup,
     report.md and manifest.json. Returns (record, manifest)."""
@@ -511,7 +521,10 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
     try:
         if vm:
             mac._do("vm", vm)
-        for name, on in getattr(mod, "FLAGS", {}).items():
+        flags, rec.unpinned = flags_to_pin(getattr(mod, "FLAGS", {}), checkout, as_base)
+        for name in rec.unpinned:
+            rec.notes.append(f"FLAGS: {name} is not defined on the base revision, so this run doesn't pin it")
+        for name, on in flags.items():
             mac._do("flag", name, "on" if on else "off")
         mac._do("build", checkout, *(["--automation"] if mac.automation else []))
         doctor = mac._do("doctor")

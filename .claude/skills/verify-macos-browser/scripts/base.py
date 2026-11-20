@@ -7,19 +7,22 @@ manifest.json, so the folder uploads as one.
 
 The base revision is checked out in a worktree under ~/.ddg-verify-macos/base/<sha12>, with its own DerivedData
 inside (.build/, ignored by git). It is kept, so the next run on the same base only rebuilds incrementally, and it is
-trusted only while it is clean at that commit: otherwise it is removed and added again. `clean-base` removes them all.
+trusted only while it is clean at that commit: otherwise it is removed and added again. Each --base run removes the
+others not used for STALE_DAYS, since the merge-base moves daily; `clean-base` removes them all.
 """
 import copy
 import json
 import os
 import shutil
 import subprocess
+import time
 
 import harness
 from harness import HOME, ROOT, ProofError, Record, label
 
 BASE_TREES = os.path.join(HOME, "base")
 AS_DECLARED, UNEXPECTED, NOT_SHOWN = "as declared", "unexpected", "not shown"
+STALE_DAYS = 3   # longer than any run, so a base worktree another run is using is never removed under it
 
 
 # ---------------------------------------------------------------- judging (pure)
@@ -47,15 +50,24 @@ def judge(base_checks, change_checks):
     return rows
 
 
-def verdict(base, change, rows):
+def where(m):
+    """The machine and macOS a run used, from its manifest."""
+    vm = m.get("vm")
+    return f"VM {vm.get('host')} (macOS {vm.get('macos')})" if vm else f"this Mac (macOS {m.get('macos') or '?'})"
+
+
+def verdict(base, change, rows, base_m=None, change_m=None):
     """(label, exit code, reason) for the pair. PASS only when this checkout passes and the base build did what the proof
-    declared, including at least one check it declared to fail there (the bug)."""
+    declared, including at least one check it declared to fail there (the bug), both on the same macOS version."""
     if base.cancelled or (change and change.cancelled):
         return "INCONCLUSIVE", 130, "cancelled"
     if base_could_not_tell(base):
         return "INCONCLUSIVE", 2, f"the base run could not tell: {base.error or 'see base/report.md'}"
     if change is None or label(change)[0] == "INCONCLUSIVE":
         return "INCONCLUSIVE", 2, f"this checkout's run could not tell: {(change and change.error) or 'not run'}"
+    if base_m and change_m and (base_m.get("vm") or base_m).get("macos") != (change_m.get("vm") or change_m).get("macos"):
+        return "INCONCLUSIVE", 2, f"the runs used different macOS versions, so a check could flip because of the OS: " \
+                                  f"before on {where(base_m)}, after on {where(change_m)}; pin one VM with --target vm-N"
     missed = [r["check"] for r in rows if r["base"] == "fail" and r["before"] == "pass"]
     if missed:
         return "FAIL", 1, f"the proof doesn't reproduce the bug: expected to fail on the base build, passed: {missed}"
@@ -98,6 +110,7 @@ def base_worktree(sha, root=ROOT, trees=BASE_TREES):
     if os.path.isdir(tree):
         status = _git(tree, "status", "--porcelain")
         if _git(tree, "rev-parse", "HEAD").stdout.strip() == sha and status.returncode == 0 and not status.stdout.strip():
+            os.utime(tree)   # last used, for prune_base
             return tree
         _remove(tree, root)
     os.makedirs(trees, exist_ok=True)
@@ -112,6 +125,24 @@ def _remove(tree, root=ROOT):
     _git(root, "worktree", "remove", "--force", tree)
     shutil.rmtree(tree, ignore_errors=True)
     _git(root, "worktree", "prune")
+
+
+def prune_base(keep, root=ROOT, trees=BASE_TREES, now=None):
+    """Remove the kept base worktrees other than `keep` not used for STALE_DAYS; each holds a full DerivedData. Returns
+    the removed paths."""
+    cutoff = (now or time.time()) - STALE_DAYS * 86400
+    removed = [os.path.join(trees, d) for d in sorted(os.listdir(trees))
+               if os.path.join(trees, d) != keep and _used(os.path.join(trees, d)) < cutoff]
+    for tree in removed:
+        _remove(tree, root)
+    return removed
+
+
+def _used(tree):
+    try:
+        return os.path.getmtime(tree)
+    except OSError:   # another run removed it first
+        return float("inf")
 
 
 def clean_base(root=ROOT, trees=BASE_TREES):
@@ -141,9 +172,10 @@ def prove_base(path, ref, target, evidence_dir=None, video=True):
     topic = harness.topic_of(evidence)
     rerun = harness.rerun_command(proof, target, shown_dir, video) + f" --base {sha}"
     tree = change = change_m = None
-    base_m = {}
+    base_m, pruned = {}, []
     try:
         tree = base_worktree(sha)
+        pruned = prune_base(tree)
     except (ProofError, KeyboardInterrupt) as e:
         base = Record()
         base.cancelled = isinstance(e, KeyboardInterrupt)
@@ -158,8 +190,9 @@ def prove_base(path, ref, target, evidence_dir=None, video=True):
         change, change_m = harness.run_one(mod, proof, os.path.join(evidence, "change"), topic, target, video, ROOT,
                                            rerun, shown_dir)
     rows = judge(base.checks, change.checks if change else [])
-    v, code, reason = verdict(base, change, rows)
-    manifest = dict(proof="proof.py", base=dict(ref=ref, sha=sha, worktree=tree, revision=base_m.get("revision")),
+    v, code, reason = verdict(base, change, rows, base_m, change_m)
+    manifest = dict(proof="proof.py", base=dict(ref=ref, sha=sha, worktree=tree, revision=base_m.get("revision"),
+                                                unpinned_flags=base.unpinned, pruned=pruned),
                     change=dict(revision=(change_m or {}).get("revision"), dirty=(change_m or {}).get("dirty")),
                     before="base/manifest.json" if base_m else None, after="change/manifest.json" if change_m else None,
                     target=target, verdict=v, exit=code, reason=reason, rows=rows, rerun=rerun,
@@ -184,10 +217,6 @@ def report(doc, base, change, base_m, change_m, m, evidence):
     def link(side, name):
         return f"[{name}]({rel(side, name)})" if rel(side, name) else "(none)"
 
-    def target(mm):
-        vm = mm.get("vm")
-        return f"VM {vm.get('host')} (macOS {vm.get('macos')})" if vm else f"this Mac (macOS {mm.get('macos') or '?'})"
-
     shots = list(dict.fromkeys((change.shots if change else []) + base.shots)) + ["final.png"]
     sha, after_rev = m["base"]["sha"], m["change"]["revision"] or "?"
     lines = [f"# Before and after: {doc.splitlines()[0]}", "", "## Verified", "", doc, "",
@@ -206,12 +235,15 @@ def report(doc, base, change, base_m, change_m, m, evidence):
     launch = change_m.get("launch") or base_m.get("launch") or {}
     lines += ["", "## Details", "",
               f"- Before: `{(m['base']['revision'] or sha)[:12]}`, built in {harness._tilde(m['base']['worktree'] or '(no worktree)')}"
-              + (f", on {target(base_m)}" if base_m else ""),
-              f"- After: `{after_rev[:12]}`" + (f", on {target(change_m)}" if change_m else ", not run"),
-              f"- Pinned flags: {', '.join(change_m.get('flags') or base_m.get('flags') or []) or '(none)'}",
+              + (f", on {where(base_m)}" if base_m else ""),
+              f"- After: `{after_rev[:12]}`" + (f", on {where(change_m)}" if change_m else ", not run"),
+              f"- Pinned flags: {', '.join(change_m.get('flags') or base_m.get('flags') or []) or '(none)'}"
+              + (f"; not pinned before, the base revision doesn't define {', '.join(base.unpinned)}" if base.unpinned else ""),
               f"- Language: {launch.get('language', '?')}, locale {launch.get('locale', '?')}",
               f"- Rerun: `{m['rerun']}`",
-              f"- The base worktree is kept for the next run on that revision; remove them all: `{m['clean']}`",
+              f"- The base worktree is kept for the next run on that revision; those not used for {STALE_DAYS} days are "
+              f"removed" + (f" (this run: {', '.join(map(harness._tilde, m['base']['pruned']))})"
+                            if m["base"].get("pruned") else "") + f"; remove them all: `{m['clean']}`",
               f"- Manifest: [manifest.json](manifest.json)", "", "## Unverified", ""]
     unverified = [f"- {w}: {y}" for w, y in (change.unverified if change else [])]
     unverified += [f"- {r['check']}: not observed on both runs" for r in m["rows"] if r["judged"] == NOT_SHOWN]

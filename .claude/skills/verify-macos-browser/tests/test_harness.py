@@ -378,5 +378,25 @@ class PublishablePathTests(unittest.TestCase):
         self.assertNotIn(self.HOME + os.sep, harness.report("x", rec, m, evidence))
 
 
+
+class BaseFlagsTests(unittest.TestCase):
+    def checkout(self, *cases):
+        root = tempfile.mkdtemp()
+        path = os.path.join(root, vhelp.FEATURE_FLAG_SWIFT)
+        os.makedirs(os.path.dirname(path))
+        with open(path, "w") as f:
+            f.write("public enum FeatureFlag {\n" + "".join(f"    case {c}\n" for c in cases) + "}\n")
+        return root
+
+    def test_the_base_run_skips_a_flag_the_base_revision_does_not_define(self):
+        flags = {"oldFlag": True, "newFlag": False}
+        self.assertEqual(harness.flags_to_pin(flags, self.checkout("oldFlag"), as_base=True),
+                         ({"oldFlag": True}, ["newFlag"]))
+
+    def test_every_other_run_pins_them_all(self):
+        flags = {"oldFlag": True, "newFlag": False}
+        self.assertEqual(harness.flags_to_pin(flags, self.checkout("oldFlag"), as_base=False), (flags, []))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -162,11 +162,17 @@ class TabViewController: UIViewController {
     var containerStackView: UIStackView!
     /// Driven by `applyContextualOnboardingTopInset(_:)` to clear the floating chrome.
     var containerStackViewTopConstraint: NSLayoutConstraint?
+    /// Released while the iPad Duck.ai chats sidebar sits beside the chat.
+    var containerStackViewLeadingConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewContainerBottomConstraint: NSLayoutConstraint?
     /// Holds the native Duck.ai chat input on iPad while this tab shows a full-tab chat.
     var fullTabChatInputContainer: FullTabChatInputContainerView?
+    /// Holds the native Duck.ai chats sidebar on iPad while this tab shows a full-tab chat.
+    var chatListSidebarContainer: IPadChatListSidebarContainerView?
+    /// Set once this tab's `sidebar=open` load has opened the chats sidebar, so later page URL changes don't reopen it.
+    var hasOpenedChatListSidebarFromURL = false
     private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?

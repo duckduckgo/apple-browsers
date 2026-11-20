@@ -44,6 +44,10 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
         XCTAssertEqual(sut.featureName, "duckAiNativeStorage")
     }
 
+    func testMessagesAreOnlyAcceptedFromHTTPSMainFrameByDefault() {
+        XCTAssertEqual(sut.messageFramePolicy, .secureMainFrame)
+    }
+
     func testWhenAllMessageNamesThenHandlerReturnsNonNil() {
         for message in DuckAiNativeStorageUserScriptMessages.allCases {
             let handler = sut.handler(forMethodNamed: message.rawValue)

@@ -16,20 +16,35 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
-import PrivacyDashboard
 
-/// The path for users who send a Duck.ai prompt from the junction. Shows no dialogs yet.
+/// The path for users who send a Duck.ai prompt from the junction:
+/// "That's Duck.ai!" on the Duck.ai tab, then the shared ending on the next new tab.
 final class DuckAIOnboardingPath: ContextualOnboardingPath {
+
+    private let progress: ContextualOnboardingProgressReading
+    private let ending: OnboardingEndingSteps
+
+    init(progress: ContextualOnboardingProgressReading,
+         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling) {
+        self.progress = progress
+        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
+    }
 
     let isUILocked = false
 
-    func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision {
-        .none
+    func dialog(for tab: Tab) -> ContextualOnboardingDecision {
+        if case .decided(let decision) = ending.decisionForNextDialog() { return decision }
+        if !progress.hasSeen(.thatsDuckAI) {
+            return tab.url?.isDuckAIURL == true ? .next(.thatsDuckAI) : .none
+        }
+        // The UI stays locked until Fire, so the next page loading means the chat was deleted.
+        return ending.start()
     }
 
     func gotItPressed(lastDialog: ContextualDialogType) -> ContextualOnboardingDecision {
-        .none
+        ending.gotItPressed(after: lastDialog)
     }
 
     func reset() {}

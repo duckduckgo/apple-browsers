@@ -140,6 +140,7 @@ final class AIChatTabExtension {
         pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
         pageContextAddedPublisher = pageContextAddedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
+        responseReceivedPublisher = responseReceivedSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -241,6 +242,12 @@ final class AIChatTabExtension {
                 self?.chatRestorationDataSubject.send(data)
             }
             .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.responseReceivedPublisher
+            .sink { [weak self] in
+                self?.responseReceivedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
     }
 
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
@@ -257,6 +264,10 @@ final class AIChatTabExtension {
 
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
+
+    private let responseReceivedSubject = PassthroughSubject<Void, Never>()
+    /// The first Duck.ai answer in onboarding mode finished, failed or was blocked.
+    let responseReceivedPublisher: AnyPublisher<Void, Never>
 
     private var temporaryAIChatNativeHandoffData: AIChatPayload?
     func setAIChatNativeHandoffData(payload: AIChatPayload) {
@@ -593,8 +604,8 @@ extension AIChatTabExtension {
             return
         }
         guard !navigationAction.navigationType.isSameDocumentNavigation else { return }
-        guard bootstrapRefresher.isInScope(url: navigationAction.url) else {
-            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope")
+        guard bootstrapRefresher.shouldRefresh(navigatingTo: navigationAction.url, isForMainFrame: navigationAction.isForMainFrame) else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope or not main frame")
             return
         }
         guard let webView else {
@@ -616,7 +627,7 @@ extension AIChatTabExtension {
         aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     ) -> DuckAiNativeStorageBootstrapScriptRefresher? {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage), let handler else { return nil }
-        var originRules: [HostnameMatchingRule] = [.exactOrSubdomain(hostname: "duck.ai")]
+        var originRules: [HostnameMatchingRule] = [.exact(hostname: "duck.ai")]
         if let customHostname = aiChatDebugURLSettings.customURLHostname {
             originRules.append(.exact(hostname: customHostname))
         }
@@ -643,6 +654,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextAddedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { get }
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

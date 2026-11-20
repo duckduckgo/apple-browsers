@@ -319,6 +319,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
         if action?.isEnabled != false {
             fireToolbarClickedPixel(identifier: identifier)
+            webExtensionManagerProvider()?.recordUserGesture(for: context)
         }
 
         // WebKit only presents the popup for an action performed during the click, so the explanation follows it.

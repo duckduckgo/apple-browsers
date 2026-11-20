@@ -72,6 +72,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitToggleSidebarAction()
     @MainActor
     func submitOpenChatProtectionAction()
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 }
 
 extension AIChatUserScriptProviding {
@@ -182,6 +184,11 @@ protocol AIChatContentHandling: AnyObject {
     /// Submits a chat-protection action, opening the "All chats are private" page.
     @MainActor
     func submitOpenChatProtectionAction()
+
+    /// Asks the page to open a chat in place, without a reload.
+    /// - Returns: the page's answer, or `nil` when it can't take the request or doesn't answer in time.
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -463,6 +470,11 @@ final class AIChatContentHandler: AIChatContentHandling {
     @MainActor
     func submitOpenChatProtectionAction() {
         userScript?.submitOpenChatProtectionAction()
+    }
+
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        await userScript?.openChat(chatId: chatId)
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {

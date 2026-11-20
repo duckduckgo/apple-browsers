@@ -318,6 +318,8 @@ class MainViewController: UIViewController {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    /// The iPad Duck.ai chats sidebar, shared by every Duck.ai tab.
+    let iPadChatListSidebarState = IPadChatListSidebarState()
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     private let tutorialSettings: TutorialSettings
@@ -1341,8 +1343,7 @@ class MainViewController: UIViewController {
             guard let self else { return }
             // Swiping restores a page's previous focus; it does not start a new keyboard landing.
             // Consumed here, before the attach below clears it, so it can't outlive this arrival.
-            let shouldRestoreFocus = NewTabPageKeyboardPolicy().shouldRestoreInputFocusOnTabSwipe(
-                on: tab, isEnabled: featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage))
+            let shouldRestoreFocus = NewTabPageKeyboardPolicy().shouldRestoreInputFocusOnTabSwipe(on: tab)
             tab.wasInputFocusedBeforeTabSwitch = false
             // A cancelled swipe selects the current tab again; only a real switch ends the visit.
             if tab !== tabManager.currentTabsModel.currentTab {
@@ -1468,6 +1469,7 @@ class MainViewController: UIViewController {
                     bookmarksDatabase: bookmarksDatabase,
                     featureFlagger: featureFlagger,
                     aiChatSettings: aiChatSettings,
+                    appSettings: appSettings,
                     privacyConfigurationManager: privacyConfigurationManager,
                     aiChatSyncCleaner: aiChatSyncCleaner,
                     duckAiNativeStorageHandler: duckAiNativeStorageHandler,
@@ -1704,6 +1706,9 @@ class MainViewController: UIViewController {
     private var isKeyboardOverlappingContent = false
     private var didSendGestureDismissPixel: Bool = false
     var latestKeyboardFrame: CGRect = .zero
+    /// The full on-screen keyboard was up, not just the bar iPadOS shows above a hardware keyboard.
+    private var isOnScreenKeyboardShown = false
+    private static let onScreenKeyboardMinimumHeight: CGFloat = 150
 
     @objc
     private func keyboardDidShow() {
@@ -1761,6 +1766,19 @@ class MainViewController: UIViewController {
             return
         }
         coordinator.showCollapsed()
+    }
+
+    /// iPad's keyboard can be put away with the input still focused, and with a hardware keyboard paired it only shrinks to
+    /// the shortcut bar, so no hide is sent. Losing the full keyboard is what leaves the input nothing to type with.
+    private func updateOnScreenKeyboardVisibility(_ visibleHeight: CGFloat) {
+        let isShown = visibleHeight >= Self.onScreenKeyboardMinimumHeight
+        defer { isOnScreenKeyboardShown = isShown }
+        guard isOnScreenKeyboardShown, !isShown, isIPadFullTabChatInput, currentTab?.isAITab == true else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator,
+                  coordinator.isAITabExpanded, !coordinator.isEditing, self.presentedViewController == nil else { return }
+            coordinator.showCollapsed()
+        }
     }
 
     @objc
@@ -2290,6 +2308,7 @@ class MainViewController: UIViewController {
         let keyboardVisible = intersection.height > 0
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
+        updateOnScreenKeyboardVisibility(view.bounds.intersection(keyboardFrameInView).height)
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
         updateDuckAIKeyboardEdgeSweep(keyboardTargetFrame: keyboardTargetFrame)
         updateWebInputChromeVisibility()
@@ -2546,10 +2565,8 @@ class MainViewController: UIViewController {
     /// The previous tab stays in the model; the launch handling records the arrival and raises the keyboard.
     private func attachNewTabPageForIdleReturnAtLaunch() {
         selectOrAddHomeTab(reuseExisting: true)
-        // Without the deferred keyboard, the held focus raises it as `newTab` would after idle.
-        attachHomeScreen(isNewTab: true,
-                         allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-                         openedAfterIdle: true)
+        // The launch handling raises the keyboard once the window is visible, so the attach doesn't.
+        attachHomeScreen(isNewTab: true, allowingKeyboard: false, openedAfterIdle: true)
     }
 
     private func selectOrAddHomeTab(reuseExisting: Bool, placement: TabsModel.TabPlacement = .atEnd) {
@@ -2737,7 +2754,7 @@ class MainViewController: UIViewController {
         daxDialogsManager.subscriptionPromotionPending || isChatPathCompletionPending
     }
 
-    /// Behind the flag, contextual onboarding keeps the keyboard hidden over its dialogs.
+    /// Contextual onboarding keeps the keyboard hidden over its dialogs.
     /// The Add Favorite flow borrows those dialogs but isn't onboarding.
     private var isNewTabPageKeyboardHeldForOnboarding: Bool {
         daxDialogsManager.isStillOnboarding() && !daxDialogsManager.isAddFavoriteFlow
@@ -2816,7 +2833,7 @@ class MainViewController: UIViewController {
         let chatPathCompletionPending = isChatPathCompletionPending
         // Keep the UI decision separate from reporting whether the input accepted focus.
         let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
-            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+            && !isNewTabPageKeyboardHeldForOnboarding
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2832,10 +2849,6 @@ class MainViewController: UIViewController {
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
         currentNTPEscapeHatch = hatch
-
-        if hasCompletedInitialLoad && !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
-            lastActiveTabStore.recordActiveTab(uid: tabModel.uid)
-        }
 
         configureUnifiedInputEscapeHatch(hatch)
 
@@ -2873,17 +2886,14 @@ class MainViewController: UIViewController {
                 return appOpenKeyboardRequestID == requestID && isAppOpenKeyboardWindowVisible
                     && tabManager.currentTabsModel.currentTab?.uid == tabID && newTabPageViewController === controller
                     && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
-                    && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+                    && !isNewTabPageKeyboardHeldForOnboarding
                     && !daxDialogsManager.isShowingContextualOnboardingDialog
                     && (presentedViewController == nil || isDismissingOriginalSwitcher)
             }
-            let beginEditing = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                ? defaultOmniBar.beginEditingOnNewTabPageAppOpen
-                : defaultOmniBar.beginEditingAutomatically
             let wasPresentingDirectly = isPresentingNewTabInputDirectly
             isPresentingNewTabInputDirectly = controller.hasInlineSearchInput
             defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
-            beginEditing(isRequestValid) { _ in }
+            defaultOmniBar.beginEditingOnNewTabPageAppOpen(isRequestValid: isRequestValid) { _ in }
         }
 
         scheduleAttachedNewTabPagePresentation(for: controller, trigger: sessionTrigger,
@@ -2900,7 +2910,6 @@ class MainViewController: UIViewController {
                                                         hatch: EscapeHatchModel?, willBeginEditing: Bool) {
         let isAfterFire = isAttachingNewTabPageAfterFire
         let requestID = appOpenKeyboardRequestID
-        let wasKeyboardFeatureEnabled = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         let recordsShown = presentedViewController == nil || presentedViewController !== tabSwitcherController
             || presentedViewController?.isBeingDismissed == true
         isAfterIdlePresentationPending = recordsShown && openedAfterIdle
@@ -2915,16 +2924,8 @@ class MainViewController: UIViewController {
         } : nil, focus: willBeginEditing ? { [weak self] in
             guard let self, appOpenKeyboardRequestID == requestID, KeyboardSettings().onNewTab,
                   !isNewTabPageKeyboardBlockedByDialog else { return }
-            let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
-                if openedAfterIdle && didFocus, let self {
-                    postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
-                }
-            }
-            if wasKeyboardFeatureEnabled {
-                showKeyboardIfAllowed(completion: focusCompleted)
-            } else {
-                enterSearchAutomatically(completion: focusCompleted)
-            }
+            // Pages opened after idle defer their keyboard to the launch handling, which records the post-idle arrival.
+            showKeyboardIfAllowed { _ in }
         } : nil)
     }
 
@@ -3077,10 +3078,6 @@ class MainViewController: UIViewController {
         let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .quickFire)
         forgetAllWithAnimation(request: request) {}
         dismiss(animated: true)
-        // On iPhone this focus outlives the burn, so behind the flag the post-Fire rule decides instead.
-        if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && KeyboardSettings().onAppLaunch {
-            enterSearch()
-        }
     }
 
     private func wakeLazyFireButtonAnimator() {
@@ -3325,7 +3322,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
+    /// The keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         showKeyboardIfAllowed { [weak self] didShowKeyboard in
             if didShowKeyboard, let self {
@@ -3373,7 +3370,6 @@ class MainViewController: UIViewController {
     private func isAppOpenKeyboardRequestValid(_ requestID: UUID, tabID: String?, onNewTabPage: Bool,
                                                restoringInputFocus: Bool) -> Bool {
         guard appOpenKeyboardRequestID == requestID,
-              featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
               isAppOpenKeyboardWindowVisible, presentedViewController == nil,
               tabManager.currentTabsModel.currentTab?.uid == tabID,
               (tabManager.currentTabsModel.currentTab?.isHomeTab == true) == onNewTabPage,
@@ -3382,15 +3378,6 @@ class MainViewController: UIViewController {
         // The last onboarding dialog marks itself seen on appearance, so also check whether it is visible.
         return !onNewTabPage || (!isNewTabPageKeyboardHeldForOnboarding && !isNewTabPageKeyboardBlockedByDialog &&
                                 !daxDialogsManager.isShowingContextualOnboardingDialog)
-    }
-
-    /// The flag-off App Launch keyboard. Like the flag-on path, it counts toward the post-idle session's `focused` value.
-    func enterSearchOnAppOpen() {
-        enterSearchAutomatically { [weak self] didFocus in
-            if didFocus, let self {
-                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
-            }
-        }
     }
 
     /// An automatic keyboard arrival. The New Tab Page visit started with the keyboard down, because
@@ -3437,18 +3424,15 @@ class MainViewController: UIViewController {
     }
 
     private func rememberNewTabPageInputFocusForTabSwitch() {
-        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-              let tab = tabManager.currentTabsModel.currentTab else { return }
+        guard let tab = tabManager.currentTabsModel.currentTab else { return }
         // A suspended UTI session can outlive a user dismissal, so remember only actual input focus.
         NewTabPageKeyboardPolicy().rememberInputFocusForTabSwitch(on: tab, isInputFocused: isInputFocused)
     }
 
     /// Shows the keyboard on the current New Tab Page after Home, tab closing, or tab selection.
-    /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
     func showKeyboardOnNewTabPageIfAllowed() {
         // New Tab, onboarding and dialog rules are checked in `isAppOpenKeyboardRequestValid`.
-        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-              isNewTabPageVisible,
+        guard isNewTabPageVisible,
               tabManager.currentTabsModel.currentTab?.isHomeTab == true else { return }
         // A landing restores focus even if a hardware keyboard left the previous input session inactive.
         showKeyboardIfAllowed { _ in }
@@ -4652,7 +4636,7 @@ class MainViewController: UIViewController {
     func openNewTabPageAfterIdleReturn() {
         currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput(.systemTeardown)
         newTab(reuseExisting: true,
-               allowingKeyboard: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+               allowingKeyboard: false,
                openedAfterIdle: true,
                entrance: .fromOutsideTheApp)
     }
@@ -4666,7 +4650,7 @@ class MainViewController: UIViewController {
             return
         }
         let requestID = appOpenKeyboardRequestID
-        presented.dismiss(animated: !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)) { [weak self] in
+        presented.dismiss(animated: false) { [weak self] in
             guard let self, appOpenKeyboardRequestID == requestID else { return }
             completion()
         }
@@ -6597,6 +6581,12 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+        recordChatHistorySelection()
+        loadChatFromHistory(url)
+    }
+
+    /// Ends the instrumentation a chat pick closes and fires its entry pixel, whether the chat then loads or opens in place.
+    func recordChatHistorySelection() {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadPreviousChat)
 
@@ -6608,6 +6598,9 @@ extension MainViewController: OmniBarDelegate {
             unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         ) == .openInNewTab
         fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
+    }
+
+    func loadChatFromHistory(_ url: URL) {
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url) { $0.duckAIEntrySource = .chatHistoryOpenChat }
     }
@@ -8760,44 +8753,45 @@ extension MainViewController: TabDelegate {
         // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
         // and this guard ensures the sheet can never be presented there.
         guard UIDevice.current.userInterfaceIdiom != .pad else { return }
-        // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
-        // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
-        // configure at launch the cast yields `nil`, and the reader surfaces a
-        // `.storageUnavailable` failure so the screen shows an error rather than a
-        // misleading empty list. Fire mode uses isolated storage so persistent chats
-        // cannot leak into a fire session.
-        let isFireMode = isCurrentTabFireTab()
-        let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
-        let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
-        // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
-        // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
-        // can't guarantee unique ids and the latter crashes on duplicates.
-        let modelDisplays = Dictionary(
-            (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        let downloader = ChatHistoryDownloader(
-            storageHandler: storageHandler,
-            modelDisplays: modelDisplays
-        )
-        let pinner: ChatPinning? = storageHandler.map { storage in
-            ChatPinner(storageHandler: storage, syncCleaner: isFireMode ? nil : aiChatSyncCleaner)
-        }
-        let viewModel = AIChatHistoryViewModel(
-            reader: reader,
-            featureFlagger: featureFlagger,
-            fireExecutor: fireExecutor,
-            downloader: downloader,
-            pinner: pinner,
-            source: source,
-            isFireMode: isFireMode
-        )
+        let viewModel = makeAIChatHistoryViewModel(source: source, isFireMode: isCurrentTabFireTab())
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
         let navigationController = UINavigationController(rootViewController: content)
         navigationController.modalPresentationStyle = .automatic
         duckAIInputFocus.setAside()
         present(navigationController, animated: true)
+    }
+
+    /// Shared by the iPhone Chats sheet and the iPad Duck.ai chats sidebar.
+    func makeAIChatHistoryViewModel(source: AIChatHistorySource, isFireMode: Bool) -> AIChatHistoryViewModel {
+        // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
+        // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
+        // configure at launch the cast yields `nil`, and the reader surfaces a
+        // `.storageUnavailable` failure so the screen shows an error rather than a
+        // misleading empty list. Fire mode uses isolated storage so persistent chats
+        // cannot leak into a fire session.
+        let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
+        let downloader = ChatHistoryDownloader(storageHandler: storageHandler)
+        // The UTI model catalog, for export header attribution. `uniquingKeysWith` rather than
+        // `uniqueKeysWithValues:` — the model list is server-supplied so ids may repeat, and the latter crashes on that.
+        let modelDisplays: () -> [String: ModelDisplay] = { [weak self] in
+            Dictionary((self?.unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
+                       uniquingKeysWith: { first, _ in first })
+        }
+        let pinner: ChatPinning? = storageHandler.map { storage in
+            ChatPinner(storageHandler: storage, syncCleaner: isFireMode ? nil : aiChatSyncCleaner)
+        }
+        return AIChatHistoryViewModel(
+            reader: reader,
+            featureFlagger: featureFlagger,
+            fireExecutor: fireExecutor,
+            downloader: downloader,
+            modelDisplays: modelDisplays,
+            pinner: pinner,
+            source: source,
+            isFireMode: isFireMode
+        )
     }
 
     func tabDidRequestBookmarks(tab: TabViewController) {
@@ -9103,8 +9097,7 @@ extension MainViewController: TabSwitcherDelegate {
             assertionFailure("Couldn't create new tab")
             return
         }
-        let shouldFocusKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-            && newTab.tabModel.isHomeTab
+        let shouldFocusKeyboard = newTab.tabModel.isHomeTab
             && (newTab.tabModel !== previousTabModel
                 || (pendingTabSwitcherKeyboard?.tab === newTab.tabModel
                     && pendingTabSwitcherKeyboard?.requestID == appOpenKeyboardRequestID))
@@ -9161,8 +9154,7 @@ extension MainViewController: TabSwitcherDelegate {
         // Closing every tab leaves the switcher's own unseen new tab, which it then dismisses onto.
         // `updateCurrentTab()` makes that tab current first, so the dismissal reports no new selection.
         let tab = tabManager.currentTabsModel.currentTab
-        let shouldFocusKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-            && tab?.isHomeTab == true && tab?.viewed == false
+        let shouldFocusKeyboard = tab?.isHomeTab == true && tab?.viewed == false
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         updateCurrentTab()
         pendingTabSwitcherKeyboard = shouldFocusKeyboard ? tab.map { ($0, appOpenKeyboardRequestID) } : nil
@@ -9282,7 +9274,7 @@ extension MainViewController: TabSwitcherDelegate {
             }
             await fireExecutor.burn(request: request, applicationState: .unknown)
             // In normal mode the switcher dismisses onto the new tab the burn leaves.
-            if case .normalMode = request.scope, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+            if case .normalMode = request.scope,
                lastForegroundEntryDate == foregroundEntryDate,
                isAppOpenKeyboardWindowVisible, presentedViewController === tabSwitcher,
                let tab = tabManager.currentTabsModel.currentTab, tab.isHomeTab {
@@ -9495,10 +9487,8 @@ extension MainViewController {
         // Tab teardown resets the keyboard request ID; keep background/return cancellation valid across the whole burn.
         let foregroundEntryDate = lastForegroundEntryDate
         // Read before the burn: the page it lands on marks onboarding's last dialog as seen as soon as it
-        // appears, before the keyboard below is decided. Flag-gated, because the check can update
-        // onboarding state.
-        let isKeyboardHeldForOnboarding = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-            && isNewTabPageKeyboardHeldForOnboarding
+        // appears, before the keyboard below is decided.
+        let isKeyboardHeldForOnboarding = isNewTabPageKeyboardHeldForOnboarding
 
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
@@ -9531,38 +9521,24 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
-                if request.options.contains(.tabs) && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
-                    // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
-                    // Tab changes, backgrounding and user dismissals invalidate the same keyboard request.
-                    let requestID = self.appOpenKeyboardRequestID
-                    let showKeyboardAfterFireButton = DispatchWorkItem { [weak self] in
-                        guard let self,
-                              self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-                              self.lastForegroundEntryDate == foregroundEntryDate,
-                              self.appOpenKeyboardRequestID == requestID,
-                              self.isAppOpenKeyboardWindowVisible,
-                              self.isNewTabPageVisible,
-                              self.tabManager.currentTabsModel.currentTab?.isHomeTab == true else { return }
-                        let showsKeyboard = NewTabPageKeyboardPolicy().showsKeyboardAfterFire(
-                            onDuckAITab: self.currentTab?.isAITab == true,
-                            stillOnboarding: isKeyboardHeldForOnboarding || self.isNewTabPageKeyboardHeldForOnboarding)
-                        guard showsKeyboard,
-                              !self.isNewTabPageKeyboardBlockedByDialog,
-                              !self.daxDialogsManager.isShowingContextualOnboardingDialog else { return }
-                        self.enterSearchAutomatically()
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
-                    self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
-                }
-            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
+            } else if request.options.contains(.tabs) && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
-                let showKeyboardAfterFireButton = DispatchWorkItem {
-                    // A burned Duck.ai chat reopens as a new chat that owns its input; don't focus search over it.
-                    guard self.currentTab?.isAITab != true else { return }
-                    if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-                        self.enterSearchAutomatically()
-                    }
+                // Tab changes, backgrounding and user dismissals invalidate the same keyboard request.
+                let requestID = self.appOpenKeyboardRequestID
+                let showKeyboardAfterFireButton = DispatchWorkItem { [weak self] in
+                    guard let self,
+                          self.lastForegroundEntryDate == foregroundEntryDate,
+                          self.appOpenKeyboardRequestID == requestID,
+                          self.isAppOpenKeyboardWindowVisible,
+                          self.isNewTabPageVisible,
+                          self.tabManager.currentTabsModel.currentTab?.isHomeTab == true else { return }
+                    let showsKeyboard = NewTabPageKeyboardPolicy().showsKeyboardAfterFire(
+                        onDuckAITab: self.currentTab?.isAITab == true,
+                        stillOnboarding: isKeyboardHeldForOnboarding || self.isNewTabPageKeyboardHeldForOnboarding)
+                    guard showsKeyboard,
+                          !self.isNewTabPageKeyboardBlockedByDialog,
+                          !self.daxDialogsManager.isShowingContextualOnboardingDialog else { return }
+                    self.enterSearchAutomatically()
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton

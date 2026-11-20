@@ -35,15 +35,7 @@ struct SubscriptionContainerViewFactoryTests {
     private let subscriptionManager = SubscriptionManagerMock()
 
     private func makeContext() -> SubscriptionFlowContext {
-        let userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
-                                                                              sync: MockDDGSyncing(),
-                                                                              privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                                                                              contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                                                              fireproofing: MockFireproofing(),
-                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-                                                                              internalUserDecider: PrivacyConfig.MockInternalUserDecider(),
-                                                                              syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                              webExtensionAvailability: nil)
+        let userScriptsDependencies = DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: MockPrivacyConfigurationManager())
         return SubscriptionFlowContext(subscriptionManager: subscriptionManager,
                                        subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true),
                                        userScriptsDependencies: userScriptsDependencies,

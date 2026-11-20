@@ -57,6 +57,7 @@ import WebKit
 import WidgetKit
 import FeatureFlags_iOS
 import WebPageTranslation
+import WideEvent
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
@@ -329,6 +330,8 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    let wideEvent: WideEventManaging
+    let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
     private(set) var isSelectingTabBySwipe = false
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
@@ -827,9 +830,13 @@ class MainViewController: UIViewController {
         usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
         promptExposureReporter: PromptExposureReporting,
+        wideEvent: WideEventManaging,
+        subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling,
         translationModels: TranslationModels? = nil
     ) {
         self.pixelFiring = pixelFiring
+        self.wideEvent = wideEvent
+        self.subscriptionExpirationReminderScheduler = subscriptionExpirationReminderScheduler
         self.translationModels = translationModels
         self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -4933,11 +4940,11 @@ class MainViewController: UIViewController {
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
             userScriptsDependencies: userScriptsDependencies,
-            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            internalUserDecider: userScriptsDependencies.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
-            wideEvent: AppDependencyProvider.shared.wideEvent,
+            wideEvent: wideEvent,
             featureFlagger: featureFlagger,
-            expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler)
+            expirationReminderScheduler: subscriptionExpirationReminderScheduler)
         let purchaseDependencies = SubscriptionPurchaseDependencies(
             subscriptionDataReporter: subscriptionDataReporter,
             tld: AppDependencyProvider.shared.storageCache.tld,

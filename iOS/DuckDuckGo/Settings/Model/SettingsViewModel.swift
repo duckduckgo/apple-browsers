@@ -131,7 +131,6 @@ final class SettingsViewModel: ObservableObject {
     // Subscription Dependencies
     let subscriptionManager: any SubscriptionManager
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
     private let expirationReminderScheduler: SubscriptionExpirationReminderScheduling
     private var subscriptionSignOutObserver: Any?
@@ -248,7 +247,7 @@ final class SettingsViewModel: ObservableObject {
             subscriptionManager: subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
             userScriptsDependencies: userScriptsDependencies,
-            internalUserDecider: internalUserDecider,
+            internalUserDecider: userScriptsDependencies.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             wideEvent: wideEvent,
             featureFlagger: featureFlagger,
@@ -1154,7 +1153,6 @@ final class SettingsViewModel: ObservableObject {
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
-         internalUserDecider: InternalUserDecider,
          wideEvent: WideEventManaging,
          expirationReminderScheduler: SubscriptionExpirationReminderScheduling
     ) {
@@ -1167,7 +1165,6 @@ final class SettingsViewModel: ObservableObject {
         self.legacyViewProvider = legacyViewProvider
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
-        self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
         self.expirationReminderScheduler = expirationReminderScheduler
         self.voiceSearchHelper = voiceSearchHelper

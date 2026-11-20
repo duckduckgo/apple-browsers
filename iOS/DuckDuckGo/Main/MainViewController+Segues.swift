@@ -584,9 +584,8 @@ extension MainViewController {
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                   adBlockingAvailability: adBlockingAvailability,
                                                   sitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
-                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                  wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                  expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler)
+                                                  wideEvent: wideEvent,
+                                                  expirationReminderScheduler: subscriptionExpirationReminderScheduler)
 
         settingsViewModel.configureSitePermissions(
             store: tabManager.sitePermissionsStore,

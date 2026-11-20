@@ -34,7 +34,7 @@ class HostTests(unittest.TestCase):
         self.assertEqual(harness.undeclared(hosts, ["duck.ai"]), ["duckduckgo.com", "evilduck.ai"])
 
     def test_evidence_kind(self):
-        self.assertEqual(harness.evidence_kind([], {"127.0.0.1"}), "local pages only")
+        self.assertEqual(harness.evidence_kind([], {"127.0.0.1"}), "no live hosts observed")
         self.assertEqual(harness.evidence_kind(["duck.ai"], {"127.0.0.1", "duck.ai"}), "live: duck.ai")
         self.assertEqual(harness.evidence_kind([], {"duckduckgo.com"}), "live: duckduckgo.com")
         self.assertTrue(harness.evidence_kind([], None).startswith("unknown: hosts not collected"))
@@ -60,15 +60,15 @@ class ReportTests(unittest.TestCase):
         self.assertIn("- Hosts the app loaded: 127.0.0.1, duckduckgo.com\n", text)
         self.assertIn("- Evidence: live: duckduckgo.com\n", text)
 
-    def test_local_pages_only(self):
+    def test_no_live_hosts_observed(self):
         text = self.report({"127.0.0.1"}, [])
-        self.assertIn("- Evidence: local pages only\n", text)
+        self.assertIn("- Evidence: no live hosts observed\n", text)
         self.assertNotIn("Warnings:", text)
 
     def test_without_automation_hosts_are_unknown_not_local(self):
         text = self.report(None, [])
         self.assertIn("- Hosts the app loaded: (not collected: AUTOMATION is off)\n", text)
-        self.assertNotIn("local pages only", text)
+        self.assertNotIn("no live hosts observed", text)
 
 
 class HostCollectionTests(unittest.TestCase):

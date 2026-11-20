@@ -208,7 +208,7 @@ final class SystemExtensionManagerTests: XCTestCase {
     func testWhenTheBuildIsIdenticalThenTheActiveExtensionIsKept() {
         let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
 
-        XCTAssertEqual(request.replacementAction(replacing: build, with: build), .cancel)
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: true, with: build), .cancel)
         XCTAssertNil(request.version)
     }
 
@@ -216,7 +216,7 @@ final class SystemExtensionManagerTests: XCTestCase {
         let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
         let rebuilt = SystemExtensionBuild(shortVersion: build.shortVersion, version: build.version, codeDirectoryHash: Data([0x65, 0x35]))
 
-        XCTAssertEqual(request.replacementAction(replacing: build, with: rebuilt), .replace)
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: true, with: rebuilt), .replace)
         XCTAssertEqual(request.version, "1.217.0.880")
     }
 
@@ -224,15 +224,41 @@ final class SystemExtensionManagerTests: XCTestCase {
         let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
         let upgrade = SystemExtensionBuild(shortVersion: "1.218.0", version: "881", codeDirectoryHash: build.codeDirectoryHash)
 
-        XCTAssertEqual(request.replacementAction(replacing: build, with: upgrade), .replace)
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: true, with: upgrade), .replace)
         XCTAssertEqual(request.version, "1.218.0.881")
+    }
+
+    func testWhenTheIdenticalInstalledExtensionIsNotActiveThenItIsReplaced() {
+        let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
+
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: false, with: build), .replace)
+        XCTAssertEqual(request.version, "1.217.0.880")
+    }
+
+    func testWhenTheIdenticalInstalledExtensionIsNotActiveThenACancelledRequestFails() async throws {
+        let manager = CapturingSystemExtensionRequestManager()
+        let request = makeActivationRequest(manager: manager)
+        let submitted = expectation(description: "Request submitted")
+        manager.onSubmit = { _ in submitted.fulfill() }
+
+        let activation = Task { try await request.submit() }
+        await fulfillment(of: [submitted], timeout: 1)
+        _ = request.replacementAction(replacing: build, existingIsActive: false, with: build)
+        request.request(try XCTUnwrap(manager.submittedRequests.first), didFailWithError: OSSystemExtensionError(.requestCanceled))
+
+        do {
+            try await activation.value
+            XCTFail("Expected the activation to fail")
+        } catch {
+            XCTAssertEqual((error as? OSSystemExtensionError)?.code, .requestCanceled)
+        }
     }
 
     func testWhenTheCodeHashCannotBeReadThenTheExtensionIsReplaced() {
         let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
         let unreadable = SystemExtensionBuild(shortVersion: build.shortVersion, version: build.version, codeDirectoryHash: nil)
 
-        XCTAssertEqual(request.replacementAction(replacing: unreadable, with: unreadable), .replace)
+        XCTAssertEqual(request.replacementAction(replacing: unreadable, existingIsActive: true, with: unreadable), .replace)
     }
 
     func testWhenTheIdenticalActiveExtensionIsKeptThenActivationSucceeds() async throws {
@@ -243,7 +269,7 @@ final class SystemExtensionManagerTests: XCTestCase {
 
         let activation = Task { try await request.submit() }
         await fulfillment(of: [submitted], timeout: 1)
-        _ = request.replacementAction(replacing: build, with: build)
+        _ = request.replacementAction(replacing: build, existingIsActive: true, with: build)
         request.request(try XCTUnwrap(manager.submittedRequests.first), didFailWithError: OSSystemExtensionError(.requestCanceled))
 
         try await activation.value

@@ -8,7 +8,9 @@
 # signing. Other configurations keep CURRENT_PROJECT_VERSION.
 #
 # Mach-O files contribute their linker UUIDs instead of their bytes, so the
-# code signature embedded in them doesn't change the number.
+# code signature embedded in them doesn't change the number. The Info.plist
+# contributes everything except CFBundleVersion, and the entitlements file in
+# CODE_SIGN_ENTITLEMENTS contributes its content.
 
 set -euo pipefail
 
@@ -32,12 +34,16 @@ content_fingerprint() {
             else
                 shasum -a 256 "${file}"
             fi
-        done \
-        | shasum -a 256 \
-        | cut -c1-7
+        done
+
+    plutil -remove CFBundleVersion -o - "${info_plist_path}" | shasum -a 256
+
+    if [ -n "${CODE_SIGN_ENTITLEMENTS:-}" ]; then
+        shasum -a 256 < "${SRCROOT}/${CODE_SIGN_ENTITLEMENTS}"
+    fi
 }
 
-content_number=$((16#$(content_fingerprint)))
+content_number=$((16#$(content_fingerprint | shasum -a 256 | cut -c1-7)))
 bundle_version="${CURRENT_PROJECT_VERSION}.${content_number}"
 
 current_version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "${info_plist_path}")

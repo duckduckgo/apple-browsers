@@ -599,7 +599,9 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
 
     func request(_ request: OSSystemExtensionRequest, actionForReplacingExtension existing: OSSystemExtensionProperties, withExtension ext: OSSystemExtensionProperties) -> OSSystemExtensionRequest.ReplacementAction {
 
-        replacementAction(replacing: SystemExtensionBuild(existing), with: SystemExtensionBuild(ext))
+        replacementAction(replacing: SystemExtensionBuild(existing),
+                          existingIsActive: existing.isEnabled && !existing.isAwaitingUserApproval && !existing.isUninstalling,
+                          with: SystemExtensionBuild(ext))
     }
 
     /// Decides whether to replace the active extension with the one being activated.
@@ -608,11 +610,15 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
     /// without reporting a new version.
     ///
     /// - Parameters:
-    ///   - existing: The active extension.
+    ///   - existing: The installed extension.
+    ///   - existingIsActive: Whether the installed extension is enabled, approved and not being uninstalled.
     ///   - new: The extension being activated.
-    /// - Returns: `.cancel` when both are the same build with the same signed code, otherwise `.replace`.
-    func replacementAction(replacing existing: SystemExtensionBuild, with new: SystemExtensionBuild) -> OSSystemExtensionRequest.ReplacementAction {
-        guard existing.codeDirectoryHash != nil, existing == new else {
+    /// - Returns: `.cancel` when the installed extension is active and both are the same build with the same signed code,
+    ///   otherwise `.replace`.
+    func replacementAction(replacing existing: SystemExtensionBuild,
+                           existingIsActive: Bool,
+                           with new: SystemExtensionBuild) -> OSSystemExtensionRequest.ReplacementAction {
+        guard existingIsActive, existing.codeDirectoryHash != nil, existing == new else {
             updateVersion(to: new.shortVersion + "." + new.version)
             return .replace
         }

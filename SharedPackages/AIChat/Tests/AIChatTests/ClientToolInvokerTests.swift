@@ -492,7 +492,7 @@ private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoo
     func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?, chatID: String?, accessToolNames: [String]?,
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         calls.append((callID, tool, targetsOtherTab, prompter))
-        guard outcome != "denied" else { return .refused(.denied, .prompt) }
+        guard outcome != "denied" else { return .refused(.denied, .prompt, answer: .never) }
         return .granted(.prompt, performExecution: { [self] operation in
             permissionConfirmationCount += 1
             return outcome == "granted" ? await operation() : nil

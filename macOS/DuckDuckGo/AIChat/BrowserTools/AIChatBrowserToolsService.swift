@@ -60,7 +60,8 @@ final class AIChatBrowserToolsService {
         let catalog = BrowserToolCatalog(tools: tools, configuration: configuration)
         let permissions = BrowserToolSitePermissions(permissionManager: permissionManager)
         let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
-        clientToolPermissions.instrumentation = BrowserToolsPixelInstrumentation(pixelFiring: PixelKit.shared)
+        let instrumentation = BrowserToolsPixelInstrumentation(pixelFiring: PixelKit.shared)
+        clientToolPermissions.instrumentation = instrumentation
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog
@@ -69,8 +70,9 @@ final class AIChatBrowserToolsService {
         self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager) { prompt, decision, prompter in
             clientToolPermissions.respond(to: prompt, decision: decision, from: prompter)
         }
-        self.invoker = BrowserToolInvoker(catalog: catalog,
-                                          clientToolPermissions: clientToolPermissions)
+        let invoker = BrowserToolInvoker(catalog: catalog, clientToolPermissions: clientToolPermissions)
+        invoker.instrumentation = instrumentation
+        self.invoker = invoker
         self.lastClientToolsConfiguration = Self.clientToolsConfiguration(for: catalog)
         self.featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
             Task { @MainActor in

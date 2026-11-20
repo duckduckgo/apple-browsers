@@ -1,9 +1,8 @@
 # widgets.yaml
 appId: com.duckduckgo.mobile.ios
 
-# Disabled until we can support iOS 17.2 on CI
-# tags:
-#     - release
+tags:
+    - release
 
 ---
 
@@ -42,7 +41,14 @@ appId: com.duckduckgo.mobile.ios
     point: 30%,30%
 - tapOn: " Add Widget"
 - tapOn: "Done"
-- tapOn: "DuckDuckGo"
+- tapOn:
+    point: 27%,14%
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000
+- tapOn:
+    id: "searchEntry"
 - inputText: "example.com"
 - pressKey: Enter
 - assertVisible: "Example Domain"
@@ -60,20 +66,71 @@ appId: com.duckduckgo.mobile.ios
 - inputText: "DuckDuckGo"
 - tapOn:
     point: 30%,30%
-- assertVisible: "Search"
-- swipe:  
+- assertVisible: "Custom Shortcuts"
+- swipe:
+    start: 90%, 50%
+    end: 10%, 50%
+- assertVisible: "Custom Shortcuts"
+- swipe:
+    start: 90%, 50%
+    end: 10%, 50%
+- assertVisible: "Search and Favorites"
+- swipe:
+    start: 90%, 50%
+    end: 10%, 50%
+- assertVisible: "Search and Favorites"
+- swipe:
     start: 90%, 50%
     end: 10%, 50%
 - assertVisible: "Search Passwords"
-- swipe:  
-    start: 90%, 50%
-    end: 10%, 50%
-- assertVisible: "Search and Favorites"
-- swipe:  
-    start: 90%, 50%
-    end: 10%, 50%
-- assertVisible: "Search and Favorites"
-- swipe:  
+- swipe:
     start: 90%, 50%
     end: 10%, 50%
 - assertVisible: "VPN"
+- swipe:
+    start: 90%, 50%
+    end: 10%, 50%
+- assertVisible: "Quickly launch a private search in DuckDuckGo."
+
+# Add the Search and Favorites widget
+- swipe:
+    start: 10%, 50%
+    end: 90%, 50%
+- swipe:
+    start: 10%, 50%
+    end: 90%, 50%
+- swipe:
+    start: 10%, 50%
+    end: 90%, 50%
+- swipe:
+    start: 10%, 50%
+    end: 90%, 50%
+- assertVisible: "Search or visit your favorite sites privately with just one tap."
+- tapOn: " Add Widget"
+- tapOn: "Done"
+- assertVisible: "Add Favorites"
+
+# Save a favorite in the app
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+- tapOn: "Browsing menu"
+- tapOn: "Add Favorite"
+
+# Check the widget shows the new favorite
+- pressKey: HOME
+- swipe:
+    start: 5%, 70%
+    end: 95%, 70%
+- extendedWaitUntil:
+    visible: "Privacy Test Pages - Home"
+    timeout: 10000
+- assertNotVisible: "Add Favorites"

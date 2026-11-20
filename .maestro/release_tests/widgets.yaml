@@ -43,6 +43,10 @@ tags:
 - tapOn: "Done"
 - tapOn:
     point: 27%,14%
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000
 - tapOn:
     id: "searchEntry"
 - inputText: "example.com"
@@ -109,6 +113,10 @@ tags:
 # Save a favorite in the app
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
+- extendedWaitUntil:
+    visible:
+      id: "searchEntry"
+    timeout: 10000
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site/"

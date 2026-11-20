@@ -117,6 +117,9 @@ jobs:
     name: UI Tests
 
     needs: create_release_branch
+    permissions:
+      contents: read
+      checks: write
     uses: ./.github/workflows/ios_ui_tests.yml
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}

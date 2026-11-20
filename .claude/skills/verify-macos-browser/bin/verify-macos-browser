@@ -8,10 +8,10 @@ usage: verify-macos-browser new-proof <name> [--evidence-dir <dir>]  a proof tem
                             [--base <ref> | --checkout <dir>]
        verify-macos-browser clean-base                               remove the kept base worktrees
 --base: prove <ref> first (the bug), then this checkout (the fix), and judge each check against both; the base
-       worktree is kept in ~/.ddg-verify-macos/base/<sha12> for the next run on that revision
+       worktree is kept in ~/.ddg-verify-macos/base/<sha12> for the next run on that revision, until unused for 3 days
 --checkout: build and prove another checkout of this repo (e.g. a base revision) with this skill
 --evidence-dir: a directory outside any git checkout; each run writes a fresh <stamp>-<name>-<id>/ attempt folder in
-       it (default ~/.ddg-verify-macos)
+       it (default: the folder that holds the proof's attempt folder, else ~/.ddg-verify-macos)
 --no-video: no recording.mp4 (by default the proof is recorded: a VM's screen, or only the app's window on this Mac)
 exit:  0 pass · 1 a check failed (with --base: also a base build that didn't do what the proof declared) ·
        2 inconclusive: setup, an action or read that failed, nothing checked, a proof rejected by check, an

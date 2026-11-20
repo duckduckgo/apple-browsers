@@ -3,12 +3,14 @@ Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -
 """
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
 import textwrap
 import unittest
 import uuid
+from unittest import mock
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "scripts"))
@@ -165,6 +167,11 @@ class TabCountTests(unittest.TestCase):
                                  'AXRadioButton id=TabBarViewItem title="New Tab" value="0" @648,89 240x38\n')
         self.assertEqual(mac.tab_count(), 2)
 
+    def test_counts_in_the_front_window_only(self):
+        mac = harness.Mac("t", tempfile.mkdtemp(), harness.Record())
+        mac._sh = lambda *a: (0, "") if a == ("ax", "findmain", "TabBarViewItem") else self.fail(f"read {a}")
+        self.assertEqual(mac.tab_count(), 0)
+
 
 class TelemetryNeedsMarkTests(unittest.TestCase):
     def test_expect_pixel_without_mark_is_refused_before_running_anything(self):
@@ -255,6 +262,8 @@ class RecordingTests(unittest.TestCase):
         self.assertEqual(harness.label(rec), ("PASS", 2))
         self.assertIn("- Recording: [recording.mp4](recording.mp4) (3.0 s)\n", text)
         self.assertIn("CUT: another app came in front", rec.video["error"])
+        self.assertIn("- screen recording cut short: ", text)
+        self.assertNotIn("recording failed", text)
 
     def test_no_video_records_nothing_and_says_so(self):
         rec, ran, text = self.finish((0, "recording.mp4 seconds=1 bytes=1"), video=False)
@@ -347,6 +356,15 @@ class AttemptFolderTests(unittest.TestCase):
         self.assertRegex(harness.topic_of(folder), r"^duck-ai-s-[0-9a-f]{4}$")
         self.assertLessEqual(len(harness.topic_of(folder)), 14)
 
+    def test_prove_without_the_option_keeps_a_proof_made_with_it_in_its_evidence_dir(self):
+        evidence_dir, home = tempfile.mkdtemp(), tempfile.mkdtemp()
+        proof = harness.new_proof("tabs", harness.evidence_root(evidence_dir))
+        with mock.patch.object(harness, "HOME", home), \
+                mock.patch.object(harness.Mac, "_sh", lambda self, *a: (2, "NO VM FREE")):
+            _, out = harness.prove(proof, "vm")
+        self.assertEqual(os.path.dirname(out["evidence"]), os.path.realpath(evidence_dir))
+        self.assertEqual(os.listdir(home), [])
+
 
 class PublishablePathTests(unittest.TestCase):
     HOME = os.path.expanduser("~")
@@ -384,6 +402,44 @@ class PublishablePathTests(unittest.TestCase):
         self.assertNotIn(self.HOME + os.sep, written)
         self.assertEqual(json.loads(written)["evidence_dir"], "~/ev")
         self.assertNotIn(self.HOME + os.sep, harness.report("x", rec, m, evidence))
+
+
+
+class BaseFlagsTests(unittest.TestCase):
+    def checkout(self, *cases):
+        root = tempfile.mkdtemp()
+        path = os.path.join(root, vhelp.FEATURE_FLAG_SWIFT)
+        os.makedirs(os.path.dirname(path))
+        with open(path, "w") as f:
+            f.write("public enum FeatureFlag {\n" + "".join(f"    case {c}\n" for c in cases) + "}\n")
+        return root
+
+    def test_the_base_run_skips_a_flag_the_base_revision_does_not_define(self):
+        flags = {"oldFlag": True, "newFlag": False}
+        self.assertEqual(harness.flags_to_pin(flags, self.checkout("oldFlag"), as_base=True),
+                         ({"oldFlag": True}, ["newFlag"]))
+
+    def test_every_other_run_pins_them_all(self):
+        flags = {"oldFlag": True, "newFlag": False}
+        self.assertEqual(harness.flags_to_pin(flags, self.checkout("oldFlag"), as_base=False), (flags, []))
+
+class CleanupSignalTests(unittest.TestCase):
+    def test_a_child_started_during_cleanup_can_still_be_stopped_with_sigterm(self):
+        # SIGINT/SIGTERM are held off during cleanup; a child (ssh, log show) must not inherit that, or a hung one
+        # can only be stopped with kill -9.
+        exits = []
+
+        def finish(*_):
+            exits.append(subprocess.run(["/bin/sh", "-c", "kill -TERM $$; sleep 5"], timeout=10).returncode)
+
+        with tempfile.TemporaryDirectory() as home:
+            proof = os.path.join(home, "p.py")
+            with open(proof, "w") as f:
+                f.write('"""x"""\ndef run(mac):\n    pass\n')
+            with mock.patch.object(harness, "HOME", home), mock.patch.object(harness, "_finish", finish), \
+                    mock.patch.object(harness.Mac, "_sh", lambda self, *a: (2, "NO VM FREE")):
+                harness.prove(proof, "vm")
+        self.assertEqual(exits, [-signal.SIGTERM])
 
 
 if __name__ == "__main__":

@@ -4082,10 +4082,10 @@ https://duckduckgo.com/mac";
 "onboarding.personalization.aiModel.cta" = "Next";
 
 /* Message of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.message" = "Choose an AI to start with, change anytime during chat.";
+"onboarding.personalization.aiModel.message" = "Swap anytime.";
 
 /* Title of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.title" = "Your chats, your way.";
+"onboarding.personalization.aiModel.title" = "Pick an AI to try first";
 
 /* Button to continue to the next onboarding screen from the AI search personalization screen. */
 "onboarding.personalization.aiSearch.cta" = "Next";

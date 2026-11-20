@@ -2921,8 +2921,8 @@ public struct UserText {
         public enum Personalization {
 
             public enum AIModel {
-                public static let title = NSLocalizedString("onboarding.personalization.aiModel.title", value: "Your chats, your way.", comment: "Title of the onboarding AI model personalization screen.")
-                public static let message = NSLocalizedString("onboarding.personalization.aiModel.message", value: "Choose an AI to start with, change anytime during chat.", comment: "Message of the onboarding AI model personalization screen.")
+                public static let title = NSLocalizedString("onboarding.personalization.aiModel.title", value: "Pick an AI to try first", comment: "Title of the onboarding AI model personalization screen.")
+                public static let message = NSLocalizedString("onboarding.personalization.aiModel.message", value: "Swap anytime.", comment: "Message of the onboarding AI model personalization screen.")
                 public static let cta = NSLocalizedString("onboarding.personalization.aiModel.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the AI model personalization screen.")
             }
 

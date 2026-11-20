@@ -10,6 +10,9 @@ own. For each, it checks:
 - images attached to the PR, which would make evidence public
 - changed files under .github/ or scripts/agent-worker/
 - text copied from the agent's instructions (leak_check.py), in the title, body and added lines
+It also checks the repo's activity log for pushes by the agent's app since the run started that went outside
+agent/**, and for branches it deleted. Ruleset 27679350 is in evaluate mode, so it records those pushes without
+blocking them, since blocking would also stop GitHub Actions pushes to developer branches (Smartling) and releases.
 Findings go to pr-audit.md in evidence. GITHUB_OUTPUT gets pr_urls (bottom of the stack first) and flags (a count);
 the log gets counts only, since this repo's logs are public
 """
@@ -24,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import leak_check  # noqa: E402
 
 LINK = re.compile(r"https?://[^\s)<>\]\"']+")
+APP = "ddg-apple-agent-publish[bot]"
 
 
 def gh(*args):
@@ -43,6 +47,23 @@ def allowed_links(template, task, repo):
     return lambda url: (url.rstrip(".,") in known or url.startswith(ok)
                         or url.startswith(f"https://github.com/{repo}/")
                         or url.startswith("https://artifacts.go.duckduckgo.com/view/auto/"))
+
+
+def stray_pushes(repo, started):
+    """The app's pushes outside agent/** and its branch deletions since the run started, from the activity log"""
+    items = json.loads(gh("api", f"repos/{repo}/activity?actor={APP.replace('[', '%5B').replace(']', '%5D')}"
+                                 "&time_period=day&per_page=100"))
+    found = []
+    for a in items:
+        ref, kind, when = a.get("ref", ""), a.get("activity_type", ""), a.get("timestamp", "")
+        # Timestamps are UTC with a Z, like RUN_STARTED
+        if when < started:
+            continue
+        if not ref.startswith("refs/heads/agent/"):
+            found.append(f"The app pushed outside `agent/**`: {kind} on `{ref}` at {when}.")
+        elif kind == "branch_deletion":
+            found.append(f"The app deleted `{ref}` at {when}, which the agent shouldn't do.")
+    return found
 
 
 def main():
@@ -78,6 +99,16 @@ def main():
             found.append("The diff's added lines copy text from the agent's instructions. Search them for it.")
         flags += len(found)
         md += [f"## {p['url']}", ""] + ([f"- {x}" for x in found] or ["No problems found."]) + [""]
+
+    try:
+        stray = stray_pushes(repo, started)
+    except Exception:
+        stray = ["Couldn't read the repo's activity log, so pushes outside `agent/**` weren't checked."]
+    flags += len(stray)
+    md += ["## Pushes outside agent/**", ""] + ([f"- {x}" for x in stray] or ["None."]) + [""]
+    if stray:
+        md += ["Check what the push changed on that branch and revert it if needed. Ruleset 27679350 is in evaluate "
+               "mode, so its Rule insights show the same push.", ""]
 
     if flags:
         md += ["Anything public stays public. If one of these is sensitive, close the PR, delete its branch and ask "

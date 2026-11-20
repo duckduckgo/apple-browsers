@@ -30,7 +30,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     private let autoconsentMessageHandler: MacOSAutoconsentMessageHandlerDelegate
     private let darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding?
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
-    private let isAppleSurrogateRedirectionEnabled: () -> Bool
+    private let isAppleSurrogateRedirectionEnabled: @MainActor () -> Bool
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -38,7 +38,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         eventHub: EventHubManaging,
-        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences

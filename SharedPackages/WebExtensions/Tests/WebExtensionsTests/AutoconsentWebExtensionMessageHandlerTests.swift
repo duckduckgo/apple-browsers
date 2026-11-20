@@ -573,6 +573,25 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         XCTAssertEqual(enabled, false)
     }
 
+    // The app's answer reads WKWebExtensionController state, which is main-actor only, so it must be read there even
+    // when the message is handled off the main thread. The stub answers `true` only when it runs on the main thread.
+    func testWhenMessageArrivesOffMainThreadThenAppleSurrogateRedirectionIsReadOnMainThread() async {
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            isAppleSurrogateRedirectionEnabled: { Thread.isMainThread }
+        )
+        let message = createMessage(
+            method: "isSubFeatureEnabled",
+            params: ["featureName": "trackerProtection", "subfeatureName": "appleSurrogateRedirection"]
+        )
+
+        let result = await Task.detached { await handler.handleMessage(message) }.value
+
+        guard case .success(let response) = result else { return XCTFail("Expected success result") }
+        XCTAssertEqual((response as? [String: Bool])?["enabled"], true)
+    }
+
     func testWhenAppleSurrogateRedirectionAnswerComesFromAppNotRawConfig() async {
         // The raw subfeature being on must not be enough: the app's check also covers OS version and the embedded flag.
         mockPrivacyConfiguration.isSubfeatureEnabledCheck = { _, _ in true }

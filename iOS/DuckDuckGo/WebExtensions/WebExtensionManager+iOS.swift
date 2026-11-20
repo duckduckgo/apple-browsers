@@ -63,7 +63,7 @@ public enum WebExtensionManagerFactory {
         searchTokenProvider: SearchTokenProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
         eventHub: EventHubManaging,
-        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool = { false }
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false }
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()

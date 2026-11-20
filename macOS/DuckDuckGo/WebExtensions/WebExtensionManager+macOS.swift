@@ -97,7 +97,7 @@ enum WebExtensionManagerFactory {
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
         eventHub: EventHubManaging,
-        isAppleSurrogateRedirectionEnabled: @escaping () -> Bool = { false }
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false }
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
         let windowTabProvider = WebExtensionWindowTabProvider()

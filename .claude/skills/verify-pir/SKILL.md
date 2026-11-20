@@ -96,7 +96,13 @@ selection.
 
 Add `--check-config` to a run command to validate inputs without building, launching or submitting requests. Run long
 scans in the background and follow their printed history events. Tokens are excluded from saved HTTP responses and logs.
-No UI screenshots, recordings or foreground assertions are required.
+For each scenario run, the runner prints the live `snapshots/` directory before launch. macOS writes PNGs there directly.
+iOS copies them from the simulator on each run-status poll and once more before cleanup. Filenames give the capture
+sequence, scan or opt-out phase, action type and capture point (`before`, `result` or `error`). To inspect a running or stalled job, open the newest PNG
+and read the action events in the latest `pir-http-*.json` next to it. Read earlier PNGs in sequence to see when
+the page changed. These are action-boundary captures of the viewport. The page can change between captures.
+A `.unavailable` marker records a capture that produced no image. Screenshots can show unredacted broker
+records and form values. Keep them in the local attempt folder.
 
 ## 4. Use interactive subscription setup only when requested
 
@@ -115,7 +121,9 @@ subscription sign-in UI.
 Report pass, fail or inconclusive, the printed `report.md` path, failed checks, cleanup problems and unverified items.
 The attempt folder also contains machine-readable results, build and launch identity, input hashes, the exact broker
 bytes, changed HTTP responses, final run state and application logs. It records a rerun command using credential
-references rather than secret values.
+references rather than secret values. The report links the available web view snapshots in capture order and notes
+collection errors. The manifest includes the PNGs and unavailable markers. Missing screenshots leave the broker
+verdict intact.
 
 No match remains inconclusive in either scenario. Site, rate-limit, captcha, authentication and email errors cannot
 become a successful empty scan. An accepted HTTP request is not job completion; the runner polls the same run ID and
@@ -128,4 +136,57 @@ Tests without a simulator or live backend:
 
 ```sh
 python3 -m unittest discover -s .claude/skills/verify-pir/tests -p 'test_*.py'
+```
+
+## 6. Verify persisted scans on macOS
+
+Choose the scheduler command by what should happen to the DEBUG profile:
+
+- `scheduler seed --profile-file <path>` saves a profile in an empty store and starts scans. An existing profile is a refusal.
+- `scheduler reseed --profile-file <path>` replaces the DEBUG PIR profile and job history, then starts scans. Obtain explicit
+  approval for that reset before invoking it.
+- `scheduler observe` watches work triggered separately through the app. Supply the UTC cutoff recorded before the
+  trigger and repeat `--job` with each exact broker URL and active profile query ID from the normal agent's `GET /api`.
+
+```sh
+python3 .claude/skills/verify-pir/pir.py scheduler seed --platform macos --profile-file ~/pir-runs/profile.json
+python3 .claude/skills/verify-pir/pir.py scheduler observe --platform macos \
+  --since 2026-11-20T15:00:00Z --job example.com 42 --timeout 600
+```
+
+Build the private macOS DEBUG browser first for seed or reseed. Close any running DEBUG browser and use a signed-out
+DEBUG test account so the normal agent takes its Freemium scan path. The browser saves through the real PIR data manager
+and starts its regular login item and debug server on port 8474. It reports the cutoff and eligible jobs automatically.
+These commands make live broker scans. The tool stops the browser it launched. The saved test profile and registered
+agent remain available after the attempt.
+
+Observation makes only GET requests. Evidence contains the agent identity, persisted scan histories and
+`scheduler.json`. A seeded attempt includes `scheduler-launch.json` with the native job plan. A pass requires a fresh
+`scanStarted` and a matching terminal `matchesFound` or `noMatchFound` for every expected job. A fresh terminal error
+fails. Missing, incomplete, or ambiguous evidence is inconclusive. For observe, choose a cutoff with room for the
+server's second-resolution timestamps. Recurring scheduler ticks and opt-out jobs are separate checks.
+
+## 7. Check the verifier without broker requests
+
+After building, run a native startup check on each platform:
+
+```sh
+python3 .claude/skills/verify-pir/pir.py selftest --platform ios --evidence-dir ~/pir-runs/evidence
+python3 .claude/skills/verify-pir/pir.py selftest --platform macos --evidence-dir ~/pir-runs/evidence
+```
+
+`selftest` uses the recorded build, forces staging with an internal dummy credential, checks correlated prerequisites,
+collects the native logs array and redacted application logs, writes the usual report and manifest, and stops its owned
+runtime. It only reads local HTTP endpoints. It rejects scenario, credential, interactive, check-config and keep options.
+It does not establish real authentication, broker execution, captcha handling, email delivery or removal. Evidence and
+cleanup failures make the attempt inconclusive. Rebuild first if the source fingerprint has changed.
+
+The native contract test connects the real Python client to the real Swift HTTP server with stub run and log services.
+It checks response shapes, HTTP statuses, instance ownership, web-origin rejection, request parsing and redaction without
+executing broker jobs. Run it through the existing macOS package test scheme:
+
+```sh
+xcodebuild -workspace DuckDuckGo.xcworkspace -scheme DataBrokerProtectionCore -configuration Debug \
+  -destination 'platform=macOS' -derivedDataPath DerivedData/verify-pir/core-tests \
+  -only-testing:DataBrokerProtectionCoreTests/DebugHTTPPythonContractTests test
 ```

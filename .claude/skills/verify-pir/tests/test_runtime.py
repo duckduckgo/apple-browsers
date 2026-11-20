@@ -125,6 +125,8 @@ class FakeTools:
                 pass
             elif args[0] == "install":
                 self.installed = Path(args[2])
+            elif args == ["get_app_container", OWNED_SIM, runtime.BUNDLES["ios"], "data"]:
+                output = str(self.root / "SimulatorDevices" / OWNED_SIM / "app-data") + "\n"
             elif args[0] == "launch":
                 if self.fail_launch:
                     output, code = "launch failed", 1
@@ -237,6 +239,46 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual([s["udid"] for s in self.tools.simulators], ["USER-SIM"])
         self.assertFalse(self.tools.processes)
 
+    def test_simulator_snapshots_are_collected_incrementally_from_the_owned_app(self):
+        instance = self.make_runtime()
+        instance.snapshots_enabled = True
+        instance.evidence.mkdir()
+        instance.build()
+        instance.launch()
+        _, options = next((c, o) for c, o in self.tools.calls if c[:3] == ["xcrun", "simctl", "launch"])
+        self.assertEqual(options["env"]["SIMCTL_CHILD_PIR_DEBUG_SNAPSHOTS"], "1")
+        self.assertNotIn("SIMCTL_CHILD_PIR_DEBUG_SNAPSHOT_DIRECTORY", options["env"])
+        directory = self.root / "SimulatorDevices" / OWNED_SIM / "app-data/tmp" / f"pir-snapshots-{instance.instance}"
+        instance.collect_snapshots()
+        directory.mkdir(parents=True)
+        name = "00000001-scan-extract-before.png"
+        (directory / name).write_bytes(b"first")
+        (directory / ".in-progress.png").write_bytes(b"partial")
+        (directory / "linked.png").symlink_to(directory / name)
+        instance.collect_snapshots()
+        evidence = instance.evidence / "snapshots"
+        self.assertEqual([p.name for p in evidence.iterdir()], [name])
+        self.assertEqual((evidence / name).read_bytes(), b"first")
+        missing = "00000002-scan-extract-result.unavailable"
+        (directory / missing).write_text("Timed out")
+        instance.collect_snapshots()
+        self.assertEqual((evidence / missing).read_text(), "Timed out")
+        instance.stop()
+
+    def test_mac_agent_writes_snapshots_to_the_attempt_directly(self):
+        instance = self.make_runtime("macos")
+        instance.evidence.mkdir()
+        instance.snapshots_enabled = True
+        instance.build()
+        instance.launch()
+        _, options = next((c, o) for c, o in self.tools.calls if c[0].endswith("Contents/MacOS/PIRAgent"))
+        self.assertEqual(options["env"]["PIR_DEBUG_SNAPSHOTS"], "1")
+        destination = Path(options["env"]["PIR_DEBUG_SNAPSHOT_DIRECTORY"])
+        self.assertEqual(destination, instance.evidence / "snapshots")
+        self.assertTrue(destination.is_dir())
+        instance.collect_snapshots()
+        instance.stop()
+
     def test_supplied_token_is_only_in_native_launch_environment_on_both_platforms(self):
         token = "private-launch-credential"
         for platform in ("ios", "macos"):
@@ -311,6 +353,44 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(runtime.RuntimeError, "Source differs"):
             instance.launch()
         instance.stop()
+
+    def test_scheduler_launch_uses_verified_browser_and_keeps_profile_out_of_arguments(self):
+        instance = self.make_runtime("macos")
+        instance.evidence.mkdir()
+        instance.build()
+        fixture = '{"synthetic":"fixture"}'
+        lock = Path(self.directory.name) / "scheduler.lock"
+        with patch.object(runtime, "SCHEDULER_LOCK", lock):
+            launched = instance.launch_scheduler("seed", fixture)
+            argv, options = next((argv, options) for argv, options in self.tools.calls
+                                 if argv == [launched["product"]["browserExecutable"]])
+            self.assertEqual(len(argv), 1)
+            self.assertEqual(options["env"]["PIR_PROFILE_JSON"], fixture)
+            self.assertEqual(options["env"]["PIR_SCHEDULER_MODE"], "seed")
+            self.assertEqual(options["env"]["PIR_SCHEDULER_INSTANCE_ID"], instance.instance)
+            self.assertNotIn("PIR_DEBUG_SERVER", options["env"])
+            receipt = Path(options["env"]["PIR_SCHEDULER_RECEIPT"])
+            receipt.write_text(json.dumps({"status": "ready"}))
+            self.assertEqual(instance.scheduler_receipt()["status"], "ready")
+            self.assertTrue(instance.stop()["stopped"])
+            self.assertFalse(self.tools.processes)
+
+    def test_scheduler_refuses_a_changed_browser_or_an_existing_debug_browser(self):
+        instance = self.make_runtime("macos")
+        build = instance.build()
+        browser = Path(build["product"]["browserExecutable"])
+        self.tools.processes[700] = str(browser)
+        with patch.object(runtime, "SCHEDULER_LOCK", Path(self.directory.name) / "scheduler.lock"):
+            with self.assertRaisesRegex(runtime.RuntimeError, "DEBUG browser is already running"):
+                instance.launch_scheduler("reseed", "{}")
+        self.assertIn(700, self.tools.processes)
+        instance.stop()
+        self.tools.processes.clear()
+        attempt = self.make_runtime("macos")
+        browser.write_bytes(b"changed browser binary")
+        with self.assertRaisesRegex(runtime.RuntimeError, "build product changed"):
+            attempt.launch_scheduler("reseed", "{}")
+        attempt.stop()
 
     def test_failed_native_readiness_still_cleans_owned_launch(self):
         for platform in ("ios", "macos"):

@@ -59,8 +59,12 @@ class WorkflowTests(unittest.TestCase):
                 return dict(source="source-sha", app="build-path", platform=self.platform)
 
             def launch(self, access_token=None):
+                if self.snapshots_enabled:
+                    (self.evidence / "snapshots").mkdir(mode=0o700)
                 self.access_token = access_token
                 test.authenticated = access_token is not None
+                if access_token is not None:
+                    test.token = access_token
                 if test.launch_error:
                     raise RuntimeError(test.launch_error)
                 return dict(instanceID=self.instance, source="source-sha", app="build-path", pid=42)
@@ -69,6 +73,10 @@ class WorkflowTests(unittest.TestCase):
                 if test.log_error:
                     raise RuntimeError(test.log_error)
                 Path(path).write_text("app log " + test.token + " " + json.dumps(test.token))
+
+            def collect_snapshots(self):
+                test.assertTrue(self.snapshots_enabled)
+                test.assertFalse(self.stopped)
 
             def stop(self):
                 self.stopped = True
@@ -152,7 +160,8 @@ class WorkflowTests(unittest.TestCase):
             self.event("Opt-out Confirmed")
             return 202, self.run_state()
         if path.startswith("/api/logs"):
-            return 200, dict(log=self.token, escaped=json.dumps(self.token))
+            return 200, [dict(timestamp="2026-01-01T00:00:00Z", level="info", category="PIR", subsystem="test",
+                              process="test-app", message=self.token + " " + json.dumps(self.token))]
         return 200, self.run_state()
 
     def args(self, *extra):
@@ -162,10 +171,13 @@ class WorkflowTests(unittest.TestCase):
                                         "--evidence-dir", str(self.directory / "evidence"), *extra])
 
     def execute(self, *extra):
+        return self.execute_args(self.args(*extra))
+
+    def execute_args(self, args):
         def client(evidence, port, instance, redactor):
             return self.original_client(evidence, self.server_port, instance, redactor)
         with patch.object(pir, "Client", side_effect=client), contextlib.redirect_stdout(io.StringIO()):
-            return pir.execute(self.args(*extra), self.Runtime)
+            return pir.execute(args, self.Runtime)
 
     def auth_options(self, opt_out=True):
         self.config.update(optOut=opt_out, emailConfirmation=True, subscriptionEnvironment="staging", pirEnvironment="staging",
@@ -202,9 +214,48 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("--token-file", result["rerun"])
         self.assertIn("subscription entitlement", [u["what"] for u in result["unverified"]])
         for file in Path(result["evidence"]).iterdir():
+            if file.is_dir():
+                continue
             text = file.read_text()
             for form in pir.Redactor(self.token).forms:
                 self.assertNotIn(form, text, file.name)
+
+    def test_step_snapshots_collected_during_scan_and_before_cleanup(self):
+        page = "snapshots/00000001-scan-extract-before.png"
+        unavailable = "snapshots/00000002-optOut-click-error.unavailable"
+        def collect(runtime):
+            self.assertTrue(runtime.snapshots_enabled)
+            self.assertFalse(runtime.stopped)
+            if self.opt_status is None:
+                (runtime.evidence / page).write_bytes(b"page")
+            if any(path.startswith("/api/logs") for _, path, *_ in self.calls):
+                (runtime.evidence / unavailable).write_text("unavailable")
+
+        original = self.handle
+        def handle(method, path, headers, body):
+            if path.endswith("/optouts/record"):
+                self.assertTrue((self.instances[-1].evidence / page).is_file())
+            return original(method, path, headers, body)
+
+        self.server_port = self.server(handle)
+        with patch.object(self.Runtime, "collect_snapshots", collect):
+            result = self.execute(*self.auth_options())
+        self.assertEqual(result["status"], "pass", result)
+        self.assertEqual(result["snapshots"], dict(directory="snapshots", captured=1, unavailable=1))
+        evidence = Path(result["evidence"])
+        report = (evidence / "report.md").read_text()
+        manifest = json.loads((evidence / "manifest.json").read_text())["files"]
+        for name in [page, unavailable]:
+            self.assertIn(f"]({name})", report)
+            self.assertEqual(manifest[name]["sha256"], pir.sha256((evidence / name).read_bytes()))
+
+    def test_snapshot_collection_error_preserves_broker_verdict(self):
+        with patch.object(self.Runtime, "collect_snapshots", side_effect=OSError("unreadable snapshots")):
+            result = self.execute()
+        self.assertEqual(result["status"], "pass", result)
+        self.assertEqual(result["snapshots"]["captured"], 0)
+        self.assertIn("unreadable snapshots", result["snapshots"]["collectionError"])
+        self.assertTrue(self.instances[-1].stopped)
 
     def test_native_absent_entitlement_field_means_unverified(self):
         snapshot = dict(result=dict(authenticated=True, backend="provided-token", status="credentialProvided",
@@ -214,6 +265,90 @@ class WorkflowTests(unittest.TestCase):
         snapshot["result"]["entitled"] = False
         with self.assertRaises(pir.SetupFailed):
             pir.verify_auth(snapshot, self.config, provided=True)
+
+    def test_native_log_array_preserves_success_report_and_redacts_evidence(self):
+        result = self.execute(*self.auth_options())
+        self.assertEqual(result["status"], "pass", result.get("evidenceErrors"))
+        self.assertEqual(result["evidenceErrors"], [])
+        self.assertTrue(result["cleanup"]["stopped"])
+        evidence = Path(result["evidence"])
+        responses = [json.loads(p.read_text()) for p in evidence.glob("pir-http-*.json")]
+        logs = [r for r in responses if r["path"] == "/api/logs?limit=1000"]
+        self.assertEqual(len(logs), 1)
+        self.assertEqual(logs[0]["status"], 200)
+        self.assertIsInstance(logs[0]["response"], list)
+        self.assertIn("[REDACTED]", logs[0]["response"][0]["message"])
+        self.assertNotIn(self.token, json.dumps(responses, ensure_ascii=False))
+        self.assertEqual(json.loads((evidence / "result.json").read_text())["status"], "pass")
+        self.assertTrue((evidence / "report.md").read_text().startswith("# PIR pass\n"))
+        manifest = json.loads((evidence / "manifest.json").read_text())
+        self.assertEqual(manifest["status"], "pass")
+        for name, metadata in manifest["files"].items():
+            self.assertEqual(metadata["sha256"], pir.sha256((evidence / name).read_bytes()), name)
+
+    def test_object_logs_prevent_pass_but_still_stop_runtime(self):
+        original = self.handle
+        self.server_port = self.server(lambda method, path, headers, body:
+                                       (200, dict(message="incorrect object")) if path.startswith("/api/logs")
+                                       else original(method, path, headers, body))
+        result = self.execute()
+        self.assertEqual(result["status"], "inconclusive")
+        self.assertTrue(any("logs response is not a JSON array" in e for e in result["evidenceErrors"]))
+        self.assertTrue(result["cleanup"]["stopped"])
+
+    def test_run_and_prerequisite_arrays_are_rejected(self):
+        port = self.server(lambda *_: (200, []))
+        client = self.original_client(self.directory, port, "owner")
+        for path in ("/api/debug/prerequisites?checkID=check", "/api/debug/runs/run"):
+            with self.subTest(path=path), self.assertRaisesRegex(pir.Failed, "not a JSON object"):
+                client.request("GET", path)
+
+    def test_selftest_only_reads_native_endpoints_and_reports_owned_cleanup(self):
+        self.auth_diagnostics["pirEndpoint"] = "https://dbp-staging.duckduckgo.com"
+        args = pir.parser().parse_args(["selftest", "--platform", "ios", "--evidence-dir", str(self.directory / "evidence")])
+        result = self.execute_args(args)
+        self.assertEqual(result["status"], "pass", result)
+        self.assertTrue(result["cleanup"]["stopped"])
+        self.assertEqual(result["brokerRequests"], 0)
+        self.assertFalse(self.instances[-1].snapshots_enabled)
+        self.assertNotIn("snapshots", result)
+        self.assertTrue(self.calls)
+        self.assertTrue(all(method == "GET" for method, *_ in self.calls))
+        self.assertTrue(any(path.startswith("/api/debug/prerequisites") for _, path, *_ in self.calls))
+        self.assertTrue(any(path.startswith("/api/logs") for _, path, *_ in self.calls))
+        self.assertEqual(self.instances[-1].kwargs["pir_environment"], "staging")
+        self.assertIsNotNone(self.instances[-1].access_token)
+        self.assertFalse((Path(result["evidence"]) / "pir-broker.json").exists())
+        for path in Path(result["evidence"]).iterdir():
+            self.assertNotIn(self.instances[-1].access_token, path.read_text(), path.name)
+
+    def test_selftest_rejects_scenario_and_auth_options_before_reading_files(self):
+        for option in (["--config", "/does-not-exist"], ["--token-file", "/does-not-exist"],
+                       ["--token-env", "PRIVATE_ACCOUNT"], ["--interactive-subscription"], ["--check-config"], ["--keep"]):
+            with self.subTest(option=option):
+                args = pir.parser().parse_args(["selftest", "--platform", "macos", *option])
+                with patch.object(pir, "read_token", side_effect=AssertionError("credential source read")):
+                    with self.assertRaisesRegex(ValueError, "selftest"):
+                        pir.execute(args, self.Runtime)
+        self.assertEqual(self.instances, [])
+
+    def test_selftest_log_capture_failure_is_inconclusive_and_still_stops_runtime(self):
+        self.auth_diagnostics["pirEndpoint"] = "https://dbp-staging.duckduckgo.com"
+        self.log_error = "cannot capture native logs"
+        args = pir.parser().parse_args(["selftest", "--platform", "macos", "--evidence-dir", str(self.directory / "evidence")])
+        result = self.execute_args(args)
+        self.assertEqual(result["status"], "inconclusive")
+        self.assertTrue(result["cleanup"]["stopped"])
+        self.assertTrue(result["evidenceErrors"])
+        self.assertTrue(all(method == "GET" for method, *_ in self.calls))
+
+    def test_selftest_refuses_an_unexpected_backend_and_still_cleans_up(self):
+        args = pir.parser().parse_args(["selftest", "--platform", "macos", "--evidence-dir", str(self.directory / "evidence")])
+        result = self.execute_args(args)
+        self.assertEqual(result["status"], "inconclusive")
+        self.assertIn("backend do not match", result["reason"])
+        self.assertTrue(result["cleanup"]["stopped"])
+        self.assertTrue(all(method == "GET" for method, *_ in self.calls))
 
     def test_redaction_handles_nested_echoes_without_changing_json_types(self):
         for token in (self.token, "true", "42"):

@@ -27,12 +27,39 @@ struct PIRDebugLaunchOptions {
         let resetBeforeSeeding: Bool
     }
 
+    struct ManagedSeed {
+        enum Mode: String, Codable {
+            case seed
+            case reseed
+        }
+
+        let mode: Mode
+        let instanceID: String
+        let receiptURL: URL
+
+        var resetBeforeSeeding: Bool { mode == .reseed }
+
+        func validateAccount(rawAuthenticated: Bool, pirAuthenticated: Bool) throws {
+            guard !rawAuthenticated, !pirAuthenticated else { throw ParseError.authenticatedAccount }
+        }
+
+        func validateExistingProfile(_ hasProfile: Bool) throws {
+            guard mode == .reseed || !hasProfile else { throw ParseError.existingProfile }
+        }
+    }
+
     let profileSetup: ProfileSetup?
     let startServer: Bool
+    let managedSeed: ManagedSeed?
 
     enum ParseError: DDGError {
         case invalidProfile
         case resetRequiresProfile
+        case invalidManagedRequest
+        case invalidReceipt
+        case conflictingReset
+        case authenticatedAccount
+        case existingProfile
 
         static var errorDomain: String { "com.duckduckgo.pir.debug-launch-options" }
 
@@ -40,6 +67,11 @@ struct PIRDebugLaunchOptions {
             switch self {
             case .invalidProfile: return 0
             case .resetRequiresProfile: return 1
+            case .invalidManagedRequest: return 2
+            case .invalidReceipt: return 3
+            case .conflictingReset: return 4
+            case .authenticatedAccount: return 5
+            case .existingProfile: return 6
             }
         }
 
@@ -47,8 +79,51 @@ struct PIRDebugLaunchOptions {
             switch self {
             case .invalidProfile: return "Invalid PIR profile JSON or required profile fields."
             case .resetRequiresProfile: return "PIR reset requires valid profile JSON."
+            case .invalidManagedRequest: return "PIR scheduler mode requires seed or reseed, a UUID, a receipt path, and valid profile JSON."
+            case .invalidReceipt: return "PIR scheduler receipt requires an absolute file path in an existing writable directory."
+            case .conflictingReset: return "PIR scheduler mode cannot be combined with the legacy reset option."
+            case .authenticatedAccount: return "PIR scheduler seeding requires an unauthenticated account."
+            case .existingProfile: return "PIR scheduler seed requires an empty profile store; use reseed to replace it."
             }
         }
+
+        var receiptErrorCode: String {
+            switch self {
+            case .invalidProfile: return "invalidProfile"
+            case .resetRequiresProfile: return "resetRequiresProfile"
+            case .invalidManagedRequest: return "invalidManagedRequest"
+            case .invalidReceipt: return "invalidReceipt"
+            case .conflictingReset: return "conflictingReset"
+            case .authenticatedAccount: return "authenticatedAccount"
+            case .existingProfile: return "profileAlreadyExists"
+            }
+        }
+    }
+
+    static func hasManagedRequest(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        ["PIR_SCHEDULER_MODE", "PIR_SCHEDULER_INSTANCE_ID", "PIR_SCHEDULER_RECEIPT"].contains { environment[$0] != nil }
+    }
+
+    /// Also resolves a receipt destination for malformed requests whose identity and destination are valid.
+    static func managedSeed(environment: [String: String] = ProcessInfo.processInfo.environment) throws -> ManagedSeed? {
+        guard hasManagedRequest(environment: environment) else { return nil }
+        guard let modeValue = environment["PIR_SCHEDULER_MODE"], let mode = ManagedSeed.Mode(rawValue: modeValue),
+              let instanceID = environment["PIR_SCHEDULER_INSTANCE_ID"], UUID(uuidString: instanceID) != nil else {
+            throw ParseError.invalidManagedRequest
+        }
+        guard let path = environment["PIR_SCHEDULER_RECEIPT"], (path as NSString).isAbsolutePath,
+              !path.contains("\0"), !path.hasSuffix("/") else { throw ParseError.invalidReceipt }
+        let url = URL(fileURLWithPath: path)
+        let parent = url.deletingLastPathComponent()
+        let manager = FileManager.default
+        var isDirectory: ObjCBool = false
+        guard url.standardizedFileURL.path == path,
+              manager.fileExists(atPath: parent.path, isDirectory: &isDirectory), isDirectory.boolValue,
+              manager.isWritableFile(atPath: parent.path) else { throw ParseError.invalidReceipt }
+        if let attributes = try? manager.attributesOfItem(atPath: path) {
+            guard attributes[.type] as? FileAttributeType == .typeRegular else { throw ParseError.invalidReceipt }
+        }
+        return ManagedSeed(mode: mode, instanceID: instanceID, receiptURL: url)
     }
 
     static func parse(
@@ -62,7 +137,13 @@ struct PIRDebugLaunchOptions {
             return valueIndex < arguments.endIndex ? arguments[valueIndex] : ""
         }
 
-        let startServer = value(argument: "pirDebugServer", environmentKey: "PIR_DEBUG_SERVER") == "true"
+        let managedSeed = try managedSeed(environment: environment)
+        if managedSeed != nil {
+            guard environment["PIR_RESET_BEFORE_SEEDING"] == nil, !arguments.contains("-pirResetBeforeSeeding") else {
+                throw ParseError.conflictingReset
+            }
+        }
+        let startServer = managedSeed != nil || value(argument: "pirDebugServer", environmentKey: "PIR_DEBUG_SERVER") == "true"
         let reset = value(argument: "pirResetBeforeSeeding", environmentKey: "PIR_RESET_BEFORE_SEEDING") == "true"
         let profileValue = value(argument: "pirProfileJSON", environmentKey: "PIR_PROFILE_JSON")
         let profileSetup: PIRDebugLaunchOptions.ProfileSetup?
@@ -90,11 +171,12 @@ struct PIRDebugLaunchOptions {
             }
             profileSetup = ProfileSetup(profile: profile, resetBeforeSeeding: reset)
         } else {
+            guard managedSeed == nil else { throw ParseError.invalidManagedRequest }
             guard !reset else { throw ParseError.resetRequiresProfile }
             profileSetup = nil
         }
         guard profileSetup != nil || startServer else { return nil }
-        return PIRDebugLaunchOptions(profileSetup: profileSetup, startServer: startServer)
+        return PIRDebugLaunchOptions(profileSetup: profileSetup, startServer: startServer, managedSeed: managedSeed)
     }
 }
 #endif

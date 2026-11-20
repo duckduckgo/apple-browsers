@@ -674,6 +674,13 @@ def run_one(mod, proof, evidence, topic, target, video, checkout, rerun, shown_d
     try:
         if vm:
             mac._do("vm", vm)
+        else:   # without both grants a run on this Mac can only end in NOT READY, after the whole build
+            grants = mac._do("ax", "grants")
+            missing = [g for g in ("Accessibility", "Screen Recording") if f"{g.lower().replace(' ', '-')}=true" not in grants]
+            if missing:
+                raise ProofError(f"NO GRANT: the process running prove has no {' or '.join(missing)} grant ({_line(grants)}); "
+                                 "turn it on in System Settings > Privacy & Security for the app it runs under, or "
+                                 "prove in a VM")
         flags, rec.unpinned = flags_to_pin(getattr(mod, "FLAGS", {}), checkout, as_base)
         for name in rec.unpinned:
             rec.notes.append(f"FLAGS: {name} is not defined on the base revision, so this run doesn't pin it")

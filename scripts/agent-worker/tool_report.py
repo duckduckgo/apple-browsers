@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-WORKFLOW = "`.github/workflows/agent-worker.yml` (Run coding agent step, `allow` or `deny`) on the agent-worker branch"
+WORKFLOW = "`scripts/agent-worker/run_agent.sh` (`allow` or `deny`) on the agent-worker branch"
 CUT = 400
 
 # Why a rule is denied on purpose, by the start of the rule

@@ -204,14 +204,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         await fulfillment(of: [cancelled], timeout: 1)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertTrue(newDecisions.isEmpty)
-        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A superseded wait must not report the rules as compiled")
+        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A replaced wait hands its sample to the replacement")
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [continued], timeout: 10)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertEqual(newDecisions.count, 1)
         XCTAssertNotEqual(newDecisions.first, .cancel)
         XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
-        XCTAssertTrue(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("m_compilation_result_success_") == true)
+        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_success_time_"), true,
+                       "The replacement reports one sample for the whole wait, not a cancelled one")
         XCTAssertFalse(tab.isError, "The superseded wait must not replace the new page with an error")
         XCTAssertEqual(webView.loadCallCount, 0)
     }
@@ -506,7 +507,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             await fulfillment(of: [installed], timeout: 10)
             subscription.cancel()
             XCTAssertEqual(decisions, [.cancel])
-            XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A stopped wait must not report the rules as compiled")
+            XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
+            XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_cancelled_time_"), true,
+                           "A stopped wait reports cancelled, and late assets must not add a success sample")
             XCTAssertFalse(tab.isError)
             XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
         }

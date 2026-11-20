@@ -33,7 +33,10 @@ final class WebExtensionNavigationGateTests: XCTestCase {
         let navigationAction = makeNavigationAction(url: URL(string: "https://example.com")!, isForMainFrame: true)
         await gate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
                                 url: navigationAction.url,
-                                initialLoadWaiter: { didWait = true })
+                                initialLoadWaiter: {
+                                    didWait = true
+                                    return .ready
+                                })
 
         XCTAssertTrue(didWait)
     }
@@ -44,7 +47,10 @@ final class WebExtensionNavigationGateTests: XCTestCase {
         let navigationAction = makeNavigationAction(url: URL(string: "https://example.com/frame")!, isForMainFrame: false)
         await gate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
                                 url: navigationAction.url,
-                                initialLoadWaiter: { XCTFail("Subframe navigation must not wait") })
+                                initialLoadWaiter: {
+                                    XCTFail("Subframe navigation must not wait")
+                                    return .ready
+                                })
     }
 
     func testMainFrameNonHTTPNavigationDoesNotWaitForInitialExtensionLoad() async {
@@ -53,7 +59,10 @@ final class WebExtensionNavigationGateTests: XCTestCase {
         let navigationAction = makeNavigationAction(url: .newtab, isForMainFrame: true)
         await gate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
                                 url: navigationAction.url,
-                                initialLoadWaiter: { XCTFail("Non-HTTP navigation must not wait") })
+                                initialLoadWaiter: {
+                                    XCTFail("Non-HTTP navigation must not wait")
+                                    return .ready
+                                })
     }
 
     private func makeNavigationAction(url: URL, isForMainFrame: Bool) -> NavigationAction {

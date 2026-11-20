@@ -155,7 +155,7 @@ final class WebExtensionNavigationCancellationTests: XCTestCase {
                                              webExtensionInitialLoadWaiterProvider: {
                 return {
                     started.fulfill()
-                    await waiter()
+                    return await waiter()
                 }
             })
             tab.specialErrorPageNavigationHandler.delegate = nil
@@ -189,6 +189,7 @@ final class WebExtensionNavigationCancellationTests: XCTestCase {
                     continuations.append(continuation)
                     (continuations.count == 1 ? firstStarted : secondStarted).fulfill()
                 }
+                return .ready
             }
         })
         tab.specialErrorPageNavigationHandler.delegate = nil

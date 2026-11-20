@@ -32,7 +32,10 @@ final class DuckAIOnboardingPath: ContextualOnboardingPath {
         self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
     }
 
-    let isUILocked = false
+    /// Only Fire is allowed until the chat is deleted.
+    var uiLock: UserInteractionLock {
+        progress.fireButtonUsedOnce ? .none : .locked(except: [.fire])
+    }
 
     func dialog(for tab: Tab) -> ContextualOnboardingDecision {
         if case .decided(let decision) = ending.decisionForNextDialog() { return decision }

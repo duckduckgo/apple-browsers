@@ -61,7 +61,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
         self.trackerMessageProvider = trackerMessageProvider
     }
 
-    let isUILocked = false
+    let uiLock = UserInteractionLock.none
 
     func reset() {
         storage.blockedTrackerSeen = false

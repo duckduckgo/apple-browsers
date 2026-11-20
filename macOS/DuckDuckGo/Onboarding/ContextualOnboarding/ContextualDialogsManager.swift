@@ -65,6 +65,11 @@ protocol ContextualOnboardingPathStarting: AnyObject {
     func startPath(_ kind: ContextualOnboardingPathKind)
 }
 
+/// Locks the browser UI while contextual onboarding needs the user to stay on one tab.
+protocol ContextualOnboardingUILocking: AnyObject {
+    func setUILock(_ lock: UserInteractionLock)
+}
+
 /// Protocol for storing onboarding state data.
 protocol ContextualOnboardingStateStoring: AnyObject {
     /// Array of string representations of dialogs that have been shown.
@@ -94,6 +99,9 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     private let progress: ContextualOnboardingProgress
     private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath
+    private weak var uiLocker: ContextualOnboardingUILocking?
+    /// The lock last sent to `uiLocker`, so it's only told about changes.
+    private var appliedUILock = UserInteractionLock.none
 
     /// The path chosen at the junction. No saved path means search.
     /// Built on first use, so a finished onboarding never builds one.
@@ -128,6 +136,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
                 progress.reset()
                 activePath = makePath(.search)
             }
+            updateUILock()
         }
     }
 
@@ -135,9 +144,11 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
          subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
+         uiLocker: ContextualOnboardingUILocking? = nil,
          makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
         let progress = ContextualOnboardingProgress(storage: stateStorage, settings: settings)
         self.progress = progress
+        self.uiLocker = uiLocker
         self.makePath = { kind in
             if let makePath { return makePath(kind, progress) }
             switch kind {
@@ -151,6 +162,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         }
         // Compares the raw value, as before: an unreadable saved value counts as not completed here.
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
+        // After a relaunch, restores the lock of a path that was still running.
+        updateUILock()
     }
 
     // Returns the last dialog shown if it was shown for the given tab.
@@ -180,11 +193,19 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     // Called when the user uses the fire button
     func fireButtonUsed() {
         progress.fireButtonUsedOnce = true
+        updateUILock()
     }
 
-    /// Whether the active path keeps the browser UI locked. Always false on the search path.
-    var isUILocked: Bool {
-        activePath.isUILocked
+    /// The lock the active path keeps on the browser UI. None on the search path and once onboarding ends.
+    var uiLock: UserInteractionLock {
+        state == .onboardingCompleted ? .none : activePath.uiLock
+    }
+
+    private func updateUILock() {
+        let lock = uiLock
+        guard lock != appliedUILock else { return }
+        appliedUILock = lock
+        uiLocker?.setUILock(lock)
     }
 
     /// Called from the junction with the path the user picked.
@@ -196,8 +217,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             // The user has just searched from the junction, so Try a search is skipped.
             progress.markSeen(.tryASearch)
         case .duckAI:
-            break
+            // Only Fire used on this path unlocks it, not Delete All History during the welcome flow.
+            progress.fireButtonUsedOnce = false
         }
+        updateUILock()
     }
 
     // Called to turn off the contextual onboarding.

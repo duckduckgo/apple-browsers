@@ -1289,10 +1289,6 @@ final class BrowserTabViewController: NSViewController {
         transientTabContentViewController = vc
     }
 
-    private func requestDisableUI() {
-        (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: true)
-    }
-
     private func showTabContent(of tabViewModel: TabViewModel?) {
         // window closing is handled in the MainWindowController
         guard delegate?.closeWindowIfNeeded() != true else { return }

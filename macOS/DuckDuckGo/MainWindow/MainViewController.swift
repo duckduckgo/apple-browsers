@@ -1266,12 +1266,14 @@ extension MainViewController {
 
 extension MainViewController {
 
-    func userInteraction(prevented: Bool) {
+    func userInteraction(lock: UserInteractionLock) {
+        let prevented = lock.isLocked
         allowsUserInteraction = !prevented
         tabCollectionViewModel.changesEnabled = !prevented
         tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+        tabCollectionViewModel.selectedTabViewModel?.tab.webView.allowsBackForwardNavigationGestures = !prevented
 
-        tabBarViewController.fireButton.isEnabled = !prevented
+        tabBarViewController.fireButton.isEnabled = lock.allows(.fire)
         tabBarViewController.isInteractionPrevented = prevented
 
         navigationBarViewController.userInteraction(prevented: prevented)

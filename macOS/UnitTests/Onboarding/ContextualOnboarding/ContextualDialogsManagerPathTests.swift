@@ -27,6 +27,7 @@ struct ContextualDialogsManagerPathTests {
     let stateStorage = MockContextualDialogStateStoring()
     let searchPathStorage = MockBlockedTrackerStoring()
     let store = InMemoryThrowingKeyValueStore()
+    let uiLocker = CapturingUILocker()
     let manager: ContextualDialogsManager
 
     init() {
@@ -34,7 +35,8 @@ struct ContextualDialogsManagerPathTests {
                                   subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling(),
                                   stateStorage: stateStorage,
                                   searchPathStorage: searchPathStorage,
-                                  settings: store.throwingKeyedStoring())
+                                  settings: store.throwingKeyedStoring(),
+                                  uiLocker: uiLocker)
         manager.state = .notStarted
     }
 
@@ -51,11 +53,93 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The search path never locks the UI", .timeLimit(.minutes(1)))
     func searchPathDoesNotLock() {
-        #expect(!manager.isUILocked)
+        #expect(manager.uiLock == UserInteractionLock.none)
 
         manager.startPath(.search)
+        manager.state = .ongoing
+        manager.fireButtonUsed()
+        manager.state = .onboardingCompleted
 
-        #expect(!manager.isUILocked)
+        #expect(manager.uiLock == UserInteractionLock.none)
+        #expect(uiLocker.calls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The Duck.ai path locks all but Fire once, until Fire is used", .timeLimit(.minutes(1)))
+    func duckAIPathLocksUntilFire() {
+        manager.startPath(.duckAI)
+        manager.state = .ongoing
+
+        #expect(manager.uiLock == .locked(except: [.fire]))
+        #expect(uiLocker.calls == [.locked(except: [.fire])])
+
+        manager.fireButtonUsed()
+
+        #expect(manager.uiLock == UserInteractionLock.none)
+        #expect(uiLocker.calls == [.locked(except: [.fire]), UserInteractionLock.none])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Ending or restarting onboarding unlocks the UI", .timeLimit(.minutes(1)),
+          arguments: [ContextualOnboardingState.onboardingCompleted, .notStarted])
+    func endingOnboardingUnlocks(newState: ContextualOnboardingState) {
+        manager.startPath(.duckAI)
+
+        manager.state = newState
+
+        #expect(manager.uiLock == UserInteractionLock.none)
+        #expect(uiLocker.calls == [.locked(except: [.fire]), UserInteractionLock.none])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Fire used before the Duck.ai path starts doesn't unlock it", .timeLimit(.minutes(1)))
+    func fireBeforeDuckAIPathStillLocks() {
+        manager.fireButtonUsed()
+
+        manager.startPath(.duckAI)
+
+        #expect(manager.uiLock == .locked(except: [.fire]))
+        #expect(uiLocker.calls == [.locked(except: [.fire])])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A relaunch during the Duck.ai path locks the UI again", .timeLimit(.minutes(1)))
+    func relaunchRelocks() {
+        manager.startPath(.duckAI)
+        manager.state = .ongoing
+
+        let relaunchLocker = CapturingUILocker()
+        _ = relaunchedManager(uiLocker: relaunchLocker)
+
+        #expect(relaunchLocker.calls == [.locked(except: [.fire])])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A relaunch after Fire, or on the search path, sends no lock", .timeLimit(.minutes(1)),
+          arguments: [true, false])
+    func relaunchWithoutLock(duckAIPathAfterFire: Bool) {
+        if duckAIPathAfterFire {
+            manager.startPath(.duckAI)
+            manager.state = .ongoing
+            manager.fireButtonUsed()
+        } else {
+            manager.startPath(.search)
+            manager.state = .ongoing
+        }
+
+        let relaunchLocker = CapturingUILocker()
+        _ = relaunchedManager(uiLocker: relaunchLocker)
+
+        #expect(relaunchLocker.calls.isEmpty)
+    }
+
+    private func relaunchedManager(uiLocker: CapturingUILocker) -> ContextualDialogsManager {
+        .withSearchPath(trackerMessageProvider: MockTrackerMessageProvider(),
+                        subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling(),
+                        stateStorage: stateStorage,
+                        searchPathStorage: searchPathStorage,
+                        settings: store.throwingKeyedStoring(),
+                        uiLocker: uiLocker)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -89,5 +173,13 @@ struct ContextualDialogsManagerPathTests {
         manager.state = .notStarted
 
         #expect(!searchPathStorage.blockedTrackerSeen)
+    }
+}
+
+final class CapturingUILocker: ContextualOnboardingUILocking {
+    private(set) var calls: [UserInteractionLock] = []
+
+    func setUILock(_ lock: UserInteractionLock) {
+        calls.append(lock)
     }
 }

@@ -1299,7 +1299,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
             ),
-            settings: keyValueStore.throwingKeyedStoring()
+            settings: keyValueStore.throwingKeyedStoring(),
+            uiLocker: windowControllersManager
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -2303,6 +2304,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        // No new windows while onboarding locks the UI.
+        guard !windowControllersManager.userInteractionLock.isLocked else { return nil }
         return ApplicationDockMenu(internalUserDecider: internalUserDecider, isFireWindowDefault: visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled)
     }
 

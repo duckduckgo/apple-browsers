@@ -132,6 +132,9 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    /// The one lock on browser interaction during onboarding. Every window and menu reads it.
+    private(set) var userInteractionLock = UserInteractionLock.none
+
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
     /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
@@ -167,6 +170,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
 
         mainWindowControllers.append(windowController)
+        // A window opened while locked, or the first one after a relaunch, starts locked.
+        if userInteractionLock.isLocked {
+            windowController.userInteraction(lock: userInteractionLock)
+        }
         didRegisterWindowController.send(windowController)
     }
 
@@ -658,10 +665,24 @@ extension WindowControllersManagerProtocol {
 
 extension WindowControllersManager: WebNotificationTabFinding {}
 
+extension WindowControllersManager {
+    /// Applies `lock` to every window; windows registered later get it too.
+    func setUserInteractionLock(_ lock: UserInteractionLock) {
+        userInteractionLock = lock
+        mainWindowControllers.forEach { $0.userInteraction(lock: lock) }
+    }
+}
+
+extension WindowControllersManager: @preconcurrency ContextualOnboardingUILocking {
+    func setUILock(_ lock: UserInteractionLock) {
+        setUserInteractionLock(lock)
+    }
+}
+
 extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     func updatePreventUserInteraction(prevent: Bool) {
-        mainWindowController?.userInteraction(prevented: prevent)
+        setUserInteractionLock(prevent ? .locked() : .none)
     }
 
     @MainActor

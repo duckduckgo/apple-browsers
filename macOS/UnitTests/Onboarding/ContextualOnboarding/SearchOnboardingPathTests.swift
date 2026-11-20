@@ -135,6 +135,6 @@ struct SearchOnboardingPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The search path never locks the UI", .timeLimit(.minutes(1)))
     func neverLocks() {
-        #expect(!sut.isUILocked)
+        #expect(sut.uiLock == UserInteractionLock.none)
     }
 }

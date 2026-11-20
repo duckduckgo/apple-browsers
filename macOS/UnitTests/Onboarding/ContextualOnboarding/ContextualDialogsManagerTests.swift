@@ -541,11 +541,13 @@ extension ContextualDialogsManager {
                                subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
                                stateStorage: ContextualOnboardingStateStoring,
                                searchPathStorage: BlockedTrackerStoring,
-                               settings: any ThrowingKeyedStoring<ContextualOnboardingSettings>) -> ContextualDialogsManager {
+                               settings: any ThrowingKeyedStoring<ContextualOnboardingSettings>,
+                               uiLocker: ContextualOnboardingUILocking? = nil) -> ContextualDialogsManager {
         ContextualDialogsManager(trackerMessageProvider: trackerMessageProvider,
                                  subscriptionUpsellExperiment: subscriptionUpsellExperiment,
                                  stateStorage: stateStorage,
                                  settings: settings,
+                                 uiLocker: uiLocker,
                                  makePath: { kind, progress in
                                      switch kind {
                                      case .search:

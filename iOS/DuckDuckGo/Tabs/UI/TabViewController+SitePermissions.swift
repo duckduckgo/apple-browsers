@@ -567,12 +567,10 @@ extension TabViewController {
                  initiatedByFrame frame: WKFrameInfo,
                  type: WKMediaCaptureType,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
-        if origin.host.isDuckAIHost {
-            guard type == .microphone || type == .cameraAndMicrophone else {
-                decisionHandler(.prompt)
-                return
-            }
-
+        if Self.isDuckAIMicrophoneAutoGrantEligible(protocolName: origin.protocol,
+                                                    host: origin.host,
+                                                    isMainFrame: frame.isMainFrame,
+                                                    permissionTypes: sitePermissionTypes(for: type)) {
             let status = AVCaptureDevice.authorizationStatus(for: .audio)
             decisionHandler(status == .authorized ? .grant : .deny)
             return
@@ -1339,7 +1337,10 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         }
 
         let origin = SitePermissionSecurityOrigin(frame.securityOrigin)
-        if origin.host.isDuckAIHost {
+        if Self.isDuckAIMicrophoneAutoGrantEligible(protocolName: frame.securityOrigin.protocol,
+                                                    host: origin.host,
+                                                    isMainFrame: frame.isMainFrame,
+                                                    permissionTypes: permissionTypes) {
             return .bypass
         }
 
@@ -1416,6 +1417,20 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             createdAtUptime: sitePermissionsUptimeProvider()
         ))
         pendingRequest.continuation.resume(returning: .allow)
+    }
+
+    /// Duck.ai voice chat gets microphone access without a site prompt. Only microphone-only requests
+    /// from the top-level Duck.ai document over HTTPS qualify; camera, combined capture, subframes and
+    /// other DuckDuckGo subdomains go through the normal permission flow.
+    static func isDuckAIMicrophoneAutoGrantEligible(protocolName: String,
+                                                    host: String,
+                                                    isMainFrame: Bool,
+                                                    permissionTypes: Set<SitePermissionType>?) -> Bool {
+        let host = host.lowercased()
+        return permissionTypes == [.microphone]
+            && isMainFrame
+            && protocolName.lowercased() == "https"
+            && (host == "duck.ai" || host == "duckduckgo.com")
     }
 
     private func isSupportedMediaCapturePermissionTypes(_ permissionTypes: Set<SitePermissionType>) -> Bool {

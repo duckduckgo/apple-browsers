@@ -167,6 +167,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Store identities available before a successful first load creates the installation record.
     var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
 
+    /// Verified bundled installations whose first load precedes their installation record.
+    var installingEmbeddedIdentifiers: Set<String> = []
+
     /// Tasks that keep background pages with open native messaging ports loaded, by extension identifier.
     var nativePortKeepAliveTasks: [String: NativePortKeepAlive] = [:]
 
@@ -328,6 +331,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // `chrome.permissions` asks the app for the permissions WebKit doesn't know, such as `privacy`.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             permissionsHandler, contentWorld: .page, name: WebExtensionAPIStubScript.permissionsMessageHandlerName)
+        controllerConfiguration.webViewConfiguration.userContentController.add(
+            permissionsHandler, contentWorld: .defaultClient, name: WebExtensionPermissionUserGestureScript.messageHandlerName)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(
+            WKUserScript(source: WebExtensionPermissionUserGestureScript.source,
+                         injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
 #endif
         controllerConfiguration.webViewConfiguration.userContentController.add(
             badgeColorHandler, contentWorld: .page, name: WebExtensionAPIStubScript.badgeColorMessageHandlerName)
@@ -573,18 +581,22 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let identifier = UUID().uuidString
         var embeddedType = storeIdentity == nil ? metadata.type : nil
 
-        if embeddedType != nil, let permissionController {
+        if embeddedType != nil {
             // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
             let isBundled = EmbeddedWebExtensionRegistry.all.contains {
                 bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
             }
             if isBundled {
-                permissionController.trustedInstallations.insert(identifier)
+                installingEmbeddedIdentifiers.insert(identifier)
+                permissionController?.trustedInstallations.insert(identifier)
             } else {
                 embeddedType = nil
             }
         }
-        defer { permissionController?.trustedInstallations.remove(identifier) }
+        defer {
+            installingEmbeddedIdentifiers.remove(identifier)
+            permissionController?.trustedInstallations.remove(identifier)
+        }
 
         let packageIdentifier = storeIdentity?.store == .chromeWebStore ? UUID() : nil
         let resourceIdentifier = InstalledWebExtension.resourceIdentifier(for: identifier, packageIdentifier: packageIdentifier)
@@ -1502,11 +1514,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    public func pixelExtension(identifier: String) -> WebExtensionPixelExtension {
+        pixelExtension(for: installedExtension(identifier: identifier)?.storeIdentity)
+    }
+
+    @MainActor
     func recordNativeMessagingLimitation(for extensionContext: WKWebExtensionContext) {
         guard let nativeMessagingLimitationStore,
               let key = nativeMessagingLimitationKey(for: extensionContext.uniqueIdentifier),
               !nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key) else { return }
         nativeMessagingLimitationStore.recordLimitation(extensionKey: key)
+        pixelFiring.fire(.nativeMessagingBlocked(extension: pixelExtension(identifier: extensionContext.uniqueIdentifier)))
         NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
     }
 
@@ -1578,6 +1596,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func handlePermissionsMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         permissionsHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
+    @MainActor
+    public func handlePermissionUserGestureMessage(_ message: WKScriptMessage) {
+        permissionsHandler.recordUserGesture(from: message)
+    }
+
+    @MainActor
+    public func recordUserGesture(for context: WKWebExtensionContext) {
+        guard self.context(for: context.uniqueIdentifier) === context else { return }
+        permissionController?.recordUserGesture(for: context)
     }
 #endif
 

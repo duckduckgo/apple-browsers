@@ -152,7 +152,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
-                .exactOrSubdomain(hostname: "duck.ai"),
+                .exact(hostname: "duck.ai"),
             ]
             if let customHostname = aiChatDebugURLSettings.customURLHostname {
                 originRules.append(.exact(hostname: customHostname))
@@ -160,6 +160,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
                 originRules: originRules,
+                framePolicy: aiChatDebugURLSettings.customURLHostname == nil ? .secureMainFrame : .mainFrame,
                 pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
@@ -256,7 +257,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         // controller's, so its extension pages get the API stubs from here.
         if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
             webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
-                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser)
+                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
+                managerProvider: { NSApp.delegateTyped.webExtensionManager as? WebExtensionManager })
         } else {
             webExtensionPageStubUserScript = nil
         }
@@ -266,6 +268,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         if let webExtensionPageStubUserScript {
+            if #available(macOS 15.4, *) {
+                userScripts.append(WebExtensionPermissionUserGestureUserScript(
+                    managerProvider: { NSApp.delegateTyped.webExtensionManager as? WebExtensionManager }))
+            }
             userScripts.append(webExtensionPageStubUserScript)
         }
 

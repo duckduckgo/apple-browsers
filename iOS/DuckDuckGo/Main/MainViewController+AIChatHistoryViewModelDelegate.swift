@@ -87,6 +87,11 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         dismiss(animated: true) { [weak self] in
             guard let self else { return }
             if let tab = self.currentTab, tab.isAITab {
+                // Duck.ai's settings sheet doesn't hide the native input, so an expanded input would sit over it.
+                // Collapse it first, the state the browsing menu opens settings from.
+                if let coordinator = self.unifiedToggleInputCoordinator, coordinator.isAITabExpanded {
+                    coordinator.showCollapsed()
+                }
                 tab.submitOpenSettingsAction()
             } else if let tab = self.currentTab {
                 tab.openSettingsInNewTab()

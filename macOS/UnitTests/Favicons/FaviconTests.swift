@@ -90,6 +90,49 @@ final class FaviconTests: XCTestCase {
         XCTAssertTrue(image.hasVisiblePixels())
     }
 
+    func testSVGDataIsRasterizedToBitmapRepresentation() throws {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+          <rect x="10" y="10" width="160" height="160" fill="#000"/>
+        </svg>
+        """
+        let image = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: nil))
+        XCTAssertFalse(image.representations.isEmpty)
+        XCTAssertTrue(image.representations.allSatisfy { $0 is NSBitmapImageRep })
+        XCTAssertEqual(image.size, NSSize(width: 180, height: 180))
+        XCTAssertTrue(image.hasVisiblePixels())
+    }
+
+    func testSVGDataIsDownscaledToMaxPixelSize() throws {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="180" height="90" viewBox="0 0 180 90">
+          <rect width="180" height="90" fill="#000"/>
+        </svg>
+        """
+        let image = try XCTUnwrap(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: 64))
+        XCTAssertEqual(image.size, NSSize(width: 64, height: 32))
+        XCTAssertTrue(image.representations.allSatisfy { $0 is NSBitmapImageRep })
+    }
+
+    /// CoreSVG recurses infinitely (stack overflow, `EXC_BAD_ACCESS` in `SVGFilter::draw`) when the root `<svg>`
+    /// and one of its children reference the same filter. Such SVGs must be rejected, not rendered.
+    func testSVGWithRecursiveFilterIsRejectedInsteadOfCrashing() {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" filter="url(#f)">
+          <filter id="f"><feOffset/></filter>
+          <rect width="20" height="20" filter="url(#f)"/>
+        </svg>
+        """
+        XCTAssertNil(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: nil))
+        XCTAssertNil(NSImage(dataUsingCIImage: Data(svg.utf8), maxPixelSize: 64))
+    }
+
+    func testSVGWithFilterIsDetected() {
+        XCTAssertTrue(Data("<svg><filter id=\"f\"/></svg>".utf8).containsSVGFilter)
+        XCTAssertTrue(Data("<svg><rect style=\"FILTER: blur(2px)\"/></svg>".utf8).containsSVGFilter)
+        XCTAssertFalse(Data("<svg><rect width=\"1\" height=\"1\"/></svg>".utf8).containsSVGFilter)
+    }
+
     func testFullyTransparentBitmapHasNoVisiblePixels() throws {
         let data = try makePNGData(pixelsWide: 16, pixelsHigh: 16)
         let image = try XCTUnwrap(NSImage(dataUsingCIImage: data, maxPixelSize: nil))

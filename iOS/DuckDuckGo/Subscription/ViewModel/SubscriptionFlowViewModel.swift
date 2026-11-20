@@ -562,6 +562,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 
                 data.appleAccountRestoreDuration?.complete()
                 wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+                NotificationCenter.default.post(name: .subscriptionFlowDidRestoreSubscription, object: self)
                 
                 backButtonEnabled(false)
                 await webViewModel.navigationCoordinator.reload()
@@ -590,4 +591,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
         state.transactionError = nil
     }
     
+}
+
+extension NSNotification.Name {
+    /// The purchase flow found a subscription the user already had ("Subscription Found"), and they restored it.
+    static let subscriptionFlowDidRestoreSubscription = Notification.Name("com.duckduckgo.subscription.flow.didRestoreSubscription")
 }

@@ -807,12 +807,9 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
 final class OnboardingSubscriptionFlowNavigationController: UINavigationController, SubscriptionFlowNavigationStyling {
 
     var onDismiss: (() -> Void)?
-    /// Called on dismissal when the paywall gave the user VPN access without a purchase: they restored a subscription
-    /// they already had ("Subscription Found" → Restore).
+    /// Called when the user restores a subscription they already had ("Subscription Found" → Restore) in this paywall.
     var onRestore: (() -> Void)?
     private var cancellables = Set<AnyCancellable>()
-    private var didPurchase = false
-    private var didGainVPNEntitlement = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -820,19 +817,13 @@ final class OnboardingSubscriptionFlowNavigationController: UINavigationControll
         NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.didPurchase = true
                 self?.dismiss(animated: true)
             }
             .store(in: &cancellables)
-        // A purchase changes entitlements too, before it posts `.userDidPurchaseSubscription`, so restores are told
-        // apart only once the paywall is gone.
-        NotificationCenter.default.publisher(for: .entitlementsDidChange)
+        NotificationCenter.default.publisher(for: .subscriptionFlowDidRestoreSubscription)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                guard let userInfo = notification.userInfo,
-                      let payload = EntitlementsDidChangePayload(notificationUserInfo: userInfo),
-                      payload.entitlements.contains(.networkProtection) else { return }
-                self?.didGainVPNEntitlement = true
+            .sink { [weak self] _ in
+                self?.onRestore?()
             }
             .store(in: &cancellables)
     }
@@ -840,9 +831,6 @@ final class OnboardingSubscriptionFlowNavigationController: UINavigationControll
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         guard isBeingDismissed else { return }
-        if didGainVPNEntitlement && !didPurchase {
-            onRestore?()
-        }
         onRestore = nil
         onDismiss?()
         onDismiss = nil

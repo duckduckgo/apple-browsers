@@ -240,7 +240,9 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         // Always include Pro tier - tier change UI is only visible when Pro is enabled
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: true) {
         case .success(let purchase):
-            NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
+            NotificationCenter.default.post(name: .userDidPurchaseSubscription,
+                                            object: self,
+                                            userInfo: [UserDidPurchaseSubscriptionUserInfoKey.isTierChange: true])
             return .success(purchase.transactionJWS)
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("Tier change purchase error: \(String(describing: error), privacy: .public)")

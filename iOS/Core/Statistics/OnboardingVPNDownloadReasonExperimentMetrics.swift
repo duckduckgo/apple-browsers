@@ -152,7 +152,7 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
 
     // MARK: - Events
 
-    /// Call on every completed subscription purchase, from any entry point. Restores aren't purchases.
+    /// Call on every new subscription purchase, from any entry point. Restores and tier changes aren't new purchases.
     /// - Parameters:
     ///   - enrollmentDate: The device's enrollment date in the experiment, or `nil` if it isn't enrolled.
     ///   - now: The purchase date.
@@ -162,7 +162,7 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
         userDefaults.set(true, forKey: Self.isSubscriberKey)
     }
 
-    /// Call whenever a VPN configuration is installed, from any entry point. Only the first one in the window is sent.
+    /// Call on the device's first VPN configuration install, from any entry point.
     public func fireVPNActivated() {
         fireExperimentPixel(Self.subfeatureID, Metric.vpnActivated, Windows.vpnActivated, "1")
     }

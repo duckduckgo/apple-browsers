@@ -282,7 +282,7 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     func test_setupTransactionObserver_appStoreTransactionCompleted_runsOnboardingEnrollment() async {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
                                                               isAlreadyAssigned: false)
-        let subFeature = makeSubscriptionFeature()
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock())
         let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger)
 
         await sut.setupTransactionObserver()
@@ -291,10 +291,35 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
         XCTAssertTrue(featureFlagger.didCallAssignedCohort)
     }
 
+    @MainActor
+    func test_restoreAppstoreTransaction_restoreSucceeds_postsDidRestoreSubscription() async {
+        let restoreFlow = AppStoreRestoreFlowMock()
+        restoreFlow.restoreAccountFromPastPurchaseResult = .success("transactionJWS")
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow), featureFlagger: PrivacyConfig.MockFeatureFlagger())
+        let restored = expectation(forNotification: .subscriptionFlowDidRestoreSubscription, object: sut)
+
+        sut.restoreAppstoreTransaction()
+
+        await fulfillment(of: [restored], timeout: 1.0)
+    }
+
+    @MainActor
+    func test_restoreAppstoreTransaction_restoreFails_doesNotPostDidRestoreSubscription() async {
+        let restoreFlow = AppStoreRestoreFlowMock()
+        restoreFlow.restoreAccountFromPastPurchaseResult = .failure(.missingAccountOrTransactions)
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow), featureFlagger: PrivacyConfig.MockFeatureFlagger())
+        let restored = expectation(forNotification: .subscriptionFlowDidRestoreSubscription, object: sut)
+        restored.isInverted = true
+
+        sut.restoreAppstoreTransaction()
+
+        await fulfillment(of: [restored], timeout: 1.0)
+    }
+
     // MARK: - Helper
 
     @MainActor
-    private func makeSubscriptionFeature() -> DefaultSubscriptionPagesUseSubscriptionFeature {
+    private func makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock) -> DefaultSubscriptionPagesUseSubscriptionFeature {
         let subscriptionManager = SubscriptionManagerMock()
         let purchaseFlow = AppStorePurchaseFlowMock()
         let wideEvent = WideEventMock()
@@ -303,7 +328,7 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true),
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            appStoreRestoreFlow: restoreFlow,
             subscriptionDataReporter: nil,
             internalUserDecider: PrivacyConfig.MockInternalUserDecider(isInternalUser: false),
             wideEvent: wideEvent,

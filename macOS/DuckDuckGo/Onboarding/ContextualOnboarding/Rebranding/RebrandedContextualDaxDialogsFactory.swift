@@ -130,7 +130,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .subscriptionUpsell:
             return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, metrics: subscriptionUpsellMetrics, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .thatsDuckAI:
-            // Placeholder until the That's Duck.ai! dialog exists: the Fire dialog.
+            // To do: replace with the That's Duck.ai! dialog. Placeholder: the Fire dialog.
             return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         }
     }

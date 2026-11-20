@@ -21,16 +21,16 @@ import AppKit
 /// Mirrors the colour the New Tab Page's scripts give `body`, so it can be shown before the page paints.
 enum NewTabPageBackgroundColor {
 
-    static func color(customBackground: CustomBackground?, canvas: NSColor, isDark: Bool) -> NSColor {
+    static func color(customBackground: CustomBackground?, surface: NSColor, isDark: Bool) -> NSColor {
         switch customBackground {
         case .solidColor(let solidColor):
             return solidColor.color
         case .gradient(let gradient):
             return gradient.fallbackColor
         case .userImage(let image):
-            return canvas.resolved(isDark: image.colorScheme == .dark)
+            return surface.resolved(isDark: image.colorScheme == .dark)
         case .none:
-            return canvas.resolved(isDark: isDark)
+            return surface.resolved(isDark: isDark)
         }
     }
 }

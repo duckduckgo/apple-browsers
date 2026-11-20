@@ -24,52 +24,51 @@ import XCTest
 
 final class NewTabPageBackgroundColorTests: XCTestCase {
 
-    private func canvas(_ themeName: ThemeName) -> NSColor {
-        ThemeColors(themeName: themeName).surfaceCanvas
+    private func surface(_ themeName: ThemeName) -> NSColor {
+        ThemeColors(themeName: themeName).surfacePrimary
     }
 
-    /// The design system `surfaceCanvas` for `themeName`, resolved for the given appearance.
-    private func expectedCanvasHex(_ themeName: ThemeName, isDark: Bool) -> String? {
+    /// The design system `surfacePrimary` for `themeName`, resolved for the given appearance.
+    private func expectedSurfaceHex(_ themeName: ThemeName, isDark: Bool) -> String? {
         var hex: String?
         NSAppearance(named: isDark ? .darkAqua : .aqua)?.performAsCurrentDrawingAppearance {
-            hex = NSColor(designSystemColor: .surfaceCanvas, palette: themeName.designColorPalette).usingColorSpace(.sRGB)?.hex()
+            hex = NSColor(designSystemColor: .surfacePrimary, palette: themeName.designColorPalette).usingColorSpace(.sRGB)?.hex()
         }
         return hex
     }
 
-    func testDefaultThemeUsesCanvasForAppearance() {
-        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, canvas: canvas(.default), isDark: true).hex(),
-                       expectedCanvasHex(.default, isDark: true))
-        // The page's own light canvas token is #FAFAFA; the native one is slightly lighter.
-        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, canvas: canvas(.default), isDark: false).hex(),
-                       expectedCanvasHex(.default, isDark: false))
+    func testDefaultThemeUsesSurfaceForAppearance() {
+        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, surface: surface(.default), isDark: true).hex(),
+                       expectedSurfaceHex(.default, isDark: true))
+        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, surface: surface(.default), isDark: false).hex(),
+                       expectedSurfaceHex(.default, isDark: false))
     }
 
-    func testThemeVariantUsesItsCanvas() {
-        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, canvas: canvas(.violet), isDark: true).hex(),
-                       expectedCanvasHex(.violet, isDark: true))
-        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, canvas: canvas(.violet), isDark: false).hex(),
-                       expectedCanvasHex(.violet, isDark: false))
+    func testThemeVariantUsesItsSurface() {
+        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, surface: surface(.violet), isDark: true).hex(),
+                       expectedSurfaceHex(.violet, isDark: true))
+        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: nil, surface: surface(.violet), isDark: false).hex(),
+                       expectedSurfaceHex(.violet, isDark: false))
     }
 
     func testSolidColorIgnoresThemeAndAppearance() {
         for background in [SolidColorBackground.color01, .color05] {
-            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .solidColor(background), canvas: canvas(.violet), isDark: true).hex(),
+            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .solidColor(background), surface: surface(.violet), isDark: true).hex(),
                            background.color.hex())
-            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .solidColor(background), canvas: canvas(.default), isDark: false).hex(),
+            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .solidColor(background), surface: surface(.default), isDark: false).hex(),
                            background.color.hex())
         }
     }
 
     func testGradientUsesItsFallbackColor() {
-        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .gradient(.gradient07), canvas: canvas(.default), isDark: false).hex(),
+        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .gradient(.gradient07), surface: surface(.default), isDark: false).hex(),
                        GradientBackground.gradient07.fallbackColor.hex())
     }
 
-    func testUserImageUsesCanvasForTheImageColorScheme() {
+    func testUserImageUsesSurfaceForTheImageColorScheme() {
         let darkImage = CustomBackground.userImage(UserBackgroundImage(fileName: "image.jpg", colorScheme: .dark))
 
-        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: darkImage, canvas: canvas(.default), isDark: false).hex(),
-                       expectedCanvasHex(.default, isDark: true))
+        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: darkImage, surface: surface(.default), isDark: false).hex(),
+                       expectedSurfaceHex(.default, isDark: true))
     }
 }

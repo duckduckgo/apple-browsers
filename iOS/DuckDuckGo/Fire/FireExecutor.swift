@@ -120,7 +120,10 @@ protocol FireExecuting {
     /// "Delete All" stays off `burn(request:)` (no tab/data orchestration, no delegate).
     @discardableResult
     @MainActor
-    func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error>
+    /// With `closingChatTabs`, requires native storage, calls it before anything is deleted, and reloads idle Duck.ai tabs after a success.
+    func burnAllChats(isFireMode: Bool,
+                      source: AIChatDeletePixelSource,
+                      closingChatTabs: (@MainActor () -> Void)?) async -> Result<Void, Error>
 
     /// Flush a pending chat deletion to sync now, so it isn't re-pulled on the next sync cycle.
     @MainActor
@@ -455,13 +458,18 @@ class FireExecutor: FireExecuting {
 
     @discardableResult
     @MainActor
-    func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
+    func burnAllChats(isFireMode: Bool,
+                      source: AIChatDeletePixelSource,
+                      closingChatTabs: (@MainActor () -> Void)?) async -> Result<Void, Error> {
         let browserToolsToken = isFireMode ? nil : beginBrowserToolsClearing(.all)
         defer {
             if let browserToolsToken { tabManager.browserToolsService.endClearing(browserToolsToken) }
         }
-        let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode, source: source)
+        let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode, source: source, beforeClearing: closingChatTabs)
         if case .success = result, let browserToolsToken { tabManager.browserToolsService.didClear(browserToolsToken) }
+        if case .success = result, closingChatTabs != nil {
+            tabManager.reloadIdleChatTabsAfterDeletingAllChats(in: isFireMode ? .fire : .normal)
+        }
         return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }
 

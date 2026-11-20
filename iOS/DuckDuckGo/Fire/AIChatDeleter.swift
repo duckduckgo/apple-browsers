@@ -34,7 +34,10 @@ protocol AIChatDeleting {
 
     @discardableResult
     @MainActor
-    func deleteAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error>
+    /// With `beforeClearing`, requires native storage and calls it once the deletion can start, before anything is deleted.
+    func deleteAllChats(isFireMode: Bool,
+                        source: AIChatDeletePixelSource,
+                        beforeClearing: (@MainActor () -> Void)?) async -> Result<Void, Error>
 
     @MainActor
     func scheduleSync()
@@ -120,15 +123,17 @@ final class AIChatDeleter: AIChatDeleting {
 
     @discardableResult
     @MainActor
-    func deleteAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
-        let requiresNativeStorage = source == .fireButtonAll
+    func deleteAllChats(isFireMode: Bool,
+                        source: AIChatDeletePixelSource,
+                        beforeClearing: (@MainActor () -> Void)?) async -> Result<Void, Error> {
+        let requiresNativeStorage = beforeClearing != nil || source == .fireButtonAll
         guard let cleaner = historyCleaner(isFireMode: isFireMode) else {
             return requiresNativeStorage ? .failure(ChatHistoryError.storageUnavailable) : .success(())
         }
 
         let clearStarted = Date()
         let result = requiresNativeStorage
-            ? await cleaner.cleanAIChatHistoryRequiringNativeStorage()
+            ? await cleaner.cleanAIChatHistoryRequiringNativeStorage { beforeClearing?() }
             : await cleaner.cleanAIChatHistory()
         switch result {
         case .success:

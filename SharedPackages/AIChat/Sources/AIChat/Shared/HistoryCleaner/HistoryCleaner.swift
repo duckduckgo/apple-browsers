@@ -24,8 +24,8 @@ import WebKit
 
 public protocol HistoryCleaning {
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
-    /// Fails before clearing JS data if native storage is unavailable.
-    @MainActor func cleanAIChatHistoryRequiringNativeStorage() async -> Result<Void, Error>
+    /// Fails before clearing anything, and without calling `beforeClearing`, if native storage is unavailable.
+    @MainActor func cleanAIChatHistoryRequiringNativeStorage(beforeClearing: @MainActor () -> Void) async -> Result<Void, Error>
     @MainActor func deleteAIChat(chatID: String) async -> Result<Void, Error>
     @MainActor func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error>
     /// What happened during the most recent JS clear (retries, timings), or `nil` if none ran.
@@ -35,7 +35,7 @@ public protocol HistoryCleaning {
 public extension HistoryCleaning {
     @MainActor var lastClearingReport: AIChatClearingReport? { nil }
 
-    @MainActor func cleanAIChatHistoryRequiringNativeStorage() async -> Result<Void, Error> {
+    @MainActor func cleanAIChatHistoryRequiringNativeStorage(beforeClearing: @MainActor () -> Void) async -> Result<Void, Error> {
         .failure(ChatHistoryError.storageUnavailable)
     }
 }
@@ -97,8 +97,12 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     }
 
     @MainActor
-    public func cleanAIChatHistoryRequiringNativeStorage() async -> Result<Void, Error> {
-        await performClear(chatID: nil, requiresNativeStorage: true)
+    public func cleanAIChatHistoryRequiringNativeStorage(beforeClearing: @MainActor () -> Void) async -> Result<Void, Error> {
+        guard isNativeStorageAvailable else {
+            return .failure(ChatHistoryError.storageUnavailable)
+        }
+        beforeClearing()
+        return await performClear(chatID: nil)
     }
 
     /// Deletes a single Duck.ai chat.
@@ -121,11 +125,8 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     }
 
     @MainActor
-    private func performClear(chatID: String?, requiresNativeStorage: Bool = false) async -> Result<Void, Error> {
+    private func performClear(chatID: String?) async -> Result<Void, Error> {
         let nativeResult = clearLocalStorageIfAvailable(chatID: chatID)
-        if requiresNativeStorage, nativeResult == nil {
-            return .failure(ChatHistoryError.storageUnavailable)
-        }
         let jsResult = await clearJSData(chatID: chatID)
 
         if case .failure = nativeResult {
@@ -168,9 +169,14 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
         return jsResult
     }
 
-    private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {
+    private var isNativeStorageAvailable: Bool {
         guard let featureFlagProvider, featureFlagProvider.isNativeDataStorageEnabled(),
-              let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true else {
+              let nativeStorageHandler else { return false }
+        return (try? nativeStorageHandler.isMigrationDone()) == true
+    }
+
+    private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {
+        guard isNativeStorageAvailable, let nativeStorageHandler else {
             return nil
         }
 
@@ -195,8 +201,7 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     }
 
     private func clearLocalStorageIfAvailable(chatIDs: [String]) -> Result<Void, Error>? {
-        guard let featureFlagProvider, featureFlagProvider.isNativeDataStorageEnabled(),
-              let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true else {
+        guard isNativeStorageAvailable, let nativeStorageHandler else {
             return nil
         }
 

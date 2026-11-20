@@ -125,6 +125,7 @@ final class AIChatContextualChatSessionState {
     private(set) var frontendState: FrontendChatState = .noChat
     private(set) var chipState: ChipState = .placeholder
     private(set) var contextualChatURL: URL?
+    private(set) var conversationID = UUID()
     private(set) var latestContext: AIChatPageContext?
 
     /// Most recent page read, attached or not. Suggestions resolve against this; keeping it out of
@@ -274,6 +275,10 @@ final class AIChatContextualChatSessionState {
 
     // MARK: - Frontend Chat State Transitions
 
+    func didStartNewConversation() {
+        conversationID = UUID()
+    }
+
     /// Call when user submits a prompt from native input
     func handlePromptSubmission(_ prompt: String, url: URL? = nil, termsAccepted: Bool = false, localTask: AIChatLocalModelTask? = nil) {
         guard frontendState != .restoredChat else {
@@ -281,6 +286,9 @@ final class AIChatContextualChatSessionState {
             return
         }
 
+        if !hasActiveChat {
+            didStartNewConversation()
+        }
         fireSelectionsSubmittedPixelIfNeeded()
 
         let contextData: AIChatPageContextData?
@@ -314,6 +322,9 @@ final class AIChatContextualChatSessionState {
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] UTI chat start request ignored - preserving .restoredChat state")
             return
+        }
+        if !hasActiveChat {
+            didStartNewConversation()
         }
 
         switch chipState {
@@ -410,6 +421,7 @@ final class AIChatContextualChatSessionState {
         lastCollectedContext = nil
         promptsInChat = 0
         frontendState = .noChat
+        didStartNewConversation()
         chipState = .placeholder
         contextualChatURL = nil
         deliveredContextURLWithNoNavigationSince = nil
@@ -439,6 +451,9 @@ final class AIChatContextualChatSessionState {
 
     /// Updates the contextual chat URL (for persistence/expansion)
     func updateContextualChatURL(_ url: URL?) {
+        if let previousChatID = contextualChatURL?.duckAIChatID, previousChatID != url?.duckAIChatID {
+            didStartNewConversation()
+        }
         contextualChatURL = url
         rebuildViewState()
 
@@ -450,6 +465,9 @@ final class AIChatContextualChatSessionState {
     }
 
     func restoreChat(with url: URL) {
+        if !hasActiveChat || contextualChatURL?.duckAIChatID != url.duckAIChatID {
+            didStartNewConversation()
+        }
         contextualChatURL = url
         frontendState = .restoredChat
         rebuildViewState()

@@ -472,7 +472,7 @@ struct Launching: LaunchingHandling {
                   isOnboarding: mainViewController?.needsToShowOnboardingIntro() ?? false)
         }, deferredContent: [
             DuckAIMenuSection.recentChatsIdentifier: DuckAIRecentChatsMenuContent { [weak mainViewController] in
-                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], totalChatCount: 0)
+                await mainViewController?.mainMenuRecentChats() ?? .init(recentChats: [], deletableChatCount: 0)
             },
             .bookmarksTree: bookmarksMenuTree
         ], rebuildTriggers: [mainMenuBookmarks.changes, mainViewController.menuRebuildRequests.eraseToAnyPublisher()])

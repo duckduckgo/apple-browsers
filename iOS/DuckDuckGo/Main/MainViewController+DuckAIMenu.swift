@@ -74,9 +74,7 @@ extension MainViewController {
 
         var deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption?
         if isDeleteAllChatsEligible(for: tab, context: context) {
-            let result = await NativeChatsReader.readCount(
-                storageHandler: isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler,
-                isStorageEnabled: featureFlagger.isFeatureOn(.aiChatNativeStorage))
+            let result = await readNativeChatCount(isFireMode: isFireMode)
             guard !Task.isCancelled, tab === tabManager.currentTabsModel.currentTab, tab?.fireTab == isFireMode,
                   browsingMode == tabManager.currentBrowsingMode else { return nil }
             if isDeleteAllChatsEligible(for: tab, context: context) {
@@ -114,13 +112,18 @@ extension MainViewController {
     }
 
     func mainMenuRecentChats() async -> DuckAIRecentChatsMenuContent.Chats {
-        guard aiChatSettings.isAIChatEnabled else { return .init(recentChats: [], totalChatCount: 0) }
-        let chats = await mainMenuNativeChats(isFireMode: menuBrowsingMode == .fire) ?? []
+        guard aiChatSettings.isAIChatEnabled else { return .init(recentChats: [], deletableChatCount: 0) }
+        let isFireMode = menuBrowsingMode == .fire
+        // Delete All Chats requires migrated native storage when it closes chat tabs.
+        let requiresMigration = featureFlagger.isFeatureOn(.fireButtonDeleteAllChats)
+        async let migratedCount = requiresMigration ? try? readNativeChatCount(isFireMode: isFireMode).get() : nil
+        let chats = await mainMenuNativeChats(isFireMode: isFireMode) ?? []
         let aiChatURL = aiChatSettings.aiChatURL
         let recentChats = chats.sorted { $0.lastEdit > $1.lastEdit }
             .prefix(Self.mainMenuRecentChatsLimit)
             .map { DuckAIRecentChatsMenuContent.Chat(title: $0.title, url: aiChatURL.withChatID($0.chatId)) }
-        return .init(recentChats: Array(recentChats), totalChatCount: chats.count)
+        let deletableChatCount = requiresMigration ? await migratedCount ?? 0 : chats.count
+        return .init(recentChats: Array(recentChats), deletableChatCount: deletableChatCount)
     }
 
     /// The mode of the tab switcher's selected grid while it is open, which can differ from the current tab's.
@@ -129,10 +132,16 @@ extension MainViewController {
     }
 
     /// `nil` when native chat storage is unavailable for that browsing mode.
-    func mainMenuNativeChats(isFireMode: Bool) async -> [DuckAiChat]? {
+    private func mainMenuNativeChats(isFireMode: Bool) async -> [DuckAiChat]? {
         let result = await NativeChatsReader.read(storageHandler: isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler,
                                                   isStorageEnabled: featureFlagger.isFeatureOn(.aiChatNativeStorage))
         return try? result.get()
+    }
+
+    private func readNativeChatCount(isFireMode: Bool) async -> Result<Int, NativeChatsReadFailure> {
+        await NativeChatsReader.readCount(
+            storageHandler: isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler,
+            isStorageEnabled: featureFlagger.isFeatureOn(.aiChatNativeStorage))
     }
 
     /// The menu bar reports the browsing menu's entry sources for the page it opens from.
@@ -234,9 +243,21 @@ extension MainViewController {
         let isFireMode = menuBrowsingMode == .fire
         dismissMenuPresentation { [weak self] in
             Task { @MainActor [weak self] in
+                guard let self else { return }
                 // Recounted because chats may have changed since the menu opened.
-                guard let chatCount = await self?.mainMenuNativeChats(isFireMode: isFireMode)?.count, chatCount > 0 else { return }
-                self?.presentDeleteAllChatsConfirmation(chatCount: chatCount, isFireMode: isFireMode)
+                let chatCount: Int?
+                if featureFlagger.isFeatureOn(.fireButtonDeleteAllChats) {
+                    // Deleting requires migrated native storage, so a count it can't read means it would fail.
+                    guard let count = try? await readNativeChatCount(isFireMode: isFireMode).get() else {
+                        presentDeleteAllChatsFailure()
+                        return
+                    }
+                    chatCount = count
+                } else {
+                    chatCount = await mainMenuNativeChats(isFireMode: isFireMode)?.count
+                }
+                guard let chatCount, chatCount > 0 else { return }
+                presentDeleteAllChatsConfirmation(chatCount: chatCount, isFireMode: isFireMode)
             }
         }
     }
@@ -261,7 +282,7 @@ extension MainViewController {
         let fireExecutor = self.fireExecutor
         guard featureFlagger.isFeatureOn(.fireButtonDeleteAllChats) else {
             fireButtonAnimator.animate { [weak self] in
-                guard case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: source) else { return }
+                guard case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: source, closingChatTabs: nil) else { return }
                 self?.reloadOpenChats(isFireMode: isFireMode)
                 onSuccess?()
                 guard !isFireMode else { return }
@@ -279,14 +300,16 @@ extension MainViewController {
             !isFireMode || (fireModeDataStoreID != nil && fireModeDataStoreID == fireExecutor.fireModeDataStoreID)
         }
 
+        let mode: BrowsingMode = isFireMode ? .fire : .normal
         fireButtonAnimator.animate { [weak self] in
             guard isOriginalStore(),
-                  case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: source) else {
+                  case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: source, closingChatTabs: {
+                      self?.closeChatTabsForDeletingAllChats(in: mode)
+                  }) else {
                 self?.presentDeleteAllChatsFailure()
                 return
             }
             guard isOriginalStore() else { return }
-            self?.reloadOpenChats(isFireMode: isFireMode)
             if !isFireMode {
                 // Flushes the deletion to sync so the chats aren't pulled back.
                 fireExecutor.scheduleSync()

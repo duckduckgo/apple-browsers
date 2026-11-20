@@ -48,7 +48,7 @@ struct DuckAIRecentChatsMenuContent: MainMenuDeferredContent {
 
     struct Chats {
         let recentChats: [Chat]
-        let totalChatCount: Int
+        let deletableChatCount: Int
     }
 
     let loadChats: @MainActor () async -> Chats
@@ -62,7 +62,7 @@ struct DuckAIRecentChatsMenuContent: MainMenuDeferredContent {
         }
     }
 
-    /// Recent Chats, newest first, followed by Delete All Chats, which stays visible and is disabled without chats.
+    /// Recent Chats, newest first, followed by the Delete All Chats command.
     static func elements(for chats: Chats) -> [UIMenuElement] {
         let builder = MainMenuBuilder()
         let recentChatCommands = chats.recentChats.map {
@@ -70,7 +70,7 @@ struct DuckAIRecentChatsMenuContent: MainMenuDeferredContent {
                                            argument: $0.url.absoluteString, image: DesignSystemImages.Glyphs.Size16.chat))
         }
         let deleteAllChats = builder.makeCommand(for: .init(command: .deleteAllChats, title: UserText.menuDeleteAllChats, shortcut: nil,
-                                                            requirement: nil, argument: String(chats.totalChatCount),
+                                                            requirement: nil, argument: String(chats.deletableChatCount),
                                                             image: DesignSystemImages.Glyphs.Size16.fire))
         var elements: [UIMenuElement] = []
         if !recentChatCommands.isEmpty {

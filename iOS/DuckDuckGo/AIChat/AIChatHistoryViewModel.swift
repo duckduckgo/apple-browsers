@@ -82,6 +82,9 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
+    /// Closes chat tabs in the browsing mode being cleared, before Delete All deletes anything. Gets `isFireMode`.
+    var onCloseChatTabs: ((Bool) -> Void)?
+    var onDeleteAllChatsFailed: (() -> Void)?
 
     init(
         reader: ChatHistoryReading,
@@ -261,8 +264,21 @@ final class AIChatHistoryViewModel: ObservableObject {
         guard let fireExecutor else { return }
         // Reached only after the user confirms the delete-all action.
         instrumentation.fireAllConfirmed()
-        let result = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: .deleteAll)
-        guard case .success = result else { return }
+        let closesChatTabs = featureFlagger.isFeatureOn(.fireButtonDeleteAllChats)
+        var closingChatTabs: (@MainActor () -> Void)?
+        if closesChatTabs {
+            closingChatTabs = { [weak self] in
+                guard let self else { return }
+                onCloseChatTabs?(isFireMode)
+            }
+        }
+        let result = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: .deleteAll, closingChatTabs: closingChatTabs)
+        guard case .success = result else {
+            if closesChatTabs {
+                onDeleteAllChatsFailed?()
+            }
+            return
+        }
         guard !isFireMode else { return }
         // Flush the clear to sync now so the FE doesn't re-pull the chats.
         fireExecutor.scheduleSync()

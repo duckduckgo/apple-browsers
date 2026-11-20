@@ -48,6 +48,23 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         XCTAssertFalse(errorDetails?.contains(serverMessage) == true)
     }
 
+    func testOptOutPixelsMarkOnlyUserAssistedAttempts() {
+        for isUserAssisted in [true, false] {
+            let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
+                                                                  dataBrokerVersion: "1.1.1",
+                                                                  handler: handler,
+                                                                  isFreeScan: false,
+                                                                  vpnConnectionState: "disconnected",
+                                                                  vpnBypassStatus: "no",
+                                                                  isUserAssisted: isUserAssisted)
+
+            sut.fireOptOutSubmitSuccess(tries: 1)
+
+            XCTAssertEqual(handler.lastPassedParameters?[DataBrokerProtectionSharedPixels.Consts.userAssistedKey],
+                           isUserAssisted ? "true" : nil)
+        }
+    }
+
     func testWhenErrorIs404_thenWeFireScanNoResultsPixel() {
         let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
